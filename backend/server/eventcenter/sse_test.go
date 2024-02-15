@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -25,20 +26,16 @@ func TestSSEBroker(t *testing.T) {
 	req = req.WithContext(context)
 
 	go func() {
-		for i := 1; i <= 10; i++ {
-			time.Sleep(10 * time.Millisecond)
-			cnt := ec.(*eventCenter).sseBroker.getSubscribersCount()
-			if cnt > 0 {
-				break
-			}
-		}
+		defer cancel()
+		assert.Eventually(t, func() bool {
+			return ec.(*eventCenter).sseBroker.getSubscribersCount() > 0
+		}, 100*time.Millisecond, 10*time.Millisecond)
+
 		ev := &dbmodel.Event{
 			Text:  "some text",
 			Level: dbmodel.EvInfo,
 		}
 		ec.(*eventCenter).sseBroker.dispatchEvent(ev)
-
-		cancel()
 	}()
 
 	ec.ServeHTTP(w, req)
@@ -62,21 +59,17 @@ func TestSSEBrokerNonMainStream(t *testing.T) {
 	req = req.WithContext(context)
 
 	go func() {
-		for i := 1; i <= 10; i++ {
-			time.Sleep(10 * time.Millisecond)
-			cnt := ec.(*eventCenter).sseBroker.getSubscribersCount()
-			if cnt > 0 {
-				break
-			}
-		}
+		defer cancel()
+		assert.Eventually(t, func() bool {
+			return ec.(*eventCenter).sseBroker.getSubscribersCount() > 0
+		}, 100*time.Millisecond, 10*time.Millisecond)
+
 		ev := &dbmodel.Event{
 			Text:       "some text",
 			Level:      dbmodel.EvInfo,
 			SSEStreams: []dbmodel.SSEStream{"connectivity", "ha"},
 		}
 		ec.(*eventCenter).sseBroker.dispatchEvent(ev)
-
-		cancel()
 	}()
 
 	ec.ServeHTTP(w, req)
@@ -101,21 +94,17 @@ func TestSSEBrokerWithDifferentStreams(t *testing.T) {
 	req = req.WithContext(context)
 
 	go func() {
-		for i := 1; i <= 10; i++ {
-			time.Sleep(10 * time.Millisecond)
-			cnt := ec.(*eventCenter).sseBroker.getSubscribersCount()
-			if cnt > 0 {
-				break
-			}
-		}
+		defer cancel()
+		assert.Eventually(t, func() bool {
+			return ec.(*eventCenter).sseBroker.getSubscribersCount() > 0
+		}, 100*time.Millisecond, 10*time.Millisecond)
+
 		ev := &dbmodel.Event{
 			Text:       "some text",
 			Level:      dbmodel.EvInfo,
 			SSEStreams: []dbmodel.SSEStream{"connectivity", "ha"},
 		}
 		ec.(*eventCenter).sseBroker.dispatchEvent(ev)
-
-		cancel()
 	}()
 
 	ec.ServeHTTP(w, req)
