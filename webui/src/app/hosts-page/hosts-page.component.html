@@ -20,7 +20,13 @@
 
 <p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
+        <a
+            role="menuitem"
+            pRipple
+            [routerLink]="item.routerLink"
+            [queryParams]="i === 0 ? validHostFilter : null"
+            class="p-ripple p-element p-menuitem-link"
+        >
             <div style="display: flex; justify-content: space-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">

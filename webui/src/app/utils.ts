@@ -158,14 +158,18 @@ export function getGrafanaSubnetTooltip(subnet: number, machine: string) {
 
 /**
  * Extract key:val pairs, is:<flag> and not:<flag> from search text
- * and prepare query params dict. Expected keys are passed as keys
- * and expected flags are passed as flags.
+ * and prepare query params dict. Accepts the keys of the numeric values and
+ * boolean flags. The numeric values are converted to numbers, the flags to
+ * boolean values. The rest of the text is stored under the 'text' key.
+ * @param text search text
+ * @param numericKeys keys of the numeric values
+ * @param flags keys of the boolean flags
  */
-export function extractKeyValsAndPrepareQueryParams<T extends { text: string }>(
+export function extractKeyValsAndPrepareQueryParams<T extends { text?: string }>(
     text: string,
-    keys: (keyof T)[],
-    flags: (keyof T)[]
-): Partial<{ [key in keyof T]: string }> {
+    numericKeys: (keyof T)[],
+    flags?: (keyof T)[]
+): Partial<{ [key in keyof T]: T[key] }> {
     // find all occurrences key:val in the text
     const re = /(\w+):(\w*)/g
     const matches = []
@@ -176,29 +180,21 @@ export function extractKeyValsAndPrepareQueryParams<T extends { text: string }>(
     }
 
     // reset query params
-    const queryParams: Partial<{ [key in keyof T]: string }> = {}
-    queryParams.text = null
-
-    for (const key of keys) {
-        queryParams[key] = null
-    }
-    if (flags) {
-        for (const flag of flags) {
-            queryParams[flag] = null
-        }
-    }
+    const queryParams: Partial<T> = {}
 
     // go through all matches and...
     for (const m of matches) {
         let found = false
 
         // look for keys
-        for (const key of keys) {
-            if (m[1] === key) {
-                queryParams[key] = m[2]
-                found = true
-                break
+        for (const key of numericKeys) {
+            if (m[1] !== key) {
+                continue
             }
+            found = true
+            const value = parseInt(m[2])
+            queryParams[m[1]] = isNaN(value) ? null : value
+            break
         }
 
         // look for flags
@@ -207,13 +203,14 @@ export function extractKeyValsAndPrepareQueryParams<T extends { text: string }>(
                 if (m[2] !== flag) {
                     continue
                 }
+                found = true
+                let value: boolean = null
                 if (m[1] === 'is') {
-                    queryParams[m[2]] = 'true'
-                    found = true
+                    value = true
                 } else if (m[1] === 'not') {
-                    queryParams[m[2]] = 'false'
-                    found = true
+                    value = false
                 }
+                queryParams[m[2]] = value
             }
         }
 

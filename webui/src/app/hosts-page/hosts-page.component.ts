@@ -1,29 +1,91 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { Router, ActivatedRoute, ParamMap } from '@angular/router'
+import { Router, ActivatedRoute, ParamMap, EventType } from '@angular/router'
 
 import { MenuItem, MessageService } from 'primeng/api'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { extractKeyValsAndPrepareQueryParams, getErrorMessage } from '../utils'
-import { concat, of, Subscription } from 'rxjs'
-import { filter, take } from 'rxjs/operators'
+import { concat, EMPTY, of, Subject, Subscription } from 'rxjs'
+import { catchError, filter, map, take } from 'rxjs/operators'
 import { HostForm } from '../forms/host-form'
 import { Host, LocalHost } from '../backend'
 import { hasDifferentLocalHostData } from '../hosts'
-import { Tab, TabType } from '../tab'
+import {
+    QueryParamsFilter,
+    getBooleanQueryParamsFilterKeys,
+    getNumericQueryParamsFilterKeys,
+} from './query-params-filter'
+import { Location } from '@angular/common'
 
 /**
- * Specifies the filter parameters for fetching hosts that may be specified
- * in the URL query parameters.
+ * Enumeration for different host tab types displayed by the component.
  */
-interface QueryParamsFilter {
-    text: string
-    appId: number
-    subnetId: number
-    keaSubnetId: number
-    global: boolean
-    conflict: boolean
+export enum HostTabType {
+    List = 1,
+    NewHost,
+    EditHost,
+    Host,
+}
+
+/**
+ * A class representing the contents of a tab displayed by the component.
+ */
+export class HostTab {
+    /**
+     * Preserves information specified in a host form.
+     */
+    form: HostForm
+
+    /**
+     * Indicates if the form has been submitted.
+     */
+    submitted = false
+
+    /**
+     * Constructor.
+     *
+     * @param tabType host tab type.
+     * @param host host information displayed in the tab.
+     */
+    constructor(
+        public tabType: HostTabType,
+        public host?: Host
+    ) {
+        this._setHostTabType(tabType)
+    }
+
+    /**
+     * Sets new host tab type and initializes the form accordingly.
+     *
+     * It is a private function variant that does not check whether the type
+     * is already set to the desired value.
+     */
+    private _setHostTabType(tabType: HostTabType): void {
+        switch (tabType) {
+            case HostTabType.NewHost:
+            case HostTabType.EditHost:
+                this.form = new HostForm()
+                break
+            default:
+                this.form = null
+                break
+        }
+        this.submitted = false
+        this.tabType = tabType
+    }
+
+    /**
+     * Sets new host tab type and initializes the form accordingly.
+     *
+     * It does nothing when the type is already set to the desired value.
+     */
+    public setHostTabType(tabType: HostTabType): void {
+        if (this.tabType === tabType) {
+            return
+        }
+        this._setHostTabType(tabType)
+    }
 }
 
 /**
@@ -40,11 +102,6 @@ interface QueryParamsFilter {
     styleUrls: ['./hosts-page.component.sass'],
 })
 export class HostsPageComponent implements OnInit, OnDestroy {
-    /**
-     * Enumeration for different host tab types displayed by the component.
-     */
-    HostTabType = TabType
-
     private subscriptions = new Subscription()
     @ViewChild('hostsTable') hostsTable: Table
 
@@ -112,16 +169,25 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     hostsLoading = false
 
-    // filters
-    filterText = ''
-    queryParams: QueryParamsFilter = {
-        text: null,
-        appId: null,
-        subnetId: null,
-        keaSubnetId: null,
-        global: null,
-        conflict: null,
-    }
+    /**
+     * The filter input box content.
+     */
+    filterText: string = ''
+
+    /**
+     * The provided filter.
+     * The source property indicates where the filter comes from:
+     * - input - the filter is set by the user in the input box,
+     * - callback - the filter is set by the child component,
+     * - query - the filter is set by the URL query parameters.
+     */
+    hostFilter$ = new Subject<{ source: 'input' | 'callback' | 'query'; filter: QueryParamsFilter }>()
+
+    /**
+     * The recent filter applied to the hosts list. Only filters that pass the
+     * validation are used.
+     */
+    validHostFilter: QueryParamsFilter = {}
 
     /**
      * Array of tabs with host information.
@@ -129,6 +195,11 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * The first tab is always present and displays the hosts list.
      */
     tabs: MenuItem[]
+
+    /**
+     * Enumeration for different tab types displayed in this component.
+     */
+    HostTabType = HostTabType
 
     /**
      * Selected tab index.
@@ -143,7 +214,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * The tab holding hosts list is not included in this tab. If only a tab
      * with the hosts list is displayed, this array is empty.
      */
-    openedTabs: Tab<HostForm, Host>[] = []
+    openedTabs = []
 
     /**
      * An array of errors in specifying filter text.
@@ -164,10 +235,12 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private router: Router,
         private dhcpApi: DHCPService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private location: Location
     ) {}
 
     ngOnDestroy(): void {
+        this.hostFilter$.complete()
         this.subscriptions.unsubscribe()
     }
 
@@ -193,36 +266,91 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         // Initially, there is only a tab with hosts list.
         this.tabs = [{ label: 'Host Reservations', routerLink: '/dhcp/hosts/all' }]
 
-        // If filtering parameters are specified in the query, apply the filtering.
-        this.initFilterText()
-
-        // Subscribe to the changes of the filtering parameters.
+        // Pipe the valid filter to the hostFilter$ subject.
         this.subscriptions.add(
-            this.route.queryParamMap.subscribe(
-                (params) => {
-                    this.updateQueryParams(params)
+            this.hostFilter$
+                .pipe(
+                    // Valid filter has no validation errors.
+                    filter((f) => this.validateFilter(f.filter).length === 0),
+                    map((f) => f.filter)
+                )
+                .subscribe((filter) => {
+                    // Remember the filter.
+                    this.validHostFilter = filter
+                    // Update the list of hosts when the filtering parameters change.
                     this.loadHosts()
-                },
-                (error) => {
-                    const msg = getErrorMessage(error)
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Cannot process the query params',
-                        detail: 'Error processing the query params: ' + msg,
-                        life: 10000,
-                    })
-                }
-            )
+                })
         )
-        // Apply to the changes of the host id, e.g. from /dhcp/hosts/all to
-        // /dhcp/hosts/1. Those changes are triggered by switching between the
-        // tabs.
+
+        // Update the filter representation when the filtering parameters change.
         this.subscriptions.add(
-            this.route.paramMap.subscribe(
-                (params) => {
+            this.hostFilter$.subscribe((f) => {
+                // Update the URL.
+                if (f.source != 'query') {
+                    this.updateQueryParameters(f.filter)
+                }
+                // Update the input box.
+                if (f.source != 'input') {
+                    this.updateFilterText(f.filter)
+                }
+
+                this.filterTextFormatErrors = this.validateFilter(f.filter)
+            })
+        )
+
+        this.subscriptions.add(
+            // This component is responsible for routing of multiple
+            // components: hosts list, host details, and host forms.
+            // We want to preserve the filtering parameters when switching
+            // between the tabs. So we need to know both URL and query
+            // parameters in the same time.
+            //
+            // If we register to the `route.queryParamMap` and `route.paramMap`
+            // separately or we merge them using the `combineLatest` operator,
+            // we may get the situation when the query parameters are updated
+            // after the segment parameters. In this case, the filtering
+            // parameters are updated twice: first with the new query
+            // parameters but with old segment parameters and then with the new
+            // query and segment parameters.
+            //
+            // We need to differently treat the situation when the user
+            // switches to detail tab (preserve the filtering parameters and
+            // clear the query parameters), when the user back to the list tab
+            // (restore the query parameters) and when the user changes the
+            // query parameters in URL bar (update the filtering parameters).
+            //
+            // We need a guarantee that the change of the segment and query
+            // parameters are notified in the same time. It is achieved by
+            // registering to the `navigation end` event.
+            //
+            // See: https://stackoverflow.com/a/45765143
+            this.router.events
+                .pipe(
+                    filter((event, idx) => idx === 0 || event.type === EventType.NavigationEnd),
+                    catchError((err) => {
+                        const msg = getErrorMessage(err)
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Cannot process the URL query',
+                            detail: msg,
+                            life: 10000,
+                        })
+                        return EMPTY
+                    })
+                )
+                .subscribe(() => {
+                    const paramMap = this.route.snapshot.paramMap
+                    const queryParamMap = this.route.snapshot.queryParamMap
+
+                    // Apply to the changes of the host id, e.g. from /dhcp/hosts/all to
+                    // /dhcp/hosts/1. Those changes are triggered by switching between the
+                    // tabs.
+
                     // Get host id.
-                    const id = params.get('id')
+                    const id = paramMap.get('id')
                     if (!id || id === 'all') {
+                        // Update the filter only if the target is host list.
+                        this.updateFilterFromQueryParameters(queryParamMap)
                         this.switchToTab(0)
                         return
                     }
@@ -237,97 +365,126 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                         // to this tab if it has been already opened.
                         this.openHostTab(numericId)
                     }
-                },
-                (error) => {
-                    const msg = getErrorMessage(error)
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Cannot process the URL params',
-                        detail: 'Error processing the URL params: ' + msg,
-                        life: 10000,
-                    })
-                }
-            )
+                })
         )
     }
 
     /**
-     * Apply filtering according to the query parameters.
+     * Updates the filter input content based on the provided filter.
      *
-     * The following parameters are taken into account:
-     * - text
-     * - appId
-     * - subnetId
-     * - keaSubnetId
-     * - global (translated to is:global or not:global filtering text).
+     * The numeric and booleans parameters are taken into account. The boolean
+     * ones are translated to is:foo or not:foo filtering text.
      */
-    private initFilterText() {
-        const ssParams = this.route.snapshot.queryParamMap
-        let text = ''
-        if (ssParams.get('text')) {
-            text += ' ' + ssParams.get('text')
-        }
-        for (const paramName of ['appId', 'subnetId', 'keaSubnetId']) {
-            const param = ssParams.get(paramName)
-            if (param) {
-                text += ` ${paramName}:${param}`
+    private updateFilterText(filter: QueryParamsFilter) {
+        const numericKeys = getNumericQueryParamsFilterKeys()
+        const booleanKeys = getBooleanQueryParamsFilterKeys()
+        const parameters = []
+
+        for (let key of numericKeys) {
+            if (filter.hasOwnProperty(key)) {
+                parameters.push(` ${key}:${filter[key]}`)
             }
         }
-        const g = ssParams.get('global')
-        if (g === 'true') {
-            text += ' is:global'
-        } else if (g === 'false') {
-            text += ' not:global'
+
+        for (let key of booleanKeys) {
+            if (filter.hasOwnProperty(key)) {
+                if (filter[key] === true) {
+                    parameters.push(`is:${key}`)
+                } else if (filter[key] === false) {
+                    parameters.push(`not:${key}`)
+                } else {
+                    parameters.push(`:${filter[key]}`)
+                }
+            }
         }
-        this.filterText = text.trim()
+
+        if (filter.text) {
+            parameters.push(filter.text)
+        }
+        this.filterText = parameters.map((p) => p.trim()).join(' ')
     }
 
     /**
-     * Updates queryParams structure using query parameters.
+     * Update the URL query parameters based on the provided filter.
      *
-     * This update is triggered when user types in the filter box.
+     * This function uses the Location provider instead Router or
+     * ActivatedRoute to avoid re-rendering the component.
+     */
+    private updateQueryParameters(filter: QueryParamsFilter) {
+        const params = []
+
+        for (let key of Object.keys(filter)) {
+            if (filter[key] != null) {
+                params.push(`${encodeURIComponent(key)}=${encodeURIComponent(filter[key])}`)
+            }
+        }
+
+        const baseUrl = this.router.url.split('?')[0]
+        this.location.go(baseUrl, params.join('&'))
+    }
+
+    /**
+     * Updates the filter structure using URL query parameters.
+     *
+     * This update is triggered when the URL changes.
      * @param params query parameters received from activated route.
      */
-    private updateQueryParams(params: ParamMap) {
-        this.queryParams.text = params.get('text')
+    private updateFilterFromQueryParameters(params: ParamMap) {
+        const numericKeys = getNumericQueryParamsFilterKeys()
+        const booleanKeys = getBooleanQueryParamsFilterKeys()
 
-        let filterTextFormatErrors: string[] = []
+        const filter: QueryParamsFilter = {}
+        filter.text = params.get('text')
 
-        // Convert appId to a number. It is NaN if the parameter doesn't exist
-        // or it is malformed.
-        const appId = parseInt(params.get('appId'), 10)
-        this.queryParams.appId = isNaN(appId) ? null : appId
-        if (params.get('appId') != null && this.queryParams.appId === null) {
-            filterTextFormatErrors.push('Please specify appId as a number (e.g., appId:2).')
-        }
-
-        // Convert subnetId to a number. It is NaN if the parameter doesn't exist
-        // or it is malformed.
-        const subnetId = parseInt(params.get('subnetId'), 10)
-        this.queryParams.subnetId = isNaN(subnetId) ? null : subnetId
-        if (params.get('subnetId') != null && this.queryParams.subnetId === null) {
-            filterTextFormatErrors.push('Please specify subnetId as a number (e.g., subnetId:2).')
-        }
-
-        // Convert keaSubnetId to a number. It is NaN if the parameter doesn't exist
-        // or it is malformed.
-        const keaSubnetId = parseInt(params.get('keaSubnetId'), 10)
-        this.queryParams.keaSubnetId = isNaN(keaSubnetId) ? null : keaSubnetId
-        if (params.get('keaSubnetId') != null && this.queryParams.keaSubnetId === null) {
-            filterTextFormatErrors.push('Please specify keaSubnetId as a number (e.g., keaSubnetId:2).')
+        for (let key of numericKeys) {
+            // Convert the value to a number. It is NaN if the parameter
+            // doesn't exist or it is malformed.
+            if (params.has(key)) {
+                const value = parseInt(params.get(key))
+                filter[key as any] = isNaN(value) ? null : value
+            }
         }
 
         const parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
 
-        // Global.
-        const g = params.get('global')
-        this.queryParams.global = parseBoolean(g)
+        for (let key of booleanKeys) {
+            if (params.has(key)) {
+                const value = parseBoolean(params.get(key))
+                filter[key as any] = value
+            }
+        }
 
-        // Conflict.
-        const c = params.get('conflict')
-        this.queryParams.conflict = parseBoolean(c)
+        this.hostFilter$.next({
+            source: 'query',
+            filter: filter,
+        })
+    }
 
-        this.filterTextFormatErrors = filterTextFormatErrors
+    /**
+     * Checks if the provided filter is valid.
+     * @param filter A filter to validate
+     * @returns List of validation issues. If the list is empty, the filter is
+     * valid.
+     */
+    private validateFilter(filter: QueryParamsFilter): string[] {
+        const numericKeys = getNumericQueryParamsFilterKeys()
+        const booleanKeys = getBooleanQueryParamsFilterKeys()
+
+        const errors: string[] = []
+
+        for (let key of numericKeys) {
+            if (filter.hasOwnProperty(key) && filter[key] == null) {
+                errors.push(`Please specify ${key} as a number (e.g., ${key}:2).`)
+            }
+        }
+
+        for (let key of booleanKeys) {
+            if (filter.hasOwnProperty(key) && filter[key] == null) {
+                errors.push(`Please specify ${key} as a boolean (e.g., is:${key} or not:${key}).`)
+            }
+        }
+
+        return errors
     }
 
     /**
@@ -340,7 +497,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     private openHostTab(id: number) {
         let index = this.openedTabs.findIndex(
-            (t) => (t.tabType === TabType.Display || t.tabType === TabType.Edit) && t.tabSubject.id === id
+            (t) => (t.tabType === HostTabType.Host || t.tabType === HostTabType.EditHost) && t.host.id === id
         )
         if (index >= 0) {
             this.switchToTab(index + 1)
@@ -360,7 +517,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe(
                 (data) => {
-                    this.openedTabs.push(new Tab(HostForm, TabType.Display, data))
+                    this.openedTabs.push(new HostTab(HostTabType.Host, data))
                     this.createMenuItem(this.getHostLabel(data), `/dhcp/hosts/${id}`)
                 },
                 (err) => {
@@ -379,12 +536,12 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * Opens an existing or new host tab for creating new host.
      */
     private openNewHostTab() {
-        let index = this.openedTabs.findIndex((t) => t.tabType === TabType.New)
+        let index = this.openedTabs.findIndex((t) => t.tabType === HostTabType.NewHost)
         if (index >= 0) {
             this.switchToTab(index + 1)
             return
         }
-        this.openedTabs.push(new Tab(HostForm, TabType.New))
+        this.openedTabs.push(new HostTab(HostTabType.NewHost))
         this.createMenuItem('New Host', '/dhcp/hosts/new')
         return
     }
@@ -401,12 +558,12 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     closeHostTab(event: Event, tabIndex: number) {
         if (
-            this.openedTabs[tabIndex - 1].tabType === TabType.New &&
-            this.openedTabs[tabIndex - 1].state.transactionId > 0 &&
+            this.openedTabs[tabIndex - 1].tabType === HostTabType.NewHost &&
+            this.openedTabs[tabIndex - 1].form.transactionId > 0 &&
             !this.openedTabs[tabIndex - 1].submitted
         ) {
             this.dhcpApi
-                .createHostDelete(this.openedTabs[tabIndex - 1].state.transactionId)
+                .createHostDelete(this.openedTabs[tabIndex - 1].form.transactionId)
                 .toPromise()
                 .catch((err) => {
                     let msg = err.statusText
@@ -421,15 +578,15 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     })
                 })
         } else if (
-            this.openedTabs[tabIndex - 1].tabType === TabType.Edit &&
-            this.openedTabs[tabIndex - 1].tabSubject.id > 0 &&
-            this.openedTabs[tabIndex - 1].state.transactionId > 0 &&
+            this.openedTabs[tabIndex - 1].tabType === HostTabType.EditHost &&
+            this.openedTabs[tabIndex - 1].host.id > 0 &&
+            this.openedTabs[tabIndex - 1].form.transactionId > 0 &&
             !this.openedTabs[tabIndex - 1].submitted
         ) {
             this.dhcpApi
                 .updateHostDelete(
-                    this.openedTabs[tabIndex - 1].tabSubject.id,
-                    this.openedTabs[tabIndex - 1].state.transactionId
+                    this.openedTabs[tabIndex - 1].host.id,
+                    this.openedTabs[tabIndex - 1].form.transactionId
                 )
                 .toPromise()
                 .catch((err) => {
@@ -498,7 +655,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * not specified, the current values are used when available.
      */
     loadHosts(event?) {
-        const params = this.queryParams
+        const params = this.validHostFilter
         if (typeof event === 'undefined') {
             event = { first: 0, rows: 10 }
             if (this.hostsTable) {
@@ -598,16 +755,27 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     keyUpFilterText(event: Pick<KeyboardEvent, 'key'>) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(
+            const filter = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(
                 this.filterText,
-                ['appId', 'subnetId', 'keaSubnetId'],
-                ['global', 'conflict']
+                getNumericQueryParamsFilterKeys(),
+                getBooleanQueryParamsFilterKeys()
             )
-            this.router.navigate(['/dhcp/hosts'], {
-                queryParams,
-                queryParamsHandling: 'merge',
+
+            this.hostFilter$.next({
+                source: 'input',
+                filter: filter,
             })
         }
+    }
+
+    /**
+     * Event handler triggered when a host list needs to be filtered.
+     */
+    onRequestedFiltering(filter: QueryParamsFilter) {
+        this.hostFilter$.next({
+            source: 'callback',
+            filter,
+        })
     }
 
     /**
@@ -622,10 +790,10 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     onHostFormDestroy(event): void {
         // Find the form matching the form for which the notification has
         // been sent.
-        const tab = this.openedTabs.find((t) => t.state && t.state.transactionId === event.transactionId)
+        const tab = this.openedTabs.find((t) => t.form && t.form.transactionId === event.transactionId)
         if (tab) {
             // Found the matching form. Update it.
-            tab.state = event
+            tab.form = event
         }
     }
 
@@ -640,7 +808,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     onHostFormSubmit(event): void {
         // Find the form matching the form for which the notification has
         // been sent.
-        const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
+        const index = this.openedTabs.findIndex((t) => t.form && t.form.transactionId === event.transactionId)
         if (index >= 0) {
             this.openedTabs[index].submitted = true
             this.closeHostTab(null, index + 1)
@@ -660,17 +828,17 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         // Find the form matching the form for which the notification has
         // been sent.
         const index = this.openedTabs.findIndex(
-            (t) => t.tabSubject?.id === hostId || (t.tabType === TabType.New && !hostId)
+            (t) => (t.host && t.host.id === hostId) || (t.tabType === HostTabType.NewHost && !hostId)
         )
         if (index >= 0) {
             if (
                 hostId &&
-                this.openedTabs[index].state?.transactionId &&
-                this.openedTabs[index].tabType !== TabType.Display
+                this.openedTabs[index].form?.transactionId &&
+                this.openedTabs[index].tabType !== HostTabType.Host
             ) {
-                this.dhcpApi.updateHostDelete(hostId, this.openedTabs[index].state.transactionId).toPromise()
+                this.dhcpApi.updateHostDelete(hostId, this.openedTabs[index].form.transactionId).toPromise()
                 this.tabs[index + 1].icon = ''
-                this.openedTabs[index].setTabType(TabType.Display)
+                this.openedTabs[index].setHostTabType(HostTabType.Host)
             } else {
                 this.closeHostTab(null, index + 1)
             }
@@ -686,12 +854,12 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     onHostEditBegin(host: Host): void {
         let index = this.openedTabs.findIndex(
-            (t) => (t.tabType === TabType.Display || t.tabType === TabType.Edit) && t.tabSubject.id === host.id
+            (t) => (t.tabType === HostTabType.Host || t.tabType === HostTabType.EditHost) && t.host.id === host.id
         )
         if (index >= 0) {
-            if (this.openedTabs[index].tabType !== TabType.Edit) {
+            if (this.openedTabs[index].tabType !== HostTabType.EditHost) {
                 this.tabs[index + 1].icon = 'pi pi-pencil'
-                this.openedTabs[index].setTabType(TabType.Edit)
+                this.openedTabs[index].setHostTabType(HostTabType.EditHost)
             }
             this.switchToTab(index + 1)
         }
@@ -705,7 +873,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     onHostDelete(host: Host): void {
         // Try to find a suitable tab by host id.
-        const index = this.openedTabs.findIndex((t) => t.tabSubject && t.tabSubject.id === host.id)
+        const index = this.openedTabs.findIndex((t) => t.host && t.host.id === host.id)
         if (index >= 0) {
             // Close the tab.
             this.closeHostTab(null, index + 1)
