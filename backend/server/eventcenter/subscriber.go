@@ -52,6 +52,16 @@ func getQueryValueAsInt64(name string, values url.Values) (int64, error) {
 	return numericValue, nil
 }
 
+// Checks if the event should be emitted based on the filtering criteria.
+func (sf subscriberFilters) isInFiter(event *dbmodel.Event) bool {
+	return (sf.level == 0 || sf.level <= event.Level) &&
+		(sf.MachineID == 0 || event.Relations.MachineID == sf.MachineID) &&
+		(sf.AppID == 0 || event.Relations.AppID == sf.AppID) &&
+		(sf.SubnetID == 0 || event.Relations.SubnetID == sf.SubnetID) &&
+		(sf.DaemonID == 0 || event.Relations.DaemonID == sf.DaemonID) &&
+		(sf.UserID == 0 || event.Relations.UserID == sf.UserID)
+}
+
 // Creates a new instance of the subscriber using URL. It doesn't populate filters.
 func newSubscriber(serverURL *url.URL, subscriberAddress string) *Subscriber {
 	subscriber := &Subscriber{
@@ -192,14 +202,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 // sent when the returned list is empty.
 func (s *Subscriber) findMatchingEventStreams(event *dbmodel.Event) (streams []dbmodel.SSEStream) {
 	for _, stream := range s.filters.SSEStreams {
-		if stream == dbmodel.SSERegularMessage &&
-			(!s.useFilter ||
-				(s.filters.level == 0 || s.filters.level <= event.Level) &&
-					(s.filters.MachineID == 0 || event.Relations.MachineID == s.filters.MachineID) &&
-					(s.filters.AppID == 0 || event.Relations.AppID == s.filters.AppID) &&
-					(s.filters.SubnetID == 0 || event.Relations.SubnetID == s.filters.SubnetID) &&
-					(s.filters.DaemonID == 0 || event.Relations.DaemonID == s.filters.DaemonID) &&
-					(s.filters.UserID == 0 || event.Relations.UserID == s.filters.UserID)) {
+		if stream == dbmodel.SSERegularMessage && (!s.useFilter || s.filters.isInFiter(event)) {
 			streams = append(streams, dbmodel.SSERegularMessage)
 		} else {
 			for _, eventStream := range event.SSEStreams {
