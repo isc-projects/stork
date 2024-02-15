@@ -217,7 +217,7 @@ export class ServerSentEventsService {
                         this.reopenSSEConnection()
                     },
                     // Use a backoff mechanism in case of a recurring error.
-                    this.errorCount++ < 10 ? 10000 : 600000
+                    this.errorCount++ < 10 ? 10000 : 60000
                 )
             },
             false
