@@ -69,7 +69,7 @@ export class ServerSentEventsService {
      * This service pushes the events received over SSE to this observable
      * and the components receive the events over it.
      */
-    private observable: Observable<SSEEvent>
+    private events$: Observable<SSEEvent>
 
     /**
      * A behavior subject used to push the new events to the observable.
@@ -93,7 +93,7 @@ export class ServerSentEventsService {
             stream: 'all',
             originalEvent: null,
         })
-        this.observable = new Observable<SSEEvent>((subscriber) => {
+        this.events$ = new Observable<SSEEvent>((subscriber) => {
             this.receivedEventsSubject.subscribe((ev) => {
                 subscriber.next(ev)
             })
@@ -122,7 +122,7 @@ export class ServerSentEventsService {
             this.subscriptions.set('connectivity', subscription)
             this.reopenSSEConnection()
         }
-        return this.observable
+        return this.events$
     }
 
     /**
@@ -142,7 +142,7 @@ export class ServerSentEventsService {
             let existingSubscription = this.subscriptions.get('message')
             if (JSON.stringify(existingSubscription) === JSON.stringify(filter)) {
                 // We already have matching subscription. Let's just return.
-                return this.observable
+                return this.events$
             }
         }
         // Need to re-establish SSE connection because our filtering parameters
@@ -150,7 +150,7 @@ export class ServerSentEventsService {
         this.subscriptions.set('connectivity', {})
         this.subscriptions.set('message', filter)
         this.reopenSSEConnection()
-        return this.observable
+        return this.events$
     }
 
     /**
