@@ -1102,7 +1102,7 @@ func (r *RestAPI) GetAppsDirectory(ctx context.Context, params services.GetAppsD
 
 // Returns a list of apps for which the server discovered some communication problems.
 // It includes a lack of communication with the agent or the daemons behind it.
-func (r *RestAPI) GetAppsCommunicationIssues(ctx context.Context, params services.GetAppsCommunicationIssuesParams) middleware.Responder {
+func (r *RestAPI) GetAppsWithCommunicationIssues(ctx context.Context, params services.GetAppsWithCommunicationIssuesParams) middleware.Responder {
 	// Get all apps with a minimal set of relations.
 	dbApps, err := dbmodel.GetAllAppsWithRelations(r.DB, dbmodel.AppRelationMachine, dbmodel.AppRelationAccessPoints, dbmodel.AppRelationDaemons)
 	if err != nil {
@@ -1134,7 +1134,7 @@ func (r *RestAPI) GetAppsCommunicationIssues(ctx context.Context, params service
 		}
 	}
 	// Send the list.
-	rsp := services.NewGetAppsCommunicationIssuesOK().WithPayload(&models.Apps{
+	rsp := services.NewGetAppsWithCommunicationIssuesOK().WithPayload(&models.Apps{
 		Items: apps,
 		Total: int64(len(apps)),
 	})

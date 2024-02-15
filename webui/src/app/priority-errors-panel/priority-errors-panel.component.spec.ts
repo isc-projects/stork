@@ -63,7 +63,7 @@ describe('PriorityErrorsPanelComponent', () => {
             ],
             total: 1,
         }
-        spyOn(api, 'getAppsCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
         spyOn(component, 'setBackoffTimeout')
 
         // When the component is initialized it should subscibe to the events and
@@ -72,7 +72,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
         expect(sse.receiveConnectivityEvents).toHaveBeenCalled()
-        expect(api.getAppsCommunicationIssues).toHaveBeenCalled()
+        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
         expect(component.setBackoffTimeout).toHaveBeenCalled()
         expect(component.messages.length).toBe(1)
         // To prevent the storm of requests to the server for each received event
@@ -91,7 +91,7 @@ describe('PriorityErrorsPanelComponent', () => {
         // It should not trigger any new subscriptions nor requests to the
         // server because we have the backoff enabled.
         expect(sse.receiveConnectivityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsCommunicationIssues).toHaveBeenCalledTimes(1)
+        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(1)
         expect(component.messages.length).toBe(1)
         expect(component.backoff).toBeTrue()
         expect(component.eventCount).toBe(1)
@@ -110,7 +110,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
         expect(sse.receiveConnectivityEvents).toHaveBeenCalledTimes(1)
-        expect(api.getAppsCommunicationIssues).toHaveBeenCalledTimes(2)
+        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(2)
         expect(component.messages.length).toBe(1)
         expect(component.backoff).toBeTrue()
         expect(component.eventCount).toBe(0)
@@ -128,13 +128,13 @@ describe('PriorityErrorsPanelComponent', () => {
             items: [],
             total: 0,
         }
-        spyOn(api, 'getAppsCommunicationIssues').and.returnValue(of(apps))
+        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
         spyOn(component, 'setBackoffTimeout')
         component.ngOnInit()
         fixture.detectChanges()
         tick()
         expect(sse.receiveConnectivityEvents).toHaveBeenCalled()
-        expect(api.getAppsCommunicationIssues).toHaveBeenCalled()
+        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
         expect(component.messages.length).toBe(0)
     }))
 
@@ -160,14 +160,14 @@ describe('PriorityErrorsPanelComponent', () => {
             })
         )
         // Simulate an error while fetching the apps.
-        spyOn(api, 'getAppsCommunicationIssues').and.returnValue(throwError({ status: 404 }))
+        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(throwError({ status: 404 }))
         spyOn(component, 'setBackoffTimeout')
         spyOn(messageService, 'add')
         component.ngOnInit()
         fixture.detectChanges()
         tick()
         expect(sse.receiveConnectivityEvents).toHaveBeenCalled()
-        expect(api.getAppsCommunicationIssues).toHaveBeenCalled()
+        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
         expect(component.messages.length).toBe(0)
     }))

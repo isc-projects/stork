@@ -1317,10 +1317,10 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 				CurrentErrors: 0,
 			})
 
-		params := services.GetAppsCommunicationIssuesParams{}
-		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		params := services.GetAppsWithCommunicationIssuesParams{}
+		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
 		require.Equal(t, "kea1", apps.Items[0].Name)
 	})
@@ -1352,10 +1352,10 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 				CurrentErrors: 0,
 			})
 
-		params := services.GetAppsCommunicationIssuesParams{}
-		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		params := services.GetAppsWithCommunicationIssuesParams{}
+		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
 		require.Equal(t, "kea1", apps.Items[0].Name)
 	})
@@ -1387,10 +1387,10 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 				CurrentErrors: 0,
 			})
 
-		params := services.GetAppsCommunicationIssuesParams{}
-		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		params := services.GetAppsWithCommunicationIssuesParams{}
+		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
 		require.Equal(t, "kea1", apps.Items[0].Name)
 	})
@@ -1411,10 +1411,10 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 				CurrentErrors: 1,
 			})
 
-		params := services.GetAppsCommunicationIssuesParams{}
-		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		params := services.GetAppsWithCommunicationIssuesParams{}
+		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
 		require.Equal(t, "bind9", apps.Items[0].Name)
 	})
@@ -1443,10 +1443,10 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 				},
 			})
 
-		params := services.GetAppsCommunicationIssuesParams{}
-		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		params := services.GetAppsWithCommunicationIssuesParams{}
+		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
 		require.Equal(t, "bind9", apps.Items[0].Name)
 	})
@@ -1476,10 +1476,10 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 				},
 			})
 
-		params := services.GetAppsCommunicationIssuesParams{}
-		rsp := rapi.GetAppsCommunicationIssues(ctx, params)
-		require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
-		apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+		params := services.GetAppsWithCommunicationIssuesParams{}
+		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
+		require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
+		apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 		require.EqualValues(t, 1, apps.Total)
 		require.Equal(t, "bind9", apps.Items[0].Name)
 	})
@@ -1535,10 +1535,10 @@ func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
 			CurrentErrors: 1,
 		})
 
-	params := services.GetAppsCommunicationIssuesParams{}
-	rsp := rapi.GetAppsCommunicationIssues(ctx, params)
-	require.IsType(t, &services.GetAppsCommunicationIssuesOK{}, rsp)
-	apps := rsp.(*services.GetAppsCommunicationIssuesOK).Payload
+	params := services.GetAppsWithCommunicationIssuesParams{}
+	rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
+	require.IsType(t, &services.GetAppsWithCommunicationIssuesOK{}, rsp)
+	apps := rsp.(*services.GetAppsWithCommunicationIssuesOK).Payload
 	require.EqualValues(t, 0, apps.Total)
 }
 

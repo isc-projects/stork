@@ -79,7 +79,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
                 // When we receive such an event something has potentially changed in the
                 // status of the connectivity between the server and the machines. Let's
                 // get the details.
-                this.getAppsCommunicationIssues()
+                this.getAppsWithCommunicationIssues()
             }
         })
     }
@@ -93,8 +93,8 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
      * be called after the timeout elapses if there have been any events
      * captured during the backoff.
      */
-    private getAppsCommunicationIssues(): void {
-        lastValueFrom(this.servicesApi.getAppsCommunicationIssues())
+    private getAppsWithCommunicationIssues(): void {
+        lastValueFrom(this.servicesApi.getAppsWithCommunicationIssues())
             .then((data) => {
                 const apps = data.items ?? []
                 if (apps.length > 0) {
@@ -154,7 +154,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
             this.backoff = false
             if (this.eventCount > 0) {
                 this.eventCount = 0
-                this.getAppsCommunicationIssues()
+                this.getAppsWithCommunicationIssues()
             }
         }, 5000)
     }
