@@ -3,10 +3,10 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angul
 import { PriorityErrorsPanelComponent } from './priority-errors-panel.component'
 import { ServicesService } from '../backend'
 import { MessageService } from 'primeng/api'
-import { SSEEvent, ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
+import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessagesModule } from 'primeng/messages'
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
+import { BehaviorSubject, of, throwError } from 'rxjs'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
 describe('PriorityErrorsPanelComponent', () => {
@@ -48,11 +48,7 @@ describe('PriorityErrorsPanelComponent', () => {
             originalEvent: null,
         })
         // Create an observable the component subscribes to to receive the events.
-        let observable = new Observable<SSEEvent>((subscriber) => {
-            receivedEventsSubject.subscribe((ev) => {
-                subscriber.next(ev)
-            })
-        })
+        let observable = receivedEventsSubject.asObservable()
         spyOn(sse, 'receiveConnectivityEvents').and.returnValue(observable)
         // Simulate returning an app with the connectivity issues.
         let apps: any = {

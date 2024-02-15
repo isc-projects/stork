@@ -93,11 +93,7 @@ export class ServerSentEventsService {
             stream: 'all',
             originalEvent: null,
         })
-        this.events$ = new Observable<SSEEvent>((subscriber) => {
-            this.receivedEventsSubject.subscribe((ev) => {
-                subscriber.next(ev)
-            })
-        })
+        this.events$ = this.receivedEventsSubject.asObservable()
     }
 
     /**
