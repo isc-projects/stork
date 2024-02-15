@@ -64,6 +64,7 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			evJSON, err := json.Marshal(event)
 			if err != nil {
 				log.WithError(err).Error("Problem serializing event to json")
+				continue
 			}
 
 			// send received event to subscriber and flush the connection
