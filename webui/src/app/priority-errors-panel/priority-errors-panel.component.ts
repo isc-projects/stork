@@ -94,15 +94,14 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     private getAppsWithCommunicationIssues(): void {
         lastValueFrom(this.servicesApi.getAppsWithCommunicationIssues())
             .then((data) => {
-                const apps = data.items ?? []
-                if (apps.length > 0) {
+                if (data.total > 0) {
                     this.messages = [
                         {
                             severity: 'warn',
                             summary: 'Communication issues',
                             detail:
                                 `Stork server reports communication problems for ${formatNoun(
-                                    apps.length,
+                                    data.total,
                                     'app',
                                     's'
                                 )} ` +
