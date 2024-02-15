@@ -265,7 +265,5 @@ export class TestableServerSentEventsService extends ServerSentEventsService {
     /**
      * Stub function for adding the event listeners used in testing.
      */
-    override addEventListeners() {
-        console.info('THIS FUNCTION CALLED')
-    }
+    override addEventListeners() {}
 }
