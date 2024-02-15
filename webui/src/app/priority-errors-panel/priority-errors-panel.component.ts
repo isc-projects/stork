@@ -27,7 +27,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     /**
      * A subscription to the SSE service receiving the events.
      */
-    subscription: Subscription
+    subscription: Subscription = null
 
     /**
      * Is the backoff mechanism enabled.
@@ -58,28 +58,24 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     /**
      * A lifecycle hook invoked when the component is initialized.
      *
-     * It subscribes to the events related to the connectivity issues.
-     * When it receives such an event, it makes a call to the server to
-     * fetch a detailed information about the communication issues.
+     * It fetches a list of apps with communication issues. When this
+     * list is returned a warning message may be displayed. Then, it
+     * subscribes to the events related to the connectivity issues to
+     * track any new alerts of that kind.
      */
     ngOnInit(): void {
-        this.subscription = this.sse
-            .receiveConnectivityEvents()
-            .pipe(filter((event) => event.stream === 'all' || event.stream === 'connectivity'))
-            .subscribe(() => {
-                // To avoid many subsequent calls getting the current communication state,
-                // we introduce a backoff mechanism. After getting the detailed communication
-                // state we set a timeout when we only get notified about the events but not
-                // actually query the server for communication issues.
-                if (this.backoff) {
-                    this.eventCount++
-                } else {
-                    // When we receive such an event something has potentially changed in the
-                    // status of the connectivity between the server and the machines. Let's
-                    // get the details.
-                    this.getAppsWithCommunicationIssues()
-                }
-            })
+        this.getAppsWithCommunicationIssues()
+    }
+
+    /**
+     * A lifecycle hook invoked when the component is destroyed.
+     *
+     * It unsubscribes from the events service.
+     */
+    ngOnDestroy(): void {
+        if (this.subscription) {
+            this.subscription.unsubscribe()
+        }
     }
 
     /**
@@ -90,6 +86,9 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
      * to this function it sets a backoff mechanism with a timeout. It will
      * be called after the timeout elapses if there have been any events
      * captured during the backoff.
+     *
+     * When it gets the list of issues for the first time it subscribes to
+     * the events related to the connectivity issues.
      */
     private getAppsWithCommunicationIssues(): void {
         lastValueFrom(this.servicesApi.getAppsWithCommunicationIssues())
@@ -122,19 +121,38 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
                 })
             })
             .finally(() => {
-                // Use a backoff mechanism with a timeout.
-                this.backoff = true
-                this.setBackoffTimeout()
+                if (!this.subscription) {
+                    this.subscribe()
+                } else {
+                    // Use a backoff mechanism with a timeout.
+                    this.backoff = true
+                    this.setBackoffTimeout()
+                }
             })
     }
 
     /**
-     * A lifecycle hook invoked when the component is destroyed.
-     *
-     * It unsubscribes from the events service.
+     * Subscribes to the events indicating the connectivity issues and the
+     * control events occuring on SSE reconnection.
      */
-    ngOnDestroy(): void {
-        this.subscription.unsubscribe()
+    private subscribe(): void {
+        this.subscription = this.sse
+            .receiveConnectivityEvents()
+            .pipe(filter((event) => event.stream === 'all' || event.stream === 'connectivity'))
+            .subscribe(() => {
+                // To avoid many subsequent calls getting the current communication state,
+                // we introduce a backoff mechanism. After getting the detailed communication
+                // state we set a timeout when we only get notified about the events but not
+                // actually query the server for communication issues.
+                if (this.backoff) {
+                    this.eventCount++
+                } else {
+                    // When we receive such an event something has potentially changed in the
+                    // status of the connectivity between the server and the machines. Let's
+                    // get the details.
+                    this.getAppsWithCommunicationIssues()
+                }
+            })
     }
 
     /**

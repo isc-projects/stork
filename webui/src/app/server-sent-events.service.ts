@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { Event } from './backend'
 
 /**
@@ -72,9 +72,9 @@ export class ServerSentEventsService {
     private events$: Observable<SSEEvent>
 
     /**
-     * A behavior subject used to push the new events to the observable.
+     * A subject used to push the new events to the observable.
      */
-    private receivedEventsSubject: BehaviorSubject<SSEEvent>
+    private receivedEventsSubject: Subject<SSEEvent>
 
     /**
      * Holds currently established subscriptions to SSE streams.
@@ -89,10 +89,7 @@ export class ServerSentEventsService {
      * Creates an observable for the components to subscribe.
      */
     constructor() {
-        this.receivedEventsSubject = new BehaviorSubject<SSEEvent>({
-            stream: 'all',
-            originalEvent: null,
-        })
+        this.receivedEventsSubject = new Subject()
         this.events$ = this.receivedEventsSubject.asObservable()
     }
 
