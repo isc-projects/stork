@@ -97,7 +97,8 @@ export class ServerSentEventsService {
     }
 
     /**
-     * Subscribe to a stream of the connectivity events in the server.
+     * Returns an observable for subscribing to a stream of the connectivity
+     * events in the server.
      *
      * The connectivity events report issues with the connectivity between
      * the server and the monitored machines. The components reporting such
@@ -122,7 +123,8 @@ export class ServerSentEventsService {
     }
 
     /**
-     * Subscribe to a connectivity and message (default) streams of events in the server.
+     * Returns an observable for subscribing to a connectivity and message (default)
+     * streams of events in the server.
      *
      * The message events are typically displayed in the events panel component. However
      * this function also subscribes to the connectivity events which are monitored on
