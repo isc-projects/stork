@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core'
 import { ServicesService } from '../backend'
 import { Message, MessageService } from 'primeng/api'
 import { ServerSentEventsService } from '../server-sent-events.service'
-import { Subscription, lastValueFrom } from 'rxjs'
+import { Subscription, filter, lastValueFrom } from 'rxjs'
 import { formatNoun, getErrorMessage } from '../utils'
 
 /**
@@ -63,25 +63,23 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
      * fetch a detailed information about the communication issues.
      */
     ngOnInit(): void {
-        this.subscription = this.sse.receiveConnectivityEvents().subscribe((event) => {
-            // We're only interested in the events related to the connectivity and
-            // the events indicating issues with the SSE communication itself.
-            if (event.stream !== 'all' && event.stream !== 'connectivity') {
-                return
-            }
-            // To avoid many subsequent calls getting the current communication state,
-            // we introduce a backoff mechanism. After getting the detailed communication
-            // state we set a timeout when we only get notified about the events but not
-            // actually query the server for communication issues.
-            if (this.backoff) {
-                this.eventCount++
-            } else {
-                // When we receive such an event something has potentially changed in the
-                // status of the connectivity between the server and the machines. Let's
-                // get the details.
-                this.getAppsWithCommunicationIssues()
-            }
-        })
+        this.subscription = this.sse
+            .receiveConnectivityEvents()
+            .pipe(filter((event) => event.stream === 'all' || event.stream === 'connectivity'))
+            .subscribe(() => {
+                // To avoid many subsequent calls getting the current communication state,
+                // we introduce a backoff mechanism. After getting the detailed communication
+                // state we set a timeout when we only get notified about the events but not
+                // actually query the server for communication issues.
+                if (this.backoff) {
+                    this.eventCount++
+                } else {
+                    // When we receive such an event something has potentially changed in the
+                    // status of the connectivity between the server and the machines. Let's
+                    // get the details.
+                    this.getAppsWithCommunicationIssues()
+                }
+            })
     }
 
     /**

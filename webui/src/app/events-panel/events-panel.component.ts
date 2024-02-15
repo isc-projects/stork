@@ -4,7 +4,7 @@ import { LazyLoadEvent, MessageService } from 'primeng/api'
 
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
-import { Subscription } from 'rxjs'
+import { Subscription, filter } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Events } from '../backend'
 import { ServerSentEventsService } from '../server-sent-events.service'
@@ -119,16 +119,12 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         const loadEvent: LazyLoadEvent = { first: 0, rows: this.limit }
         this.refreshEvents(loadEvent)
         this.subscriptions.add(
-            this.sse.receiveConnectivityAndMessageEvents(this.filter).subscribe((event) => {
-                switch (event.stream) {
-                    case 'all':
-                        break
-                    case 'message':
-                        this.eventHandler(event.originalEvent)
-                    default:
-                        break
-                }
-            })
+            this.sse
+                .receiveConnectivityAndMessageEvents(this.filter)
+                .pipe(filter((event) => event.stream === 'message'))
+                .subscribe((event) => {
+                    this.eventHandler(event.originalEvent)
+                })
         )
 
         if (this.filter.appType) {
