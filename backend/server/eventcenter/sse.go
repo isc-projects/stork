@@ -101,7 +101,7 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 	defer sb.subscribersMutex.RUnlock()
 
 	for ch := range sb.subscribers {
-		streams := sb.subscribers[ch].GetEventStreams(event)
+		streams := sb.subscribers[ch].findMatchingEventStreams(event)
 		if len(streams) > 0 {
 			event.SSEStreams = streams
 			ch <- *event

@@ -98,11 +98,11 @@ func TestAcceptEventsSingleFilter(t *testing.T) {
 				ev.Relations.UserID = 123
 			}
 			// Event should be accepted.
-			require.Contains(t, subscriber.GetEventStreams(ev), dbmodel.SSERegularMessage)
+			require.Contains(t, subscriber.findMatchingEventStreams(ev), dbmodel.SSERegularMessage)
 
 			// When event relations are cleared this event is no longer accepted.
 			ev.Relations = &dbmodel.Relations{}
-			require.Empty(t, subscriber.GetEventStreams(ev))
+			require.Empty(t, subscriber.findMatchingEventStreams(ev))
 		})
 	}
 }
@@ -132,7 +132,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			MachineID: 1,
 		},
 	}
-	require.Empty(t, subscriber.GetEventStreams(ev))
+	require.Empty(t, subscriber.findMatchingEventStreams(ev))
 
 	// This is similar to previous case but this time app id is lacking.
 	ev = &dbmodel.Event{
@@ -141,7 +141,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID: 2,
 		},
 	}
-	require.Empty(t, subscriber.GetEventStreams(ev))
+	require.Empty(t, subscriber.findMatchingEventStreams(ev))
 
 	// The first parameter is not matching.
 	ev = &dbmodel.Event{
@@ -151,7 +151,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID:  2,
 		},
 	}
-	require.Empty(t, subscriber.GetEventStreams(ev))
+	require.Empty(t, subscriber.findMatchingEventStreams(ev))
 
 	// Both IDs are matching but it doesn't match the event level.
 	ev = &dbmodel.Event{
@@ -161,7 +161,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID:     2,
 		},
 	}
-	require.Empty(t, subscriber.GetEventStreams(ev))
+	require.Empty(t, subscriber.findMatchingEventStreams(ev))
 
 	// Everything is matching.
 	ev = &dbmodel.Event{
@@ -171,7 +171,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			AppID:     2,
 		},
 	}
-	require.Contains(t, subscriber.GetEventStreams(ev), dbmodel.SSERegularMessage)
+	require.Contains(t, subscriber.findMatchingEventStreams(ev), dbmodel.SSERegularMessage)
 
 	// More parameters is also fine as long as the first two are matching.
 	ev = &dbmodel.Event{
@@ -182,7 +182,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 			UserID:    5,
 		},
 	}
-	require.Contains(t, subscriber.GetEventStreams(ev), dbmodel.SSERegularMessage)
+	require.Contains(t, subscriber.findMatchingEventStreams(ev), dbmodel.SSERegularMessage)
 }
 
 // Test that appType and daemonName can be specified instead of app and daemon

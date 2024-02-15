@@ -190,7 +190,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 
 // Returns a list of SSE streams in which this event should be sent. The event is not
 // sent when the returned list is empty.
-func (s *Subscriber) GetEventStreams(event *dbmodel.Event) (streams []dbmodel.SSEStream) {
+func (s *Subscriber) findMatchingEventStreams(event *dbmodel.Event) (streams []dbmodel.SSEStream) {
 	for _, stream := range s.filters.SSEStreams {
 		if stream == dbmodel.SSERegularMessage &&
 			(!s.useFilter ||
