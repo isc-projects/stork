@@ -1106,8 +1106,8 @@ func (r *RestAPI) GetAppsWithCommunicationIssues(ctx context.Context, params ser
 	// Get all apps with a minimal set of relations.
 	dbApps, err := dbmodel.GetAllAppsWithRelations(r.DB, dbmodel.AppRelationMachine, dbmodel.AppRelationAccessPoints, dbmodel.AppRelationDaemons)
 	if err != nil {
-		log.Error(err)
 		msg := "Cannot get apps from the database"
+		log.WithError(err).Error(msg)
 		rsp := services.NewGetAppsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
