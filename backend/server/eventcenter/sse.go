@@ -15,7 +15,7 @@ import (
 type SSEBroker struct {
 	db               *dbops.PgDB
 	subscribers      map[chan dbmodel.Event]*Subscriber
-	subscribersMutex *sync.Mutex
+	subscribersMutex *sync.RWMutex
 }
 
 // Create a new SSE Broker.
@@ -23,7 +23,7 @@ func NewSSEBroker(db *dbops.PgDB) *SSEBroker {
 	sb := &SSEBroker{
 		db:               db,
 		subscribers:      map[chan dbmodel.Event]*Subscriber{},
-		subscribersMutex: &sync.Mutex{},
+		subscribersMutex: &sync.RWMutex{},
 	}
 	return sb
 }
@@ -97,8 +97,8 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // Dispatch event to subscribers using filtering.
 func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
-	sb.subscribersMutex.Lock()
-	defer sb.subscribersMutex.Unlock()
+	sb.subscribersMutex.RLock()
+	defer sb.subscribersMutex.RUnlock()
 
 	for ch := range sb.subscribers {
 		streams := sb.subscribers[ch].GetEventStreams(event)
@@ -111,7 +111,7 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 
 // Get count of subscribers.
 func (sb *SSEBroker) getSubscribersCount() int {
-	sb.subscribersMutex.Lock()
-	defer sb.subscribersMutex.Unlock()
+	sb.subscribersMutex.RLock()
+	defer sb.subscribersMutex.RUnlock()
 	return len(sb.subscribers)
 }
