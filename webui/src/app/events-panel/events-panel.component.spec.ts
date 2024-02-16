@@ -165,9 +165,9 @@ describe('EventsPanelComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        spyOn(component.subscriptions, 'unsubscribe')
+        spyOn(component.eventSubscription, 'unsubscribe')
         component.ngOnDestroy()
-        expect(component.subscriptions.unsubscribe).toHaveBeenCalled()
+        expect(component.eventSubscription.unsubscribe).toHaveBeenCalled()
     })
 
     it('should recognize the layout type', () => {

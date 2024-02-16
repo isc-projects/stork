@@ -4,7 +4,7 @@ import { LazyLoadEvent, MessageService } from 'primeng/api'
 
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
-import { Subscription, filter } from 'rxjs'
+import { Subscription, filter, lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Events } from '../backend'
 import { ServerSentEventsService } from '../server-sent-events.service'
@@ -19,7 +19,11 @@ import { ServerSentEventsService } from '../server-sent-events.service'
     styleUrls: ['./events-panel.component.sass'],
 })
 export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
-    subscriptions = new Subscription()
+    /**
+     * A subscription to the events.
+     */
+    eventSubscription = new Subscription()
+
     events: Events = { items: [], total: 0 }
     errorCnt = 0
     start = 0
@@ -104,7 +108,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     ) {}
 
     ngOnDestroy(): void {
-        this.subscriptions.unsubscribe()
+        this.eventSubscription.unsubscribe()
     }
 
     /**
@@ -118,14 +122,13 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     private applyFilter(): void {
         const loadEvent: LazyLoadEvent = { first: 0, rows: this.limit }
         this.refreshEvents(loadEvent)
-        this.subscriptions.add(
-            this.sse
-                .receiveConnectivityAndMessageEvents(this.filter)
-                .pipe(filter((event) => event.stream === 'message'))
-                .subscribe((event) => {
-                    this.eventHandler(event.originalEvent)
-                })
-        )
+        this.eventSubscription.unsubscribe()
+        this.eventSubscription = this.sse
+            .receiveConnectivityAndMessageEvents(this.filter)
+            .pipe(filter((event) => event.stream === 'message'))
+            .subscribe((event) => {
+                this.eventHandler(event.originalEvent)
+            })
 
         if (this.filter.appType) {
             for (const at of this.appTypes) {
@@ -170,55 +173,49 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         }
 
         if (this.auth.superAdmin()) {
-            this.subscriptions.add(
-                this.usersApi.getUsers(0, 1000, null).subscribe(
-                    (data) => {
-                        this.users = data.items
+            lastValueFrom(this.usersApi.getUsers(0, 1000, null))
+                .then((data) => {
+                    this.users = data.items
 
-                        if (this.filter.user) {
-                            for (const u of this.users) {
-                                if (u.id === this.filter.user) {
-                                    this.selectedUser = u
-                                }
-                            }
-                        }
-                    },
-                    (err) => {
-                        const msg = getErrorMessage(err)
-                        this.msgSrv.add({
-                            severity: 'error',
-                            summary: 'Loading user accounts failed',
-                            detail: 'Loading user accounts from the database failed: ' + msg,
-                            life: 10000,
-                        })
-                    }
-                )
-            )
-        }
-        this.subscriptions.add(
-            this.servicesApi.getMachines(0, 1000, null, null).subscribe(
-                (data) => {
-                    this.machines = data.items
-
-                    if (this.filter.machine) {
-                        for (const m of this.machines) {
-                            if (m.id === this.filter.machine) {
-                                this.selectedMachine = m
+                    if (this.filter.user) {
+                        for (const u of this.users) {
+                            if (u.id === this.filter.user) {
+                                this.selectedUser = u
                             }
                         }
                     }
-                },
-                (err) => {
+                })
+                .catch((err) => {
                     const msg = getErrorMessage(err)
                     this.msgSrv.add({
                         severity: 'error',
-                        summary: 'Cannot get machines',
-                        detail: 'Getting machines failed: ' + msg,
+                        summary: 'Loading user accounts failed',
+                        detail: 'Loading user accounts from the database failed: ' + msg,
                         life: 10000,
                     })
+                })
+        }
+        lastValueFrom(this.servicesApi.getMachines(0, 1000, null, null))
+            .then((data) => {
+                this.machines = data.items
+
+                if (this.filter.machine) {
+                    for (const m of this.machines) {
+                        if (m.id === this.filter.machine) {
+                            this.selectedMachine = m
+                        }
+                    }
                 }
-            )
-        )
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Cannot get machines',
+                    detail: 'Getting machines failed: ' + msg,
+                    life: 10000,
+                })
+            })
     }
 
     /**
