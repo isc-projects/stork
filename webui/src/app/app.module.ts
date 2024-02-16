@@ -49,6 +49,7 @@ import { ChipsModule } from 'primeng/chips'
 import { ChartModule } from 'primeng/chart'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { AccordionModule } from 'primeng/accordion'
+import { TreeTableModule } from 'primeng/treetable'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -79,7 +80,6 @@ import { HostsPageComponent } from './hosts-page/hosts-page.component'
 import { SettingsPageComponent } from './settings-page/settings-page.component'
 import { HelpTipComponent } from './help-tip/help-tip.component'
 import { GlobalSearchComponent } from './global-search/global-search.component'
-import { HaStatusPanelComponent } from './ha-status-panel/ha-status-panel.component'
 import { EventTextComponent } from './event-text/event-text.component'
 import { EntityLinkComponent } from './entity-link/entity-link.component'
 import { EventsPanelComponent } from './events-panel/events-panel.component'
@@ -161,7 +161,6 @@ export function cfgFactory() {
         SettingsPageComponent,
         HelpTipComponent,
         GlobalSearchComponent,
-        HaStatusPanelComponent,
         EventTextComponent,
         EntityLinkComponent,
         EventsPanelComponent,
@@ -261,6 +260,7 @@ export function cfgFactory() {
         ChartModule,
         TriStateCheckboxModule,
         AccordionModule,
+        TreeTableModule,
     ],
     providers: [
         {

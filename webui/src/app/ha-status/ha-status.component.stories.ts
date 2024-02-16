@@ -1,4 +1,3 @@
-import { RouterModule } from '@angular/router'
 import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular'
 import { MessageModule } from 'primeng/message'
 import { PanelModule } from 'primeng/panel'
@@ -18,8 +17,12 @@ import { toastDecorator } from '../utils-stories'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ToastModule } from 'primeng/toast'
 import { RouterTestingModule } from '@angular/router/testing'
+import { TreeTableModule } from 'primeng/treetable'
+import { TagModule } from 'primeng/tag'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { ProgressBarModule } from 'primeng/progressbar'
 
-let mockServicesStatus: ServicesStatus = {
+let mockHubAndSpokeStatus: ServicesStatus = {
     items: [
         {
             status: {
@@ -96,11 +99,36 @@ let mockServicesStatus: ServicesStatus = {
                         scopes: [],
                         state: 'hot-standby',
                         statusTime: '2024-02-16',
-                        commInterrupted: 0,
-                        connectingClients: 0,
-                        unackedClients: 0,
-                        unackedClientsLeft: 0,
+                        commInterrupted: 1,
+                        connectingClients: 5,
+                        unackedClients: 1,
+                        unackedClientsLeft: 4,
                         analyzedPackets: 0,
+                    },
+                },
+            },
+        },
+    ],
+}
+
+let mockPassiveBackupStatus: ServicesStatus = {
+    items: [
+        {
+            status: {
+                daemon: 'dhcp4',
+                haServers: {
+                    relationship: 'server1',
+                    primaryServer: {
+                        age: 0,
+                        appId: 234,
+                        controlAddress: '192.0.2.1:8080',
+                        failoverTime: null,
+                        id: 1,
+                        inTouch: true,
+                        role: 'primary',
+                        scopes: ['server1'],
+                        state: 'passive-backup',
+                        statusTime: '2024-02-16',
                     },
                 },
             },
@@ -126,11 +154,21 @@ export default {
                 TooltipModule,
                 MessageModule,
                 OverlayPanelModule,
+                ProgressBarModule,
                 ProgressSpinnerModule,
                 RouterTestingModule,
+                TagModule,
                 ToastModule,
+                TreeTableModule,
             ],
-            declarations: [HaStatusComponent, HaStatusPanelComponent, HelpTipComponent, LocaltimePipe, PlaceholderPipe],
+            declarations: [
+                EntityLinkComponent,
+                HaStatusComponent,
+                HaStatusPanelComponent,
+                HelpTipComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+            ],
         }),
         toastDecorator,
     ],
@@ -141,7 +179,14 @@ export default {
                 method: 'GET',
                 status: 200,
                 delay: 200,
-                response: mockServicesStatus,
+                response: mockHubAndSpokeStatus,
+            },
+            {
+                url: 'http://localhost/api/apps/234/services/status',
+                method: 'GET',
+                status: 200,
+                delay: 200,
+                response: mockPassiveBackupStatus,
             },
         ],
     },
@@ -154,5 +199,11 @@ const Template: Story<HaStatusComponent> = (args: HaStatusComponent) => ({
 export const hubAndSpoke = Template.bind({})
 hubAndSpoke.args = {
     appId: 123,
+    daemonName: 'dhcp4',
+}
+
+export const passiveBackup = Template.bind({})
+passiveBackup.args = {
+    appId: 234,
     daemonName: 'dhcp4',
 }
