@@ -193,10 +193,11 @@ export class ServerSentEventsService {
      * @param url an url the listener should connect to
      */
     addEventListeners(url: string) {
-        this.eventSource = new EventSource(url)
+        let eventSource = new EventSource(url)
+        this.eventSource = eventSource
 
         // Add an error handler.
-        this.eventSource.addEventListener(
+        eventSource.addEventListener(
             'error',
             () => {
                 this.closeEventSource()
@@ -223,20 +224,18 @@ export class ServerSentEventsService {
         // We need to install different listeners for different streams,
         // so they can be dispatch to their respective components.
         this.subscriptions.forEach((_, stream) => {
-            if (this.eventSource) {
-                this.eventSource.addEventListener(
-                    stream,
-                    (ev) => {
-                        const data = JSON.parse(ev.data)
-                        this.receivedEventsSubject.next({
-                            stream: stream,
-                            originalEvent: data,
-                        })
-                        this.errorCount = 0
-                    },
-                    false
-                )
-            }
+            eventSource.addEventListener(
+                stream,
+                (ev) => {
+                    const data = JSON.parse(ev.data)
+                    this.receivedEventsSubject.next({
+                        stream: stream,
+                        originalEvent: data,
+                    })
+                    this.errorCount = 0
+                },
+                false
+            )
         })
     }
 
