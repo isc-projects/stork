@@ -257,7 +257,7 @@ export class ServerSentEventsService {
  * to establish actual connections.
  */
 @Injectable()
-export class TestableServerSentEventsService extends ServerSentEventsService {
+export class ServerSentEventsTestingService extends ServerSentEventsService {
     /**
      * Stub function for adding the event listeners used in testing.
      */

@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angul
 import { PriorityErrorsPanelComponent } from './priority-errors-panel.component'
 import { ServicesService } from '../backend'
 import { MessageService } from 'primeng/api'
-import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
+import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessagesModule } from 'primeng/messages'
 import { BehaviorSubject, of, throwError } from 'rxjs'
@@ -21,7 +21,7 @@ describe('PriorityErrorsPanelComponent', () => {
             providers: [
                 MessageService,
                 ServicesService,
-                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
             ],
             imports: [HttpClientTestingModule, MessagesModule, NoopAnimationsModule],
             declarations: [PriorityErrorsPanelComponent],

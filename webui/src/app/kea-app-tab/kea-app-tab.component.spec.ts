@@ -34,7 +34,7 @@ import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
+import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { DividerModule } from 'primeng/divider'
 import { TagModule } from 'primeng/tag'
 import { EventTextComponent } from '../event-text/event-text.component'
@@ -114,7 +114,7 @@ describe('KeaAppTabComponent', () => {
                 ServicesService,
                 MessageService,
                 MockLocationStrategy,
-                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
             ],
             imports: [
                 RouterTestingModule,

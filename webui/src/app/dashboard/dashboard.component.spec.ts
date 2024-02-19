@@ -22,7 +22,7 @@ import { TableModule } from 'primeng/table'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { SurroundPipe } from '../pipes/surround.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
+import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -60,7 +60,7 @@ describe('DashboardComponent', () => {
                 UsersService,
                 SettingsService,
                 { provide: LocationStrategy, useClass: PathLocationStrategy },
-                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
             ],
         })
 

@@ -12,7 +12,7 @@ import { EventsService, ServicesService, UsersService } from '../backend'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { EventsPanelComponent } from './events-panel.component'
-import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
+import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { of } from 'rxjs'
 
 /**
@@ -49,7 +49,7 @@ describe('EventsPanelComponent', () => {
                     provide: ActivatedRoute,
                     useValue: {},
                 },
-                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
             ],
             imports: [
                 HttpClientTestingModule,

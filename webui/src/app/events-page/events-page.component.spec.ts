@@ -15,7 +15,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterTestingModule } from '@angular/router/testing'
-import { ServerSentEventsService, TestableServerSentEventsService } from '../server-sent-events.service'
+import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
@@ -26,7 +26,7 @@ describe('EventsPageComponent', () => {
             providers: [
                 EventsService,
                 MessageService,
-                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
             ],
             declarations: [
                 BreadcrumbsComponent,

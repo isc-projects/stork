@@ -14,7 +14,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
 import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
-import { ServerSentEventsService, TestableServerSentEventsService } from './server-sent-events.service'
+import { ServerSentEventsService, ServerSentEventsTestingService } from './server-sent-events.service'
 import { MessagesModule } from 'primeng/messages'
 
 describe('AppComponent', () => {
@@ -38,7 +38,7 @@ describe('AppComponent', () => {
                 GeneralService,
                 UsersService,
                 MessageService,
-                { provide: ServerSentEventsService, useClass: TestableServerSentEventsService },
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 ServicesService,
                 SettingsService,
             ],
