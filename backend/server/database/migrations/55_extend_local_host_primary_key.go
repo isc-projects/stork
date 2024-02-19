@@ -2,7 +2,7 @@ package dbmigs
 
 import "github.com/go-pg/migrations/v8"
 
-// The migrations extends the primary key of the local_host table to include
+// The migration extends the primary key of the local_host table to include
 // the data_source column.
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {

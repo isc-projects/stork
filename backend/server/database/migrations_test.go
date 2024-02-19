@@ -13,11 +13,12 @@ import (
 	"isc.org/stork/server/database/maintenance"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
+	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 )
 
 // Current schema version. This value must be bumped up every
 // time the schema is updated.
-const expectedSchemaVersion int64 = 57
+const expectedSchemaVersion int64 = 58
 
 // Common function which tests a selected migration action.
 func testMigrateAction(t *testing.T, db *dbops.PgDB, expectedOldVersion, expectedNewVersion int64, action ...string) {
@@ -279,4 +280,21 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 	_, err = db.QueryOne(pg.Scan(&family), `SELECT inet_family FROM shared_network;`)
 	require.NoError(t, err)
 	require.EqualValues(t, 6, family)
+}
+
+// Test that the 56 migration passes if the local_host table is not empty.
+func TestMIgrationFrom55To56(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	dbops.Migrate(db, "down", "55")
+
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
+
+	// Act
+	_, _, errUp := dbops.Migrate(db, "up", "56")
+
+	// Assert
+	require.NoError(t, errUp)
 }
