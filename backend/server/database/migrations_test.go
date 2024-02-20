@@ -283,14 +283,37 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 }
 
 // Test that the 56 migration passes if the local_host table is not empty.
-func TestMIgrationFrom55To56(t *testing.T) {
+func TestMigrationFrom55To56(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	// Down to the previous migration.
 	dbops.Migrate(db, "down", "55")
 
+	// The IP reservation and host tables are changed in the 56 migration.
+	type reservation struct {
+		tableName struct{} `pg:"ip_reservation"` //nolint:unused
+		ID        int64
+		Address   string
+		HostID    int64
+	}
+
+	type host struct {
+		tableName      struct{} `pg:"host"` //nolint:unused
+		ID             int64
+		Hostname       string
+		IPReservations []reservation `pg:"rel:has-many"`
+	}
+
+	// Add test data.
 	_, _ = storktestdbmodel.AddTestHosts(t, db)
+
+	// Fetch the data before the migration.
+	var expectedHosts []host
+	err := db.Model(&expectedHosts).Relation("IPReservations").Select()
+	require.NoError(t, err)
+	require.NotEmpty(t, expectedHosts)
 
 	// Act
 	_, _, errUp := dbops.Migrate(db, "up", "56")

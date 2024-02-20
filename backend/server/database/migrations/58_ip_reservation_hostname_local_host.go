@@ -24,7 +24,7 @@ func init() {
 				-- Drop the foreign key constraint from the ip_reservation table.
 				ALTER TABLE ip_reservation DROP CONSTRAINT ip_reservation_host_fkey;
 				-- Add a new column for the local_host reference.
-				ALTER TABLE ip_reservation ADD COLUMN local_host_id bigint NOT NULL;
+				ALTER TABLE ip_reservation ADD COLUMN local_host_id bigint;
 				-- Fill the new column with the local_host references. We
 				-- select a first local_host.id for each host_id.
 				UPDATE ip_reservation
@@ -34,6 +34,12 @@ func init() {
 						FROM local_host
 					) lh
 					WHERE ip_reservation.host_id = lh.host_id;
+				-- Drop the eventually orphaned IP reservations (the
+				-- reservations than not belong to any daemon).
+				DELETE FROM ip_reservation WHERE local_host_id IS NULL;
+				-- Add the not-null constraint to the new column.
+				ALTER TABLE ip_reservation
+					ALTER COLUMN local_host_id SET NOT NULL;
 				-- Add a foreign key constraint to the local_host table.
 				ALTER TABLE ip_reservation
 					ADD CONSTRAINT ip_reservation_local_host_fkey
@@ -72,14 +78,14 @@ func init() {
 				-- Add the host_id column back to the ip_reservation table.
 				ALTER TABLE ip_reservation ADD COLUMN host_id bigint NOT NULL;
 				-- Fill the new column with the host references. We select a
-				-- first host.id for each local_host_id.
+				-- first host_id for each local_host.
 				UPDATE ip_reservation
-					SET host_id = h.id
+					SET host_id = lh.host_id
 					FROM (
-						SELECT DISTINCT ON (local_host_id) host_id
+						SELECT DISTINCT ON (local_host.host_id) id, host_id
 						FROM local_host
-					) h
-					WHERE ip_reservation.local_host_id = h.host_id;
+					) lh
+					WHERE ip_reservation.local_host_id = lh.host_id;
 				-- Add a foreign key constraint to the host table.
 				ALTER TABLE ip_reservation
 					ADD CONSTRAINT ip_reservation_host_fkey

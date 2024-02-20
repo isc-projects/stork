@@ -313,7 +313,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 	// Add hosts to the database.
 	for i, h := range hosts {
 		host := h
-		err := dbmodel.AddHost(db, &host)
+		err := dbmodel.AddHostWithLocalHosts(db, &host)
 		require.NoError(t, err)
 		require.NotZero(t, host.ID)
 		hosts[i] = host
