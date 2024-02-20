@@ -263,7 +263,7 @@ func NewSubnetFromKea(subnet keaconfig.Subnet, daemon *Daemon, source HostDataSo
 // Kea configuration.
 func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *Daemon, source HostDataSource, lookup keaconfig.DHCPOptionDefinitionLookup) (*Host, error) {
 	var host Host
-	host.Hostname = reservation.Hostname
+	hostname := reservation.Hostname
 	structType := reflect.TypeOf(reservation)
 	value := reflect.ValueOf(reservation)
 
@@ -302,21 +302,7 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 			host.HostIdentifiers = append(host.HostIdentifiers, identifier)
 		}
 	}
-	// Iterate over the IPv6 addresses and prefixes and create IP reservations
-	// from them
-	for _, addrs := range [][]string{reservation.IPAddresses, reservation.Prefixes} {
-		for _, addr := range addrs {
-			host.IPReservations = append(host.IPReservations, IPReservation{
-				Address: strings.TrimSpace(addr),
-			})
-		}
-	}
-	// Take the IPv4 reservation.
-	if len(reservation.IPAddress) > 0 {
-		host.IPReservations = append(host.IPReservations, IPReservation{
-			Address: strings.TrimSpace(reservation.IPAddress),
-		})
-	}
+
 	// Finally, store server specific host information including DHCP options.
 	lh := LocalHost{
 		DaemonID:       daemon.ID,
@@ -325,6 +311,7 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 		NextServer:     reservation.NextServer,
 		ServerHostname: reservation.ServerHostname,
 		BootFileName:   reservation.BootFileName,
+		Hostname:       hostname,
 	}
 	universe := storkutil.IPv4
 	if daemon.Name == DaemonNameDHCPv6 {
@@ -339,6 +326,23 @@ func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation, daemon *
 		optionSet = append(optionSet, *hostOption)
 	}
 	lh.SetDHCPOptions(optionSet, keaconfig.NewHasher())
+
+	// Iterate over the IPv6 addresses and prefixes and create IP reservations
+	// from them
+	for _, addrs := range [][]string{reservation.IPAddresses, reservation.Prefixes} {
+		for _, addr := range addrs {
+			lh.IPReservations = append(lh.IPReservations, IPReservation{
+				Address: strings.TrimSpace(addr),
+			})
+		}
+	}
+	// Take the IPv4 reservation.
+	if len(reservation.IPAddress) > 0 {
+		lh.IPReservations = append(lh.IPReservations, IPReservation{
+			Address: strings.TrimSpace(reservation.IPAddress),
+		})
+	}
+
 	host.LocalHosts = append(host.LocalHosts, lh)
 	return &host, nil
 }

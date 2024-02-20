@@ -666,10 +666,11 @@ func TestDetectNetworksRemoveOrphanedHosts(t *testing.T) {
 	hosts, err = dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
 	require.NoError(t, err)
 	require.Len(t, hosts, 1)
+	require.Len(t, hosts[0].LocalHosts, 1)
 
 	// Ensure that the correct host is in the database.
-	require.Len(t, hosts[0].IPReservations, 1)
-	require.Equal(t, "192.0.2.66/32", hosts[0].IPReservations[0].Address)
+	require.Len(t, hosts[0].LocalHosts[0].IPReservations, 1)
+	require.Equal(t, "192.0.2.66/32", hosts[0].LocalHosts[0].IPReservations[0].Address)
 }
 
 // Utility shorthand alias.

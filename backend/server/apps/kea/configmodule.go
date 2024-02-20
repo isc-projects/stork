@@ -222,7 +222,7 @@ func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context,
 		if update.Recipe.HostAfterUpdate == nil {
 			return ctx, errors.New("server logic error: the update.Recipe.HostAfterUpdate cannot be nil when committing host creation")
 		}
-		err = dbmodel.AddHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
+		err = dbmodel.AddHostWithReferences(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
 			return ctx, errors.WithMessagef(err, "host has been successfully added to Kea but adding to the Stork database failed")
 		}
@@ -371,7 +371,7 @@ func (module *ConfigModule) commitHostUpdate(ctx context.Context) (context.Conte
 		}
 
 		// Update the host in the database.
-		err = dbmodel.UpdateHostWithLocalHosts(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
+		err = dbmodel.UpdateHostWithReferences(module.manager.GetDB(), update.Recipe.HostAfterUpdate)
 		if err != nil {
 			return ctx, errors.WithMessagef(err, "host has been successfully updated in Kea but updating it in the Stork database failed")
 		}

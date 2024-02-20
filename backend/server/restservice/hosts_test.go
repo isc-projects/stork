@@ -42,11 +42,6 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
 	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
 
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceConfig)
-	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceConfig)
-	require.NoError(t, err)
-
 	params := dhcp.GetHostsParams{}
 	rsp := rapi.GetHosts(ctx, params)
 	require.IsType(t, &dhcp.GetHostsOK{}, rsp)
@@ -75,14 +70,15 @@ func TestGetHostsNoFiltering(t *testing.T) {
 		// The total number of reservations, which includes both address and
 		// prefix reservations should be equal to the number of reservations for
 		// a given host.
-		require.EqualValues(t, len(hosts[i].IPReservations),
+		require.EqualValues(t, len(hosts[i].GetIPReservations()),
 			len(items[i].AddressReservations)+len(items[i].PrefixReservations))
 
 		// Walk over the address and prefix reservations for a host.
 		for _, ips := range [][]*models.IPReservation{items[i].AddressReservations, items[i].PrefixReservations} {
+			hostIPReservations := hosts[i].GetIPReservations()
 			for j, resrv := range ips {
 				require.NotNil(t, resrv)
-				require.EqualValues(t, hosts[i].IPReservations[j].Address, resrv.Address)
+				require.EqualValues(t, hostIPReservations[j], resrv.Address)
 			}
 		}
 	}
@@ -184,7 +180,7 @@ func TestGetHostsByConflicts(t *testing.T) {
 		DataSource: dbmodel.HostDataSourceConfig,
 		NextServer: "foobar",
 	})
-	err = dbmodel.AddHostLocalHosts(db, &host)
+	err = dbmodel.UpdateHostWithReferences(db, &host)
 	require.NoError(t, err)
 
 	params := dhcp.GetHostsParams{
@@ -241,7 +237,7 @@ func TestGetHost(t *testing.T) {
 	returnedHost := okRsp.Payload
 	require.EqualValues(t, hosts[0].ID, returnedHost.ID)
 	require.EqualValues(t, hosts[0].SubnetID, returnedHost.SubnetID)
-	require.Equal(t, hosts[0].Hostname, returnedHost.Hostname)
+	require.Equal(t, hosts[0].GetHostname(), returnedHost.Hostname)
 
 	// Get host for non-existing ID should return a default response.
 	params = dhcp.GetHostParams{
@@ -262,10 +258,6 @@ func TestGetHostWithClientClasses(t *testing.T) {
 
 	// Add hosts.
 	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
-
-	// Add LocalHost instance comprising client classes.
-	err = dbmodel.AddHostLocalHosts(db, &hosts[4])
-	require.NoError(t, err)
 
 	// Get the host over the API.
 	params := dhcp.GetHostParams{
@@ -298,10 +290,6 @@ func TestGetHostWithBootFields(t *testing.T) {
 	// Add hosts.
 	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
-	// Add LocalHost instance comprising client classes.
-	err = dbmodel.AddHostLocalHosts(db, &hosts[0])
-	require.NoError(t, err)
-
 	// Get the host over the API.
 	params := dhcp.GetHostParams{
 		ID: hosts[0].ID,
@@ -332,10 +320,6 @@ func TestGetHostWithOptions(t *testing.T) {
 	// Add hosts.
 	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
-	// Add LocalHost instances comprising DHCP options.
-	err = dbmodel.AddHostLocalHosts(db, &hosts[4])
-	require.NoError(t, err)
-
 	params := dhcp.GetHostParams{
 		ID: hosts[4].ID,
 	}
@@ -345,7 +329,7 @@ func TestGetHostWithOptions(t *testing.T) {
 	returnedHost := okRsp.Payload
 	require.EqualValues(t, hosts[4].ID, returnedHost.ID)
 	require.EqualValues(t, hosts[4].SubnetID, returnedHost.SubnetID)
-	require.Equal(t, hosts[4].Hostname, returnedHost.Hostname)
+	require.Equal(t, hosts[4].GetHostname(), returnedHost.Hostname)
 
 	// Validate returned DHCP options and their hashes.
 	require.Len(t, returnedHost.LocalHosts, 2)
@@ -495,7 +479,7 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 
 	require.Len(t, returnedHost.HostIdentifiers, 1)
 	require.Equal(t, "hw-address", returnedHost.HostIdentifiers[0].Type)
-	require.Equal(t, "example.org", returnedHost.Hostname)
+	require.Equal(t, "example.org", returnedHost.GetHostname())
 
 	require.Len(t, returnedHost.LocalHosts, 2)
 	for _, lh := range returnedHost.LocalHosts {
@@ -874,10 +858,6 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 
 	// Make sure we have some Kea apps in the database.
 	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
 
 	// Begin transaction.
 	params := dhcp.UpdateHostBeginParams{
@@ -1023,7 +1003,7 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 
 	require.Len(t, returnedHost.HostIdentifiers, 1)
 	require.Equal(t, "hw-address", returnedHost.HostIdentifiers[0].Type)
-	require.Equal(t, "updated.example.org", returnedHost.Hostname)
+	require.Equal(t, "updated.example.org", returnedHost.GetHostname())
 
 	require.Len(t, returnedHost.LocalHosts, 2)
 	for _, lh := range returnedHost.LocalHosts {
@@ -1278,8 +1258,6 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 
 	// Make sure we have some Kea apps in the database.
 	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
-	err = dbmodel.AddHostLocalHosts(db, &hosts[0])
-	require.NoError(t, err)
 
 	// Begin transaction.
 	params := dhcp.UpdateHostBeginParams{
@@ -1373,11 +1351,7 @@ func TestDeleteHost(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add test hosts and associate them with the daemons.
-	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
 	// Attempt to delete the first host.
 	params := dhcp.DeleteHostParams{
@@ -1445,12 +1419,7 @@ func TestDeleteHostError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
-
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
 
 	// Submit transaction with non-matching host ID.
 	t.Run("wrong host id", func(t *testing.T) {

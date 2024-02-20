@@ -252,9 +252,9 @@ func isAnyAddressInPools(addresses []string, pools []keaconfig.Pool) bool {
 }
 
 // Check if any of the listed IP reservations is within any of the address pools.
-func isAnyIPReservationInPools(reservations []dbmodel.IPReservation, pools []keaconfig.Pool) bool {
-	for _, reservation := range reservations {
-		parsedReservation := storkutil.ParseIP(reservation.Address)
+func isAnyIPReservationInPools(reservedAddresses []string, pools []keaconfig.Pool) bool {
+	for _, address := range reservedAddresses {
+		parsedReservation := storkutil.ParseIP(address)
 		if parsedReservation == nil || parsedReservation.Prefix {
 			continue
 		}
@@ -273,9 +273,9 @@ func isAnyIPReservationInPools(reservations []dbmodel.IPReservation, pools []kea
 }
 
 // Check if any of the listed IP reservations is within any of the prefix pools.
-func isAnyIPReservationInPDPools(reservations []dbmodel.IPReservation, pdPools []keaconfig.PDPool) bool {
-	for _, reservation := range reservations {
-		parsedReservation := storkutil.ParseIP(reservation.Address)
+func isAnyIPReservationInPDPools(addresses []string, pdPools []keaconfig.PDPool) bool {
+	for _, address := range addresses {
+		parsedReservation := storkutil.ParseIP(address)
 		if parsedReservation == nil || !parsedReservation.Prefix {
 			continue
 		}
@@ -343,8 +343,9 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 			if !inPool {
 				for _, dbHost := range dbHosts[subnet.GetID()] {
 					ipResrvExist = true
-					if len(dbHost.IPReservations) > 0 {
-						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.GetPools()) {
+					ipAddresses := dbHost.GetIPReservations()
+					if len(ipAddresses) > 0 {
+						if isAnyIPReservationInPools(ipAddresses, subnet.GetPools()) {
 							inPool = true
 							break
 						}
@@ -449,9 +450,10 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 			if !inPool {
 				for _, dbHost := range dbHosts[subnet.GetID()] {
 					ipResrvExist = true
-					if len(dbHost.IPReservations) > 0 {
-						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.GetPools()) ||
-							isAnyIPReservationInPDPools(dbHost.IPReservations, subnet.GetPDPools()) {
+					ipAddresses := dbHost.GetIPReservations()
+					if len(ipAddresses) > 0 {
+						if isAnyIPReservationInPools(ipAddresses, subnet.GetPools()) ||
+							isAnyIPReservationInPDPools(ipAddresses, subnet.GetPDPools()) {
 							inPool = true
 							break
 						}

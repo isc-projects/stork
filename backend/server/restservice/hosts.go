@@ -23,10 +23,15 @@ import (
 // Converts host reservation fetched from the database to the format
 // used in REST API.
 func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
+	hostname := ""
+	if len(dbHost.LocalHosts) > 0 {
+		hostname = dbHost.LocalHosts[0].Hostname
+	}
+
 	host := &models.Host{
 		ID:       dbHost.ID,
 		SubnetID: dbHost.SubnetID,
-		Hostname: dbHost.Hostname,
+		Hostname: hostname,
 	}
 	// Include subnet prefix if this is subnet specific host.
 	if dbHost.Subnet != nil {
@@ -41,8 +46,8 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 		host.HostIdentifiers = append(host.HostIdentifiers, &hostID)
 	}
 	// Convert IP reservations.
-	for _, dbHostIP := range dbHost.IPReservations {
-		parsedIP := storkutil.ParseIP(dbHostIP.Address)
+	for _, address := range dbHost.GetIPReservations() {
+		parsedIP := storkutil.ParseIP(address)
 		if parsedIP == nil {
 			continue
 		}
@@ -81,7 +86,6 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 	host := &dbmodel.Host{
 		ID:       restHost.ID,
 		SubnetID: restHost.SubnetID,
-		Hostname: restHost.Hostname,
 	}
 	// Convert DHCP host identifiers.
 	for _, hid := range restHost.HostIdentifiers {
@@ -90,13 +94,6 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 			Value: storkutil.HexToBytes(hid.IDHexValue),
 		}
 		host.HostIdentifiers = append(host.HostIdentifiers, hostID)
-	}
-	// Convert IP reservations.
-	for _, r := range append(restHost.PrefixReservations, restHost.AddressReservations...) {
-		ipr := dbmodel.IPReservation{
-			Address: r.Address,
-		}
-		host.IPReservations = append(host.IPReservations, ipr)
 	}
 	// Convert local hosts containing associations of the host with daemons.
 	for _, lh := range restHost.LocalHosts {
@@ -122,7 +119,17 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 			NextServer:     lh.NextServer,
 			ServerHostname: lh.ServerHostname,
 			BootFileName:   lh.BootFileName,
+			Hostname:       restHost.Hostname,
 		}
+
+		// Convert IP reservations.
+		for _, r := range append(restHost.PrefixReservations, restHost.AddressReservations...) {
+			ipr := dbmodel.IPReservation{
+				Address: r.Address,
+			}
+			localHost.IPReservations = append(localHost.IPReservations, ipr)
+		}
+
 		options, err := r.flattenDHCPOptions("", lh.Options, 0)
 		if err != nil {
 			return nil, err

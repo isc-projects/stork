@@ -873,15 +873,15 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 									Value: []byte{1, 2, 3, 4, 5, 6},
 								},
 							},
-							IPReservations: []IPReservation{
-								{
-									Address: "192.0.2.123/32",
-								},
-							},
 							LocalHosts: []LocalHost{
 								{
 									DaemonID:   app.Daemons[0].ID,
 									DataSource: HostDataSourceConfig,
+									IPReservations: []IPReservation{
+										{
+											Address: "192.0.2.123/32",
+										},
+									},
 								},
 							},
 						},
@@ -915,15 +915,15 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 							Value: []byte{1, 2, 3, 4, 5, 6},
 						},
 					},
-					IPReservations: []IPReservation{
-						{
-							Address: "192.0.3.123/32",
-						},
-					},
 					LocalHosts: []LocalHost{
 						{
 							DaemonID:   app.Daemons[0].ID,
 							DataSource: HostDataSourceConfig,
+							IPReservations: []IPReservation{
+								{
+									Address: "192.0.3.123/32",
+								},
+							},
 						},
 					},
 				},
@@ -1289,7 +1289,17 @@ func TestUpdateSubnet(t *testing.T) {
 			},
 		},
 		SharedNetworkID: sharedNetworkFoo.ID,
-		Hosts:           []Host{{Hostname: "foo"}},
+		Hosts: []Host{
+			{
+				LocalHosts: []LocalHost{
+					{
+						DaemonID:   apps[0].Daemons[0].ID,
+						DataSource: HostDataSourceConfig,
+						Hostname:   "foo",
+					},
+				},
+			},
+		},
 	}
 
 	err := AddSubnet(db, subnet)
@@ -1317,7 +1327,17 @@ func TestUpdateSubnet(t *testing.T) {
 	})
 
 	subnet.SharedNetworkID = sharedNetworkBar.ID
-	subnet.Hosts = []Host{{Hostname: "bar"}}
+	subnet.Hosts = []Host{
+		{
+			LocalHosts: []LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: HostDataSourceConfig,
+					Hostname:   "bar",
+				},
+			},
+		},
+	}
 
 	err = updateSubnet(db, subnet)
 	require.NoError(t, err)

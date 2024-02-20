@@ -170,8 +170,7 @@ func TestApplyHostAdd(t *testing.T) {
 	// Simulate submitting new host entry. The host is associated with
 	// two different daemons/apps.
 	host := &dbmodel.Host{
-		ID:       1,
-		Hostname: "cool.example.org",
+		ID: 1,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -181,6 +180,7 @@ func TestApplyHostAdd(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: 1,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -196,6 +196,7 @@ func TestApplyHostAdd(t *testing.T) {
 			},
 			{
 				DaemonID: 2,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -298,8 +299,7 @@ func TestCommitHostAdd(t *testing.T) {
 
 	// Create new host reservation and store it in the context.
 	host := &dbmodel.Host{
-		ID:       1001,
-		Hostname: "cool.example.org",
+		ID: 1001,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -309,6 +309,7 @@ func TestCommitHostAdd(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -325,6 +326,7 @@ func TestCommitHostAdd(t *testing.T) {
 			},
 			{
 				DaemonID: apps[1].Daemons[0].KeaDaemon.DaemonID,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -409,8 +411,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 
 	// Create new host reservation and store it in the context.
 	host := &dbmodel.Host{
-		ID:       1,
-		Hostname: "cool.example.org",
+		ID: 1,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -420,6 +421,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: 1,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -436,6 +438,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 			},
 			{
 				DaemonID: 2,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -508,7 +511,6 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 				},
 			},
 		},
-		Hostname: "cool.example.org",
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -518,6 +520,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -592,10 +595,6 @@ func TestBeginHostUpdate(t *testing.T) {
 	require.NotNil(t, module)
 
 	hosts, apps := storktest.AddTestHosts(t, db)
-	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
 
 	ctx, err := module.BeginHostUpdate(context.Background(), hosts[0].ID)
 	require.NoError(t, err)
@@ -620,8 +619,7 @@ func TestApplyHostUpdate(t *testing.T) {
 	// it is preserved after applying host update.
 	hasher := keaconfig.NewHasher()
 	host := &dbmodel.Host{
-		ID:       1,
-		Hostname: "cool.example.org",
+		ID: 1,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -631,6 +629,7 @@ func TestApplyHostUpdate(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: 1,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -650,6 +649,7 @@ func TestApplyHostUpdate(t *testing.T) {
 			},
 			{
 				DaemonID: 2,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -669,6 +669,7 @@ func TestApplyHostUpdate(t *testing.T) {
 			},
 			{
 				DaemonID: 2,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -710,8 +711,7 @@ func TestApplyHostUpdate(t *testing.T) {
 
 	// Simulate updating host entry. We change host identifier and hostname.
 	host = &dbmodel.Host{
-		ID:       1,
-		Hostname: "foo.example.org",
+		ID: 1,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -721,6 +721,7 @@ func TestApplyHostUpdate(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: 1,
+				Hostname: "foo.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -740,6 +741,7 @@ func TestApplyHostUpdate(t *testing.T) {
 			},
 			{
 				DaemonID: 2,
+				Hostname: "foo.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -857,8 +859,7 @@ func TestCommitHostUpdate(t *testing.T) {
 
 	// Create host reservation.
 	host := &dbmodel.Host{
-		ID:       1001,
-		Hostname: "cool.example.org",
+		ID: 1001,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -868,6 +869,7 @@ func TestCommitHostUpdate(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -884,6 +886,7 @@ func TestCommitHostUpdate(t *testing.T) {
 			},
 			{
 				DaemonID: apps[1].Daemons[0].KeaDaemon.DaemonID,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -901,7 +904,7 @@ func TestCommitHostUpdate(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, dbmodel.AddHost(db, host))
+	require.NoError(t, dbmodel.AddHostWithReferences(db, host))
 
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
@@ -932,9 +935,10 @@ func TestCommitHostUpdate(t *testing.T) {
 	// the database upon commit.
 	modifiedHost := *host
 	modifiedHost.CreatedAt = time.Time{}
-	modifiedHost.Hostname = "modified.example.org"
 	modifiedHost.LocalHosts[0].NextServer = "192.0.2.22"
+	modifiedHost.LocalHosts[0].Hostname = "modified.example.org"
 	modifiedHost.LocalHosts[1].NextServer = "192.0.2.22"
+	modifiedHost.LocalHosts[1].Hostname = "modified.example.org"
 
 	ctx, err = module.ApplyHostUpdate(ctx, &modifiedHost)
 	require.NoError(t, err)
@@ -993,9 +997,9 @@ func TestCommitHostUpdate(t *testing.T) {
 	updatedHost, err := dbmodel.GetHost(db, host.ID)
 	require.NoError(t, err)
 	require.NotNil(t, updatedHost)
-	require.Equal(t, "modified.example.org", updatedHost.Hostname)
 	require.Len(t, updatedHost.LocalHosts, 2)
 	require.Equal(t, "192.0.2.22", updatedHost.LocalHosts[0].NextServer)
+	require.Equal(t, "modified.example.org", updatedHost.LocalHosts[0].Hostname)
 	require.Equal(t, "192.0.2.22", updatedHost.LocalHosts[0].NextServer)
 }
 
@@ -1003,8 +1007,7 @@ func TestCommitHostUpdate(t *testing.T) {
 func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 	// Create new host reservation.
 	host := &dbmodel.Host{
-		ID:       1,
-		Hostname: "cool.example.org",
+		ID: 1,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -1014,6 +1017,7 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: 1,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -1093,7 +1097,6 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 				},
 			},
 		},
-		Hostname: "cool.example.org",
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -1103,6 +1106,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: apps[0].Daemons[0].KeaDaemon.DaemonID,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -1119,7 +1123,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, dbmodel.AddHost(db, host))
+	require.NoError(t, dbmodel.AddHostWithReferences(db, host))
 
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
@@ -1159,7 +1163,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	// Copy the host and modify it. The modifications should be applied in
 	// the database upon commit.
 	modifiedHost := *host
-	modifiedHost.Hostname = "modified.example.org"
+	modifiedHost.LocalHosts[0].Hostname = "modified.example.org"
 
 	ctx, err = module.ApplyHostUpdate(ctx, &modifiedHost)
 	require.NoError(t, err)
@@ -1216,7 +1220,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 	updatedHost, err := dbmodel.GetHost(db, host.ID)
 	require.NoError(t, err)
 	require.NotNil(t, updatedHost)
-	require.Equal(t, updatedHost.Hostname, "modified.example.org")
+	require.Equal(t, updatedHost.LocalHosts[0].Hostname, "modified.example.org")
 }
 
 // Test first stage of deleting a host.
@@ -1241,8 +1245,7 @@ func TestApplyHostDelete(t *testing.T) {
 	// Simulate submitting new host entry. The host is associated with
 	// two different daemons/apps.
 	host := &dbmodel.Host{
-		ID:       1,
-		Hostname: "cool.example.org",
+		ID: 1,
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -1252,6 +1255,7 @@ func TestApplyHostDelete(t *testing.T) {
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID: 1,
+				Hostname: "cool.example.org",
 				Daemon: &dbmodel.Daemon{
 					Name: "dhcp4",
 					App: &dbmodel.App{
@@ -1346,11 +1350,7 @@ func TestCommitHostDelete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	hosts, apps := storktest.AddTestHosts(t, db)
-	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
-	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
+	hosts, _ := storktest.AddTestHosts(t, db)
 
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
@@ -1410,9 +1410,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	hosts, apps := storktest.AddTestHosts(t, db)
-	err := dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
-	require.NoError(t, err)
+	hosts, _ := storktest.AddTestHosts(t, db)
 
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
@@ -1430,7 +1428,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 		Lastname: "test",
 		Name:     "test",
 	}
-	_, err = dbmodel.CreateUser(db, user)
+	_, err := dbmodel.CreateUser(db, user)
 	require.NoError(t, err)
 	require.NotZero(t, user.ID)
 

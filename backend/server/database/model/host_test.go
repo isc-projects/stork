@@ -423,7 +423,7 @@ func TestUpdateHostWithLocalHosts(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithLocalHosts(db, host)
+	err := AddHostWithReferences(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -1546,7 +1546,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 }
 
 // Test that the host and its local host can be added within a single transaction.
-func TestAddHostWithLocalHosts(t *testing.T) {
+func TestAddHostWithReferences(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1568,7 +1568,7 @@ func TestAddHostWithLocalHosts(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithLocalHosts(db, &host)
+	err := AddHostWithReferences(db, &host)
 	require.NoError(t, err)
 
 	returned, err := GetHost(db, host.ID)
@@ -2163,7 +2163,6 @@ func TestKeaConfigHostInterface(t *testing.T) {
 				},
 			},
 		},
-		Hostname: "host.example.org",
 		HostIdentifiers: []HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -2172,14 +2171,6 @@ func TestKeaConfigHostInterface(t *testing.T) {
 			{
 				Type:  "circuit-id",
 				Value: []byte{1, 1, 1, 1, 1},
-			},
-		},
-		IPReservations: []IPReservation{
-			{
-				Address: "192.0.2.4",
-			},
-			{
-				Address: "2001:db8:1::4",
 			},
 		},
 		LocalHosts: []LocalHost{
@@ -2199,6 +2190,15 @@ func TestKeaConfigHostInterface(t *testing.T) {
 						Universe:    storkutil.IPv4,
 					},
 				}, keaconfig.NewHasher()),
+				Hostname: "host.example.org",
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.4",
+					},
+					{
+						Address: "2001:db8:1::4",
+					},
+				},
 			},
 		},
 	}
@@ -2570,10 +2570,18 @@ func TestDeleteDaemonsFromHostAPIDataSource(t *testing.T) {
 
 	host := &Host{
 		SubnetID: 0,
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceConfig,
+			},
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceAPI,
+			},
+		},
 	}
-	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
+	_ = AddHostWithReferences(db, host)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)

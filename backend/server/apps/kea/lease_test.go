@@ -1284,10 +1284,10 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Len(t, leases, 3)
 
 	// Basic checks if expected leases were returned.
-	for i, ipaddr := range []string{"192.0.2.2", "2001:db8:2::1", "2001:db8:2::2"} {
+	for i, ipAddress := range []string{"192.0.2.2", "2001:db8:2::1", "2001:db8:2::2"} {
 		require.EqualValues(t, app.ID, leases[i].AppID)
 		require.NotNil(t, leases[i].App)
-		require.Equal(t, ipaddr, leases[i].IPAddress)
+		require.Equal(t, ipAddress, leases[i].IPAddress)
 		require.EqualValues(t, keadata.LeaseStateDeclined, leases[i].State)
 	}
 
@@ -1389,10 +1389,10 @@ func TestFindDeclinedLeasesPriorKea2_3_8(t *testing.T) {
 	require.Len(t, leases, 3)
 
 	// Basic checks if expected leases were returned.
-	for i, ipaddr := range []string{"192.0.2.2", "2001:db8:2::1", "2001:db8:2::2"} {
+	for i, ipAddress := range []string{"192.0.2.2", "2001:db8:2::1", "2001:db8:2::2"} {
 		require.EqualValues(t, app.ID, leases[i].AppID)
 		require.NotNil(t, leases[i].App)
-		require.Equal(t, ipaddr, leases[i].IPAddress)
+		require.Equal(t, ipAddress, leases[i].IPAddress)
 		require.EqualValues(t, keadata.LeaseStateDeclined, leases[i].State)
 	}
 
@@ -1577,29 +1577,40 @@ func TestFindLeasesByHostID(t *testing.T) {
 				Value: []byte{0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42},
 			},
 		},
-		IPReservations: []dbmodel.IPReservation{
-			{
-				Address: "192.0.2.1",
-			},
-			{
-				Address: "2001:db8:2::1",
-			},
-			{
-				Address: "2001:db8:0:0:2::/80",
-			},
-		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID:   app1.Daemons[0].ID,
 				DataSource: dbmodel.HostDataSourceConfig,
+				IPReservations: []dbmodel.IPReservation{
+					{
+						Address: "192.0.2.1",
+					},
+					{
+						Address: "2001:db8:2::1",
+					},
+					{
+						Address: "2001:db8:0:0:2::/80",
+					},
+				},
 			},
 			{
 				DaemonID:   app2.Daemons[1].ID,
 				DataSource: dbmodel.HostDataSourceConfig,
+				IPReservations: []dbmodel.IPReservation{
+					{
+						Address: "192.0.2.1",
+					},
+					{
+						Address: "2001:db8:2::1",
+					},
+					{
+						Address: "2001:db8:0:0:2::/80",
+					},
+				},
 			},
 		},
 	}
-	err = dbmodel.AddHost(db, &host)
+	err = dbmodel.AddHostWithReferences(db, &host)
 	require.NoError(t, err)
 
 	// Expecting the following commands and responses:

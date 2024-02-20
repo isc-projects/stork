@@ -505,8 +505,9 @@ func testHost(t *testing.T, reservation interface{}, identifier string, address 
 		host = &h
 	}
 	require.NotNil(t, host)
-	require.Len(t, host.IPReservations, 1)
-	require.Equal(t, address, host.IPReservations[0].Address)
+	require.NotEmpty(t, host.LocalHosts)
+	require.Len(t, host.LocalHosts[0].IPReservations, 1)
+	require.Equal(t, address, host.LocalHosts[0].IPReservations[0].Address)
 	require.Len(t, host.HostIdentifiers, 1)
 
 	// If the caller specified colons within the identifier, they have to
@@ -1856,13 +1857,14 @@ func TestUpdateHost(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, hosts, 1)
 		host := hosts[0]
+		require.NotEmpty(t, host.LocalHosts)
 
 		switch i {
 		case 0:
 			testHost(t, host, "01:02:03:04:05:06", "fe80::1/128")
 		case 1:
 			testHost(t, host, "01:02:03:04:05:06", "fe80::1/128")
-			require.EqualValues(t, "foo.bar", host.Hostname)
+			require.EqualValues(t, "foo.bar", host.LocalHosts[0].Hostname)
 		}
 	}
 }

@@ -65,10 +65,10 @@ func validateGetLeasesResponse(commandName string, result int, arguments interfa
 // Sends a lease4-get command with ip-address argument specifying a searched lease.
 // If the lease is found, the pointer to it is returned. If the lease does not
 // exist, a nil pointer and nil error are returned.
-func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, ipaddress string) (lease *dbmodel.Lease, err error) {
+func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, ipAddress string) (lease *dbmodel.Lease, err error) {
 	daemons := []string{"dhcp4"}
 	arguments := map[string]interface{}{
-		"ip-address": ipaddress,
+		"ip-address": ipAddress,
 	}
 	command := keactrl.NewCommand("lease4-get", daemons, arguments)
 	response := make([]Lease4GetResponse, 1)
@@ -99,10 +99,10 @@ func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 // searched lease type and IP address. If the lease is found, the pointer to
 // it is returned. If the lease does not exist, a nil pointer and nil error
 // are returned.
-func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, leaseType, ipaddress string) (lease *dbmodel.Lease, err error) {
+func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, leaseType, ipAddress string) (lease *dbmodel.Lease, err error) {
 	daemons := []string{"dhcp6"}
 	arguments := map[string]interface{}{
-		"ip-address": ipaddress,
+		"ip-address": ipAddress,
 		"type":       leaseType,
 	}
 	command := keactrl.NewCommand("lease6-get", daemons, arguments)
@@ -248,8 +248,8 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 }
 
 // Sends lease4-get-by-hw-address command to Kea.
-func GetLeases4ByHWAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hwaddress string) (leases []dbmodel.Lease, err error) {
-	leases, _, err = getLeasesByProperties(agents, dbApp, hwaddress, "lease4-get-by-hw-address")
+func GetLeases4ByHWAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hwAddress string) (leases []dbmodel.Lease, err error) {
+	leases, _, err = getLeasesByProperties(agents, dbApp, hwAddress, "lease4-get-by-hw-address")
 	return leases, err
 }
 
@@ -553,8 +553,8 @@ func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID
 		appError := false
 		// Go over all IP reservations and send appropriate commands to the app
 		// for each of them.
-		for _, r := range host.IPReservations {
-			parsedIP := storkutil.ParseIP(r.Address)
+		for _, address := range host.GetIPReservations() {
+			parsedIP := storkutil.ParseIP(address)
 			if parsedIP == nil {
 				// This is rather impossible condition, but let's be safe.
 				continue

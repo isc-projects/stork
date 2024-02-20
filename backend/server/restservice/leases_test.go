@@ -666,22 +666,22 @@ func TestFindLeasesByHostID(t *testing.T) {
 				Value: []byte{8, 8, 8, 8, 8, 8},
 			},
 		},
-		IPReservations: []dbmodel.IPReservation{
-			{
-				Address: "192.0.2.1",
-			},
-			{
-				Address: "2001:db8:2::1",
-			},
-		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
 				DaemonID:   app.Daemons[0].ID,
 				DataSource: dbmodel.HostDataSourceConfig,
+				IPReservations: []dbmodel.IPReservation{
+					{
+						Address: "192.0.2.1",
+					},
+					{
+						Address: "2001:db8:2::1",
+					},
+				},
 			},
 		},
 	}
-	err = dbmodel.AddHost(db, &host)
+	err = dbmodel.AddHostWithReferences(db, &host)
 	require.NoError(t, err)
 
 	// Setup REST API.

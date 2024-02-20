@@ -73,11 +73,12 @@ type HostIdentifier struct {
 }
 
 // This structure reflects a row in the ip_reservation table. It represents
-// a single IP address or prefix reservation associated with a selected host.
+// a single IP address or prefix reservation associated with a selected local
+// host.
 type IPReservation struct {
-	ID      int64
-	Address string
-	HostID  int64
+	ID          int64
+	Address     string
+	LocalHostID int64
 }
 
 // Checks if reservation is a delegated prefix.
@@ -89,8 +90,7 @@ func (r *IPReservation) IsPrefix() bool {
 	return ip.Prefix
 }
 
-// This structure reflects a row in the host table. The host may be associated
-// with zero, one or multiple IP reservations. It may also be associated with
+// This structure reflects a row in the host table. It may also be associated with
 // one or more identifiers which are used for matching DHCP clients with the
 // host.
 type Host struct {
@@ -99,10 +99,7 @@ type Host struct {
 	SubnetID  int64
 	Subnet    *Subnet `pg:"rel:has-one"`
 
-	Hostname string
-
 	HostIdentifiers []HostIdentifier `pg:"rel:has-many"`
-	IPReservations  []IPReservation  `pg:"rel:has-many"`
 
 	LocalHosts []LocalHost `pg:"rel:has-many"`
 }
@@ -110,11 +107,13 @@ type Host struct {
 // This structure links a host entry stored in the database with a daemon from
 // which it has been retrieved. It provides M:N relationship between hosts
 // and daemons.
+// The local host may be associated with zero, one or multiple IP reservations.
 type LocalHost struct {
 	DHCPOptionSet
-	HostID     int64          `pg:",pk"`
-	DaemonID   int64          `pg:",pk"`
-	DataSource HostDataSource `pg:",pk"`
+	ID         int64
+	HostID     int64
+	DaemonID   int64
+	DataSource HostDataSource
 
 	Daemon *Daemon `pg:"rel:has-one"`
 	Host   *Host   `pg:"rel:has-one"`
@@ -123,6 +122,10 @@ type LocalHost struct {
 	NextServer     string
 	ServerHostname string
 	BootFileName   string
+
+	// Reservation data.
+	Hostname       string
+	IPReservations []IPReservation `pg:"rel:has-many"`
 }
 
 // Associates a host with DHCP with host identifiers.
@@ -146,18 +149,21 @@ func addHostIdentifiers(tx *pg.Tx, host *Host) error {
 
 // Associates a host with IP reservations.
 func addIPReservations(tx *pg.Tx, host *Host) error {
-	for i, r := range host.IPReservations {
-		reservation := r
-		reservation.HostID = host.ID
-		_, err := tx.Model(&reservation).
-			OnConflict("DO NOTHING").
-			Insert()
-		if err != nil {
-			err = pkgerrors.Wrapf(err, "problem adding IP reservation %s for host with ID %d",
-				reservation.Address, host.ID)
-			return err
+	for _, lh := range host.LocalHosts {
+		for i, r := range lh.IPReservations {
+			r.LocalHostID = lh.ID
+			reservation := r
+			reservation.LocalHostID = r.LocalHostID
+			_, err := tx.Model(&reservation).
+				OnConflict("DO NOTHING").
+				Insert()
+			if err != nil {
+				err = pkgerrors.Wrapf(err, "problem adding IP reservation %s for host with ID %d",
+					reservation.Address, host.ID)
+				return err
+			}
+			lh.IPReservations[i] = reservation
 		}
-		host.IPReservations[i] = reservation
 	}
 	return nil
 }
@@ -173,11 +179,6 @@ func addHost(tx *pg.Tx, host *Host) error {
 	}
 	// Associate the host with the given id with its identifiers.
 	err = addHostIdentifiers(tx, host)
-	if err != nil {
-		return err
-	}
-	// Associate the host with the given id with its reservations.
-	err = addIPReservations(tx, host)
 	if err != nil {
 		return err
 	}
@@ -223,31 +224,6 @@ func updateHost(tx *pg.Tx, host *Host) error {
 		return pkgerrors.WithMessagef(err, "problem updating host with ID %d", host.ID)
 	}
 
-	// Collect updated identifiers.
-	ipAddresses := []string{}
-	for _, resrv := range host.IPReservations {
-		ipAddresses = append(ipAddresses, resrv.Address)
-	}
-	q = tx.Model((*IPReservation)(nil)).
-		Where("ip_reservation.host_id = ?", host.ID)
-	// If the new reservation has some reserved IP addresses exclude them
-	// from the deleted ones. Otherwise, delete all IP addresses belonging
-	// to the old host version.
-	if len(ipAddresses) > 0 {
-		q = q.Where("ip_reservation.address NOT IN (?)", pg.In(ipAddresses))
-	}
-	_, err = q.Delete()
-
-	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem deleting IP reservations for host %d", host.ID)
-		return err
-	}
-	// Add or update host reservations.
-	err = addIPReservations(tx, host)
-	if err != nil {
-		return pkgerrors.WithMessagef(err, "problem updating host with ID %d", host.ID)
-	}
-
 	// Update the host information.
 	result, err := tx.Model(host).WherePK().ExcludeColumn("created_at").Update()
 	if err != nil {
@@ -269,7 +245,7 @@ func UpdateHost(dbi pg.DBI, host *Host) error {
 }
 
 // Attempts to update a host and its local hosts with in an existing transaction.
-func updateHostWithLocalHosts(tx *pg.Tx, host *Host) error {
+func updateHostWithReferences(tx *pg.Tx, host *Host) error {
 	err := updateHost(tx, host)
 	if err != nil {
 		return err
@@ -282,19 +258,19 @@ func updateHostWithLocalHosts(tx *pg.Tx, host *Host) error {
 		return pkgerrors.Wrapf(err, "problem deleting daemons from host %d", host.ID)
 	}
 	// Add new associations.
-	err = AddHostLocalHosts(tx, host)
+	err = addHostReferences(tx, host)
 	return err
 }
 
 // Attempts to update a host and its local hosts within a transaction. If the dbi
 // does not point to a transaction, a new transaction is started.
-func UpdateHostWithLocalHosts(dbi dbops.DBI, host *Host) error {
+func UpdateHostWithReferences(dbi dbops.DBI, host *Host) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return updateHostWithLocalHosts(tx, host)
+			return updateHostWithReferences(tx, host)
 		})
 	}
-	return updateHostWithLocalHosts(dbi.(*pg.Tx), host)
+	return updateHostWithReferences(dbi.(*pg.Tx), host)
 }
 
 // Fetch the host by ID.
@@ -331,7 +307,8 @@ func GetAllHosts(dbi dbops.DBI, family int) ([]Host, error) {
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.
 	if family == 4 || family == 6 {
-		q = q.Join("INNER JOIN ip_reservation AS r ON r.host_id = host.id")
+		q = q.Join("INNER JOIN local_host AS lh").JoinOn("host.id = lh.host_id")
+		q = q.Join("INNER JOIN ip_reservation AS r").JoinOn("r.local_host_id = lh.id")
 		q = q.Where("family(r.address) = ?", family)
 	}
 
@@ -340,10 +317,9 @@ func GetAllHosts(dbi dbops.DBI, family int) ([]Host, error) {
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
-		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+		Relation("LocalHosts.IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
-		Relation("LocalHosts").
 		OrderExpr("id ASC")
 
 	err := q.Select()
@@ -678,26 +654,12 @@ func DeleteHost(dbi dbops.DBI, hostID int64) error {
 	return err
 }
 
-// Associates a daemon with the host having a specified ID.
-func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source HostDataSource) error {
-	hostCopy := Host{
-		ID: host.ID,
-		LocalHosts: []LocalHost{
-			{
-				DaemonID:   daemonID,
-				DataSource: source,
-			},
-		},
-	}
-	return AddHostLocalHosts(dbi, &hostCopy)
-}
-
-// Iterates over the LocalHost instances of a Host and inserts them or
-// updates in the database.
-func AddHostLocalHosts(dbi dbops.DBI, host *Host) error {
+// Iterates over the LocalHost instances of a Host and inserts or updates them
+// and their IP reservations in the database.
+func addHostReferences(tx *pg.Tx, host *Host) error {
 	for i := range host.LocalHosts {
 		host.LocalHosts[i].HostID = host.ID
-		q := dbi.Model(&host.LocalHosts[i]).
+		q := tx.Model(&host.LocalHosts[i]).
 			OnConflict("(daemon_id, host_id, data_source) DO UPDATE").
 			Set("client_classes = EXCLUDED.client_classes").
 			Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
@@ -712,50 +674,31 @@ func AddHostLocalHosts(dbi dbops.DBI, host *Host) error {
 				host.LocalHosts[i].DaemonID, host.ID)
 		}
 	}
-	return nil
+
+	return addIPReservations(tx, host)
 }
 
-// Attempts to add a host and its local hosts within an existing transaction.
-func addHostWithLocalHosts(tx *pg.Tx, host *Host) error {
+// Attempts to add a host, its local hosts and IP reservations within an
+// existing transaction.
+func addHostWithReferences(tx *pg.Tx, host *Host) error {
 	err := addHost(tx, host)
 	if err != nil {
 		return err
 	}
-	err = AddHostLocalHosts(tx, host)
+	err = addHostReferences(tx, host)
 	return err
 }
 
-// Attempts to add a host and its local hosts within a transaction. If the dbi
-// does not point to a transaction, a new transaction is started.
-func AddHostWithLocalHosts(dbi dbops.DBI, host *Host) error {
+// Attempts to add a host, its local hosts and IP reservations within a
+// transaction. If the dbi does not point to a transaction, a new transaction
+// is started.
+func AddHostWithReferences(dbi dbops.DBI, host *Host) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addHostWithLocalHosts(tx, host)
+			return addHostWithReferences(tx, host)
 		})
 	}
-	return addHostWithLocalHosts(dbi.(*pg.Tx), host)
-}
-
-// Fetches the local hosts of a given host coming from a specific data source.
-// If the data source is zero, returns all local hosts.
-func GetLocalHosts(dbi dbops.DBI, hostID int64, dataSource HostDataSource) ([]LocalHost, error) {
-	localHosts := []LocalHost{}
-	q := dbi.Model(&localHosts).
-		Where("host_id = ?", hostID)
-
-	if dataSource.IsSpecified() {
-		q = q.Where("data_source = ?", dataSource)
-	}
-
-	err := q.Select()
-	if err != nil {
-		if errors.Is(err, pg.ErrNoRows) {
-			return nil, nil
-		}
-		err = pkgerrors.Wrapf(err, "problem getting local hosts for host %d", hostID)
-		return nil, err
-	}
-	return localHosts, nil
+	return addHostWithReferences(dbi.(*pg.Tx), host)
 }
 
 // Dissociates a daemon from the hosts. The dataSource designates a data
@@ -819,24 +762,21 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 // can be associated with a subnet or can be made global. The committed hosts
 // must already include associations with the daemons and other information
 // specific to daemons, e.g., DHCP options.
-func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64) (err error) {
+func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
 		if hosts[i].ID == 0 {
-			err = AddHost(dbi, &hosts[i])
+			err = addHostWithReferences(tx, &hosts[i])
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to add detected host to the database")
 				return err
 			}
 		} else {
-			err = UpdateHost(dbi, &hosts[i])
+			err = updateHostWithReferences(tx, &hosts[i])
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to update detected host in the database")
 				return err
 			}
-		}
-		if err = AddHostLocalHosts(dbi, &hosts[i]); err != nil {
-			return err
 		}
 	}
 	return nil
@@ -846,24 +786,24 @@ func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64) (err error) 
 func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host) (err error) {
 	if db, ok := dbi.(*pg.DB); ok {
 		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return commitHostsIntoDB(dbi, hosts, 0)
+			return commitHostsIntoDB(tx, hosts, 0)
 		})
 		return
 	}
-	return commitHostsIntoDB(dbi, hosts, 0)
+	return commitHostsIntoDB(dbi.(*pg.Tx), hosts, 0)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(dbi dbops.DBI, subnet *Subnet) (err error) {
-	return commitHostsIntoDB(dbi, subnet.Hosts, subnet.ID)
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet) (err error) {
+	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID)
 }
 
 // This function checks if the given host includes a reservation for the
 // given address.
 func (host Host) HasIPAddress(ipAddress string) bool {
-	for _, r := range host.IPReservations {
-		hostCidr, err := storkutil.MakeCIDR(r.Address)
+	for _, hostAddress := range host.GetIPReservations() {
+		hostCidr, err := storkutil.MakeCIDR(hostAddress)
 		if err != nil {
 			continue
 		}
@@ -905,12 +845,15 @@ func (host Host) HasIdentifierType(idType string) bool {
 
 // Checks if two hosts have the same IP reservations.
 func (host Host) HasEqualIPReservations(other *Host) bool {
-	if len(host.IPReservations) != len(other.IPReservations) {
+	thisIPReservations := host.GetIPReservations()
+	otherIPReservations := other.GetIPReservations()
+
+	if len(thisIPReservations) != len(otherIPReservations) {
 		return false
 	}
 
-	for _, o := range other.IPReservations {
-		if !host.HasIPAddress(o.Address) {
+	for _, o := range otherIPReservations {
+		if !host.HasIPAddress(o) {
 			return false
 		}
 	}
@@ -936,7 +879,7 @@ func (host Host) IsSame(other *Host) bool {
 		return false
 	}
 
-	return host.Hostname == other.Hostname
+	return host.GetHostname() == other.GetHostname()
 }
 
 // Returns local host instance for the daemon ID or nil.
@@ -1002,7 +945,8 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 	err := dbi.Model((*IPReservation)(nil)).
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
-		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
+		Join("LEFT JOIN host").JoinOn("local_host.host_id = host.id").
 		// Exclude global reservations
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
@@ -1075,7 +1019,8 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	err := dbi.Model((*IPReservation)(nil)).
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
-		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
+		Join("LEFT JOIN host").JoinOn("local_host.host_id = host.id").
 		// Exclude global reservations
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
@@ -1122,7 +1067,8 @@ func CountGlobalReservations(dbi dbops.DBI) (ipv4Addresses, ipv6Addresses, prefi
 		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 4) AS ipv4_addresses").
 		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) = 128) AS ipv6_addresses").
 		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) != 128) AS prefixes").
-		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
+		Join("LEFT JOIN host").JoinOn("local_host.host_id = host.id").
 		// Include only global reservations
 		Where("host.subnet_id IS NULL").
 		Select(&res)
@@ -1156,16 +1102,34 @@ func (host Host) GetHostIdentifiers() (identifiers []struct {
 }
 
 // Returns reserved IP addresses and prefixes.
-func (host Host) GetIPReservations() (ips []string) {
-	for _, r := range host.IPReservations {
-		ips = append(ips, r.Address)
+// If the same address is reserved on multiple daemons (as usually happens)
+// it is returned only once.
+func (host Host) GetIPReservations() []string {
+	ips := make(map[string]bool)
+
+	for _, lh := range host.LocalHosts {
+		for _, r := range lh.IPReservations {
+			ips[r.Address] = true
+		}
 	}
-	return
+
+	uniqueIPs := make([]string, 0, len(ips))
+	for ip := range ips {
+		uniqueIPs = append(uniqueIPs, ip)
+	}
+
+	return uniqueIPs
 }
 
 // Returns reserved hostname.
+// All daemons should have the same hostname reserved for a given identifier
+// (host). We assume it is the case and return the hostname from the first
+// local host.
 func (host Host) GetHostname() string {
-	return host.Hostname
+	if len(host.LocalHosts) == 0 {
+		return ""
+	}
+	return host.LocalHosts[0].Hostname
 }
 
 // Returns reserved client classes.

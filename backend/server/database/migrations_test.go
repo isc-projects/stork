@@ -288,36 +288,21 @@ func TestMigrationFrom55To56(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Down to the previous migration.
-	dbops.Migrate(db, "down", "55")
-
-	// The IP reservation and host tables are changed in the 56 migration.
-	type reservation struct {
-		tableName struct{} `pg:"ip_reservation"` //nolint:unused
-		ID        int64
-		Address   string
-		HostID    int64
-	}
-
-	type host struct {
-		tableName      struct{} `pg:"host"` //nolint:unused
-		ID             int64
-		Hostname       string
-		IPReservations []reservation `pg:"rel:has-many"`
-	}
-
 	// Add test data.
 	_, _ = storktestdbmodel.AddTestHosts(t, db)
-
-	// Fetch the data before the migration.
-	var expectedHosts []host
-	err := db.Model(&expectedHosts).Relation("IPReservations").Select()
+	expectedHosts, err := dbmodel.GetAllHosts(db, 0)
 	require.NoError(t, err)
-	require.NotEmpty(t, expectedHosts)
 
 	// Act
+	// Down to the previous migration.
+	_, _, errDown := dbops.Migrate(db, "down", "55")
+	// And back to the 56 migration.
 	_, _, errUp := dbops.Migrate(db, "up", "56")
 
 	// Assert
+	require.NoError(t, errDown)
 	require.NoError(t, errUp)
+	actualHosts, _ := dbmodel.GetAllHosts(db, 0)
+	require.NotEmpty(t, expectedHosts)
+	require.Equal(t, expectedHosts, actualHosts)
 }

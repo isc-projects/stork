@@ -106,18 +106,23 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 			},
 		},
 	}
+
+	localHost := &dbmodel.LocalHost{
+		DaemonID:   app.Daemons[0].ID,
+		DataSource: dbmodel.HostDataSourceAPI,
+	}
+
 	// Append reserved addresses.
 	for _, a := range reservationAddress {
-		host.IPReservations = append(host.IPReservations, dbmodel.IPReservation{
+		localHost.IPReservations = append(localHost.IPReservations, dbmodel.IPReservation{
 			Address: a,
 		})
 	}
-	// Add the host.
-	err = dbmodel.AddHost(db, host)
-	require.NoError(t, err)
 
-	// Associate the daemon with the host.
-	err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, dbmodel.HostDataSourceAPI)
+	host.LocalHosts = append(host.LocalHosts, *localHost)
+
+	// Add the host.
+	err = dbmodel.AddHostWithReferences(db, host)
 	require.NoError(t, err)
 }
 
@@ -4262,21 +4267,22 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 					Value: []byte{1, 2, 3, 4, 5, 6},
 				},
 			},
-			IPReservations: []dbmodel.IPReservation{
+			LocalHosts: []dbmodel.LocalHost{
 				{
-					Address: fmt.Sprintf("%s.5", prefix),
+					DaemonID:   app.Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI,
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: fmt.Sprintf("%s.5", prefix),
+						},
+					},
 				},
 			},
 		}
 		// Add the host.
-		err = dbmodel.AddHost(db, host)
+		err = dbmodel.AddHostWithReferences(db, host)
 		if err != nil {
 			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
-		}
-		// Associate the daemon with the host.
-		err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, dbmodel.HostDataSourceAPI)
-		if err != nil {
-			b.Fatalf("failed to add app to host: %+v", err)
 		}
 	}
 

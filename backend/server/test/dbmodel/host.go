@@ -40,6 +40,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 				dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv6, true),
 			},
 		}
+
 		err = a.Daemons[0].SetConfigFromJSON(`{
             "Dhcp4": {
 				"client-classes": [
@@ -128,7 +129,6 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 	hosts = []dbmodel.Host{
 		{
 			SubnetID: 1,
-			Hostname: "first.example.org",
 			HostIdentifiers: []dbmodel.HostIdentifier{
 				{
 					Type:  "hw-address",
@@ -139,28 +139,38 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Value: []byte{1, 2, 3, 4},
 				},
 			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "192.0.2.4",
-				},
-				{
-					Address: "192.0.2.5",
-				},
-			},
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:       apps[0].Daemons[0].ID,
+					Hostname:       "first.example.org",
 					DataSource:     dbmodel.HostDataSourceAPI,
 					NextServer:     "192.2.2.2",
 					ServerHostname: "stork.example.org",
 					BootFileName:   "/tmp/boot.xyz",
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "192.0.2.4",
+						},
+						{
+							Address: "192.0.2.5",
+						},
+					},
 				},
 				{
 					DaemonID:       apps[1].Daemons[0].ID,
+					Hostname:       "first.example.org",
 					DataSource:     dbmodel.HostDataSourceAPI,
 					NextServer:     "192.2.2.2",
 					ServerHostname: "stork.example.org",
 					BootFileName:   "/tmp/boot.xyz",
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "192.0.2.4",
+						},
+						{
+							Address: "192.0.2.5",
+						},
+					},
 				},
 			},
 		},
@@ -175,22 +185,30 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Value: []byte{2, 3, 4, 5},
 				},
 			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "192.0.2.6",
-				},
-				{
-					Address: "192.0.2.7",
-				},
-			},
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[0].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "192.0.2.6",
+						},
+						{
+							Address: "192.0.2.7",
+						},
+					},
 				},
 				{
 					DaemonID:   apps[1].Daemons[0].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "192.0.2.6",
+						},
+						{
+							Address: "192.0.2.7",
+						},
+					},
 				},
 			},
 		},
@@ -202,19 +220,24 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Value: []byte{1, 2, 3, 4, 5, 6},
 				},
 			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "2001:db8:1::1",
-				},
-			},
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[1].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "2001:db8:1::1",
+						},
+					},
 				},
 				{
 					DaemonID:   apps[1].Daemons[1].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "2001:db8:1::1",
+						},
+					},
 				},
 			},
 		},
@@ -225,19 +248,24 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Value: []byte{1, 2, 3, 4},
 				},
 			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "2001:db8:1::2",
-				},
-			},
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[1].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "2001:db8:1::2",
+						},
+					},
 				},
 				{
 					DaemonID:   apps[1].Daemons[1].ID,
 					DataSource: dbmodel.HostDataSourceAPI,
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "2001:db8:1::2",
+						},
+					},
 				},
 			},
 		},
@@ -248,11 +276,6 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 					Value: []byte{2, 2, 2, 2},
 				},
 			},
-			IPReservations: []dbmodel.IPReservation{
-				{
-					Address: "3000::/48",
-				},
-			},
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[1].ID,
@@ -279,6 +302,11 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Universe: storkutil.IPv6,
 						},
 					}, hasher),
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "3000::/48",
+						},
+					},
 				},
 				{
 					DaemonID:   apps[1].Daemons[1].ID,
@@ -305,6 +333,11 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 							Universe: storkutil.IPv6,
 						},
 					}, hasher),
+					IPReservations: []dbmodel.IPReservation{
+						{
+							Address: "3000::/48",
+						},
+					},
 				},
 			},
 		},
@@ -313,7 +346,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 	// Add hosts to the database.
 	for i, h := range hosts {
 		host := h
-		err := dbmodel.AddHostWithLocalHosts(db, &host)
+		err := dbmodel.AddHostWithReferences(db, &host)
 		require.NoError(t, err)
 		require.NotZero(t, host.ID)
 		hosts[i] = host
