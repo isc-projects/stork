@@ -310,13 +310,10 @@ func TestMigrationFrom55To56(t *testing.T) {
 	for i := range expectedHosts {
 		expectedHost := expectedHosts[i]
 		actualHost := actualHosts[i]
-		// The hosts are the same but the IP reservations are assigned to the
-		// only one from the local hosts. Also the local host ID differs.
-		// We lose the exact assignment between the IP reservation and the
-		// daemon because the previous DB schema doesn't store this information.
 		require.True(t, expectedHost.IsSame(&actualHost))
-		require.NotEqual(t, expectedHost, actualHost)
 
+		// Check if the data after the down and up migrations are exactly equal
+		// (except IDs).
 		require.Equal(t, expectedHost.CreatedAt, actualHost.CreatedAt)
 		require.Equal(t, expectedHost.HostIdentifiers, actualHost.HostIdentifiers)
 		require.Equal(t, expectedHost.SubnetID, actualHost.SubnetID)
@@ -329,7 +326,6 @@ func TestMigrationFrom55To56(t *testing.T) {
 			return actualHost.LocalHosts[i].DaemonID < actualHost.LocalHosts[j].DaemonID
 		})
 
-		localHostsWithIPReservations := 0
 		for j := range expectedHost.LocalHosts {
 			expectedLocalHost := expectedHost.LocalHosts[j]
 			actualLocalHost := actualHost.LocalHosts[j]
@@ -337,12 +333,34 @@ func TestMigrationFrom55To56(t *testing.T) {
 			require.Equal(t, expectedLocalHost.HostID, actualLocalHost.HostID)
 			require.Equal(t, expectedLocalHost.DaemonID, actualLocalHost.DaemonID)
 			require.Equal(t, expectedLocalHost.DataSource, actualLocalHost.DataSource)
+			require.Equal(t, expectedLocalHost.BootFileName, actualLocalHost.BootFileName)
+			require.Equal(t, expectedLocalHost.ClientClasses, actualLocalHost.ClientClasses)
+			require.Equal(t, expectedLocalHost.DHCPOptionSet, actualLocalHost.DHCPOptionSet)
+			require.Equal(t, expectedLocalHost.Hash, actualLocalHost.Hash)
+			require.Equal(t, expectedLocalHost.NextServer, actualLocalHost.NextServer)
+			require.Equal(t, expectedLocalHost.Options, actualLocalHost.Options)
+			require.Equal(t, expectedLocalHost.ServerHostname, actualLocalHost.ServerHostname)
+			require.Equal(t, len(expectedLocalHost.IPReservations), len(actualLocalHost.IPReservations))
 
-			if len(actualLocalHost.IPReservations) != 0 {
-				localHostsWithIPReservations++
+			sort.Slice(expectedLocalHost.IPReservations, func(i, j int) bool {
+				if expectedLocalHost.IPReservations[i].Address != expectedLocalHost.IPReservations[j].Address {
+					return expectedLocalHost.IPReservations[i].Address < expectedLocalHost.IPReservations[j].Address
+				}
+				return expectedLocalHost.IPReservations[i].LocalHostID < expectedLocalHost.IPReservations[j].LocalHostID
+			})
+			sort.Slice(actualLocalHost.IPReservations, func(i, j int) bool {
+				if actualLocalHost.IPReservations[i].Address != actualLocalHost.IPReservations[j].Address {
+					return actualLocalHost.IPReservations[i].Address < actualLocalHost.IPReservations[j].Address
+				}
+				return actualLocalHost.IPReservations[i].LocalHostID < actualLocalHost.IPReservations[j].LocalHostID
+			})
+
+			for k := range expectedLocalHost.IPReservations {
+				expectedReservation := expectedLocalHost.IPReservations[k]
+				actualReservation := actualLocalHost.IPReservations[k]
+				require.Equal(t, expectedReservation.Address, actualReservation.Address)
+				require.Equal(t, expectedReservation.LocalHostID, actualReservation.LocalHostID)
 			}
 		}
-		// All local hosts should have the IP reservations assigned.
-		require.Equal(t, len(actualHost.LocalHosts), localHostsWithIPReservations)
 	}
 }
