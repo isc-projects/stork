@@ -3,7 +3,6 @@ package restservice
 import (
 	"context"
 	"net/http"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -77,10 +76,9 @@ func TestGetHostsNoFiltering(t *testing.T) {
 		// Walk over the address and prefix reservations for a host.
 		for _, ips := range [][]*models.IPReservation{items[i].AddressReservations, items[i].PrefixReservations} {
 			hostIPReservations := hosts[i].GetIPReservations()
-			sort.Strings(hostIPReservations)
-			for j, resrv := range ips {
+			for _, resrv := range ips {
 				require.NotNil(t, resrv)
-				require.EqualValues(t, hostIPReservations[j], resrv.Address)
+				require.Contains(t, hostIPReservations, resrv.Address)
 			}
 		}
 	}
@@ -107,7 +105,7 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	require.Len(t, items[0].LocalHosts, 2)
 	require.NotNil(t, items[0].LocalHosts[0])
 	require.EqualValues(t, apps[0].ID, items[0].LocalHosts[0].AppID)
-	require.Equal(t, dbmodel.HostDataSourceConfig.String(), items[0].LocalHosts[0].DataSource)
+	require.Equal(t, dbmodel.HostDataSourceAPI.String(), items[0].LocalHosts[0].DataSource)
 	require.Equal(t, "dhcp-server0", items[0].LocalHosts[0].AppName)
 	require.NotNil(t, items[0].LocalHosts[1])
 	require.EqualValues(t, apps[1].ID, items[0].LocalHosts[1].AppID)

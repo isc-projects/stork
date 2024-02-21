@@ -1411,6 +1411,7 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	defer teardown()
 
 	hosts, _ := storktest.AddTestHosts(t, db)
+	dbmodel.DeleteDaemonFromHosts(db, hosts[0].LocalHosts[1].DaemonID, dbmodel.HostDataSourceUnspecified)
 
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{

@@ -185,18 +185,6 @@ func addHost(tx *pg.Tx, host *Host) error {
 	return nil
 }
 
-// Adds new host, its reservations and identifiers into the database.
-// It begins a new transaction when dbi has a *pg.DB type or uses an
-// existing transaction when dbi has a *pg.Tx type.
-func AddHost(dbi dbops.DBI, host *Host) error {
-	if db, ok := dbi.(*pg.DB); ok {
-		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addHost(tx, host)
-		})
-	}
-	return addHost(dbi.(*pg.Tx), host)
-}
-
 // Updates a host, its reservations and identifiers in the database
 // in a transaction.
 func updateHost(tx *pg.Tx, host *Host) error {
@@ -232,16 +220,6 @@ func updateHost(tx *pg.Tx, host *Host) error {
 		err = pkgerrors.Wrapf(ErrNotExists, "host with ID %d does not exist", host.ID)
 	}
 	return err
-}
-
-// Updates a host, its reservations and identifiers in the database.
-func UpdateHost(dbi pg.DBI, host *Host) error {
-	if db, ok := dbi.(*pg.DB); ok {
-		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return updateHost(tx, host)
-		})
-	}
-	return updateHost(dbi.(*pg.Tx), host)
 }
 
 // Attempts to update a host and its local hosts with in an existing transaction.
