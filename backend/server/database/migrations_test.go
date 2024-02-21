@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/big"
 	"math/rand"
+	"sort"
 	"testing"
 
 	"github.com/go-pg/pg/v10"
@@ -297,12 +298,51 @@ func TestMigrationFrom55To56(t *testing.T) {
 	// Down to the previous migration.
 	_, _, errDown := dbops.Migrate(db, "down", "55")
 	// And back to the 56 migration.
-	_, _, errUp := dbops.Migrate(db, "up", "56")
+	_, _, errUp := dbops.Migrate(db, "up")
 
 	// Assert
 	require.NoError(t, errDown)
 	require.NoError(t, errUp)
 	actualHosts, _ := dbmodel.GetAllHosts(db, 0)
 	require.NotEmpty(t, expectedHosts)
-	require.Equal(t, expectedHosts, actualHosts)
+	require.Equal(t, len(expectedHosts), len(actualHosts))
+
+	for i := range expectedHosts {
+		expectedHost := expectedHosts[i]
+		actualHost := actualHosts[i]
+		// The hosts are the same but the IP reservations are assigned to the
+		// only one from the local hosts. Also the local host ID differs.
+		// We lose the exact assignment between the IP reservation and the
+		// daemon because the previous DB schema doesn't store this information.
+		require.True(t, expectedHost.IsSame(&actualHost))
+		require.NotEqual(t, expectedHost, actualHost)
+
+		require.Equal(t, expectedHost.CreatedAt, actualHost.CreatedAt)
+		require.Equal(t, expectedHost.HostIdentifiers, actualHost.HostIdentifiers)
+		require.Equal(t, expectedHost.SubnetID, actualHost.SubnetID)
+		require.Equal(t, len(expectedHost.LocalHosts), len(actualHost.LocalHosts))
+
+		sort.Slice(expectedHost.LocalHosts, func(i, j int) bool {
+			return expectedHost.LocalHosts[i].DaemonID < expectedHost.LocalHosts[j].DaemonID
+		})
+		sort.Slice(actualHost.LocalHosts, func(i, j int) bool {
+			return actualHost.LocalHosts[i].DaemonID < actualHost.LocalHosts[j].DaemonID
+		})
+
+		localHostsWithIPReservations := 0
+		for j := range expectedHost.LocalHosts {
+			expectedLocalHost := expectedHost.LocalHosts[j]
+			actualLocalHost := actualHost.LocalHosts[j]
+			require.Equal(t, expectedLocalHost.Hostname, actualLocalHost.Hostname)
+			require.Equal(t, expectedLocalHost.HostID, actualLocalHost.HostID)
+			require.Equal(t, expectedLocalHost.DaemonID, actualLocalHost.DaemonID)
+			require.Equal(t, expectedLocalHost.DataSource, actualLocalHost.DataSource)
+
+			if len(actualLocalHost.IPReservations) != 0 {
+				localHostsWithIPReservations++
+			}
+		}
+		// All local hosts should have the IP reservations assigned.
+		require.Equal(t, len(actualHost.LocalHosts), localHostsWithIPReservations)
+	}
 }
