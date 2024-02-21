@@ -3,6 +3,7 @@ package restservice
 import (
 	"context"
 	"net/http"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -76,6 +77,7 @@ func TestGetHostsNoFiltering(t *testing.T) {
 		// Walk over the address and prefix reservations for a host.
 		for _, ips := range [][]*models.IPReservation{items[i].AddressReservations, items[i].PrefixReservations} {
 			hostIPReservations := hosts[i].GetIPReservations()
+			sort.Strings(hostIPReservations)
 			for j, resrv := range ips {
 				require.NotNil(t, resrv)
 				require.EqualValues(t, hostIPReservations[j], resrv.Address)
@@ -109,7 +111,7 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	require.Equal(t, "dhcp-server0", items[0].LocalHosts[0].AppName)
 	require.NotNil(t, items[0].LocalHosts[1])
 	require.EqualValues(t, apps[1].ID, items[0].LocalHosts[1].AppID)
-	require.Equal(t, dbmodel.HostDataSourceConfig.String(), items[0].LocalHosts[1].DataSource)
+	require.Equal(t, dbmodel.HostDataSourceAPI.String(), items[0].LocalHosts[1].DataSource)
 	require.Equal(t, "dhcp-server1", items[0].LocalHosts[1].AppName)
 }
 
@@ -384,7 +386,11 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure we have some Kea apps in the database.
-	_, apps := storktestdbmodel.AddTestHosts(t, db)
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
+	// Drop the hosts associations.
+	for _, host := range hosts {
+		_, _ = dbmodel.DeleteDaemonsFromHost(db, host.ID, dbmodel.HostDataSourceUnspecified)
+	}
 
 	// Begin transaction.
 	params := dhcp.CreateHostBeginParams{}

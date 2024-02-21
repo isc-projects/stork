@@ -280,7 +280,7 @@ func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
-		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+		Relation("LocalHosts.IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
 		Relation("Subnet.LocalSubnets").
@@ -342,10 +342,9 @@ func GetHostsBySubnetID(dbi dbops.DBI, subnetID int64) ([]Host, error) {
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
-		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+		Relation("LocalHosts.IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
-		Relation("LocalHosts").
 		OrderExpr("id ASC")
 
 	// Subnet ID is never zero, it may be NULL. The reason for it is that we
@@ -379,10 +378,9 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource HostDataSource
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
-		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+		Relation("LocalHosts.IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
-		Relation("LocalHosts").
 		Relation("Subnet.LocalSubnets").
 		OrderExpr("id ASC").
 		Where("lh.daemon_id = ?", daemonID)
@@ -458,11 +456,15 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 	q = q.DistinctOn(distinctOnFields)
 
+	// Join to the local host table.
+	if (filters.AppID != nil && *filters.AppID != 0) || filters.FilterText != nil && len(*filters.FilterText) > 0 {
+		q = q.Join("JOIN local_host").JoinOn("host.id = local_host.host_id")
+	}
+
 	// Filter by app ID.
 	// When filtering by appID we also need the local_host
 	// table as it holds the application identifier.
 	if filters.AppID != nil && *filters.AppID != 0 {
-		q = q.Join("JOIN local_host").JoinOn("host.id = local_host.host_id")
 		q = q.Join("JOIN daemon").JoinOn("local_host.daemon_id = daemon.id")
 		q = q.Where("daemon.app_id = ?", *filters.AppID)
 	}
@@ -506,6 +508,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		// for a given host. This is because the HAVING clause filters out this
 		// kind of entries, so there are no corresponding rows in the subquery
 		// and the subquery results are joined with LEFT JOIN.
+		// TODO: Check the conflicts in the IP reservations.
 		conflictSubquery := dbi.Model((*struct {
 			tableName struct{} `pg:"local_host"`
 			HostID    int64
@@ -519,6 +522,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 				OR max(next_server) IS DISTINCT FROM min(next_server)
 				OR max(server_hostname) IS DISTINCT FROM min(server_hostname)
 				OR max(boot_file_name) IS DISTINCT FROM min(boot_file_name)
+				OR max(hostname) IS DISTINCT FROM min(hostname)
 				AS conflict`).
 			Group("host_id", "daemon_id").
 			Having("COUNT(*) > 1").
@@ -594,14 +598,14 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		// for host identifiers. We need to remove them because they are
 		// not present in the database.
 		colonlessFilterText := strings.ReplaceAll(*filters.FilterText, ":", "")
-		q = q.Join("LEFT JOIN ip_reservation AS r").JoinOn("r.host_id = host.id")
 		q = q.Join("JOIN host_identifier AS i").JoinOn("i.host_id = host.id")
+		q = q.Join("LEFT JOIN ip_reservation AS r").JoinOn("r.local_host_id = local_host.id")
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
 			q = q.WhereOr("text(r.address) ILIKE ?", "%"+*filters.FilterText+"%").
 				WhereOr("i.type::text ILIKE ?", "%"+*filters.FilterText+"%").
 				WhereOr("encode(i.value, 'hex') ILIKE ?", "%"+colonlessFilterText+"%").
 				WhereOr("encode(i.value, 'escape') ILIKE ?", "%"+*filters.FilterText+"%").
-				WhereOr("host.hostname ILIKE ?", "%"+*filters.FilterText+"%")
+				WhereOr("local_host.hostname ILIKE ?", "%"+*filters.FilterText+"%")
 			return q, nil
 		})
 	}
@@ -610,7 +614,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
-		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+		Relation("LocalHosts.IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
 		Relation("LocalHosts").

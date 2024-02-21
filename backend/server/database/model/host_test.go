@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -23,9 +24,39 @@ func hostsContain(t *testing.T, returned []Host, host Host) {
 	require.Contains(t, returned, host)
 }
 
-// This function creates multiple hosts used in tests which fetch and
-// filter hosts.
-func addTestHosts(t *testing.T, db *pg.DB) []Host {
+// This function creates a machine, app and daemons for the testing purposes.
+func addMachineAppAndDaemons(t *testing.T, db *pg.DB) (*Machine, []*App) {
+	machine := &Machine{
+		Address:   "cool.example.org",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	apps := []*App{}
+	for i := 0; i < 2; i++ {
+		app := &App{
+			MachineID: machine.ID,
+			Type:      AppTypeKea,
+			Name:      fmt.Sprintf("kea-%d", i),
+			Daemons: []*Daemon{
+				NewKeaDaemon("dhcp4", true),
+				NewKeaDaemon("dhcp6", true),
+			},
+		}
+		_, err := AddApp(db, app)
+		require.NoError(t, err)
+		apps = append(apps, app)
+	}
+
+	return machine, apps
+}
+
+// This function creates machine, app, daemons, subnets, and multiple hosts
+// used in tests.
+func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
+	_, apps := addMachineAppAndDaemons(t, db)
+
 	subnets := []Subnet{
 		{
 			ID:     1,
@@ -57,15 +88,21 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 					Value: []byte{0xf1, 0xf2, 0xf3, 0xf4},
 				},
 			},
-			IPReservations: []IPReservation{
+			LocalHosts: []LocalHost{
 				{
-					Address: "192.0.2.4/32",
-				},
-				{
-					Address: "192.0.2.5/32",
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: HostDataSourceConfig,
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.4/32",
+						},
+						{
+							Address: "192.0.2.5/32",
+						},
+					},
+					Hostname: "first.example.org",
 				},
 			},
-			Hostname: "first.example.org",
 		},
 		{
 			HostIdentifiers: []HostIdentifier{
@@ -78,12 +115,18 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 					Value: []byte{2, 3, 4, 5},
 				},
 			},
-			IPReservations: []IPReservation{
+			LocalHosts: []LocalHost{
 				{
-					Address: "192.0.2.6/32",
-				},
-				{
-					Address: "192.0.2.7/32",
+					DaemonID:   apps[1].Daemons[0].ID,
+					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.6/32",
+						},
+						{
+							Address: "192.0.2.7/32",
+						},
+					},
 				},
 			},
 		},
@@ -95,12 +138,18 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 					Value: []byte{1, 2, 3, 4, 5, 6},
 				},
 			},
-			IPReservations: []IPReservation{
+			LocalHosts: []LocalHost{
 				{
-					Address: "2001:db8:1::1/128",
+					DaemonID:   apps[0].Daemons[1].ID,
+					DataSource: HostDataSourceConfig,
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::1/128",
+						},
+					},
+					Hostname: "second.example.org",
 				},
 			},
-			Hostname: "second.example.org",
 		},
 		{
 			HostIdentifiers: []HostIdentifier{
@@ -113,9 +162,15 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 					Value: []byte{0x51, 0x52, 0x53, 0x54},
 				},
 			},
-			IPReservations: []IPReservation{
+			LocalHosts: []LocalHost{
 				{
-					Address: "2001:db8:1::2/128",
+					DaemonID:   apps[1].Daemons[1].ID,
+					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::2/128",
+						},
+					},
 				},
 			},
 		},
@@ -128,7 +183,7 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 		require.NotZero(t, host.ID)
 		hosts[i] = host
 	}
-	return hosts
+	return apps, hosts
 }
 
 // Test that the function returns true if the data source is config; otherwise,
@@ -161,9 +216,11 @@ func TestAddHost(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	_, apps := addMachineAppAndDaemons(t, db)
+	daemons := apps[0].Daemons
+
 	// Add a host with two identifiers and two reservations.
 	host := &Host{
-		Hostname: "host.example.org",
 		HostIdentifiers: []HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -174,12 +231,26 @@ func TestAddHost(t *testing.T) {
 				Value: []byte{1, 1, 1, 1, 1},
 			},
 		},
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				Address: "192.0.2.4",
+				DaemonID:   daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				Hostname:   "host.example.org",
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.4",
+					},
+				},
 			},
 			{
-				Address: "2001:db8:1::4",
+				DaemonID:   daemons[1].ID,
+				DataSource: HostDataSourceConfig,
+				Hostname:   "host.example.org",
+				IPReservations: []IPReservation{
+					{
+						Address: "2001:db8:1::4",
+					},
+				},
 			},
 		},
 	}
@@ -193,9 +264,9 @@ func TestAddHost(t *testing.T) {
 	require.NotNil(t, returned)
 
 	require.Equal(t, host.ID, returned.ID)
-	require.Equal(t, "host.example.org", host.Hostname)
+	require.Equal(t, "host.example.org", host.GetHostname())
 	require.Len(t, returned.HostIdentifiers, 2)
-	require.Len(t, returned.IPReservations, 2)
+	require.Len(t, returned.GetIPReservations(), 2)
 
 	// Make sure that the returned host identifiers match.
 	for i := range returned.HostIdentifiers {
@@ -203,9 +274,7 @@ func TestAddHost(t *testing.T) {
 	}
 
 	// Make sure that the returned reservations match.
-	for i := range returned.IPReservations {
-		require.Contains(t, returned.IPReservations[i].Address, host.IPReservations[i].Address)
-	}
+	require.Equal(t, host.GetIPReservations(), returned.GetIPReservations())
 }
 
 // Test that the host can be updated and that this update includes extending
@@ -213,6 +282,9 @@ func TestAddHost(t *testing.T) {
 func TestUpdateHostExtend(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+
+	_, apps := addMachineAppAndDaemons(t, db)
+	daemons := apps[0].Daemons
 
 	// Add the host with two reservations and two identifiers.
 	host := &Host{
@@ -226,12 +298,24 @@ func TestUpdateHostExtend(t *testing.T) {
 				Value: []byte{1, 1, 1, 1, 1},
 			},
 		},
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				Address: "192.0.2.4/32",
+				DaemonID:   daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.4/32",
+					},
+				},
 			},
 			{
-				Address: "2001:db8:1::4/128",
+				DaemonID:   daemons[1].ID,
+				DataSource: HostDataSourceConfig,
+				IPReservations: []IPReservation{
+					{
+						Address: "2001:db8:1::4/128",
+					},
+				},
 			},
 		},
 	}
@@ -250,9 +334,9 @@ func TestUpdateHostExtend(t *testing.T) {
 	})
 
 	// Modify the first reservation.
-	host.IPReservations[0].Address = "192.0.3.4/32"
+	host.LocalHosts[0].IPReservations[0].Address = "192.0.3.4/32"
 	// Add one more reservation.
-	host.IPReservations = append(host.IPReservations, IPReservation{
+	host.LocalHosts[1].IPReservations = append(host.LocalHosts[1].IPReservations, IPReservation{
 		Address: "3000::/64",
 	})
 
@@ -268,11 +352,11 @@ func TestUpdateHostExtend(t *testing.T) {
 	require.NotNil(t, returned)
 
 	require.Len(t, returned.HostIdentifiers, 3)
-	require.Len(t, returned.IPReservations, 3)
+	require.Len(t, returned.GetIPReservations(), 3)
 
 	// Make sure that the identifiers and reservations were modified.
 	require.ElementsMatch(t, returned.HostIdentifiers, host.HostIdentifiers)
-	require.ElementsMatch(t, returned.IPReservations, host.IPReservations)
+	require.ElementsMatch(t, returned.GetIPReservations(), host.GetIPReservations())
 }
 
 // Test that the host can be updated and that some reservations and
@@ -280,6 +364,9 @@ func TestUpdateHostExtend(t *testing.T) {
 func TestUpdateHostShrink(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+
+	_, apps := addMachineAppAndDaemons(t, db)
+	daemons := apps[0].Daemons
 
 	host := &Host{
 		HostIdentifiers: []HostIdentifier{
@@ -292,12 +379,24 @@ func TestUpdateHostShrink(t *testing.T) {
 				Value: []byte{1, 1, 1, 1, 1},
 			},
 		},
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				Address: "192.0.2.4/32",
+				DaemonID:   daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.4/32",
+					},
+				},
 			},
 			{
-				Address: "2001:db8:1::4/128",
+				DaemonID:   daemons[1].ID,
+				DataSource: HostDataSourceConfig,
+				IPReservations: []IPReservation{
+					{
+						Address: "2001:db8:1::4/128",
+					},
+				},
 			},
 		},
 	}
@@ -307,7 +406,7 @@ func TestUpdateHostShrink(t *testing.T) {
 
 	// Remove one host identifier and one reservation.
 	host.HostIdentifiers = host.HostIdentifiers[0:1]
-	host.IPReservations = host.IPReservations[1:]
+	host.LocalHosts[0].IPReservations = []IPReservation{}
 
 	// Updating the host should result in removal of this identifier
 	// and the reservation from the database.
@@ -322,16 +421,17 @@ func TestUpdateHostShrink(t *testing.T) {
 
 	// Verify that only one identifier and one reservation have left.
 	require.Len(t, returned.HostIdentifiers, 1)
-	require.Len(t, returned.IPReservations, 1)
+	require.Len(t, returned.GetIPReservations(), 1)
 
 	require.Equal(t, "hw-address", returned.HostIdentifiers[0].Type)
 	require.Equal(t, []byte{1, 2, 3, 4, 5, 6}, returned.HostIdentifiers[0].Value)
 
-	require.Equal(t, "2001:db8:1::4/128", returned.IPReservations[0].Address)
+	require.Equal(t, "2001:db8:1::4/128", returned.GetIPReservations()[0])
 
 	// Remove the IP reservation and add the reserved hostname instead.
-	host.IPReservations = []IPReservation{}
-	host.Hostname = "host.example.org."
+	host.LocalHosts[1].IPReservations = []IPReservation{}
+	host.LocalHosts[0].Hostname = "host.example.org."
+	host.LocalHosts[1].Hostname = "host.example.org."
 	err = UpdateHost(db, host)
 	require.NoError(t, err)
 
@@ -339,9 +439,9 @@ func TestUpdateHostShrink(t *testing.T) {
 	returned, err = GetHost(db, host.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
-	require.Empty(t, returned.IPReservations)
+	require.Empty(t, returned.GetIPReservations())
 	require.Len(t, returned.HostIdentifiers, 1)
-	require.Equal(t, "host.example.org.", returned.Hostname)
+	require.Equal(t, "host.example.org.", returned.GetHostname())
 
 	// Remove the host identifiers.
 	host.HostIdentifiers = []HostIdentifier{}
@@ -352,13 +452,13 @@ func TestUpdateHostShrink(t *testing.T) {
 	returned, err = GetHost(db, host.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
-	require.Empty(t, returned.IPReservations)
+	require.Empty(t, returned.GetIPReservations())
 	require.Empty(t, returned.HostIdentifiers)
-	require.Equal(t, "host.example.org.", returned.Hostname)
+	require.Equal(t, "host.example.org.", returned.GetHostname())
 
-	require.Empty(t, returned.IPReservations)
+	require.Empty(t, returned.GetHostname())
 	require.Empty(t, host.HostIdentifiers)
-	require.Equal(t, "host.example.org.", returned.Hostname)
+	require.Equal(t, "host.example.org.", returned.GetHostname())
 }
 
 // Test that the created_at value is excluded from the host update.
@@ -443,7 +543,7 @@ func TestUpdateHostWithLocalHosts(t *testing.T) {
 			},
 		},
 	}
-	err = UpdateHostWithLocalHosts(db, host2)
+	err = UpdateHostWithReferences(db, host2)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -463,7 +563,7 @@ func TestGetAllHosts(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 
 	// Fetch all hosts having IPv4 reservations.
 	returned, err := GetAllHosts(db, 4)
@@ -497,7 +597,7 @@ func TestGetHostsBySubnetID(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 
 	// Fetch host having IPv4 reservations.
 	returned, err := GetHostsBySubnetID(db, 1)
@@ -518,7 +618,7 @@ func TestGetHostsByPageNoFiltering(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_ = addTestHosts(t, db)
+	_, _ = addTestHosts(t, db)
 
 	filters := HostsByPageFilters{}
 	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -533,7 +633,7 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 
 	// Get global hosts only.
 	subnetID := int64(0)
@@ -561,7 +661,7 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	require.NotNil(t, returned[0].Subnet)
 	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
 	require.ElementsMatch(t, returned[0].HostIdentifiers, hosts[0].HostIdentifiers)
-	require.ElementsMatch(t, returned[0].IPReservations, hosts[0].IPReservations)
+	require.ElementsMatch(t, returned[0].GetIPReservations(), hosts[0].GetIPReservations())
 
 	// Get hosts associated with subnet id 2.
 	subnetID = int64(2)
@@ -577,7 +677,7 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	require.NotNil(t, returned[0].Subnet)
 	require.Equal(t, "2001:db8:1::/64", returned[0].Subnet.Prefix)
 	require.ElementsMatch(t, returned[0].HostIdentifiers, hosts[2].HostIdentifiers)
-	require.ElementsMatch(t, returned[0].IPReservations, hosts[2].IPReservations)
+	require.ElementsMatch(t, returned[0].GetIPReservations(), hosts[2].GetIPReservations())
 }
 
 // Test that hosts can be filtered by local subnet id.
@@ -586,8 +686,7 @@ func TestGetHostsByPageLocalSubnetID(t *testing.T) {
 	defer teardown()
 
 	// Insert apps and hosts into the database.
-	apps := addTestSubnetApps(t, db)
-	addTestHosts(t, db)
+	apps, _ := addTestHosts(t, db)
 
 	subnets, err := GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
@@ -654,17 +753,7 @@ func TestGetHostsByPageApp(t *testing.T) {
 
 	// Insert apps and hosts into the database.
 	apps := addTestSubnetApps(t, db)
-	hosts := addTestHosts(t, db)
-
-	// Associate the first host with the first app.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
+	_, hosts := addTestHosts(t, db)
 
 	// Get global hosts only.
 	filters := HostsByPageFilters{
@@ -686,7 +775,7 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 
 	filterText := "0.2.4"
 	filters := HostsByPageFilters{
@@ -817,7 +906,7 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two global and two non-global.
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 
 	// find only global hosts
 	filters := HostsByPageFilters{
@@ -915,7 +1004,7 @@ func TestGetHostsByPageNoConflictsOrDuplicates(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_ = addTestHosts(t, db)
+	_, _ = addTestHosts(t, db)
 
 	filters := HostsByPageFilters{
 		DHCPDataConflict:  storkutil.Ptr(true),
@@ -942,12 +1031,8 @@ func TestGetHostsByPageDuplicate(t *testing.T) {
 		DHCPDataDuplicate: storkutil.Ptr(true),
 	}
 
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 	host := hosts[0]
-	daemon, _, _ := addTestDaemons(db)
-
-	_ = AddDaemonToHost(db, &host, daemon.ID, HostDataSourceAPI)
-	_ = AddDaemonToHost(db, &host, daemon.ID, HostDataSourceConfig)
 
 	// Act
 	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -970,7 +1055,7 @@ func TestGetHostsByPageConflict(t *testing.T) {
 		DHCPDataConflict: storkutil.Ptr(true),
 	}
 
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 	host := hosts[0]
 	daemon, _, _ := addTestDaemons(db)
 
@@ -1057,7 +1142,7 @@ func TestGetHostsByPageConflict(t *testing.T) {
 
 		_, _ = DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
 		host.LocalHosts = localHosts
-		_ = AddHostLocalHosts(db, &host)
+		_ = AddHostWithReferences(db, &host)
 
 		t.Run(label, func(t *testing.T) {
 			// Act
@@ -1084,31 +1169,14 @@ func TestGetHostsByPageConflictAndDuplicate(t *testing.T) {
 		DHCPDataDuplicate: storkutil.Ptr(true),
 	}
 
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 	host0 := hosts[0]
-	daemon, _, _ := addTestDaemons(db)
-
-	// Duplicates
-	_ = AddDaemonToHost(db, &host0, daemon.ID, HostDataSourceAPI)
-	_ = AddDaemonToHost(db, &host0, daemon.ID, HostDataSourceConfig)
 
 	// Conflicts
 	host1 := hosts[1]
-	host1.LocalHosts = []LocalHost{
-		{
-			HostID:       host1.ID,
-			DaemonID:     daemon.ID,
-			DataSource:   HostDataSourceAPI,
-			BootFileName: "foo",
-		},
-		{
-			HostID:       host1.ID,
-			DaemonID:     daemon.ID,
-			DataSource:   HostDataSourceConfig,
-			BootFileName: "bar",
-		},
-	}
-	_ = AddHostLocalHosts(db, &host1)
+	host1.LocalHosts[0].BootFileName = "foo"
+	host1.LocalHosts[1].BootFileName = "bar"
+	_ = UpdateHostWithReferences(db, &host1)
 
 	// Act
 	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -1128,13 +1196,11 @@ func TestGetHostsByPageConflictDuplicateCombinations(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 	hostDuplicate := hosts[0]
 	daemon, _, _ := addTestDaemons(db)
 
-	// Duplicates
-	_ = AddDaemonToHost(db, &hostDuplicate, daemon.ID, HostDataSourceAPI)
-	_ = AddDaemonToHost(db, &hostDuplicate, daemon.ID, HostDataSourceConfig)
+	// Duplicates - the host 0 represents a duplicated host.
 
 	// Conflicts
 	hostConflict := hosts[1]
@@ -1152,7 +1218,7 @@ func TestGetHostsByPageConflictDuplicateCombinations(t *testing.T) {
 			BootFileName: "bar",
 		},
 	}
-	_ = AddHostLocalHosts(db, &hostConflict)
+	_ = AddHostWithReferences(db, &hostConflict)
 
 	// No conflict and no duplicate.
 	hostStandardIDs := make([]int64, len(hosts)-2)
@@ -1385,17 +1451,7 @@ func TestGetHostsByDaemonID(t *testing.T) {
 
 	// Insert apps and hosts into the database.
 	apps := addTestSubnetApps(t, db)
-	hosts := addTestHosts(t, db)
-
-	// Associate the first host with the first app.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
+	_, hosts := addTestHosts(t, db)
 
 	// Get hosts for the first daemon.
 	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceAPI)
@@ -1428,44 +1484,30 @@ func TestDeleteHost(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	host := &Host{
-		HostIdentifiers: []HostIdentifier{
-			{
-				Type:  "hw-address",
-				Value: []byte{1, 2, 3, 4, 5, 6},
-			},
-		},
-		IPReservations: []IPReservation{
-			{
-				Address: "192.0.2.4/32",
-			},
-		},
+	_, hosts := addTestHosts(t, db)
+
+	for _, host := range hosts {
+		err := DeleteHost(db, host.ID)
+		require.NoError(t, err)
 	}
-	err := AddHost(db, host)
-	require.NoError(t, err)
-	require.NotZero(t, host.ID)
 
-	err = DeleteHost(db, host.ID)
-	require.NoError(t, err)
-
-	returned, err := GetHost(db, host.ID)
+	returned, err := GetAllHosts(db, 0)
 	require.NoError(t, err)
 	require.Nil(t, returned)
 }
 
 // Test that a daemon can be associated with a host.
-func TestAddHostLocalHosts(t *testing.T) {
+func TestAddHostWithReferences(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Insert apps and hosts into the database.
-	apps := addTestSubnetApps(t, db)
-	hosts := addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
 
 	// Associate the first host with the first app.
 	host := hosts[0]
 	host.LocalHosts = append(host.LocalHosts, LocalHost{
-		DaemonID:       apps[0].Daemons[0].ID,
+		DaemonID:       host.LocalHosts[0].DaemonID,
 		DataSource:     HostDataSourceAPI,
 		NextServer:     "192.2.2.2",
 		ServerHostname: "my-server-hostname",
@@ -1482,7 +1524,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 			},
 		}, keaconfig.NewHasher()),
 	})
-	err := AddHostLocalHosts(db, &host)
+	err := AddHostWithReferences(db, &host)
 	require.NoError(t, err)
 
 	// Fetch the host from the database.
@@ -1494,7 +1536,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 	// associates daemon with the host.
 	require.Len(t, returned.LocalHosts, 1)
 	require.Equal(t, HostDataSourceAPI, returned.LocalHosts[0].DataSource)
-	require.EqualValues(t, apps[0].Daemons[0].ID, returned.LocalHosts[0].DaemonID)
+	require.EqualValues(t, host.LocalHosts[0].DaemonID, returned.LocalHosts[0].DaemonID)
 	// When fetching one selected host the daemon and app information should
 	// be also returned.
 	require.NotNil(t, returned.LocalHosts[0].Daemon)
@@ -1506,7 +1548,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 	require.Len(t, returnedList, 4)
 	require.Len(t, returnedList[0].LocalHosts, 1)
 	require.Equal(t, HostDataSourceAPI, returnedList[0].LocalHosts[0].DataSource)
-	require.EqualValues(t, apps[0].Daemons[0].ID, returnedList[0].LocalHosts[0].DaemonID)
+	require.EqualValues(t, host.LocalHosts[0].DaemonID, returnedList[0].LocalHosts[0].DaemonID)
 	// When fetching all hosts, the detailed daemon information should not be returned.
 	require.Nil(t, returnedList[0].LocalHosts[0].Daemon)
 
@@ -1521,7 +1563,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 	require.Len(t, returnedList, 1)
 	require.Len(t, returnedList[0].LocalHosts, 1)
 	require.Equal(t, HostDataSourceAPI, returnedList[0].LocalHosts[0].DataSource)
-	require.EqualValues(t, apps[0].Daemons[0].ID, returnedList[0].LocalHosts[0].DaemonID)
+	require.EqualValues(t, host.LocalHosts[0].DaemonID, returnedList[0].LocalHosts[0].DaemonID)
 
 	// When fetching all hosts, the detailed app and daemon information
 	// should be returned as well.
@@ -1546,7 +1588,7 @@ func TestAddHostLocalHosts(t *testing.T) {
 }
 
 // Test that the host and its local host can be added within a single transaction.
-func TestAddHostWithReferences(t *testing.T) {
+func TestAddHostWithReferences2(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1559,9 +1601,9 @@ func TestAddHostWithReferences(t *testing.T) {
 				Value: []byte{1, 1, 1, 1, 1, 1},
 			},
 		},
-		Hostname: "foo.example.org",
 		LocalHosts: []LocalHost{
 			{
+				Hostname:   "foo.example.org",
 				DaemonID:   apps[0].Daemons[0].ID,
 				DataSource: HostDataSourceAPI,
 				NextServer: "192.0.2.1",
@@ -1575,7 +1617,7 @@ func TestAddHostWithReferences(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 
-	require.Equal(t, "foo.example.org", returned.Hostname)
+	require.Equal(t, "foo.example.org", returned.GetHostname())
 	require.Len(t, returned.LocalHosts, 1)
 	require.EqualValues(t, apps[0].Daemons[0].ID, returned.LocalHosts[0].DaemonID)
 	require.Equal(t, HostDataSourceAPI, returned.LocalHosts[0].DataSource)
@@ -1588,23 +1630,11 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	defer teardown()
 
 	// Insert apps and hosts into the database.
-	apps := addTestSubnetApps(t, db)
-	hosts := addTestHosts(t, db)
-
-	// Associate the first app with two hosts.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
-
-	// Associate the second app with another host.
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
+	apps, _ := addTestHosts(t, db)
 
 	// Removing associations with non-matching data source should
 	// affect no hosts.
-	count, err := DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, HostDataSourceConfig)
+	count, err := DeleteDaemonFromHosts(db, 404, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.Zero(t, count)
 
@@ -1638,13 +1668,7 @@ func TestDeleteOrphanedHosts(t *testing.T) {
 	defer teardown()
 
 	// Insert apps and hosts into the database.
-	apps := addTestSubnetApps(t, db)
-	hosts := addTestHosts(t, db)
-
-	// Associate one of the hosts with one of the daemons. The
-	// other two hosts are orphaned.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, HostDataSourceAPI)
-	require.NoError(t, err)
+	_, hosts := addTestHosts(t, db)
 
 	// Delete hosts not assigned to any apps.
 	count, err := DeleteOrphanedHosts(db)
@@ -1671,12 +1695,16 @@ func TestHasIPAddress(t *testing.T) {
 				Value: []byte{1, 2, 3, 4},
 			},
 		},
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				Address: "192.0.2.4/32",
-			},
-			{
-				Address: "192.0.2.5/32",
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.4/32",
+					},
+					{
+						Address: "192.0.2.5/32",
+					},
+				},
 			},
 		},
 	}
@@ -1700,12 +1728,16 @@ func TestHasIdentifier(t *testing.T) {
 				Value: []byte{1, 2, 3, 4},
 			},
 		},
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				Address: "192.0.2.4/32",
-			},
-			{
-				Address: "192.0.2.5/32",
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.4/32",
+					},
+					{
+						Address: "192.0.2.5/32",
+					},
+				},
 			},
 		},
 	}
@@ -1745,12 +1777,16 @@ func TestSameHosts(t *testing.T) {
 				Value: []byte{1, 2, 3, 4},
 			},
 		},
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				Address: "192.0.2.4/32",
-			},
-			{
-				Address: "192.0.2.5/32",
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.4/32",
+					},
+					{
+						Address: "192.0.2.5/32",
+					},
+				},
 			},
 		},
 	}
@@ -1766,12 +1802,16 @@ func TestSameHosts(t *testing.T) {
 				Value: []byte{1, 2, 3, 4, 5, 6},
 			},
 		},
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				Address: "192.0.2.5/32",
-			},
-			{
-				Address: "192.0.2.4/32",
+				IPReservations: []IPReservation{
+					{
+						Address: "192.0.2.5/32",
+					},
+					{
+						Address: "192.0.2.4/32",
+					},
+				},
 			},
 		},
 	}
@@ -1785,7 +1825,7 @@ func TestSameHosts(t *testing.T) {
 		Type:  "client-id",
 		Value: []byte{1, 1, 1, 1},
 	})
-	host1.IPReservations = append(host1.IPReservations, IPReservation{
+	host1.LocalHosts[0].IPReservations = append(host1.LocalHosts[0].IPReservations, IPReservation{
 		Address: "192.0.2.6",
 	})
 
@@ -1795,7 +1835,10 @@ func TestSameHosts(t *testing.T) {
 	require.False(t, host2.HasEqualIPReservations(&host1))
 
 	host1 = host2
-	host1.Hostname = "foobar"
+	for i := range host1.LocalHosts {
+		host1.LocalHosts[i].Hostname = "foobar"
+	}
+
 	require.False(t, host1.IsSame(&host2))
 	require.False(t, host2.IsSame(&host1))
 }
@@ -1825,15 +1868,15 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 					Value: []byte{1, 2, 3, 4, 5, 6},
 				},
 			},
-			IPReservations: []IPReservation{
-				{
-					Address: "192.0.2.56",
-				},
-			},
 			LocalHosts: []LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[0].ID,
 					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.56",
+						},
+					},
 				},
 			},
 		},
@@ -1844,13 +1887,13 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 					Value: []byte{1, 2, 3, 4},
 				},
 			},
-			IPReservations: []IPReservation{
-				{
-					Address: "192.0.2.156",
-				},
-			},
 			LocalHosts: []LocalHost{
 				{
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.156",
+						},
+					},
 					DaemonID:   apps[0].Daemons[0].ID,
 					DataSource: HostDataSourceAPI,
 				},
@@ -1961,19 +2004,25 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	host := &Host{
 		CreatedAt: time.Now(),
 		SubnetID:  subnetIPv4.ID,
-		Hostname:  "foo",
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				// In pool
-				Address: "192.0.2.5",
-			},
-			{
-				// In pool
-				Address: "192.0.2.10",
-			},
-			{
-				// Out of pool
-				Address: "192.0.2.15",
+				DaemonID:   apps[0].Daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				Hostname:   "foo",
+				IPReservations: []IPReservation{
+					{
+						// In pool
+						Address: "192.0.2.5",
+					},
+					{
+						// In pool
+						Address: "192.0.2.10",
+					},
+					{
+						// Out of pool
+						Address: "192.0.2.15",
+					},
+				},
 			},
 		},
 	}
@@ -1982,19 +2031,25 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	host = &Host{
 		CreatedAt: time.Now(),
 		SubnetID:  subnetIPv4.ID,
-		Hostname:  "bar",
-		IPReservations: []IPReservation{
+		LocalHosts: []LocalHost{
 			{
-				// In pool
-				Address: "192.0.2.21",
-			},
-			{
-				// In pool
-				Address: "192.0.2.25",
-			},
-			{
-				// Out of pool
-				Address: "192.0.2.40",
+				DaemonID:   apps[0].Daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				Hostname:   "bar",
+				IPReservations: []IPReservation{
+					{
+						// In pool
+						Address: "192.0.2.21",
+					},
+					{
+						// In pool
+						Address: "192.0.2.25",
+					},
+					{
+						// Out of pool
+						Address: "192.0.2.40",
+					},
+				},
 			},
 		},
 	}
@@ -2037,50 +2092,56 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	host = &Host{
 		CreatedAt: time.Now(),
 		SubnetID:  subnetIPv6.ID,
-		Hostname:  "baz",
-		IPReservations: []IPReservation{
-			// Addresses
+		LocalHosts: []LocalHost{
 			{
-				// In pool
-				Address: "fe80::5",
-			},
-			{
-				// In pool
-				Address: "fe80::10",
-			},
-			{
-				// Out of pool
-				Address: "fe80::15",
-			},
-			// Prefixes
-			{
-				// Out of pool - different prefix
-				Address: "3001:3::/96",
-			},
-			{
-				// Out of pool - prefix contains the pool prefix
-				Address: "3001::/16",
-			},
-			{
-				// Out of pool - mask length less than the length of the pool prefix
-				Address: "3001:1::/32",
-			},
-			{
-				// Out of pool - mask length between the length of the pool prefix and
-				// the delegation length
-				Address: "3001:1::/58",
-			},
-			{
-				// Out of prefix pool, but in the subnet
-				Address: "fe80::/80",
-			},
-			{
-				// In pool, mask length equals to the delegation length
-				Address: "3001:1:0:10::/64",
-			},
-			{
-				// In pool, mask length greater than the delegation length
-				Address: "3001:1:0:10:20::/80",
+				DaemonID:   apps[0].Daemons[1].ID,
+				DataSource: HostDataSourceConfig,
+				Hostname:   "baz",
+				IPReservations: []IPReservation{
+					// Addresses
+					{
+						// In pool
+						Address: "fe80::5",
+					},
+					{
+						// In pool
+						Address: "fe80::10",
+					},
+					{
+						// Out of pool
+						Address: "fe80::15",
+					},
+					// Prefixes
+					{
+						// Out of pool - different prefix
+						Address: "3001:3::/96",
+					},
+					{
+						// Out of pool - prefix contains the pool prefix
+						Address: "3001::/16",
+					},
+					{
+						// Out of pool - mask length less than the length of the pool prefix
+						Address: "3001:1::/32",
+					},
+					{
+						// Out of pool - mask length between the length of the pool prefix and
+						// the delegation length
+						Address: "3001:1::/58",
+					},
+					{
+						// Out of prefix pool, but in the subnet
+						Address: "fe80::/80",
+					},
+					{
+						// In pool, mask length equals to the delegation length
+						Address: "3001:1:0:10::/64",
+					},
+					{
+						// In pool, mask length greater than the delegation length
+						Address: "3001:1:0:10:20::/80",
+					},
+				},
 			},
 		},
 	}
@@ -2090,36 +2151,49 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	host = &Host{
 		CreatedAt: time.Now(),
 		SubnetID:  0,
-		Hostname:  "biz",
-		IPReservations: []IPReservation{
-			// Addresses
+		LocalHosts: []LocalHost{
 			{
-				Address: "10.42.0.1",
+				DaemonID:   apps[0].Daemons[0].ID,
+				DataSource: HostDataSourceAPI,
+				Hostname:   "biz",
+				IPReservations: []IPReservation{
+					{
+						Address: "10.42.0.1",
+					},
+					{
+						Address: "10.42.0.2",
+					},
+					{
+						Address: "10.42.0.3",
+					},
+				},
 			},
 			{
-				Address: "10.42.0.2",
-			},
-			{
-				Address: "10.42.0.3",
-			},
-			{
-				Address: "EC::1",
-			},
-			{
-				Address: "EC::2",
-			},
-			// Prefixes
-			{
-				Address: "DD:1::/64",
-			},
-			{
-				Address: "DD:2::/64",
-			},
-			{
-				Address: "DD:3::/64",
-			},
-			{
-				Address: "DD:4::/64",
+				DaemonID:   apps[0].Daemons[1].ID,
+				DataSource: HostDataSourceConfig,
+				Hostname:   "biz",
+				IPReservations: []IPReservation{
+					// Addresses
+					{
+						Address: "EC::1",
+					},
+					{
+						Address: "EC::2",
+					},
+					// Prefixes
+					{
+						Address: "DD:1::/64",
+					},
+					{
+						Address: "DD:2::/64",
+					},
+					{
+						Address: "DD:3::/64",
+					},
+					{
+						Address: "DD:4::/64",
+					},
+				},
 			},
 		},
 	}
@@ -2540,10 +2614,18 @@ func TestDeleteDaemonsFromHostConfigDataSource(t *testing.T) {
 
 	host := &Host{
 		SubnetID: 0,
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceConfig,
+			},
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceAPI,
+			},
+		},
 	}
 	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)
@@ -2608,10 +2690,18 @@ func TestDeleteDaemonsFromHostAllDataSource(t *testing.T) {
 
 	host := &Host{
 		SubnetID: 0,
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceConfig,
+			},
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceAPI,
+			},
+		},
 	}
 	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)
@@ -2637,10 +2727,18 @@ func TestDeleteDaemonsFromHostError(t *testing.T) {
 
 	host := &Host{
 		SubnetID: 0,
+		LocalHosts: []LocalHost{
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceConfig,
+			},
+			{
+				DaemonID:   daemon.ID,
+				DataSource: HostDataSourceAPI,
+			},
+		},
 	}
 	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)
@@ -2653,151 +2751,4 @@ func TestDeleteDaemonsFromHostError(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	require.Zero(t, count)
-}
-
-// Test that the fetching local hosts for a given host ID and config data
-// source works properly.
-func TestGetLocalHostsConfigDataSource(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	daemon, _, _ := addTestDaemons(db)
-
-	host := &Host{
-		SubnetID: 0,
-	}
-	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
-
-	// Act
-	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceConfig)
-
-	// Assert
-	require.NoError(t, err)
-	require.Len(t, localHosts, 1)
-	require.EqualValues(t, HostDataSourceConfig, localHosts[0].DataSource)
-}
-
-// Test that the fetching local hosts for a given host ID and API data source
-// works properly.
-func TestGetLocalHostsAPIDataSource(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	daemon, _, _ := addTestDaemons(db)
-
-	host := &Host{
-		SubnetID: 0,
-	}
-	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
-
-	// Act
-	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceAPI)
-
-	// Assert
-	require.NoError(t, err)
-	require.Len(t, localHosts, 1)
-	require.EqualValues(t, HostDataSourceAPI, localHosts[0].DataSource)
-}
-
-// Test that the fetching local hosts for a given host ID and all data sources
-// works properly.
-func TestGetLocalHostsAllDataSources(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	daemon, _, _ := addTestDaemons(db)
-
-	host := &Host{
-		SubnetID: 0,
-	}
-	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
-
-	// Act
-	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceUnspecified)
-
-	// Assert
-	require.NoError(t, err)
-	require.Len(t, localHosts, 2)
-	dataSources := []HostDataSource{localHosts[0].DataSource, localHosts[1].DataSource}
-	require.Contains(t, dataSources, HostDataSourceConfig)
-	require.Contains(t, dataSources, HostDataSourceAPI)
-}
-
-// Test that the no local hosts and no error are returned for an unknown host
-// ID and any data source works properly.
-func TestGetLocalHostsUnknownHost(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	daemon, _, _ := addTestDaemons(db)
-
-	host := &Host{
-		SubnetID: 0,
-	}
-	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
-
-	t.Run("config", func(t *testing.T) {
-		// Act
-		localHosts, err := GetLocalHosts(db, 42, HostDataSourceConfig)
-
-		// Assert
-		require.NoError(t, err)
-		require.Len(t, localHosts, 0)
-	})
-
-	t.Run("api", func(t *testing.T) {
-		// Act
-		localHosts, err := GetLocalHosts(db, 42, HostDataSourceAPI)
-
-		// Assert
-		require.NoError(t, err)
-		require.Len(t, localHosts, 0)
-	})
-
-	t.Run("all", func(t *testing.T) {
-		// Act
-		localHosts, err := GetLocalHosts(db, 42, HostDataSourceUnspecified)
-
-		// Assert
-		require.NoError(t, err)
-		require.Len(t, localHosts, 0)
-	})
-}
-
-// Test that the fetching local hosts for an unavailable database causes an
-// error.
-func TestGetLocalHostsError(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	daemon, _, _ := addTestDaemons(db)
-
-	host := &Host{
-		SubnetID: 0,
-	}
-	_ = AddHost(db, host)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceConfig)
-	_ = AddDaemonToHost(db, host, daemon.ID, HostDataSourceAPI)
-
-	teardown()
-
-	// Act
-	localHosts, err := GetLocalHosts(db, host.ID, HostDataSourceAPI)
-
-	// Assert
-	require.Error(t, err)
-	require.Nil(t, localHosts)
 }

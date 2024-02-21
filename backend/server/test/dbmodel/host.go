@@ -188,7 +188,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[0].ID,
-					DataSource: dbmodel.HostDataSourceAPI,
+					DataSource: dbmodel.HostDataSourceConfig,
 					IPReservations: []dbmodel.IPReservation{
 						{
 							Address: "192.0.2.6",
@@ -223,7 +223,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[1].ID,
-					DataSource: dbmodel.HostDataSourceAPI,
+					DataSource: dbmodel.HostDataSourceConfig,
 					IPReservations: []dbmodel.IPReservation{
 						{
 							Address: "2001:db8:1::1",
@@ -251,7 +251,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[1].ID,
-					DataSource: dbmodel.HostDataSourceAPI,
+					DataSource: dbmodel.HostDataSourceConfig,
 					IPReservations: []dbmodel.IPReservation{
 						{
 							Address: "2001:db8:1::2",
@@ -279,7 +279,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			LocalHosts: []dbmodel.LocalHost{
 				{
 					DaemonID:   apps[0].Daemons[1].ID,
-					DataSource: dbmodel.HostDataSourceAPI,
+					DataSource: dbmodel.HostDataSourceConfig,
 					ClientClasses: []string{
 						"foo",
 						"bar",
