@@ -142,7 +142,8 @@ func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) (*Machine, []*App) 
 //   - 1 reserved IPv6 address
 //   - No reserved hostname
 //   - Associated with the single daemon
-//   - The config is duplicated in the API and JSON configuration.
+//   - The config is duplicated in the API and JSON configuration with
+//     conflicted DHCP data.
 func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 	_, apps := addMachineAppDaemonsAndSubnets(t, db)
 
@@ -257,8 +258,11 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 					},
 				},
 				{
-					DaemonID:   apps[1].Daemons[1].ID,
-					DataSource: HostDataSourceConfig,
+					DaemonID:       apps[1].Daemons[1].ID,
+					DataSource:     HostDataSourceConfig,
+					NextServer:     "conflict",
+					ServerHostname: "conflict",
+					BootFileName:   "conflict",
 					IPReservations: []IPReservation{
 						{
 							Address: "2001:db8:1::2/128",
@@ -1010,15 +1014,8 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
 
-	for i := range returned {
-		for j := range returned[i].LocalHosts {
-			// Ignore the nested references for the comparison.
-			returned[i].LocalHosts[j].Daemon = nil
-		}
-	}
-
-	require.Contains(t, returned, hosts[1])
-	require.Contains(t, returned, hosts[3])
+	hostsContain(t, returned, hosts[1])
+	hostsContain(t, returned, hosts[3])
 
 	// find only non-global hosts
 	filters = HostsByPageFilters{
@@ -1098,7 +1095,9 @@ func TestGetHostsByPageNoConflictsOrDuplicates(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, _ = addTestHosts(t, db)
+	_, hosts := addTestHosts(t, db)
+	_ = DeleteHost(db, hosts[2].ID)
+	_ = DeleteHost(db, hosts[3].ID)
 
 	filters := HostsByPageFilters{
 		DHCPDataConflict:  storkutil.Ptr(true),
@@ -1126,12 +1125,7 @@ func TestGetHostsByPageDuplicate(t *testing.T) {
 	}
 
 	_, hosts := addTestHosts(t, db)
-	host := hosts[1]
-	duplicate := host.LocalHosts[0]
-	duplicate.ID = 0
-	duplicate.DataSource = HostDataSourceConfig
-	host.LocalHosts = append(host.LocalHosts, duplicate)
-	_ = UpdateHostWithReferences(db, &host)
+	host := hosts[2]
 
 	// Act
 	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -1155,15 +1149,15 @@ func TestGetHostsByPageConflict(t *testing.T) {
 	}
 
 	_, hosts := addTestHosts(t, db)
-	host := hosts[0]
-	daemon, _, _ := addTestDaemons(db)
+	host := hosts[3]
+	daemonID := host.LocalHosts[0].DaemonID
 
 	hasher := keaconfig.NewHasher()
 	testCases := map[string][]LocalHost{
 		"DHCP options": {
 			{
 				HostID:     host.ID,
-				DaemonID:   daemon.ID,
+				DaemonID:   daemonID,
 				DataSource: HostDataSourceAPI,
 				DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{{
 					Code: 42,
@@ -1171,7 +1165,7 @@ func TestGetHostsByPageConflict(t *testing.T) {
 			},
 			{
 				HostID:     host.ID,
-				DaemonID:   daemon.ID,
+				DaemonID:   daemonID,
 				DataSource: HostDataSourceConfig,
 				DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{{
 					Code: 24,
@@ -1181,13 +1175,13 @@ func TestGetHostsByPageConflict(t *testing.T) {
 		"Client classes": {
 			{
 				HostID:        host.ID,
-				DaemonID:      daemon.ID,
+				DaemonID:      daemonID,
 				DataSource:    HostDataSourceAPI,
 				ClientClasses: []string{"foo", "bar"},
 			},
 			{
 				HostID:        host.ID,
-				DaemonID:      daemon.ID,
+				DaemonID:      daemonID,
 				DataSource:    HostDataSourceConfig,
 				ClientClasses: []string{"foo", "baz"},
 			},
@@ -1195,13 +1189,13 @@ func TestGetHostsByPageConflict(t *testing.T) {
 		"Boot filename": {
 			{
 				HostID:       host.ID,
-				DaemonID:     daemon.ID,
+				DaemonID:     daemonID,
 				DataSource:   HostDataSourceAPI,
 				BootFileName: "foo",
 			},
 			{
 				HostID:       host.ID,
-				DaemonID:     daemon.ID,
+				DaemonID:     daemonID,
 				DataSource:   HostDataSourceConfig,
 				BootFileName: "bar",
 			},
@@ -1209,13 +1203,13 @@ func TestGetHostsByPageConflict(t *testing.T) {
 		"Next server": {
 			{
 				HostID:     host.ID,
-				DaemonID:   daemon.ID,
+				DaemonID:   daemonID,
 				DataSource: HostDataSourceAPI,
 				NextServer: "foo",
 			},
 			{
 				HostID:     host.ID,
-				DaemonID:   daemon.ID,
+				DaemonID:   daemonID,
 				DataSource: HostDataSourceConfig,
 				NextServer: "bar",
 			},
@@ -1223,13 +1217,13 @@ func TestGetHostsByPageConflict(t *testing.T) {
 		"Server hostname": {
 			{
 				HostID:         host.ID,
-				DaemonID:       daemon.ID,
+				DaemonID:       daemonID,
 				DataSource:     HostDataSourceAPI,
 				ServerHostname: "foo",
 			},
 			{
 				HostID:         host.ID,
-				DaemonID:       daemon.ID,
+				DaemonID:       daemonID,
 				DataSource:     HostDataSourceConfig,
 				ServerHostname: "bar",
 			},
@@ -1237,13 +1231,13 @@ func TestGetHostsByPageConflict(t *testing.T) {
 		"Hostname": {
 			{
 				HostID:     host.ID,
-				DaemonID:   daemon.ID,
+				DaemonID:   daemonID,
 				DataSource: HostDataSourceAPI,
 				Hostname:   "foo",
 			},
 			{
 				HostID:     host.ID,
-				DaemonID:   daemon.ID,
+				DaemonID:   daemonID,
 				DataSource: HostDataSourceConfig,
 				Hostname:   "bar",
 			},
@@ -1311,32 +1305,16 @@ func TestGetHostsByPageConflictDuplicateCombinations(t *testing.T) {
 	defer teardown()
 
 	_, hosts := addTestHosts(t, db)
-	hostDuplicate := hosts[0]
-	daemon, _, _ := addTestDaemons(db)
 
-	// Duplicates - the host 0 represents a duplicated host.
+	// Duplicates
+	hostDuplicate := hosts[2]
 
 	// Conflicts
-	hostConflict := hosts[1]
-	hostConflict.LocalHosts = []LocalHost{
-		{
-			HostID:       hostConflict.ID,
-			DaemonID:     daemon.ID,
-			DataSource:   HostDataSourceAPI,
-			BootFileName: "foo",
-		},
-		{
-			HostID:       hostConflict.ID,
-			DaemonID:     daemon.ID,
-			DataSource:   HostDataSourceConfig,
-			BootFileName: "bar",
-		},
-	}
-	_ = AddHostWithReferences(db, &hostConflict)
+	hostConflict := hosts[3]
 
 	// No conflict and no duplicate.
 	hostStandardIDs := make([]int64, len(hosts)-2)
-	for i, host := range hosts[2:] {
+	for i, host := range hosts[:2] {
 		hostStandardIDs[i] = host.ID
 	}
 
@@ -1564,11 +1542,22 @@ func TestGetHostsByDaemonID(t *testing.T) {
 	defer teardown()
 
 	// Insert apps and hosts into the database.
-	apps := addTestSubnetApps(t, db)
-	_, hosts := addTestHosts(t, db)
+	apps, hosts := addTestHosts(t, db)
+
+	hosts[1].LocalHosts = append(hosts[1].LocalHosts, LocalHost{
+		DaemonID:   apps[0].Daemons[0].ID,
+		DataSource: HostDataSourceConfig,
+	})
+	_ = UpdateHostWithReferences(db, &hosts[1])
+
+	hosts[2].LocalHosts = append(hosts[2].LocalHosts, LocalHost{
+		DaemonID:   apps[1].Daemons[0].ID,
+		DataSource: HostDataSourceConfig,
+	})
+	_ = UpdateHostWithReferences(db, &hosts[2])
 
 	// Get hosts for the first daemon.
-	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceAPI)
+	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceConfig)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
@@ -1582,11 +1571,11 @@ func TestGetHostsByDaemonID(t *testing.T) {
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
 	require.True(t,
-		(returned[0].ID == hosts[2].ID && returned[1].ID == hosts[3].ID) ||
-			(returned[0].ID == hosts[3].ID && returned[1].ID == hosts[2].ID))
+		(returned[0].ID == hosts[2].ID && returned[1].ID == hosts[1].ID) ||
+			(returned[0].ID == hosts[1].ID && returned[1].ID == hosts[2].ID))
 
 	// Use filtering by data source. It should return no hosts.
-	returned, total, err = GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceConfig)
+	returned, total, err = GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceAPI)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, returned)
@@ -1620,25 +1609,36 @@ func TestAddHostWithReferences(t *testing.T) {
 
 	// Associate the first host with the first app.
 	host := hosts[0]
-	host.LocalHosts = append(host.LocalHosts, LocalHost{
-		DaemonID:       host.LocalHosts[0].DaemonID,
-		DataSource:     HostDataSourceAPI,
-		NextServer:     "192.2.2.2",
-		ServerHostname: "my-server-hostname",
-		BootFileName:   "/tmp/bootfile",
-		ClientClasses: []string{
-			"foo",
-			"bar",
-		},
-		DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{
-			{
-				Code:  254,
-				Name:  "foo",
-				Space: dhcpmodel.DHCPv4OptionSpace,
+	host.LocalHosts = []LocalHost{
+		{
+			DaemonID:       host.LocalHosts[0].DaemonID,
+			DataSource:     HostDataSourceAPI,
+			NextServer:     "192.2.2.2",
+			ServerHostname: "my-server-hostname",
+			BootFileName:   "/tmp/bootfile",
+			ClientClasses: []string{
+				"foo",
+				"bar",
 			},
-		}, keaconfig.NewHasher()),
-	})
-	err := AddHostWithReferences(db, &host)
+			DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{
+				{
+					Code:  254,
+					Name:  "foo",
+					Space: dhcpmodel.DHCPv4OptionSpace,
+				},
+			}, keaconfig.NewHasher()),
+			IPReservations: []IPReservation{
+				{
+					Address: "192.0.2.4/32",
+				},
+				{
+					Address: "192.0.2.5/32",
+				},
+			},
+			Hostname: "first.example.org",
+		},
+	}
+	err := UpdateHostWithReferences(db, &host)
 	require.NoError(t, err)
 
 	// Fetch the host from the database.
@@ -1744,7 +1744,18 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	defer teardown()
 
 	// Insert apps and hosts into the database.
-	apps, _ := addTestHosts(t, db)
+	apps, hosts := addTestHosts(t, db)
+	hosts[0].LocalHosts = append(hosts[0].LocalHosts, LocalHost{
+		DaemonID:   apps[0].Daemons[0].ID,
+		DataSource: HostDataSourceAPI,
+	})
+	_ = UpdateHostWithReferences(db, &hosts[0])
+
+	hosts[1].LocalHosts = append(hosts[1].LocalHosts, LocalHost{
+		DaemonID:   apps[0].Daemons[0].ID,
+		DataSource: HostDataSourceAPI,
+	})
+	_ = UpdateHostWithReferences(db, &hosts[1])
 
 	// Removing associations with non-matching data source should
 	// affect no hosts.
@@ -1753,7 +1764,11 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	require.Zero(t, count)
 
 	// Remove associations of the first app.
-	count, err = DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, HostDataSourceAPI)
+	count, err = DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, HostDataSourceUnspecified)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, count)
+
+	count, err = DeleteDaemonFromHosts(db, apps[0].Daemons[1].ID, HostDataSourceUnspecified)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, count)
 
@@ -1772,8 +1787,8 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	}
 	returned, count, err = GetHostsByPage(db, 0, 1000, filters, "", SortDirAny)
 	require.NoError(t, err)
-	require.EqualValues(t, 1, count)
-	require.Len(t, returned, 1)
+	require.EqualValues(t, 2, count)
+	require.Len(t, returned, 2)
 }
 
 // Test deleting hosts not assigned to any apps.
@@ -1783,6 +1798,11 @@ func TestDeleteOrphanedHosts(t *testing.T) {
 
 	// Insert apps and hosts into the database.
 	_, hosts := addTestHosts(t, db)
+	_, _ = DeleteDaemonsFromHost(db, hosts[0].ID, HostDataSourceUnspecified)
+	_, _ = DeleteDaemonsFromHost(db, hosts[1].ID, HostDataSourceUnspecified)
+	_, _ = DeleteDaemonsFromHost(db, hosts[2].ID, HostDataSourceUnspecified)
+	// Deletes only one of two data sources.
+	_, _ = DeleteDaemonsFromHost(db, hosts[3].ID, HostDataSourceConfig)
 
 	// Delete hosts not assigned to any apps.
 	count, err := DeleteOrphanedHosts(db)
@@ -1790,7 +1810,7 @@ func TestDeleteOrphanedHosts(t *testing.T) {
 	require.EqualValues(t, len(hosts)-1, count)
 
 	// There should be one host left.
-	returned, err := GetAllHosts(db, 4)
+	returned, err := GetAllHosts(db, 0)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
 }
@@ -1948,7 +1968,10 @@ func TestSameHosts(t *testing.T) {
 	require.False(t, host1.HasEqualIPReservations(&host2))
 	require.False(t, host2.HasEqualIPReservations(&host1))
 
+	// Copy the host.
 	host1 = host2
+	host1.LocalHosts = []LocalHost{host2.LocalHosts[0]}
+
 	for i := range host1.LocalHosts {
 		host1.LocalHosts[i].Hostname = "foobar"
 	}

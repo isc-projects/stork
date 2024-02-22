@@ -279,7 +279,7 @@ func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 // Fetch all hosts having address reservations belonging to a specific family
 // or all reservations regardless of the family.
 func GetAllHosts(dbi dbops.DBI, family int) ([]Host, error) {
-	hosts := []Host{}
+	var hosts []Host
 	q := dbi.Model(&hosts).DistinctOn("id")
 
 	// Let's be liberal and allow other values than 0 too. The only special
@@ -495,12 +495,12 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 			DistinctOn("host_id").
 			Column("host_id").
 			ColumnExpr(`
-				max(dhcp_option_set_hash) IS DISTINCT FROM min(dhcp_option_set_hash)
-				OR max(client_classes) IS DISTINCT FROM min(client_classes)
-				OR max(next_server) IS DISTINCT FROM min(next_server)
-				OR max(server_hostname) IS DISTINCT FROM min(server_hostname)
-				OR max(boot_file_name) IS DISTINCT FROM min(boot_file_name)
-				OR max(hostname) IS DISTINCT FROM min(hostname)
+				   COUNT(DISTINCT COALESCE(dhcp_option_set_hash, '')) > 1
+				OR COUNT(DISTINCT COALESCE(client_classes, '{}')) > 1
+				OR COUNT(DISTINCT COALESCE(next_server, '')) > 1
+				OR COUNT(DISTINCT COALESCE(server_hostname, '')) > 1
+				OR COUNT(DISTINCT COALESCE(boot_file_name, '')) > 1
+				OR COUNT(DISTINCT COALESCE(hostname, '')) > 1
 				AS conflict`).
 			Group("host_id", "daemon_id").
 			Having("COUNT(*) > 1").
@@ -595,7 +595,9 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		Relation("LocalHosts.IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
-		Relation("LocalHosts").
+		Relation("LocalHosts", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("local_host.id ASC"), nil
+		}).
 		Relation("LocalHosts.Daemon.App").
 		Relation("LocalHosts.Daemon.App.Machine").
 		Relation("LocalHosts.Daemon.App.AccessPoints")
