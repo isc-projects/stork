@@ -673,7 +673,6 @@ func TestDetectNetworksRemoveOrphanedHosts(t *testing.T) {
 	require.Equal(t, "192.0.2.66/32", hosts[0].LocalHosts[0].IPReservations[0].Address)
 	require.Len(t, hosts[0].LocalHosts[1].IPReservations, 1)
 	require.Equal(t, "192.0.2.66/32", hosts[0].LocalHosts[1].IPReservations[0].Address)
-
 }
 
 // Utility shorthand alias.

@@ -54,7 +54,7 @@ func hostsMatch(t *testing.T, a, b []Host) {
 }
 
 // This function creates a machine, app and daemons for the testing purposes.
-func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) (*Machine, []*App) {
+func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) []*App {
 	machine := &Machine{
 		Address:   "cool.example.org",
 		AgentPort: 8080,
@@ -106,7 +106,7 @@ func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) (*Machine, []*App) 
 		subnets[i] = subnet
 	}
 
-	return machine, apps
+	return apps
 }
 
 // This function creates machine, app, daemons, subnets, and multiple hosts
@@ -145,7 +145,7 @@ func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) (*Machine, []*App) 
 //   - The config is duplicated in the API and JSON configuration with
 //     conflicted DHCP data.
 func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
-	_, apps := addMachineAppDaemonsAndSubnets(t, db)
+	apps := addMachineAppDaemonsAndSubnets(t, db)
 
 	hosts := []Host{
 		// Host 1
@@ -313,7 +313,7 @@ func TestAddHostWithReferences3(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := addMachineAppDaemonsAndSubnets(t, db)
+	apps := addMachineAppDaemonsAndSubnets(t, db)
 	daemons := apps[0].Daemons
 
 	// Add a host with two identifiers and two reservations.
@@ -380,7 +380,7 @@ func TestUpdateHostExtend(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := addMachineAppDaemonsAndSubnets(t, db)
+	apps := addMachineAppDaemonsAndSubnets(t, db)
 	daemons := apps[0].Daemons
 
 	// Add the host with two reservations and two identifiers.
@@ -462,7 +462,7 @@ func TestUpdateHostShrink(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := addMachineAppDaemonsAndSubnets(t, db)
+	apps := addMachineAppDaemonsAndSubnets(t, db)
 	daemons := apps[0].Daemons
 
 	host := &Host{
