@@ -54,7 +54,7 @@ func hostsMatch(t *testing.T, a, b []Host) {
 }
 
 // This function creates a machine, app and daemons for the testing purposes.
-func addMachineAppAndDaemons(t *testing.T, db *pg.DB) (*Machine, []*App) {
+func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) (*Machine, []*App) {
 	machine := &Machine{
 		Address:   "cool.example.org",
 		AgentPort: 8080,
@@ -69,13 +69,41 @@ func addMachineAppAndDaemons(t *testing.T, db *pg.DB) (*Machine, []*App) {
 			Type:      AppTypeKea,
 			Name:      fmt.Sprintf("kea-%d", i),
 			Daemons: []*Daemon{
-				NewKeaDaemon("dhcp4", true),
-				NewKeaDaemon("dhcp6", true),
+				{
+					Name: DaemonNameDHCPv4,
+					KeaDaemon: &KeaDaemon{
+						Config: getTestConfigWithIPv4Subnets(t),
+					},
+				},
+				{
+					Name: DaemonNameDHCPv6,
+					KeaDaemon: &KeaDaemon{
+						Config: getTestConfigWithIPv6Subnets(t),
+					},
+				},
 			},
 		}
 		_, err := AddApp(db, app)
 		require.NoError(t, err)
 		apps = append(apps, app)
+	}
+
+	subnets := []Subnet{
+		{
+			ID:     1,
+			Prefix: "192.0.2.0/24",
+		},
+		{
+			ID:     2,
+			Prefix: "2001:db8:1::/64",
+		},
+	}
+	for i, s := range subnets {
+		subnet := s
+		err := AddSubnet(db, &subnet)
+		require.NoError(t, err)
+		require.NotZero(t, subnet.ID)
+		subnets[i] = subnet
 	}
 
 	return machine, apps
@@ -106,6 +134,7 @@ func addMachineAppAndDaemons(t *testing.T, db *pg.DB) (*Machine, []*App) {
 //   - 1 reserved IPv6 address
 //   - Reserved hostname
 //   - Associated with the single daemon
+//   - The config is duplicated in the API and JSON configuration.
 //
 // - Host 4
 //   - Global reservation
@@ -113,26 +142,9 @@ func addMachineAppAndDaemons(t *testing.T, db *pg.DB) (*Machine, []*App) {
 //   - 1 reserved IPv6 address
 //   - No reserved hostname
 //   - Associated with the single daemon
+//   - The config is duplicated in the API and JSON configuration.
 func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
-	_, apps := addMachineAppAndDaemons(t, db)
-
-	subnets := []Subnet{
-		{
-			ID:     1,
-			Prefix: "192.0.2.0/24",
-		},
-		{
-			ID:     2,
-			Prefix: "2001:db8:1::/64",
-		},
-	}
-	for i, s := range subnets {
-		subnet := s
-		err := AddSubnet(db, &subnet)
-		require.NoError(t, err)
-		require.NotZero(t, subnet.ID)
-		subnets[i] = subnet
-	}
+	_, apps := addMachineAppDaemonsAndSubnets(t, db)
 
 	hosts := []Host{
 		// Host 1
@@ -211,6 +223,16 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 					},
 					Hostname: "second.example.org",
 				},
+				{
+					DaemonID:   apps[0].Daemons[1].ID,
+					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::1/128",
+						},
+					},
+					Hostname: "second.example.org",
+				},
 			},
 		},
 		{
@@ -228,6 +250,15 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 				{
 					DaemonID:   apps[1].Daemons[1].ID,
 					DataSource: HostDataSourceAPI,
+					IPReservations: []IPReservation{
+						{
+							Address: "2001:db8:1::2/128",
+						},
+					},
+				},
+				{
+					DaemonID:   apps[1].Daemons[1].ID,
+					DataSource: HostDataSourceConfig,
 					IPReservations: []IPReservation{
 						{
 							Address: "2001:db8:1::2/128",
@@ -278,7 +309,7 @@ func TestAddHostWithReferences3(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := addMachineAppAndDaemons(t, db)
+	_, apps := addMachineAppDaemonsAndSubnets(t, db)
 	daemons := apps[0].Daemons
 
 	// Add a host with two identifiers and two reservations.
@@ -300,7 +331,7 @@ func TestAddHostWithReferences3(t *testing.T) {
 				Hostname:   "host.example.org",
 				IPReservations: []IPReservation{
 					{
-						Address: "192.0.2.4",
+						Address: "192.0.2.4/32",
 					},
 				},
 			},
@@ -310,7 +341,7 @@ func TestAddHostWithReferences3(t *testing.T) {
 				Hostname:   "host.example.org",
 				IPReservations: []IPReservation{
 					{
-						Address: "2001:db8:1::4",
+						Address: "2001:db8:1::4/128",
 					},
 				},
 			},
@@ -336,7 +367,7 @@ func TestAddHostWithReferences3(t *testing.T) {
 	}
 
 	// Make sure that the returned reservations match.
-	require.Equal(t, host.GetIPReservations(), returned.GetIPReservations())
+	require.ElementsMatch(t, host.GetIPReservations(), returned.GetIPReservations())
 }
 
 // Test that the host can be updated and that this update includes extending
@@ -345,7 +376,7 @@ func TestUpdateHostExtend(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := addMachineAppAndDaemons(t, db)
+	_, apps := addMachineAppDaemonsAndSubnets(t, db)
 	daemons := apps[0].Daemons
 
 	// Add the host with two reservations and two identifiers.
@@ -427,7 +458,7 @@ func TestUpdateHostShrink(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, apps := addMachineAppAndDaemons(t, db)
+	_, apps := addMachineAppDaemonsAndSubnets(t, db)
 	daemons := apps[0].Daemons
 
 	host := &Host{
@@ -507,6 +538,7 @@ func TestUpdateHostShrink(t *testing.T) {
 
 	// Remove the host identifiers.
 	host.HostIdentifiers = []HostIdentifier{}
+
 	err = UpdateHostWithReferences(db, host)
 	require.NoError(t, err)
 
@@ -518,7 +550,7 @@ func TestUpdateHostShrink(t *testing.T) {
 	require.Empty(t, returned.HostIdentifiers)
 	require.Equal(t, "host.example.org.", returned.GetHostname())
 
-	require.Empty(t, returned.GetHostname())
+	require.Empty(t, returned.GetIPReservations())
 	require.Empty(t, host.HostIdentifiers)
 	require.Equal(t, "host.example.org.", returned.GetHostname())
 }
@@ -1252,13 +1284,13 @@ func TestGetHostsByPageConflictAndDuplicate(t *testing.T) {
 	}
 
 	_, hosts := addTestHosts(t, db)
-	host0 := hosts[0]
+	hostDuplicate := hosts[2]
 
 	// Conflicts
-	host1 := hosts[1]
-	host1.LocalHosts[0].BootFileName = "foo"
-	host1.LocalHosts[1].BootFileName = "bar"
-	_ = UpdateHostWithReferences(db, &host1)
+	hostConflict := hosts[3]
+	hostConflict.LocalHosts[0].BootFileName = "foo"
+	hostConflict.LocalHosts[1].BootFileName = "bar"
+	_ = UpdateHostWithReferences(db, &hostConflict)
 
 	// Act
 	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -1267,8 +1299,8 @@ func TestGetHostsByPageConflictAndDuplicate(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
-	require.EqualValues(t, host0.ID, returned[0].ID)
-	require.EqualValues(t, host1.ID, returned[1].ID)
+	require.EqualValues(t, hostDuplicate.ID, returned[0].ID)
+	require.EqualValues(t, hostConflict.ID, returned[1].ID)
 }
 
 // Test that the combinations of the conflict and duplicate filters return
