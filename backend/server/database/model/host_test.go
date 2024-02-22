@@ -275,7 +275,7 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 
 	for i, h := range hosts {
 		host := h
-		err := AddHostWithReferences(db, &host)
+		err := AddHost(db, &host)
 		require.NoError(t, err)
 		require.NotZero(t, host.ID)
 		hosts[i] = host
@@ -309,7 +309,7 @@ func TestHostDataSourceIsUnspecified(t *testing.T) {
 
 // This test verifies that the new host along with identifiers and reservations
 // can be added to the database.
-func TestAddHostWithReferences3(t *testing.T) {
+func TestAddHost3(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -351,7 +351,7 @@ func TestAddHostWithReferences3(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithReferences(db, host)
+	err := AddHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -416,7 +416,7 @@ func TestUpdateHostExtend(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithReferences(db, host)
+	err := AddHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -439,7 +439,7 @@ func TestUpdateHostExtend(t *testing.T) {
 
 	// Not only does updating the host modify the host value but also adds
 	// or removes reservations and identifiers.
-	err = UpdateHostWithReferences(db, host)
+	err = UpdateHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -497,7 +497,7 @@ func TestUpdateHostShrink(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithReferences(db, host)
+	err := AddHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -507,7 +507,7 @@ func TestUpdateHostShrink(t *testing.T) {
 
 	// Updating the host should result in removal of this identifier
 	// and the reservation from the database.
-	err = UpdateHostWithReferences(db, host)
+	err = UpdateHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -529,7 +529,7 @@ func TestUpdateHostShrink(t *testing.T) {
 	host.LocalHosts[1].IPReservations = []IPReservation{}
 	host.LocalHosts[0].Hostname = "host.example.org."
 	host.LocalHosts[1].Hostname = "host.example.org."
-	err = UpdateHostWithReferences(db, host)
+	err = UpdateHost(db, host)
 	require.NoError(t, err)
 
 	// Get the updated host.
@@ -543,7 +543,7 @@ func TestUpdateHostShrink(t *testing.T) {
 	// Remove the host identifiers.
 	host.HostIdentifiers = []HostIdentifier{}
 
-	err = UpdateHostWithReferences(db, host)
+	err = UpdateHost(db, host)
 	require.NoError(t, err)
 
 	// Get the updated host.
@@ -573,7 +573,7 @@ func TestUpdateHostExcludeCreatedAt(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithReferences(db, host)
+	err := AddHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -584,7 +584,7 @@ func TestUpdateHostExcludeCreatedAt(t *testing.T) {
 	// Update the host with a zero timestamp. The zero value should
 	// be excluded from the update and the original timestamp should
 	// not be affected in the database.
-	err = UpdateHostWithReferences(db, host)
+	err = UpdateHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -621,7 +621,7 @@ func TestUpdateHostWithLocalHosts(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithReferences(db, host)
+	err := AddHost(db, host)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -641,7 +641,7 @@ func TestUpdateHostWithLocalHosts(t *testing.T) {
 			},
 		},
 	}
-	err = UpdateHostWithReferences(db, host2)
+	err = UpdateHost(db, host2)
 	require.NoError(t, err)
 	require.NotZero(t, host.ID)
 
@@ -1250,7 +1250,7 @@ func TestGetHostsByPageConflict(t *testing.T) {
 
 		_, _ = DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
 		host.LocalHosts = localHosts
-		_ = UpdateHostWithReferences(db, &host)
+		_ = UpdateHost(db, &host)
 
 		t.Run(label, func(t *testing.T) {
 			// Act
@@ -1284,7 +1284,7 @@ func TestGetHostsByPageConflictAndDuplicate(t *testing.T) {
 	hostConflict := hosts[3]
 	hostConflict.LocalHosts[0].BootFileName = "foo"
 	hostConflict.LocalHosts[1].BootFileName = "bar"
-	_ = UpdateHostWithReferences(db, &hostConflict)
+	_ = UpdateHost(db, &hostConflict)
 
 	// Act
 	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
@@ -1548,13 +1548,13 @@ func TestGetHostsByDaemonID(t *testing.T) {
 		DaemonID:   apps[0].Daemons[0].ID,
 		DataSource: HostDataSourceConfig,
 	})
-	_ = UpdateHostWithReferences(db, &hosts[1])
+	_ = UpdateHost(db, &hosts[1])
 
 	hosts[2].LocalHosts = append(hosts[2].LocalHosts, LocalHost{
 		DaemonID:   apps[1].Daemons[0].ID,
 		DataSource: HostDataSourceConfig,
 	})
-	_ = UpdateHostWithReferences(db, &hosts[2])
+	_ = UpdateHost(db, &hosts[2])
 
 	// Get hosts for the first daemon.
 	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, HostDataSourceConfig)
@@ -1600,7 +1600,7 @@ func TestDeleteHost(t *testing.T) {
 }
 
 // Test that a daemon can be associated with a host.
-func TestAddHostWithReferences(t *testing.T) {
+func TestAddHost(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1638,7 +1638,7 @@ func TestAddHostWithReferences(t *testing.T) {
 			Hostname: "first.example.org",
 		},
 	}
-	err := UpdateHostWithReferences(db, &host)
+	err := UpdateHost(db, &host)
 	require.NoError(t, err)
 
 	// Fetch the host from the database.
@@ -1702,7 +1702,7 @@ func TestAddHostWithReferences(t *testing.T) {
 }
 
 // Test that the host and its local host can be added within a single transaction.
-func TestAddHostWithReferences2(t *testing.T) {
+func TestAddHost2(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1724,7 +1724,7 @@ func TestAddHostWithReferences2(t *testing.T) {
 			},
 		},
 	}
-	err := AddHostWithReferences(db, &host)
+	err := AddHost(db, &host)
 	require.NoError(t, err)
 
 	returned, err := GetHost(db, host.ID)
@@ -1749,13 +1749,13 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 		DaemonID:   apps[0].Daemons[0].ID,
 		DataSource: HostDataSourceAPI,
 	})
-	_ = UpdateHostWithReferences(db, &hosts[0])
+	_ = UpdateHost(db, &hosts[0])
 
 	hosts[1].LocalHosts = append(hosts[1].LocalHosts, LocalHost{
 		DaemonID:   apps[0].Daemons[0].ID,
 		DataSource: HostDataSourceAPI,
 	})
-	_ = UpdateHostWithReferences(db, &hosts[1])
+	_ = UpdateHost(db, &hosts[1])
 
 	// Removing associations with non-matching data source should
 	// affect no hosts.
@@ -2163,7 +2163,7 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 			},
 		},
 	}
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	host = &Host{
 		CreatedAt: time.Now(),
@@ -2190,7 +2190,7 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 			},
 		},
 	}
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	// IPv6
 	subnetIPv6 := &Subnet{
@@ -2282,7 +2282,7 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 			},
 		},
 	}
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	// Global reservations
 	host = &Host{
@@ -2351,7 +2351,7 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 		},
 	}
 
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	// Act
 	addressCounters, errAddresses := CountOutOfPoolAddressReservations(db)
@@ -2778,7 +2778,7 @@ func TestDeleteDaemonsFromHostConfigDataSource(t *testing.T) {
 			},
 		},
 	}
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)
@@ -2816,7 +2816,7 @@ func TestDeleteDaemonsFromHostAPIDataSource(t *testing.T) {
 			},
 		},
 	}
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)
@@ -2854,7 +2854,7 @@ func TestDeleteDaemonsFromHostAllDataSource(t *testing.T) {
 			},
 		},
 	}
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)
@@ -2891,7 +2891,7 @@ func TestDeleteDaemonsFromHostError(t *testing.T) {
 			},
 		},
 	}
-	_ = AddHostWithReferences(db, host)
+	_ = AddHost(db, host)
 
 	host, _ = GetHost(db, host.ID)
 	require.Len(t, host.LocalHosts, 2)

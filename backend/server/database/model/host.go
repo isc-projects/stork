@@ -242,7 +242,7 @@ func updateHostWithReferences(tx *pg.Tx, host *Host) error {
 
 // Attempts to update a host and its local hosts within a transaction. If the dbi
 // does not point to a transaction, a new transaction is started.
-func UpdateHostWithReferences(dbi dbops.DBI, host *Host) error {
+func UpdateHost(dbi dbops.DBI, host *Host) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 			return updateHostWithReferences(tx, host)
@@ -676,7 +676,7 @@ func addHostWithReferences(tx *pg.Tx, host *Host) error {
 // Attempts to add a host, its local hosts and IP reservations within a
 // transaction. If the dbi does not point to a transaction, a new transaction
 // is started.
-func AddHostWithReferences(dbi dbops.DBI, host *Host) error {
+func AddHost(dbi dbops.DBI, host *Host) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 			return addHostWithReferences(tx, host)

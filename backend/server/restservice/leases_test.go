@@ -681,7 +681,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddHostWithReferences(db, &host)
+	err = dbmodel.AddHost(db, &host)
 	require.NoError(t, err)
 
 	// Setup REST API.

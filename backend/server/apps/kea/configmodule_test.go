@@ -904,7 +904,7 @@ func TestCommitHostUpdate(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, dbmodel.AddHostWithReferences(db, host))
+	require.NoError(t, dbmodel.AddHost(db, host))
 
 	// Create the config manager instance "connected to" fake agents.
 	agents := agentcommtest.NewKeaFakeAgents()
@@ -1123,7 +1123,7 @@ func TestCommitScheduledHostUpdate(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, dbmodel.AddHostWithReferences(db, host))
+	require.NoError(t, dbmodel.AddHost(db, host))
 
 	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{

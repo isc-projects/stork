@@ -180,7 +180,7 @@ func TestGetHostsByConflicts(t *testing.T) {
 		DataSource: dbmodel.HostDataSourceConfig,
 		NextServer: "foobar",
 	})
-	err = dbmodel.UpdateHostWithReferences(db, &host)
+	err = dbmodel.UpdateHost(db, &host)
 	require.NoError(t, err)
 
 	params := dhcp.GetHostsParams{
