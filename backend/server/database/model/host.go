@@ -912,6 +912,13 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 		Oop uint64
 	}
 
+	// Select the unique reserved IP addresses for each host.
+	reservedAddressesSubquery := dbi.Model((*IPReservation)(nil)).
+		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
+		Group("local_host.host_id", "ip_reservation.address").
+		DistinctOn("local_host.host_id, ip_reservation.address").
+		Column("local_host.host_id", "ip_reservation.address")
+
 	// Check if IP reservation address is in any subnet pool
 	inAnyPoolSubquery := dbi.Model((*AddressPool)(nil)).
 		// We don't need any data from this query, we check only row existence
@@ -921,16 +928,15 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 		// the subnet in which it is defined
 		Where("local_subnet.subnet_id = host.subnet_id").
 		// Is it in a pool? - from lower to upper bands inclusively
-		Where("ip_reservation.address BETWEEN address_pool.lower_bound AND address_pool.upper_bound").
+		Where("reserved_address.address BETWEEN address_pool.lower_bound AND address_pool.upper_bound").
 		// We want only to know if the address is in at least one pool
 		Limit(1)
 
 	// Find out-of-pool host reservations.
-	err := dbi.Model((*IPReservation)(nil)).
+	err := dbi.Model().TableExpr("(?) AS reserved_address", reservedAddressesSubquery).
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
-		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
-		Join("LEFT JOIN host").JoinOn("local_host.host_id = host.id").
+		Join("LEFT JOIN host").JoinOn("reserved_address.host_id = host.id").
 		// Exclude global reservations
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
@@ -941,8 +947,8 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 		// implies that it's an IPv6 address).
 		WhereGroup(func(q *pg.Query) (*pg.Query, error) {
 			return q.
-				Where("family(ip_reservation.address) = 4").
-				WhereOr("masklen(ip_reservation.address) = 128"), nil
+				Where("family(reserved_address.address) = 4").
+				WhereOr("masklen(reserved_address.address) = 128"), nil
 		}).
 		// Is it out of all pools? - Is it not in any pool?
 		Where("NOT EXISTS (?)", inAnyPoolSubquery).
@@ -978,6 +984,13 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 		Oop uint64
 	}
 
+	// Select the unique reserved IP addresses for each host.
+	reservedAddressesSubquery := dbi.Model((*IPReservation)(nil)).
+		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
+		Group("local_host.host_id", "ip_reservation.address").
+		DistinctOn("local_host.host_id, ip_reservation.address").
+		Column("local_host.host_id", "ip_reservation.address")
+
 	// Check if prefix reservation is in any prefix pool
 	inAnyPrefixPoolSubquery := dbi.Model((*PrefixPool)(nil)).
 		// We don't need any data from this query, we check only row existence
@@ -995,16 +1008,15 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 		// - Prefixes 3001::/64 and 3001::/80 are in the pool. They are in an expected network
 		// and the mask lengths are greater or equals 64.
 		// The `<<=` is an operator that check if the left CIDR is contained within right CIDR.
-		Where("ip_reservation.address <<= prefix_pool.prefix AND masklen(ip_reservation.address) >= prefix_pool.delegated_len").
+		Where("reserved_address.address <<= prefix_pool.prefix AND masklen(reserved_address.address) >= prefix_pool.delegated_len").
 		// We want only to know if the address is in at least one pool
 		Limit(1)
 
 	// Find out-of-pool host reservations.
-	err := dbi.Model((*IPReservation)(nil)).
+	err := dbi.Model().TableExpr("(?) AS reserved_address", reservedAddressesSubquery).
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
-		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
-		Join("LEFT JOIN host").JoinOn("local_host.host_id = host.id").
+		Join("LEFT JOIN host").JoinOn("reserved_address.host_id = host.id").
 		// Exclude global reservations
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
@@ -1013,8 +1025,8 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 		// only IPv6 reservations (as only IPv6 has prefix concept) and
 		// non single IPv6 hosts - entries with mask length less then 128 (128 mask length
 		// implies that they are IPv6 addresses).
-		Where("family(ip_reservation.address) = 6").
-		Where("masklen(ip_reservation.address) != 128").
+		Where("family(reserved_address.address) = 6").
+		Where("masklen(reserved_address.address) != 128").
 		// Is it out of all pools? - Is it not in any pool?
 		Where("NOT EXISTS (?)", inAnyPrefixPoolSubquery).
 		// Group out-of-pool reservations per subnet
@@ -1046,13 +1058,19 @@ func CountGlobalReservations(dbi dbops.DBI) (ipv4Addresses, ipv6Addresses, prefi
 		Prefixes      uint64
 	}
 
-	err = dbi.Model((*IPReservation)(nil)).
-		// Window functions aren't supported well by Go-PG
-		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 4) AS ipv4_addresses").
-		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) = 128) AS ipv6_addresses").
-		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) != 128) AS prefixes").
+	// Select the unique reserved IP addresses for each host.
+	reservedAddressesSubquery := dbi.Model((*IPReservation)(nil)).
 		Join("LEFT JOIN local_host").JoinOn("ip_reservation.local_host_id = local_host.id").
-		Join("LEFT JOIN host").JoinOn("local_host.host_id = host.id").
+		Group("local_host.host_id", "ip_reservation.address").
+		DistinctOn("local_host.host_id, ip_reservation.address").
+		Column("local_host.host_id", "ip_reservation.address")
+
+	err = dbi.Model().TableExpr("(?) AS reserved", reservedAddressesSubquery).
+		// Window functions aren't supported well by Go-PG
+		ColumnExpr("COUNT(reserved.address) FILTER (WHERE family(reserved.address) = 4) AS ipv4_addresses").
+		ColumnExpr("COUNT(reserved.address) FILTER (WHERE family(reserved.address) = 6 AND masklen(reserved.address) = 128) AS ipv6_addresses").
+		ColumnExpr("COUNT(reserved.address) FILTER (WHERE family(reserved.address) = 6 AND masklen(reserved.address) != 128) AS prefixes").
+		Join("LEFT JOIN host").JoinOn("reserved.host_id = host.id").
 		// Include only global reservations
 		Where("host.subnet_id IS NULL").
 		Select(&res)
