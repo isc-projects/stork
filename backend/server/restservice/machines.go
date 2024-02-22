@@ -1304,6 +1304,7 @@ func getKeaServicesStatus(db *dbops.PgDB, app *dbmodel.App) *models.ServicesStat
 			}
 		}
 		keaStatus.HaServers = &models.KeaStatusHaServers{
+			Relationship: ha.Relationship,
 			PrimaryServer: &models.KeaHAServerStatus{
 				Age:                age[0],
 				AppID:              appID[0],
