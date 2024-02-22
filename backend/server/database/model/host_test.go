@@ -16,13 +16,41 @@ import (
 )
 
 // Convenience function checking if the slice of hosts returned from
-// the database contains the given host. It excludes the Subnet value
-// in the returned hosts from the comparison.
+// the database contains the given host. It excludes the Subnet and Daemons
+// value from the comparison.
 func hostsContain(t *testing.T, returned []Host, host Host) {
 	for i := range returned {
 		returned[i].Subnet = nil
+		for j := range returned[i].LocalHosts {
+			returned[i].LocalHosts[j].Daemon = nil
+		}
 	}
+
+	for i := range host.LocalHosts {
+		host.LocalHosts[i].Daemon = nil
+	}
+
 	require.Contains(t, returned, host)
+}
+
+// Convenience function checking if the two slices of hosts match. It excludes
+// the Subnet and Daemons value from the comparison.
+func hostsMatch(t *testing.T, a, b []Host) {
+	for i := range a {
+		a[i].Subnet = nil
+		for j := range a[i].LocalHosts {
+			a[i].LocalHosts[j].Daemon = nil
+		}
+	}
+
+	for i := range b {
+		b[i].Subnet = nil
+		for j := range b[i].LocalHosts {
+			b[i].LocalHosts[j].Daemon = nil
+		}
+	}
+
+	require.ElementsMatch(t, a, b)
 }
 
 // This function creates a machine, app and daemons for the testing purposes.
@@ -55,6 +83,36 @@ func addMachineAppAndDaemons(t *testing.T, db *pg.DB) (*Machine, []*App) {
 
 // This function creates machine, app, daemons, subnets, and multiple hosts
 // used in tests.
+//
+// Host configurations:
+//
+// - Host 1
+//   - Defined in subnet 1
+//   - 2 identifiers: hw-address and circuit-id
+//   - 2 reserved IPv4 addresses
+//   - Reserved hostname
+//   - Associated with the single daemon
+//
+// - Host 2
+//   - Global reservation
+//   - 2 identifiers: hw-address and circuit-id
+//   - 2 reserved IPv4 addresses
+//   - No reserved hostname
+//   - Associated with the single daemon
+//
+// - Host 3
+//   - Defined in subnet 2
+//   - 2 identifiers: hw-address and duid
+//   - 1 reserved IPv6 address
+//   - Reserved hostname
+//   - Associated with the single daemon
+//
+// - Host 4
+//   - Global reservation
+//   - 2 identifiers: duid and flex-id
+//   - 1 reserved IPv6 address
+//   - No reserved hostname
+//   - Associated with the single daemon
 func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 	_, apps := addMachineAppAndDaemons(t, db)
 
@@ -77,6 +135,7 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 	}
 
 	hosts := []Host{
+		// Host 1
 		{
 			SubnetID: 1,
 			HostIdentifiers: []HostIdentifier{
@@ -105,6 +164,7 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 				},
 			},
 		},
+		// Host 2
 		{
 			HostIdentifiers: []HostIdentifier{
 				{
@@ -131,6 +191,7 @@ func addTestHosts(t *testing.T, db *pg.DB) ([]*App, []Host) {
 				},
 			},
 		},
+		// Host 3
 		{
 			SubnetID: 2,
 			HostIdentifiers: []HostIdentifier{
@@ -645,8 +706,8 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
-	require.Contains(t, returned, hosts[1])
-	require.Contains(t, returned, hosts[3])
+	hostsContain(t, returned, hosts[1])
+	hostsContain(t, returned, hosts[3])
 
 	// Get hosts associated with subnet id 1.
 	subnetID = int64(1)
@@ -816,11 +877,7 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 
-	for i := range returned {
-		returned[i].Subnet = nil
-	}
-
-	require.ElementsMatch(t, returned, hosts)
+	hostsMatch(t, returned, hosts)
 
 	// Case insensitive address matching.
 	filterText = "2001:Db8:1"
