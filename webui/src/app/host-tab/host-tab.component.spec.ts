@@ -82,7 +82,7 @@ describe('HostTabComponent', () => {
     })
 
     it('should display v4 host information', () => {
-        const host = {
+        const host: Partial<Host> = {
             id: 1,
             hostIdentifiers: [
                 {
@@ -106,6 +106,12 @@ describe('HostTabComponent', () => {
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
                     bootFileName: '/tmp/bootfile1',
+                    hostname: 'mouse.example.org',
+                    reservations: [
+                        {
+                            address: '192.0.2.123',
+                        },
+                    ]
                 },
                 {
                     appId: 2,
@@ -114,6 +120,12 @@ describe('HostTabComponent', () => {
                     nextServer: '192.0.2.2',
                     serverHostname: 'my-server',
                     bootFileName: '/tmp/bootfile1',
+                    hostname: 'mouse.example.org',
+                    reservations: [
+                        {
+                            address: '192.0.2.123',
+                        },
+                    ]
                 },
             ],
         }
@@ -167,7 +179,7 @@ describe('HostTabComponent', () => {
     })
 
     it('should display v6 host information', () => {
-        const host = {
+        const host: Partial<Host> = {
             id: 1,
             hostIdentifiers: [
                 {
@@ -203,11 +215,41 @@ describe('HostTabComponent', () => {
                     appId: 1,
                     appName: 'frog',
                     dataSource: 'config',
+                    hostname: 'mouse.example.org',
+                    reservations: [
+                        {
+                            address: '2001:db8:1::1',
+                        },
+                        {
+                            address: '2001:db8:1::2',
+                        },
+                        {
+                            address: '2001:db8:2::/64',
+                        },
+                        {
+                            address: '2001:db8:3::/64',
+                        },
+                    ]
                 },
                 {
                     appId: 2,
                     appName: 'mouse',
                     dataSource: 'api',
+                    hostname: 'mouse.example.org',
+                    reservations: [
+                        {
+                            address: '2001:db8:1::1',
+                        },
+                        {
+                            address: '2001:db8:1::2',
+                        },
+                        {
+                            address: '2001:db8:2::/64',
+                        },
+                        {
+                            address: '2001:db8:3::/64',
+                        },
+                    ]
                 },
             ],
         }
@@ -285,7 +327,7 @@ describe('HostTabComponent', () => {
     })
 
     it('should display lease information', () => {
-        const host = {
+        const host: Partial<Host> = {
             id: 1,
             hostIdentifiers: [
                 {
@@ -320,11 +362,39 @@ describe('HostTabComponent', () => {
                     appId: 1,
                     appName: 'frog',
                     dataSource: 'config',
+                    reservations: [
+                        {
+                            address: '2001:db8:1::1',
+                        },
+                        {
+                            address: '2001:db8:1::2',
+                        },
+                        {
+                            address: '2001:db8:2::/64',
+                        },
+                        {
+                            address: '2001:db8:3::/64',
+                        },
+                    ]
                 },
                 {
                     appId: 2,
                     appName: 'mouse',
                     dataSource: 'api',
+                    reservations: [
+                        {
+                            address: '2001:db8:1::1',
+                        },
+                        {
+                            address: '2001:db8:1::2',
+                        },
+                        {
+                            address: '2001:db8:2::/64',
+                        },
+                        {
+                            address: '2001:db8:3::/64',
+                        },
+                    ]
                 },
             ],
         }
@@ -359,9 +429,9 @@ describe('HostTabComponent', () => {
         expect(dhcpApi.getLeases).toHaveBeenCalled()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(6)
 
-        const ipReservationsFieldset = fieldsets[2]
+        const ipReservationsFieldset = fieldsets[3]
         expect(ipReservationsFieldset).toBeTruthy()
         const ipReservationTable = ipReservationsFieldset.query(By.css('table'))
         expect(ipReservationTable).toBeTruthy()
@@ -394,7 +464,7 @@ describe('HostTabComponent', () => {
     })
 
     it('should display multiple lease information', () => {
-        const host = {
+        const host: Partial<Host> = {
             id: 1,
             hostIdentifiers: [
                 {
@@ -414,11 +484,21 @@ describe('HostTabComponent', () => {
                     appId: 1,
                     appName: 'frog',
                     dataSource: 'config',
+                    reservations: [
+                        {
+                            address: '192.0.2.1'
+                        }
+                    ]
                 },
                 {
                     appId: 2,
                     appName: 'mouse',
                     dataSource: 'api',
+                    reservations: [
+                        {
+                            address: '192.0.2.1'
+                        }
+                    ]
                 },
             ],
         }
@@ -455,9 +535,9 @@ describe('HostTabComponent', () => {
         expect(dhcpApi.getLeases).toHaveBeenCalled()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(6)
 
-        let ipReservationsFieldset = fieldsets[2]
+        let ipReservationsFieldset = fieldsets[3]
         expect(ipReservationsFieldset).toBeTruthy()
         let ipReservationTable = ipReservationsFieldset.query(By.css('table'))
         expect(ipReservationTable).toBeTruthy()
@@ -484,9 +564,9 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(6)
 
-        ipReservationsFieldset = fieldsets[2]
+        ipReservationsFieldset = fieldsets[3]
         expect(ipReservationsFieldset).toBeTruthy()
         ipReservationTable = ipReservationsFieldset.query(By.css('table'))
         expect(ipReservationTable).toBeTruthy()
@@ -859,16 +939,16 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(8)
+        expect(fieldsets.length).toBe(10)
 
-        expect(fieldsets[2].properties.innerText).toContain('Boot Fields')
-        expect(fieldsets[3].properties.innerText).toContain('Boot Fields')
-        expect(fieldsets[4].properties.innerText).toContain('Client Classes')
-        expect(fieldsets[5].properties.innerText).toContain('Client Classes')
-        expect(fieldsets[6].properties.innerText).toContain('DHCP Options')
-        expect(fieldsets[7].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[4].properties.innerText).toContain('Boot Fields')
+        expect(fieldsets[5].properties.innerText).toContain('Boot Fields')
+        expect(fieldsets[6].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[7].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[8].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[9].properties.innerText).toContain('DHCP Options')
 
-        for (let i = 2; i < 8; i++) {
+        for (let i = 4; i < 10; i++) {
             let link = fieldsets[i].query(By.css('a'))
             expect(link).toBeTruthy()
             if (i % 2 === 0) {
@@ -940,16 +1020,16 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(7)
 
-        expect(fieldsets[2].properties.innerText).toContain('Boot Fields')
-        expect(fieldsets[2].properties.innerText).toContain('All Servers')
-
-        expect(fieldsets[3].properties.innerText).toContain('Client Classes')
-        expect(fieldsets[3].properties.innerText).toContain('All Servers')
-
-        expect(fieldsets[4].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[4].properties.innerText).toContain('Boot Fields')
         expect(fieldsets[4].properties.innerText).toContain('All Servers')
+
+        expect(fieldsets[5].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[5].properties.innerText).toContain('All Servers')
+
+        expect(fieldsets[6].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[6].properties.innerText).toContain('All Servers')
     })
 
     it('should display DHCP options panel for host with one daemon', () => {
@@ -990,14 +1070,14 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(7)
 
-        expect(fieldsets[2].properties.innerText).toContain('Boot Fields')
-        expect(fieldsets[2].properties.innerText).toContain('All Servers')
-        expect(fieldsets[3].properties.innerText).toContain('Client Classes')
-        expect(fieldsets[3].properties.innerText).toContain('All Servers')
-        expect(fieldsets[4].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[4].properties.innerText).toContain('Boot Fields')
         expect(fieldsets[4].properties.innerText).toContain('All Servers')
+        expect(fieldsets[5].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[5].properties.innerText).toContain('All Servers')
+        expect(fieldsets[6].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[6].properties.innerText).toContain('All Servers')
     })
 
     it('should display a message about no client classes configured', () => {
@@ -1027,8 +1107,8 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
-        expect(fieldsets[2].properties.innerText).toContain('No client classes configured.')
+        expect(fieldsets.length).toBe(6)
+        expect(fieldsets[4].properties.innerText).toContain('No client classes configured.')
     })
 
     it('should display dashes when boot fields are not specified', () => {
@@ -1059,10 +1139,10 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
-        expect(fieldsets[2].properties.innerText).toContain('Next server\n0.0.0.0')
-        expect(fieldsets[2].properties.innerText).toContain('Server hostname\n-')
-        expect(fieldsets[2].properties.innerText).toContain('Boot file name\n-')
+        expect(fieldsets.length).toBe(7)
+        expect(fieldsets[4].properties.innerText).toContain('Next server\n0.0.0.0')
+        expect(fieldsets[4].properties.innerText).toContain('Server hostname\n-')
+        expect(fieldsets[4].properties.innerText).toContain('Boot file name\n-')
     })
 
     it('should display a message about no DHCP options configured', () => {
@@ -1098,8 +1178,8 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(4)
-        expect(fieldsets[3].properties.innerText).toContain('No options configured.')
+        expect(fieldsets.length).toBe(6)
+        expect(fieldsets[5].properties.innerText).toContain('No options configured.')
     })
 
     it('should group local hosts by app ID properly', () => {
