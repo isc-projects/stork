@@ -275,20 +275,6 @@ export class HostTabComponent {
     }
 
     /**
-     * Returns all IP host reservations (addresses and prefixes).
-     */
-    get ipReservations(): Array<IPReservation> {
-        let reservations: Array<IPReservation> = []
-        if (this.host.addressReservations) {
-            reservations.push(...this.host.addressReservations)
-        }
-        if (this.host.prefixReservations) {
-            reservations.push(...this.host.prefixReservations)
-        }
-        return reservations
-    }
-
-    /**
      * Returns boolean value indicating if the leases are being searched
      * for the currently displayed host.
      *

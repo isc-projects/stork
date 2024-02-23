@@ -17,7 +17,9 @@ export function hasDifferentLocalHostData(localHosts: LocalHost[]): boolean {
     return (
         hasDifferentLocalHostOptions(localHosts) ||
         hasDifferentLocalHostClientClasses(localHosts) ||
-        hasDifferentLocalHostBootFields(localHosts)
+        hasDifferentLocalHostBootFields(localHosts) ||
+        hasDifferentLocalHostHostname(localHosts) ||
+        hasDifferentLocalHostIPReservations(localHosts)
     )
 }
 

@@ -83,100 +83,133 @@
                     </p-table>
                 </p-fieldset>
             </div>
-            <div *ngIf="host.hostname?.length > 0" class="mb-4">
-                <p-fieldset id="non-ip-reservations-fieldset" legend="Hostname">
-                    <span class="monospace">{{ host.hostname }}</span>
-                </p-fieldset>
-            </div>
-            <div *ngIf="ipReservations.length > 0" class="mb-4">
-                <p-fieldset legend="IP Reservations">
-                    <p-table [value]="ipReservations" dataKey="address">
-                        <ng-template pTemplate="body" let-r let-expanded="expanded">
-                            <tr>
-                                <td class="border-none">
-                                    <div class="flex align-items-center">
-                                        <div class="flex-initial">
-                                            <button
-                                                type="button"
-                                                pButton
-                                                pRipple
-                                                [pRowToggler]="r"
-                                                class="p-button-text p-button-rounded p-button-plain"
-                                                [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                                            ></button>
-                                        </div>
-                                        <div class="pl-2 flex-auto word-break-all">
-                                            <a
-                                                routerLink="/dhcp/leases"
-                                                [queryParams]="{ text: r.address.split('/')[0] }"
-                                                >{{ r.address }}</a
-                                            >
-                                        </div>
-                                        <div class="flex-none">
-                                            <p-progressSpinner
-                                                *ngIf="leasesSearchInProgress"
-                                                [style]="{ width: '15px', height: '15px' }"
-                                                styleClass="host-tab-leases-spinner"
-                                                fill="#FFFFFF"
-                                                strokeWidth="6"
-                                            ></p-progressSpinner>
-                                            <ng-container *ngIf="!leasesSearchInProgress">
-                                                <span
-                                                    *ngIf="
-                                                        currentLeases && currentLeases.has(r.address);
-                                                        else leaseNotFoundBlock
-                                                    "
-                                                >
-                                                    <ng-container [ngSwitch]="currentLeases.get(r.address)['usage']">
-                                                        <i
-                                                            *ngSwitchCase="Usage.Used"
-                                                            class="fa fa-signal"
-                                                            [ngStyle]="{ color: '#00a800' }"
-                                                        ></i>
-                                                        <i
-                                                            *ngSwitchCase="Usage.Expired"
-                                                            class="fa fa-signal"
-                                                            [ngStyle]="{ color: '#f11' }"
-                                                        ></i>
-                                                        <i
-                                                            *ngSwitchDefault
-                                                            class="fa fa-lock"
-                                                            [ngStyle]="{ color: 'grey' }"
-                                                        ></i>
-                                                    </ng-container>
-                                                    {{ getLeaseUsageText(currentLeases.get(r.address)['usage']) }}
-                                                </span>
-                                                <ng-template #leaseNotFoundBlock>
-                                                    <i class="fa fa-power-off" [ngStyle]="{ color: 'grey' }"></i>
-                                                    unused
-                                                </ng-template>
-                                            </ng-container>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </ng-template>
-                        <ng-template pTemplate="rowexpansion" let-r>
-                            <tr>
-                                <td class="border-none pl-6 pt-0 pb-4">
-                                    <div
-                                        *ngIf="
-                                            !leasesSearchInProgress && currentLeases.get(r.address) as leaseInfo;
-                                            else leaseFoundBlock
-                                        "
-                                    >
-                                        {{ getLeaseSummary(leaseInfo) }}
-                                    </div>
-                                    <ng-template #leaseFoundBlock>{{
-                                        leasesSearchInProgress ? 'Checking leases...' : 'No lease found.'
-                                    }}</ng-template>
-                                </td>
-                            </tr>
-                        </ng-template>
-                    </p-table>
-                </p-fieldset>
-            </div>
+
             <ng-container *ngIf="host.localHosts?.length > 0">
+                <!-- Hostname -->
+                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.hostname">
+                    <p-fieldset>
+                        <ng-template pTemplate="header">
+                            <ng-container
+                                [ngTemplateOutlet]="sectionHeaderContent"
+                                [ngTemplateOutletContext]="{
+                                    title: 'Hostname',
+                                    localHosts: localHosts,
+                                    all: localHostsGroups.hostname.length === 1
+                                }"
+                            ></ng-container>
+                        </ng-template>
+                        <span class="monospace" *ngIf="!!localHosts[0].hostname">{{ localHosts[0].hostname }}</span>
+                        <span *ngIf="!localHosts[0].hostname">No hostname configured.</span>
+                    </p-fieldset>
+                </div>
+
+                <!-- IP Reservations -->
+                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.ipReservations">
+                    <p-fieldset>
+                        <ng-template pTemplate="header">
+                            <ng-container
+                                [ngTemplateOutlet]="sectionHeaderContent"
+                                [ngTemplateOutletContext]="{
+                                    title: 'IP Reservations',
+                                    localHosts: localHosts,
+                                    all: localHostsGroups.ipReservations.length === 1
+                                }"
+                            ></ng-container>
+                        </ng-template>
+                        <p-table [value]="localHosts[0].reservations || []" dataKey="address">
+                            <ng-template pTemplate="body" let-r let-expanded="expanded">
+                                <tr>
+                                    <td class="border-none">
+                                        <div class="flex align-items-center">
+                                            <div class="flex-initial">
+                                                <button
+                                                    type="button"
+                                                    pButton
+                                                    pRipple
+                                                    [pRowToggler]="r"
+                                                    class="p-button-text p-button-rounded p-button-plain"
+                                                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                                                ></button>
+                                            </div>
+                                            <div class="pl-2 flex-auto word-break-all">
+                                                <a
+                                                    routerLink="/dhcp/leases"
+                                                    [queryParams]="{ text: r.address.split('/')[0] }"
+                                                    >{{ r.address }}</a
+                                                >
+                                            </div>
+                                            <div class="flex-none">
+                                                <p-progressSpinner
+                                                    *ngIf="leasesSearchInProgress"
+                                                    [style]="{ width: '15px', height: '15px' }"
+                                                    styleClass="host-tab-leases-spinner"
+                                                    fill="#FFFFFF"
+                                                    strokeWidth="6"
+                                                ></p-progressSpinner>
+                                                <ng-container *ngIf="!leasesSearchInProgress">
+                                                    <span
+                                                        *ngIf="
+                                                            currentLeases && currentLeases.has(r.address);
+                                                            else leaseNotFoundBlock
+                                                        "
+                                                    >
+                                                        <ng-container
+                                                            [ngSwitch]="currentLeases.get(r.address)['usage']"
+                                                        >
+                                                            <i
+                                                                *ngSwitchCase="Usage.Used"
+                                                                class="fa fa-signal"
+                                                                [ngStyle]="{ color: '#00a800' }"
+                                                            ></i>
+                                                            <i
+                                                                *ngSwitchCase="Usage.Expired"
+                                                                class="fa fa-signal"
+                                                                [ngStyle]="{ color: '#f11' }"
+                                                            ></i>
+                                                            <i
+                                                                *ngSwitchDefault
+                                                                class="fa fa-lock"
+                                                                [ngStyle]="{ color: 'grey' }"
+                                                            ></i>
+                                                        </ng-container>
+                                                        {{ getLeaseUsageText(currentLeases.get(r.address)['usage']) }}
+                                                    </span>
+                                                    <ng-template #leaseNotFoundBlock>
+                                                        <i class="fa fa-power-off" [ngStyle]="{ color: 'grey' }"></i>
+                                                        unused
+                                                    </ng-template>
+                                                </ng-container>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="rowexpansion" let-r>
+                                <tr>
+                                    <td class="border-none pl-6 pt-0 pb-4">
+                                        <div
+                                            *ngIf="
+                                                !leasesSearchInProgress && currentLeases.get(r.address) as leaseInfo;
+                                                else leaseFoundBlock
+                                            "
+                                        >
+                                            {{ getLeaseSummary(leaseInfo) }}
+                                        </div>
+                                        <ng-template #leaseFoundBlock>{{
+                                            leasesSearchInProgress ? 'Checking leases...' : 'No lease found.'
+                                        }}</ng-template>
+                                    </td>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="emptymessage">
+                                <tr>
+                                    <td>No IP reservations configured.</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </p-fieldset>
+                </div>
+
                 <!-- Boot fields -->
                 <ng-container *ngIf="displayBootFields">
                     <div class="mb-4" *ngFor="let localHosts of localHostsGroups.bootFields">
