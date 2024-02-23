@@ -8,6 +8,8 @@ import {
     hasDifferentLocalHostBootFields,
     hasDifferentLocalHostClientClasses,
     hasDifferentLocalHostData,
+    hasDifferentLocalHostHostname,
+    hasDifferentLocalHostIPReservations,
     hasDifferentLocalHostOptions,
 } from '../hosts'
 import { durationToString, epochToLocal, getErrorMessage } from '../utils'
@@ -80,7 +82,9 @@ export class HostTabComponent {
         bootFields: LocalHost[][]
         clientClasses: LocalHost[][]
         appID: LocalHost[][]
-    } = { bootFields: [], dhcpOptions: [], clientClasses: [], appID: [] }
+        hostname: LocalHost[][]
+        ipReservations: LocalHost[][]
+    } = { bootFields: [], dhcpOptions: [], clientClasses: [], appID: [], hostname: [], ipReservations: [] }
 
     /**
      * Indicates if the boot fields panel should be displayed.
@@ -148,7 +152,14 @@ export class HostTabComponent {
     set host(host) {
         // Make the new host current.
         this.currentHost = host
-        this.localHostsGroups = { bootFields: [], dhcpOptions: [], clientClasses: [], appID: [] }
+        this.localHostsGroups = {
+            bootFields: [],
+            dhcpOptions: [],
+            clientClasses: [],
+            appID: [],
+            hostname: [],
+            ipReservations: [],
+        }
         // The host is null if the tab with a list of hosts is selected.
         if (!this.currentHost) {
             return
@@ -225,11 +236,41 @@ export class HostTabComponent {
             localHostsByClientClasses.push(this.host.localHosts)
         }
 
+        // Group local hosts by the IP reservations equality.
+        const localHostsByIPReservations: LocalHost[][] = []
+        if (hasDifferentLocalHostIPReservations(this.host.localHosts)) {
+            for (let localHosts of localHostsByAppID) {
+                if (hasDifferentLocalHostIPReservations(localHosts)) {
+                    localHostsByIPReservations.push(...localHosts.map((lh) => [lh]))
+                } else {
+                    localHostsByIPReservations.push(localHosts)
+                }
+            }
+        } else {
+            localHostsByIPReservations.push(this.host.localHosts)
+        }
+
+        // Group local hosts by the hostname equality.
+        const localHostsByHostname: LocalHost[][] = []
+        if (hasDifferentLocalHostHostname(this.host.localHosts)) {
+            for (let localHosts of localHostsByAppID) {
+                if (hasDifferentLocalHostHostname(localHosts)) {
+                    localHostsByHostname.push(...localHosts.map((lh) => [lh]))
+                } else {
+                    localHostsByHostname.push(localHosts)
+                }
+            }
+        } else {
+            localHostsByHostname.push(this.host.localHosts)
+        }
+
         this.localHostsGroups = {
             bootFields: localHostsByBootFields,
             dhcpOptions: localHostsByDhcpOptions,
             clientClasses: localHostsByClientClasses,
             appID: localHostsByAppID,
+            hostname: localHostsByHostname,
+            ipReservations: localHostsByIPReservations,
         }
     }
 

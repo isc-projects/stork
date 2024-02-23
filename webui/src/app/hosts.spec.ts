@@ -3,6 +3,8 @@ import {
     hasDifferentLocalHostBootFields,
     hasDifferentLocalHostClientClasses,
     hasDifferentLocalHostData,
+    hasDifferentLocalHostHostname,
+    hasDifferentLocalHostIPReservations,
     hasDifferentLocalHostOptions,
 } from './hosts'
 import { LocalHost } from './backend'
@@ -237,6 +239,50 @@ describe('hosts', () => {
         expect(hasDifferentLocalHostBootFields(localHosts)).toBeTrue()
     })
 
+    it('detects differences for IP reservations', () => {
+        const localHosts: Partial<LocalHost>[] = [
+            {
+                reservations: [
+                    {
+                        address: '10.0.0.1',
+                    },
+                ],
+            },
+            {
+                reservations: [
+                    {
+                        address: '10.0.0.1',
+                    },
+                ],
+            },
+            {
+                reservations: [
+                    {
+                        address: '10.1.1.1',
+                    },
+                ],
+            },
+        ]
+
+        expect(hasDifferentLocalHostIPReservations(localHosts as LocalHost[])).toBeTrue()
+    })
+
+    it('detects differences for hostnames', () => {
+        const localHosts: Partial<LocalHost>[] = [
+            {
+                hostname: 'foo',
+            },
+            {
+                hostname: 'bar',
+            },
+            {
+                hostname: 'foo',
+            },
+        ]
+
+        expect(hasDifferentLocalHostHostname(localHosts as LocalHost[])).toBeTrue()
+    })
+
     it('detects no differences when there is a single local host', () => {
         const localHosts = [
             {
@@ -245,17 +291,21 @@ describe('hosts', () => {
                 nextServer: '192.0.2.1',
             },
         ]
-        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
         expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
         expect(hasDifferentLocalHostBootFields(localHosts)).toBeFalse()
         expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostHostname(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostIPReservations(localHosts)).toBeFalse()
     })
 
     it('detects no differences when there is no local host', () => {
         const localHosts = []
         expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
-        expect(hasDifferentLocalHostClientClasses(localHosts)).toBeFalse()
         expect(hasDifferentLocalHostBootFields(localHosts)).toBeFalse()
         expect(hasDifferentLocalHostData(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostOptions(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostHostname(localHosts)).toBeFalse()
+        expect(hasDifferentLocalHostIPReservations(localHosts)).toBeFalse()
     })
 })

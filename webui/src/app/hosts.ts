@@ -76,3 +76,42 @@ export function hasDifferentLocalHostBootFields(localHosts: LocalHost[]): boolea
                 lh.bootFileName !== reference.bootFileName
         )
 }
+
+/**
+ * Utility function checking if there are differences between IP reservations
+ * in the local hosts.
+ *
+ * @param localHosts local host instances.
+ * @returns true if there are differences in IP reservations, false
+ * otherwise.
+ */
+export function hasDifferentLocalHostIPReservations(localHosts: LocalHost[]): boolean {
+    if (localHosts == null || localHosts.length <= 1) {
+        return false
+    }
+
+    const getSortedIPAddresses = (lh: LocalHost) => (lh.reservations ?? []).map((r) => r.address).sort()
+    const referenceAddresses = getSortedIPAddresses(localHosts[0])
+    return localHosts
+        .slice(1)
+        .some(
+            (lh) =>
+                (lh.reservations?.length ?? 0) != referenceAddresses.length ||
+                getSortedIPAddresses(lh).some((a, i) => a !== referenceAddresses[i])
+        )
+}
+
+/**
+ * Utility function checking if there are differences between hostnames
+ * in the local hosts.
+ *
+ * @param localHosts local host instances.
+ * @returns true if there are differences in hostnames, false otherwise.
+ */
+export function hasDifferentLocalHostHostname(localHosts: LocalHost[]): boolean {
+    if (localHosts == null || localHosts.length <= 1) {
+        return false
+    }
+
+    return localHosts.slice(1).some((lh) => lh.hostname !== localHosts[0].hostname)
+}
