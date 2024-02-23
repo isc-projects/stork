@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { Host, IPReservation, Lease, LeasesSearchErredApp, LocalHost } from '../backend'
+import { Host, Lease, LeasesSearchErredApp, LocalHost } from '../backend'
 
 import { DHCPService } from '../backend/api/api'
 import {
