@@ -111,7 +111,7 @@ describe('HostTabComponent', () => {
                         {
                             address: '192.0.2.123',
                         },
-                    ]
+                    ],
                 },
                 {
                     appId: 2,
@@ -125,7 +125,7 @@ describe('HostTabComponent', () => {
                         {
                             address: '192.0.2.123',
                         },
-                    ]
+                    ],
                 },
             ],
         }
@@ -229,7 +229,7 @@ describe('HostTabComponent', () => {
                         {
                             address: '2001:db8:3::/64',
                         },
-                    ]
+                    ],
                 },
                 {
                     appId: 2,
@@ -249,7 +249,7 @@ describe('HostTabComponent', () => {
                         {
                             address: '2001:db8:3::/64',
                         },
-                    ]
+                    ],
                 },
             ],
         }
@@ -375,7 +375,7 @@ describe('HostTabComponent', () => {
                         {
                             address: '2001:db8:3::/64',
                         },
-                    ]
+                    ],
                 },
                 {
                     appId: 2,
@@ -394,7 +394,7 @@ describe('HostTabComponent', () => {
                         {
                             address: '2001:db8:3::/64',
                         },
-                    ]
+                    ],
                 },
             ],
         }
@@ -486,9 +486,9 @@ describe('HostTabComponent', () => {
                     dataSource: 'config',
                     reservations: [
                         {
-                            address: '192.0.2.1'
-                        }
-                    ]
+                            address: '192.0.2.1',
+                        },
+                    ],
                 },
                 {
                     appId: 2,
@@ -496,9 +496,9 @@ describe('HostTabComponent', () => {
                     dataSource: 'api',
                     reservations: [
                         {
-                            address: '192.0.2.1'
-                        }
-                    ]
+                            address: '192.0.2.1',
+                        },
+                    ],
                 },
             ],
         }
