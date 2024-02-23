@@ -135,7 +135,7 @@ func (r *RestAPI) convertToHost(restHost *models.Host) (*dbmodel.Host, error) {
 			return nil, err
 		}
 		localHost.DHCPOptionSet.SetDHCPOptions(options, keaconfig.NewHasher())
-		host.SetLocalHost(&localHost)
+		host.AddOrUpdateLocalHost(&localHost)
 	}
 	return host, nil
 }

@@ -486,7 +486,12 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		// for a given host. This is because the HAVING clause filters out this
 		// kind of entries, so there are no corresponding rows in the subquery
 		// and the subquery results are joined with LEFT JOIN.
-		// TODO: Check the conflicts in the IP reservations.
+		//
+		// TODO: Check the conflicts in the IP reservations. Currently, the UI
+		//       treats the IP reservations as belonging to the host, not to
+		//       the particular local host. This means that the IP reservations
+		//       are not considered when checking the conflicts but they should
+		//       be.
 		conflictSubquery := dbi.Model((*struct {
 			tableName struct{} `pg:"local_host"`
 			HostID    int64
@@ -1253,7 +1258,7 @@ func (host *Host) PopulateSubnet(dbi dbops.DBI) error {
 // (having the same daemon ID and data source) already exists, it is replaced
 // with the specified instance. Otherwise, the instance is appended to the
 // slice of LocalHosts.
-func (host *Host) SetLocalHost(localHost *LocalHost) {
+func (host *Host) AddOrUpdateLocalHost(localHost *LocalHost) {
 	for i, lh := range host.LocalHosts {
 		if lh.DaemonID == localHost.DaemonID && lh.DataSource == localHost.DataSource {
 			host.LocalHosts[i] = *localHost
@@ -1272,7 +1277,7 @@ func (host *Host) Join(other *Host) bool {
 		return false
 	}
 	for i := range other.LocalHosts {
-		host.SetLocalHost(&other.LocalHosts[i])
+		host.AddOrUpdateLocalHost(&other.LocalHosts[i])
 	}
 	return true
 }

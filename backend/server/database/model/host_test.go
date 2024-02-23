@@ -2649,7 +2649,7 @@ func TestSetLocalHost(t *testing.T) {
 	host := &Host{}
 
 	// Create new LocalHost instance.
-	host.SetLocalHost(&LocalHost{
+	host.AddOrUpdateLocalHost(&LocalHost{
 		DaemonID:   123,
 		DataSource: HostDataSourceConfig,
 	})
@@ -2658,7 +2658,7 @@ func TestSetLocalHost(t *testing.T) {
 	require.Equal(t, HostDataSourceConfig, host.LocalHosts[0].DataSource)
 
 	// Create another one.
-	host.SetLocalHost(&LocalHost{
+	host.AddOrUpdateLocalHost(&LocalHost{
 		DaemonID:   234,
 		DataSource: HostDataSourceConfig,
 	})
@@ -2669,7 +2669,7 @@ func TestSetLocalHost(t *testing.T) {
 	require.Equal(t, HostDataSourceConfig, host.LocalHosts[1].DataSource)
 
 	// Append a new instance with existing daemon ID but a new data source.
-	host.SetLocalHost(&LocalHost{
+	host.AddOrUpdateLocalHost(&LocalHost{
 		DaemonID:   123,
 		DataSource: HostDataSourceAPI,
 	})
