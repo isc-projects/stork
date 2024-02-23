@@ -347,6 +347,45 @@ func TestGetHostWithOptions(t *testing.T) {
 	require.Equal(t, hashes[0], hashes[1])
 }
 
+// Test that the fetched host includes IP reservations in the host entity and
+// its local host references.
+func TestGetHostWithIPReservations(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, _ := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	ctx := context.Background()
+
+	hosts, _ := storktestdbmodel.AddTestHosts(t, db)
+
+	// Act
+	params := dhcp.GetHostParams{
+		ID: hosts[3].ID,
+	}
+	rsp := rapi.GetHost(ctx, params)
+
+	// Assert
+	require.IsType(t, &dhcp.GetHostOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetHostOK)
+	returnedHost := okRsp.Payload
+	require.EqualValues(t, hosts[3].ID, returnedHost.ID)
+	require.NotEmpty(t, returnedHost.AddressReservations)
+	require.NotEmpty(t, returnedHost.PrefixReservations)
+	require.Len(t, returnedHost.LocalHosts, 2)
+
+	var localHostReservations []*models.IPReservation
+	for _, lh := range returnedHost.LocalHosts {
+		localHostReservations = append(localHostReservations, lh.Reservations...)
+	}
+	var hostReservations []*models.IPReservation
+	for i := 0; i < len(returnedHost.LocalHosts); i++ {
+		hostReservations = append(hostReservations, returnedHost.AddressReservations...)
+		hostReservations = append(hostReservations, returnedHost.PrefixReservations...)
+	}
+	require.ElementsMatch(t, hostReservations, localHostReservations)
+}
+
 // Test the calls for creating transaction and submitting a new host
 // reservation.
 func TestCreateHostBeginSubmit(t *testing.T) {

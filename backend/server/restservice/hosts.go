@@ -63,6 +63,18 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 	// Append local hosts containing associations of the host with
 	// daemons and DHCP options.
 	for _, dbLocalHost := range dbHost.LocalHosts {
+		ipReservations := []*models.IPReservation{}
+		for _, reservation := range dbLocalHost.IPReservations {
+			parsedIP := storkutil.ParseIP(reservation.Address)
+			if parsedIP == nil {
+				continue
+			}
+
+			ipReservations = append(ipReservations, &models.IPReservation{
+				Address: parsedIP.NetworkAddress,
+			})
+		}
+
 		localHost := models.LocalHost{
 			AppID:          dbLocalHost.Daemon.AppID,
 			AppName:        dbLocalHost.Daemon.App.Name,
@@ -73,6 +85,8 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 			BootFileName:   dbLocalHost.BootFileName,
 			ClientClasses:  dbLocalHost.ClientClasses,
 			OptionsHash:    dbLocalHost.DHCPOptionSet.Hash,
+			Hostname:       dbLocalHost.Hostname,
+			Reservations:   ipReservations,
 		}
 		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet.Options, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)

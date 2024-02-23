@@ -127,6 +127,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 
 	hasher := keaconfig.NewHasher()
 	hosts = []dbmodel.Host{
+		// Host 0.
 		{
 			SubnetID: 1,
 			HostIdentifiers: []dbmodel.HostIdentifier{
@@ -174,6 +175,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 				},
 			},
 		},
+		// Host 1.
 		{
 			HostIdentifiers: []dbmodel.HostIdentifier{
 				{
@@ -212,6 +214,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 				},
 			},
 		},
+		// Host 2.
 		{
 			SubnetID: 2,
 			HostIdentifiers: []dbmodel.HostIdentifier{
@@ -241,6 +244,7 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 				},
 			},
 		},
+		// Host 3.
 		{
 			HostIdentifiers: []dbmodel.HostIdentifier{
 				{
@@ -256,6 +260,9 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 						{
 							Address: "2001:db8:1::2",
 						},
+						{
+							Address: "3001::/48",
+						},
 					},
 				},
 				{
@@ -265,10 +272,14 @@ func AddTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 						{
 							Address: "2001:db8:1::2",
 						},
+						{
+							Address: "3001::/48",
+						},
 					},
 				},
 			},
 		},
+		// Host 4.
 		{
 			HostIdentifiers: []dbmodel.HostIdentifier{
 				{
