@@ -1126,15 +1126,86 @@ func TestGetHostsByPageDuplicate(t *testing.T) {
 
 	_, hosts := addTestHosts(t, db)
 	host := hosts[2]
+	daemonID := host.LocalHosts[0].DaemonID
 
-	// Act
-	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+	hasher := keaconfig.NewHasher()
+	testCases := map[string]LocalHost{
+		"DHCP options": {
+			HostID:     host.ID,
+			DaemonID:   daemonID,
+			DataSource: HostDataSourceAPI,
+			DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{{
+				Code: 42,
+			}}, hasher),
+		},
+		"Client classes": {
+			HostID:        host.ID,
+			DaemonID:      daemonID,
+			DataSource:    HostDataSourceAPI,
+			ClientClasses: []string{"foo", "bar"},
+		},
+		"Boot filename": {
+			HostID:       host.ID,
+			DaemonID:     daemonID,
+			DataSource:   HostDataSourceAPI,
+			BootFileName: "foo",
+		},
+		"Next server": {
+			HostID:     host.ID,
+			DaemonID:   daemonID,
+			DataSource: HostDataSourceAPI,
+			NextServer: "foo",
+		},
+		"Server hostname": {
+			HostID:         host.ID,
+			DaemonID:       daemonID,
+			DataSource:     HostDataSourceAPI,
+			ServerHostname: "foo",
+		},
+		"Hostname": {
+			HostID:     host.ID,
+			DaemonID:   daemonID,
+			DataSource: HostDataSourceAPI,
+			Hostname:   "foo",
+		},
+		"IP reservations": {
+			HostID:     host.ID,
+			DaemonID:   daemonID,
+			DataSource: HostDataSourceAPI,
+			IPReservations: []IPReservation{
+				{
+					Address: "10.0.0.1",
+				},
+				{
+					Address: "10.0.0.2",
+				},
+			},
+		},
+	}
 
-	// Assert
-	require.NoError(t, err)
-	require.EqualValues(t, 1, total)
-	require.Len(t, returned, 1)
-	require.EqualValues(t, host.ID, returned[0].ID)
+	for label, localHost := range testCases {
+		label := label
+
+		_, _ = DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
+		localHostFirst := localHost
+		localHostSecond := localHost
+		localHostSecond.IPReservations = append([]IPReservation{}, localHost.IPReservations...)
+		localHostSecond.DataSource = HostDataSourceConfig
+
+		host.LocalHosts = []LocalHost{localHostFirst, localHostSecond}
+		_ = UpdateHost(db, &host)
+
+		t.Run(label, func(t *testing.T) {
+			// Act
+			returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+			// Assert
+			require.NoError(t, err)
+			require.EqualValues(t, 1, total)
+			require.Len(t, returned, 1)
+			require.EqualValues(t, host.ID, returned[0].ID)
+		})
+	}
 }
 
 // Test that page of the hosts contains only hosts with conflicted local hosts
@@ -1242,7 +1313,31 @@ func TestGetHostsByPageConflict(t *testing.T) {
 				Hostname:   "bar",
 			},
 		},
-		// TODO: Add case for IP reservations.
+		"IP reservations": {
+			{
+				HostID:     host.ID,
+				DaemonID:   daemonID,
+				DataSource: HostDataSourceAPI,
+				IPReservations: []IPReservation{
+					{
+						Address: "10.0.0.1",
+					},
+					{
+						Address: "10.0.0.2",
+					},
+				},
+			},
+			{
+				HostID:     host.ID,
+				DaemonID:   daemonID,
+				DataSource: HostDataSourceConfig,
+				IPReservations: []IPReservation{
+					{
+						Address: "10.0.0.3",
+					},
+				},
+			},
+		},
 	}
 
 	for label, localHosts := range testCases {

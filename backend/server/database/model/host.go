@@ -486,17 +486,17 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		// for a given host. This is because the HAVING clause filters out this
 		// kind of entries, so there are no corresponding rows in the subquery
 		// and the subquery results are joined with LEFT JOIN.
-		//
-		// TODO: Check the conflicts in the IP reservations. Currently, the UI
-		//       treats the IP reservations as belonging to the host, not to
-		//       the particular local host. This means that the IP reservations
-		//       are not considered when checking the conflicts but they should
-		//       be.
+		reservedSubquery := dbi.Model((*IPReservation)(nil)).
+			Column("local_host_id").
+			ColumnExpr("array_agg(address ORDER BY address) AS addresses").
+			Group("local_host_id")
+
 		conflictSubquery := dbi.Model((*struct {
 			tableName struct{} `pg:"local_host"`
 			HostID    int64
 			Conflict  bool
 		})(nil)).
+			Join("LEFT JOIN (?) AS reserved", reservedSubquery).JoinOn("local_host.id = reserved.local_host_id").
 			DistinctOn("host_id").
 			Column("host_id").
 			ColumnExpr(`
@@ -506,6 +506,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 				OR COUNT(DISTINCT COALESCE(server_hostname, '')) > 1
 				OR COUNT(DISTINCT COALESCE(boot_file_name, '')) > 1
 				OR COUNT(DISTINCT COALESCE(hostname, '')) > 1
+				OR COUNT(DISTINCT COALESCE(addresses, '{}')) > 1
 				AS conflict`).
 			Group("host_id", "daemon_id").
 			Having("COUNT(*) > 1").
