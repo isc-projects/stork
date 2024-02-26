@@ -517,7 +517,6 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, returnedHosts, 1)
 	returnedHost := returnedHosts[0]
-	require.NoError(t, err)
 	require.NotNil(t, returnedHost)
 
 	require.Len(t, returnedHost.HostIdentifiers, 1)
@@ -536,6 +535,145 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 		require.Empty(t, lh.DHCPOptionSet.Options)
 		require.Empty(t, lh.DHCPOptionSet.Hash)
 	}
+}
+
+// Test the calls for creating transaction and submitting a new host
+// reservation with the IP reservations and a hostname. The hostname and IP
+// reservations included in the local hosts should be ignored.
+func TestCreateHostBeginSubmitHostnameIPReservationsFromLocalHosts(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-add commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, _ := NewRestAPI(dbSettings, db, fa, cm, lookup)
+
+	// Create session manager.
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+
+	// Make sure we have some Kea apps in the database.
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
+	// Drop the hosts associations.
+	for _, host := range hosts {
+		_, _ = dbmodel.DeleteDaemonsFromHost(db, host.ID, dbmodel.HostDataSourceUnspecified)
+	}
+
+	// Begin transaction.
+	rspBegin := rapi.CreateHostBegin(ctx, dhcp.CreateHostBeginParams{})
+	require.IsType(t, &dhcp.CreateHostBeginOK{}, rspBegin)
+	okRsp := rspBegin.(*dhcp.CreateHostBeginOK)
+	contents := okRsp.Payload
+	transactionID := contents.ID
+
+	// Act
+	// Submit transaction.
+	params := dhcp.CreateHostSubmitParams{
+		ID: transactionID,
+		Host: &models.Host{
+			Hostname: "foo",
+			HostIdentifiers: []*models.HostIdentifier{
+				{
+					IDType:     "hw-address",
+					IDHexValue: "010203040506",
+				},
+			},
+			AddressReservations: []*models.IPReservation{
+				{
+					Address: "10.0.0.1",
+				},
+			},
+			PrefixReservations: []*models.IPReservation{
+				{
+					Address: "10.1.0.0/24",
+				},
+			},
+			LocalHosts: []*models.LocalHost{
+				{
+					DaemonID:   apps[0].Daemons[0].ID,
+					DataSource: dbmodel.HostDataSourceAPI.String(),
+					Hostname:   "bar",
+					IPReservations: []*models.IPReservation{
+						{
+							Address: "172.0.1.1",
+						},
+						{
+							Address: "172.1.0.0/24",
+						},
+					},
+				},
+			},
+		},
+	}
+	rsp := rapi.CreateHostSubmit(ctx, params)
+
+	// Assert
+	require.IsType(t, &dhcp.CreateHostSubmitOK{}, rsp)
+	require.Len(t, fa.RecordedCommands, 1)
+
+	require.JSONEq(t, `{
+		"command": "reservation-add",
+		"service": ["dhcp4"],
+		"arguments": {
+			"reservation": {
+				"hw-address": "010203040506",
+				"subnet-id": 0,
+				"hostname": "foo",
+				"ip-address": "10.0.0.1",
+				"prefixes": [ "10.1.0.0/24" ]
+			}
+		}
+	}`, fa.RecordedCommands[0].Marshal())
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	returnedHosts, _, err := dbmodel.GetHostsByDaemonID(db, apps[0].Daemons[0].ID, dbmodel.HostDataSourceAPI)
+	require.NoError(t, err)
+	require.Len(t, returnedHosts, 1)
+	returnedHost := returnedHosts[0]
+	require.Equal(t, "foo", returnedHost.GetHostname())
+	require.Contains(t, returnedHost.GetIPReservations(), "10.0.0.1/32")
+	require.Contains(t, returnedHost.GetIPReservations(), "10.1.0.0/24")
+
+	require.Len(t, returnedHost.LocalHosts, 1)
+	localHost := returnedHost.LocalHosts[0]
+	require.Equal(t, "foo", localHost.Hostname)
+	require.Len(t, localHost.IPReservations, 2)
+	var addresses []string
+	for _, reservation := range localHost.IPReservations {
+		addresses = append(addresses, reservation.Address)
+	}
+	require.Contains(t, addresses, "10.0.0.1/32")
+	require.Contains(t, addresses, "10.1.0.0/24")
 }
 
 // Test error case when a user attempts to begin a new transaction when
