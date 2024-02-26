@@ -28,6 +28,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { MessageModule } from 'primeng/message'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -55,6 +56,7 @@ describe('HostTabComponent', () => {
                 TreeModule,
                 TagModule,
                 MessageModule,
+                ProgressSpinnerModule,
             ],
             declarations: [
                 DhcpClientClassSetViewComponent,
@@ -881,7 +883,7 @@ describe('HostTabComponent', () => {
     })
 
     it('should display different host data for different servers separately', () => {
-        const host = {
+        const host: Partial<Host> = {
             id: 1,
             hostIdentifiers: [
                 {
@@ -889,9 +891,23 @@ describe('HostTabComponent', () => {
                     idHexValue: '51:52:53:54',
                 },
             ],
-            addressReservations: [],
-            prefixReservations: [],
-            hostname: '',
+            addressReservations: [
+                {
+                    address: '2001:db8:1::1',
+                },
+                {
+                    address: '2001:db8:1::2',
+                },
+            ],
+            prefixReservations: [
+                {
+                    address: '2001:db8:2::/80',
+                },
+                {
+                    address: '2001:db8:3::/80',
+                },
+            ],
+            hostname: 'foo.example.org',
             subnetId: 1,
             subnetPrefix: '2001:db8:1::/64',
             localHosts: [
@@ -904,6 +920,7 @@ describe('HostTabComponent', () => {
                     nextServer: '192.0.2.1',
                     serverHostname: 'myhostname',
                     bootFileName: '/tmp/boot1',
+                    hostname: 'foo.example.org',
                     options: [
                         {
                             code: 1024,
@@ -913,6 +930,20 @@ describe('HostTabComponent', () => {
                         },
                     ],
                     optionsHash: '1111',
+                    ipReservations: [
+                        {
+                            address: '2001:db8:1::1',
+                        },
+                        {
+                            address: '2001:db8:1::2',
+                        },
+                        {
+                            address: '2001:db8:2::/80',
+                        },
+                        {
+                            address: '2001:db8:3::/80',
+                        },
+                    ],
                 },
                 {
                     appId: 2,
@@ -923,6 +954,7 @@ describe('HostTabComponent', () => {
                     nextServer: '192.0.2.2',
                     serverHostname: 'yourhostname',
                     bootFileName: '/tmp/boot2',
+                    hostname: 'bar.example.org',
                     options: [
                         {
                             code: 1024,
@@ -932,6 +964,14 @@ describe('HostTabComponent', () => {
                         },
                     ],
                     optionsHash: '2222',
+                    ipReservations: [
+                        {
+                            address: '2001:db8:1::3',
+                        },
+                        {
+                            address: '2001:db8:4::/80',
+                        },
+                    ],
                 },
             ],
         }
@@ -939,16 +979,20 @@ describe('HostTabComponent', () => {
         fixture.detectChanges()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(10)
+        expect(fieldsets.length).toBe(12)
 
-        expect(fieldsets[4].properties.innerText).toContain('Boot Fields')
-        expect(fieldsets[5].properties.innerText).toContain('Boot Fields')
-        expect(fieldsets[6].properties.innerText).toContain('Client Classes')
-        expect(fieldsets[7].properties.innerText).toContain('Client Classes')
-        expect(fieldsets[8].properties.innerText).toContain('DHCP Options')
-        expect(fieldsets[9].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[2].properties.innerText).toContain('Hostname')
+        expect(fieldsets[3].properties.innerText).toContain('Hostname')
+        expect(fieldsets[4].properties.innerText).toContain('IP Reservations')
+        expect(fieldsets[5].properties.innerText).toContain('IP Reservations')
+        expect(fieldsets[6].properties.innerText).toContain('Boot Fields')
+        expect(fieldsets[7].properties.innerText).toContain('Boot Fields')
+        expect(fieldsets[8].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[9].properties.innerText).toContain('Client Classes')
+        expect(fieldsets[10].properties.innerText).toContain('DHCP Options')
+        expect(fieldsets[11].properties.innerText).toContain('DHCP Options')
 
-        for (let i = 4; i < 10; i++) {
+        for (let i = 2; i < 12; i++) {
             let link = fieldsets[i].query(By.css('a'))
             expect(link).toBeTruthy()
             if (i % 2 === 0) {
@@ -962,7 +1006,7 @@ describe('HostTabComponent', () => {
     })
 
     it('should display the same host data for different servers in one panel', () => {
-        const host = {
+        const host: Partial<Host> = {
             id: 1,
             hostIdentifiers: [
                 {
@@ -970,9 +1014,17 @@ describe('HostTabComponent', () => {
                     idHexValue: '51:52:53:54',
                 },
             ],
-            addressReservations: [],
-            prefixReservations: [],
-            hostname: '',
+            addressReservations: [
+                {
+                    address: '192.0.2.1',
+                },
+            ],
+            prefixReservations: [
+                {
+                    address: '192.0.0.128/30',
+                },
+            ],
+            hostname: 'foo.example.com',
             subnetId: 1,
             subnetPrefix: '192.0.2.0/24',
             localHosts: [
@@ -985,6 +1037,7 @@ describe('HostTabComponent', () => {
                     serverHostname: 'my-server',
                     bootFileName: '/tmp/boot1',
                     clientClasses: ['foo', 'bar'],
+                    hostname: 'foo.example.com',
                     options: [
                         {
                             code: 1024,
@@ -994,6 +1047,14 @@ describe('HostTabComponent', () => {
                         },
                     ],
                     optionsHash: '1111',
+                    ipReservations: [
+                        {
+                            address: '192.0.2.1',
+                        },
+                        {
+                            address: '192.0.0.128/30',
+                        },
+                    ],
                 },
                 {
                     appId: 2,
@@ -1004,6 +1065,7 @@ describe('HostTabComponent', () => {
                     serverHostname: 'my-server',
                     bootFileName: '/tmp/boot1',
                     clientClasses: ['foo', 'bar'],
+                    hostname: 'foo.example.com',
                     options: [
                         {
                             code: 1024,
@@ -1013,6 +1075,14 @@ describe('HostTabComponent', () => {
                         },
                     ],
                     optionsHash: '1111',
+                    ipReservations: [
+                        {
+                            address: '192.0.2.1',
+                        },
+                        {
+                            address: '192.0.0.128/30',
+                        },
+                    ],
                 },
             ],
         }
