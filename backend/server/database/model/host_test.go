@@ -1995,84 +1995,107 @@ func TestHasIdentifier(t *testing.T) {
 // Test the function that checks if two hosts are the same and which
 // compare IP reservations for equality.
 func TestSameHosts(t *testing.T) {
-	host1 := Host{
-		HostIdentifiers: []HostIdentifier{
-			{
-				Type:  "hw-address",
-				Value: []byte{1, 2, 3, 4, 5, 6},
+	hostsFactory := func() (Host, Host) {
+		host1 := Host{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
+				{
+					Type:  "circuit-id",
+					Value: []byte{1, 2, 3, 4},
+				},
 			},
-			{
-				Type:  "circuit-id",
-				Value: []byte{1, 2, 3, 4},
-			},
-		},
-		LocalHosts: []LocalHost{
-			{
-				IPReservations: []IPReservation{
-					{
-						Address: "192.0.2.4/32",
-					},
-					{
-						Address: "192.0.2.5/32",
+			LocalHosts: []LocalHost{
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.4/32",
+						},
+						{
+							Address: "192.0.2.5/32",
+						},
 					},
 				},
 			},
-		},
-	}
+		}
 
-	host2 := Host{
-		HostIdentifiers: []HostIdentifier{
-			{
-				Type:  "circuit-id",
-				Value: []byte{1, 2, 3, 4},
+		host2 := Host{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "circuit-id",
+					Value: []byte{1, 2, 3, 4},
+				},
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
 			},
-			{
-				Type:  "hw-address",
-				Value: []byte{1, 2, 3, 4, 5, 6},
-			},
-		},
-		LocalHosts: []LocalHost{
-			{
-				IPReservations: []IPReservation{
-					{
-						Address: "192.0.2.5/32",
-					},
-					{
-						Address: "192.0.2.4/32",
+			LocalHosts: []LocalHost{
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.2.5/32",
+						},
+						{
+							Address: "192.0.2.4/32",
+						},
 					},
 				},
 			},
-		},
+		}
+
+		return host1, host2
 	}
 
-	require.True(t, host1.IsSame(&host2))
-	require.True(t, host2.IsSame(&host1))
-	require.True(t, host1.HasEqualIPReservations(&host2))
-	require.True(t, host2.HasEqualIPReservations(&host1))
+	t.Run("Same data", func(t *testing.T) {
+		host1, host2 := hostsFactory()
 
-	host1.HostIdentifiers = append(host1.HostIdentifiers, HostIdentifier{
-		Type:  "client-id",
-		Value: []byte{1, 1, 1, 1},
-	})
-	host1.LocalHosts[0].IPReservations = append(host1.LocalHosts[0].IPReservations, IPReservation{
-		Address: "192.0.2.6",
+		require.True(t, host1.IsSame(&host2))
+		require.True(t, host2.IsSame(&host1))
+		require.True(t, host1.HasEqualIPReservations(&host2))
+		require.True(t, host2.HasEqualIPReservations(&host1))
 	})
 
-	require.False(t, host1.IsSame(&host2))
-	require.False(t, host2.IsSame(&host1))
-	require.False(t, host1.HasEqualIPReservations(&host2))
-	require.False(t, host2.HasEqualIPReservations(&host1))
+	t.Run("Different identifiers", func(t *testing.T) {
+		host1, host2 := hostsFactory()
 
-	// Copy the host.
-	host1 = host2
-	host1.LocalHosts = []LocalHost{host2.LocalHosts[0]}
+		host1.HostIdentifiers = append(host1.HostIdentifiers, HostIdentifier{
+			Type:  "client-id",
+			Value: []byte{1, 1, 1, 1},
+		})
 
-	for i := range host1.LocalHosts {
-		host1.LocalHosts[i].Hostname = "foobar"
-	}
+		require.False(t, host1.IsSame(&host2))
+		require.False(t, host2.IsSame(&host1))
+		require.True(t, host1.HasEqualIPReservations(&host2))
+		require.True(t, host2.HasEqualIPReservations(&host1))
+	})
 
-	require.False(t, host1.IsSame(&host2))
-	require.False(t, host2.IsSame(&host1))
+	t.Run("Different IP reservations", func(t *testing.T) {
+		host1, host2 := hostsFactory()
+
+		host1.LocalHosts[0].IPReservations = append(host1.LocalHosts[0].IPReservations, IPReservation{
+			Address: "192.0.2.6",
+		})
+
+		require.True(t, host1.IsSame(&host2))
+		require.True(t, host2.IsSame(&host1))
+		require.False(t, host1.HasEqualIPReservations(&host2))
+		require.False(t, host2.HasEqualIPReservations(&host1))
+	})
+
+	t.Run("Different hostnames", func(t *testing.T) {
+		host1, host2 := hostsFactory()
+
+		for i := range host1.LocalHosts {
+			host1.LocalHosts[i].Hostname = "foobar"
+		}
+
+		require.True(t, host1.IsSame(&host2))
+		require.True(t, host2.IsSame(&host1))
+		require.NotEqual(t, host1.GetHostname(), host2.GetHostname())
+	})
 }
 
 func TestHostIdentifierToHex(t *testing.T) {
@@ -2744,7 +2767,7 @@ func TestSetLocalHost(t *testing.T) {
 	host := &Host{}
 
 	// Create new LocalHost instance.
-	host.AddOrUpdateLocalHost(&LocalHost{
+	host.AddOrUpdateLocalHost(LocalHost{
 		DaemonID:   123,
 		DataSource: HostDataSourceConfig,
 	})
@@ -2753,7 +2776,7 @@ func TestSetLocalHost(t *testing.T) {
 	require.Equal(t, HostDataSourceConfig, host.LocalHosts[0].DataSource)
 
 	// Create another one.
-	host.AddOrUpdateLocalHost(&LocalHost{
+	host.AddOrUpdateLocalHost(LocalHost{
 		DaemonID:   234,
 		DataSource: HostDataSourceConfig,
 	})
@@ -2764,7 +2787,7 @@ func TestSetLocalHost(t *testing.T) {
 	require.Equal(t, HostDataSourceConfig, host.LocalHosts[1].DataSource)
 
 	// Append a new instance with existing daemon ID but a new data source.
-	host.AddOrUpdateLocalHost(&LocalHost{
+	host.AddOrUpdateLocalHost(LocalHost{
 		DaemonID:   123,
 		DataSource: HostDataSourceAPI,
 	})

@@ -852,8 +852,7 @@ func (host Host) HasEqualIPReservations(other *Host) bool {
 }
 
 // Checks if two Host instances describe the same host. The host is
-// the same when it has equal host identifiers, IP reservations and
-// hostname.
+// the same when it has equal host identifiers.
 func (host Host) IsSame(other *Host) bool {
 	if len(host.HostIdentifiers) != len(other.HostIdentifiers) {
 		return false
@@ -865,11 +864,7 @@ func (host Host) IsSame(other *Host) bool {
 		}
 	}
 
-	if !host.HasEqualIPReservations(other) {
-		return false
-	}
-
-	return host.GetHostname() == other.GetHostname()
+	return true
 }
 
 // Returns local host instance for the daemon ID or nil.
@@ -1259,14 +1254,14 @@ func (host *Host) PopulateSubnet(dbi dbops.DBI) error {
 // (having the same daemon ID and data source) already exists, it is replaced
 // with the specified instance. Otherwise, the instance is appended to the
 // slice of LocalHosts.
-func (host *Host) AddOrUpdateLocalHost(localHost *LocalHost) {
+func (host *Host) AddOrUpdateLocalHost(localHost LocalHost) {
 	for i, lh := range host.LocalHosts {
 		if lh.DaemonID == localHost.DaemonID && lh.DataSource == localHost.DataSource {
-			host.LocalHosts[i] = *localHost
+			host.LocalHosts[i] = localHost
 			return
 		}
 	}
-	host.LocalHosts = append(host.LocalHosts, *localHost)
+	host.LocalHosts = append(host.LocalHosts, localHost)
 }
 
 // Combines two hosts into a single host by copying LocalHost data from
@@ -1278,7 +1273,7 @@ func (host *Host) Join(other *Host) bool {
 		return false
 	}
 	for i := range other.LocalHosts {
-		host.AddOrUpdateLocalHost(&other.LocalHosts[i])
+		host.AddOrUpdateLocalHost(other.LocalHosts[i])
 	}
 	return true
 }

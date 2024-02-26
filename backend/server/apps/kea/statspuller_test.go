@@ -238,7 +238,7 @@ func createDhcpConfigs() (string, string) {
 					// 1 out-of-pool, 1 in-pool prefix reservations
 					"reservations": [
 						{
-							"hw-address": "00:00:00:00:01:23",
+							"hw-address": "00:00:00:00:01:21",
 							"ip-address": "2001:db8:3::101",
 							"prefixes": [ "2001:db8:3:8000::/80" ]
 						},
