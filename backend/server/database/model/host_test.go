@@ -3000,3 +3000,127 @@ func TestDeleteDaemonsFromHostError(t *testing.T) {
 	require.Error(t, err)
 	require.Zero(t, count)
 }
+
+// Test that the IP reservations from all local hosts are returned and the
+// duplicates are removed.
+func TestGetIPReservations(t *testing.T) {
+	t.Run("single local host", func(t *testing.T) {
+		// Arrange
+		host := &Host{
+			LocalHosts: []LocalHost{
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "10.0.0.1",
+						},
+						{
+							Address: "10.0.0.2",
+						},
+					},
+				},
+			},
+		}
+
+		// Act
+		ips := host.GetIPReservations()
+
+		// Assert
+		require.Len(t, ips, 2)
+		require.Contains(t, ips, "10.0.0.1")
+		require.Contains(t, ips, "10.0.0.2")
+	})
+
+	t.Run("multiple local hosts with the same data", func(t *testing.T) {
+		// Arrange
+		host := &Host{
+			LocalHosts: []LocalHost{
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "10.0.0.1",
+						},
+						{
+							Address: "10.0.0.2",
+						},
+					},
+				},
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "10.0.0.1",
+						},
+						{
+							Address: "10.0.0.2",
+						},
+					},
+				},
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "10.0.0.1",
+						},
+						{
+							Address: "10.0.0.2",
+						},
+					},
+				},
+			},
+		}
+
+		// Act
+		ips := host.GetIPReservations()
+
+		// Assert
+		require.Len(t, ips, 2)
+		require.Contains(t, ips, "10.0.0.1")
+		require.Contains(t, ips, "10.0.0.2")
+	})
+
+	t.Run("multiple local hosts with different data", func(t *testing.T) {
+		host := &Host{
+			LocalHosts: []LocalHost{
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "10.0.0.1",
+						},
+						{
+							Address: "10.0.0.2",
+						},
+					},
+				},
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "10.0.0.2",
+						},
+						{
+							Address: "10.0.0.3",
+						},
+					},
+				},
+				{
+					IPReservations: []IPReservation{
+						{
+							Address: "10.0.0.4",
+						},
+						{
+							Address: "10.0.0.5",
+						},
+					},
+				},
+			},
+		}
+
+		// Act
+		ips := host.GetIPReservations()
+
+		// Assert
+		require.Len(t, ips, 5)
+		require.Contains(t, ips, "10.0.0.1")
+		require.Contains(t, ips, "10.0.0.2")
+		require.Contains(t, ips, "10.0.0.3")
+		require.Contains(t, ips, "10.0.0.4")
+		require.Contains(t, ips, "10.0.0.5")
+	})
+}
