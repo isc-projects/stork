@@ -820,9 +820,8 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	// find only global hosts
-	global := true
 	filters := HostsByPageFilters{
-		Global: &global,
+		Global: storkutil.Ptr(true),
 	}
 	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
@@ -832,9 +831,8 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 	require.Contains(t, returned, hosts[3])
 
 	// find only non-global hosts
-	global = false
 	filters = HostsByPageFilters{
-		Global: &global,
+		Global: storkutil.Ptr(false),
 	}
 	returned, total, err = GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
@@ -842,6 +840,39 @@ func TestGetHostsByPageGlobal(t *testing.T) {
 	require.Len(t, returned, 2)
 	require.Contains(t, []int64{hosts[0].ID, hosts[2].ID}, returned[0].ID)
 	require.Contains(t, []int64{hosts[0].ID, hosts[2].ID}, returned[1].ID)
+}
+
+// Test that the global hosts from a specific app can be fetched if both the
+// app ID and the global filter are set.
+func TestGetHostsByPageGlobalAndAppID(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add four hosts. Two global and two non-global.
+	hosts := addTestHosts(t, db)
+	daemon1, daemon2, _ := addTestDaemons(db)
+
+	_ = AddDaemonToHost(db, &hosts[0], daemon1.ID, HostDataSourceAPI)
+	_ = AddDaemonToHost(db, &hosts[1], daemon1.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, &hosts[2], daemon2.ID, HostDataSourceAPI)
+	_ = AddDaemonToHost(db, &hosts[3], daemon2.ID, HostDataSourceConfig)
+
+	// Prepare a filter.
+	filters := HostsByPageFilters{
+		Global: storkutil.Ptr(true),
+		AppID:  storkutil.Ptr(daemon1.AppID),
+	}
+
+	// Act
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	require.EqualValues(t, hosts[1].ID, returned[0].ID)
+	require.Zero(t, returned[0].SubnetID)
 }
 
 // Test that page of the hosts is empty if there is a filter for conflicted or

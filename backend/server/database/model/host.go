@@ -605,10 +605,10 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 
 	// Filter global or non-global hosts.
 	if (filters.Global != nil && *filters.Global) || (filters.SubnetID != nil && *filters.SubnetID == 0) {
-		q = q.WhereOr("host.subnet_id IS NULL")
+		q = q.Where("host.subnet_id IS NULL")
 	}
 	if filters.Global != nil && !*filters.Global {
-		q = q.WhereOr("host.subnet_id IS NOT NULL")
+		q = q.Where("host.subnet_id IS NOT NULL")
 	}
 
 	// Filter by text.
