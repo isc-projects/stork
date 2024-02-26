@@ -324,7 +324,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                         })
                     // Check if we need to add the partner's column. This is the case in the
                     // hot-standby and load-balancing case.
-                    this.hasPartnerColumn = this.status.some((s) => s.data?.cells?.length > 1)
+                    this.hasPartnerColumn = status.some((s) => s.children?.some((c) => c.data?.cells?.length > 1))
                     this.status = status
                 }
                 this.loadedOnce = true
