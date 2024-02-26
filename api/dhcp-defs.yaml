@@ -176,7 +176,7 @@
         type: string
       hostname:
         type: string
-      reservations:
+      ipReservations:
         type: array
         items:
           $ref: '#/definitions/IPReservation'

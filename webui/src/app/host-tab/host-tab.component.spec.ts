@@ -107,7 +107,7 @@ describe('HostTabComponent', () => {
                     serverHostname: 'my-server',
                     bootFileName: '/tmp/bootfile1',
                     hostname: 'mouse.example.org',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '192.0.2.123',
                         },
@@ -121,7 +121,7 @@ describe('HostTabComponent', () => {
                     serverHostname: 'my-server',
                     bootFileName: '/tmp/bootfile1',
                     hostname: 'mouse.example.org',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '192.0.2.123',
                         },
@@ -216,7 +216,7 @@ describe('HostTabComponent', () => {
                     appName: 'frog',
                     dataSource: 'config',
                     hostname: 'mouse.example.org',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '2001:db8:1::1',
                         },
@@ -236,7 +236,7 @@ describe('HostTabComponent', () => {
                     appName: 'mouse',
                     dataSource: 'api',
                     hostname: 'mouse.example.org',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '2001:db8:1::1',
                         },
@@ -362,7 +362,7 @@ describe('HostTabComponent', () => {
                     appId: 1,
                     appName: 'frog',
                     dataSource: 'config',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '2001:db8:1::1',
                         },
@@ -381,7 +381,7 @@ describe('HostTabComponent', () => {
                     appId: 2,
                     appName: 'mouse',
                     dataSource: 'api',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '2001:db8:1::1',
                         },
@@ -484,7 +484,7 @@ describe('HostTabComponent', () => {
                     appId: 1,
                     appName: 'frog',
                     dataSource: 'config',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '192.0.2.1',
                         },
@@ -494,7 +494,7 @@ describe('HostTabComponent', () => {
                     appId: 2,
                     appName: 'mouse',
                     dataSource: 'api',
-                    reservations: [
+                    ipReservations: [
                         {
                             address: '192.0.2.1',
                         },

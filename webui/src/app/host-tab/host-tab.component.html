@@ -116,7 +116,7 @@
                                 }"
                             ></ng-container>
                         </ng-template>
-                        <p-table [value]="localHosts[0].reservations || []" dataKey="address">
+                        <p-table [value]="localHosts[0].ipReservations || []" dataKey="address">
                             <ng-template pTemplate="body" let-r let-expanded="expanded">
                                 <tr>
                                     <td class="border-none">

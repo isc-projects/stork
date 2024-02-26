@@ -242,21 +242,21 @@ describe('hosts', () => {
     it('detects differences for IP reservations', () => {
         const localHosts: Partial<LocalHost>[] = [
             {
-                reservations: [
+                ipReservations: [
                     {
                         address: '10.0.0.1',
                     },
                 ],
             },
             {
-                reservations: [
+                ipReservations: [
                     {
                         address: '10.0.0.1',
                     },
                 ],
             },
             {
-                reservations: [
+                ipReservations: [
                     {
                         address: '10.1.1.1',
                     },

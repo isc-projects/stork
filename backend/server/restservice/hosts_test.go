@@ -376,7 +376,7 @@ func TestGetHostWithIPReservations(t *testing.T) {
 
 	var localHostReservations []*models.IPReservation
 	for _, lh := range returnedHost.LocalHosts {
-		localHostReservations = append(localHostReservations, lh.Reservations...)
+		localHostReservations = append(localHostReservations, lh.IPReservations...)
 	}
 	var hostReservations []*models.IPReservation
 	for i := 0; i < len(returnedHost.LocalHosts); i++ {

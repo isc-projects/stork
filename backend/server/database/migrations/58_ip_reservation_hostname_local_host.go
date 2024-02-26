@@ -50,7 +50,7 @@ func init() {
 
 				-- Duplicate the IP reservations for each daemon.
 				INSERT INTO ip_reservation (created_at, address, host_id, local_host_id)
-				SELECT ir2.created_at, ir2.address , ir2.host_id, lh.id 
+				SELECT ir2.created_at, ir2.address, ir2.host_id, lh.id 
 				FROM local_host lh
 				LEFT JOIN ip_reservation ir ON lh.id = ir.local_host_id
 				LEFT JOIN local_host lh2 ON lh.host_id = lh2.host_id

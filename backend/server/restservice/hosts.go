@@ -86,7 +86,7 @@ func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
 			ClientClasses:  dbLocalHost.ClientClasses,
 			OptionsHash:    dbLocalHost.DHCPOptionSet.Hash,
 			Hostname:       dbLocalHost.Hostname,
-			Reservations:   ipReservations,
+			IPReservations: ipReservations,
 		}
 		localHost.Options = r.unflattenDHCPOptions(dbLocalHost.DHCPOptionSet.Options, "", 0)
 		host.LocalHosts = append(host.LocalHosts, &localHost)
