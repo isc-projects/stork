@@ -875,6 +875,39 @@ func TestGetHostsByPageGlobalAndAppID(t *testing.T) {
 	require.Zero(t, returned[0].SubnetID)
 }
 
+// Test that the non-global hosts from a specific app can be fetched if both the
+// app ID and the negated global filter are set.
+func TestGetHostsByPageNotGlobalAndAppID(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add four hosts. Two global and two non-global.
+	hosts := addTestHosts(t, db)
+	daemon1, daemon2, _ := addTestDaemons(db)
+
+	_ = AddDaemonToHost(db, &hosts[0], daemon1.ID, HostDataSourceAPI)
+	_ = AddDaemonToHost(db, &hosts[1], daemon1.ID, HostDataSourceConfig)
+	_ = AddDaemonToHost(db, &hosts[2], daemon2.ID, HostDataSourceAPI)
+	_ = AddDaemonToHost(db, &hosts[3], daemon2.ID, HostDataSourceConfig)
+
+	// Prepare a filter.
+	filters := HostsByPageFilters{
+		Global: storkutil.Ptr(false),
+		AppID:  storkutil.Ptr(daemon1.AppID),
+	}
+
+	// Act
+	returned, total, err := GetHostsByPage(db, 0, 10, filters, "", SortDirAny)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	require.EqualValues(t, hosts[0].ID, returned[0].ID)
+	require.NotZero(t, returned[0].SubnetID)
+}
+
 // Test that page of the hosts is empty if there is a filter for conflicted or
 // duplicated DHCP data and there are no such hosts.
 func TestGetHostsByPageNoConflictsOrDuplicates(t *testing.T) {
