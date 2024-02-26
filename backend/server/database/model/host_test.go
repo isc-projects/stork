@@ -3004,6 +3004,17 @@ func TestDeleteDaemonsFromHostError(t *testing.T) {
 // Test that the IP reservations from all local hosts are returned and the
 // duplicates are removed.
 func TestGetIPReservations(t *testing.T) {
+	t.Run("no local hosts", func(t *testing.T) {
+		// Arrange
+		host := &Host{}
+
+		// Act
+		ips := host.GetIPReservations()
+
+		// Assert
+		require.Empty(t, ips)
+	})
+
 	t.Run("single local host", func(t *testing.T) {
 		// Arrange
 		host := &Host{
@@ -3122,5 +3133,76 @@ func TestGetIPReservations(t *testing.T) {
 		require.Contains(t, ips, "10.0.0.3")
 		require.Contains(t, ips, "10.0.0.4")
 		require.Contains(t, ips, "10.0.0.5")
+	})
+}
+
+// Test that the hostname is returned from the first local host.
+func TestGetHostname(t *testing.T) {
+	t.Run("no local hosts", func(t *testing.T) {
+		// Arrange
+		host := &Host{}
+
+		// Act
+		hostname := host.GetHostname()
+
+		// Assert
+		require.Empty(t, hostname)
+	})
+
+	t.Run("single local host", func(t *testing.T) {
+		// Arrange
+		host := &Host{
+			LocalHosts: []LocalHost{
+				{
+					Hostname: "foo",
+				},
+			},
+		}
+
+		// Act
+		hostname := host.GetHostname()
+
+		// Assert
+		require.Equal(t, "foo", hostname)
+	})
+
+	t.Run("multiple local hosts", func(t *testing.T) {
+		// Arrange
+		host := &Host{
+			LocalHosts: []LocalHost{
+				{
+					Hostname: "foo",
+				},
+				{
+					Hostname: "bar",
+				},
+			},
+		}
+
+		// Act
+		hostname := host.GetHostname()
+
+		// Assert
+		require.Equal(t, "foo", hostname)
+	})
+
+	t.Run("multiple local hosts the first has no hostname", func(t *testing.T) {
+		// Arrange
+		host := &Host{
+			LocalHosts: []LocalHost{
+				{
+					Hostname: "",
+				},
+				{
+					Hostname: "bar",
+				},
+			},
+		}
+
+		// Act
+		hostname := host.GetHostname()
+
+		// Assert
+		require.Empty(t, hostname)
 	})
 }
