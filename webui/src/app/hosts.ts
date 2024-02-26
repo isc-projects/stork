@@ -92,13 +92,13 @@ export function hasDifferentLocalHostIPReservations(localHosts: LocalHost[]): bo
         return false
     }
 
-    const getSortedIPAddresses = (lh: LocalHost) => (lh.reservations ?? []).map((r) => r.address).sort()
+    const getSortedIPAddresses = (lh: LocalHost) => (lh.ipReservations ?? []).map((r) => r.address).sort()
     const referenceAddresses = getSortedIPAddresses(localHosts[0])
     return localHosts
         .slice(1)
         .some(
             (lh) =>
-                (lh.reservations?.length ?? 0) != referenceAddresses.length ||
+                (lh.ipReservations?.length ?? 0) != referenceAddresses.length ||
                 getSortedIPAddresses(lh).some((a, i) => a !== referenceAddresses[i])
         )
 }

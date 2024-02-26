@@ -23,15 +23,10 @@ import (
 // Converts host reservation fetched from the database to the format
 // used in REST API.
 func (r *RestAPI) convertHostFromRestAPI(dbHost *dbmodel.Host) *models.Host {
-	hostname := ""
-	if len(dbHost.LocalHosts) > 0 {
-		hostname = dbHost.LocalHosts[0].Hostname
-	}
-
 	host := &models.Host{
 		ID:       dbHost.ID,
 		SubnetID: dbHost.SubnetID,
-		Hostname: hostname,
+		Hostname: dbHost.GetHostname(),
 	}
 	// Include subnet prefix if this is subnet specific host.
 	if dbHost.Subnet != nil {
