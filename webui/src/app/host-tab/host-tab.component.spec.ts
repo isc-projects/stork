@@ -1344,7 +1344,7 @@ describe('HostTabComponent', () => {
     })
 
     it('should group local hosts by different hash of DHCP options properly', () => {
-        const host = {
+        const host: Partial<Host> = {
             localHosts: [
                 {
                     appId: 1,
@@ -1372,7 +1372,7 @@ describe('HostTabComponent', () => {
                     optionsHash: 'foo',
                 },
             ],
-        } as Host
+        }
 
         component.host = host
         const groups = component.localHostsGroups.dhcpOptions
@@ -1392,6 +1392,125 @@ describe('HostTabComponent', () => {
                     for (const item of group) {
                         expect(item.daemonId).toBeGreaterThanOrEqual(4)
                     }
+            }
+        }
+    })
+
+    it('should group local hosts by different IP reservations', () => {
+        const host: Partial<Host> = {
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    ipReservations: [
+                        {
+                            address: '10.0.0.1',
+                        },
+                        {
+                            address: '10.0.0.2',
+                        },
+                    ],
+                },
+                {
+                    appId: 1,
+                    daemonId: 2,
+                    ipReservations: [
+                        {
+                            address: '10.0.0.1',
+                        },
+                        {
+                            address: '10.0.0.2',
+                        },
+                    ],
+                },
+                {
+                    appId: 2,
+                    daemonId: 3,
+                    ipReservations: [
+                        {
+                            address: '10.0.0.3',
+                        },
+                    ],
+                },
+                {
+                    appId: 2,
+                    daemonId: 4,
+                    ipReservations: [
+                        {
+                            address: '10.0.0.3',
+                        },
+                        {
+                            address: '10.0.0.4',
+                        },
+                    ],
+                },
+            ],
+        }
+
+        component.host = host
+        const groups = component.localHostsGroups.ipReservations
+
+        expect(groups.length).toBe(3)
+
+        for (let group of groups) {
+            const appId = group[0].appId
+
+            switch (appId) {
+                case 1:
+                    expect(group.length).toBe(2)
+                    expect(group[0].daemonId).toBeLessThanOrEqual(2)
+                    break
+                case 2:
+                    expect(group.length).toBe(1)
+                    expect(group[0].daemonId).toBeGreaterThanOrEqual(3)
+                    expect(group[0].daemonId).toBeLessThanOrEqual(4)
+            }
+        }
+    })
+
+    it('should group local hosts by different hostnames', () => {
+        const host: Partial<Host> = {
+            hostname: 'ignored',
+            localHosts: [
+                {
+                    appId: 1,
+                    daemonId: 1,
+                    hostname: 'foo',
+                },
+                {
+                    appId: 1,
+                    daemonId: 2,
+                    hostname: 'foo',
+                },
+                {
+                    appId: 2,
+                    daemonId: 3,
+                    hostname: 'bar',
+                },
+                {
+                    appId: 2,
+                    daemonId: 4,
+                },
+            ],
+        }
+
+        component.host = host
+        const groups = component.localHostsGroups.hostname
+
+        expect(groups.length).toBe(3)
+
+        for (let group of groups) {
+            const appId = group[0].appId
+
+            switch (appId) {
+                case 1:
+                    expect(group.length).toBe(2)
+                    expect(group[0].daemonId).toBeLessThanOrEqual(2)
+                    break
+                case 2:
+                    expect(group.length).toBe(1)
+                    expect(group[0].daemonId).toBeGreaterThanOrEqual(3)
+                    expect(group[0].daemonId).toBeLessThanOrEqual(4)
             }
         }
     })
@@ -1428,6 +1547,8 @@ describe('HostTabComponent', () => {
             component.localHostsGroups.bootFields,
             component.localHostsGroups.clientClasses,
             component.localHostsGroups.dhcpOptions,
+            component.localHostsGroups.hostname,
+            component.localHostsGroups.ipReservations,
         ]) {
             expect(groups.length).toBe(1)
             const group = groups[0]
