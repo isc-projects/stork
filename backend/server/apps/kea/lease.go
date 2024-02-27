@@ -392,7 +392,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 			appError = warns
 			if err != nil {
 				appError = true
-				log.Warn(err)
+				log.WithError(err).Warnf("Failed to fetch leases from Kea [%d] %s app", apps[i].ID, apps[i].Name)
 			} else {
 				leases = append(leases, leasesByProperties...)
 			}
