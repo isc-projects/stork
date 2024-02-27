@@ -10,6 +10,7 @@ import (
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
@@ -292,6 +293,116 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
              "result": 1,
              "text": "Unable to communicate"
          }]`
+	}
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
+}
+
+// Generates a response to the status-get command for a server that has two
+// HA relationships.
+func mockGetStatusWithHAHub(callNo int, cmdResponses []any) {
+	command := keactrl.NewCommand("status-get", []string{"dhcp4"}, nil)
+	var json string
+	switch callNo {
+	case 0:
+		json = `[{
+            "result": 0,
+            "text": "Everything is fine",
+            "arguments": {
+                "pid": 2222,
+                "uptime": 1020,
+                "reload": 70,
+                "high-availability": [
+                    {
+                        "ha-mode": "hot-standby",
+                        "ha-servers": {
+                            "local": {
+                                "server-name": "server2",
+                                "role": "standby",
+                                "scopes": [ ],
+                                "state": "hot-standby"
+                            },
+                            "remote": {
+                                "server-name": "server1",
+                                "age": 10,
+                                "in-touch": true,
+                                "role": "primary",
+                                "last-scopes": [ "server1" ],
+                                "last-state": "hot-standby"
+							}
+                        }
+                    },
+                    {
+                        "ha-mode": "hot-standby",
+                        "ha-servers": {
+                            "local": {
+                                "server-name": "server4",
+                                "role": "standby",
+                                "scopes": [ ],
+                                "state": "hot-standby"
+                            },
+                            "remote": {
+                                "server-name": "server3",
+                                "age": 10,
+                                "in-touch": true,
+                                "role": "standby",
+                                "last-scopes": [ "server3" ],
+                                "last-state": "hot-standby"
+                            }
+                        }
+                    }
+                ]
+            }
+        }]`
+	default:
+		json = `[{
+            "result": 0,
+            "text": "Everything is fine",
+            "arguments": {
+                "pid": 1234,
+                "uptime": 3024,
+                "reload": 1111,
+                "high-availability": [
+                    {
+                        "ha-mode": "hot-standby",
+                        "ha-servers": {
+                            "local": {
+                                "server-name": "server2",
+                                "role": "standby",
+                                "scopes": [ "server1" ],
+                                "state": "partner-down"
+                            },
+                            "remote": {
+                                "server-name": "server1",
+                                "age": 10,
+                                "in-touch": true,
+                                "role": "secondary",
+                                "last-scopes": [ ],
+                                "last-state": "unavailable"
+							}
+                        }
+                    },
+                    {
+                        "ha-mode": "hot-standby",
+                        "ha-servers": {
+                            "local": {
+                                "server-name": "server4",
+                                "role": "standby",
+                                "scopes": [ "server3" ],
+                                "state": "partner-down"
+                            },
+                            "remote": {
+                                "server-name": "server3",
+                                "age": 10,
+                                "in-touch": true,
+                                "role": "primary",
+                                "last-scopes": [ ],
+                                "last-state": "unavailable"
+                            }
+                        }
+                    }
+                ]
+            }
+        }]`
 	}
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
@@ -805,4 +916,127 @@ func TestPullHAStatus(t *testing.T) {
 // mechanism for Kea versions 1.7.8 and later.
 func TestPullHAStatus178(t *testing.T) {
 	testPullHAStatus(t, true)
+}
+
+// Test that HA status for the hub-and-spoke case is properly propagated.
+func TestPullHAStatusHub(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	// Create the hub
+	kea, err := dbmodeltest.NewKea(db)
+	require.NoError(t, err)
+
+	dhcp4, err := kea.NewKeaDHCPv4Server()
+	require.NoError(t, err)
+
+	err = dhcp4.Configure(`{
+				"Dhcp4": {
+					"hooks-libraries": [
+						{
+							"library": "libdhcp_ha.so",
+							"parameters": {
+								"high-availability": [
+									{
+										"this-server-name": "server2",
+										"mode": "hot-standby",
+										"peers": [
+											{
+												"name": "server1",
+												"url":  "http://192.0.2.33:8000",
+												"role": "primary"
+											},
+											{
+												"name": "server2",
+												"url":  "http://192.0.2.66:8000",
+												"role": "standby"
+											}
+										]
+									},
+									{
+										"this-server-name": "server4",
+										"mode": "hot-standby",
+										"peers": [
+											{
+												"name": "server3",
+												"url":  "http://192.0.2.99:8000",
+												"role": "primary"
+											},
+											{
+												"name": "server4",
+												"url":  "http://192.0.2.133:8000",
+												"role": "standby"
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			}`)
+	require.NoError(t, err)
+
+	keaApp, err := dhcp4.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, keaApp, fec, nil, lookup)
+	require.NoError(t, err)
+
+	services, err := dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 2)
+
+	// The puller requires fetch interval to be present in the database.
+	err = dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	fa := agentcommtest.NewFakeAgents(mockGetStatusWithHAHub, nil)
+
+	// Create the puller which normally fetches the HA status periodically.
+	puller, err := NewHAStatusPuller(db, fa)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
+	// No need to wait for the puller to fetch the status.
+	err = puller.pullData()
+	require.NoError(t, err)
+
+	services, err = dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 2)
+
+	require.NotNil(t, services[0].HAService)
+	require.NotNil(t, services[1].HAService)
+	require.Equal(t, "hot-standby", services[0].HAService.HAMode)
+	require.Equal(t, "hot-standby", services[1].HAService.HAMode)
+	require.Equal(t, "hot-standby", services[0].HAService.PrimaryLastState)
+	require.Equal(t, "hot-standby", services[1].HAService.PrimaryLastState)
+	require.Contains(t, services[0].HAService.PrimaryLastScopes, "server1")
+	require.Contains(t, services[1].HAService.PrimaryLastScopes, "server3")
+	require.Empty(t, services[0].HAService.SecondaryLastScopes)
+	require.Empty(t, services[1].HAService.SecondaryLastScopes)
+
+	// Pull the data again. it should affect the state of our services.
+	err = puller.pullData()
+	require.NoError(t, err)
+
+	services, err = dbmodel.GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, services, 2)
+
+	// The statue should have changed.
+	require.NotNil(t, services[0].HAService)
+	require.NotNil(t, services[1].HAService)
+	require.Equal(t, "hot-standby", services[0].HAService.HAMode)
+	require.Equal(t, "hot-standby", services[1].HAService.HAMode)
+	require.Equal(t, "unavailable", services[0].HAService.PrimaryLastState)
+	require.Equal(t, "unavailable", services[1].HAService.PrimaryLastState)
+	require.Contains(t, services[0].HAService.SecondaryLastScopes, "server1")
+	require.Contains(t, services[1].HAService.SecondaryLastScopes, "server3")
+	require.Empty(t, services[0].HAService.PrimaryLastScopes)
+	require.Empty(t, services[1].HAService.PrimaryLastScopes)
 }

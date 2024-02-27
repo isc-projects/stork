@@ -18,13 +18,15 @@ import (
 // Represents the status of the local server (the one that
 // responded to the command).
 type HALocalStatus struct {
-	Role   string
-	Scopes []string
-	State  string
+	ServerName string `json:"server-name"`
+	Role       string
+	Scopes     []string
+	State      string
 }
 
 // Represents the status of the remote server.
 type HARemoteStatus struct {
+	ServerName         string `json:"server-name"`
 	Age                int64
 	InTouch            bool `json:"in-touch"`
 	Role               string
@@ -313,30 +315,30 @@ func (puller *HAStatusPuller) pullDataForApp(app *dbmodel.App) (bool, bool) {
 			continue
 		}
 		// Find the matching service for the returned status.
-		index := -1
-
 		for i := range haServices {
 			if haServices[i].HAService.HAType == status.Daemon {
-				index = i
-			}
-		}
-		if index < 0 {
-			continue
-		}
-		service := haServices[index].HAService
-		for _, daemon := range app.Daemons {
-			// Update the HA service status only if the given server is primary
-			// or secondary.
-			if service.PrimaryID == daemon.ID || service.SecondaryID == daemon.ID {
-				// todo: Currently Kea supports only one HA service per daemon. This
-				// will change but for now it is safe to assume that only one status
-				// is returned. Supporting more requires some mechanisms to
-				// distinguish the HA relationships which should be first designed
-				// on the Kea side.
-				if len(status.HA) > 0 {
-					updateHAServiceStatus(&status.HA[0].HAServers, daemon, service)
-				} else if status.HAServers != nil {
-					updateHAServiceStatus(status.HAServers, daemon, service)
+				service := haServices[i].HAService
+				for _, daemon := range app.Daemons {
+					// Update the HA service status only if the given server is primary
+					// or secondary.
+					if service.PrimaryID == daemon.ID || service.SecondaryID == daemon.ID {
+						switch {
+						case len(status.HA) == 1:
+							updateHAServiceStatus(&status.HA[0].HAServers, daemon, service)
+						case len(status.HA) > 1:
+							for j, ha := range status.HA {
+								if ha.HAServers.Local.ServerName == service.Relationship ||
+									ha.HAServers.Remote.ServerName == service.Relationship {
+									updateHAServiceStatus(&status.HA[j].HAServers, daemon, service)
+									break
+								}
+							}
+						case status.HAServers != nil:
+							updateHAServiceStatus(status.HAServers, daemon, service)
+						default:
+							continue
+						}
+					}
 				}
 			}
 		}
