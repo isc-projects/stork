@@ -81,7 +81,7 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		log.Error(err)
 		return errRsp
 	}
-	err = dbmodel.SetSettingInt(r.DB, "apps_state_puller_interval", s.KeaStatusPullerInterval)
+	err = dbmodel.SetSettingInt(r.DB, "apps_state_puller_interval", s.AppsStatePullerInterval)
 	if err != nil {
 		log.Error(err)
 		return errRsp
