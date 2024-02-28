@@ -93,6 +93,24 @@ func TestIsHexIdentifier(t *testing.T) {
 	require.False(t, IsHexIdentifier("ab: cd"))
 }
 
+// Test splitting an identifier into a slice of bytes.
+func TestCountHexIdentifierBytes(t *testing.T) {
+	require.Equal(t, 3, CountHexIdentifierBytes("01:02:03"))
+	require.Equal(t, 3, CountHexIdentifierBytes("01::02::03"))
+	require.Equal(t, 3, CountHexIdentifierBytes("01 e2 03"))
+	require.Equal(t, 3, CountHexIdentifierBytes("abcdef "))
+	require.Equal(t, 1, CountHexIdentifierBytes("12"))
+	require.Equal(t, 3, CountHexIdentifierBytes(" abcd:ef"))
+
+	// Invalid output for invalid input.
+	require.Zero(t, CountHexIdentifierBytes(" "))
+	require.Equal(t, 3, CountHexIdentifierBytes("1234gh"))
+	require.Equal(t, 2, CountHexIdentifierBytes("12:56:"))
+	require.Equal(t, 2, CountHexIdentifierBytes("12:56:9"))
+	require.Equal(t, 2, CountHexIdentifierBytes("ab,cd"))
+	require.Equal(t, 2, CountHexIdentifierBytes("ab: cd"))
+}
+
 // Check if BytesToHex works.
 func TestBytesToHex(t *testing.T) {
 	bytesArray := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}

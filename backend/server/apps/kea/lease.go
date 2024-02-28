@@ -336,12 +336,13 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 
 	for i := range apps {
 		appError := false
+		app := &apps[i]
 
 		switch queryType {
 		case ipv4:
-			if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv4) {
+			if hasLeaseCmdsHook(app, dbmodel.DaemonNameDHCPv4) {
 				// This is an IPv4 address, so send the command to the DHCPv4 server.
-				lease, err := GetLease4ByIPAddress(agents, &apps[i], text)
+				lease, err := GetLease4ByIPAddress(agents, app, text)
 				if err != nil {
 					appError = true
 					log.Warn(err)
@@ -350,11 +351,11 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				}
 			}
 		case ipv6:
-			if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv6) {
+			if hasLeaseCmdsHook(app, dbmodel.DaemonNameDHCPv6) {
 				// This is an IPv6 address (or prefix), so send the command to the
 				// DHCPv6 server instead.
 				for _, leaseType := range []string{"IA_NA", "IA_PD"} {
-					lease, err := GetLease6ByIPAddress(agents, &apps[i], leaseType, text)
+					lease, err := GetLease6ByIPAddress(agents, app, leaseType, text)
 					if err != nil {
 						appError = true
 						log.Warn(err)
@@ -371,34 +372,47 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 			// The remaining cases are to query by identifier or hostname. They share
 			// lots of common code, so they are combined in their own switch statement.
 			var commands []string
+
+			hasLeseCmdHookIPv6 := hasLeaseCmdsHook(app, dbmodel.DaemonNameDHCPv6)
+
+			// From Kea 2.3.8, the DUID identifier must be at least 3 bytes long.
+			// If the value is shorter, it must be a hostname.
+			if queryType == identifier && hasLeseCmdHookIPv6 && storkutil.CountHexIdentifierBytes(text) < 3 {
+				semver := storkutil.ParseSemanticVersionOrLatest(app.Meta.Version)
+				if semver.GreaterThanOrEqual(storkutil.NewSemanticVersion(2, 3, 8)) {
+					// It isn't an identifier in the Kea 2.3.8+ sense.
+					queryType = hostname
+				}
+			}
+
 			switch queryType {
 			case identifier:
-				if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv4) {
+				if hasLeaseCmdsHook(app, dbmodel.DaemonNameDHCPv4) {
 					commands = append(commands, "lease4-get-by-hw-address", "lease4-get-by-client-id")
 				}
-				if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv6) {
+				if hasLeseCmdHookIPv6 {
 					commands = append(commands, "lease6-get-by-duid")
 				}
 			default:
-				if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv4) {
+				if hasLeaseCmdsHook(app, dbmodel.DaemonNameDHCPv4) {
 					commands = append(commands, "lease4-get-by-hostname")
 				}
-				if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv6) {
+				if hasLeseCmdHookIPv6 {
 					commands = append(commands, "lease6-get-by-hostname")
 				}
 			}
 			// Search for leases by identifier or hostname.
-			leasesByProperties, warns, err := getLeasesByProperties(agents, &apps[i], text, commands...)
+			leasesByProperties, warns, err := getLeasesByProperties(agents, app, text, commands...)
 			appError = warns
 			if err != nil {
 				appError = true
-				log.WithError(err).Warnf("Failed to fetch leases from Kea [%d] %s app", apps[i].ID, apps[i].Name)
+				log.WithError(err).Warnf("Failed to fetch leases from Kea [%d] %s app", app.ID, app.Name)
 			} else {
 				leases = append(leases, leasesByProperties...)
 			}
 		}
 		if appError {
-			erredApps = append(erredApps, &apps[i])
+			erredApps = append(erredApps, app)
 		}
 	}
 	return leases, erredApps, nil

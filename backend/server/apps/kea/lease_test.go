@@ -1116,6 +1116,101 @@ func TestFindLeases(t *testing.T) {
 	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[3].GetCommand())
 }
 
+// Test that the Kea servers prior to version 2.3.8 receive lease6-get-by-duid
+// command and the Kea servers version 2.3.8 and later receive
+// lease6-get-by-hostname command when the DUID has less than 3 bytes.
+func TestTestFindLeasesTooShortDUID(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "machine2",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, machine)
+
+	appOld := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Meta: dbmodel.AppMeta{
+			Version: "2.0.2",
+		},
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:      dbmodel.AccessPointControl,
+				Address:   "localhost",
+				Port:      8000,
+				MachineID: machine.ID,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+		},
+	}
+	_, _ = dbmodel.AddApp(db, appOld)
+
+	appModern := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Meta: dbmodel.AppMeta{
+			Version: "2.7.2",
+		},
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:      dbmodel.AccessPointControl,
+				Address:   "localhost",
+				Port:      8001,
+				MachineID: machine.ID,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+		},
+	}
+	_, _ = dbmodel.AddApp(db, appModern)
+
+	agents := agentcommtest.NewFakeAgents(mockLeases6GetEmpty, nil)
+
+	// Act
+	_, erredApps, err := FindLeases(db, agents, "0102")
+
+	// Assert
+	require.NoError(t, err)
+	require.Empty(t, erredApps)
+
+	require.Len(t, agents.RecordedCommands, 2)
+	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[1].GetCommand())
+}
+
 // Test declined leases search mechanism. It verifies a positive scenario in which
 // the DHCPv4 server returns two leases (one is in a default state and one is in the
 // declined state), and the DHCPv6 server returns two declined leases. The DHCPv4 lease

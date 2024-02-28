@@ -109,6 +109,16 @@ func IsHexIdentifier(text string) bool {
 	return pattern.MatchString(strings.TrimSpace(text))
 }
 
+// Counts the number of bytes in the provided hex identifier.
+// It doesn't check if the input is a valid hex identifier. It may return
+// a value even for malformed input.
+func CountHexIdentifierBytes(text string) int {
+	// Remove any whitespace and colons.
+	replacer := strings.NewReplacer(" ", "", ":", "")
+	identifier := replacer.Replace(text)
+	return len(identifier) / 2
+}
+
 // Sets up the logging level. It's set to INFO, unless STORK_LOG_LEVEL
 // environment variable is present. If it is, its value governs the level.
 // Supported levels are: DEBUG, INFO, WARN, ERROR.
