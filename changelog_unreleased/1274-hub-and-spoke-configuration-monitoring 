@@ -1,0 +1,6 @@
+* [func] marcin
+
+    High Availability status for a daemon now contains the state of
+    all HA relationships. It facilitates monitoring the hub-and-spoke
+    configuration recently implemented in Kea.
+    (Gitlab #1274)
