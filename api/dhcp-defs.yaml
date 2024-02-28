@@ -501,6 +501,16 @@
         type: string
         format: bigint
 
+  DhcpDaemonHARelationshipOverview:
+    type: object
+    properties:
+      haState:
+        type: string
+      haFailureAt:
+        type: string
+        format: date-time
+        x-nullable: true
+
   DhcpDaemon:
     type: object
     properties:
@@ -526,12 +536,10 @@
         type: integer
       haEnabled:
         type: boolean
-      haState:
-        type: string
-      haFailureAt:
-        type: string
-        format: date-time
-        x-nullable: true
+      haOverview:
+        type: array
+        items:
+          $ref: '#/definitions/DhcpDaemonHARelationshipOverview'
       uptime:
         type: integer
       agentCommErrors:

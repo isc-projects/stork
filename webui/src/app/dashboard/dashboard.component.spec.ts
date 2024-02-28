@@ -89,7 +89,7 @@ describe('DashboardComponent', () => {
                     appId: 27,
                     appName: 'kea@localhost',
                     appVersion: '2.0.0',
-                    haFailureAt: null,
+                    haOverview: [],
                     machine: 'pc',
                     machineId: 15,
                     monitored: true,
@@ -206,39 +206,147 @@ describe('DashboardComponent', () => {
         // finding the right table cell is going to be involved. Instead
         // we test it indirectly by making sure that the functions used
         // to render the content return expected values.
-        const daemon = { haState: 'load-balancing', haFailureAt: '2014-06-01T12:00:00Z' }
+        const daemon = {
+            haOverview: [
+                {
+                    haState: 'load-balancing',
+                    haFailureAt: '2014-06-01T12:00:00Z',
+                },
+            ],
+        }
         expect(component.showHAState(daemon)).toBe('not configured')
         expect(component.showHAFailureTime(daemon)).toBe('')
         expect(component.haStateIcon(daemon)).toBe('ban')
 
-        const daemon2 = { haEnabled: false, haState: 'load-balancing', haFailureAt: '2014-06-01T12:00:00Z' }
+        const daemon2 = {
+            haEnabled: false,
+            haOverview: [
+                {
+                    haState: 'load-balancing',
+                    haFailureAt: '2014-06-01T12:00:00Z',
+                },
+            ],
+        }
         expect(component.showHAState(daemon2)).toBe('not configured')
         expect(component.showHAFailureTime(daemon2)).toBe('')
         expect(component.haStateIcon(daemon2)).toBe('ban')
 
-        const daemon3 = { haEnabled: true, haState: '', haFailureAt: null }
+        const daemon3 = {
+            haEnabled: true,
+            haOverview: [
+                {
+                    haState: '',
+                    haFailureAt: null,
+                },
+            ],
+        }
         expect(component.showHAState(daemon3)).toBe('fetching...')
         expect(component.showHAFailureTime(daemon3)).toBe('')
         expect(component.haStateIcon(daemon3)).toBe('spin pi-spinner')
 
-        const daemon4 = { haEnabled: true }
+        const daemon4 = {
+            haEnabled: true,
+            haOverview: [{}],
+        }
         expect(component.showHAState(daemon4)).toBe('fetching...')
         expect(component.showHAFailureTime(daemon4)).toBe('')
         expect(component.haStateIcon(daemon4)).toBe('spin pi-spinner')
 
-        const daemon5 = { haEnabled: true, haState: null, haFailureAt: null }
+        const daemon5 = {
+            haEnabled: true,
+            haOverview: [
+                {
+                    haState: null,
+                    haFailureAt: null,
+                },
+            ],
+        }
         expect(component.showHAState(daemon5)).toBe('fetching...')
         expect(component.showHAFailureTime(daemon5)).toBe('')
         expect(component.haStateIcon(daemon5)).toBe('spin pi-spinner')
     })
 
     it('should display HA time or placeholder', () => {
-        let daemon = { haEnabled: true, haState: 'load-balancing', haFailureAt: null }
+        let daemon = {
+            haEnabled: true,
+            haOverview: [
+                {
+                    haState: 'load-balancing',
+                    haFailureAt: null,
+                },
+            ],
+        }
         expect(component.showHAFailureTime(daemon)).toBe('never')
 
-        daemon = { haEnabled: true, haState: 'load-balancing', haFailureAt: '2014-06-01T12:00:00Z' }
+        daemon = {
+            haEnabled: true,
+            haOverview: [
+                {
+                    haState: 'load-balancing',
+                    haFailureAt: '2014-06-01T12:00:00Z',
+                },
+            ],
+        }
         expect(component.showHAFailureTime(daemon)).not.toBe('never')
         expect(component.showHAFailureTime(daemon)).not.toBe('')
+    })
+
+    it('should select the most important state to display', () => {
+        // The second state is partner-down, so it is more important and
+        // it should be shown.
+        const daemon = {
+            haEnabled: true,
+            haOverview: [
+                {
+                    haState: 'load-balancing',
+                    haFailureAt: '2014-06-01T12:00:00Z',
+                },
+                {
+                    haState: 'partner-down',
+                    haFailureAt: '2014-06-02T12:00:00Z',
+                },
+            ],
+        }
+        expect(component.showHAState(daemon)).toBe('partner-down')
+        expect(component.showHAFailureTime(daemon)).not.toBe('')
+        expect(component.haStateIcon(daemon)).toBe('exclamation-triangle')
+
+        // Swap the states. Still the partner-down state should be shown.
+        const daemon1 = {
+            haEnabled: true,
+            haOverview: [
+                {
+                    haState: 'partner-down',
+                    haFailureAt: '2014-06-02T12:00:00Z',
+                },
+                {
+                    haState: 'load-balancing',
+                    haFailureAt: '2014-06-01T12:00:00Z',
+                },
+            ],
+        }
+        console.info('starting')
+        expect(component.showHAState(daemon1)).toBe('partner-down')
+        expect(component.showHAFailureTime(daemon1)).not.toBe('')
+        expect(component.haStateIcon(daemon1)).toBe('exclamation-triangle')
+        console.info('ending')
+
+        const daemon2 = {
+            haEnabled: true,
+            haOverview: [
+                {
+                    haState: 'partner-down',
+                    haFailureAt: '2014-06-02T12:00:00Z',
+                },
+                {
+                    haState: 'unavailable',
+                    haFailureAt: null,
+                },
+            ],
+        }
+        expect(component.showHAState(daemon2)).toBe('unavailable')
+        expect(component.showHAFailureTime(daemon2)).toBe('never')
+        expect(component.haStateIcon(daemon2)).toBe('times')
     })
 
     it('should parse integer statistics', async () => {

@@ -2027,7 +2027,7 @@ func TestGetDhcpOverview(t *testing.T) {
 
 	// HA is not enabled.
 	require.False(t, okRsp.Payload.DhcpDaemons[0].HaEnabled)
-	require.Empty(t, okRsp.Payload.DhcpDaemons[0].HaState)
+	require.Empty(t, okRsp.Payload.DhcpDaemons[0].HaOverview)
 }
 
 // This test verifies that the overview response includes HA state.
@@ -2102,8 +2102,9 @@ func TestHAInDhcpOverview(t *testing.T) {
 
 	// Test that the HA specific information was returned.
 	require.True(t, okRsp.Payload.DhcpDaemons[0].HaEnabled)
-	require.Equal(t, "load-balancing", okRsp.Payload.DhcpDaemons[0].HaState)
-	require.NotEmpty(t, okRsp.Payload.DhcpDaemons[0].HaFailureAt.String())
+	require.Len(t, okRsp.Payload.DhcpDaemons[0].HaOverview, 1)
+	require.Equal(t, "load-balancing", okRsp.Payload.DhcpDaemons[0].HaOverview[0].HaState)
+	require.NotEmpty(t, okRsp.Payload.DhcpDaemons[0].HaOverview[0].HaFailureAt.String())
 }
 
 // Test that the DHCP Overview is properly generated when the statistic

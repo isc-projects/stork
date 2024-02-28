@@ -19,7 +19,7 @@ import { ServerDataService } from '../server-data.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
-import { DhcpDaemon, DhcpOverview } from '../backend'
+import { DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview } from '../backend'
 import { ModifyDeep } from '../utiltypes'
 
 type DhcpOverviewParsed = ModifyDeep<
@@ -81,6 +81,31 @@ export class DashboardComponent implements OnInit, OnDestroy {
     appsStats: AppsStats
     overview: DhcpOverviewParsed
     grafanaUrl: string
+
+    /**
+     * A list of possible HA states.
+     *
+     * The states are ordered by severity, from the least alarming to the
+     * most alarming. Using this ordering it is possible to decide which
+     * relationship state should be displayed when there are multiple
+     * relationships in different states.
+     */
+    private static haStateNamesBySeverity: string[] = [
+        'load-balancing',
+        'hot-standby',
+        'passive-backup',
+        'backup',
+        'ready',
+        'syncing',
+        'waiting',
+        'partner-in-maintenance',
+        'in-maintenance',
+        'communication-recovery',
+        'partner-down',
+        'terminated',
+        'unavailable',
+        '',
+    ]
 
     constructor(
         private serverData: ServerDataService,
@@ -299,19 +324,63 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Selects a relationship from the HA status to be presented in the dashboard.
+     *
+     * A DHCP server can use multiple HA relationships and return their status.
+     * We currently don't have enough space in the dashboard to show all of them.
+     * Therefore we should pick one that is worth presenting. We select it by the
+     * severity of the HA state. For example, we surely want to show the
+     * relationship status when the server has status unavailable to indicate
+     * that something is wrong, and not shadow it with the status of another
+     * relationship where everything is fine. This function picks the relationship
+     * with the most alarming state.
+     *
+     * @param daemon data structure holding the information about the daemon.
+     * @returns HA relationship state with the highest severity.
+     */
+    private selectMostAlarmingHAState(daemon: DhcpDaemon): DhcpDaemonHARelationshipOverview | null {
+        // There is nothing to do, if we have no HA status.
+        if (!daemon.haOverview || daemon.haOverview.length == 0) {
+            return null
+        }
+        let selectedOverview: DhcpDaemonHARelationshipOverview
+        let stateIndex = -1
+        // Iterate over all the relationships and pick one.
+        for (let overview of daemon.haOverview) {
+            // Get the severity of the current state.
+            let currentIndex = DashboardComponent.haStateNamesBySeverity.findIndex((s) => s === overview.haState)
+            // If the severity is greater than the saved severity from the
+            // previous iterations, we pick this one.
+            if (!overview.haState || currentIndex > stateIndex) {
+                selectedOverview = {
+                    haState: overview.haState,
+                    haFailureAt: overview.haFailureAt,
+                }
+                // Let's save the index.
+                stateIndex = currentIndex
+            }
+        }
+        return selectedOverview
+    }
+
+    /**
      * Returns the name of the icon to be shown for the given HA state
      *
      * @param daemon daemon for which HA state is being displayed.
      * @returns check, times, exclamation triangle or ban or spinner.
      */
-    haStateIcon(daemon) {
+    haStateIcon(daemon: DhcpDaemon): string | null {
         if (!daemon.haEnabled) {
             return 'ban'
         }
-        if (!daemon.haState || daemon.haState.length === 0) {
+        const state = this.selectMostAlarmingHAState(daemon)
+        if (!state) {
+            return null
+        }
+        if (!state.haState || state.haState.length === 0) {
             return 'spin pi-spinner'
         }
-        switch (daemon.haState) {
+        switch (state.haState) {
             case 'load-balancing':
             case 'hot-standby':
             case 'backup':
@@ -330,7 +399,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
      * @returns Green color for icon check, red for times, orange for
      *          exclamation triangle, grey otherwise.
      */
-    haStateIconColor(haStateIcon) {
+    haStateIconColor(haStateIcon: string) {
         switch (haStateIcon) {
             case 'check':
                 return '#00a800'
@@ -350,14 +419,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
      * @returns state name or 'not configured' if the state name
      *          is empty or 'fetching' if the state is to be fetched.
      */
-    showHAState(daemon) {
+    showHAState(daemon: DhcpDaemon) {
         if (!daemon.haEnabled) {
             return 'not configured'
         }
-        if (!daemon.haState || daemon.haState.length === 0) {
+        const state = this.selectMostAlarmingHAState(daemon)
+        if (!state) {
+            return null
+        }
+        if (!state.haState || state.haState.length === 0) {
             return 'fetching...'
         }
-        return daemon.haState
+        return state.haState
     }
 
     /**
@@ -371,10 +444,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
      *          is zero.
      */
     showHAFailureTime(daemon: DhcpDaemon) {
-        if (!daemon.haEnabled || !daemon.haState) {
+        const state = this.selectMostAlarmingHAState(daemon)
+        if (!state) {
+            return null
+        }
+        if (!daemon.haEnabled || !state.haState) {
             return ''
         }
-        const localTime = datetimeToLocal(daemon.haFailureAt)
+        const localTime = datetimeToLocal(state.haFailureAt)
         if (!localTime) {
             return 'never'
         }

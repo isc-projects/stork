@@ -1539,15 +1539,22 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			// will be 0 or 1. Therefore, we take the first HA state if it exists
 			// and return it over the REST API.
 			var (
-				haEnabled   bool
-				haState     string
-				haFailureAt *strfmt.DateTime
+				haEnabled               bool
+				haRelationshipOverviews []*models.DhcpDaemonHARelationshipOverview
+				haState                 string
+				haFailureAt             *strfmt.DateTime
 			)
-			if haOverview := dbDaemon.GetHAOverview(); len(haOverview) > 0 {
+			if overview := dbDaemon.GetHAOverview(); len(overview) > 0 {
 				haEnabled = true
-				haState = haOverview[0].State
-				if !haOverview[0].LastFailureAt.IsZero() {
-					haFailureAt = convertToOptionalDatetime(haOverview[0].LastFailureAt)
+				for i := range overview {
+					haState = overview[i].State
+					if !overview[0].LastFailureAt.IsZero() {
+						haFailureAt = convertToOptionalDatetime(overview[0].LastFailureAt)
+					}
+					haRelationshipOverviews = append(haRelationshipOverviews, &models.DhcpDaemonHARelationshipOverview{
+						HaState:     haState,
+						HaFailureAt: haFailureAt,
+					})
 				}
 			}
 			agentErrors := int64(0)
@@ -1573,8 +1580,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				Rps1:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1),
 				Rps2:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2),
 				HaEnabled:        haEnabled,
-				HaState:          haState,
-				HaFailureAt:      haFailureAt,
+				HaOverview:       haRelationshipOverviews,
 				Uptime:           dbDaemon.Uptime,
 				AgentCommErrors:  agentErrors,
 				CaCommErrors:     caErrors,
