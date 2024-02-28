@@ -152,6 +152,7 @@ func (ec *eventCenter) mainLoop() {
 		select {
 		// wait for done signal from shutdown function
 		case <-ec.done:
+			ec.sseBroker.shutdown()
 			return
 		// get events from channel
 		case event := <-ec.events:

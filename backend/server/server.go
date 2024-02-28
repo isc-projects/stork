@@ -263,7 +263,6 @@ func (ss *StorkServer) Shutdown(reload bool) {
 			ss.EventCenter.AddInfoEvent("shutting down Stork Server")
 			log.Println("Shutting down Stork Server")
 		}
-		ss.RestAPI.Shutdown()
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
 		ss.Pullers.KeaStatsPuller.Shutdown()
@@ -276,6 +275,7 @@ func (ss *StorkServer) Shutdown(reload bool) {
 			ss.MetricsCollector.Shutdown()
 		}
 		ss.HookManager.Close()
+		ss.RestAPI.Shutdown()
 		ss.DB.Close()
 
 		if !reload {

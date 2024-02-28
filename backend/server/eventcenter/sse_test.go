@@ -46,6 +46,32 @@ func TestSSEBroker(t *testing.T) {
 	require.Equal(t, "data: {\"ID\":0,\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"Text\":\"some text\",\"Level\":0,\"Relations\":null,\"Details\":\"\",\"SSEStreams\":[\"message\"]}\n\n", string(body))
 }
 
+// Check SSEBroker shutdown.
+func TestSSEBrokerShutdown(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ec := NewEventCenter(db)
+
+	// Serve the request in background.
+	req := httptest.NewRequest("GET", "http://localhost/sse?stream=message", nil)
+	w := httptest.NewRecorder()
+	go ec.ServeHTTP(w, req)
+
+	// We should establish new connection eventually.
+	require.Eventually(t, func() bool {
+		return ec.(*eventCenter).sseBroker.getSubscribersCount() > 0
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	// Shutdown event center.
+	ec.Shutdown()
+
+	// It should eventually remove the connection.
+	require.Eventually(t, func() bool {
+		return ec.(*eventCenter).sseBroker.getSubscribersCount() == 0
+	}, 100*time.Millisecond, 10*time.Millisecond)
+}
+
 // Check that SSEBroker dispatches events to non-main streams.
 func TestSSEBrokerNonMainStream(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

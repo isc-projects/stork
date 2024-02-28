@@ -20,6 +20,9 @@ func TestNewSubscriber(t *testing.T) {
 	subscriber := newSubscriber(url, "localhost:8080")
 	require.NotNil(t, subscriber)
 
+	// Make sure the done channel is created.
+	require.NotNil(t, subscriber.done)
+
 	// Make sure no filters are set.
 	require.False(t, subscriber.useFilter)
 	require.Equal(t, dbmodel.EvInfo, subscriber.filters.level)

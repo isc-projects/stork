@@ -84,7 +84,12 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if flusher, ok := w.(http.Flusher); ok {
 				flusher.Flush()
 			}
-
+		case done := <-s.done:
+			// The server is shutting down.
+			if done {
+				log.Printf("Shutting down connection from %p", s)
+				return
+			}
 		case <-req.Context().Done():
 			// connection is closed so unsubscribe subscriber
 			log.Printf("Connection with %p closed", s)
@@ -107,6 +112,19 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 			event.SSEStreams = streams
 			ch <- *event
 		}
+	}
+}
+
+// Shuts down the all SSE broker connections from subscribers.
+func (sb *SSEBroker) shutdown() {
+	sb.subscribersMutex.RLock()
+	defer sb.subscribersMutex.RUnlock()
+	for ch, s := range sb.subscribers {
+		s.done <- true
+		close(ch)
+	}
+	for ch := range sb.subscribers {
+		delete(sb.subscribers, ch)
 	}
 }
 

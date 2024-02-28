@@ -31,6 +31,7 @@ type Subscriber struct {
 	subscriberAddress string
 	useFilter         bool
 	filters           subscriberFilters
+	done              chan bool
 }
 
 // Attempts to retrieve a named parameter from the subscriber's query
@@ -68,6 +69,7 @@ func newSubscriber(serverURL *url.URL, subscriberAddress string) *Subscriber {
 		serverURL:         serverURL,
 		useFilter:         false,
 		subscriberAddress: subscriberAddress,
+		done:              make(chan bool),
 	}
 	return subscriber
 }
