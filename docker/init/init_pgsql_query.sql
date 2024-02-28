@@ -1,4 +1,4 @@
 delete from lease6;
 insert into lease6(address, duid, valid_lifetime, expire, subnet_id, pref_lifetime, lease_type, iaid, prefix_len, hwtype, hwaddr_source, state, user_context) values('3001:db8:1::1', DECODE('0002000000090c1fef1fef1fef', 'hex'), 3600, NOW() + interval '1' MONTH, 1, 1800, 0, 1, 128, 0, 0, 0, '{"ISC":{"client-classes":["ALL","HA_primary","UNKNOWN"]}}');
-insert into lease6(address, duid, valid_lifetime, expire, subnet_id, pref_lifetime, lease_type, iaid, prefix_len, hwtype, hwaddr_source, state) values('3001:db8:1::2', DECODE('00', 'hex'), 3600, NOW() + interval '1' MONTH, 1, 1800, 0, 1, 128, 0, 0, 1);
+insert into lease6(address, duid, valid_lifetime, expire, subnet_id, pref_lifetime, lease_type, iaid, prefix_len, hwtype, hwaddr_source, state) values('3001:db8:1::2', DECODE('000000', 'hex'), 3600, NOW() + interval '1' MONTH, 1, 1800, 0, 1, 128, 0, 0, 1);
 insert into lease6(address, duid, valid_lifetime, expire, subnet_id, pref_lifetime, lease_type, iaid, prefix_len, hwtype, hwaddr_source, state) values('3001:db8:8:10::', DECODE('0002000000090c1fef1fef1fef', 'hex'), 3600, NOW() + interval '1' MONTH, 1, 1800, 2, 1, 64, 0, 0, 0);
