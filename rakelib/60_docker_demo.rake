@@ -147,10 +147,10 @@ namespace :demo do
             docker_up_services("agent-kea6")
         end
         
-        desc 'Build and run two containers with Stork Agent and Kea HA pair
+        desc 'Build and run three containers with Stork Agent and Kea HA pair
         See "up" command for arguments.'
         task :kea_ha => [DOCKER_COMPOSE] do
-            docker_up_services("agent-kea-ha1", "agent-kea-ha2")
+            docker_up_services("agent-kea-ha1", "agent-kea-ha2", "agent-kea-ha3")
         end
         
         desc 'Build and run container with Stork Agent and Kea with host reseverations in db
