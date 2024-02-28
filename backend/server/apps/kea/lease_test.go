@@ -1119,7 +1119,7 @@ func TestFindLeases(t *testing.T) {
 // Test that the Kea servers prior to version 2.3.8 receive lease6-get-by-duid
 // command and the Kea servers version 2.3.8 and later receive
 // lease6-get-by-hostname command when the DUID has less than 3 bytes.
-func TestTestFindLeasesTooShortDUID(t *testing.T) {
+func TestFindLeasesTooShortDUID(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
