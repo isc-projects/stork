@@ -35,3 +35,5 @@ We have received the following contributions:
    - 2021-05: Fix for Stork agent not honoring the listen-only flags
  - Kevin Fleming
    - 2022-03: Automatic Stork services restart on failure
+ - Mark Tinberg (University of Wisconsin-Madison)
+   - 2024-02: Enhanced the RPM package installation scripts
