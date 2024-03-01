@@ -2,17 +2,19 @@
 
 set -eu
 
-if [ "$1" -eq 0 ]; then # Uninstall == 0 not Upgrade == 1
-    has_active_systemd=0
-    if command -v systemctl > /dev/null; then
-        status=$(systemctl is-system-running || true)
-        if [ "${status}" = "running" ] || [ "${status}" = "degraded" ] || [ "${status}" = "maintenance" ]; then
-            has_active_systemd=1
+case "$1" in
+    0)  # This is a yum/dnf remove.
+        has_active_systemd=0
+        if command -v systemctl > /dev/null; then
+            status=$(systemctl is-system-running || true)
+            if [ "${status}" = "running" ] || [ "${status}" = "degraded" ] || [ "${status}" = "maintenance" ]; then
+                has_active_systemd=1
+            fi
         fi
-    fi
 
-    if [ $has_active_systemd -eq 1 ]; then
-        systemctl disable isc-stork-server
-        systemctl stop isc-stork-server
-    fi
-fi
+        if [ $has_active_systemd -eq 1 ]; then
+            systemctl disable isc-stork-server
+            systemctl stop isc-stork-server
+        fi
+        ;;
+esac
