@@ -3,7 +3,7 @@
 set -eu
 
 case "$1" in
-    0)  # This is a yum/dnf remove.
+    0) # This is a yum/dnf remove.
         has_active_systemd=0
         if command -v systemctl > /dev/null; then
             status=$(systemctl is-system-running || true)
