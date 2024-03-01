@@ -2,6 +2,6 @@
 
 set -eu
 
-adduser --quiet --system --group --home /var/lib/ \
+adduser --quiet --system --group --home /var/lib/stork-server \
         --no-create-home --disabled-password --disabled-login \
         --gecos "Stork Agent User" stork-server >/dev/null
