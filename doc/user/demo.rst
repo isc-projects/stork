@@ -212,7 +212,7 @@ demo setup. It can stop and start selected Stork agents and the Kea and
 BIND 9 applications. This is useful to simulate communication problems
 between applications, Stork agents, and the Stork server.
 
-The Stork Environment Simulator can be found at port 5000 when the demo is
+The Stork Environment Simulator can be found at port 5010 when the demo is
 running.
 
 Prometheus

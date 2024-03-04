@@ -140,7 +140,7 @@ then
     echo "Stork Server:      http://127.0.0.1:8080"
     echo "Grafana:           http://127.0.0.1:3000"
     echo "Prometheus:        http://127.0.0.1:9090"
-    echo "Traffic simulator: http://127.0.0.1:5000"
+    echo "Traffic simulator: http://127.0.0.1:5010"
     echo "Default username: admin password: admin"
     echo ""
     echo "Use './stork-demo.sh --stop' to shutdown the demo"

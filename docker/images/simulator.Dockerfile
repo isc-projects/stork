@@ -2,11 +2,18 @@
 ARG KEA_REPO=public/isc/kea-2-4
 ARG KEA_VERSION=2.4.0-isc20230630120747
 
-FROM debian:12.1-slim AS base
+# The demo setup is not fully compatible with arm64 architectures.
+# In particular, only the amd64 image with named is available.
+# In addition, the flamethrower program requires an older Debian
+# version for which we provide no arm64 packages with perfdhcp.
+# Since we use common containers for building Stork, building
+# BIND9, Kea and simulator on different architectures is impossible.
+# The good news is that amd64 can be emulated on top of the arm64.
+FROM --platform=linux/amd64 debian:12.1-slim AS base
 
 # Stage to compile Flamethrower.
 # Flamethrower doesn't compile on Debian 12.1, so we use Debian 11 instead.
-FROM debian:bullseye-slim AS flamethrower-builder
+FROM --platform=linux/amd64 debian:bullseye-slim AS flamethrower-builder
 # Install Flamethrower dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         g++=4:10.2.* \

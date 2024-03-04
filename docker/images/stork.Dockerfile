@@ -15,7 +15,14 @@ ARG BIND9_VERSION=9.18
 ### Base images ###
 ###################
 
-FROM debian:12.1-slim AS debian-base
+# The demo setup is not fully compatible with arm64 architectures.
+# In particular, only the amd64 image with named is available.
+# In addition, the flamethrower program requires an older Debian
+# version for which we provide no arm64 packages with perfdhcp.
+# Since we use common containers for building Stork, building
+# BIND9, Kea and simulator on different architectures is impossible.
+# The good news is that amd64 can be emulated on top of the arm64.
+FROM --platform=linux/amd64 debian:12.1-slim AS debian-base
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \

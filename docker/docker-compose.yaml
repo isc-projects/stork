@@ -389,7 +389,9 @@ services:
         ipv6_address: 3001:db8:1::200
         priority: 400
     ports:
-      - "5000:5000"
+      # We used to use port 5000 externally but that doesn't work
+      # on macOS that has its own service on that port.
+      - "5010:5000"
     environment:
       STORK_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
     depends_on:
