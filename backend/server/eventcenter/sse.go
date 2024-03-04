@@ -84,12 +84,10 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if flusher, ok := w.(http.Flusher); ok {
 				flusher.Flush()
 			}
-		case done := <-s.done:
+		case <-s.done:
 			// The server is shutting down.
-			if done {
-				log.Printf("Shutting down connection from %p", s)
-				return
-			}
+			log.Printf("Shutting down connection from %p", s)
+			return
 		case <-req.Context().Done():
 			// connection is closed so unsubscribe subscriber
 			log.Printf("Connection with %p closed", s)
@@ -120,10 +118,11 @@ func (sb *SSEBroker) shutdown() {
 	sb.subscribersMutex.RLock()
 	defer sb.subscribersMutex.RUnlock()
 	for ch, s := range sb.subscribers {
-		s.done <- true
+		s.done <- struct{}{}
 		close(ch)
 	}
 	for ch := range sb.subscribers {
+		close(sb.subscribers[ch].done)
 		delete(sb.subscribers, ch)
 	}
 }
