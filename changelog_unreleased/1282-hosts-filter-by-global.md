@@ -1,6 +1,7 @@
 [bug] slawek
 
-    Fixed combining of the filter for global host reservations with other ones.
-    If this filter was set, all global hosts were appending to the hosts
-    selected by other filters.
+    Fixed filtering global host reservations with a combination of other
+    filters. Previously, global hosts were appended to the hosts returned by
+    other filters. Now, a subset of global hosts matching other filters is
+    returned.
     (Gitlab #1282)
