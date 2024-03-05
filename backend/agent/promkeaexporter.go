@@ -322,6 +322,7 @@ type PromKeaExporter struct {
 	Ticker        *time.Ticker
 	DoneCollector chan bool
 	Wg            *sync.WaitGroup
+	StartTime     time.Time
 
 	Registry       *prometheus.Registry
 	PktStatsMap    map[string]statisticDescriptor
@@ -329,6 +330,7 @@ type PromKeaExporter struct {
 	Adr6StatsMap   map[string]*prometheus.GaugeVec
 	Global4StatMap map[string]prometheus.Gauge
 	Global6StatMap map[string]prometheus.Gauge
+	UptimeCounter  prometheus.Gauge
 
 	// Set of the ignored stats as they are estimated by summing sub-stats
 	// (like ack, nak, etc) or not-supported.
@@ -347,6 +349,7 @@ func NewPromKeaExporter(host string, port int, interval time.Duration, enablePer
 		DoneCollector:        make(chan bool),
 		Wg:                   &sync.WaitGroup{},
 		Registry:             prometheus.NewRegistry(),
+		StartTime:            time.Now(),
 		Adr4StatsMap:         nil,
 		Adr6StatsMap:         nil,
 		Global4StatMap:       nil,
@@ -361,6 +364,14 @@ func NewPromKeaExporter(host string, port int, interval time.Duration, enablePer
 	}
 
 	factory := promauto.With(pke.Registry)
+
+	// stork agent internal stats
+	pke.UptimeCounter = factory.NewGauge(prometheus.GaugeOpts{
+		Namespace: "storkagent",
+		Subsystem: "promkeaexporter",
+		Name:      "uptime_seconds",
+		Help:      "Uptime of the Prometheus Kea Exporter in seconds",
+	})
 
 	// global stats
 	pke.Global4StatMap = map[string]prometheus.Gauge{
@@ -787,6 +798,9 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 
 // Collect stats from all Kea apps.
 func (pke *PromKeaExporter) collectStats() error {
+	// Update uptime counter
+	pke.UptimeCounter.Set(time.Since(pke.StartTime).Seconds())
+
 	var lastErr error
 
 	// Request to kea dhcp daemons for getting all stats.
