@@ -42,7 +42,7 @@ class Kea(Agent):
 
     def wait_for_detect_kea_applications(self, expected_apps=1):
         """Wait for the Stork Agent to detect the Kea applications."""
-        @wait_for_success(wait_msg="Waiting for the Kea applications to be detected...")
+        @wait_for_success(wait_msg="Waiting for the Kea applications to be detected...", max_tries=5)
         def worker():
             metrics = self.wait_for_next_prometheus_metrics()
 
@@ -80,7 +80,7 @@ class Kea(Agent):
         uptime_metric_name = "storkagent_promkeaexporter_uptime_seconds"
         initial_uptime = Kea._get_metric_value(self.read_prometheus_metrics(), uptime_metric_name)
 
-        @wait_for_success(wait_msg="Waiting to update Prometheus metrics...")
+        @wait_for_success(wait_msg="Waiting to update Prometheus metrics...", max_tries=5)
         def worker():
             metrics = self.read_prometheus_metrics()
             uptime = Kea._get_metric_value(metrics, uptime_metric_name)
