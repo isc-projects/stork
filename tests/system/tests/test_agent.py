@@ -107,3 +107,14 @@ def test_communication_with_kea_using_basic_auth(
     # Check communication
     leases = server_service.list_leases("192.0.2.1")
     assert leases.total == 1
+
+
+@kea_parametrize("agent-kea6", suppress_registration=True, version="2.4.0-isc20230630120747")
+def test_kea_integer_overflow_in_statistics(kea_service: Kea):
+    kea_service.wait_for_detect_kea_applications()
+    metrics = kea_service.read_prometheus_metrics()
+    assert len(metrics) > 0
+    assert "kea_dhcp6_na_total" in metrics
+    assert metrics["kea_dhcp6_na_total"].samples[0].value > 0
+
+    
