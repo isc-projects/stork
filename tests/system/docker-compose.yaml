@@ -98,7 +98,7 @@ services:
   agent-kea:
     extends: agent-kea-base
     ports:
-      - "9119"
+      - "42547:9547"
     networks:
       storknet:
         ipv4_address: 172.42.42.100
@@ -118,9 +118,6 @@ services:
       subnet6_01:
         ipv6_address: 3001:db8:1:42::100
         priority: 400
-    expose:
-      - "8080" # stork server to agent
-      - "9547" # kea_exporter for prometheus
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
