@@ -1,4 +1,5 @@
 import urllib3
+from typing import Generator
 
 from core.compose import DockerCompose
 from core.wrappers.base import ComposeServiceWrapper
@@ -9,6 +10,7 @@ from core.prometheus_parser import text_fd_to_metric_families
 
 class Agent(ComposeServiceWrapper):
     """A wrapper for the Stork Agent docker-compose service."""
+    prometheus_exporter_port = 0  # Unknown port
 
     def __init__(
         self, compose: DockerCompose, service_name: str, server_service: Server
@@ -31,9 +33,8 @@ class Agent(ComposeServiceWrapper):
         self._server_service = server_service
 
     @memoize
-    def _get_metrics_endpoint(self):
+    def _get_metrics_endpoint(self, internal_port: int):
         """Returns URL of the agent metrics endpoint."""
-        internal_port = 9119
         mapped = self._compose.port(self._service_name, internal_port)
         url = f"http://{mapped[0]}:{mapped[1]}/metrics"
         return url
@@ -61,7 +62,10 @@ class Agent(ComposeServiceWrapper):
 
     def read_prometheus_metrics(self):
         """Reads the Prometheus metrics collected by the Stork Agent."""
-        url = self._get_metrics_endpoint()
+        if self.prometheus_exporter_port == 0:
+            raise ValueError("The Prometheus exporter port is not known.")
+
+        url = self._get_metrics_endpoint(self.prometheus_exporter_port)
         http = urllib3.PoolManager()
         resp = http.request("GET", url)
         data = resp.data.decode("utf-8")

@@ -14,7 +14,7 @@ logger = setup_logger(__name__)
 
 
 def _agent_parametrize(
-    fixture_name, service_name, suppress_registration=False, bind9_version=None
+    fixture_name, service_name, suppress_registration=False, version=None
 ):
     """
     Helper for parametrizing the agent fixtures.
@@ -27,8 +27,8 @@ def _agent_parametrize(
         Name of docker-compose service
     suppress_registration : bool, optional
         Suppress the Stork Agent registration in a server, by default False
-    bind9_version : str, optional
-        Use a specific BIND9 version
+    version : str, optional
+        Use a specific service version
 
     Returns
     -------
@@ -41,14 +41,14 @@ def _agent_parametrize(
             {
                 "service_name": service_name,
                 "suppress_registration": suppress_registration,
-                "bind9_version": bind9_version,
+                "version": version,
             }
         ],
         indirect=True,
     )
 
 
-def kea_parametrize(service_name="agent-kea", suppress_registration=False):
+def kea_parametrize(service_name="agent-kea", suppress_registration=False, version=None):
     """
     Helper for parametrizing the Kea fixture.
 
@@ -64,7 +64,7 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False):
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return _agent_parametrize("kea_service", service_name, suppress_registration)
+    return _agent_parametrize("kea_service", service_name, suppress_registration, version)
 
 
 def ha_pair_parametrize(
@@ -125,7 +125,7 @@ def bind9_parametrize(
         the Pytest decorator ready to use
     """
     return _agent_parametrize(
-        "bind9_service", service_name, suppress_registration, bind9_version=version
+        "bind9_service", service_name, suppress_registration, version=version
     )
 
 
@@ -217,13 +217,20 @@ def kea_service(request):
     -----
     You can use the kea_parametrize helper for configure the service.
     """
-    param = {"service_name": "agent-kea", "suppress_registration": False}
+    param = {
+        "service_name": "agent-kea",
+        "suppress_registration": False,
+        "version": None,
+    }
 
     if hasattr(request, "param"):
         param.update(request.param)
 
     return _prepare_kea_wrapper(
-        request, param["service_name"], param["suppress_registration"]
+        request=request,
+        service_name=param["service_name"],
+        suppress_registration=param["suppress_registration"],
+        version=param["version"]
     )
 
 
@@ -266,7 +273,7 @@ def ha_pair_service(request):
 
 
 def _prepare_kea_wrapper(
-    request, service_name: str, suppress_registration: bool, config_dirname="kea"
+    request, service_name: str, suppress_registration: bool, config_dirname="kea", version: str=None
 ):
     """
     The helper function setting up the Kea Server service and guarantees that
@@ -289,16 +296,32 @@ def _prepare_kea_wrapper(
         Kea wrapper for the docker-compose service
     """
     # Starts server service or suppresses registration
-    env_vars = None
+    env_vars = {}
     server_service_instance = None
     if suppress_registration:
-        env_vars = {
-            "STORK_SERVER_URL": "",
-            "STORK_AGENT_LISTEN_PROMETHEUS_ONLY": "true",
-        }
+        env_vars["STORK_SERVER_URL"] = ""
+        env_vars["STORK_AGENT_LISTEN_PROMETHEUS_ONLY"] = "true"
     else:
         # We need the Server to perform the registration
         server_service_instance = request.getfixturevalue("server_service")
+
+    # Set the version-related environment variables.
+    if version is not None:
+        version_tuple = tuple(version.split(".", 2))
+        if len(version_tuple) < 2:
+            raise ValueError("Invalid version format, expected at least the "
+                             "major and minor components")
+        elif len(version_tuple) == 2:
+            version += ".*"
+        elif "-" not in version:
+            version += "-*"
+
+        major_minor_version_tuple = tuple(int(v) for v in version_tuple[0:2])
+
+        env_vars["KEA_VERSION_MAJOR"] = version_tuple[0]
+        env_vars["KEA_VERSION_MINOR"] = version_tuple[1]
+        env_vars["KEA_VERSION"] = version
+        env_vars["KEA_LEGACY_PKGS"] = str(major_minor_version_tuple <= (2, 2)).lower()
 
     # Re-generate the lease files
     config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
@@ -343,7 +366,7 @@ def bind9_service(request):
     param = {
         "service_name": "agent-bind9",
         "suppress_registration": False,
-        "bind9_version": None,
+        "version": None,
     }
 
     if hasattr(request, "param"):
@@ -362,8 +385,8 @@ def bind9_service(request):
         server_service_instance = request.getfixturevalue("server_service")
 
     build_args = {}
-    if param["bind9_version"] is not None:
-        build_args["BIND9_VERSION"] = param["bind9_version"]
+    if param["version"] is not None:
+        build_args["BIND9_VERSION"] = param["version"]
 
     # Setup wrapper
     service_name = param["service_name"]
