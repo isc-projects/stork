@@ -901,7 +901,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		responseData, err := pke.sendCommandToKeaCA(ctrl, string(requestDataBytes))
 		if err != nil {
 			lastErr = err
-			log.Errorf("Problem fetching stats from Kea: %+v", err)
+			log.WithError(err).Error("Problem fetching stats from Kea")
 			continue
 		}
 
