@@ -64,6 +64,8 @@ type PromBind9Exporter struct {
 	Host string
 	Port int
 
+	StartTime time.Time
+
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
 	HTTPServer *http.Server
@@ -84,6 +86,7 @@ func NewPromBind9Exporter(host string, port int, appMonitor AppMonitor, httpClie
 	pbe := &PromBind9Exporter{
 		Host:       host,
 		Port:       port,
+		StartTime:  time.Now(),
 		AppMonitor: appMonitor,
 		HTTPClient: httpClient,
 		Registry:   prometheus.NewRegistry(),
@@ -94,6 +97,11 @@ func NewPromBind9Exporter(host string, port int, appMonitor AppMonitor, httpClie
 	trafficStatsDesc := make(map[string]*prometheus.Desc)
 	viewStatsDesc := make(map[string]*prometheus.Desc)
 
+	// uptime_seconds
+	serverStatsDesc["uptime-seconds"] = prometheus.NewDesc(
+		prometheus.BuildFQName("storkagent", "prombind9exporter", "uptime_seconds"),
+		"Uptime of the Prometheus BIND 9 Exporter in seconds",
+		nil, nil)
 	// boot_time_seconds
 	serverStatsDesc["boot-time"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "boot_time_seconds"),
@@ -563,6 +571,12 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 	if pbe.procID == 0 {
 		return
 	}
+
+	// uptime_seconds (Uptime of the Stork Agent)
+	ch <- prometheus.MustNewConstMetric(
+		pbe.serverStatsDesc["uptime-seconds"],
+		prometheus.GaugeValue,
+		time.Since(pbe.StartTime).Seconds())
 
 	// up
 	ch <- prometheus.MustNewConstMetric(pbe.serverStatsDesc["up"], prometheus.GaugeValue, float64(pbe.up))
