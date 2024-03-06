@@ -16,38 +16,34 @@ import (
 
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
+	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
 )
 
 // Settings specific to communication with Agents.
 type AgentsSettings struct{}
 
-// Holds runtime communication statistics with Kea daemons via
-// a given agent.
-type AgentKeaCommStats struct {
-	CurrentErrorsCA      int64            // general errors in communication to/via CA
-	CurrentErrorsDaemons map[string]int64 // errors returned by particular daemon (including CA)
+// Holds runtime communication statistics with Kea daemons.
+type KeaAppCommErrors struct {
+	DHCPv4       int64
+	DHCPv6       int64
+	D2           int64
+	ControlAgent int64
 }
 
-// Holds runtime communication statistics with Bind9 daemon for
-// a given agent.
-type AgentBind9CommStats struct {
-	CurrentErrorsRNDC  int64
-	CurrentErrorsStats int64
-}
-
-// The complex identifier for the application. It's expected to be unique.
-type AppCommStatsKey struct {
-	Address string
-	Port    int64
+// Holds runtime communication statistics with Bind9 daemon.
+type Bind9AppCommErrors struct {
+	RNDC  int64
+	Stats int64
 }
 
 // Holds runtime statistics of communication with a given agent and
 // with the apps behind this agent.
 type AgentStats struct {
-	CurrentErrors int64
-	AppCommStats  map[AppCommStatsKey]interface{}
-	mutex         *sync.Mutex
+	AgentCommErrors map[string]int64
+	KeaCommErrors   map[int64]KeaAppCommErrors
+	Bind9CommErrors map[int64]Bind9AppCommErrors
+	mutex           *sync.Mutex
 }
 
 // Runtime information about the agent, e.g. connection, communication
@@ -141,12 +137,12 @@ type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
 	GetConnectedAgentStats(address string, port int64) *AgentStats
-	Ping(ctx context.Context, address string, agentPort int64) error
-	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
+	Ping(ctx context.Context, machine dbmodel.MachineTag) error
+	GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error)
 	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
-	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
+	ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
 	ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
-	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error)
+	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.
@@ -200,17 +196,19 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	// Look for agent in Agents map and if found then return it
 	agent, ok := agents.AgentsMap[address]
 	if ok {
-		log.WithFields(log.Fields{
-			"address": address,
-		}).Info("Connecting to existing agent")
 		return agent, nil
 	}
 
 	// Agent not found so allocate agent and prepare connection
-	agent = new(Agent)
-	agent.Address = address
-	agent.Stats.AppCommStats = make(map[AppCommStatsKey]interface{})
-	agent.Stats.mutex = new(sync.Mutex)
+	agent = &Agent{
+		Address: address,
+		Stats: AgentStats{
+			AgentCommErrors: make(map[string]int64),
+			KeaCommErrors:   make(map[int64]KeaAppCommErrors),
+			Bind9CommErrors: make(map[int64]Bind9AppCommErrors),
+			mutex:           &sync.Mutex{},
+		},
+	}
 	err := agent.MakeGrpcConnection(agents.caCertPEM, agents.serverCertPEM, agents.serverKeyPEM)
 	if err != nil {
 		return nil, err

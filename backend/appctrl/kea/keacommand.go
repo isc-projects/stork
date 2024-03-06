@@ -232,18 +232,33 @@ func UnmarshalResponseList(request SerializableCommand, response []byte, parsed 
 }
 
 // Returns status code.
-func (r Response) GetResult() int {
+func (r ResponseHeader) GetResult() int {
 	return r.Result
 }
 
 // Returns status text.
-func (r Response) GetText() string {
+func (r ResponseHeader) GetText() string {
 	return r.Text
 }
 
 // Returns name of the daemon that returned the response.
-func (r Response) GetDaemon() string {
+func (r ResponseHeader) GetDaemon() string {
 	return r.Daemon
+}
+
+// Returns status code.
+func (r Response) GetResult() int {
+	return r.ResponseHeader.GetResult()
+}
+
+// Returns status text.
+func (r Response) GetText() string {
+	return r.ResponseHeader.GetText()
+}
+
+// Returns name of the daemon that returned the response.
+func (r Response) GetDaemon() string {
+	return r.ResponseHeader.GetDaemon()
 }
 
 // Returns response arguments.
@@ -253,17 +268,17 @@ func (r Response) GetArguments() *map[string]interface{} {
 
 // Returns status code.
 func (r HashedResponse) GetResult() int {
-	return r.Result
+	return r.ResponseHeader.GetResult()
 }
 
 // Returns status text.
 func (r HashedResponse) GetText() string {
-	return r.Text
+	return r.ResponseHeader.GetText()
 }
 
 // Returns name of the daemon that returned the response.
 func (r HashedResponse) GetDaemon() string {
-	return r.Daemon
+	return r.ResponseHeader.GetDaemon()
 }
 
 // Returns response arguments.

@@ -22,7 +22,7 @@ type LogsDump struct {
 // Log tail source - it corresponds to agentcomm.ConnectedAgents interface.
 // It is needed to avoid the dependency cycle.
 type LogTailSource interface {
-	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error)
+	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
 }
 
 // Constructs the log dump instance. It needs access to the log tail source
@@ -51,8 +51,7 @@ func (d *LogsDump) Execute() error {
 
 				contents, err := d.logSources.TailTextFile(
 					context.Background(),
-					d.machine.Address,
-					d.machine.AgentPort,
+					d.machine,
 					logTarget.Output,
 					40000)
 

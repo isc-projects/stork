@@ -80,6 +80,13 @@ type ControlledApp interface {
 	GetControlAccessPoint() (string, int64, string, bool, error)
 	GetMachineTag() dbmodel.MachineTag
 	GetDaemonTags() []dbmodel.DaemonTag
+	GetDaemonTag(daemonName string) dbmodel.DaemonTag
+}
+
+// An interface to a machine that can receive commands from Stork.
+type ControlledMachine interface {
+	GetAddress() string
+	GetAgentPort() int64
 }
 
 // MakeAccessPoint is an utility to make an array of one access point.
@@ -92,31 +99,251 @@ func MakeAccessPoint(tp, address, key string, port int64) []AccessPoint {
 	}}
 }
 
+// An interface to the response from gRPC including a command status.
+type agentResponse interface {
+	GetStatus() *agentapi.Status
+}
+
+// An enum type indicating a state of the communication with an agent
+// or a daemon behind an agent.
+type commState int
+
+const (
+	/// Indicates that there was no communication issue.
+	noCommIssue commState = iota
+	/// Indicates that there is a new communication issue.
+	newCommIssue
+	/// Indicates that the previous communication issue still occurs.
+	existingCommIssue
+	/// Indicates that the communication issue has gone away.
+	correctedCommIssue
+)
+
+// Based on the gRPC request, response and an error it checks the state of
+// the communication with an agent and returns this state. The status message
+// is returned as a second parameter.
+func (agents *connectedAgentsData) checkAgentCommState(agentAddr string, reqData any, reqErr error, resp any) (commState, string) {
+	agent, err := agents.GetConnectedAgent(agentAddr)
+	if err != nil {
+		return noCommIssue, ""
+	}
+	dataType := reflect.TypeOf(reqData).Elem().Name()
+
+	var (
+		status  *agentapi.Status
+		details string
+	)
+	if statusResp, ok := resp.(agentResponse); ok {
+		status = statusResp.GetStatus()
+		details = statusResp.GetStatus().Message
+	}
+
+	agent.Stats.mutex.Lock()
+	defer agent.Stats.mutex.Unlock()
+	commErrors := agent.Stats.AgentCommErrors[dataType]
+
+	switch {
+	case commErrors == 0 && (reqErr != nil || (status != nil && status.GetCode() != agentapi.Status_OK)):
+		// New communication issue.
+		agent.Stats.AgentCommErrors[dataType]++
+		return newCommIssue, details
+	case commErrors > 0 && (reqErr != nil || (status != nil && status.GetCode() != agentapi.Status_OK)):
+		// Old communication issue
+		agent.Stats.AgentCommErrors[dataType]++
+		return existingCommIssue, details
+	case commErrors == 0 && (reqErr == nil && (status == nil || status.GetCode() == agentapi.Status_OK)):
+		// Everything still ok.
+		return noCommIssue, details
+	case commErrors > 0 && (reqErr == nil && (status == nil || status.GetCode() == agentapi.Status_OK)):
+		// Communication resumed.
+		if status != nil && status.GetCode() != agentapi.Status_OK {
+			agent.Stats.AgentCommErrors[dataType]++
+			return existingCommIssue, details
+		}
+		delete(agent.Stats.AgentCommErrors, dataType)
+		return correctedCommIssue, details
+	}
+	return noCommIssue, details
+}
+
+// It checks the communication state with the Kea daemons behind an agent. This
+// function is called if there was no communication problem with an agent itself.
+// If checks the status codes returned by the Kea Control Agent and returns the
+// communication states for each of the daemons.
+func (agents *connectedAgentsData) checkKeaCommState(agentAddr string, commands []keactrl.SerializableCommand, app ControlledApp, resp *agentapi.ForwardToKeaOverHTTPRsp) (controlAgentIssue commState, controlAgentErrMessages []error, dhcp4Issue commState, dhcp4ErrMessage string, dhcp6Issue commState, dhcp6ErrMessage string, d2Issue commState, d2ErrMessage string) {
+	agent, err := agents.GetConnectedAgent(agentAddr)
+	if err != nil {
+		return controlAgentIssue, controlAgentErrMessages, dhcp4Issue, dhcp4ErrMessage, dhcp6Issue, dhcp6ErrMessage, d2Issue, d2ErrMessage
+	}
+
+	var (
+		controlAgentErr int64 = -1
+		dhcp4Err        int64 = -1
+		dhcp6Err        int64 = -1
+		d2Err           int64 = -1
+	)
+	agent.Stats.mutex.Lock()
+	defer agent.Stats.mutex.Unlock()
+	keaCommErrors := agent.Stats.KeaCommErrors[app.GetID()]
+
+	// Get all responses from the Kea server.
+	for idx, daemonResp := range resp.GetKeaResponses() {
+		if controlAgentErr < 0 {
+			controlAgentErr = 0
+		}
+		var controlAgentErrMessageBuilder strings.Builder
+		if daemonResp.Status.Code != agentapi.Status_OK {
+			controlAgentErr++
+			if daemonResp.Status.Message != "" {
+				fmt.Fprintln(&controlAgentErrMessageBuilder, daemonResp.Status.Message)
+			}
+			continue
+		}
+		var parsedResp []keactrl.ResponseHeader
+		err = keactrl.UnmarshalResponseList(commands[idx], daemonResp.Response, &parsedResp)
+		if err != nil {
+			fmt.Fprintf(&controlAgentErrMessageBuilder, "received invalid response from Kea ControlAgent: %s\n", err)
+		}
+
+		for _, daemonResp := range parsedResp {
+			switch daemonResp.GetDaemon() {
+			case dbmodel.DaemonNameDHCPv4:
+				if dhcp4Err < 0 {
+					dhcp4Err = 0
+				}
+				if daemonResp.GetResult() == keactrl.ResponseError {
+					dhcp4Err++
+					dhcp4ErrMessage = daemonResp.GetText()
+				}
+			case dbmodel.DaemonNameDHCPv6:
+				if dhcp6Err < 0 {
+					dhcp6Err = 0
+				}
+				if daemonResp.GetResult() == keactrl.ResponseError {
+					dhcp6Err++
+					dhcp6ErrMessage = daemonResp.GetText()
+				}
+			case dbmodel.DaemonNameD2:
+				if d2Err < 0 {
+					d2Err = 0
+				}
+				if daemonResp.GetResult() == keactrl.ResponseError {
+					d2Err++
+					d2ErrMessage = daemonResp.GetText()
+				}
+			case dbmodel.DaemonNameCA, "":
+				if daemonResp.GetResult() == keactrl.ResponseError {
+					controlAgentErr++
+					fmt.Fprintln(&controlAgentErrMessageBuilder, daemonResp.GetText())
+				}
+			default:
+				continue
+			}
+		}
+		if controlAgentErrMessageBuilder.Len() == 0 {
+			controlAgentErrMessages = append(controlAgentErrMessages, nil)
+		} else {
+			controlAgentErrMessages = append(controlAgentErrMessages, errors.New(controlAgentErrMessageBuilder.String()))
+		}
+	}
+	controlAgentIssue = updateKeaCommErrors(controlAgentErr, &keaCommErrors.ControlAgent)
+	dhcp4Issue = updateKeaCommErrors(dhcp4Err, &keaCommErrors.DHCPv4)
+	dhcp6Issue = updateKeaCommErrors(dhcp6Err, &keaCommErrors.DHCPv6)
+	d2Issue = updateKeaCommErrors(d2Err, &keaCommErrors.D2)
+	agent.Stats.KeaCommErrors[app.GetID()] = keaCommErrors
+	return controlAgentIssue, controlAgentErrMessages, dhcp4Issue, dhcp4ErrMessage, dhcp6Issue, dhcp6ErrMessage, d2Issue, d2ErrMessage
+}
+
+// A function called internally by the checkKeaCommState function. It checks
+// the communication status with a Kea daemon and updates the error count.
+func updateKeaCommErrors(newErrCount int64, updatedErrCount *int64) commState {
+	if newErrCount < 0 {
+		return noCommIssue
+	}
+	switch {
+	case newErrCount == 0 && *updatedErrCount == 0:
+		return noCommIssue
+	case newErrCount == 0 && *updatedErrCount > 0:
+		*updatedErrCount = 0
+		return correctedCommIssue
+	case newErrCount > 0 && *updatedErrCount == 0:
+		*updatedErrCount = newErrCount
+		return newCommIssue
+	case newErrCount > 0 && *updatedErrCount > 0:
+		*updatedErrCount += newErrCount
+		return existingCommIssue
+	}
+	return noCommIssue
+}
+
 // Check connectivity with machine.
-func (agents *connectedAgentsData) Ping(ctx context.Context, address string, agentPort int64) error {
-	addrPort := net.JoinHostPort(address, strconv.FormatInt(agentPort, 10))
+func (agents *connectedAgentsData) Ping(ctx context.Context, machine dbmodel.MachineTag) error {
+	addrPort := net.JoinHostPort(machine.GetAddress(), strconv.FormatInt(machine.GetAgentPort(), 10))
 
 	// Call agent for version.
-	resp, err := agents.sendAndRecvViaQueue(addrPort, &agentapi.PingReq{})
-	if err != nil {
-		return errors.Wrapf(err, "failed to ping agent %s", addrPort)
+	req := &agentapi.PingReq{}
+	resp, reqErr := agents.sendAndRecvViaQueue(addrPort, req)
+
+	commIssue, details := agents.checkAgentCommState(addrPort, req, reqErr, resp)
+	switch commIssue {
+	case newCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warn("Failed to ping the agent")
+		agents.EventCenter.AddErrorEvent("Pinging {machine} failed", machine, dbmodel.SSEConnectivity, details)
+
+	case correctedCommIssue:
+		agents.EventCenter.AddWarningEvent("Pinging {machine} no longer fails", machine, dbmodel.SSEConnectivity, details)
+
+	case existingCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warn("Failed to ping the agent; the agent is still not responding")
+	default:
+	}
+
+	if reqErr != nil {
+		return errors.Wrapf(reqErr, "failed to ping agent %s", addrPort)
 	}
 	if resp.(*agentapi.PingRsp) != nil {
-		return errors.Wrapf(err, "wrong response for ping agent %s", addrPort)
+		return errors.Wrapf(reqErr, "wrong response for ping agent %s", addrPort)
 	}
 	return nil
 }
 
 // Get version from agent.
-func (agents *connectedAgentsData) GetState(ctx context.Context, address string, agentPort int64) (*State, error) {
-	addrPort := net.JoinHostPort(address, strconv.FormatInt(agentPort, 10))
+func (agents *connectedAgentsData) GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error) {
+	addrPort := net.JoinHostPort(machine.GetAddress(), strconv.FormatInt(machine.GetAgentPort(), 10))
 
 	// Call agent for version.
-	resp, err := agents.sendAndRecvViaQueue(addrPort, &agentapi.GetStateReq{})
+	req := &agentapi.GetStateReq{}
+	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
+
+	commIssue, details := agents.checkAgentCommState(addrPort, req, err, resp)
+	switch commIssue {
+	case newCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warn("Failed to get state from the agent")
+		agents.EventCenter.AddErrorEvent("Communication with {machine} to get its state failed", machine, dbmodel.SSEConnectivity, details)
+
+	case correctedCommIssue:
+		agents.EventCenter.AddWarningEvent("Communication with {machine} to get its state resumed", machine, dbmodel.SSEConnectivity, details)
+
+	case existingCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warn("Failed to get state from the agent; the agent is still not responding")
+	default:
+	}
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get state from agent %s", addrPort)
 	}
 	grpcState := resp.(*agentapi.GetStateRsp)
+	if grpcState == nil {
+		return nil, errors.Errorf("wrong response to get state from agent %s", addrPort)
+	}
 
 	var apps []*App
 	for _, app := range grpcState.Apps {
@@ -139,7 +366,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	}
 
 	state := State{
-		Address:                  address,
+		Address:                  machine.GetAddress(),
 		AgentVersion:             grpcState.AgentVersion,
 		Cpus:                     grpcState.Cpus,
 		CpusLoad:                 grpcState.CpusLoad,
@@ -175,7 +402,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 	agentAddress := app.GetMachineTag().GetAddress()
 	agentPort := app.GetMachineTag().GetAgentPort()
 
-	// Get rndc control settings
+	// Get rndc control settingsToKeaO
 	ctrlAddress, ctrlPort, _, _, err := app.GetControlAccessPoint()
 	if err != nil {
 		return nil, err
@@ -194,40 +421,44 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 
 	// Send the command to the Stork Agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
+
+	commIssue, details := agents.checkAgentCommState(addrPort, req, err, resp)
+	switch commIssue {
+	case newCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+			"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
+		}).Warnf("Failed to send the rndc command: %s", command)
+		agents.EventCenter.AddErrorEvent("communication with {app} on {machine} over rndc failed", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
+
+	case existingCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+			"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
+		}).Warnf("Failed to send the rndc command: %s; agent is still not responding", command)
+
+	case correctedCommIssue:
+		agents.EventCenter.AddWarningEvent("communication with {app} on {machine} over rndc resumed", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
+	default:
+	}
+
 	if err != nil {
-		if agent, agentExists := agents.AgentsMap[addrPort]; agentExists {
-			agent.Stats.mutex.Lock()
-			defer agent.Stats.mutex.Unlock()
-			if agent.Stats.CurrentErrors == 1 {
-				// If this is the first time we failed to communicate with the
-				// agent, let's print the stack trace for debugging purposes.
-				err = errors.WithStack(err)
-			} else {
-				// This is not the first time we can't communicate with the
-				// agent. Let's be brief and say that the communication is
-				// still broken.
-				err = errors.Errorf("failed to send rndc command via the agent %s, the agent is still not responding",
-					agent.Address)
-			}
-			// Log the commands that failed.
-			log.WithFields(log.Fields{
-				"agent": addrPort,
-				"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
-			}).Warnf("Failed to send the following rndc command: %s", command)
-		}
-		agents.EventCenter.AddErrorEvent("cannot connect to agent on {machine}", app.GetMachineTag(), dbmodel.SSEConnectivity)
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to send the rndc command to agent %s", addrPort)
 	}
 	response := resp.(*agentapi.ForwardRndcCommandRsp)
+	if response == nil {
+		return nil, errors.Errorf("wrong response to the rndc command from agent %s", addrPort)
+	}
+
+	result := &RndcOutput{
+		Output: "",
+		Error:  err,
+	}
 
 	if response.Status.Code != agentapi.Status_OK {
 		err = errors.New(response.Status.Message)
 	}
 
-	result := &RndcOutput{
-		Output: "",
-		Error:  nil,
-	}
 	if err == nil {
 		rndcResponse := response.GetRndcResponse()
 		if rndcResponse.Status.Code != agentapi.Status_OK {
@@ -237,59 +468,38 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 		}
 	}
 
-	if err != nil || result.Error != nil {
-		var errStr string
-		if err != nil {
-			errStr = fmt.Sprintf("%s", err)
-		} else {
-			errStr = fmt.Sprintf("%s", result.Error)
-		}
-		agents.EventCenter.AddErrorEvent("Communication with {app} failed", errStr, app, dbmodel.SSEConnectivity)
-	}
-
 	// Start updating error statistics for this agent and the BIND9 app we've
 	// been communicating with.
-	agent, agentExists := agents.AgentsMap[addrPort]
-	if agentExists {
-		// This function may be called by multiple goroutines, so we need to make
-		// sure that the statistics update is safe in terms of concurrent access.
-		agent.Stats.mutex.Lock()
-		defer agent.Stats.mutex.Unlock()
-
-		// For this address and port we may already have BIND9 statistics stored.
-		// If not, this is first time we communicate with this endpoint.
-		bind9CommStats, bind9CommStatsExist := agent.Stats.AppCommStats[AppCommStatsKey{ctrlAddress, ctrlPort}].(*AgentBind9CommStats)
-		if !bind9CommStatsExist {
-			bind9CommStats = &AgentBind9CommStats{}
-			agent.Stats.AppCommStats[AppCommStatsKey{ctrlAddress, ctrlPort}] = bind9CommStats
-		}
-		if err != nil || result.Error != nil {
-			bind9CommStats.CurrentErrorsRNDC++
-			// This is not the first tie the BIND9 RNDC is not responding, so let's
-			// print the brief message.
-			if bind9CommStats.CurrentErrorsRNDC > 1 {
-				result.Error = errors.Errorf("failed to send rndc command via the agent %s, BIND 9 is still not responding",
-					agent.Address)
-				err = result.Error
-				// Log the commands that failed.
-				log.WithFields(log.Fields{
-					"agent": addrPort,
-					"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
-				}).Warnf("Failed to send the following rndc command: %s", command)
-			}
-		} else {
-			bind9CommStats.CurrentErrorsRNDC = 0
-		}
+	agent, err := agents.GetConnectedAgent(addrPort)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get statistics for the non-existing agent %s", agent.Address)
 	}
+	agent.Stats.mutex.Lock()
+	defer agent.Stats.mutex.Unlock()
 
+	bind9CommErrors := agent.Stats.Bind9CommErrors[app.GetID()]
+	if result.Error != nil {
+		bind9CommErrors := agent.Stats.Bind9CommErrors[app.GetID()]
+		bind9CommErrors.RNDC++
+		if bind9CommErrors.RNDC > 1 {
+			result.Error = errors.Errorf("failed to send rndc command via the agent %s; BIND 9 is still failing",
+				agent.Address)
+		}
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+			"rndc":  net.JoinHostPort(ctrlAddress, strconv.FormatInt(ctrlPort, 10)),
+		}).Warnf("Failed to send the rndc command: %s", command)
+	} else {
+		bind9CommErrors.RNDC = 0
+	}
 	return result, err
 }
 
 // Forwards a statistics request via the Stork Agent to the named daemon and
 // then parses the response. statsAddress, statsPort and statsPath are used to
 // construct the URL to the statistics-channel of the named daemon.
-func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, statsPath string, statsOutput interface{}) error {
-	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
+func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, statsPath string, statsOutput interface{}) error {
+	addrPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
 	statsURL := storkutil.HostWithPortURL(statsAddress, statsPort, false)
 	statsURL += statsPath
 
@@ -303,29 +513,36 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 
 	// Send the commands to the Stork Agent.
 	storkRsp, err := agents.sendAndRecvViaQueue(addrPort, storkReq)
-	if err != nil {
-		if agent, agentExists := agents.AgentsMap[addrPort]; agentExists {
-			agent.Stats.mutex.Lock()
-			defer agent.Stats.mutex.Unlock()
-			if agent.Stats.CurrentErrors == 1 {
-				// If this is the first time we failed to communicate with the
-				// agent, let's print the stack trace for debugging purposes.
-				err = errors.WithStack(err)
-			} else {
-				// This is not the first time we can't communicate with the
-				// agent. Let's be brief and say that the communication is
-				// still broken.
-				err = errors.Errorf("failed to send named statistics command via the agent %s, the agent is still not responding",
-					agent.Address)
-			}
-			// Log the commands that failed.
-			log.WithFields(log.Fields{
-				"agent":     addrPort,
-				"stats URL": statsURL,
-			}).Warnf("Failed to send the following named statistics command: %+v", storkReq.NamedStatsRequest)
-		}
-		return err
+
+	commIssue, details := agents.checkAgentCommState(addrPort, storkReq, err, storkRsp)
+	switch commIssue {
+	case newCommIssue:
+		log.WithFields(log.Fields{
+			"agent":     addrPort,
+			"stats URL": statsURL,
+		}).Warnf("Failed to send the following named stats command: %s", storkReq.NamedStatsRequest)
+		agents.EventCenter.AddErrorEvent("communication with {app} on {machine} failed when querying for stats", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
+
+	case correctedCommIssue:
+		agents.EventCenter.AddWarningEvent("communication with {app} on {machine} resumed when querying for stats", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
+
+	case existingCommIssue:
+		log.WithFields(log.Fields{
+			"agent":     addrPort,
+			"stats URL": statsURL,
+		}).Warnf("Failed to send the following named stats command: %s; agent is still not responding", storkReq.NamedStatsRequest)
+
+	default:
 	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to query stats from named via agent %s", addrPort)
+	}
+	response := storkRsp.(*agentapi.ForwardToNamedStatsRsp)
+	if response == nil {
+		return errors.Errorf("wrong response when querying stats from named via agent %s", addrPort)
+	}
+
 	fdRsp := storkRsp.(*agentapi.ForwardToNamedStatsRsp)
 
 	statsRsp := fdRsp.NamedStatsResponse
@@ -342,38 +559,29 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 
 	// Start updating error statistics for this agent and the BIND9 app we've
 	// been communicating with.
-	agent, agentExists := agents.AgentsMap[addrPort]
-	if agentExists {
-		// This function may be called by multiple goroutines, so we need to make
-		// sure that the statistics update is safe in terms of concurrent access.
-		agent.Stats.mutex.Lock()
-		defer agent.Stats.mutex.Unlock()
-
-		// For this address and port we may already have BIND9 statistics stored.
-		// If not, this is first time we communicate with this endpoint.
-		bind9CommStats, bind9CommStatsExist := agent.Stats.AppCommStats[AppCommStatsKey{statsAddress, statsPort}].(*AgentBind9CommStats)
-		if !bind9CommStatsExist {
-			bind9CommStats = &AgentBind9CommStats{}
-			agent.Stats.AppCommStats[AppCommStatsKey{statsAddress, statsPort}] = bind9CommStats
-		}
-		if err != nil {
-			bind9CommStats.CurrentErrorsStats++
-			// This is not the first tie the BIND9 stats is not responding, so let's
-			// print the brief message.
-			if bind9CommStats.CurrentErrorsStats > 1 {
-				err = errors.Errorf("failed to send named stats command via the agent %s, BIND 9 is still not responding",
-					agent.Address)
-				// Log the commands that failed.
-				log.WithFields(log.Fields{
-					"agent":     addrPort,
-					"stats URL": statsURL,
-				}).Warnf("Failed to send the following named stats command: %s", storkReq.NamedStatsRequest)
-			}
-		} else {
-			bind9CommStats.CurrentErrorsStats = 0
-		}
+	agent, err2 := agents.GetConnectedAgent(addrPort)
+	if err2 != nil {
+		return errors.Wrapf(err2, "failed to get statistics for the non-existing agent %s", agent.Address)
 	}
+	agent.Stats.mutex.Lock()
+	defer agent.Stats.mutex.Unlock()
 
+	bind9CommErrors := agent.Stats.Bind9CommErrors[app.GetID()]
+	if err != nil {
+		bind9CommErrors.Stats++
+		if bind9CommErrors.Stats > 1 {
+			err = errors.Errorf("failed to send named stats command via the agent %s, BIND 9 is still failing",
+				agent.Address)
+		}
+		// Log the commands that failed.
+		log.WithFields(log.Fields{
+			"agent":     addrPort,
+			"stats URL": statsURL,
+		}).Warnf("Failed to send the following named stats command: %s", storkReq.NamedStatsRequest)
+	} else {
+		bind9CommErrors.Stats = 0
+	}
+	agent.Stats.Bind9CommErrors[app.GetID()] = bind9CommErrors
 	return err
 }
 
@@ -402,14 +610,29 @@ func (result *KeaCmdsResult) GetFirstError() error {
 }
 
 // Forwards a Kea command via the Stork Agent and Kea Control Agent and then
-// parses the response. caAddress and caPort are used to construct the URL
-// of the Kea Control Agent to which the command should be sent.
-func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
+// parses the response. It accepts a slice of commands that are aggregated
+// in a single message to the Stork agent. The agent then sends them sequentially
+// to the Kea servers via the control agent. This function tracks errors at several
+// encapsulation level. First, it tracks the errors in sending the message to
+// the Stork agent. Then, it tracks the errors reported by the Stork agent upon
+// reception of this message. Next, it tracks the errors in communication between
+// the Stork agent and Kea control agent. Finally, it tracks the errors reported
+// by the daemons behind the control agent. Any new errors trigger appropriate
+// events. If any of the existing errors go away in this communication, the
+// warning events are triggered to indicate that the problem has gone away.
+// The received responses are unmarshalled into the respective parameters at
+// the end of the parameter list. The returned structure holds aggregated errors
+// reported at different levels.
+func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...any) (*KeaCmdsResult, error) {
 	agentAddress := app.GetMachineTag().GetAddress()
 	agentPort := app.GetMachineTag().GetAgentPort()
 
 	caAddress, caPort, _, caUseSecureProtocol, err := app.GetControlAccessPoint()
 	if err != nil {
+		log.WithFields(log.Fields{
+			"address": caAddress,
+			"port":    caPort,
+		}).Warnf("no Kea CA access point found matching the specified address and port to send the commands")
 		return nil, err
 	}
 
@@ -425,235 +648,128 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 			Request: cmd.Marshal(),
 		})
 	}
-
-	// Send the commands to the Stork Agent.
+	// Send the commands to the Stork Agent and get the response.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, fdReq)
 
-	// This should always return an agent but we make this check to be safe
-	// and not panic if someone has screwed up something in the code.
-	// Concurrent access should be safe assuming that the agent has been
-	// already added to the map by the GetConnectedAgent function.
-	agent, agentExists := agents.AgentsMap[addrPort]
-	if !agentExists {
-		err = errors.Errorf("missing agent in agents map: %s", addrPort)
-		return nil, err
-	}
-
-	// Lock agent comm stats, they may be modified below. This
-	// function may be called by multiple goroutines, so we need
-	// to make sure that the statistics update is safe in terms of
-	// concurrent access.  There should be no time consuming
-	// operations below to not block other requests to this agent
-	// from other goroutines.
-	agent.Stats.mutex.Lock()
-	defer agent.Stats.mutex.Unlock()
-
-	prevAgentErrorsCnt := agent.Stats.CurrentErrors
-
-	// now check error from agents.sendAndRecvViaQueue
-	if err != nil {
-		// agent.Stats.CurrentErrors is incremented in manager.go during agents.sendAndRecvViaQueue
-		if agent.Stats.CurrentErrors == 0 {
-			// If this is the first time we failed to communicate with the
-			// agent, let's print the stack trace for debugging purposes.
-			err = errors.WithStack(err)
-			agents.EventCenter.AddErrorEvent("Cannot connect to agent on {machine}", err.Error(), app.GetMachineTag(), dbmodel.SSEConnectivity)
-		} else {
-			// This is not the first time we can't communicate with the
-			// agent. Let's be brief and say that the communication is
-			// still broken.
-			err = errors.Errorf("failed to send Kea commands via the agent %s, the agent is still not responding",
-				agent.Address)
-		}
-		agent.Stats.CurrentErrors++
-
-		// Log the commands that failed.
+	// Check the communication issues with the Stork agent.
+	commState, details := agents.checkAgentCommState(addrPort, fdReq, err, resp)
+	switch commState {
+	case newCommIssue:
 		log.WithFields(log.Fields{
 			"agent": addrPort,
-			"kea":   caURL,
-		}).Warnf("Failed to send the following commands: %+v", fdReq.KeaRequests)
-		return nil, err
+		}).Warnf("Failed to send %d Kea command(s)", len(commands))
+		agents.EventCenter.AddErrorEvent("communication with {app} on {machine} failed", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
+
+	case correctedCommIssue:
+		agents.EventCenter.AddWarningEvent("communication with {app} on {machine} resumed", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
+
+	case existingCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warnf("Failed to send %d Kea command(s); agent is still not responding", len(commands))
+
+	default:
 	}
 
-	agent.Stats.CurrentErrors = 0
-	if prevAgentErrorsCnt > 0 {
-		agents.EventCenter.AddWarningEvent("Communication with stork agent on {machine} resumed", app.GetMachineTag(), dbmodel.SSEConnectivity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to send Kea commands to agent %s", addrPort)
+	}
+	response := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
+	if response == nil {
+		return nil, errors.Errorf("wrong response to a Kea command from agent %s", addrPort)
 	}
 
-	fdRsp := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
-
-	// Gather errors in communication via the Kea Control
-	// Agent. It is possible to send multiple commands so there
-	// may be multiple errors.
-	caErrorsCount := int64(0)
-	caErrorStr := ""
-
+	// We will aggregate the results from various communication levels in this structure.
 	result := &KeaCmdsResult{}
-	result.Error = nil
-	if fdRsp.Status.Code != agentapi.Status_OK {
-		result.Error = errors.New(fdRsp.Status.Message)
-		caErrorsCount++
-		caErrorStr += "\n" + fdRsp.Status.Message
+	if response.Status.Code != agentapi.Status_OK {
+		result.Error = errors.New(response.Status.Message)
 	}
 
-	// Gather errors from daemons (including CA).
-	daemonErrorsCount := make(map[string]int64)
+	// Check the communication issues with the Kea daemons. For each supported daemon we
+	// get the current state of the communication with this daemon and optionally an
+	// error message.
+	controlAgentState, controlAgentErrors, dhcp4State, dhcp4ErrMessage, dhcp6State, dhcp6ErrMessage, d2State, d2ErrMessage := agents.checkKeaCommState(addrPort, commands, app, response)
+
+	// Save Control Agent Errors.
+	result.CmdsErrors = controlAgentErrors
+
+	// Generate events for the Kea Control Agent.
+	if controlAgentState == newCommIssue {
+		// The connection was ok but now it is broken.
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warnf("Failed to forward Kea command to Kea Control Agent")
+		agents.EventCenter.AddErrorEvent("forwarding Kea command via the Kea Control Agent {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameCA), app.GetMachineTag(), dbmodel.SSEConnectivity, controlAgentErrors)
+	} else if controlAgentState == correctedCommIssue {
+		// The connection was broken but now is ok.
+		agents.EventCenter.AddWarningEvent("forwarding Kea command via the Kea Control Agent {daemon} on {machine} no longer fails", app.GetDaemonTag(dbmodel.DaemonNameCA), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	}
+	// Generate events for the DHCPv4 server.
+	if dhcp4State == newCommIssue {
+		// The connection was ok but now it is broken.
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warnf("Failed to forward Kea command to Kea DHCPv4 server")
+		agents.EventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameDHCPv4), app.GetMachineTag(), dbmodel.SSEConnectivity, dhcp4ErrMessage)
+	} else if dhcp4State == correctedCommIssue {
+		// The connection was broken but now is ok.
+		agents.EventCenter.AddWarningEvent("processing Kea command by {daemon} on {machine} no longer fails", app.GetDaemonTag(dbmodel.DaemonNameDHCPv4), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	}
+	// Generate events for the DHCPv6 server.
+	if dhcp6State == newCommIssue {
+		// The connection was ok but now it is broken.
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warnf("Failed to forward Kea command to Kea DHCPv6 server")
+		agents.EventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameDHCPv6), app.GetMachineTag(), dbmodel.SSEConnectivity, dhcp6ErrMessage)
+	} else if dhcp6State == correctedCommIssue {
+		// The connection was broken but now is ok.
+		agents.EventCenter.AddWarningEvent("processing Kea command by {daemon} on {machine} no longer fails", app.GetDaemonTag(dbmodel.DaemonNameDHCPv6), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	}
+	// Generate events for the D2 server.
+	if d2State == newCommIssue {
+		// The connection was ok but now it is broken.
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+		}).Warnf("Failed to forward Kea command to Kea D2 server")
+		agents.EventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameD2), app.GetMachineTag(), dbmodel.SSEConnectivity, d2ErrMessage)
+	} else if d2State == correctedCommIssue {
+		// The connection was broken but now is ok.
+		agents.EventCenter.AddWarningEvent("processing Kea command by {daemon} on {machine} no longer fails", app.GetDaemonTag(dbmodel.DaemonNameD2), app.GetMachineTag(), dbmodel.SSEConnectivity)
+	}
 
 	// Get all responses from the Kea server.
-	for idx, rsp := range fdRsp.GetKeaResponses() {
+	for idx, rsp := range response.GetKeaResponses() {
 		cmdResp := cmdResponses[idx]
-		if rsp.Status.Code != agentapi.Status_OK {
-			result.CmdsErrors = append(result.CmdsErrors, errors.New(rsp.Status.Message))
-			caErrorsCount++
-			caErrorStr += "\n" + rsp.Status.Message
-			continue
-		}
-
 		// Try to parse the json response from the on-wire format.
 		err = keactrl.UnmarshalResponseList(commands[idx], rsp.Response, cmdResp)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
-			result.CmdsErrors = append(result.CmdsErrors, err)
-			// Issues with parsing the response count as issues with communication.
-			caErrorsCount++
-			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
-			continue
-		}
-
-		// The response should be a list.
-		cmdRespList := reflect.ValueOf(cmdResp).Elem()
-		if cmdRespList.Kind() != reflect.Slice {
-			err = errors.Wrapf(err, "no well-formatted response from Kea CA %s, response was: %s", caURL, rsp)
-			result.CmdsErrors = append(result.CmdsErrors, err)
-			// Issues with parsing the response count as issues with communication.
-			caErrorsCount++
-			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
-			continue
-		}
-		// Iterate over the responses from individual servers behind the CA.
-		for i := 0; i < cmdRespList.Len(); i++ {
-			// The Daemon field of the response should be present if the
-			// caller used the right data structures.
-			cmdRespItem := cmdRespList.Index(i)
-			daemonField := cmdRespItem.FieldByName("Daemon")
-			if !daemonField.IsValid() {
-				log.Warnf("Missing Daemon field in response from Kea CA")
-				continue
-			}
-			// The response should contain the result.
-			resultField := cmdRespItem.FieldByName("Result")
-			if !resultField.IsValid() {
-				log.Warnf("Missing Result field in response from Kea CA")
-				continue
-			}
-			daemonName := daemonField.String()
-			if daemonName == "" {
-				daemonName = "ca"
-			}
-
-			// If error was returned, let's bump up the number of errors
-			// for this daemon. Otherwise, let's reset the counter.
-			if resultField.Int() == keactrl.ResponseError {
-				daemonErrorsCount[daemonName]++
+			// The sufficient number of elements should have been already alocated but
+			// let's make sure.
+			if len(result.CmdsErrors) > idx {
+				result.CmdsErrors[idx] = err
 			} else {
-				daemonErrorsCount[daemonName] = 0
+				result.CmdsErrors = append(result.CmdsErrors, err)
+			}
+			// Failure to parse the response is treated as a Kea Control Agent error.
+			if agent, err := agents.GetConnectedAgent(addrPort); err == nil {
+				agent.Stats.mutex.Lock()
+				keaCommErrors := agent.Stats.KeaCommErrors[app.GetID()]
+				keaCommErrors.ControlAgent++
+				agent.Stats.KeaCommErrors[app.GetID()] = keaCommErrors
+				agent.Stats.mutex.Unlock()
 			}
 		}
-		result.CmdsErrors = append(result.CmdsErrors, nil)
 	}
-
-	agents.updateErrorStatsAndRaiseEvents(agent, caAddress, caPort, app, caErrorsCount, addrPort, caURL, fdReq, caErrorStr, daemonErrorsCount)
 
 	// Everything was fine, so return no error.
 	return result, nil
 }
 
-func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, caAddress string, caPort int64, app ControlledApp, caErrorsCount int64, addrPort, caURL string, fdReq *agentapi.ForwardToKeaOverHTTPReq, caErrorStr string, daemonErrorsCount map[string]int64) {
-	// Start updating error statistics for this agent and the Kea app we've been
-	// communicating with.
-	var (
-		keaCommStats      *AgentKeaCommStats
-		keaCommStatsExist bool
-	)
-
-	// For this address and port we may already have Kea statistics stored.
-	// If not, this is first time we communicate with this endpoint.
-	keaCommStats, keaCommStatsExist = agent.Stats.AppCommStats[AppCommStatsKey{caAddress, caPort}].(*AgentKeaCommStats)
-	// Seems that this is the first request to this Kea server.
-	if !keaCommStatsExist {
-		keaCommStats = &AgentKeaCommStats{}
-		keaCommStats.CurrentErrorsDaemons = make(map[string]int64)
-		agent.Stats.AppCommStats[AppCommStatsKey{caAddress, caPort}] = keaCommStats
-	}
-
-	// prepare daemons map for quick access
-	daemonsMap := make(map[string]dbmodel.DaemonTag)
-	for _, dmn := range app.GetDaemonTags() {
-		daemonsMap[dmn.GetName()] = dmn
-	}
-
-	// If there are any communication errors with CA, let's add them.
-	// Otherwise, let's reset the counter.
-	prevErrorsCA := keaCommStats.CurrentErrorsCA
-	if caErrorsCount > 0 {
-		keaCommStats.CurrentErrorsCA += caErrorsCount
-		// This is the first time we have a problem in communication with the Kea Control Agent,
-		// so let's print a brief message and raise an event.
-		if prevErrorsCA == 0 {
-			log.WithFields(log.Fields{
-				"agent": addrPort,
-				"kea":   caURL,
-			}).Warnf("communication failed: %+v", fdReq.KeaRequests)
-			dmn, ok := daemonsMap["ca"]
-			if ok {
-				agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn, app, dbmodel.SSEConnectivity)
-			} else {
-				agents.EventCenter.AddErrorEvent("Communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), app, dbmodel.SSEConnectivity)
-			}
-		}
-	} else {
-		keaCommStats.CurrentErrorsCA = 0
-		// Now it seems all is ok but there were problems earlier so raise an event
-		// that communication resumed.
-		if prevErrorsCA > 0 {
-			dmn, ok := daemonsMap["ca"]
-			if ok {
-				agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", &dmn, app, dbmodel.SSEConnectivity)
-			} else {
-				agents.EventCenter.AddWarningEvent("Communication with CA daemon of {app} resumed", app, dbmodel.SSEConnectivity)
-			}
-		}
-	}
-
-	// Set the counters for individual daemons.
-	for dmnName, errCnt := range daemonErrorsCount {
-		prevErrors, ok := keaCommStats.CurrentErrorsDaemons[dmnName]
-		if !ok || errCnt == 0 {
-			keaCommStats.CurrentErrorsDaemons[dmnName] = errCnt
-		} else {
-			keaCommStats.CurrentErrorsDaemons[dmnName] += errCnt
-		}
-
-		// if communication with given daemon started or stopped failing then generate an event
-		currentErrors := keaCommStats.CurrentErrorsDaemons[dmnName]
-		if (prevErrors == 0 && currentErrors > 0) || (prevErrors > 0 && currentErrors == 0) {
-			for _, dmn := range app.GetDaemonTags() {
-				if dmn.GetName() == dmnName {
-					if currentErrors == 0 {
-						agents.EventCenter.AddWarningEvent("Communication with {daemon} of {app} resumed", dmn, app, dbmodel.SSEConnectivity)
-					} else {
-						agents.EventCenter.AddErrorEvent("Communication with {daemon} of {app} failed", dmn, app, dbmodel.SSEConnectivity)
-					}
-					break
-				}
-			}
-		}
-	}
-}
-
 // Get the tail of the remote text file.
-func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error) {
-	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
+func (agents *connectedAgentsData) TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error) {
+	addrPort := net.JoinHostPort(machine.GetAddress(), strconv.FormatInt(machine.GetAgentPort(), 10))
 
 	// Get the path to the file and the (seek) info indicating the location
 	// from which the tail should be fetched.
@@ -664,12 +780,28 @@ func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddres
 
 	// Send the request via queue.
 	agentResponse, err := agents.sendAndRecvViaQueue(addrPort, req)
-	if err != nil {
+
+	commIssue, details := agents.checkAgentCommState(addrPort, req, err, agentResponse)
+	switch commIssue {
+	case newCommIssue:
 		log.WithFields(log.Fields{
 			"agent": addrPort,
 			"file":  path,
-		}).Warnf("Failed to fetch text file contents")
+		}).Warn("Failed to tail the text file via the agent", path)
+		agents.EventCenter.AddErrorEvent("communication with {machine} failed when tailing a log file", machine, dbmodel.SSEConnectivity, details)
 
+	case correctedCommIssue:
+		agents.EventCenter.AddWarningEvent("communication with {machine} resumed when tailing a log file", machine, dbmodel.SSEConnectivity, details)
+
+	case existingCommIssue:
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+			"file":  path,
+		}).Warn("Failed to tail the text file via the agent which is still not responding", path)
+	default:
+	}
+
+	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch text file contents: %s", path)
 	}
 

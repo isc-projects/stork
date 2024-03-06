@@ -57,8 +57,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 	}
 
 	// Send the request to the agent to tail the file.
-	contents, err := r.Agents.TailTextFile(ctx, dbLogTarget.Daemon.App.Machine.Address,
-		dbLogTarget.Daemon.App.Machine.AgentPort, dbLogTarget.Output, maxLength)
+	contents, err := r.Agents.TailTextFile(ctx, dbLogTarget.Daemon.App.Machine, dbLogTarget.Output, maxLength)
 
 	errStr := ""
 	if err != nil {

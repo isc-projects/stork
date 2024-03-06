@@ -536,10 +536,13 @@
         type: integer
       agentCommErrors:
         type: integer
+        format: int64
       caCommErrors:
         type: integer
+        format: int64
       daemonCommErrors:
         type: integer
+        format: int64
 
   DhcpOverview:
     type: object

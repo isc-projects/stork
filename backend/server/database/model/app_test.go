@@ -1659,3 +1659,30 @@ func TestGetDaemonTagsKea(t *testing.T) {
 	require.EqualValues(t, 11, daemons[1].GetID())
 	require.Equal(t, AppTypeBind9, daemons[1].GetAppType())
 }
+
+// Test getting a selected daemon tag.
+func TestGetDaemonTagKea(t *testing.T) {
+	app := App{
+		Type: AppTypeKea,
+		Daemons: []*Daemon{
+			{
+				ID:   10,
+				Name: DaemonNameDHCPv4,
+			},
+			{
+				ID:   11,
+				Name: DaemonNameDHCPv6,
+			},
+		},
+	}
+	daemon := app.GetDaemonTag(DaemonNameDHCPv4)
+	require.NotNil(t, daemon)
+	require.EqualValues(t, 10, daemon.GetID())
+
+	daemon = app.GetDaemonTag(DaemonNameDHCPv6)
+	require.NotNil(t, daemon)
+	require.EqualValues(t, 11, daemon.GetID())
+
+	daemon = app.GetDaemonTag(DaemonNameD2)
+	require.Nil(t, daemon)
+}

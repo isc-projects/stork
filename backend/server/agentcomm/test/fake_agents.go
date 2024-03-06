@@ -5,6 +5,7 @@ import (
 
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
+	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
 
@@ -74,7 +75,7 @@ func NewKeaFakeAgents(fnsKea ...func(int, []interface{})) *FakeAgents {
 }
 
 // Do nothing. Always returns nil.
-func (fa *FakeAgents) Ping(ctx context.Context, address string, agentPort int64) error {
+func (fa *FakeAgents) Ping(ctx context.Context, machine dbmodel.MachineTag) error {
 	return nil
 }
 
@@ -89,25 +90,13 @@ func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error
 // Returns fake statistics for the selected connected agent.
 func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentcomm.AgentStats {
 	stats := agentcomm.AgentStats{
-		CurrentErrors: 1,
-		AppCommStats: map[agentcomm.AppCommStatsKey]interface{}{
-			{Address: "localhost", Port: 1234}: &agentcomm.AgentKeaCommStats{
-				CurrentErrorsCA: 2,
-				CurrentErrorsDaemons: map[string]int64{
-					"dhcp4": 5,
-				},
-			},
-			{Address: "localhost", Port: 4321}: &agentcomm.AgentBind9CommStats{
-				CurrentErrorsRNDC:  2,
-				CurrentErrorsStats: 3,
-			},
-		},
+		AgentCommErrors: make(map[string]int64),
 	}
 	return &stats
 }
 
 // FakeAgents specific implementation of the GetState.
-func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort int64) (*agentcomm.State, error) {
+func (fa *FakeAgents) GetState(ctx context.Context, machine dbmodel.MachineTag) (*agentcomm.State, error) {
 	fa.GetStateCalled = true
 
 	if fa.MachineState != nil {
@@ -164,7 +153,7 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.Co
 // to this function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error {
+func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, app agentcomm.ControlledApp, statsAddress string, statsPort int64, path string, statsOutput interface{}) error {
 	fa.RecordedStatsURL = storkutil.HostWithPortURL(statsAddress, statsPort, false) + path
 
 	// Generate response.
@@ -196,6 +185,6 @@ func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.Cont
 }
 
 // Mimics tailing text file.
-func (fa *FakeAgents) TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error) {
+func (fa *FakeAgents) TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error) {
 	return []string{"lorem ipsum"}, nil
 }

@@ -475,7 +475,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 	// ping machine
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	err = r.Agents.Ping(ctx2, dbMachine.Address, dbMachine.AgentPort)
+	err = r.Agents.Ping(ctx2, dbMachine)
 	if err != nil {
 		msg := "Cannot ping machine"
 		log.Error(err)
@@ -855,31 +855,38 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 
 	agentErrors := int64(0)
 	var agentStats *agentcomm.AgentStats
-	var accessPoint *dbmodel.AccessPoint
 	if dbApp.Machine != nil {
 		agentStats = r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
 		if agentStats != nil {
-			agentErrors = agentStats.CurrentErrors
-			accessPoint, _ = dbApp.GetAccessPoint(dbmodel.AccessPointControl)
+			for _, errors := range agentStats.AgentCommErrors {
+				agentErrors += errors
+			}
 		}
 	}
 
 	switch {
 	case isKeaApp:
-		var keaStats *agentcomm.AgentKeaCommStats
-		if agentStats != nil && accessPoint != nil {
-			keaStats, _ = agentStats.AppCommStats[agentcomm.AppCommStatsKey{
-				Address: accessPoint.Address,
-				Port:    accessPoint.Port,
-			}].(*agentcomm.AgentKeaCommStats)
+		var keaStats *agentcomm.KeaAppCommErrors
+		if agentStats != nil {
+			if s, ok := agentStats.KeaCommErrors[app.ID]; ok {
+				keaStats = &s
+			}
 		}
 		keaDaemons := []*models.KeaDaemon{}
 		for _, d := range dbApp.Daemons {
 			dmn := keaDaemonToRestAPI(d)
 			dmn.AgentCommErrors = agentErrors
 			if keaStats != nil {
-				dmn.CaCommErrors = keaStats.CurrentErrorsCA
-				dmn.DaemonCommErrors = keaStats.CurrentErrorsDaemons[d.Name]
+				dmn.CaCommErrors = keaStats.ControlAgent
+				switch d.Name {
+				case dbmodel.DaemonNameDHCPv4:
+					dmn.DaemonCommErrors = keaStats.DHCPv4
+				case dbmodel.DaemonNameDHCPv6:
+					dmn.DaemonCommErrors = keaStats.DHCPv6
+				case dbmodel.DaemonNameD2:
+					dmn.DaemonCommErrors = keaStats.D2
+				default:
+				}
 			}
 			keaDaemons = append(keaDaemons, dmn)
 		}
@@ -945,15 +952,10 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			bind9Daemon.AutoZoneCount = bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount
 		}
 
-		var bind9Stats *agentcomm.AgentBind9CommStats
-		if agentStats != nil && accessPoint != nil {
-			if bind9Stats, _ = agentStats.AppCommStats[agentcomm.AppCommStatsKey{
-				Address: accessPoint.Address,
-				Port:    accessPoint.Port,
-			}].(*agentcomm.AgentBind9CommStats); bind9Stats != nil {
-				bind9Daemon.RndcCommErrors = bind9Stats.CurrentErrorsRNDC
-				bind9Daemon.StatsCommErrors = bind9Stats.CurrentErrorsStats
-			}
+		if agentStats != nil {
+			bind9Errors := agentStats.Bind9CommErrors[app.ID]
+			bind9Daemon.RndcCommErrors = bind9Errors.RNDC
+			bind9Daemon.StatsCommErrors = bind9Errors.Stats
 		}
 		app.Details = struct {
 			models.AppKea
@@ -1498,16 +1500,19 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			daemonErrors := int64(0)
 			agentStats := r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
 			if agentStats != nil {
-				agentErrors = agentStats.CurrentErrors
-				accessPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
-				if accessPoint != nil {
-					if keaStats, ok := agentStats.AppCommStats[agentcomm.AppCommStatsKey{
-						Address: accessPoint.Address,
-						Port:    accessPoint.Port,
-					}].(*agentcomm.AgentKeaCommStats); ok {
-						caErrors = keaStats.CurrentErrorsCA
-						daemonErrors = keaStats.CurrentErrorsDaemons[dbDaemon.Name]
-					}
+				keaErrors := agentStats.KeaCommErrors[dbApp.ID]
+				for _, errors := range agentStats.AgentCommErrors {
+					agentErrors += errors
+				}
+				caErrors = keaErrors.ControlAgent
+				switch dbDaemon.Name {
+				case dbmodel.DaemonNameDHCPv4:
+					daemonErrors = keaErrors.DHCPv4
+				case dbmodel.DaemonNameDHCPv6:
+					daemonErrors = keaErrors.DHCPv6
+				case dbmodel.DaemonNameD2:
+					daemonErrors = keaErrors.D2
+				default:
 				}
 			}
 			daemon := &models.DhcpDaemon{

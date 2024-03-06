@@ -54,7 +54,7 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 
 	// store all collected details in app db record
 	statsOutput := NamedStatsGetResponse{}
-	err = agents.ForwardToNamedStats(ctx2, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
+	err = agents.ForwardToNamedStats(ctx2, dbApp, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
 	if err != nil {
 		log.Warnf("Problem retrieving stats from named: %s", err)
 	}

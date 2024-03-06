@@ -242,7 +242,7 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 	defer cancel()
 
 	// get state of machine from agent
-	state, err := agents.GetState(ctx2, dbMachine.Address, dbMachine.AgentPort)
+	state, err := agents.GetState(ctx2, dbMachine)
 	if err != nil {
 		log.Warn(err)
 		dbMachine.Error = "Cannot get state of machine"

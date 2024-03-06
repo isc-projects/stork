@@ -109,6 +109,19 @@ func CreateEvent(level dbmodel.EventLevel, text string, objects ...interface{}) 
 				details = s
 			}
 
+		case error:
+			s := entity.Error()
+			if len(s) > 0 {
+				details = s
+			}
+
+		case []error:
+			var errors []string
+			for _, err := range entity {
+				errors = append(errors, err.Error())
+			}
+			details = strings.Join(errors, "; ")
+
 		default:
 			log.Warnf("Unknown object passed to CreateEvent: %v", obj)
 		}

@@ -201,17 +201,19 @@ func TestConnectingToAgent(t *testing.T) {
 
 	// Initially, there should be no stats.
 	require.NotNil(t, agent)
-	require.Zero(t, agent.Stats.CurrentErrors)
-	require.Empty(t, agent.Stats.AppCommStats)
+	require.Empty(t, agent.Stats.AgentCommErrors)
+	require.Empty(t, agent.Stats.KeaCommErrors)
+	require.Empty(t, agent.Stats.Bind9CommErrors)
 
 	// Let's modify some stats.
-	agent.Stats.CurrentErrors++
+	agent.Stats.AgentCommErrors["foo"] = 1
 
 	// We should be able to get pointer to stats via the convenience
 	// function.
 	stats := agents.GetConnectedAgentStats("127.0.0.1", 8080)
 	require.NotNil(t, stats)
-	require.EqualValues(t, 1, agent.Stats.CurrentErrors)
+	require.Len(t, agent.Stats.AgentCommErrors, 1)
+	require.Contains(t, agent.Stats.AgentCommErrors, "foo")
 }
 
 // Check if credentials for TLS can be prepared using prepareTLSCreds.

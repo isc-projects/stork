@@ -77,7 +77,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 	statsOutput := NamedStatsGetResponse{}
 	ctx := context.Background()
-	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
+	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
 	if err != nil {
 		return err
 	}

@@ -581,3 +581,14 @@ func (app App) GetDaemonTags() (tags []DaemonTag) {
 	}
 	return
 }
+
+// Returns selected daemon's tag or nil if the daemon does
+// not exist.
+func (app App) GetDaemonTag(daemonName string) DaemonTag {
+	for i := range app.Daemons {
+		if app.Daemons[i].Name == daemonName {
+			return app.Daemons[i]
+		}
+	}
+	return nil
+}

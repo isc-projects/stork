@@ -1,6 +1,7 @@
 package eventcenter
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -330,6 +331,33 @@ func TestCreateEventSSEMessages(t *testing.T) {
 	require.Len(t, ev.SSEStreams, 2)
 	require.EqualValues(t, "prime", ev.SSEStreams[0])
 	require.EqualValues(t, "second", ev.SSEStreams[1])
+}
+
+// Test that event details are set from a string.
+func TestCreateEventStringDetails(t *testing.T) {
+	details := "A string error"
+	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", details)
+
+	require.EqualValues(t, "foo bar baz", ev.Text)
+	require.EqualValues(t, details, ev.Details)
+}
+
+// Test that event details are set from an error.
+func TestCreateEventErrorDetails(t *testing.T) {
+	err := errors.New("an error")
+	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", err)
+
+	require.EqualValues(t, "foo bar baz", ev.Text)
+	require.EqualValues(t, "an error", ev.Details)
+}
+
+// Test that event details are set from an array of errors.
+func TestCreateEventErrorArrayDetails(t *testing.T) {
+	errs := []error{errors.New("first error"), errors.New("second error")}
+	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", errs)
+
+	require.EqualValues(t, "foo bar baz", ev.Text)
+	require.EqualValues(t, "first error; second error", ev.Details)
 }
 
 // Test that the event without tags is created properly.
