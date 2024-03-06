@@ -324,13 +324,13 @@ type PromKeaExporter struct {
 	Wg            *sync.WaitGroup
 	StartTime     time.Time
 
-	Registry       *prometheus.Registry
-	PktStatsMap    map[string]statisticDescriptor
-	Adr4StatsMap   map[string]*prometheus.GaugeVec
-	Adr6StatsMap   map[string]*prometheus.GaugeVec
-	Global4StatMap map[string]prometheus.Gauge
-	Global6StatMap map[string]prometheus.Gauge
-	UptimeCounter  prometheus.Gauge
+	Registry        *prometheus.Registry
+	PktStatsMap     map[string]statisticDescriptor
+	Adr4StatsMap    map[string]*prometheus.GaugeVec
+	Adr6StatsMap    map[string]*prometheus.GaugeVec
+	Global4StatMap  map[string]prometheus.Gauge
+	Global6StatMap  map[string]prometheus.Gauge
+	ExporterStatMap map[string]prometheus.Gauge
 
 	// Set of the ignored stats as they are estimated by summing sub-stats
 	// (like ack, nak, etc) or not-supported.
@@ -366,12 +366,45 @@ func NewPromKeaExporter(host string, port int, interval time.Duration, enablePer
 	factory := promauto.With(pke.Registry)
 
 	// stork agent internal stats
-	pke.UptimeCounter = factory.NewGauge(prometheus.GaugeOpts{
-		Namespace: "storkagent",
-		Subsystem: "promkeaexporter",
-		Name:      "uptime_seconds",
-		Help:      "Uptime of the Prometheus Kea Exporter in seconds",
-	})
+	const storkAgentNamespace = "storkagent"
+	pke.ExporterStatMap = map[string]prometheus.Gauge{
+		"uptime_seconds": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: storkAgentNamespace,
+			Subsystem: "promkeaexporter",
+			Name:      "uptime_seconds",
+			Help:      "Uptime of the Prometheus Kea Exporter in seconds",
+		}),
+		"monitored_kea_apps": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: storkAgentNamespace,
+			Subsystem: "appmonitor",
+			Name:      "monitored_kea_apps_total",
+			Help:      "Number of currently monitored Kea applications",
+		}),
+		"active_dhcp4_daemons": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: storkAgentNamespace,
+			Subsystem: "promkeaexporter",
+			Name:      "active_dhcp4_daemons_total",
+			Help:      "Number of DHCPv4 daemons providing statistics",
+		}),
+		"active_dhcp6_daemons": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: storkAgentNamespace,
+			Subsystem: "promkeaexporter",
+			Name:      "active_dhcp6_daemons_total",
+			Help:      "Number of DHCPv6 daemons providing statistics",
+		}),
+		"configured_dhcp4_daemons": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: storkAgentNamespace,
+			Subsystem: "promkeaexporter",
+			Name:      "configured_dhcp4_daemons_total",
+			Help:      "Number of configured DHCPv4 daemons in Kea CA",
+		}),
+		"configured_dhcp6_daemons": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: storkAgentNamespace,
+			Subsystem: "promkeaexporter",
+			Name:      "configured_dhcp6_daemons_total",
+			Help:      "Number of configured DHCPv6 daemons in Kea CA",
+		}),
+	}
 
 	// global stats
 	pke.Global4StatMap = map[string]prometheus.Gauge{
@@ -724,7 +757,7 @@ func (pke *PromKeaExporter) statsCollectorLoop() {
 		case <-pke.Ticker.C:
 			err := pke.collectStats()
 			if err != nil {
-				log.Errorf("Some errors were encountered while collecting stats from Kea: %+v", err)
+				log.WithError(err).Error("Some errors were encountered while collecting stats from Kea")
 			}
 		// wait for done signal from shutdown function
 		case <-pke.DoneCollector:
@@ -799,7 +832,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 // Collect stats from all Kea apps.
 func (pke *PromKeaExporter) collectStats() error {
 	// Update uptime counter
-	pke.UptimeCounter.Set(time.Since(pke.StartTime).Seconds())
+	pke.ExporterStatMap["uptime_seconds"].Set(time.Since(pke.StartTime).Seconds())
 
 	var lastErr error
 
@@ -811,26 +844,32 @@ func (pke *PromKeaExporter) collectStats() error {
 		"arguments": map[string]any{},
 	}
 
-	// Set of the services (daemons) that support the get-statistics-all
-	// command.
-	supportedServices := map[string]bool{
-		"dhcp4": true,
-		"dhcp6": true,
-	}
-
 	// Go through all kea apps discovered by monitor and query them for stats.
 	apps := pke.AppMonitor.GetApps()
+	keaAppsCount := 0
+	activeDHCP4DaemonsCount := 0
+	activeDHCP6DaemonsCount := 0
+	configuredDHCP4DaemonsCount := 0
+	configuredDHCP6DaemonsCount := 0
+
 	for _, app := range apps {
 		// Ignore non-kea apps.
 		if app.GetBaseApp().Type != AppTypeKea {
 			continue
 		}
+		keaAppsCount++
 
 		// Collect the list of the configured DHCP daemons in a given app to
 		// avoid sending requests to non-existing daemons.
 		var services []string
 		for _, daemon := range app.GetConfiguredDaemons() {
-			if _, ok := supportedServices[daemon]; ok {
+			// Select services (daemons) that support the get-statistics-all
+			// command.
+			if daemon == "dhcp4" {
+				configuredDHCP4DaemonsCount++
+				services = append(services, daemon)
+			} else if daemon == "dhcp6" {
+				configuredDHCP6DaemonsCount++
 				services = append(services, daemon)
 			}
 		}
@@ -871,7 +910,9 @@ func (pke *PromKeaExporter) collectStats() error {
 		err = json.Unmarshal(responseData, &response)
 		if err != nil {
 			lastErr = err
-			log.Errorf("Failed to parse responses from Kea: %s", err)
+			log.WithError(err).
+				WithField("request", requestData).
+				Error("Failed to parse responses from Kea")
 			continue
 		}
 
@@ -883,14 +924,24 @@ func (pke *PromKeaExporter) collectStats() error {
 		// Fetching also DHCP subnet prefixes. It may fail if Kea doesn't support
 		// required commands.
 		if response.Dhcp4 != nil {
+			activeDHCP4DaemonsCount++
 			subnetPrefixLookup.setFamily(4)
 			pke.setDaemonStats(&pke.Adr4StatsMap, pke.Global4StatMap, response.Dhcp4, pke.ignoredStats, subnetPrefixLookup)
 		}
 		if response.Dhcp6 != nil {
+			activeDHCP6DaemonsCount++
 			subnetPrefixLookup.setFamily(6)
 			pke.setDaemonStats(&pke.Adr6StatsMap, pke.Global6StatMap, response.Dhcp6, pke.ignoredStats, subnetPrefixLookup)
 		}
 	}
+
+	// Set the number of monitored Kea applications and daemons.
+	pke.ExporterStatMap["monitored_kea_apps"].Set(float64(keaAppsCount))
+	pke.ExporterStatMap["active_dhcp4_daemons"].Set(float64(activeDHCP4DaemonsCount))
+	pke.ExporterStatMap["active_dhcp6_daemons"].Set(float64(activeDHCP6DaemonsCount))
+	pke.ExporterStatMap["configured_dhcp4_daemons"].Set(float64(configuredDHCP4DaemonsCount))
+	pke.ExporterStatMap["configured_dhcp6_daemons"].Set(float64(configuredDHCP6DaemonsCount))
+
 	return lastErr
 }
 
