@@ -61,7 +61,11 @@ class Agent(ComposeServiceWrapper):
         return hashes
 
     def read_prometheus_metrics(self):
-        """Reads the Prometheus metrics collected by the Stork Agent."""
+        """
+        Reads the Prometheus metrics collected by the Stork Agent.
+        Returns a dictionary where the key is the metric name and the value is
+        the metric object.
+        """
         if self.prometheus_exporter_port == 0:
             raise ValueError("The Prometheus exporter port is not known.")
 
@@ -71,7 +75,11 @@ class Agent(ComposeServiceWrapper):
         data = resp.data.decode("utf-8")
         data = data.split("\n")
 
-        return text_fd_to_metric_families(data)
+        metrics_list = text_fd_to_metric_families(data)
+        metrics_dict = {
+            metric.name: metric for metric in metrics_list
+        }
+        return metrics_dict
 
     def restart_stork_agent(self):
         """

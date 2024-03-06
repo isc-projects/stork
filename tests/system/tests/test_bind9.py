@@ -18,9 +18,7 @@ def test_bind9(server_service: Server, bind9_service: Bind9):
     # See: https://gitlab.isc.org/isc-projects/bind9/-/issues/3463
     # This loop checks if the Stork isn't affected.
     for _ in range(2):
-        metrics = {
-            metric.name: metric for metric in bind9_service.read_prometheus_metrics()
-        }
+        metrics = bind9_service.read_prometheus_metrics()
         up_metric = metrics["bind_up"]
         up_metric_value = up_metric.samples[0].value
         assert up_metric_value == 1.0
@@ -42,7 +40,7 @@ def test_bind9_rndc(server_service: Server, bind9_service: Bind9):
 
     metrics = bind9_service.read_prometheus_metrics()
     assert metrics is not None
-    assert len(list(metrics)) > 0
+    assert len(metrics) > 0
 
 
 @bind9_parametrize("agent-bind9-package")
