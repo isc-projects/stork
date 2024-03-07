@@ -672,7 +672,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 	default:
 	}
 
-	if err != nil {
+	if err != nil || commState == newCommIssue || commState == existingCommIssue {
 		return nil, errors.Wrapf(err, "failed to send Kea commands to agent %s", addrPort)
 	}
 	response := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
@@ -754,7 +754,9 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 				result.CmdsErrors = append(result.CmdsErrors, err)
 			}
 			// Failure to parse the response is treated as a Kea Control Agent error.
-			if agent, err := agents.GetConnectedAgent(addrPort); err == nil {
+			if agent, err := agents.GetConnectedAgent(addrPort); err == nil &&
+				controlAgentState != newCommIssue &&
+				controlAgentState != existingCommIssue {
 				agent.Stats.mutex.Lock()
 				keaCommErrors := agent.Stats.KeaCommErrors[app.GetID()]
 				keaCommErrors.ControlAgent++
