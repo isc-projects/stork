@@ -202,6 +202,7 @@ func (agents *connectedAgentsData) checkKeaCommState(agentAddr string, commands 
 		var parsedResp []keactrl.ResponseHeader
 		err = keactrl.UnmarshalResponseList(commands[idx], daemonResp.Response, &parsedResp)
 		if err != nil {
+			controlAgentErr++
 			fmt.Fprintf(&controlAgentErrMessageBuilder, "received invalid response from Kea ControlAgent: %s\n", err)
 		}
 

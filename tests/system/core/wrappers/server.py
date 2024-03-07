@@ -622,7 +622,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
         def condition(event: Event):
             text = event.text
-            if not text.startswith("Communication with CA daemon of"):
+            if not text.startswith("forwarding Kea command via"):
                 return False
             if not text.endswith("failed"):
                 return False
