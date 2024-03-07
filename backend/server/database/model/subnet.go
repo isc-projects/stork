@@ -23,7 +23,96 @@ import (
 var _ keaconfig.SubnetAccessor = (*Subnet)(nil)
 
 // Custom statistic type to redefine JSON marshalling.
-type SubnetStats map[string]interface{}
+type SubnetStats struct {
+	data map[string]any
+}
+
+func NewSubnetStats() *SubnetStats {
+	return &SubnetStats{
+		data: make(map[string]any),
+	}
+}
+
+func NewSubnetStatsFromMap(data map[string]any) *SubnetStats {
+	subnetStats := NewSubnetStats()
+
+	for k, v := range data {
+		subnetStats.SetAny(k, v)
+	}
+
+	return subnetStats
+}
+
+func (s *SubnetStats) GetAny(key string) any {
+	return s.data[key]
+}
+
+func (s *SubnetStats) Has(key string) bool {
+	_, ok := s.data[key]
+	return ok
+
+}
+
+func (s *SubnetStats) TryGetAny(key string) (any, bool) {
+	value, ok := s.data[key]
+	return value, ok
+}
+
+func (s *SubnetStats) TryGetUint64(key string) (uint64, bool) {
+	value, ok := s.data[key]
+	if !ok {
+		return 0, false
+	}
+
+	switch v := value.(type) {
+	case uint64:
+		return v, true
+	case int64:
+		return uint64(v), v >= 0
+	case *big.Int:
+		return v.Uint64(), v.IsUint64()
+	}
+
+	return 0, false
+}
+
+func (s *SubnetStats) SetUint64(key string, value uint64) {
+	s.data[key] = value
+}
+
+func (s *SubnetStats) SetInt64(key string, value int64) {
+	if value >= 0 {
+		s.SetUint64(key, uint64(value))
+	}
+	s.data[key] = value
+}
+
+func (s *SubnetStats) SetBigInt(key string, value *big.Int) {
+	if value.IsUint64() {
+		s.SetUint64(key, value.Uint64())
+	} else if value.IsInt64() {
+		s.SetInt64(key, value.Int64())
+	} else {
+		s.data[key] = value
+	}
+}
+
+func (s *SubnetStats) SetAny(key string, value any) {
+	switch value := value.(type) {
+	case int64:
+		s.SetInt64(key, value)
+	case uint64:
+		s.SetUint64(key, value)
+	case *big.Int:
+		s.SetBigInt(key, value)
+	default:
+		s.data[key] = value
+	}
+}
+
+func (s *SubnetStats) ToMap() map[string]any {
+	return s.data
+}
 
 // Subnet statistics may contain the integer number from the int64
 // (or uint64) range (max value is 2^63-1 (2^64-1)). The value returned by
@@ -38,17 +127,15 @@ type SubnetStats map[string]interface{}
 // It doesn't use the pointer to receiver type for compatibility with go-pg serialization
 // during inserting to the database.
 func (s SubnetStats) MarshalJSON() ([]byte, error) {
-	if s == nil {
+	if s.data == nil {
 		return json.Marshal(nil)
 	}
 
-	toMarshal := make(map[string]interface{}, len(s))
+	toMarshal := make(map[string]interface{}, len(s.data))
 
-	for k, v := range s {
+	for k, v := range s.data {
 		switch value := v.(type) {
-		case *big.Int:
-			toMarshal[k] = value.String()
-		case int64, uint64:
+		case *big.Int, int64, uint64:
 			toMarshal[k] = fmt.Sprint(value)
 		default:
 			toMarshal[k] = value
@@ -64,7 +151,7 @@ func (s SubnetStats) MarshalJSON() ([]byte, error) {
 type utilizationStats interface {
 	GetAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
-	GetStatistics() SubnetStats
+	GetStatistics() *SubnetStats
 }
 
 // Deserialize statistics and convert back the strings to int64 or uint64.
@@ -80,40 +167,40 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 	}
 
 	if toUnmarshal == nil {
-		*s = nil
+		s.data = nil
 		return nil
 	}
 
-	if *s == nil {
-		*s = SubnetStats{}
+	if s.data == nil {
+		s.data = make(map[string]any)
 	}
 
 	for k, v := range toUnmarshal {
 		vStr, ok := v.(string)
 		if !ok {
-			(*s)[k] = v
+			s.data[k] = v
 			continue
 		}
 
 		vUint64, err := strconv.ParseUint(vStr, 10, 64)
 		if err == nil {
-			(*s)[k] = vUint64
+			s.SetUint64(k, vUint64)
 			continue
 		}
 
 		vInt64, err := strconv.ParseInt(vStr, 10, 64)
 		if err == nil {
-			(*s)[k] = vInt64
+			s.SetInt64(k, vInt64)
 			continue
 		}
 
 		vBigInt, ok := new(big.Int).SetString(vStr, 10)
 		if ok {
-			(*s)[k] = vBigInt
+			s.SetBigInt(k, vBigInt)
 			continue
 		}
 
-		(*s)[k] = v
+		s.data[k] = v
 	}
 
 	return nil
@@ -137,7 +224,7 @@ type LocalSubnet struct {
 	Subnet        *Subnet `pg:"rel:has-one"`
 	LocalSubnetID int64
 
-	Stats            SubnetStats
+	Stats            *SubnetStats
 	StatsCollectedAt time.Time
 
 	AddressPools []AddressPool `pg:"rel:has-many"`
@@ -162,7 +249,7 @@ type Subnet struct {
 
 	AddrUtilization  int16
 	PdUtilization    int16
-	Stats            SubnetStats
+	Stats            *SubnetStats
 	StatsCollectedAt time.Time
 }
 
@@ -929,7 +1016,7 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 }
 
 // Update stats pulled for given local subnet.
-func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
+func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats *SubnetStats) error {
 	lsn.Stats = stats
 	lsn.StatsCollectedAt = storkutil.UTCNow()
 	q := dbi.Model(lsn)

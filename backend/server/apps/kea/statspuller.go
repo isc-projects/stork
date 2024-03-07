@@ -2,6 +2,7 @@ package kea
 
 import (
 	"context"
+	"math"
 	"math/big"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // Statistics puller is responsible for fetching the data using the Kea
@@ -173,7 +175,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 // Part of response for stat-lease4-get and stat-lease6-get commands.
 type ResultSetInStatLeaseGet struct {
 	Columns []string
-	Rows    [][]int64
+	Rows    [][]storkutil.BigIntJSON
 }
 
 // Part of response for stat-lease4-get and stat-lease6-get commands.
@@ -219,27 +221,39 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 	}
 
 	for _, row := range resultSet.Rows {
-		stats := dbmodel.SubnetStats{}
+		stats := dbmodel.NewSubnetStats()
 		var sn *dbmodel.LocalSubnet
 		var lsnID int64
 		for colIdx, val := range row {
 			name := resultSet.Columns[colIdx]
 			if name == "subnet-id" {
-				lsnID = val
+				lsnID = val.BigInt().Int64()
 				sn = subnetsMap[localSubnetKey{lsnID, family}]
 			} else {
 				// handle inconsistency in stats naming in different kea versions
 				name = strings.Replace(name, "addreses", "addresses", 1)
-
-				// Cast the value to a proper type
-				switch name {
-				case "total-addresses", "assigned-addresses", "declined-addresses",
-					"total-nas", "assigned-nas", "declined-nas",
-					"total-pds", "assigned-pds", "cumulative-assigned-addresses":
-					stats[name] = uint64(val)
-				default:
-					stats[name] = val
+				value := val.BigInt()
+				if value.Sign() == -1 {
+					// Handle negative statistics from older Kea versions.
+					// Older Kea versions stored the statistics as uint64
+					// but they were returned as int64.
+					//
+					// For the negative int64 values:
+					// uint64 = maxUint64 + (int64 + 1)
+					value = big.NewInt(0).Add(
+						big.NewInt(0).SetUint64(math.MaxUint64),
+						big.NewInt(0).Add(
+							big.NewInt(1),
+							value,
+						),
+					)
 				}
+
+				// Store the value as a best fit type to preserve compatibility
+				// with the existing code. Some features expect the IPv
+				// statistics to be always stored as uint64, while IPv6 can be
+				// uint64 or big int.
+				stats.SetBigInt(name, value)
 			}
 		}
 		if sn == nil {

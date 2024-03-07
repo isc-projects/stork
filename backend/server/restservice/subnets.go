@@ -81,13 +81,18 @@ func convertGlobalSubnetParametersToRestAPI(cfg *dbmodel.KeaConfig) *models.KeaC
 
 // Creates a REST API representation of a subnet from a database model.
 func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
+	var stats map[string]any
+	if sn.Stats != nil {
+		stats = sn.Stats.ToMap()
+	}
+
 	subnet := &models.Subnet{
 		ID:               sn.ID,
 		Subnet:           sn.Prefix,
 		ClientClass:      sn.ClientClass,
 		AddrUtilization:  float64(sn.AddrUtilization) / 10,
 		PdUtilization:    float64(sn.PdUtilization) / 10,
-		Stats:            sn.Stats,
+		Stats:            stats,
 		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
 	}
 

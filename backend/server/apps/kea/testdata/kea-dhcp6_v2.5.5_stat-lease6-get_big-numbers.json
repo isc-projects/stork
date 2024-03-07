@@ -1,0 +1,26 @@
+[
+    {
+        "arguments": {
+            "result-set": {
+                "columns": [
+                    "subnet-id",
+                    "total-nas",
+                    "cumulative-assigned-nas",
+                    "assigned-nas",
+                    "declined-addresses",
+                    "total-pds",
+                    "cumulative-assigned-pds",
+                    "assigned-pds"
+                ],
+                "rows": [
+                    [ 1, 844424930131968, 0, 9, 10, 0, 0, 0 ],
+                    [ 2, 281474976710656, 0, 0, 0, 0, 0, 0 ],
+                    [ 3, 2417851639229258349412352, 0, 0, 0, 0, 0, 0 ]
+                ],
+                "timestamp": "2024-03-07 08:46:44.225766"
+            }
+        },
+        "result": 0,
+        "text": "stat-lease6-get[all subnets]: 3 rows found"
+    }
+]

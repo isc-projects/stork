@@ -23,10 +23,10 @@ import (
 type utilizationStatsMock struct {
 	addressUtilization         float64
 	delegatedPrefixUtilization float64
-	statistics                 SubnetStats
+	statistics                 *SubnetStats
 }
 
-func newUtilizationStatsMock(address, pd float64, stats SubnetStats) utilizationStats {
+func newUtilizationStatsMock(address, pd float64, stats *SubnetStats) utilizationStats {
 	return &utilizationStatsMock{
 		addressUtilization:         address,
 		delegatedPrefixUtilization: pd,
@@ -42,7 +42,7 @@ func (m *utilizationStatsMock) GetDelegatedPrefixUtilization() float64 {
 	return m.delegatedPrefixUtilization
 }
 
-func (m *utilizationStatsMock) GetStatistics() SubnetStats {
+func (m *utilizationStatsMock) GetStatistics() *SubnetStats {
 	return m.statistics
 }
 
@@ -806,8 +806,8 @@ func TestUpdateStats(t *testing.T) {
 	lsn := subnets[0]
 	lsn.DaemonID = apps[0].Daemons[0].ID
 	lsn.SubnetID = subnet.ID
-	stats := make(map[string]interface{})
-	stats["hakuna-matata"] = 123
+	stats := NewSubnetStats()
+	stats.SetInt64("hakuna-matata", 123)
 	err = lsn.UpdateStats(db, stats)
 	require.NoError(t, err)
 
@@ -818,9 +818,9 @@ func TestUpdateStats(t *testing.T) {
 	require.Len(t, localSubnets, 1)
 	lsn = localSubnets[0]
 	require.NotZero(t, lsn.StatsCollectedAt)
-	require.NotEmpty(t, lsn.Stats)
-	require.Contains(t, lsn.Stats, "hakuna-matata")
-	require.EqualValues(t, 123, lsn.Stats["hakuna-matata"])
+	require.NotNil(t, lsn.Stats)
+	require.True(t, lsn.Stats.Has("hakuna-matata"))
+	require.EqualValues(t, 123, lsn.Stats.GetAny("hakuna-matata"))
 }
 
 // Test that global shared networks and subnet instances are committed
@@ -1035,12 +1035,12 @@ func TestUpdateUtilization(t *testing.T) {
 	require.Zero(t, returnedSubnet.StatsCollectedAt)
 
 	// update utilization in subnet
-	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, SubnetStats{
+	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, NewSubnetStatsFromMap(map[string]any{
 		"total-nas":    uint64(100),
 		"assigned-nas": uint64(1),
 		"total-pds":    uint64(100),
 		"assigned-pds": uint64(2),
-	}))
+	})))
 
 	// check if utilization was stored in db
 	returnedSubnet2, err := GetSubnet(db, subnet.ID)
@@ -1048,8 +1048,8 @@ func TestUpdateUtilization(t *testing.T) {
 	require.NotNil(t, returnedSubnet2)
 	require.EqualValues(t, 10, returnedSubnet2.AddrUtilization)
 	require.EqualValues(t, 20, returnedSubnet2.PdUtilization)
-	require.EqualValues(t, 1, returnedSubnet2.Stats["assigned-nas"])
-	require.EqualValues(t, 2, returnedSubnet2.Stats["assigned-pds"])
+	require.EqualValues(t, 1, returnedSubnet2.Stats.GetAny("assigned-nas"))
+	require.EqualValues(t, 2, returnedSubnet2.Stats.GetAny("assigned-pds"))
 	require.InDelta(t, time.Now().UTC().Unix(), returnedSubnet2.StatsCollectedAt.Unix(), 10.0)
 }
 
@@ -1188,7 +1188,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	// Arrange
 	localSubnet := &LocalSubnet{
-		Stats: SubnetStats{
+		Stats: NewSubnetStatsFromMap(map[string]any{
 			"maxInt64":             int64(math.MaxInt64),
 			"minInt64":             int64(math.MinInt64),
 			"maxUint64":            uint64(math.MaxUint64),
@@ -1205,7 +1205,7 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 			"bigIntBelowInt64Bounds": big.NewInt(0).Add(
 				big.NewInt(math.MinInt64), big.NewInt(math.MinInt64),
 			),
-		},
+		}),
 	}
 
 	var deserialized LocalSubnet
@@ -1219,24 +1219,24 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	require.NoError(t, fromJSONErr)
 
 	// Deserializer loses the original types (!)
-	require.Equal(t, uint64(math.MaxInt64), deserialized.Stats["maxInt64"])
-	require.Equal(t, int64(math.MinInt64), deserialized.Stats["minInt64"])
-	require.Equal(t, uint64(math.MaxUint64), deserialized.Stats["maxUint64"])
-	require.Equal(t, uint64(0), deserialized.Stats["minUint64"])
+	require.Equal(t, uint64(math.MaxInt64), deserialized.Stats.GetAny("maxInt64"))
+	require.Equal(t, int64(math.MinInt64), deserialized.Stats.GetAny("minInt64"))
+	require.Equal(t, uint64(math.MaxUint64), deserialized.Stats.GetAny("maxUint64"))
+	require.Equal(t, uint64(0), deserialized.Stats.GetAny("minUint64"))
 
-	require.Equal(t, float64(42), deserialized.Stats["untyped"])
-	require.Equal(t, float64(16), deserialized.Stats["int16"])
-	require.Equal(t, float64(32), deserialized.Stats["int32"])
+	require.Equal(t, float64(42), deserialized.Stats.GetAny("untyped"))
+	require.Equal(t, float64(16), deserialized.Stats.GetAny("int16"))
+	require.Equal(t, float64(32), deserialized.Stats.GetAny("int32"))
 
-	require.Equal(t, uint64(42), deserialized.Stats["bigIntInUint64Bounds"])
-	require.Equal(t, int64(-42), deserialized.Stats["bigIntInInt64Bounds"])
+	require.Equal(t, uint64(42), deserialized.Stats.GetAny("bigIntInUint64Bounds"))
+	require.Equal(t, int64(-42), deserialized.Stats.GetAny("bigIntInInt64Bounds"))
 	require.Equal(t, big.NewInt(0).Add(
 		big.NewInt(0).SetUint64(math.MaxUint64),
 		big.NewInt(0).SetUint64(math.MaxUint64),
-	), deserialized.Stats["bigIntAboveUint64Bounds"])
+	), deserialized.Stats.GetAny("bigIntAboveUint64Bounds"))
 	require.Equal(t, big.NewInt(0).Add(
 		big.NewInt(math.MinInt64), big.NewInt(math.MinInt64),
-	), deserialized.Stats["bigIntBelowInt64Bounds"])
+	), deserialized.Stats.GetAny("bigIntBelowInt64Bounds"))
 }
 
 // Test that the none stats are serialized as nil.

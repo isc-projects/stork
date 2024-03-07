@@ -56,7 +56,7 @@ func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 type subnetStats interface {
 	GetAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
-	GetStatistics() dbmodel.SubnetStats
+	GetStatistics() *dbmodel.SubnetStats
 }
 
 // Sum of the subnet statistics from the single shared network.
@@ -91,13 +91,13 @@ func (s *sharedNetworkStats) GetDelegatedPrefixUtilization() float64 {
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given shared network.
-func (s *sharedNetworkStats) GetStatistics() dbmodel.SubnetStats {
-	return dbmodel.SubnetStats{
+func (s *sharedNetworkStats) GetStatistics() *dbmodel.SubnetStats {
+	return dbmodel.NewSubnetStatsFromMap(map[string]any{
 		"total-nas":    s.totalAddresses.ConvertToNativeType(),
 		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),
 		"total-pds":    s.totalDelegatedPrefixes.ConvertToNativeType(),
 		"assigned-pds": s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
-	}
+	})
 }
 
 // Add the IPv4 subnet statistics to the shared network state.
@@ -138,12 +138,12 @@ func (s *subnetIPv4Stats) GetDelegatedPrefixUtilization() float64 {
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given IPv4 subnet.
-func (s *subnetIPv4Stats) GetStatistics() dbmodel.SubnetStats {
-	return dbmodel.SubnetStats{
+func (s *subnetIPv4Stats) GetStatistics() *dbmodel.SubnetStats {
+	return dbmodel.NewSubnetStatsFromMap(map[string]any{
 		"total-addresses":    s.totalAddresses,
 		"assigned-addresses": s.totalAssignedAddresses,
 		"declined-addresses": s.totalDeclinedAddresses,
-	}
+	})
 }
 
 // IPv6 statistics retrieved from the single subnet.
@@ -168,14 +168,14 @@ func (s *subnetIPv6Stats) GetDelegatedPrefixUtilization() float64 {
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given IPv6 network.
-func (s *subnetIPv6Stats) GetStatistics() dbmodel.SubnetStats {
-	return dbmodel.SubnetStats{
+func (s *subnetIPv6Stats) GetStatistics() *dbmodel.SubnetStats {
+	return dbmodel.NewSubnetStatsFromMap(map[string]any{
 		"total-nas":    s.totalAddresses.ConvertToNativeType(),
 		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),
 		"declined-nas": s.totalDeclinedAddresses.ConvertToNativeType(),
 		"total-pds":    s.totalDelegatedPrefixes.ConvertToNativeType(),
 		"assigned-pds": s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
-	}
+	})
 }
 
 // Statistics Counter is a helper for calculating the global IPv4 and IPv6
@@ -306,7 +306,11 @@ func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string, excludedDa
 			continue
 		}
 
-		value, ok := localSubnet.Stats[statName]
+		if localSubnet.Stats == nil {
+			continue
+		}
+
+		value, ok := localSubnet.Stats.TryGetAny(statName)
 		if !ok {
 			continue
 		}
@@ -340,7 +344,11 @@ func sumStatLocalSubnetsIPv4(subnet *dbmodel.Subnet, statName string, excludedDa
 			continue
 		}
 
-		value, ok := localSubnet.Stats[statName]
+		if localSubnet.Stats == nil {
+			continue
+		}
+
+		value, ok := localSubnet.Stats.TryGetAny(statName)
 		if !ok {
 			continue
 		}

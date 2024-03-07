@@ -1,6 +1,7 @@
 package kea
 
 import (
+	_ "embed"
 	"encoding/json"
 	"math"
 	"math/big"
@@ -12,6 +13,7 @@ import (
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
 // Prepares the Kea mock. It accepts list of serialized JSON responses in order:
@@ -48,6 +50,18 @@ func createKeaMock(jsonFactory func(callNo int) (jsons []string)) func(callNo in
 	}
 }
 
+// Converts the list of int64s to list of the JSON-serializable big integers.
+func convertInt64SeriesToBigInts(series [][]int64) (result [][]storkutil.BigIntJSON) {
+	result = make([][]storkutil.BigIntJSON, len(series))
+	for i, row := range series {
+		result[i] = make([]storkutil.BigIntJSON, len(row))
+		for j, item := range row {
+			result[i][j] = storkutil.NewBigIntJSONFromInt64(item)
+		}
+	}
+	return
+}
+
 // Prepares the Kea mock with the statistic values compatible with the
 // configurations produced by the createDhcpConfigs function.
 // It assigns different, predictable values for each application. Supports the
@@ -73,10 +87,10 @@ func createStandardKeaMock(oldStatsFormat bool) func(callNo int, cmdResponses []
 					Arguments: &StatLeaseGetArgs{
 						ResultSet: ResultSetInStatLeaseGet{
 							Columns: statLeaseGetResponseDHCPv4Columns,
-							Rows: [][]int64{
+							Rows: convertInt64SeriesToBigInts([][]int64{
 								{10, 256 + totalShift, 111 + shift, 0 + shift},
 								{20, 4098 + totalShift, 2034 + shift, 4 + shift},
-							},
+							}),
 						},
 						Timestamp: "2018-05-04 15:03:37.000000",
 					},
@@ -104,12 +118,12 @@ func createStandardKeaMock(oldStatsFormat bool) func(callNo int, cmdResponses []
 					Arguments: &StatLeaseGetArgs{
 						ResultSet: ResultSetInStatLeaseGet{
 							Columns: []string{"subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds"},
-							Rows: [][]int64{
+							Rows: convertInt64SeriesToBigInts([][]int64{
 								{30, 4096 + totalShift, 2400 + shift, 3 + shift, 0 + totalShift, 0 + shift},
 								{40, 0 + totalShift, 0 + shift, 0 + shift, 1048 + totalShift, 233 + shift},
 								{50, 256 + totalShift, 60 + shift, 0 + shift, 1048 + totalShift, 15 + shift},
 								{60, -1, 9223372036854775807, 0, -2, -3},
-							},
+							}),
 						},
 						Timestamp: "2018-05-04 15:03:37.000000",
 					},
@@ -286,42 +300,42 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 		totalShift := shift * 2
 		switch sn.LocalSubnetID {
 		case 10:
-			require.Equal(t, uint64(111+shift), sn.Stats["assigned-addresses"])
-			require.Equal(t, uint64(0+shift), sn.Stats["declined-addresses"])
-			require.Equal(t, uint64(256+totalShift), sn.Stats["total-addresses"])
+			require.Equal(t, uint64(111+shift), sn.Stats.GetAny("assigned-addresses"))
+			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("declined-addresses"))
+			require.Equal(t, uint64(256+totalShift), sn.Stats.GetAny("total-addresses"))
 			snCnt++
 		case 20:
-			require.Equal(t, uint64(2034+shift), sn.Stats["assigned-addresses"])
-			require.Equal(t, uint64(4+shift), sn.Stats["declined-addresses"])
-			require.Equal(t, uint64(4098+totalShift), sn.Stats["total-addresses"])
+			require.Equal(t, uint64(2034+shift), sn.Stats.GetAny("assigned-addresses"))
+			require.Equal(t, uint64(4+shift), sn.Stats.GetAny("declined-addresses"))
+			require.Equal(t, uint64(4098+totalShift), sn.Stats.GetAny("total-addresses"))
 			snCnt++
 		case 30:
-			require.Equal(t, uint64(2400+shift), sn.Stats["assigned-nas"])
-			require.Equal(t, uint64(0+shift), sn.Stats["assigned-pds"])
-			require.Equal(t, uint64(3+shift), sn.Stats["declined-nas"])
-			require.Equal(t, uint64(4096+totalShift), sn.Stats["total-nas"])
-			require.Equal(t, uint64(0+totalShift), sn.Stats["total-pds"])
+			require.Equal(t, uint64(2400+shift), sn.Stats.GetAny("assigned-nas"))
+			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("assigned-pds"))
+			require.Equal(t, uint64(3+shift), sn.Stats.GetAny("declined-nas"))
+			require.Equal(t, uint64(4096+totalShift), sn.Stats.GetAny("total-nas"))
+			require.Equal(t, uint64(0+totalShift), sn.Stats.GetAny("total-pds"))
 			snCnt++
 		case 40:
-			require.Equal(t, uint64(0+shift), sn.Stats["assigned-nas"])
-			require.Equal(t, uint64(233+shift), sn.Stats["assigned-pds"])
-			require.Equal(t, uint64(0+shift), sn.Stats["declined-nas"])
-			require.Equal(t, uint64(0+totalShift), sn.Stats["total-nas"])
-			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
+			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("assigned-nas"))
+			require.Equal(t, uint64(233+shift), sn.Stats.GetAny("assigned-pds"))
+			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("declined-nas"))
+			require.Equal(t, uint64(0+totalShift), sn.Stats.GetAny("total-nas"))
+			require.Equal(t, uint64(1048+totalShift), sn.Stats.GetAny("total-pds"))
 			snCnt++
 		case 50:
-			require.Equal(t, uint64(60+shift), sn.Stats["assigned-nas"])
-			require.Equal(t, uint64(15+shift), sn.Stats["assigned-pds"])
-			require.Equal(t, uint64(0+shift), sn.Stats["declined-nas"])
-			require.Equal(t, uint64(256+totalShift), sn.Stats["total-nas"])
-			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
+			require.Equal(t, uint64(60+shift), sn.Stats.GetAny("assigned-nas"))
+			require.Equal(t, uint64(15+shift), sn.Stats.GetAny("assigned-pds"))
+			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("declined-nas"))
+			require.Equal(t, uint64(256+totalShift), sn.Stats.GetAny("total-nas"))
+			require.Equal(t, uint64(1048+totalShift), sn.Stats.GetAny("total-pds"))
 			snCnt++
 		case 60:
-			require.Equal(t, uint64(math.MaxUint64), sn.Stats["total-nas"])
-			require.Equal(t, uint64(math.MaxInt64), sn.Stats["assigned-nas"])
-			require.Equal(t, uint64(0), sn.Stats["declined-nas"])
-			require.Equal(t, uint64(math.MaxUint64)-1, sn.Stats["total-pds"])
-			require.Equal(t, uint64(math.MaxUint64)-2, sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(math.MaxUint64), sn.Stats.GetAny("total-nas"))
+			require.Equal(t, uint64(math.MaxInt64), sn.Stats.GetAny("assigned-nas"))
+			require.Equal(t, uint64(0), sn.Stats.GetAny("declined-nas"))
+			require.Equal(t, uint64(math.MaxUint64)-1, sn.Stats.GetAny("total-pds"))
+			require.Equal(t, uint64(math.MaxUint64)-2, sn.Stats.GetAny("assigned-pds"))
 			snCnt++
 		case 70:
 			require.Nil(t, sn.Stats)
@@ -1080,4 +1094,71 @@ func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsDown(t *testing.T) {
 	require.NotNil(t, hotStandby)
 
 	verifyCountingStatisticsFromPrimary(t, db)
+}
+
+//go:embed testdata/kea-dhcp6_v2.5.5_stat-lease6-get_big-numbers.json
+var statisticGetAllBigNumbersJSON []byte
+
+// Test that unmarshalling of the Kea stat-lease6-get response does not lose
+// precision when the values exceed the maximum value of int64.
+func TestUnmarshalStatLeaseGetResponse(t *testing.T) {
+	// Arrange
+	var response []StatLeaseGetResponse
+	expected0, _ := big.NewInt(0).SetString("844424930131968", 10)
+	expected1, _ := big.NewInt(0).SetString("281474976710656", 10)
+	expected2, _ := big.NewInt(0).SetString("2417851639229258349412352", 10)
+	expectedValues := []*big.Int{expected0, expected1, expected2}
+
+	// Act
+	err := json.Unmarshal(statisticGetAllBigNumbersJSON, &response)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, "subnet-id", response[0].Arguments.ResultSet.Columns[0])
+	require.Equal(t, "total-nas", response[0].Arguments.ResultSet.Columns[1])
+
+	for i, value := range expectedValues {
+		require.EqualValues(t, i+1, response[0].Arguments.ResultSet.Rows[i][0].BigInt().Int64())
+		require.Equal(t,
+			value,
+			response[0].Arguments.ResultSet.Rows[i][1].BigInt(),
+		)
+	}
+}
+
+// Test that the statistics with values exceeding the maximum value of int64
+// are stored without loss of precision.
+func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	puller, _ := NewStatsPuller(db, fa)
+
+	var response []StatLeaseGetResponse
+	_ = json.Unmarshal(statisticGetAllBigNumbersJSON, &response)
+
+	// Seed database.
+
+	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
+	_ = dbmodel.AddMachine(db, machine)
+
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Active:    true,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp6", true),
+		},
+	}
+	daemons, _ := dbmodel.AddApp(db, app)
+
+	// Act
+	err := puller.processAppResponses(app, []*keactrl.Command{{Command: "stat-lease6-get"}}, daemons, []any{&response})
+
+	// Assert
+	require.NoError(t, err)
+
 }

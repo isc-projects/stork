@@ -160,18 +160,18 @@ func TestGetSubnets(t *testing.T) {
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.118.0.0/24")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
-	subnets[0].Stats = dbmodel.SubnetStats{
+	subnets[0].Stats = dbmodel.NewSubnetStatsFromMap(map[string]any{
 		"bar": 24,
-	}
+	})
 	subnets[0].StatsCollectedAt = time.Time{}.Add(2 * time.Hour)
 	dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, subnets)
 
 	subnets, err = dbmodel.GetSubnetsByPrefix(db, "3001:db8:1::/64")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
-	subnets[0].Stats = dbmodel.SubnetStats{
+	subnets[0].Stats = dbmodel.NewSubnetStatsFromMap(map[string]any{
 		"baz": 4224,
-	}
+	})
 	subnets[0].StatsCollectedAt = time.Time{}.Add(3 * time.Hour)
 	subnets[0].AddrUtilization = 240
 	subnets[0].PdUtilization = 420
@@ -210,7 +210,7 @@ func TestGetSubnets(t *testing.T) {
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	require.Equal(t, a4.Name, okRsp.Payload.Items[0].LocalSubnets[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
-	require.EqualValues(t, dbmodel.SubnetStats(nil), okRsp.Payload.Items[0].Stats)
+	require.EqualValues(t, map[string]any(nil), okRsp.Payload.Items[0].Stats)
 	require.Nil(t, okRsp.Payload.Items[0].StatsCollectedAt)
 
 	// get subnets from app a46
@@ -244,7 +244,7 @@ func TestGetSubnets(t *testing.T) {
 	require.True(t,
 		(okRsp.Payload.Items[0].LocalSubnets[0].ID == 1 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 3) ||
 			(okRsp.Payload.Items[0].LocalSubnets[0].ID == 3 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 1))
-	require.EqualValues(t, 24, okRsp.Payload.Items[1].Stats.(dbmodel.SubnetStats)["bar"])
+	require.EqualValues(t, 24, okRsp.Payload.Items[1].Stats.(map[string]any)["bar"])
 	require.NotNil(t, okRsp.Payload.Items[1].StatsCollectedAt)
 	require.EqualValues(t, time.Time{}.Add(2*time.Hour), *okRsp.Payload.Items[1].StatsCollectedAt)
 
@@ -265,7 +265,7 @@ func TestGetSubnets(t *testing.T) {
 			okRsp.Payload.Items[1].LocalSubnets[0].ID,
 			okRsp.Payload.Items[2].LocalSubnets[0].ID,
 		})
-	require.EqualValues(t, 4224, okRsp.Payload.Items[2].Stats.(dbmodel.SubnetStats)["baz"])
+	require.EqualValues(t, 4224, okRsp.Payload.Items[2].Stats.(map[string]any)["baz"])
 	require.NotNil(t, okRsp.Payload.Items[2].StatsCollectedAt)
 	require.EqualValues(t, time.Time{}.Add(3*time.Hour), *okRsp.Payload.Items[2].StatsCollectedAt)
 	require.EqualValues(t, 24, okRsp.Payload.Items[2].AddrUtilization)

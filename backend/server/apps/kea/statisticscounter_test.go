@@ -36,11 +36,11 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
-				},
+				}),
 			},
 		},
 	}
@@ -74,13 +74,13 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(40),
 					"declined-nas": uint64(30),
 					"total-pds":    uint64(20),
 					"assigned-pds": uint64(10),
-				},
+				}),
 			},
 		},
 	}
@@ -114,13 +114,13 @@ func TestCounterAddSubnetUsingNonUint64(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    int64(100),
 					"assigned-nas": int32(40),
 					"declined-nas": int16(30),
 					"total-pds":    int(20),
 					"assigned-pds": uint32(10),
-				},
+				}),
 			},
 		},
 	}
@@ -154,32 +154,32 @@ func TestCounterAddMultipleIPv4LocalSubnet(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(200),
 					"assigned-addresses": uint64(20),
 					"declined-addresses": uint64(40),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(5),
 					"assigned-addresses": uint64(3),
 					"declined-addresses": uint64(1),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(50),
 					"assigned-addresses": uint64(1),
 					"declined-addresses": uint64(2),
-				},
+				}),
 			},
 		},
 	}
@@ -211,40 +211,40 @@ func TestCounterAddMultipleIPv6LocalSubnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
 					"total-pds":    uint64(40),
 					"assigned-pds": uint64(30),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),
 					"total-pds":    uint64(100),
 					"assigned-pds": uint64(10),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(5),
 					"assigned-nas": uint64(3),
 					"declined-nas": uint64(1),
 					"total-pds":    uint64(3),
 					"assigned-pds": uint64(1),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(50),
 					"assigned-nas": uint64(1),
 					"declined-nas": uint64(2),
 					"total-pds":    uint64(100),
 					"assigned-pds": uint64(3),
-				},
+				}),
 			},
 		},
 	}
@@ -277,13 +277,13 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 						"total-nas":    uint64(100),
 						"assigned-nas": uint64(10),
 						"declined-nas": uint64(20),
 						"total-pds":    uint64(40),
 						"assigned-pds": uint64(30),
-					},
+					}),
 				},
 			},
 		},
@@ -292,13 +292,13 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 						"total-nas":    uint64(200),
 						"assigned-nas": uint64(40),
 						"declined-nas": uint64(50),
 						"total-pds":    uint64(80),
 						"assigned-pds": uint64(70),
-					},
+					}),
 				},
 			},
 		},
@@ -307,11 +307,11 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "192.0.2.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 						"total-addresses":    uint64(300),
 						"assigned-addresses": uint64(90),
 						"declined-addresses": uint64(100),
-					},
+					}),
 				},
 			},
 		},
@@ -339,13 +339,13 @@ func TestCounterAddMultipleSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 						"total-nas":    uint64(100),
 						"assigned-nas": uint64(10),
 						"declined-nas": uint64(20),
 						"total-pds":    uint64(40),
 						"assigned-pds": uint64(30),
-					},
+					}),
 				},
 			},
 		},
@@ -354,13 +354,13 @@ func TestCounterAddMultipleSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 						"total-nas":    uint64(200),
 						"assigned-nas": uint64(40),
 						"declined-nas": uint64(50),
 						"total-pds":    uint64(80),
 						"assigned-pds": uint64(70),
-					},
+					}),
 				},
 			},
 		},
@@ -475,10 +475,23 @@ func TestCounterRealKeaResponse(t *testing.T) {
 		localSubnets := make([]*dbmodel.LocalSubnet, 0)
 		resultSet := statResponse.Arguments.ResultSet
 		for _, row := range resultSet.Rows {
-			stats := make(map[string]interface{})
-			for colIdx, val := range row {
+			stats := dbmodel.NewSubnetStats()
+			for colIdx, wrappedValue := range row {
 				name := resultSet.Columns[colIdx]
-				stats[name] = uint64(val)
+				value := wrappedValue.BigInt()
+				// For the negative int64 values:
+				// uint64 = maxUint64 + (int64 + 1)
+				if value.Sign() == -1 {
+					value = big.NewInt(0).Add(
+						big.NewInt(0).SetUint64(math.MaxUint64),
+						big.NewInt(0).Add(
+							big.NewInt(1),
+							value,
+						),
+					)
+				}
+
+				stats.SetBigInt(name, value)
 			}
 			sn := &dbmodel.LocalSubnet{
 				Stats: stats,
@@ -528,13 +541,13 @@ func TestCounterAddIgnoreNegativeNumbers(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    big.NewInt(-1),
 					"assigned-nas": big.NewInt(math.MinInt64),
 					"declined-nas": big.NewInt(0).Mul(big.NewInt(0).SetUint64(math.MaxUint64), big.NewInt(-1)),
 					"total-pds":    big.NewInt(-2),
 					"assigned-pds": big.NewInt(-3),
-				},
+				}),
 			},
 		},
 	}
@@ -564,13 +577,13 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 			Prefix: "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: map[string]interface{}{
+					Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 						"total-nas":    uint64(90),
 						"assigned-nas": uint64(50),
 						"declined-nas": uint64(40),
 						"total-pds":    uint64(60),
 						"assigned-pds": uint64(9),
-					},
+					}),
 				},
 			},
 			SharedNetworkID: 42,
@@ -580,11 +593,11 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 			Prefix: "10.0.0.0/16",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: map[string]interface{}{
+					Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 						"total-addresses":    uint64(60),
 						"assigned-addresses": uint64(20),
 						"declined-addresses": uint64(30),
-					},
+					}),
 				},
 			},
 			SharedNetworkID: 42,
@@ -644,35 +657,35 @@ func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
-				},
+				}),
 				DaemonID: 1,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(200),
 					"assigned-addresses": uint64(20),
 					"declined-addresses": uint64(40),
-				},
+				}),
 				DaemonID: 1,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(5),
 					"assigned-addresses": uint64(3),
 					"declined-addresses": uint64(1),
-				},
+				}),
 				DaemonID: 2,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(50),
 					"assigned-addresses": uint64(1),
 					"declined-addresses": uint64(2),
-				},
+				}),
 				DaemonID: 3,
 			},
 		},
@@ -706,43 +719,43 @@ func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
 					"total-pds":    uint64(40),
 					"assigned-pds": uint64(30),
-				},
+				}),
 				DaemonID: 1,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),
 					"total-pds":    uint64(100),
 					"assigned-pds": uint64(10),
-				},
+				}),
 				DaemonID: 2,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(5),
 					"assigned-nas": uint64(3),
 					"declined-nas": uint64(1),
 					"total-pds":    uint64(3),
 					"assigned-pds": uint64(1),
-				},
+				}),
 				DaemonID: 3,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(50),
 					"assigned-nas": uint64(1),
 					"declined-nas": uint64(2),
 					"total-pds":    uint64(100),
 					"assigned-pds": uint64(3),
-				},
+				}),
 				DaemonID: 4,
 			},
 		},
@@ -776,18 +789,18 @@ func TestCounterGetStatisticsForIPv4Subnet(t *testing.T) {
 		Prefix:          "10.0.0.0/16",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-addresses":    uint64(200),
 					"assigned-addresses": uint64(20),
 					"declined-addresses": uint64(40),
-				},
+				}),
 			},
 		},
 	}
@@ -799,9 +812,9 @@ func TestCounterGetStatisticsForIPv4Subnet(t *testing.T) {
 	stats := sn.GetStatistics()
 
 	// Assert
-	require.EqualValues(t, 300, stats["total-addresses"])
-	require.EqualValues(t, 30, stats["assigned-addresses"])
-	require.EqualValues(t, 60, stats["declined-addresses"])
+	require.EqualValues(t, 300, stats.GetAny("total-addresses"))
+	require.EqualValues(t, 30, stats.GetAny("assigned-addresses"))
+	require.EqualValues(t, 60, stats.GetAny("declined-addresses"))
 }
 
 // Checks if the subnet statistics contain proper values for IPv6 subnet.
@@ -812,22 +825,22 @@ func TestCounterGetStatisticsForIPv6Subnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
 					"total-pds":    uint64(40),
 					"assigned-pds": uint64(30),
-				},
+				}),
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),
 					"total-pds":    uint64(100),
 					"assigned-pds": uint64(10),
-				},
+				}),
 			},
 		},
 	}
@@ -839,11 +852,11 @@ func TestCounterGetStatisticsForIPv6Subnet(t *testing.T) {
 	stats := sn.GetStatistics()
 
 	// Assert
-	require.EqualValues(t, 300, stats["total-nas"])
-	require.EqualValues(t, 30, stats["assigned-nas"])
-	require.EqualValues(t, 60, stats["declined-nas"])
-	require.EqualValues(t, 140, stats["total-pds"])
-	require.EqualValues(t, 40, stats["assigned-pds"])
+	require.EqualValues(t, 300, stats.GetAny("total-nas"))
+	require.EqualValues(t, 30, stats.GetAny("assigned-nas"))
+	require.EqualValues(t, 60, stats.GetAny("declined-nas"))
+	require.EqualValues(t, 140, stats.GetAny("total-pds"))
+	require.EqualValues(t, 40, stats.GetAny("assigned-pds"))
 }
 
 // Checks if the subnet statistics contain proper values for a shared network.
@@ -854,13 +867,13 @@ func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
 					"total-pds":    uint64(40),
 					"assigned-pds": uint64(30),
-				},
+				}),
 			},
 		},
 	}
@@ -870,13 +883,13 @@ func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 		Prefix:          "30::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),
 					"total-pds":    uint64(100),
 					"assigned-pds": uint64(10),
-				},
+				}),
 			},
 		},
 	}
@@ -890,8 +903,8 @@ func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 	stats := sn.GetStatistics()
 
 	// Assert
-	require.EqualValues(t, 300, stats["total-nas"])
-	require.EqualValues(t, 30, stats["assigned-nas"])
-	require.EqualValues(t, 140, stats["total-pds"])
-	require.EqualValues(t, 40, stats["assigned-pds"])
+	require.EqualValues(t, 300, stats.GetAny("total-nas"))
+	require.EqualValues(t, 30, stats.GetAny("assigned-nas"))
+	require.EqualValues(t, 140, stats.GetAny("total-pds"))
+	require.EqualValues(t, 40, stats.GetAny("assigned-pds"))
 }

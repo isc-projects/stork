@@ -501,12 +501,12 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.Equal(t, network.Name, returned.Name)
 
 	// update utilization
-	err = UpdateStatisticsInSharedNetwork(db, network.ID, newUtilizationStatsMock(0.01, 0.02, SubnetStats{
+	err = UpdateStatisticsInSharedNetwork(db, network.ID, newUtilizationStatsMock(0.01, 0.02, NewSubnetStatsFromMap(map[string]any{
 		"assigned-nas": uint64(1),
 		"total-nas":    uint64(100),
 		"assigned-pds": uint64(4),
 		"total-pds":    uint64(200),
-	}))
+	})))
 	require.NoError(t, err)
 
 	returned, err = GetSharedNetwork(db, network.ID)
@@ -514,8 +514,8 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.NotNil(t, returned)
 	require.EqualValues(t, 10, returned.AddrUtilization)
 	require.EqualValues(t, 20, returned.PdUtilization)
-	require.EqualValues(t, 100, returned.Stats["total-nas"])
-	require.EqualValues(t, 200, returned.Stats["total-pds"])
+	require.EqualValues(t, 100, returned.Stats.GetAny("total-nas"))
+	require.EqualValues(t, 200, returned.Stats.GetAny("total-pds"))
 	require.InDelta(t, time.Now().Unix(), returned.StatsCollectedAt.Unix(), 10.0)
 	require.Equal(t, createdAt, returned.CreatedAt)
 }
