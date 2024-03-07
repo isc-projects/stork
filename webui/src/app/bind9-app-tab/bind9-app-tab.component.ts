@@ -11,7 +11,6 @@ import {
     durationToString,
     daemonStatusErred,
     daemonStatusIconName,
-    daemonStatusIconColor,
     daemonStatusIconTooltip,
     getErrorMessage,
 } from '../utils'
@@ -28,6 +27,11 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
     @Input() refreshedAppTab: any
 
     daemons: any[] = []
+
+    /**
+     * Active tab index used by the tab view.
+     */
+    activeTabIndex = 0
 
     /**
      * Holds a map of existing apps' names and ids.
@@ -204,19 +208,6 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      */
     daemonStatusIconName(daemon) {
         return daemonStatusIconName(daemon)
-    }
-
-    /**
-     * Returns the color of the icon used when presenting daemon status
-     *
-     * @param daemon data structure holding the information about the daemon.
-     *
-     * @returns grey color if the daemon is not active, red if the daemon is
-     *          active but there are communication issues, green if the
-     *          communication with the active daemon is ok.
-     */
-    daemonStatusIconColor(daemon) {
-        return daemonStatusIconColor(daemon)
     }
 
     /**

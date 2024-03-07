@@ -44,15 +44,13 @@
         </p-panel>
     </div>
     <div class="p-0 col-12">
-        <p-tabView>
-            <p-tabPanel *ngFor="let daemon of daemons">
+        <p-tabView [activeIndex]="activeTabIndex">
+            <p-tabPanel *ngFor="let daemon of daemons; let i = index" [selected]="i === activeTabIndex">
                 <ng-template pTemplate="header">
                     <div>
                         <span
                             class="pi {{ daemonStatusIconName(daemon) }}"
-                            style="font-size: 1.6em; vertical-align: bottom; color: {{
-                                daemonStatusIconColor(daemon)
-                            }};"
+                            style="font-size: 1.6em; vertical-align: bottom"
                         ></span>
                         <span style="margin-right: 0.5em; font-weight: bold">
                             {{ daemon.niceName }}
@@ -62,62 +60,67 @@
 
                 <ng-template pTemplate="content">
                     <div class="grid" style="padding: 0">
-                        <div class="col-6">
-                            <div *ngIf="daemon.statusErred" class="col-12">
-                                <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
-                            </div>
+                        <div *ngIf="daemon.statusErred" class="col-6">
+                            <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
+                        </div>
 
-                            <div class="col-12">
-                                <h3>Overview</h3>
-                                <table style="width: 100%">
-                                    <tr>
-                                        <td>Version</td>
-                                        <td>{{ daemon.version }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top">Uptime</td>
-                                        <td>{{ showDuration(daemon.uptime) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top">Last Reloaded At</td>
-                                        <td>{{ daemon.reloadedAt | localtime | placeholder: 'never' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top">Number of Zones</td>
-                                        <td>{{ daemon.zoneCount }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top">Query Hit Ratio</td>
-                                        <td>
-                                            <span
-                                                pTooltip="Hits: {{ daemon.queryHits }}, Misses: {{
-                                                    daemon.queryMisses
-                                                }}"
-                                            >
-                                                {{ daemon.queryHitRatio ? getQueryUtilization(daemon) + '%' : '?' }}
-                                                <i
-                                                    *ngIf="getQueryUtilization(daemon) < 60"
-                                                    class="pi pi-exclamation-triangle"
-                                                    style="font-size: 1.5em; vertical-align: text-top; color: red"
-                                                ></i>
-                                                <i
-                                                    *ngIf="
-                                                        getQueryUtilization(daemon) >= 60 &&
-                                                        getQueryUtilization(daemon) < 80
-                                                    "
-                                                    class="pi pi-exclamation-circle"
-                                                    style="font-size: 1.5em; vertical-align: text-top; color: orange"
-                                                ></i>
-                                                <i
-                                                    *ngIf="getQueryUtilization(daemon) >= 80"
-                                                    class="pi pi-check-circle"
-                                                    style="font-size: 1.5em; vertical-align: text-top; color: green"
-                                                ></i>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
+                        <div class="col-12 xl:col-7">
+                            <h3>Overview</h3>
+                            <table style="width: 100%">
+                                <tr>
+                                    <td>Version</td>
+                                    <td>{{ daemon.version }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top">Uptime</td>
+                                    <td>{{ showDuration(daemon.uptime) }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top">Last Reloaded At</td>
+                                    <td>{{ daemon.reloadedAt | localtime | placeholder: 'never' }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top">Number of Zones</td>
+                                    <td>{{ daemon.zoneCount }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top">Query Hit Ratio</td>
+                                    <td>
+                                        <span pTooltip="Hits: {{ daemon.queryHits }}, Misses: {{ daemon.queryMisses }}">
+                                            {{ daemon.queryHitRatio ? getQueryUtilization(daemon) + '%' : '?' }}
+                                            <i
+                                                *ngIf="getQueryUtilization(daemon) < 60"
+                                                class="pi pi-exclamation-triangle"
+                                                style="font-size: 1.5em; vertical-align: text-top; color: red"
+                                            ></i>
+                                            <i
+                                                *ngIf="
+                                                    getQueryUtilization(daemon) >= 60 &&
+                                                    getQueryUtilization(daemon) < 80
+                                                "
+                                                class="pi pi-exclamation-circle"
+                                                style="font-size: 1.5em; vertical-align: text-top; color: orange"
+                                            ></i>
+                                            <i
+                                                *ngIf="getQueryUtilization(daemon) >= 80"
+                                                class="pi pi-check-circle"
+                                                style="font-size: 1.5em; vertical-align: text-top; color: green"
+                                            ></i>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <!-- Events -->
+                        <div class="col-12 xl:col-5">
+                            <h3>Events</h3>
+                            <app-events-panel
+                                #eventsTable
+                                [filter]="{
+                                    machine: appTab.app.machine.id,
+                                    appType: appTab.app.type
+                                }"
+                            ></app-events-panel>
                         </div>
                     </div>
                 </ng-template>

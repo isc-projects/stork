@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { Bind9AppTabComponent } from './bind9-app-tab.component'
 import { RouterTestingModule } from '@angular/router/testing'
@@ -8,7 +8,7 @@ import { MessageService } from 'primeng/api'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { of, throwError } from 'rxjs'
+import { BehaviorSubject, of, throwError } from 'rxjs'
 
 import { ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
@@ -19,9 +19,16 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { AppOverviewComponent } from '../app-overview/app-overview.component'
 import { PanelModule } from 'primeng/panel'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { By } from '@angular/platform-browser'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { DataViewModule } from 'primeng/dataview'
+import { EventTextComponent } from '../event-text/event-text.component'
+import { TableModule } from 'primeng/table'
 
 class Daemon {
-    name = 'bind9'
+    name = 'named'
 }
 
 class Details {
@@ -35,6 +42,7 @@ class Machine {
 class App {
     id = 1
     name = ''
+    type = 'bind9'
     machine = new Machine()
     details = new Details()
 }
@@ -48,10 +56,17 @@ describe('Bind9AppTabComponent', () => {
     let fixture: ComponentFixture<Bind9AppTabComponent>
     let servicesApi: ServicesService
     let serverData: ServerDataService
+    let sse: ServerSentEventsService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [UsersService, ServicesService, MessageService, MockLocationStrategy],
+            providers: [
+                UsersService,
+                ServicesService,
+                MessageService,
+                MockLocationStrategy,
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+            ],
             imports: [
                 HttpClientTestingModule,
                 FormsModule,
@@ -61,6 +76,9 @@ describe('Bind9AppTabComponent', () => {
                 DialogModule,
                 NoopAnimationsModule,
                 PanelModule,
+                OverlayPanelModule,
+                DataViewModule,
+                TableModule,
             ],
             declarations: [
                 Bind9AppTabComponent,
@@ -68,6 +86,8 @@ describe('Bind9AppTabComponent', () => {
                 PlaceholderPipe,
                 RenameAppDialogComponent,
                 AppOverviewComponent,
+                EventsPanelComponent,
+                EventTextComponent,
             ],
         }).compileComponents()
     }))
@@ -78,7 +98,7 @@ describe('Bind9AppTabComponent', () => {
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         serverData = fixture.debugElement.injector.get(ServerDataService)
         const appTab = new AppTab()
-        component.refreshedAppTab = of(appTab)
+        component.refreshedAppTab = new BehaviorSubject(appTab)
         component.appTab = appTab
         fixture.detectChanges()
     })
@@ -151,4 +171,13 @@ describe('Bind9AppTabComponent', () => {
         // A request to rename the app should not be sent.
         expect(servicesApi.renameApp).not.toHaveBeenCalled()
     })
+
+    it('should include events', fakeAsync(() => {
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        const eventsPanel = fixture.debugElement.query(By.css('app-events-panel'))
+        expect(eventsPanel).toBeTruthy()
+    }))
 })
