@@ -1,8 +1,4 @@
-# File adopted from an external project. Keep it in its original form if possible.
-#
-# The file has been modified by Stork developer to support the sample values
-# grater than max 64-integer.
-#
+# File adopted from an external project. Keep it in its original form.
 # pylint: skip-file
 
 """
@@ -144,30 +140,18 @@ def _parse_labels(labels_string):
 
 # If we have multiple values only consider the first
 def _parse_value_and_timestamp(s):
-    '''
-    Warning: This function has been modified by Stork developer.
-    '''
     s = s.lstrip()
     separator = " "
     if separator not in s:
         separator = "\t"
     values = [value.strip() for value in s.split(separator) if value.strip()]
     if not values:
-        return _parse_number(s), None
-    value = _parse_number(values[0])
+        return float(s), None
+    value = float(values[0])
     timestamp = (float(values[-1]) / 1000) if len(values) > 1 else None
     return value, timestamp
 
-def _parse_number(s):
-    '''
-    Parse a string as int or float.
 
-    Warning: It is a function added by Stork developer to the original file.
-    '''
-    if '.' in s or 'e' in s or 'E' in s:
-        return float(s)
-    return int(s)
-    
 def _parse_sample(text):
     # Detect the labels in the text
     try:
