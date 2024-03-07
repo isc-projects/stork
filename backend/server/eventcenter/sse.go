@@ -115,8 +115,8 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 
 // Shuts down the all SSE broker connections from subscribers.
 func (sb *SSEBroker) shutdown() {
-	sb.subscribersMutex.RLock()
-	defer sb.subscribersMutex.RUnlock()
+	sb.subscribersMutex.Lock()
+	defer sb.subscribersMutex.Unlock()
 	for ch, s := range sb.subscribers {
 		s.done <- struct{}{}
 		close(ch)
