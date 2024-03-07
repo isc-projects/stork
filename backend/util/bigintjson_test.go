@@ -102,7 +102,7 @@ func TestBigIntJSONUnmarshal(t *testing.T) {
 
 			// Assert
 			require.NoError(t, err)
-			require.Equal(t, bigInts[i], &bigInt.Int)
+			require.Equal(t, bigInts[i], bigInt.BigInt())
 		})
 	}
 }

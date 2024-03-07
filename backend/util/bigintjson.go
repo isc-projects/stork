@@ -17,12 +17,21 @@ import (
 //
 // See: https://stackoverflow.com/a/53991836
 type BigIntJSON struct {
-	big.Int
+	value big.Int
+}
+
+func NewBigIntJSONFromInt64(value int64) BigIntJSON {
+	return BigIntJSON{*big.NewInt(value)}
+}
+
+// Return the big int instance.
+func (b BigIntJSON) BigInt() *big.Int {
+	return &b.value
 }
 
 // Serializes the big integer to JSON as a numeric literal.
 func (b BigIntJSON) MarshalJSON() ([]byte, error) {
-	return []byte(b.String()), nil
+	return []byte(b.value.String()), nil
 }
 
 // Deserializes the big integer from JSON numeric literal without casting it
@@ -36,6 +45,6 @@ func (b *BigIntJSON) UnmarshalJSON(p []byte) error {
 	if !ok {
 		return errors.Errorf("not a valid big integer: %s", p)
 	}
-	b.Int = z
+	b.value = z
 	return nil
 }
