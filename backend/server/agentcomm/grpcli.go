@@ -402,7 +402,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 	agentAddress := app.GetMachineTag().GetAddress()
 	agentPort := app.GetMachineTag().GetAgentPort()
 
-	// Get rndc control settingsToKeaO
+	// Get rndc control settings
 	ctrlAddress, ctrlPort, _, _, err := app.GetControlAccessPoint()
 	if err != nil {
 		return nil, err
