@@ -1,7 +1,6 @@
 package eventcenter
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -9,6 +8,14 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 )
+
+type testError struct {
+	text string
+}
+
+func (err testError) Error() string {
+	return err.text
+}
 
 // Test that the event with a machine entry is created property.
 func TestCreateEventMachine(t *testing.T) {
@@ -344,7 +351,7 @@ func TestCreateEventStringDetails(t *testing.T) {
 
 // Test that event details are set from an error.
 func TestCreateEventErrorDetails(t *testing.T) {
-	err := errors.New("an error")
+	err := testError{"an error"}
 	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", err)
 
 	require.EqualValues(t, "foo bar baz", ev.Text)
@@ -353,7 +360,7 @@ func TestCreateEventErrorDetails(t *testing.T) {
 
 // Test that event details are set from an array of errors.
 func TestCreateEventErrorArrayDetails(t *testing.T) {
-	errs := []error{errors.New("first error"), errors.New("second error")}
+	errs := []error{testError{"first error"}, testError{"second error"}}
 	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", errs)
 
 	require.EqualValues(t, "foo bar baz", ev.Text)

@@ -56,7 +56,6 @@ describe('Bind9AppTabComponent', () => {
     let fixture: ComponentFixture<Bind9AppTabComponent>
     let servicesApi: ServicesService
     let serverData: ServerDataService
-    let sse: ServerSentEventsService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
