@@ -56,7 +56,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.Equal(t, 42, pbe.Port)
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
-	require.Len(t, pbe.serverStatsDesc, 19)
+	require.Len(t, pbe.serverStatsDesc, 20)
 	require.Len(t, pbe.viewStatsDesc, 18)
 }
 
