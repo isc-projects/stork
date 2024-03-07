@@ -106,12 +106,12 @@ func TestCountHexIdentifierBytes(t *testing.T) {
 	// Invalid output for invalid input.
 	require.Zero(t, CountHexIdentifierBytes(" "))
 	require.Zero(t, CountHexIdentifierBytes(""))
-	require.Equal(t, 3, CountHexIdentifierBytes("1234gh"))
-	require.Equal(t, 2, CountHexIdentifierBytes("12:56:"))
-	require.Equal(t, 2, CountHexIdentifierBytes("12:56:9"))
-	require.Equal(t, 2, CountHexIdentifierBytes("ab,cd"))
-	require.Equal(t, 2, CountHexIdentifierBytes("ab: cd"))
-	require.Equal(t, 2, CountHexIdentifierBytes("abcde"))
+	require.Zero(t, CountHexIdentifierBytes("1234gh"))
+	require.Zero(t, CountHexIdentifierBytes("12:56:"))
+	require.Zero(t, CountHexIdentifierBytes("12:56:9"))
+	require.Zero(t, CountHexIdentifierBytes("ab,cd"))
+	require.Zero(t, CountHexIdentifierBytes("ab: cd"))
+	require.Zero(t, CountHexIdentifierBytes("abcde"))
 }
 
 // Check if BytesToHex works.

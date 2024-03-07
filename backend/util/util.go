@@ -111,8 +111,13 @@ func IsHexIdentifier(text string) bool {
 
 // Counts the number of bytes in the provided hex identifier.
 // It doesn't check if the input is a valid hex identifier. It may return
-// a value even for malformed input.
+// a value even for malformed input. Returns zero if the input is not a hex
+// identifier.
 func CountHexIdentifierBytes(text string) int {
+	if !IsHexIdentifier(text) {
+		return 0
+	}
+
 	// Remove any whitespace and colons.
 	replacer := strings.NewReplacer(" ", "", ":", "")
 	identifier := replacer.Replace(text)
