@@ -133,7 +133,7 @@
                         label="Refresh List"
                         icon="pi pi-refresh"
                         styleClass="block p-button-primary no-underline ml-2"
-                        (onClick)="loadHosts()"
+                        (onClick)="reloadData(hostsTable)"
                     ></p-button>
                 </div>
             </div>
@@ -155,11 +155,13 @@
             [lazy]="true"
             [loading]="hostsLoading"
             (onLazyLoad)="loadHosts($event)"
+            [lazyLoadOnInit]="false"
+            (onStateRestore)="stateRestored($event, hostsTable)"
             [totalRecords]="totalHosts"
             [rowsPerPageOptions]="[10, 30, 100]"
             [showCurrentPageReport]="true"
             stateStorage="session"
-            stateKey="hosts-table-session"
+            [stateKey]="stateKey"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
             styleClass="alternate-list"
         >

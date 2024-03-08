@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute, ParamMap, EventType } from '@angular/router'
 
 import { MenuItem, MessageService } from 'primeng/api'
-import { Table } from 'primeng/table'
+import { Table, TableLazyLoadEvent } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { extractKeyValsAndPrepareQueryParams, getErrorMessage } from '../utils'
@@ -224,6 +224,33 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     filterTextFormatErrors: string[] = []
 
     /**
+     * Unique identifier of a stateful table to use in state storage.
+     */
+    stateKey: string = 'hosts-table-session-all'
+
+    /**
+     * Table's index of the first row to be displayed, restored from browser's storage.
+     */
+    restoredFirst: number = 0
+
+    /**
+     * Table's number of rows to display per page, restored from browser's storage.
+     */
+    restoredRows: number = 10
+
+    /**
+     * Keeps restored PrimeNG table. PrimeNG restores table's state from browser storage in ngOnChanges lifecycle hook of the table component,
+     * that's why it can be accessed even before ngOnInit lifecycle hook. Restored table may be used to create LazyLoadMetadata when hostsTable
+     * is not yet defined.
+     */
+    restoredTable: Table
+
+    /**
+     * Keeps Kea appId if hosts page is displaying only hosts that belong to that Kea app.
+     */
+    appId: number
+
+    /**
      * Constructor.
      *
      * @param route activated route used to gather parameters from the URL.
@@ -266,6 +293,19 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         // Initially, there is only a tab with hosts list.
         this.tabs = [{ label: 'Host Reservations', routerLink: '/dhcp/hosts/all' }]
 
+        this.hostsLoading = true
+
+        const paramMap = this.route.snapshot.paramMap
+        const queryParamMap = this.route.snapshot.queryParamMap
+
+        // Get host id and appId.
+        const id = paramMap.get('id')
+        if (!id || id === 'all') {
+            const appId = parseInt(queryParamMap.get('appId'))
+            this.appId = isNaN(appId) ? null : appId
+            this.stateKey = isNaN(appId) ? 'hosts-table-session-all' : `hosts-table-session-${appId}`
+        }
+
         // Pipe the valid filter to the hostFilter$ subject.
         this.subscriptions.add(
             this.hostFilter$
@@ -277,8 +317,6 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                 .subscribe((filter) => {
                     // Remember the filter.
                     this.validHostFilter = filter
-                    // Update the list of hosts when the filtering parameters change.
-                    this.loadHosts()
                 })
         )
 
@@ -295,6 +333,50 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                 }
 
                 this.filterTextFormatErrors = this.validateFilter(f.filter)
+
+                if (this.hostsTable) {
+                    if (!this.hostsTable.stateRestored) {
+                        // console.log('hostTable defined, table was not restored, filter with table api filter()')
+                        this.hostsTable.filter(this.validHostFilter.appId, 'appId', 'contains')
+                        this.hostsTable.filter(this.validHostFilter.text, 'text', 'contains')
+                    } else if (
+                        this.validHostFilter.appId != this.hostsTable.filters.appId?.[0]?.value ||
+                        this.validHostFilter.text != this.hostsTable.filters.text?.[0]?.value
+                    ) {
+                        // console.log(
+                        //     'SPECIFIC CASE!!! hostTable defined, table state was restored, filtering change found though'
+                        // )
+                        this.hostsTable.filter(this.validHostFilter.appId, 'appId', 'contains')
+                        this.hostsTable.filter(this.validHostFilter.text, 'text', 'contains')
+                    } else {
+                        // console.log('hostTable defined, table state was restored, force emit onLazyLoad')
+                        this.reloadData(this.hostsTable)
+                    }
+                } else if (this.restoredTable) {
+                    // use case: 1st navigation is to host detailed view tab (index >= 1) and then
+                    // there is navigation to hosts list view tab (index 0)
+                    // console.log(
+                    //     'hostTable undefined, setting filters in restoredTable; stateRestored ' +
+                    //         this.restoredTable.stateRestored
+                    // )
+                    this.restoredTable.filters = {
+                        appId: [{ value: this.validHostFilter.appId, matchMode: 'contains' }],
+                        text: [{ value: this.validHostFilter.text, matchMode: 'contains' }],
+                    }
+                    this.loadHosts(this.restoredTable.createLazyLoadMetadata())
+                } else {
+                    // console.log(
+                    //     'both hostTable and restoredTable undefined, calling onLazyLoad() with constructed lazyLoadEvent'
+                    // )
+                    this.loadHosts({
+                        first: this.restoredFirst,
+                        rows: this.restoredRows,
+                        filters: {
+                            appId: [{ value: this.validHostFilter.appId, matchMode: 'contains' }],
+                            text: [{ value: this.validHostFilter.text, matchMode: 'contains' }],
+                        },
+                    })
+                }
             })
         )
 
@@ -349,6 +431,14 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     // Get host id.
                     const id = paramMap.get('id')
                     if (!id || id === 'all') {
+                        // todo: think and check if still needed after router tweaks
+                        const appId = parseInt(queryParamMap.get('appId'))
+                        this.appId = isNaN(appId) ? null : appId
+                        this.stateKey = isNaN(appId) ? 'hosts-table-session-all' : `hosts-table-session-${appId}`
+                        if (this.hostsTable) {
+                            this.hostsTable.stateKey = this.stateKey
+                        }
+
                         // Update the filter only if the target is host list.
                         this.updateFilterFromQueryParameters(queryParamMap)
                         this.switchToTab(0)
@@ -654,26 +744,19 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * number of rows to be returned and a text for hosts filtering. If it is
      * not specified, the current values are used when available.
      */
-    loadHosts(event?) {
+    loadHosts(event: TableLazyLoadEvent) {
         const params = this.validHostFilter
-        if (typeof event === 'undefined') {
-            event = { first: 0, rows: 10 }
-            if (this.hostsTable) {
-                // When hosts are filtered, go by default to first page after filtering.
-                this.hostsTable.first = 0
-                event = this.hostsTable.createLazyLoadMetadata()
-            }
-        }
+
         // Indicate that hosts refresh is in progress.
         this.hostsLoading = true
         this.dhcpApi
             .getHosts(
                 event.first,
                 event.rows,
-                params.appId,
+                this.appId ?? event.filters.appId?.[0]?.value,
                 params.subnetId,
                 params.keaSubnetId,
-                params.text,
+                event.filters.text?.[0]?.value,
                 params.global,
                 params.conflict
             )
@@ -878,5 +961,28 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             // Close the tab.
             this.closeHostTab(null, index + 1)
         }
+    }
+
+    /**
+     * Callback method called when PrimeNG table's state was restored from browser's storage.
+     * @param state restored state
+     * @param hostsTable table which state was restored
+     */
+    stateRestored(state: any, hostsTable: Table) {
+        // console.log('stateRestored - state ' + JSON.stringify(state))
+        // console.log(
+        //     'stateRestored from ' + hostsTable.stateKey + ' - table.filters ' + JSON.stringify(hostsTable.filters)
+        // )
+        this.restoredFirst = state.first
+        this.restoredRows = state.rows
+        this.restoredTable = hostsTable
+    }
+
+    /**
+     * Reloads data in given table.
+     * @param table table when data is to be reloaded
+     */
+    reloadData(table: Table) {
+        table.onLazyLoad.emit(table.createLazyLoadMetadata())
     }
 }
