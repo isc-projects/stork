@@ -57,7 +57,7 @@ import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './
 // Stork modules
 import { environment } from './../environments/environment'
 import { getBaseApiPath } from './utils'
-import { AppRoutingModule } from './app-routing.module'
+import { AppRoutingModule, CustomRouteReuseStrategy } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { AuthInterceptor } from './auth-interceptor'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
@@ -127,7 +127,7 @@ import { AddressPoolFormComponent } from './address-pool-form/address-pool-form.
 import { PrefixPoolFormComponent } from './prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from './array-value-set-form/array-value-set-form.component'
 import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
-import { SharedNetworkFormComponent } from './shared-network-form/shared-network-form.component'
+import { RouteReuseStrategy } from '@angular/router'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -208,7 +208,6 @@ export function cfgFactory() {
         ArrayValueSetFormComponent,
         HostDataSourceLabelComponent,
         PriorityErrorsPanelComponent,
-        SharedNetworkFormComponent,
     ],
     imports: [
         BrowserModule,
@@ -276,6 +275,10 @@ export function cfgFactory() {
         },
         ConfirmationService,
         MessageService,
+        {
+            provide: RouteReuseStrategy,
+            useClass: CustomRouteReuseStrategy,
+        },
     ],
     bootstrap: [AppComponent],
 })
