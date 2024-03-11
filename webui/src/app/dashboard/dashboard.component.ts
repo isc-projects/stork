@@ -352,10 +352,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             // If the severity is greater than the saved severity from the
             // previous iterations, we pick this one.
             if (!overview.haState || currentIndex > stateIndex) {
-                selectedOverview = {
-                    haState: overview.haState,
-                    haFailureAt: overview.haFailureAt,
-                }
+                selectedOverview = { ...overview }
                 // Let's save the index.
                 stateIndex = currentIndex
             }

@@ -325,11 +325,9 @@ describe('DashboardComponent', () => {
                 },
             ],
         }
-        console.info('starting')
         expect(component.showHAState(daemon1)).toBe('partner-down')
         expect(component.showHAFailureTime(daemon1)).not.toBe('')
         expect(component.haStateIcon(daemon1)).toBe('exclamation-triangle')
-        console.info('ending')
 
         const daemon2 = {
             haEnabled: true,
