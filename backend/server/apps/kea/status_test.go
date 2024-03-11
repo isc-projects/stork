@@ -934,50 +934,51 @@ func TestPullHAStatusHub(t *testing.T) {
 	require.NoError(t, err)
 
 	err = dhcp4.Configure(`{
-				"Dhcp4": {
-					"hooks-libraries": [
-						{
-							"library": "libdhcp_ha.so",
-							"parameters": {
-								"high-availability": [
-									{
-										"this-server-name": "server2",
-										"mode": "hot-standby",
-										"peers": [
-											{
-												"name": "server1",
-												"url":  "http://192.0.2.33:8000",
-												"role": "primary"
-											},
-											{
-												"name": "server2",
-												"url":  "http://192.0.2.66:8000",
-												"role": "standby"
-											}
-										]
-									},
-									{
-										"this-server-name": "server4",
-										"mode": "hot-standby",
-										"peers": [
-											{
-												"name": "server3",
-												"url":  "http://192.0.2.99:8000",
-												"role": "primary"
-											},
-											{
-												"name": "server4",
-												"url":  "http://192.0.2.133:8000",
-												"role": "standby"
-											}
-										]
-									}
-								]
-							}
-						}
-					]
-				}
-			}`)
+        "Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_ha.so",
+                    "parameters": {
+                        "high-availability": [
+                            {
+                                "this-server-name": "server2",
+                                "mode": "hot-standby",
+                                "peers": [
+                                    {
+                                        "name": "server1",
+                                        "url":  "http://192.0.2.33:8000",
+                                        "role": "primary"
+                                    },
+                                    {
+                                        "name": "server2",
+                                        "url":  "http://192.0.2.66:8000",
+                                        "role": "standby"
+                                    }
+                                ]
+                            },
+                            {
+                                "this-server-name": "server4",
+                                "mode": "hot-standby",
+                                "peers": [
+                                    {
+                                        "name": "server3",
+                                        "url":  "http://192.0.2.99:8000",
+                                        "role": "primary"
+                                    },
+                                    {
+                                        "name": "server4",
+                                        "url":  "http://192.0.2.133:8000",
+                                        "role": "standby"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }`)
+
 	require.NoError(t, err)
 
 	keaApp, err := dhcp4.GetKea()
