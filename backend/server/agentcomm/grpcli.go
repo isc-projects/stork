@@ -288,18 +288,14 @@ func (agents *connectedAgentsData) Ping(ctx context.Context, machine dbmodel.Mac
 	commIssue, details := agents.checkAgentCommState(addrPort, req, reqErr, resp)
 	switch commIssue {
 	case newCommIssue:
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warn("Failed to ping the agent")
+		log.WithField("agent", addrPort).Warn("Failed to ping the agent")
 		agents.EventCenter.AddErrorEvent("Pinging {machine} failed", machine, dbmodel.SSEConnectivity, details)
 
 	case correctedCommIssue:
 		agents.EventCenter.AddWarningEvent("Pinging {machine} no longer fails", machine, dbmodel.SSEConnectivity, details)
 
 	case existingCommIssue:
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warn("Failed to ping the agent; the agent is still not responding")
+		log.WithField("agent", addrPort).Warn("Failed to ping the agent; the agent is still not responding")
 	default:
 	}
 
@@ -323,18 +319,14 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, machine dbmodel
 	commIssue, details := agents.checkAgentCommState(addrPort, req, err, resp)
 	switch commIssue {
 	case newCommIssue:
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warn("Failed to get state from the agent")
+		log.WithField("agent", addrPort).Warn("Failed to get state from the agent")
 		agents.EventCenter.AddErrorEvent("Communication with {machine} to get its state failed", machine, dbmodel.SSEConnectivity, details)
 
 	case correctedCommIssue:
 		agents.EventCenter.AddWarningEvent("Communication with {machine} to get its state resumed", machine, dbmodel.SSEConnectivity, details)
 
 	case existingCommIssue:
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warn("Failed to get state from the agent; the agent is still not responding")
+		log.WithField("agent", addrPort).Warn("Failed to get state from the agent; the agent is still not responding")
 	default:
 	}
 
@@ -633,7 +625,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 		log.WithFields(log.Fields{
 			"address": caAddress,
 			"port":    caPort,
-		}).Warnf("no Kea CA access point found matching the specified address and port to send the commands")
+		}).Warnf("No Kea CA access point found matching the specified address and port to send the commands")
 		return nil, err
 	}
 
@@ -656,18 +648,14 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 	commState, details := agents.checkAgentCommState(addrPort, fdReq, err, resp)
 	switch commState {
 	case newCommIssue:
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warnf("Failed to send %d Kea command(s)", len(commands))
+		log.WithField("agent", addrPort).Warnf("Failed to send %d Kea command(s)", len(commands))
 		agents.EventCenter.AddErrorEvent("communication with {app} on {machine} failed", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
 
 	case correctedCommIssue:
 		agents.EventCenter.AddWarningEvent("communication with {app} on {machine} resumed", app, app.GetMachineTag(), dbmodel.SSEConnectivity, details)
 
 	case existingCommIssue:
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warnf("Failed to send %d Kea command(s); agent is still not responding", len(commands))
+		log.WithField("agent", addrPort).Warnf("Failed to send %d Kea command(s); agent is still not responding", len(commands))
 
 	default:
 	}
@@ -697,9 +685,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 	// Generate events for the Kea Control Agent.
 	if controlAgentState == newCommIssue {
 		// The connection was ok but now it is broken.
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warnf("Failed to forward Kea command to Kea Control Agent")
+		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea Control Agent")
 		agents.EventCenter.AddErrorEvent("forwarding Kea command via the Kea Control Agent {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameCA), app.GetMachineTag(), dbmodel.SSEConnectivity, controlAgentErrors)
 	} else if controlAgentState == correctedCommIssue {
 		// The connection was broken but now is ok.
@@ -708,9 +694,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 	// Generate events for the DHCPv4 server.
 	if dhcp4State == newCommIssue {
 		// The connection was ok but now it is broken.
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warnf("Failed to forward Kea command to Kea DHCPv4 server")
+		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea DHCPv4 server")
 		agents.EventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameDHCPv4), app.GetMachineTag(), dbmodel.SSEConnectivity, dhcp4ErrMessage)
 	} else if dhcp4State == correctedCommIssue {
 		// The connection was broken but now is ok.
@@ -719,9 +703,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 	// Generate events for the DHCPv6 server.
 	if dhcp6State == newCommIssue {
 		// The connection was ok but now it is broken.
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warnf("Failed to forward Kea command to Kea DHCPv6 server")
+		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea DHCPv6 server")
 		agents.EventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameDHCPv6), app.GetMachineTag(), dbmodel.SSEConnectivity, dhcp6ErrMessage)
 	} else if dhcp6State == correctedCommIssue {
 		// The connection was broken but now is ok.
@@ -730,9 +712,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 	// Generate events for the D2 server.
 	if d2State == newCommIssue {
 		// The connection was ok but now it is broken.
-		log.WithFields(log.Fields{
-			"agent": addrPort,
-		}).Warnf("Failed to forward Kea command to Kea D2 server")
+		log.WithField("agent", addrPort).Warnf("Failed to forward Kea command to Kea D2 server")
 		agents.EventCenter.AddErrorEvent("processing Kea command by {daemon} on {machine} failed", app.GetDaemonTag(dbmodel.DaemonNameD2), app.GetMachineTag(), dbmodel.SSEConnectivity, d2ErrMessage)
 	} else if d2State == correctedCommIssue {
 		// The connection was broken but now is ok.
