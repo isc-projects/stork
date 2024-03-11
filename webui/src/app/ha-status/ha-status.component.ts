@@ -389,7 +389,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      *          status does not contain the flag.
      */
     formatControlStatus(serverStatus: KeaHAServerStatus): string {
-        if (serverStatus.inTouch === null || serverStatus.inTouch === undefined) {
+        if (serverStatus.inTouch == null) {
             return 'unknown'
         }
         if (serverStatus.inTouch) {
@@ -409,7 +409,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * @returns A state or the text "fetching..." if it is not available yet.
      */
     formatState(serverStatus: KeaHAServerStatus): string {
-        if (!serverStatus.state || serverStatus.state === '') {
+        if (!serverStatus.state) {
             return 'fetching...'
         }
         return serverStatus.state
@@ -448,7 +448,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
         if (age && age < 0) {
             return 'n/a'
         }
-        if (!age || age === 0) {
+        if (!age) {
             return 'just now'
         }
         if (age < 60) {
@@ -576,7 +576,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      *          server status hasn't been determined yet.
      */
     getStateIconType(serverStatus: KeaHAServerStatus): 'ok' | 'warn' | 'pending' {
-        if (!serverStatus.state || serverStatus.state === '') {
+        if (!serverStatus.state) {
             return 'pending'
         }
         if (
