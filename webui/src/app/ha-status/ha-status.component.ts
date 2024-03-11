@@ -309,8 +309,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                                 // non-ok icons. If so, we take the first one and display it in the
                                 // relationship top-level row.
                                 c.iconType = row.children?.find((ch) => {
-                                    return ch.data?.cells?.[index].iconType &&
-                                        ch.data?.cells?.[index].iconType !== 'ok'
+                                    return ch.data?.cells?.[index].iconType && ch.data?.cells?.[index].iconType !== 'ok'
                                 })?.data.cells[index].iconType
                             })
                             status.push(row)

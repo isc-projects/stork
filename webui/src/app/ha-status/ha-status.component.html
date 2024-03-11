@@ -233,23 +233,14 @@
                             ></app-entity-link>
                         </span>
                         <ng-container [ngSwitch]="column.iconType">
-                            <span
-                                *ngSwitchCase="'ok'"
-                                class="ml-2 pi pi-check icon-ok"
-                            ></span>
-                            <span
-                                *ngSwitchCase="'warn'"
-                                class="ml-2 pi pi-exclamation-triangle icon-warn"
-                            ></span>
+                            <span *ngSwitchCase="'ok'" class="ml-2 pi pi-check icon-ok"></span>
+                            <span *ngSwitchCase="'warn'" class="ml-2 pi pi-exclamation-triangle icon-warn"></span>
                             <span
                                 *ngSwitchCase="'error'"
                                 class="ml-2 pi pi-exclamation-circle icon-error"
                                 [ngStyle]="{ color: 'var(--red-500)', 'text-decoration': 'none' }"
                             ></span>
-                            <span
-                                *ngSwitchCase="'pending'"
-                                class="ml-2 pi pi-spin pi-spinner icon-pending"
-                            ></span>
+                            <span *ngSwitchCase="'pending'" class="ml-2 pi pi-spin pi-spinner icon-pending"></span>
                         </ng-container>
                         <p-progressBar
                             *ngIf="column.hasOwnProperty('progress')"
