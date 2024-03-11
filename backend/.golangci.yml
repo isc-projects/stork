@@ -89,6 +89,8 @@ linters-settings:
     # trigger the warning on the most of the functions that previously met the
     # requirement.
     max-func-lines: 70
+  goconst:
+    ignore-tests: true
 
 issues:
   max-same-issues: 3

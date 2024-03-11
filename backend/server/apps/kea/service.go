@@ -39,12 +39,12 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) ([]dbmodel.Service,
 		dbServices []dbmodel.Service
 		services   []dbmodel.Service
 	)
-	for i, relationship := range relationships {
+	for _, relationship := range relationships {
 		// Make sure that all required parameters are set.
 		if !relationship.IsValid() {
 			return []dbmodel.Service{}, errors.New("invalid HA relationship configuration found")
 		}
-		// Find which peer is ours.
+		// Find which peer matches this server name.
 		var thisPeer *keaconfig.Peer
 		for i, peer := range relationship.Peers {
 			if *peer.Name == *relationship.ThisServerName {
@@ -54,10 +54,10 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) ([]dbmodel.Service,
 		}
 		// If we can't find our peer. There is nothing we can do.
 		if thisPeer == nil {
-			return []dbmodel.Service{}, errors.New("HA relationship configuration lacks the server's peer settings")
+			return []dbmodel.Service{}, errors.Errorf("HA relationship configuration lacks the %s server's peer settings", *relationship.ThisServerName)
 		}
 		// Lazily get the existing services.
-		if i == 0 {
+		if dbServices == nil {
 			var err error
 			dbServices, err = dbmodel.GetDetailedAllServices(dbi)
 			if err != nil {
@@ -66,6 +66,7 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) ([]dbmodel.Service,
 		}
 		// Try to match the service with our relationship.
 		var service *dbmodel.Service
+	SERVICE_MATCH_LOOP:
 		for i := range dbServices {
 			if len(dbServices[i].Daemons) == 0 {
 				continue
@@ -74,12 +75,12 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) ([]dbmodel.Service,
 				for _, peer := range relationship.Peers {
 					if *peer.Name == dbServices[i].HAService.Relationship {
 						service = &dbServices[i]
-						break
+						break SERVICE_MATCH_LOOP
 					}
 				}
 			}
 		}
-		// I we haven't found the matching service, let's create one.
+		// If we haven't found the matching service, let's create one.
 		if service == nil {
 			service = &dbmodel.Service{
 				BaseService: dbmodel.BaseService{
