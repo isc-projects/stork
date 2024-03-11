@@ -9,6 +9,7 @@ import (
 	require "github.com/stretchr/testify/require"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	"isc.org/stork/testutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Returns test Kea configuration with empty list of hooks libraries.
@@ -1462,6 +1463,47 @@ func TestGetMultiThreadingEntryNotExists(t *testing.T) {
 
 	// Assert
 	require.Nil(t, multiThreading)
+}
+
+// Test that MT is by default disabled in Kea version earlier than 2.3.5.
+func TestIsGlobalMultiThreadingEnabledDefault230(t *testing.T) {
+	configStr := `{ "Dhcp4": { } }`
+	config, _ := NewConfig(configStr)
+	require.False(t, config.IsMultiThreadingEnabled(storkutil.NewSemanticVersion(2, 3, 0)))
+}
+
+// Test that MT can be explicitly enabled in Kea version earlier than 2.3.5.
+func TestIsGlobalMultiThreadingEnabledEnabled230(t *testing.T) {
+	configStr := `{
+		"Dhcp4": {
+			"multi-threading": {
+				"enable-multi-threading": true
+			}
+		}
+	}`
+	config, _ := NewConfig(configStr)
+	require.True(t, config.IsMultiThreadingEnabled(storkutil.NewSemanticVersion(2, 3, 0)))
+}
+
+// Test that MT is by default enabled in Kea version later than or equal
+// 2.3.5.
+func TestIsGlobalMultiThreadingEnabledDefault235(t *testing.T) {
+	configStr := `{ "Dhcp4": { } }`
+	config, _ := NewConfig(configStr)
+	require.True(t, config.IsMultiThreadingEnabled(storkutil.NewSemanticVersion(2, 3, 5)))
+}
+
+// Test that MT can be explicitly disabled in Kea version later than 2.3.5.
+func TestIsGlobalMultiThreadingEnabledDisabled235(t *testing.T) {
+	configStr := `{
+		"Dhcp4": {
+			"multi-threading": {
+				"enable-multi-threading": false
+			}
+		}
+	}`
+	config, _ := NewConfig(configStr)
+	require.False(t, config.IsMultiThreadingEnabled(storkutil.NewSemanticVersion(2, 3, 0)))
 }
 
 // Test getting all shared networks from the DHCPv4 config.

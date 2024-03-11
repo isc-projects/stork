@@ -15,7 +15,7 @@ import (
 )
 
 // Creates review context from configuration string.
-func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *ReviewContext {
+func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string, keaVersion string) *ReviewContext {
 	config, err := dbmodel.NewKeaConfigFromJSON(configStr)
 	require.NoError(t, err)
 
@@ -30,8 +30,9 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 
 	// Create the daemon instance and the context.
 	ctx := newReviewContext(db, &dbmodel.Daemon{
-		ID:   1,
-		Name: daemonName,
+		ID:      1,
+		Name:    daemonName,
+		Version: keaVersion,
 		KeaDaemon: &dbmodel.KeaDaemon{
 			Config: config,
 		},
@@ -132,7 +133,7 @@ func TestStatCmdsPresent(t *testing.T) {
             ]
         }
     }`
-	report, err := statCmdsPresence(createReviewContext(t, nil, configStr))
+	report, err := statCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -141,7 +142,7 @@ func TestStatCmdsPresent(t *testing.T) {
 // returns the report when the library is not loaded.
 func TestStatCmdsAbsent(t *testing.T) {
 	configStr := `{"Dhcp4": { }}`
-	report, err := statCmdsPresence(createReviewContext(t, nil, configStr))
+	report, err := statCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -166,7 +167,7 @@ func TestHostCmdsPresent(t *testing.T) {
             ]
         }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -180,7 +181,7 @@ func TestHostCmdsBackendUnused(t *testing.T) {
 	configStr := `{
         "Dhcp4": { }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -198,7 +199,7 @@ func TestHostCmdsAbsentHostsDatabase(t *testing.T) {
             }
         }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -220,7 +221,7 @@ func TestHostCmdsAbsentHostsDatabases(t *testing.T) {
             ]
         }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -250,7 +251,7 @@ func TestSharedNetworkDispensableNoDHCPv4Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -274,7 +275,7 @@ func TestSharedNetworkDispensableSingleDHCPv4Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -324,7 +325,7 @@ func TestSharedNetworkDispensableSomeEmptySomeWithSingleSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -352,7 +353,7 @@ func TestSharedNetworkDispensableMultipleDHCPv4Subnets(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -380,7 +381,7 @@ func TestSharedNetworkDispensableNoDHCPv6Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -404,7 +405,7 @@ func TestSharedNetworkDispensableSingleDHCPv6Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -432,7 +433,7 @@ func TestSharedNetworkDispensableMultipleDHCPv6Subnets(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -459,7 +460,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -498,7 +499,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, db, configStr))
+	report, err := subnetDispensable(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -530,7 +531,7 @@ func TestIPv4SubnetDispensableSomeDatabaseReservations(t *testing.T) {
 	// Create a host in the database.
 	createHostInDatabase(t, db, configStr, "192.0.3.0/24", "192.0.3.50")
 
-	report, err := subnetDispensable(createReviewContext(t, db, configStr))
+	report, err := subnetDispensable(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -552,7 +553,7 @@ func TestIPv4SubnetDispensableSomePoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -575,7 +576,7 @@ func TestIPv4SubnetDispensableNoPoolsSomeReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -602,7 +603,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -641,7 +642,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, db, configStr))
+	report, err := subnetDispensable(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -673,7 +674,7 @@ func TestIPv6SubnetDispensableSomeDatabaseReservations(t *testing.T) {
 	// Create a host in the database.
 	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::50", "3000::/96")
 
-	report, err := subnetDispensable(createReviewContext(t, db, configStr))
+	report, err := subnetDispensable(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -695,7 +696,7 @@ func TestIPv6SubnetDispensableSomePoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -719,7 +720,7 @@ func TestIPv6SubnetDispensableSomePdPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -742,7 +743,7 @@ func TestIPv6SubnetDispensableNoPoolsSomeReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -770,7 +771,7 @@ func TestDHCPv4ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -804,7 +805,7 @@ func TestDHCPv4ReservationsOutOfPoolSharedNetwork(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -837,7 +838,7 @@ func TestDHCPv4ReservationsOutOfPoolEnabledGlobally(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -871,7 +872,7 @@ func TestDHCPv4ReservationsOutOfPoolEnabledAtSharedNetworkLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -901,7 +902,7 @@ func TestDHCPv4ReservationsOutOfPoolEnabledAtSubnetLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -924,7 +925,7 @@ func TestDHCPv4ReservationsOutOfPoolNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -947,7 +948,7 @@ func TestDHCPv4ReservationsOutOfPoolNoPools(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -965,7 +966,7 @@ func TestDHCPv4ReservationsOutOfPoolNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -993,7 +994,7 @@ func TestDHCPv4ReservationsOutOfPoolNoPoolsNonIPReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1029,7 +1030,7 @@ func TestDHCPv4DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	// Create the out-of-pool host reservation in the database.
 	createHostInDatabase(t, db, configStr, "192.0.3.0/24", "192.0.3.5")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -1062,7 +1063,7 @@ func TestDHCPv4DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
 	// Create the out-of-pool host reservation in the database.
 	createHostInDatabase(t, db, configStr, "192.0.3.0/24", "192.0.3.5")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1093,7 +1094,7 @@ func TestDHCPv4DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
 	// any IP reservation.
 	createHostInDatabase(t, db, configStr, "192.0.3.0/24")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1121,7 +1122,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -1153,7 +1154,7 @@ func TestDHCPv6ReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -1183,7 +1184,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnetInPool(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1213,7 +1214,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnetInPDPool(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1245,7 +1246,7 @@ func TestDHCPv6ReservationsOutOfPoolSharedNetwork(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -1279,7 +1280,7 @@ func TestDHCPv6ReservationsOutOfPDPoolSharedNetwork(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -1312,7 +1313,7 @@ func TestDHCPv6ReservationsOutOfPoolEnabledGlobally(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1346,7 +1347,7 @@ func TestDHCPv6ReservationsOutOfPoolEnabledAtSharedNetworkLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1376,7 +1377,7 @@ func TestDHCPv6ReservationsOutOfPoolEnabledAtSubnetLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1399,7 +1400,7 @@ func TestDHCPv6ReservationsOutOfPoolNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1422,7 +1423,7 @@ func TestDHCPv6ReservationsOutOfPoolNoPools(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -1440,7 +1441,7 @@ func TestDHCPv6ReservationsOutOfPoolNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1469,7 +1470,7 @@ func TestDHCPv6ReservationsOutOfPoolNoPoolsNonIPReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1505,7 +1506,7 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	// Create the out-of-pool host reservation in the database.
 	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::5")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -1545,7 +1546,7 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	// Create the out-of-pool host reservation in the database.
 	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "3001::/96")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
@@ -1583,7 +1584,7 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnetInPool(t *testing.T) {
 	// Create the out-of-pool host reservation in the database.
 	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::50")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1621,7 +1622,7 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnetInPool(t *testing.T)
 	// Create the out-of-pool host reservation in the database.
 	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "3000::/96")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1652,7 +1653,7 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
 	// Create the out-of-pool host reservation in the database.
 	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::5")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1683,7 +1684,7 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
 	// any IP reservation.
 	createHostInDatabase(t, db, configStr, "2001:db8:1::/64")
 
-	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr, "2.2.0"))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -2497,7 +2498,7 @@ func TestCanonicalPrefixesForEmptyConfig(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Dhcp4": { }
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := canonicalPrefixes(ctx)
@@ -2512,7 +2513,7 @@ func TestCanonicalPrefixesForEmptyConfig(t *testing.T) {
 func TestHighAvailabilityMultiThreadingModeCheckerTopMultiThreadingDisabled(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": false
         },
         "hooks-libraries": [
@@ -2534,7 +2535,7 @@ func TestHighAvailabilityMultiThreadingModeCheckerTopMultiThreadingDisabled(t *t
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityMultiThreadingMode(ctx)
@@ -2574,7 +2575,7 @@ func TestHighAvailabilityMultiThreadingModeCheckerTopMTDisabledHAMTEnabled(t *te
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityMultiThreadingMode(ctx)
@@ -2588,10 +2589,10 @@ func TestHighAvailabilityMultiThreadingModeCheckerTopMTDisabledHAMTEnabled(t *te
 func TestHighAvailabilityMultiThreadingModeCheckerNoHAConfigured(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         }
-    } }`)
+    } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityMultiThreadingMode(ctx)
@@ -2605,7 +2606,7 @@ func TestHighAvailabilityMultiThreadingModeCheckerNoHAConfigured(t *testing.T) {
 // multi-threading is enabled but the HA is configured to use single thread.
 func TestHighAvailabilityMultiThreadingModeCheckerSingleThreaded(t *testing.T) {
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [
@@ -2627,7 +2628,64 @@ func TestHighAvailabilityMultiThreadingModeCheckerSingleThreaded(t *testing.T) {
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
+
+	// Act
+	report, err := highAvailabilityMultiThreadingMode(ctx)
+
+	// Assert
+	require.NotNil(t, report)
+	require.NoError(t, err)
+
+	require.Len(t, report.refDaemonIDs, 1)
+	require.EqualValues(t, ctx.subjectDaemon.ID, report.refDaemonIDs[0])
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "daemon is configured to work "+
+		"in multi-threading mode, but the High Availability hooks use "+
+		"single-thread mode")
+}
+
+// Test that single threaded HA configuration in one of the relationships is
+// properly detected in Kea 2.4.0.
+func TestHighAvailabilityMultiThreadingModeCheckerSingleThreadedMultipleRelationships(t *testing.T) {
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+		"hooks-libraries": [
+			{
+				"library": "/libdhcp_ha.so",
+				"parameters": {
+					"high-availability": [
+						{
+							"peers": [
+								{
+									"name": "foo",
+									"url": "http://foobar:8000"
+								},
+								{
+									"name": "bar",
+									"url": "http://barfoo:8000"
+								}
+							]
+						},
+						{
+							"multi-threading": {
+								"enable-multi-threading": false
+							},
+							"peers": [
+								{
+									"name": "baz",
+									"url": "http://foobar:8000"
+								},
+								{
+									"name": "zab",
+									"url": "http://barfoo:8000"
+								}
+							]
+						}
+					]
+				}
+			}
+		]
+    } }`, "2.4.0")
 
 	// Act
 	report, err := highAvailabilityMultiThreadingMode(ctx)
@@ -2649,7 +2707,7 @@ func TestHighAvailabilityMultiThreadingModeCheckerSingleThreaded(t *testing.T) {
 func TestHighAvailabilityMultiThreadingModeCheckerCorrectConfiguration(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [
@@ -2676,7 +2734,7 @@ func TestHighAvailabilityMultiThreadingModeCheckerCorrectConfiguration(t *testin
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityMultiThreadingMode(ctx)
@@ -2686,11 +2744,59 @@ func TestHighAvailabilityMultiThreadingModeCheckerCorrectConfiguration(t *testin
 	require.NoError(t, err)
 }
 
+// Test that no issue is returned when MT is enabled at the global level
+// and for all HA relationships in Kea 2.4.0.
+func TestHighAvailabilityMultiThreadingModeCheckerCorrectConfigurationMultipleRelationships(t *testing.T) {
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+		"multi-threading": {
+			"enable-multi-threading": true
+		},
+		"hooks-libraries": [
+			{
+				"library": "/libdhcp_ha.so",
+				"parameters": {
+					"high-availability": [
+						{
+							"peers": [
+								{
+									"name": "foo",
+									"url": "http://foobar:8000"
+								},
+								{
+									"name": "bar",
+									"url": "http://barfoo:8000"
+								}
+							]
+						},
+						{
+							"peers": [
+								{
+									"name": "baz",
+									"url": "http://foobar:8000"
+								},
+								{
+									"name": "zab",
+									"url": "http://barfoo:8000"
+								}
+							]
+						}
+					]
+				}
+			}
+		]
+    } }`, "2.4.0")
+
+	report, err := highAvailabilityMultiThreadingMode(ctx)
+
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
 // Test that the HA dedicated ports checker produces no report if the global
 // multi-threading is not configured.
 func TestHighAvailabilityDedicatedPortsCheckerNoGlobalMultiThreading(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -2705,11 +2811,11 @@ func TestHighAvailabilityDedicatedPortsCheckerNoGlobalMultiThreading(t *testing.
 func TestHighAvailabilityDedicatedPortsCheckerMissingHAHook(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [ ]
-    } }`)
+    } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -2724,7 +2830,7 @@ func TestHighAvailabilityDedicatedPortsCheckerMissingHAHook(t *testing.T) {
 func TestHighAvailabilityDedicatedPortsCheckerMissingMultiThreading(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [
@@ -2739,7 +2845,7 @@ func TestHighAvailabilityDedicatedPortsCheckerMissingMultiThreading(t *testing.T
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -2779,7 +2885,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 
 	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [
@@ -2807,7 +2913,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
 
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.ID = 2
@@ -2835,7 +2941,7 @@ func TestHighAvailabilityDedicatedPortsCheckerPortCollisionWithCA(t *testing.T) 
 func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [
@@ -2863,7 +2969,73 @@ func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabled(t *testi
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.NotNil(t, report)
+	require.NoError(t, err)
+
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content,
+		"is not configured to use dedicated HTTP listeners")
+}
+
+// Test that the HA dedicated ports checker produces a report if the dedicated
+// HTTP listener is not enabled for any of the relationships.
+
+func TestHighAvailabilityDedicatedPortsCheckerDedicatedListenerDisabledMultipleRelationships(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": {
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [
+                        {
+                            "multi-threading": {
+                                "enable-multi-threading": true,
+                                "http-dedicated-listener": true
+                            },
+                            "peers": [
+                                {
+                                    "role": "primary",
+                                    "name": "bar",
+                                    "url": "http://10.0.0.2:8000"
+                                },
+                                {
+                                    "role": "standby",
+                                    "name": "baz",
+                                    "url": "http://10.0.0.3:8000"
+                                }
+                            ]
+                        },
+                        {
+                            "multi-threading": {
+                                "http-dedicated-listener": false
+                            },
+                            "peers": [
+                                {
+                                    "role": "primary",
+                                    "name": "bar",
+                                    "url": "http://10.0.0.2:8000"
+                                },
+                                {
+                                    "role": "standby",
+                                    "name": "baz",
+                                    "url": "http://10.0.0.3:8000"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    } }`, "2.4.0")
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -2909,7 +3081,7 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
 
 	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [
@@ -2937,7 +3109,93 @@ func TestHighAvailabilityDedicatedPortsCheckerCorrectConfiguration(t *testing.T)
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
+
+	// The default IDs are already stored in the database.
+	ctx.subjectDaemon.ID = 2
+	ctx.subjectDaemon.AppID = 2
+
+	// Act
+	report, err := highAvailabilityDedicatedPorts(ctx)
+
+	// Assert
+	require.Nil(t, report)
+	require.NoError(t, err)
+}
+
+// Test that the HA dedicated ports checker produces no report if the
+// configuration contains no issue for multiple relationships.
+func TestHighAvailabilityDedicatedPortsCheckerCorrectConfigurationMultipleRelationships(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Initialize the failover entries.
+	failoverMachine := &dbmodel.Machine{
+		Address:   "10.0.0.2",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, failoverMachine)
+
+	failoverApp := &dbmodel.App{
+		MachineID: failoverMachine.ID,
+		Type:      dbmodel.AppTypeKea,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "10.0.0.2",
+				Port:    8000,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{{Name: dbmodel.DaemonNameCA}},
+	}
+	_, _ = dbmodel.AddApp(db, failoverApp)
+
+	// Prepare the subject entries.
+	ctx := createReviewContext(t, db, `{ "Dhcp4": {
+        "hooks-libraries": [
+            {
+                "library": "/libdhcp_ha.so",
+                "parameters": {
+                    "high-availability": [
+                        {
+                            "peers": [
+                                {
+                                    "role": "primary",
+                                    "name": "bar",
+                                    "url": "http://10.0.0.2:8001"
+                                },
+                                {
+                                    "role": "standby",
+                                    "name": "baz",
+                                    "url": "http://10.0.0.3:8001"
+                                }
+                            ]
+                        },
+                        {
+                            "multi-threading": {
+                                "enable-multi-threading": true,
+                                "http-dedicated-listener": true
+                            },
+                            "peers": [
+                                {
+                                    "role": "primary",
+                                    "name": "baz",
+                                    "url": "http://10.0.0.2:8001"
+                                },
+                                {
+                                    "role": "standby",
+                                    "name": "zab",
+                                    "url": "http://10.0.0.3:8001"
+                                }
+                            ]
+                        }
+
+                    ]
+                }
+            }
+        ]
+    } }`, "2.4.0")
 
 	// The default IDs are already stored in the database.
 	ctx.subjectDaemon.ID = 2
@@ -2981,7 +3239,7 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
 
 	// Prepare the subject entries.
 	ctx := createReviewContext(t, db, `{ "Dhcp4": {
-        "multi-threading": { 
+        "multi-threading": {
             "enable-multi-threading": true
         },
         "hooks-libraries": [
@@ -3009,7 +3267,7 @@ func TestHighAvailabilityDedicatedPortsCheckerLocalPeer(t *testing.T) {
                 }
             }
         ]
-    } }`)
+    } }`, "2.2.0")
 
 	// Act
 	report, err := highAvailabilityDedicatedPorts(ctx)
@@ -3033,7 +3291,7 @@ func TestAddressPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *testing.T)
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Control-agent": { }
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := addressPoolsExhaustedByReservations(ctx)
@@ -3049,7 +3307,7 @@ func TestAddressPoolsExhaustedByReservationsForMissingSubnets(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Dhcp4": {}
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := addressPoolsExhaustedByReservations(ctx)
@@ -3082,7 +3340,7 @@ func TestAddressPoolsExhaustedByReservationsForLessReservationsThanAddresses(t *
                 ]
             }]
         }
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := addressPoolsExhaustedByReservations(ctx)
@@ -3119,7 +3377,7 @@ func TestAddressPoolsExhaustedByReservationsForEqualReservationsAndAddresses(t *
                 ]
             }]
         }
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := addressPoolsExhaustedByReservations(ctx)
@@ -3176,7 +3434,7 @@ func TestAddressPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimit(t *tes
 	}
 	configJSON, _ := json.Marshal(config)
 
-	ctx := createReviewContext(t, nil, string(configJSON))
+	ctx := createReviewContext(t, nil, string(configJSON), "2.2.0")
 
 	// Act
 	report, err := addressPoolsExhaustedByReservations(ctx)
@@ -3213,7 +3471,7 @@ func TestAddressPoolsExhaustedByReservationsReportContainsSubnetID(t *testing.T)
                 "reservations": [{ "ip-address": "fe80::1" }]
             }]
         }
-    }`)
+    }`, "2.2.0")
 	// Act
 	report, err := addressPoolsExhaustedByReservations(ctx)
 
@@ -3245,7 +3503,7 @@ func TestAddressPoolsExhaustedByReservationsConsidersDatabaseReservations(t *tes
         }
     }`
 
-	ctx := createReviewContext(t, db, config)
+	ctx := createReviewContext(t, db, config, "2.2.0")
 
 	createHostInDatabase(t, db, config, "fe80::/16", "fe80::1")
 
@@ -3265,7 +3523,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForNonDHCPDaemonConfig(t *te
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Control-agent": { }
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
@@ -3281,7 +3539,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForMissingSubnets(t *testing
 	// Arrange
 	ctx := createReviewContext(t, nil, `{
         "Dhcp4": {}
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
@@ -3316,7 +3574,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForLessReservationsThanAddre
                 ]
             }]
         }
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
@@ -3356,7 +3614,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForEqualReservationsAndAddre
                 ]
             }]
         }
-    }`)
+    }`, "2.2.0")
 
 	// Act
 	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
@@ -3417,7 +3675,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsForMoreAffectedPoolsThanLimi
 	}
 	configJSON, _ := json.Marshal(config)
 
-	ctx := createReviewContext(t, nil, string(configJSON))
+	ctx := createReviewContext(t, nil, string(configJSON), "2.2.0")
 
 	// Act
 	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
@@ -3454,7 +3712,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsReportContainsSubnetID(t *te
                 "reservations": [{ "prefixes": ["fe80::/80"] }]
             }]
         }
-    }`)
+    }`, "2.2.0")
 	// Act
 	report, err := delegatedPrefixPoolsExhaustedByReservations(ctx)
 
@@ -3486,7 +3744,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsConsidersDatabaseReservation
         }
     }`
 
-	ctx := createReviewContext(t, db, config)
+	ctx := createReviewContext(t, db, config, "2.2.0")
 
 	createHostInDatabase(t, db, config, "fe80::/16", "fe80::/80")
 
@@ -3504,7 +3762,7 @@ func TestDelegatedPrefixPoolsExhaustedByReservationsConsidersDatabaseReservation
 // Test that the checker returns an error if provided a non-DHCP daemon.
 func TestSubnetCmdsAndConfigBackendMutualExclusionForNonDHCPDaemon(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`)
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`, "2.2.0")
 	// Act
 	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
 
@@ -3528,7 +3786,7 @@ func TestSubnetCmdsAndConfigBackendMutualExclusionForMissingSubnetHook(t *testin
             }
         }
     }`
-	ctx := createReviewContext(t, nil, configStr)
+	ctx := createReviewContext(t, nil, configStr, "2.2.0")
 
 	// Act
 	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
@@ -3551,7 +3809,7 @@ func TestSubnetCmdsAndConfigBackendMutualExclusionForMissingConfigBackend(t *tes
             ]
         }
     }`
-	ctx := createReviewContext(t, nil, configStr)
+	ctx := createReviewContext(t, nil, configStr, "2.2.0")
 
 	// Act
 	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
@@ -3582,7 +3840,7 @@ func TestSubnetCmdsAndConfigBackendMutualExclusionDetection(t *testing.T) {
             }
         }
     }`
-	ctx := createReviewContext(t, nil, configStr)
+	ctx := createReviewContext(t, nil, configStr, "2.2.0")
 
 	// Act
 	report, err := subnetCmdsAndConfigBackendMutualExclusion(ctx)
@@ -3606,7 +3864,7 @@ func TestSubnetCmdsAndConfigBackendMutualExclusionDetection(t *testing.T) {
 // not-CA daemons.
 func TestCredentialsOverHTTPSForNonCADaemon(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`, "2.2.0")
 
 	// Act
 	report, err := credentialsOverHTTPS(ctx)
@@ -3620,7 +3878,7 @@ func TestCredentialsOverHTTPSForNonCADaemon(t *testing.T) {
 // HTTP credentials are not provided in the Stork agent.
 func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`)
+	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`, "2.2.0")
 
 	machine := &dbmodel.Machine{
 		Address:   "10.0.0.2",
@@ -3652,7 +3910,7 @@ func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
 // communicate over the secure protocol.
 func TestCredentialsOverHTTPSForProvidedCredentialsWithoutTLS(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`)
+	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`, "2.2.0")
 
 	machine := &dbmodel.Machine{
 		Address:   "10.0.0.2",
@@ -3695,7 +3953,7 @@ func TestCredentialsOverHTTPSForProvidedCredentialsWithTLS(t *testing.T) {
         "trust-anchor": "foo",
         "cert-file": "/bar",
         "key-file": "/baz"
-    } }`)
+    } }`, "2.2.0")
 
 	machine := &dbmodel.Machine{
 		Address:   "10.0.0.2",
@@ -3732,7 +3990,7 @@ func TestCredentialsOverHTTPSForMissingMachine(t *testing.T) {
         "trust-anchor": "foo",
         "cert-file": "/bar",
         "key-file": "/baz"
-    } }`)
+    } }`, "2.2.0")
 	ctx.subjectDaemon.ID = 0
 
 	machine := &dbmodel.Machine{
@@ -3765,7 +4023,7 @@ func TestCredentialsOverHTTPSForMissingMachine(t *testing.T) {
 // sockets entry is missing in the Kea Control Agent configuration.
 func TestControlSocketsCAMissingEntry(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`)
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {} }`, "2.2.0")
 
 	// Act
 	report, err := controlSocketsCA(ctx)
@@ -3790,7 +4048,7 @@ func TestControlSocketsCAEmptyEntry(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Control-agent": {
 		"control-sockets": { }
-	} }`)
+	} }`, "2.2.0")
 
 	// Act
 	report, err := controlSocketsCA(ctx)
@@ -3820,7 +4078,7 @@ func TestControlSocketsCAMissingDHCPDaemons(t *testing.T) {
 				"socket-name": "/path/to/the/unix/socket-d2"
 			}
 		}
-	} }`)
+	} }`, "2.2.0")
 
 	// Act
 	report, err := controlSocketsCA(ctx)
@@ -3850,7 +4108,7 @@ func TestControlSocketsCAProperConfig(t *testing.T) {
 				"socket-name": "/tmp/kea4-ctrl-socket"
 			}
 		}
-	} }`)
+	} }`, "2.2.0")
 
 	// Act
 	report, err := controlSocketsCA(ctx)
@@ -3864,7 +4122,7 @@ func TestControlSocketsCAProperConfig(t *testing.T) {
 // not-CA daemons.
 func TestControlSocketsCAForNonCADaemon(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`)
+	ctx := createReviewContext(t, nil, `{ "Dhcp4": { } }`, "2.2.0")
 
 	// Act
 	report, err := controlSocketsCA(ctx)

@@ -725,12 +725,10 @@ func getCanonicalPrefix(prefix string) (string, bool) {
 func highAvailabilityMultiThreadingMode(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
-	multiThreadingConfig := config.GetMultiThreading()
+	keaVersion := storkutil.ParseSemanticVersionOrLatest(ctx.subjectDaemon.Version)
 
-	if multiThreadingConfig == nil ||
-		multiThreadingConfig.EnableMultiThreading == nil ||
-		!*multiThreadingConfig.EnableMultiThreading {
-		// The top-level multi-threading is not configured or disabled.
+	if !config.IsMultiThreadingEnabled(keaVersion) {
+		// There is no HA configured.
 		return nil, nil
 	}
 
@@ -740,10 +738,14 @@ func highAvailabilityMultiThreadingMode(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	haMultiThreadingConfig := haConfig.GetFirstRelationship().MultiThreading
-	if haMultiThreadingConfig != nil &&
-		haMultiThreadingConfig.EnableMultiThreading != nil &&
-		*haMultiThreadingConfig.EnableMultiThreading {
+	var disabled bool
+	for _, rel := range haConfig.GetAllRelationships() {
+		if !rel.IsMultiThreadingEnabled(keaVersion) {
+			disabled = true
+			break
+		}
+	}
+	if !disabled {
 		// HA+MT enabled.
 		return nil, nil
 	}
@@ -764,12 +766,10 @@ func highAvailabilityMultiThreadingMode(ctx *ReviewContext) (*Report, error) {
 func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
 
-	multiThreadingConfig := config.GetMultiThreading()
+	keaVersion := storkutil.ParseSemanticVersionOrLatest(ctx.subjectDaemon.Version)
 
-	if multiThreadingConfig == nil ||
-		multiThreadingConfig.EnableMultiThreading == nil ||
-		!*multiThreadingConfig.EnableMultiThreading {
-		// The top-level multi-threading is not configured or disabled.
+	if !config.IsMultiThreadingEnabled(keaVersion) {
+		// There is no HA configured.
 		return nil, nil
 	}
 
@@ -779,101 +779,97 @@ func highAvailabilityDedicatedPorts(ctx *ReviewContext) (*Report, error) {
 		return nil, nil
 	}
 
-	if haConfig.GetFirstRelationship().MultiThreading == nil ||
-		haConfig.GetFirstRelationship().MultiThreading.EnableMultiThreading == nil ||
-		!*haConfig.GetFirstRelationship().MultiThreading.EnableMultiThreading {
-		// There is no HA+MT configured.
-		return nil, nil
-	}
-
-	if haConfig.GetFirstRelationship().MultiThreading.HTTPDedicatedListener == nil ||
-		!*haConfig.GetFirstRelationship().MultiThreading.HTTPDedicatedListener {
-		// The dedicated listener is disabled.
-		return NewReport(ctx, "The Kea {daemon} daemon is not configured to "+
-			"use dedicated HTTP listeners to handle communication between HA "+
-			"peers. They will communicate Kea Control Agent. It may cause "+
-			"the bottlenecks that nullify any performance gains offered by "+
-			"HA+MT. To avoid it, enable the dedicated HTTP listeners in the "+
-			"multi-threading configuration of the High-Availability hook. "+
-			"Remember that the dedicated listeners must be configured to use "+
-			"the HTTP port different from the one used by the Kea Control "+
-			"Agent.").referencingDaemon(ctx.subjectDaemon).create()
+	for _, rel := range haConfig.GetAllRelationships() {
+		if rel.IsMultiThreadingEnabled(keaVersion) && !rel.IsDedicatedListenerEnabled(keaVersion) {
+			// The dedicated listener is disabled.
+			return NewReport(ctx, "The Kea {daemon} daemon is not configured to "+
+				"use dedicated HTTP listeners to handle communication between HA "+
+				"peers. They will communicate Kea Control Agent. It may cause "+
+				"the bottlenecks that nullify any performance gains offered by "+
+				"HA+MT. To avoid it, enable the dedicated HTTP listeners in the "+
+				"multi-threading configuration of the High-Availability hook. "+
+				"Remember that the dedicated listeners must be configured to use "+
+				"the HTTP port different from the one used by the Kea Control "+
+				"Agent.").referencingDaemon(ctx.subjectDaemon).create()
+		}
 	}
 
 	// The loop checks if the subject daemon connects directly to the
 	// dedicated listeners on the external peers.
-	for _, peer := range haConfig.GetFirstRelationship().Peers {
-		if !peer.IsValid() {
-			// Invalid peer. Skip.
-			continue
-		}
+	for _, rel := range haConfig.GetAllRelationships() {
+		for _, peer := range rel.Peers {
+			if !peer.IsValid() {
+				// Invalid peer. Skip.
+				continue
+			}
 
-		urlObj, err := url.Parse(*peer.URL)
-		if err != nil {
-			// It should never happen. Kea disallows invalid URLs.
-			continue
-		}
+			urlObj, err := url.Parse(*peer.URL)
+			if err != nil {
+				// It should never happen. Kea disallows invalid URLs.
+				continue
+			}
 
-		peerPort, err := strconv.ParseInt(urlObj.Port(), 10, 64)
-		if err != nil {
-			// It should never happen. Kea disallows invalid URLs.
-			continue
-		}
+			peerPort, err := strconv.ParseInt(urlObj.Port(), 10, 64)
+			if err != nil {
+				// It should never happen. Kea disallows invalid URLs.
+				continue
+			}
 
-		peerAddress := urlObj.Hostname()
+			peerAddress := urlObj.Hostname()
 
-		// Fetch the external peer machine from the database.
-		accessPointType := dbmodel.AccessPointControl
-		peerMachine, err := dbmodel.GetMachineByAddressAndAccessPointPort(
-			ctx.db, peerAddress, peerPort, &accessPointType,
-		)
-		if err != nil {
-			return nil, err
-		}
+			// Fetch the external peer machine from the database.
+			accessPointType := dbmodel.AccessPointControl
+			peerMachine, err := dbmodel.GetMachineByAddressAndAccessPointPort(
+				ctx.db, peerAddress, peerPort, &accessPointType,
+			)
+			if err != nil {
+				return nil, err
+			}
 
-		if peerMachine == nil {
-			// Peer port doesn't collide with the CA port or the peer is not
-			// monitored by Stork. Skip.
-			continue
-		}
+			if peerMachine == nil {
+				// Peer port doesn't collide with the CA port or the peer is not
+				// monitored by Stork. Skip.
+				continue
+			}
 
-		// Collect the Kea Control Agent daemons.
-		// There is no possibility of binding the access point to a
-		// specific CA daemon.
-		var caDaemons []*dbmodel.Daemon
-		for _, peerApp := range peerMachine.Apps {
-			// Search for an application that contains the collided access point.
-			for _, peerAccessPoint := range peerApp.AccessPoints {
-				if peerAccessPoint.Port != peerPort {
-					continue
-				}
-
-				for _, peerDaemon := range peerApp.Daemons {
-					if peerDaemon.ID == ctx.subjectDaemon.ID {
-						// Prevent referencing the subject daemon twice.
+			// Collect the Kea Control Agent daemons.
+			// There is no possibility of binding the access point to a
+			// specific CA daemon.
+			var caDaemons []*dbmodel.Daemon
+			for _, peerApp := range peerMachine.Apps {
+				// Search for an application that contains the collided access point.
+				for _, peerAccessPoint := range peerApp.AccessPoints {
+					if peerAccessPoint.Port != peerPort {
 						continue
 					}
 
-					if peerDaemon.Name == dbmodel.DaemonNameCA {
-						caDaemons = append(caDaemons, peerDaemon)
+					for _, peerDaemon := range peerApp.Daemons {
+						if peerDaemon.ID == ctx.subjectDaemon.ID {
+							// Prevent referencing the subject daemon twice.
+							continue
+						}
+
+						if peerDaemon.Name == dbmodel.DaemonNameCA {
+							caDaemons = append(caDaemons, peerDaemon)
+						}
 					}
 				}
 			}
-		}
 
-		report := NewReport(ctx, fmt.Sprintf("The {daemon} has enabled High "+
-			"Availability hook configured to use dedicated HTTP "+
-			"listeners but the connections to the HA '%s' peer with the '%s' "+
-			"URL are performed over the Kea Control Agent omitting the "+
-			"dedicated HTTP listener of this peer. It may cause the "+
-			"bottlenecks that nullify any performance gains offered by HA+MT"+
-			"You need to set the peer's HTTP '%d' port to the dedicated "+
-			"listener's port.", *peer.Name, *peer.URL, peerPort)).
-			referencingDaemon(ctx.subjectDaemon)
-		for _, daemon := range caDaemons {
-			report = report.referencingDaemon(daemon)
+			report := NewReport(ctx, fmt.Sprintf("The {daemon} has enabled High "+
+				"Availability hook configured to use dedicated HTTP "+
+				"listeners but the connections to the HA '%s' peer with the '%s' "+
+				"URL are performed over the Kea Control Agent omitting the "+
+				"dedicated HTTP listener of this peer. It may cause the "+
+				"bottlenecks that nullify any performance gains offered by HA+MT"+
+				"You need to set the peer's HTTP '%d' port to the dedicated "+
+				"listener's port.", *peer.Name, *peer.URL, peerPort)).
+				referencingDaemon(ctx.subjectDaemon)
+			for _, daemon := range caDaemons {
+				report = report.referencingDaemon(daemon)
+			}
+			return report.create()
 		}
-		return report.create()
 	}
 
 	return nil, nil

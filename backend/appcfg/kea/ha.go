@@ -1,5 +1,7 @@
 package keaconfig
 
+import storkutil "isc.org/stork/util"
+
 // A structure reflecting an array of high availability configurations
 // for a Kea server. It is a top level HA library configuration.
 type HALibraryParams struct {
@@ -38,14 +40,6 @@ type Peer struct {
 	AutoFailover *bool   `json:"auto-failover"`
 }
 
-// Convenience function returning the first HA configuration.
-func (params HALibraryParams) GetFirstRelationship() *HA {
-	if len(params.HA) > 0 {
-		return &params.HA[0]
-	}
-	return &HA{}
-}
-
 // Returns configurations of all HA relationships.
 func (params HALibraryParams) GetAllRelationships() []HA {
 	return params.HA
@@ -62,6 +56,32 @@ func (c HA) IsValid() bool {
 	}
 	// Check other required parameters.
 	return c.ThisServerName != nil && c.Mode != nil
+}
+
+// Checks if multi threading has been enabled for an HA relationship.
+// The Kea version 2.3.7 and later enable multi threading by default.
+func (c HA) IsMultiThreadingEnabled(keaVersion storkutil.SemanticVersion) bool {
+	if keaVersion.GreaterThanOrEqual(storkutil.NewSemanticVersion(2, 3, 7)) {
+		return c.MultiThreading == nil ||
+			c.MultiThreading.EnableMultiThreading == nil ||
+			*c.MultiThreading.EnableMultiThreading
+	}
+	return c.MultiThreading != nil &&
+		c.MultiThreading.EnableMultiThreading != nil &&
+		*c.MultiThreading.EnableMultiThreading
+}
+
+// Checks if an HTTP dedicated listener has been enabled for an HA relationship.
+// The Kea version 2.3.7 and later enable the dedicated listener by default.
+func (c HA) IsDedicatedListenerEnabled(keaVersion storkutil.SemanticVersion) bool {
+	if keaVersion.GreaterThanOrEqual(storkutil.NewSemanticVersion(2, 3, 7)) {
+		return c.MultiThreading == nil ||
+			c.MultiThreading.HTTPDedicatedListener == nil ||
+			*c.MultiThreading.HTTPDedicatedListener
+	}
+	return c.MultiThreading != nil &&
+		c.MultiThreading.HTTPDedicatedListener != nil &&
+		*c.MultiThreading.HTTPDedicatedListener
 }
 
 // Checks if the mandatory peer parameters are set. It doesn't check if the

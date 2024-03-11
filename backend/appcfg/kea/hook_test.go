@@ -63,14 +63,17 @@ func TestGetHAHookLibrary(t *testing.T) {
 	require.True(t, ok)
 	require.Len(t, params.HA, 1)
 
-	require.NotNil(t, params.GetFirstRelationship().ThisServerName)
-	require.NotNil(t, params.GetFirstRelationship().Mode)
-	require.NotNil(t, params.GetFirstRelationship().HeartbeatDelay)
+	relationships := params.GetAllRelationships()
+	require.Len(t, relationships, 1)
+
+	require.NotNil(t, relationships[0].ThisServerName)
+	require.NotNil(t, relationships[0].Mode)
+	require.NotNil(t, relationships[0].HeartbeatDelay)
 
 	require.Equal(t, "/usr/lib/kea/libdhcp_ha.so", path)
-	require.Equal(t, "server1", *params.GetFirstRelationship().ThisServerName)
-	require.Equal(t, "hot-standby", *params.GetFirstRelationship().Mode)
-	require.Equal(t, 10000, *params.GetFirstRelationship().HeartbeatDelay)
+	require.Equal(t, "server1", *relationships[0].ThisServerName)
+	require.Equal(t, "hot-standby", *relationships[0].Mode)
+	require.Equal(t, 10000, *relationships[0].HeartbeatDelay)
 }
 
 func TestGetLeaseCmdsHookLibrary(t *testing.T) {

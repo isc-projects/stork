@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	storkutil "isc.org/stork/util"
 	"muzzammil.xyz/jsonc"
 )
 
@@ -145,6 +146,20 @@ func (c *Config) GetMultiThreading() (mt *MultiThreading) {
 		mt = accessor.GetCommonDHCPConfig().MultiThreading
 	}
 	return
+}
+
+// Checks if the multi threading has been enabled in the Kea configuration.
+// Versions earlier than 2.3.5 have MT disabled by default. Other versions
+// have MT enabled by default.
+func (c *Config) IsMultiThreadingEnabled(keaVersion storkutil.SemanticVersion) bool {
+	var mt *MultiThreading
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		mt = accessor.GetCommonDHCPConfig().MultiThreading
+	}
+	if keaVersion.GreaterThanOrEqual(storkutil.NewSemanticVersion(2, 3, 5)) {
+		return mt == nil || mt.EnableMultiThreading == nil || *mt.EnableMultiThreading
+	}
+	return mt != nil && mt.EnableMultiThreading != nil && *mt.EnableMultiThreading
 }
 
 // It returns all database backend configurations found in the DHCP configuration.

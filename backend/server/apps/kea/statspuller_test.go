@@ -906,7 +906,9 @@ func TestGetHATestConfigWithSubnets(t *testing.T) {
 	path, params, ok := config.GetHookLibraries().GetHAHookLibrary()
 	require.True(t, ok)
 	require.NotEmpty(t, path)
-	require.Equal(t, "server1", *params.GetFirstRelationship().ThisServerName)
+	relationships := params.GetAllRelationships()
+	require.Len(t, relationships, 1)
+	require.Equal(t, "server1", *relationships[0].ThisServerName)
 	subnets := config.GetSubnets()
 	require.NotEmpty(t, subnets)
 }
