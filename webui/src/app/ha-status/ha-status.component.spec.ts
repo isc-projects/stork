@@ -267,7 +267,7 @@ describe('HaStatusComponent', () => {
         expect(component.status[1].data.cells[1].iconType).toBeFalsy()
         expect(component.status[1].data.cells[1].progress).toBeFalsy()
         expect(component.status[1].data.cells[1].value).toBe('primary')
-        4
+
         const expectedTitles = [
             'Heartbeat status',
             'Control status',

@@ -306,7 +306,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                             // Check if we need to show any icons in the relationship top-level row.
                             row.data.cells.forEach((c, index) => {
                                 // Check if the columns belonging to this relationship contain any
-                                // non-ok icons. If so, we take the first one and display in the
+                                // non-ok icons. If so, we take the first one and display it in the
                                 // relationship top-level row.
                                 c.iconType = row.children?.reduce((acc, ch) => {
                                     if (
