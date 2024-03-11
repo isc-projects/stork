@@ -235,23 +235,20 @@
                         <ng-container [ngSwitch]="column.iconType">
                             <span
                                 *ngSwitchCase="'ok'"
-                                class="ml-2 pi pi-check"
-                                [ngStyle]="{ color: 'var(--green-500)', 'text-decoration': 'none' }"
+                                class="ml-2 pi pi-check icon-ok"
                             ></span>
                             <span
                                 *ngSwitchCase="'warn'"
-                                class="ml-2 pi pi-exclamation-triangle"
-                                [ngStyle]="{ color: 'var(--orange-500)', 'text-decoration': 'none' }"
+                                class="ml-2 pi pi-exclamation-triangle icon-warn"
                             ></span>
                             <span
                                 *ngSwitchCase="'error'"
-                                class="ml-2 pi pi-exclamation-circle"
+                                class="ml-2 pi pi-exclamation-circle icon-error"
                                 [ngStyle]="{ color: 'var(--red-500)', 'text-decoration': 'none' }"
                             ></span>
                             <span
                                 *ngSwitchCase="'pending'"
-                                class="ml-2 pi pi-spin pi-spinner"
-                                [ngStyle]="{ color: 'var(--gray-500)', 'text-decoration': 'none' }"
+                                class="ml-2 pi pi-spin pi-spinner icon-pending"
                             ></span>
                         </ng-container>
                         <p-progressBar
