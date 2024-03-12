@@ -433,7 +433,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	q = q.DistinctOn(distinctOnFields)
 
 	// Join to the local host table.
-	if (filters.AppID != nil && *filters.AppID != 0) || filters.FilterText != nil && len(*filters.FilterText) > 0 {
+	if (filters.AppID != nil && *filters.AppID != 0) || (filters.FilterText != nil && len(*filters.FilterText) > 0) {
 		q = q.Join("JOIN local_host").JoinOn("host.id = local_host.host_id")
 	}
 
@@ -561,7 +561,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	}
 
 	// Filter by local subnet ID.
-	if filters.LocalSubnetID != nil {
+	if filters.LocalSubnetID != nil && *filters.LocalSubnetID != 0 {
 		q = q.Join("JOIN local_subnet").JoinOn("local_subnet.subnet_id = host.subnet_id")
 		q = q.Where("local_subnet.local_subnet_id = ?", *filters.LocalSubnetID)
 	}
