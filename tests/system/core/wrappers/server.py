@@ -655,8 +655,9 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         overview = self.overview()
 
         for daemon in overview.dhcp_daemons:
-            if daemon.ha_state not in valid_states:
-                identifier = f"{daemon.app_name}@{daemon.machine}/{daemon.name}"
-                raise NoSuccessException(
-                    f"The {identifier} HA peer is {daemon.ha_state}"
-                )
+            for relationship in daemon.ha_overview:
+                if relationship.ha_state not in valid_states:
+                    identifier = f"{daemon.app_name}@{daemon.machine}/{daemon.name}"
+                    raise NoSuccessException(
+                        f"The {identifier} HA peer is {relationship.ha_state}"
+                    )
