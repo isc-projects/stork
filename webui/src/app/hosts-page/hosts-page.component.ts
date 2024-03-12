@@ -17,6 +17,7 @@ import {
     getNumericQueryParamsFilterKeys,
 } from './query-params-filter'
 import { Location } from '@angular/common'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 /**
  * Enumeration for different host tab types displayed by the component.
@@ -179,9 +180,10 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * The source property indicates where the filter comes from:
      * - input - the filter is set by the user in the input box,
      * - callback - the filter is set by the child component,
-     * - query - the filter is set by the URL query parameters.
+     * - query - the filter is set by the URL query parameters,
+     * - state - the filter is restored from saved state.
      */
-    hostFilter$ = new Subject<{ source: 'input' | 'callback' | 'query'; filter: QueryParamsFilter }>()
+    hostFilter$ = new Subject<{ source: 'input' | 'callback' | 'query' | 'state'; filter: QueryParamsFilter }>()
 
     /**
      * The recent filter applied to the hosts list. Only filters that pass the
@@ -323,60 +325,57 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         // Update the filter representation when the filtering parameters change.
         this.subscriptions.add(
             this.hostFilter$.subscribe((f) => {
-                // Update the URL.
-                if (f.source != 'query') {
-                    this.updateQueryParameters(f.filter)
-                }
-                // Update the input box.
-                if (f.source != 'input') {
-                    this.updateFilterText(f.filter)
-                }
-
-                this.filterTextFormatErrors = this.validateFilter(f.filter)
-
                 if (this.hostsTable) {
-                    if (!this.hostsTable.stateRestored) {
-                        // console.log('hostTable defined, table was not restored, filter with table api filter()')
-                        this.hostsTable.filter(this.validHostFilter.appId, 'appId', 'contains')
-                        this.hostsTable.filter(this.validHostFilter.text, 'text', 'contains')
-                    } else if (
-                        this.validHostFilter.appId != this.hostsTable.filters.appId?.[0]?.value ||
-                        this.validHostFilter.text != this.hostsTable.filters.text?.[0]?.value
+                    if (
+                        f.source == 'query' &&
+                        ((this.validHostFilter.appId &&
+                            this.validHostFilter.appId != this.hostsTable.filters.appId?.[0]?.value) ||
+                            (this.validHostFilter.text &&
+                                this.validHostFilter.text != this.hostsTable.filters.text?.[0]?.value))
                     ) {
-                        // console.log(
-                        //     'SPECIFIC CASE!!! hostTable defined, table state was restored, filtering change found though'
-                        // )
-                        this.hostsTable.filter(this.validHostFilter.appId, 'appId', 'contains')
-                        this.hostsTable.filter(this.validHostFilter.text, 'text', 'contains')
-                    } else {
-                        // console.log('hostTable defined, table state was restored, force emit onLazyLoad')
-                        this.reloadData(this.hostsTable)
+                        // console.log('queryParams vs restored filter differs, overwrite')
+                        this.clearFilters(this.hostsTable, false)
+
+                        if (this.validHostFilter.appId) {
+                            this.hostsTable.filters['appId'] = [
+                                { value: this.validHostFilter.appId, matchMode: 'equals' },
+                            ]
+                        }
+
+                        if (this.validHostFilter.text) {
+                            this.hostsTable.filters['text'] = [
+                                { value: this.validHostFilter.text, matchMode: 'contains' },
+                            ]
+                        }
+
+                        this.hostsTable.saveState()
                     }
+
+                    this.reloadData(this.hostsTable)
                 } else if (this.restoredTable) {
-                    // use case: 1st navigation is to host detailed view tab (index >= 1) and then
-                    // there is navigation to hosts list view tab (index 0)
-                    // console.log(
-                    //     'hostTable undefined, setting filters in restoredTable; stateRestored ' +
-                    //         this.restoredTable.stateRestored
-                    // )
-                    this.restoredTable.filters = {
-                        appId: [{ value: this.validHostFilter.appId, matchMode: 'contains' }],
-                        text: [{ value: this.validHostFilter.text, matchMode: 'contains' }],
-                    }
+                    // console.log('hostTable undefined but restoredTable defined, call onLazyLoad() using restored state')
                     this.loadHosts(this.restoredTable.createLazyLoadMetadata())
                 } else {
                     // console.log(
                     //     'both hostTable and restoredTable undefined, calling onLazyLoad() with constructed lazyLoadEvent'
                     // )
+                    const filters =
+                        f.source == 'query'
+                            ? {
+                                  appId: [{ value: this.validHostFilter.appId, matchMode: 'equals' }],
+                                  text: [{ value: this.validHostFilter.text, matchMode: 'contains' }],
+                              }
+                            : {}
                     this.loadHosts({
                         first: this.restoredFirst,
                         rows: this.restoredRows,
-                        filters: {
-                            appId: [{ value: this.validHostFilter.appId, matchMode: 'contains' }],
-                            text: [{ value: this.validHostFilter.text, matchMode: 'contains' }],
-                        },
+                        filters: filters,
                     })
                 }
+
+                // if (f.source == "input") {
+                // todo: input validation
+                // }
             })
         )
 
@@ -431,14 +430,6 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     // Get host id.
                     const id = paramMap.get('id')
                     if (!id || id === 'all') {
-                        // todo: think and check if still needed after router tweaks
-                        const appId = parseInt(queryParamMap.get('appId'))
-                        this.appId = isNaN(appId) ? null : appId
-                        this.stateKey = isNaN(appId) ? 'hosts-table-session-all' : `hosts-table-session-${appId}`
-                        if (this.hostsTable) {
-                            this.hostsTable.stateKey = this.stateKey
-                        }
-
                         // Update the filter only if the target is host list.
                         this.updateFilterFromQueryParameters(queryParamMap)
                         this.switchToTab(0)
@@ -524,14 +515,19 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         const booleanKeys = getBooleanQueryParamsFilterKeys()
 
         const filter: QueryParamsFilter = {}
-        filter.text = params.get('text')
+        const text = params.get('text')
+        if (text) {
+            filter.text = text
+        }
 
         for (let key of numericKeys) {
             // Convert the value to a number. It is NaN if the parameter
             // doesn't exist or it is malformed.
             if (params.has(key)) {
                 const value = parseInt(params.get(key))
-                filter[key as any] = isNaN(value) ? null : value
+                if (!isNaN(value)) {
+                    filter[key as any] = value
+                }
             }
         }
 
@@ -540,14 +536,24 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         for (let key of booleanKeys) {
             if (params.has(key)) {
                 const value = parseBoolean(params.get(key))
-                filter[key as any] = value
+                if (value) {
+                    filter[key as any] = value
+                }
             }
         }
 
-        this.hostFilter$.next({
-            source: 'query',
-            filter: filter,
-        })
+        if (Object.keys(filter).length === 0) {
+            // No valid filters were parsed. Let's try to restore filtering from saved state.
+            this.hostFilter$.next({
+                source: 'state',
+                filter: filter,
+            })
+        } else {
+            this.hostFilter$.next({
+                source: 'query',
+                filter: filter,
+            })
+        }
     }
 
     /**
@@ -738,6 +744,14 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Determines whether given filter is FilterMetadata or FilterMetadata[] type filter.
+     * @param f filter to be checked
+     */
+    isNotArrFilter(f: FilterMetadata | FilterMetadata[] | undefined): f is FilterMetadata {
+        return f !== undefined && (f as FilterMetadata).value !== undefined
+    }
+
+    /**
      * Loads hosts from the database into the component.
      *
      * @param event Event object containing an index if the first row, maximum
@@ -745,20 +759,28 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * not specified, the current values are used when available.
      */
     loadHosts(event: TableLazyLoadEvent) {
-        const params = this.validHostFilter
-
         // Indicate that hosts refresh is in progress.
         this.hostsLoading = true
+        // The goal is to send to backend something as simple as:
+        // this.someApi.getHosts(JSON.stringify(event))
         this.dhcpApi
             .getHosts(
                 event.first,
                 event.rows,
                 this.appId ?? event.filters.appId?.[0]?.value,
-                params.subnetId,
-                params.keaSubnetId,
+                this.isNotArrFilter(event.filters.subnetId)
+                    ? event.filters.subnetId?.value
+                    : event.filters.subnetId?.[0]?.value, // params.subnetId,
+                this.isNotArrFilter(event.filters.keaSubnetId)
+                    ? event.filters.keaSubnetId.value
+                    : event.filters.keaSubnetId?.[0]?.value, // params.keaSubnetId,
                 event.filters.text?.[0]?.value,
-                params.global,
-                params.conflict
+                this.isNotArrFilter(event.filters.isGlobal)
+                    ? event.filters.isGlobal?.value
+                    : event.filters.isGlobal?.[0]?.value, // params.global,
+                this.isNotArrFilter(event.filters.conflict)
+                    ? event.filters.conflict?.value
+                    : event.filters.conflict?.[0]?.value // params.conflict
             )
             .toPromise()
             .then((data) => {
@@ -969,13 +991,35 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * @param hostsTable table which state was restored
      */
     stateRestored(state: any, hostsTable: Table) {
-        // console.log('stateRestored - state ' + JSON.stringify(state))
-        // console.log(
-        //     'stateRestored from ' + hostsTable.stateKey + ' - table.filters ' + JSON.stringify(hostsTable.filters)
-        // )
+        if (hostsTable.restoringFilter) {
+            // Force set this flag to false.
+            // This is a workaround of the issue in PrimeNG,
+            // where for stateful table, sometimes when filtering is applied,
+            // table.first property is not set to 0 as expected.
+            hostsTable.restoringFilter = false
+        }
+
+        // Backup restored data to properties.
+        // They will be used when hostTable is not available.
+        // Use case: navigation back from detailed host view tab (index > 0)
+        // to hosts' list view tab (index 0).
         this.restoredFirst = state.first
         this.restoredRows = state.rows
         this.restoredTable = hostsTable
+    }
+
+    /**
+     * Callback method called when PrimeNG table's state was saved to browser's storage.
+     * @param hostsTable table which state was saved
+     */
+    stateSaved(hostsTable: Table) {
+        if (hostsTable.restoringFilter) {
+            // Force set this flag to false.
+            // This is a workaround of the issue in PrimeNG,
+            // where for stateful table, sometimes when filtering is applied,
+            // table.first property is not set to 0 as expected.
+            hostsTable.restoringFilter = false
+        }
     }
 
     /**
@@ -984,5 +1028,27 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     reloadData(table: Table) {
         table.onLazyLoad.emit(table.createLazyLoadMetadata())
+    }
+
+    /**
+     * Clears filtering on the table and stores table's state.
+     * @param table table where filters are to be cleared
+     * @param lazyLoad flag to control whether to reload table data after filters are cleared
+     */
+    clearFilters(table: Table, lazyLoad = true) {
+        table.clearFilterValues()
+
+        // Even when all filters are cleared, restore appId filter if it was given in queryParams.
+        if (this.appId) {
+            table.filters['appId'] = [{ value: this.appId, matchMode: 'equals' }]
+        }
+
+        table.first = 0
+        table.firstChange.emit(table.first)
+        table.saveState()
+
+        if (lazyLoad) {
+            this.reloadData(table)
+        }
     }
 }

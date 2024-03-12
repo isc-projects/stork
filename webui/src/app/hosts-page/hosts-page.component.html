@@ -46,72 +46,6 @@
 <div *ngIf="activeTabIndex === 0; else openedTabBlock" style="margin: 10px">
     <div class="mb-3" style="display: flex; justify-content: space-between">
         <div class="flex align-items-center">
-            <div class="fa fa-search" style="margin: 4px 4px 0 0"></div>
-            <div class="ml-2">Filter hosts:</div>
-            <div class="ml-2">
-                <input
-                    type="text"
-                    id="filter-hosts-text-field"
-                    pInputText
-                    [(ngModel)]="filterText"
-                    placeholder="IP or identifier"
-                    (keyup)="keyUpFilterText($event)"
-                    #searchInput
-                />
-            </div>
-            <div>
-                <app-help-tip title="filtering" id="filtering-help-button" width="40vw" [target]="searchInput">
-                    <p>
-                        Hosts in the table below can be filtered by entering a text in the search box; the table shows
-                        all hosts matching the filter text. Currently supported fields for such filtering are:
-                    </p>
-                    <ul>
-                        <li>Identifier</li>
-                        <li>Identifier Type</li>
-                        <li>Address</li>
-                        <li>Hostname</li>
-                    </ul>
-                    <p>
-                        Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of the
-                        identifier (e.g. filter by the initial 3 bytes of a MAC address that denotes OUI, a unique
-                        identifier of the vendor, effectively showing all devices produced by the same vendor); or
-                        identifier type (e.g. <b>hw-address</b> to show all reservations made by a MAC address).
-                    </p>
-                    <p>
-                        Hosts can be also filtered by a full or partial IP address. For example, all reservations in a
-                        192.0.2.0/24 subnet can found by entering
-                        <b>192.0.2</b> as the filter text.
-                    </p>
-                    <p>
-                        Global hosts, i.e. the hosts valid for all subnets, can be filtered out by typing the expression
-                        <b>is:global</b>. Typing <b>not:global</b> will cause all other hosts to be returned, i.e. those
-                        that are associated with certain subnets.
-                    </p>
-                    <p>
-                        Hosts with inconsistent DHCP configurations can be filtered by typing <b>is:conflict</b>. It
-                        returns the hosts whose configurations are repeated in the configuration file and host database
-                        with some differences. Conversely, to display all hosts lacking the configuration conflicts type
-                        <b>not:conflict</b>.
-                    </p>
-                    <p>
-                        In addition, hosts can be filtered by an explicitly selected field using the expression:
-                        <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for
-                        explicit filtering are:
-                    </p>
-                    <ul>
-                        <li class="monospace">appId</li>
-                        <li><span class="monospace">subnetId</span> - the subnet ID used by Stork.</li>
-                        <li>
-                            <span class="monospace">keaSubnetId</span> - the subnet ID assigned to the subnet in the Kea
-                            configuration.
-                        </li>
-                    </ul>
-                    <p>
-                        To filter the hosts by multiple fields, separate them with a space character (e.g.,
-                        <b>appId:2 subnetId:3</b>).
-                    </p>
-                </app-help-tip>
-            </div>
             <div *ngIf="filterTextFormatErrors?.length > 0">
                 <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
             </div>
@@ -157,6 +91,7 @@
             (onLazyLoad)="loadHosts($event)"
             [lazyLoadOnInit]="false"
             (onStateRestore)="stateRestored($event, hostsTable)"
+            (onStateSave)="stateSaved(hostsTable)"
             [totalRecords]="totalHosts"
             [rowsPerPageOptions]="[10, 30, 100]"
             [showCurrentPageReport]="true"
@@ -165,6 +100,119 @@
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
             styleClass="alternate-list"
         >
+            <ng-template pTemplate="caption">
+                <div class="flex">
+                    <button
+                        pButton
+                        label="Clear"
+                        class="p-button-outlined"
+                        icon="pi pi-filter-slash"
+                        (click)="clearFilters(hostsTable)"
+                    ></button>
+                    <div class="flex align-items-center ml-auto">
+                        Subnet Id
+                        <p-columnFilter
+                            type="numeric"
+                            field="subnetId"
+                            class="ml-1"
+                            matchMode="equals"
+                            [showMenu]="false"
+                        ></p-columnFilter>
+                    </div>
+                    <div class="flex align-items-center ml-2">
+                        Kea Subnet Id
+                        <p-columnFilter
+                            type="numeric"
+                            field="keaSubnetId"
+                            class="ml-1"
+                            matchMode="equals"
+                            [showMenu]="false"
+                        ></p-columnFilter>
+                    </div>
+                    <div class="flex align-items-center ml-2">
+                        Global
+                        <p-columnFilter
+                            type="boolean"
+                            field="isGlobal"
+                            matchMode="equals"
+                            class="ml-1"
+                        ></p-columnFilter>
+                    </div>
+                    <div class="flex align-items-center ml-2">
+                        Conflict
+                        <p-columnFilter
+                            type="boolean"
+                            field="conflict"
+                            matchMode="equals"
+                            class="ml-1"
+                        ></p-columnFilter>
+                    </div>
+
+                    <span class="p-input-icon-left ml-2">
+                        <i class="pi pi-search"></i>
+                        <input
+                            pInputText
+                            type="text"
+                            (input)="hostsTable.filter($event.target.value, 'text', 'contains')"
+                            [value]="hostsTable.filters.text?.[0]?.value"
+                            placeholder="Search IP or identifier"
+                        />
+                    </span>
+                    <app-help-tip title="filtering" id="filtering-help-button">
+                        <p>
+                            Hosts in the table below can be filtered by entering a text in the search box; the table
+                            shows all hosts matching the filter text. Currently supported fields for such filtering are:
+                        </p>
+                        <ul>
+                            <li>Identifier</li>
+                            <li>Identifier Type</li>
+                            <li>Address</li>
+                            <li>Hostname</li>
+                        </ul>
+                        <p>
+                            Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of
+                            the identifier (e.g. filter by the initial 3 bytes of a MAC address that denotes OUI, a
+                            unique identifier of the vendor, effectively showing all devices produced by the same
+                            vendor); or identifier type (e.g. <b>hw-address</b> to show all reservations made by a MAC
+                            address).
+                        </p>
+                        <p>
+                            Hosts can be also filtered by a full or partial IP address. For example, all reservations in
+                            a 192.0.2.0/24 subnet can found by entering
+                            <b>192.0.2</b> as the filter text.
+                        </p>
+                        <p>
+                            Global hosts, i.e. the hosts valid for all subnets, can be filtered out by typing the
+                            expression
+                            <b>is:global</b>. Typing <b>not:global</b> will cause all other hosts to be returned, i.e.
+                            those that are associated with certain subnets.
+                        </p>
+                        <p>
+                            Hosts with inconsistent DHCP configurations can be filtered by typing <b>is:conflict</b>. It
+                            returns the hosts whose configurations are repeated in the configuration file and host
+                            database with some differences. Conversely, to display all hosts lacking the configuration
+                            conflicts type <b>not:conflict</b>.
+                        </p>
+                        <p>
+                            In addition, hosts can be filtered by an explicitly selected field using the expression:
+                            <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for
+                            explicit filtering are:
+                        </p>
+                        <ul>
+                            <li class="monospace">appId</li>
+                            <li><span class="monospace">subnetId</span> - the subnet ID used by Stork.</li>
+                            <li>
+                                <span class="monospace">keaSubnetId</span> - the subnet ID assigned to the subnet in the
+                                Kea configuration.
+                            </li>
+                        </ul>
+                        <p>
+                            To filter the hosts by multiple fields, separate them with a space character (e.g.,
+                            <b>appId:2 subnetId:3</b>).
+                        </p>
+                    </app-help-tip>
+                </div>
+            </ng-template>
             <ng-template pTemplate="header">
                 <tr>
                     <th style="width: 28%">DHCP Identifiers</th>
