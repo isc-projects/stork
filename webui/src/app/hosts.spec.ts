@@ -239,7 +239,7 @@ describe('hosts', () => {
         expect(hasDifferentLocalHostBootFields(localHosts)).toBeTrue()
     })
 
-    it('detects differences for IP reservations', () => {
+    it('detects differences between IP reservations', () => {
         const localHosts: Partial<LocalHost>[] = [
             {
                 ipReservations: [
@@ -267,7 +267,7 @@ describe('hosts', () => {
         expect(hasDifferentLocalHostIPReservations(localHosts as LocalHost[])).toBeTrue()
     })
 
-    it('detects differences for hostnames', () => {
+    it('detects differences between hostnames', () => {
         const localHosts: Partial<LocalHost>[] = [
             {
                 hostname: 'foo',
