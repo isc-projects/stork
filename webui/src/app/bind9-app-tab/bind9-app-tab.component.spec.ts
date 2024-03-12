@@ -97,7 +97,7 @@ describe('Bind9AppTabComponent', () => {
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         serverData = fixture.debugElement.injector.get(ServerDataService)
         const appTab = new AppTab()
-        component.refreshedAppTab = new BehaviorSubject(appTab)
+        component.refreshedAppTab = of(appTab)
         component.appTab = appTab
         fixture.detectChanges()
     })
