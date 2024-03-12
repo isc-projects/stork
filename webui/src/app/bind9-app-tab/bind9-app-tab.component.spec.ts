@@ -8,7 +8,7 @@ import { MessageService } from 'primeng/api'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { MockLocationStrategy } from '@angular/common/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { BehaviorSubject, of, throwError } from 'rxjs'
+import { of, throwError } from 'rxjs'
 
 import { ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
