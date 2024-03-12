@@ -1064,6 +1064,15 @@ file PYTEST => [PIP] do
 end
 add_hash_guard(PYTEST, pytests_requirements_file)
 
+PROTOC_GEN_PYTHON_GRPC = File.join(python_tools_dir, "bin", "protoc-gen-python_grpc")
+file PROTOC_GEN_PYTHON_GRPC => [PYTEST] do
+    sh "touch", "-c", PROTOC_GEN_PYTHON_GRPC
+    if !File.file?(PROTOC_GEN_PYTHON_GRPC)
+        # This plugin doesn't support version printing.
+        fail
+    end
+end
+
 PIP_COMPILE = File.join(python_tools_dir, "bin", "pip-compile")
 file PIP_COMPILE => [PIP] do
     sh PIP, "install", "pip-tools==#{pip_tools_ver}"

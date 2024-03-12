@@ -6,14 +6,28 @@
 #
 annotated-types==0.7.0
     # via pydantic
+asyncio==3.4.3
+    # via -r rakelib/init_deps/pytest.in
 exceptiongroup==1.2.1
     # via pytest
+grpclib==0.4.7
+    # via -r rakelib/init_deps/pytest.in
+h2==4.1.0
+    # via grpclib
+hpack==4.0.0
+    # via h2
+hyperframe==6.0.1
+    # via h2
 iniconfig==2.0.0
     # via pytest
+multidict==6.0.5
+    # via grpclib
 packaging==24.0
     # via pytest
 pluggy==1.5.0
     # via pytest
+protobuf==4.25.3
+    # via -r rakelib/init_deps/pytest.in
 pydantic==2.7.2
     # via -r rakelib/init_deps/pytest.in
 pydantic-core==2.18.3

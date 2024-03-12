@@ -98,6 +98,7 @@ services:
   agent-kea:
     extends: agent-kea-base
     ports:
+      - "42888:8080"
       - "42547:9547"
     networks:
       storknet:
@@ -256,6 +257,7 @@ services:
     extends: agent-kea
     hostname: agent-kea-ha2
     ports: !override
+      - 8080
       - "42548:9547"
     environment:
       STORK_AGENT_HOST: 172.42.42.101

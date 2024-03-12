@@ -4,3 +4,6 @@ pyyaml
 python-dateutil
 pydantic
 urllib3
+protobuf
+grpclib
+asyncio

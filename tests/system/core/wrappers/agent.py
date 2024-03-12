@@ -1,3 +1,4 @@
+import os.path
 import urllib3
 
 from core.compose import DockerCompose
@@ -9,6 +10,13 @@ from core.prometheus_parser import text_fd_to_metric_families
 
 class Agent(ComposeServiceWrapper):
     """A wrapper for the Stork Agent docker-compose service."""
+
+    _cert_paths = [
+        "/var/lib/stork-agent/certs/key.pem",
+        "/var/lib/stork-agent/certs/cert.pem",
+        "/var/lib/stork-agent/certs/ca.pem",
+        "/var/lib/stork-agent/tokens/agent-token.txt",
+    ]
 
     prometheus_exporter_port = 0  # Unknown port
 
@@ -39,6 +47,13 @@ class Agent(ComposeServiceWrapper):
         url = f"http://{mapped[0]}:{mapped[1]}/metrics"
         return url
 
+    @memoize
+    def get_stork_control_endpoint(self):
+        """Returns the host and port of the stork-agent control endpoint."""
+        internal_port = 8080
+        mapped = self._compose.port(self._service_name, internal_port)
+        return mapped
+
     @property
     def server(self):
         """Returns a Server wrapper where this agent is registered. If the
@@ -47,18 +62,21 @@ class Agent(ComposeServiceWrapper):
 
     def hash_cert_files(self):
         """Calculates the hashes of the TLS credentials used by the agent."""
-        cert_paths = [
-            "/var/lib/stork-agent/certs/key.pem",
-            "/var/lib/stork-agent/certs/cert.pem",
-            "/var/lib/stork-agent/certs/ca.pem",
-            "/var/lib/stork-agent/tokens/agent-token.txt",
-        ]
-
         hashes = {}
-        for cert_path in cert_paths:
+        for cert_path in Agent._cert_paths:
             hash_ = self._hash_file(cert_path)
             hashes[cert_path] = hash_
         return hashes
+
+    def download_cert_files(self, target_dir: str):
+        """Downloads the TLS credentials used by the agent to the host."""
+        downloaded = {}
+        for cert_path in Agent._cert_paths:
+            filename = os.path.basename(cert_path)
+            target = os.path.join(target_dir, filename)
+            self._download_file(cert_path, target)
+            downloaded[os.path.splitext(filename)[0]] = target
+        return downloaded
 
     def read_prometheus_metrics(self):
         """

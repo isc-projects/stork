@@ -5,5 +5,6 @@ RUN apk add --no-cache \
     python3~3.11 \
     openssl~3.1 \
     ruby-rake~13 \
-    nodejs~18.17 \
-    npm~9
+    nodejs~20.11 \
+    npm~10 \
+    protoc~24.4

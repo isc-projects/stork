@@ -144,7 +144,7 @@ desc 'Run system tests
     BIND9_VERSION - use specific BIND9 version - optional, format: MAJOR.MINOR
     POSTGRES_VERSION - use specific Postgres database version - optional
     EXIT_FIRST - exit on the first error - optional, default: false'
-task :systemtest => [PYTEST, DOCKER_COMPOSE, OPEN_API_GENERATOR_PYTHON_DIR, *volume_files, "systemtest:setup_version_envvars"] do
+task :systemtest => [PYTEST, DOCKER_COMPOSE, OPEN_API_GENERATOR_PYTHON_DIR, *GRPC_PYTHON_API_FILES, *volume_files, "systemtest:setup_version_envvars"] do
     opts = []
 
     if !ENV["TEST"].nil?
@@ -241,7 +241,7 @@ namespace :systemtest do
     end
 
     desc 'List the test cases'
-    task :list => [PYTEST, OPEN_API_GENERATOR_PYTHON_DIR] do
+    task :list => [PYTEST, OPEN_API_GENERATOR_PYTHON_DIR, *OPEN_API_GENERATOR_PYTHON_DIR] do
         Dir.chdir(system_tests_dir) do
             sh PYTEST, "--collect-only"
         end
@@ -366,6 +366,9 @@ namespace :gen do
 
         desc 'Generate Swagger API files'
         task :swagger => [OPEN_API_GENERATOR_PYTHON_DIR]
+
+        desc 'Generate GRPC API files'
+        task :grpc => GRPC_PYTHON_API_FILES
     end
 end
 

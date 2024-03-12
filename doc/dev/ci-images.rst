@@ -148,10 +148,17 @@ The image names are the file names of their Dockerfiles.
 
 **Tag: 4**
 
-    Introduced in the #1353 ticket to provide new Alpine 3.18 image,
-    which includes updated Go 1.22.2 package.
+    - ``compose.Dockerfile``:
+
+        Introduced in #1328 ticket to add the missing ``protoc`` dependency.
+
+        - Added: protoc 24
+        - Update: NodeJS 20 and NPM 10
 
     - ``alpine.Dockerfile``:
+
+        Introduced in the #1353 ticket to provide new Alpine 3.18 image,
+        which includes updated Go 1.22.2 package.
 
         - Base: ``golang:1.22-alpine3.18``
         - Frozen all dependency versions

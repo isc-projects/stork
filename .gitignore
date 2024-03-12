@@ -56,6 +56,11 @@ docker/config/agent-kea-many-subnets/kea-dhcp4.conf
 /dist
 **/.bundle/config
 
+# Protoc generated files
+/backend/api/stork/backend/api/agent/protocol/agent.pb.go
+/tests/system/agent_pb2.py
+/tests/system/agent_grpc.py
+
 # tests venv and pycache
 /tests/system/venv/
 /tests/system/test-results/
@@ -63,7 +68,6 @@ docker/config/agent-kea-many-subnets/kea-dhcp4.conf
 /isc-stork-*.deb
 /isc-stork-*.rpm
 *.code-workspace
-/backend/api/stork/backend/api/agent/protocol/agent.pb.go
 root/
 tests/system/.env/
 test-results/

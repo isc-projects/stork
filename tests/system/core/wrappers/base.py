@@ -46,6 +46,10 @@ class ComposeServiceWrapper:
         _, stdout, _ = self._compose.exec(self._service_name, cmd)
         return stdout.split()[0]
 
+    def _download_file(self, source: str, target: str):
+        """Downloads a file from the container to the host."""
+        self._compose.copy_from_service(self._service_name, source, target)
+
     def is_operational(self):
         """Checks if the wrapped service is operational."""
         return self._compose.is_operational(self._service_name)

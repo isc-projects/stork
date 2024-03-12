@@ -453,6 +453,31 @@ class DockerCompose:
             mapped_host = self._default_mapped_hostname
         return mapped_host, mapped_port
 
+    def copy_from_service(self, service_name, source, destination):
+        """
+        Copies a file or directory from a service container to the host.
+
+        Parameters
+        ----------
+        service_name: str
+            Name of the docker compose service
+        source: str
+            The path to the file or directory in the container
+        destination: str
+            The path to the destination on the host
+        """
+        if not os.path.isabs(source):
+            raise ValueError("source must be an absolute path")
+        if not os.path.isabs(destination):
+            raise ValueError("destination must be an absolute path")
+
+        cp_cmd = self.docker_compose_command() + [
+            "cp",
+            f"{service_name}:{source}",
+            destination,
+        ]
+        self._call_command(cmd=cp_cmd)
+
     def get_service_ip_address(self, service_name, network_name, family):
         """
         Returns the assigned IP address for one of the services.
