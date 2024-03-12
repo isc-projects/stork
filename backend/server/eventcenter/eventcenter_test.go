@@ -4,18 +4,11 @@ import (
 	"testing"
 	"time"
 
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 )
-
-type testError struct {
-	text string
-}
-
-func (err testError) Error() string {
-	return err.text
-}
 
 // Test that the event with a machine entry is created property.
 func TestCreateEventMachine(t *testing.T) {
@@ -351,8 +344,7 @@ func TestCreateEventStringDetails(t *testing.T) {
 
 // Test that event details are set from an error.
 func TestCreateEventErrorDetails(t *testing.T) {
-	err := testError{"an error"}
-	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", err)
+	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", pkgerrors.New("an error"))
 
 	require.EqualValues(t, "foo bar baz", ev.Text)
 	require.EqualValues(t, "an error", ev.Details)
@@ -360,7 +352,7 @@ func TestCreateEventErrorDetails(t *testing.T) {
 
 // Test that event details are set from an array of errors.
 func TestCreateEventErrorArrayDetails(t *testing.T) {
-	errs := []error{testError{"first error"}, testError{"second error"}}
+	errs := []error{pkgerrors.New("first error"), pkgerrors.New("second error")}
 	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", errs)
 
 	require.EqualValues(t, "foo bar baz", ev.Text)
