@@ -152,17 +152,15 @@ func addIPReservations(tx *pg.Tx, host *Host) error {
 	for _, lh := range host.LocalHosts {
 		for i, r := range lh.IPReservations {
 			r.LocalHostID = lh.ID
-			reservation := r
-			reservation.LocalHostID = r.LocalHostID
-			_, err := tx.Model(&reservation).
+			_, err := tx.Model(r).
 				OnConflict("DO NOTHING").
 				Insert()
 			if err != nil {
 				err = pkgerrors.Wrapf(err, "problem adding IP reservation %s for host with ID %d",
-					reservation.Address, host.ID)
+					r.Address, host.ID)
 				return err
 			}
-			lh.IPReservations[i] = reservation
+			lh.IPReservations[i] = r
 		}
 	}
 	return nil
