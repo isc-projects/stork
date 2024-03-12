@@ -548,7 +548,8 @@ func TestForwardRndcCommand(t *testing.T) {
 	require.Empty(t, agent.Stats.AgentCommErrors)
 
 	bind9CommErrors := agent.Stats.Bind9CommErrors
-	require.Empty(t, bind9CommErrors)
+	require.Zero(t, bind9CommErrors[0].RNDC)
+	require.Zero(t, bind9CommErrors[0].Stats)
 }
 
 // Test the gRPC call which fetches the tail of the specified text file.
