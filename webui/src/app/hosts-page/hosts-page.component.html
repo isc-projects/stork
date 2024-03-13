@@ -101,7 +101,7 @@
             styleClass="alternate-list"
         >
             <ng-template pTemplate="caption">
-                <div class="flex mt-3">
+                <div class="flex flex-wrap gap-3 row-gap-5 mt-3">
                     <button
                         pButton
                         label="Clear"
@@ -109,7 +109,8 @@
                         icon="pi pi-filter-slash"
                         (click)="clearFilters(hostsTable)"
                     ></button>
-                    <div class="flex align-items-center ml-auto">
+                    <div class="flex-auto"></div>
+                    <div class="flex-initial align-items-center">
                         <span class="p-float-label">
                             <p-inputNumber
                                 inputId="app-id"
@@ -122,7 +123,7 @@
                             <label for="app-id">Kea App Id</label>
                         </span>
                     </div>
-                    <div class="flex align-items-center ml-2">
+                    <div class="flex-initial align-items-center">
                         <span class="p-float-label">
                             <p-inputNumber
                                 inputId="subnet-id"
@@ -134,7 +135,7 @@
                             <label for="subnet-id">Subnet Id</label>
                         </span>
                     </div>
-                    <div class="flex align-items-center ml-2">
+                    <div class="flex-initial align-items-center">
                         <span class="p-float-label">
                             <p-inputNumber
                                 inputId="kea-subnet-id"
@@ -146,7 +147,7 @@
                             <label for="kea-subnet-id">Kea Subnet Id</label>
                         </span>
                     </div>
-                    <div class="flex align-items-center ml-2">
+                    <div class="flex align-items-center">
                         Global
                         <p-columnFilter
                             type="boolean"
@@ -155,7 +156,7 @@
                             class="ml-1"
                         ></p-columnFilter>
                     </div>
-                    <div class="flex align-items-center ml-2">
+                    <div class="flex align-items-center">
                         Conflict
                         <p-columnFilter
                             type="boolean"
@@ -165,7 +166,7 @@
                         ></p-columnFilter>
                     </div>
 
-                    <span class="p-input-icon-left ml-2">
+                    <span class="p-input-icon-left">
                         <i class="pi pi-search"></i>
                         <input
                             pInputText
