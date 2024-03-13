@@ -325,6 +325,8 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         // Update the filter representation when the filtering parameters change.
         this.subscriptions.add(
             this.hostFilter$.subscribe((f) => {
+                this.filterTextFormatErrors = this.validateFilter(f.filter)
+
                 if (this.hostsTable) {
                     if (
                         f.source == 'query' &&
@@ -451,60 +453,6 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Updates the filter input content based on the provided filter.
-     *
-     * The numeric and booleans parameters are taken into account. The boolean
-     * ones are translated to is:foo or not:foo filtering text.
-     */
-    private updateFilterText(filter: QueryParamsFilter) {
-        const numericKeys = getNumericQueryParamsFilterKeys()
-        const booleanKeys = getBooleanQueryParamsFilterKeys()
-        const parameters = []
-
-        for (let key of numericKeys) {
-            if (filter.hasOwnProperty(key)) {
-                parameters.push(` ${key}:${filter[key]}`)
-            }
-        }
-
-        for (let key of booleanKeys) {
-            if (filter.hasOwnProperty(key)) {
-                if (filter[key] === true) {
-                    parameters.push(`is:${key}`)
-                } else if (filter[key] === false) {
-                    parameters.push(`not:${key}`)
-                } else {
-                    parameters.push(`:${filter[key]}`)
-                }
-            }
-        }
-
-        if (filter.text) {
-            parameters.push(filter.text)
-        }
-        this.filterText = parameters.map((p) => p.trim()).join(' ')
-    }
-
-    /**
-     * Update the URL query parameters based on the provided filter.
-     *
-     * This function uses the Location provider instead Router or
-     * ActivatedRoute to avoid re-rendering the component.
-     */
-    private updateQueryParameters(filter: QueryParamsFilter) {
-        const params = []
-
-        for (let key of Object.keys(filter)) {
-            if (filter[key] != null) {
-                params.push(`${encodeURIComponent(key)}=${encodeURIComponent(filter[key])}`)
-            }
-        }
-
-        const baseUrl = this.router.url.split('?')[0]
-        this.location.go(baseUrl, params.join('&'))
-    }
-
-    /**
      * Updates the filter structure using URL query parameters.
      *
      * This update is triggered when the URL changes.
@@ -515,19 +463,14 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         const booleanKeys = getBooleanQueryParamsFilterKeys()
 
         const filter: QueryParamsFilter = {}
-        const text = params.get('text')
-        if (text) {
-            filter.text = text
-        }
+        filter.text = params.get('text')
 
         for (let key of numericKeys) {
             // Convert the value to a number. It is NaN if the parameter
             // doesn't exist or it is malformed.
             if (params.has(key)) {
                 const value = parseInt(params.get(key))
-                if (!isNaN(value)) {
-                    filter[key as any] = value
-                }
+                filter[key as any] = isNaN(value) ? null : value
             }
         }
 
@@ -535,25 +478,14 @@ export class HostsPageComponent implements OnInit, OnDestroy {
 
         for (let key of booleanKeys) {
             if (params.has(key)) {
-                const value = parseBoolean(params.get(key))
-                if (value) {
-                    filter[key as any] = value
-                }
+                filter[key as any] = parseBoolean(params.get(key))
             }
         }
 
-        if (Object.keys(filter).length === 0) {
-            // No valid filters were parsed. Let's try to restore filtering from saved state.
-            this.hostFilter$.next({
-                source: 'state',
-                filter: filter,
-            })
-        } else {
-            this.hostFilter$.next({
-                source: 'query',
-                filter: filter,
-            })
-        }
+        this.hostFilter$.next({
+            source: 'query',
+            filter: filter,
+        })
     }
 
     /**
@@ -570,13 +502,13 @@ export class HostsPageComponent implements OnInit, OnDestroy {
 
         for (let key of numericKeys) {
             if (filter.hasOwnProperty(key) && filter[key] == null) {
-                errors.push(`Please specify ${key} as a number (e.g., ${key}:2).`)
+                errors.push(`Please specify ${key} as a number (e.g., ${key}=2).`)
             }
         }
 
         for (let key of booleanKeys) {
             if (filter.hasOwnProperty(key) && filter[key] == null) {
-                errors.push(`Please specify ${key} as a boolean (e.g., is:${key} or not:${key}).`)
+                errors.push(`Please specify ${key} as a boolean (e.g., ${key}=true or ${key}=false).`)
             }
         }
 
