@@ -854,39 +854,31 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
 
 	agentErrors := int64(0)
-	var agentStats *agentcomm.AgentStats
+	var agentStats *agentcomm.AgentCommStats
 	if dbApp.Machine != nil {
 		agentStats = r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
 		if agentStats != nil {
-			for _, errors := range agentStats.AgentCommErrors {
-				agentErrors += errors
-			}
+			agentStats.GetMutex().RLock()
+			agentErrors = agentStats.GetTotalErrorCount()
+			agentStats.GetMutex().RUnlock()
 		}
 	}
 
 	switch {
 	case isKeaApp:
-		var keaStats *agentcomm.KeaAppCommErrors
+		var keaStats *agentcomm.KeaAppCommErrorStats
 		if agentStats != nil {
-			if s, ok := agentStats.KeaCommErrors[app.ID]; ok {
-				keaStats = &s
-			}
+			keaStats = agentStats.GetKeaCommErrorStats(app.ID)
 		}
 		keaDaemons := []*models.KeaDaemon{}
 		for _, d := range dbApp.Daemons {
 			dmn := keaDaemonToRestAPI(d)
 			dmn.AgentCommErrors = agentErrors
 			if keaStats != nil {
-				dmn.CaCommErrors = keaStats.ControlAgent
-				switch d.Name {
-				case dbmodel.DaemonNameDHCPv4:
-					dmn.DaemonCommErrors = keaStats.DHCPv4
-				case dbmodel.DaemonNameDHCPv6:
-					dmn.DaemonCommErrors = keaStats.DHCPv6
-				case dbmodel.DaemonNameD2:
-					dmn.DaemonCommErrors = keaStats.D2
-				default:
-				}
+				agentStats.GetMutex().RLock()
+				dmn.CaCommErrors = keaStats.GetErrorCount(agentcomm.KeaDaemonCA)
+				dmn.DaemonCommErrors = keaStats.GetErrorCount(agentcomm.KeaDaemonTypeFromName(d.Name))
+				agentStats.GetMutex().RUnlock()
 			}
 			keaDaemons = append(keaDaemons, dmn)
 		}
@@ -953,9 +945,11 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 
 		if agentStats != nil {
-			bind9Errors := agentStats.Bind9CommErrors[app.ID]
-			bind9Daemon.RndcCommErrors = bind9Errors.RNDC
-			bind9Daemon.StatsCommErrors = bind9Errors.Stats
+			agentStats.GetMutex().RLock()
+			bind9Errors := agentStats.GetBind9CommErrorStats(app.ID)
+			bind9Daemon.RndcCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelRNDC)
+			bind9Daemon.StatsCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelStats)
+			agentStats.GetMutex().RUnlock()
 		}
 		app.Details = struct {
 			models.AppKea
@@ -1500,20 +1494,10 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			daemonErrors := int64(0)
 			agentStats := r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
 			if agentStats != nil {
-				keaErrors := agentStats.KeaCommErrors[dbApp.ID]
-				for _, errors := range agentStats.AgentCommErrors {
-					agentErrors += errors
-				}
-				caErrors = keaErrors.ControlAgent
-				switch dbDaemon.Name {
-				case dbmodel.DaemonNameDHCPv4:
-					daemonErrors = keaErrors.DHCPv4
-				case dbmodel.DaemonNameDHCPv6:
-					daemonErrors = keaErrors.DHCPv6
-				case dbmodel.DaemonNameD2:
-					daemonErrors = keaErrors.D2
-				default:
-				}
+				agentErrors = agentStats.GetTotalErrorCount()
+				keaErrors := agentStats.GetKeaCommErrorStats(dbApp.ID)
+				caErrors = keaErrors.GetErrorCount(agentcomm.KeaDaemonCA)
+				daemonErrors = keaErrors.GetErrorCount(agentcomm.KeaDaemonTypeFromName(dbDaemon.Name))
 			}
 			daemon := &models.DhcpDaemon{
 				MachineID:        dbApp.MachineID,

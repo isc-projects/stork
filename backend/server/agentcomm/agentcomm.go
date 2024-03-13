@@ -4,7 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
+	"net"
+	"strconv"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -23,36 +24,13 @@ import (
 // Settings specific to communication with Agents.
 type AgentsSettings struct{}
 
-// Holds runtime communication statistics with Kea daemons.
-type KeaAppCommErrors struct {
-	DHCPv4       int64
-	DHCPv6       int64
-	D2           int64
-	ControlAgent int64
-}
-
-// Holds runtime communication statistics with Bind9 daemon.
-type Bind9AppCommErrors struct {
-	RNDC  int64
-	Stats int64
-}
-
-// Holds runtime statistics of communication with a given agent and
-// with the apps behind this agent.
-type AgentStats struct {
-	AgentCommErrors map[string]int64
-	KeaCommErrors   map[int64]KeaAppCommErrors
-	Bind9CommErrors map[int64]Bind9AppCommErrors
-	mutex           *sync.Mutex
-}
-
 // Runtime information about the agent, e.g. connection, communication
 // statistics.
 type Agent struct {
 	Address  string
 	Client   agentapi.AgentClient
 	GrpcConn *grpc.ClientConn
-	Stats    AgentStats
+	Stats    *AgentCommStats
 }
 
 // Prepare TLS credentials with configured certs and verification options.
@@ -136,7 +114,7 @@ func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []
 type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
-	GetConnectedAgentStats(address string, port int64) *AgentStats
+	GetConnectedAgentStats(address string, port int64) *AgentCommStats
 	Ping(ctx context.Context, machine dbmodel.MachineTag) error
 	GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error)
 	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
@@ -156,6 +134,7 @@ type connectedAgentsData struct {
 	serverCertPEM []byte
 	serverKeyPEM  []byte
 	caCertPEM     []byte
+	mutex         sync.RWMutex
 }
 
 // Create new ConnectedAgents objects.
@@ -170,6 +149,7 @@ func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventC
 		caCertPEM:     caCertPEM,
 		serverCertPEM: serverCertPEM,
 		serverKeyPEM:  serverKeyPEM,
+		mutex:         sync.RWMutex{},
 	}
 
 	agents.Wg.Add(1)
@@ -198,24 +178,21 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	if ok {
 		return agent, nil
 	}
-
 	// Agent not found so allocate agent and prepare connection
 	agent = &Agent{
 		Address: address,
-		Stats: AgentStats{
-			AgentCommErrors: make(map[string]int64),
-			KeaCommErrors:   make(map[int64]KeaAppCommErrors),
-			Bind9CommErrors: make(map[int64]Bind9AppCommErrors),
-			mutex:           &sync.Mutex{},
-		},
+		Stats:   NewAgentStats(),
 	}
+	// Avoid a race with GetConnectedAgentStats().
+	agents.mutex.Lock()
+	agents.AgentsMap[address] = agent
+	agents.mutex.Unlock()
+
 	err := agent.MakeGrpcConnection(agents.caCertPEM, agents.serverCertPEM, agents.serverKeyPEM)
 	if err != nil {
 		return nil, err
 	}
 
-	// Store it in Agents map
-	agents.AgentsMap[address] = agent
 	log.WithFields(log.Fields{
 		"address": address,
 	}).Info("Connecting to new agent")
@@ -226,12 +203,15 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 // Returns statistics for the connected agent. The statistics include number
 // of errors to communicate with the agent and the number of errors to
 // communicate with the apps behind the agent.
-func (agents *connectedAgentsData) GetConnectedAgentStats(address string, port int64) *AgentStats {
+func (agents *connectedAgentsData) GetConnectedAgentStats(address string, port int64) *AgentCommStats {
 	if port != 0 {
-		address = fmt.Sprintf("%s:%d", address, port)
+		address = net.JoinHostPort(address, strconv.FormatInt(port, 10))
 	}
+	// Avoid a race with GetConnectedAgent().
+	agents.mutex.RLock()
+	defer agents.mutex.RUnlock()
 	if agent, ok := agents.AgentsMap[address]; ok {
-		return &agent.Stats
+		return agent.Stats
 	}
 	return nil
 }

@@ -1100,22 +1100,13 @@ func TestRestGetApps(t *testing.T) {
 	_, err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
-	mock.EXPECT().GetConnectedAgentStats(gomock.Any(), gomock.Any()).
-		Return(&agentcomm.AgentStats{
-			AgentCommErrors: map[string]int64{"foo": 1},
-			KeaCommErrors: map[int64]agentcomm.KeaAppCommErrors{
-				s1.ID: {
-					ControlAgent: 2,
-					DHCPv4:       5,
-				},
-			},
-			Bind9CommErrors: map[int64]agentcomm.Bind9AppCommErrors{
-				s2.ID: {
-					RNDC:  2,
-					Stats: 3,
-				},
-			},
-		}).AnyTimes()
+	stats := agentcomm.NewAgentStats()
+	stats.IncreaseErrorCount("foo")
+	stats.GetKeaCommErrorStats(s1.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonCA, 2)
+	stats.GetKeaCommErrorStats(s1.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonDHCPv4, 5)
+	stats.GetBind9CommErrorStats(s2.ID).IncreaseErrorCountBy(agentcomm.Bind9ChannelRNDC, 2)
+	stats.GetBind9CommErrorStats(s2.ID).IncreaseErrorCountBy(agentcomm.Bind9ChannelStats, 3)
+	mock.EXPECT().GetConnectedAgentStats(gomock.Any(), gomock.Any()).Return(stats).AnyTimes()
 
 	// get added apps
 	params = services.GetAppsParams{}
@@ -1322,20 +1313,15 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("current errors", func(t *testing.T) {
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{"foo": 1},
-			})
+		stats1 := agentcomm.NewAgentStats()
+		stats1.IncreaseErrorCount("foo")
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats1)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{"foo": 0},
-			})
+		stats2 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).Return(stats2)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats3 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).Return(stats3)
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
 		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
@@ -1346,25 +1332,15 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 	})
 
 	t.Run("ca errors", func(t *testing.T) {
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-				KeaCommErrors: map[int64]agentcomm.KeaAppCommErrors{
-					id1: {
-						ControlAgent: 10,
-					},
-				},
-			})
+		stats1 := agentcomm.NewAgentStats()
+		stats1.GetKeaCommErrorStats(id1).IncreaseErrorCountBy(agentcomm.KeaDaemonCA, 10)
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats1)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats2 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).Return(stats2)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats3 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).Return(stats3)
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
 		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
@@ -1375,25 +1351,15 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 	})
 
 	t.Run("kea daemon errors", func(t *testing.T) {
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-				KeaCommErrors: map[int64]agentcomm.KeaAppCommErrors{
-					id1: {
-						DHCPv4: 1,
-					},
-				},
-			})
+		stats1 := agentcomm.NewAgentStats()
+		stats1.GetKeaCommErrorStats(id1).IncreaseErrorCountBy(agentcomm.KeaDaemonDHCPv4, 1)
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats1)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats2 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).Return(stats2)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats3 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).Return(stats3)
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
 		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
@@ -1404,20 +1370,15 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 	})
 
 	t.Run("bind9 current errors", func(t *testing.T) {
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats1 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats1)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats2 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).Return(stats2)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{"foo": 1},
-			})
+		stats3 := agentcomm.NewAgentStats()
+		stats3.IncreaseErrorCount("foo")
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).Return(stats3)
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
 		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
@@ -1428,25 +1389,15 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 	})
 
 	t.Run("rndc errors", func(t *testing.T) {
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats1 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats1)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats2 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).Return(stats2)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-				Bind9CommErrors: map[int64]agentcomm.Bind9AppCommErrors{
-					id3: {
-						RNDC: 10,
-					},
-				},
-			})
+		stats3 := agentcomm.NewAgentStats()
+		stats3.GetBind9CommErrorStats(id3).IncreaseErrorCountBy(agentcomm.Bind9ChannelRNDC, 10)
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).Return(stats3)
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
 		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
@@ -1457,26 +1408,15 @@ func TestGetAppsCommunicationIssues(t *testing.T) {
 	})
 
 	t.Run("stats errors", func(t *testing.T) {
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats1 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats1)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-			})
+		stats2 := agentcomm.NewAgentStats()
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8081)).Return(stats2)
 
-		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).
-			Return(&agentcomm.AgentStats{
-				AgentCommErrors: map[string]int64{},
-				Bind9CommErrors: map[int64]agentcomm.Bind9AppCommErrors{
-					id3: {
-						RNDC:  0,
-						Stats: 10,
-					},
-				},
-			})
+		stats3 := agentcomm.NewAgentStats()
+		stats3.GetBind9CommErrorStats(id3).IncreaseErrorCountBy(agentcomm.Bind9ChannelStats, 10)
+		mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8082)).Return(stats3)
 
 		params := services.GetAppsWithCommunicationIssuesParams{}
 		rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
@@ -1532,10 +1472,9 @@ func TestGetAppsCommunicationIssuesNotMonitored(t *testing.T) {
 	rapi, err := NewRestAPI(&settings, dbSettings, db, mock, fec, fd)
 	require.NoError(t, err)
 
-	mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-		Return(&agentcomm.AgentStats{
-			AgentCommErrors: map[string]int64{"foo": 1},
-		})
+	stats := agentcomm.NewAgentStats()
+	stats.IncreaseErrorCount("foo")
+	mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats)
 
 	params := services.GetAppsWithCommunicationIssuesParams{}
 	rsp := rapi.GetAppsWithCommunicationIssues(ctx, params)
@@ -1962,16 +1901,11 @@ func TestGetDhcpOverview(t *testing.T) {
 
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
-	mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).
-		Return(&agentcomm.AgentStats{
-			AgentCommErrors: map[string]int64{"foo": 1},
-			KeaCommErrors: map[int64]agentcomm.KeaAppCommErrors{
-				app.ID: {
-					ControlAgent: 2,
-					DHCPv4:       5,
-				},
-			},
-		})
+	stats := agentcomm.NewAgentStats()
+	stats.IncreaseErrorCount("foo")
+	stats.GetKeaCommErrorStats(app.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonCA, 2)
+	stats.GetKeaCommErrorStats(app.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonDHCPv4, 5)
+	mock.EXPECT().GetConnectedAgentStats(gomock.Any(), int64(8080)).Return(stats)
 
 	settings := RestAPISettings{}
 	//	fa := agentcommtest.NewFakeAgents(nil, nil)

@@ -108,6 +108,29 @@ func TestPing(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Test an error case for Ping.
+func TestPingError(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	// prepare expectations
+	mockAgentClient.EXPECT().Ping(gomock.Any(), gomock.Any()).
+		Return(nil, pkgerrors.Errorf("ping failed"))
+
+	// call ping
+	ctx := context.Background()
+	err := agents.Ping(ctx, &dbmodel.Machine{
+		Address:   "127.0.0.1",
+		AgentPort: 8080,
+	})
+	require.Error(t, err)
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.EqualValues(t, 1, agent.Stats.GetTotalErrorCount())
+}
+
 // Check if GetState works.
 func TestGetState(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
@@ -137,6 +160,30 @@ func TestGetState(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expVer, state.AgentVersion)
 	require.Equal(t, AppTypeKea, state.Apps[0].Type)
+}
+
+// Test error case for GetState.
+func TestGetStateError(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	// prepare expectations
+	mockAgentClient.EXPECT().
+		GetState(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		Return(nil, pkgerrors.New("get state error"))
+
+	// call get state
+	ctx := context.Background()
+	_, err := agents.GetState(ctx, &dbmodel.Machine{
+		Address:   "127.0.0.1",
+		AgentPort: 8080,
+	})
+	require.Error(t, err)
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.EqualValues(t, 1, agent.Stats.GetTotalErrorCount())
 }
 
 // Test that a command can be successfully forwarded to Kea and the response
@@ -213,14 +260,12 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.Empty(t, agent.Stats.AgentCommErrors)
-
-	keaCommErrors := agent.Stats.KeaCommErrors
-	require.Len(t, keaCommErrors, 1)
-
-	require.Zero(t, keaCommErrors[0].ControlAgent)
-	require.EqualValues(t, 1, keaCommErrors[0].DHCPv4)
-	require.Zero(t, keaCommErrors[0].DHCPv6)
+	require.Zero(t, 0, agent.Stats.GetTotalErrorCount())
+	keaCommErrors := agent.Stats.GetKeaCommErrorStats(0)
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonCA))
+	require.EqualValues(t, 1, keaCommErrors.GetErrorCount(KeaDaemonDHCPv4))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv6))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonD2))
 }
 
 // Test that two commands can be successfully forwarded to Kea and the response
@@ -317,15 +362,12 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-
-	require.Empty(t, agent.Stats.AgentCommErrors)
-
-	keaCommErrors := agent.Stats.KeaCommErrors
-	require.Len(t, keaCommErrors, 1)
-
-	require.Zero(t, keaCommErrors[0].ControlAgent)
-	require.EqualValues(t, 2, keaCommErrors[0].DHCPv4)
-	require.Zero(t, keaCommErrors[0].DHCPv6)
+	require.Zero(t, 0, agent.Stats.GetTotalErrorCount())
+	keaCommErrors := agent.Stats.GetKeaCommErrorStats(0)
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonCA))
+	require.EqualValues(t, 2, keaCommErrors.GetErrorCount(KeaDaemonDHCPv4))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv6))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonD2))
 }
 
 // Test that the error is returned when the response to the forwarded Kea command
@@ -379,15 +421,12 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-
-	require.Empty(t, agent.Stats.AgentCommErrors)
-
-	keaCommErrors := agent.Stats.KeaCommErrors
-	require.Len(t, keaCommErrors, 1)
-
-	require.EqualValues(t, 1, keaCommErrors[0].ControlAgent)
-	require.Zero(t, keaCommErrors[0].DHCPv4)
-	require.Zero(t, keaCommErrors[0].DHCPv6)
+	require.Zero(t, 0, agent.Stats.GetTotalErrorCount())
+	keaCommErrors := agent.Stats.GetKeaCommErrorStats(0)
+	require.EqualValues(t, 1, keaCommErrors.GetErrorCount(KeaDaemonCA))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv4))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv6))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonD2))
 }
 
 // Test that a statistics request can be successfully forwarded to named
@@ -444,12 +483,10 @@ func TestForwardToNamedStats(t *testing.T) {
 	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-
-	require.Empty(t, agent.Stats.AgentCommErrors)
-
-	bind9CommErrors := agent.Stats.Bind9CommErrors
-	require.Zero(t, bind9CommErrors[1].RNDC)
-	require.Zero(t, bind9CommErrors[1].Stats)
+	require.Zero(t, 0, agent.Stats.GetTotalErrorCount())
+	bind9CommErrors := agent.Stats.GetBind9CommErrorStats(1)
+	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelRNDC))
+	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelStats))
 }
 
 // Test that the error is returned when the response to the forwarded
@@ -492,12 +529,10 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
 	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-
-	require.Empty(t, agent.Stats.AgentCommErrors)
-
-	bind9CommErrors := agent.Stats.Bind9CommErrors
-	require.Len(t, bind9CommErrors, 1)
-	require.EqualValues(t, 1, bind9CommErrors[1].Stats)
+	require.Zero(t, 0, agent.Stats.GetTotalErrorCount())
+	bind9CommErrors := agent.Stats.GetBind9CommErrorStats(1)
+	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelRNDC))
+	require.EqualValues(t, 1, bind9CommErrors.GetErrorCount(Bind9ChannelStats))
 }
 
 // Test that a command can be successfully forwarded to rndc and the response
@@ -539,17 +574,14 @@ func TestForwardRndcCommand(t *testing.T) {
 	out, err := agents.ForwardRndcCommand(ctx, dbApp, "test")
 	require.NoError(t, err)
 	require.Equal(t, out.Output, "all good")
-	require.NoError(t, out.Error)
 
 	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-
-	require.Empty(t, agent.Stats.AgentCommErrors)
-
-	bind9CommErrors := agent.Stats.Bind9CommErrors
-	require.Zero(t, bind9CommErrors[0].RNDC)
-	require.Zero(t, bind9CommErrors[0].Stats)
+	require.Zero(t, 0, agent.Stats.GetTotalErrorCount())
+	bind9CommErrors := agent.Stats.GetBind9CommErrorStats(0)
+	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelRNDC))
+	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelStats))
 }
 
 // Test the gRPC call which fetches the tail of the specified text file.
@@ -581,6 +613,29 @@ func TestTailTextFile(t *testing.T) {
 
 	require.Equal(t, "Text returned by", tail[0])
 	require.Equal(t, "mock agent client", tail[1])
+}
+
+// Test the error case for the gRPC call fetching the tail of the
+// specified text file.
+func TestTailTextFileError(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	mockAgentClient.EXPECT().
+		TailTextFile(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		Return(nil, pkgerrors.New("tail error"))
+
+	ctx := context.Background()
+	_, err := agents.TailTextFile(ctx, &dbmodel.Machine{
+		Address:   "127.0.0.1",
+		AgentPort: 8080,
+	}, "/tmp/log.txt", 2)
+	require.Error(t, err)
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.EqualValues(t, 1, agent.Stats.GetTotalErrorCount())
 }
 
 // Check MakeAccessPoint.

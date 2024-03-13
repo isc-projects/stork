@@ -88,11 +88,9 @@ func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error
 }
 
 // Returns fake statistics for the selected connected agent.
-func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentcomm.AgentStats {
-	stats := agentcomm.AgentStats{
-		AgentCommErrors: make(map[string]int64),
-	}
-	return &stats
+func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentcomm.AgentCommStats {
+	stats := agentcomm.NewAgentStats()
+	return stats
 }
 
 // FakeAgents specific implementation of the GetState.
@@ -176,7 +174,6 @@ func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.Cont
 	if fa.mockRndcOutput != "" {
 		output := &agentcomm.RndcOutput{
 			Output: fa.mockRndcOutput,
-			Error:  nil,
 		}
 		return output, nil
 	}
