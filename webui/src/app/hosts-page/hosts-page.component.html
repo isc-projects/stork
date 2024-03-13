@@ -101,7 +101,7 @@
             styleClass="alternate-list"
         >
             <ng-template pTemplate="caption">
-                <div class="flex">
+                <div class="flex mt-3">
                     <button
                         pButton
                         label="Clear"
@@ -110,24 +110,38 @@
                         (click)="clearFilters(hostsTable)"
                     ></button>
                     <div class="flex align-items-center ml-auto">
-                        Subnet Id
-                        <p-columnFilter
-                            type="numeric"
-                            field="subnetId"
-                            class="ml-1"
-                            matchMode="equals"
-                            [showMenu]="false"
-                        ></p-columnFilter>
+                        <span class="p-float-label">
+                            <p-inputNumber
+                                inputId="app-id"
+                                mode="decimal"
+                                (onInput)="hostsTable.filter($event.value, 'appId', 'equals')"
+                                [ngModel]="hostsTable.filters.appId?.[0]?.value"
+                                [disabled]="appId != null"
+                            ></p-inputNumber>
+                            <label for="app-id">Kea App Id</label>
+                        </span>
                     </div>
                     <div class="flex align-items-center ml-2">
-                        Kea Subnet Id
-                        <p-columnFilter
-                            type="numeric"
-                            field="keaSubnetId"
-                            class="ml-1"
-                            matchMode="equals"
-                            [showMenu]="false"
-                        ></p-columnFilter>
+                        <span class="p-float-label">
+                            <p-inputNumber
+                                inputId="subnet-id"
+                                mode="decimal"
+                                (onInput)="hostsTable.filter($event.value, 'subnetId', 'equals')"
+                                [ngModel]="hostsTable.filters.subnetId?.[0]?.value"
+                            ></p-inputNumber>
+                            <label for="subnet-id">Subnet Id</label>
+                        </span>
+                    </div>
+                    <div class="flex align-items-center ml-2">
+                        <span class="p-float-label">
+                            <p-inputNumber
+                                inputId="kea-subnet-id"
+                                mode="decimal"
+                                (onInput)="hostsTable.filter($event.value, 'keaSubnetId', 'equals')"
+                                [ngModel]="hostsTable.filters.keaSubnetId?.[0]?.value"
+                            ></p-inputNumber>
+                            <label for="kea-subnet-id">Kea Subnet Id</label>
+                        </span>
                     </div>
                     <div class="flex align-items-center ml-2">
                         Global
