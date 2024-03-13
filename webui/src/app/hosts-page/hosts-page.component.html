@@ -114,6 +114,7 @@
                             <p-inputNumber
                                 inputId="app-id"
                                 mode="decimal"
+                                [useGrouping]="false"
                                 (onInput)="hostsTable.filter($event.value, 'appId', 'equals')"
                                 [ngModel]="hostsTable.filters.appId?.[0]?.value"
                                 [disabled]="appId != null"
@@ -126,6 +127,7 @@
                             <p-inputNumber
                                 inputId="subnet-id"
                                 mode="decimal"
+                                [useGrouping]="false"
                                 (onInput)="hostsTable.filter($event.value, 'subnetId', 'equals')"
                                 [ngModel]="hostsTable.filters.subnetId?.[0]?.value"
                             ></p-inputNumber>
@@ -137,6 +139,7 @@
                             <p-inputNumber
                                 inputId="kea-subnet-id"
                                 mode="decimal"
+                                [useGrouping]="false"
                                 (onInput)="hostsTable.filter($event.value, 'keaSubnetId', 'equals')"
                                 [ngModel]="hostsTable.filters.keaSubnetId?.[0]?.value"
                             ></p-inputNumber>
@@ -237,6 +240,23 @@
                     <th style="width: 14%">App Name</th>
                 </tr>
             </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="6">
+                        No hosts found.
+                        <span *ngIf="hasFilter(hostsTable)">
+                            Try to clear filtering.
+                            <button
+                                pButton
+                                label="Clear"
+                                class="p-button-outlined"
+                                icon="pi pi-filter-slash"
+                                (click)="clearFilters(hostsTable)"
+                            ></button>
+                        </span>
+                    </td>
+                </tr>
+            </ng-template>
             <ng-template pTemplate="body" let-h>
                 <tr id="host-row-{{ h.id }}">
                     <td>
@@ -309,6 +329,10 @@
                         </div>
                     </td>
                 </tr>
+            </ng-template>
+            <ng-template pTemplate="paginatorright" let-paginatorState>
+                Total: {{ paginatorState.totalRecords > 0 ? paginatorState.totalRecords : '0' }}
+                {{ paginatorState.totalRecords === 1 ? 'host' : 'hosts' }}
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>

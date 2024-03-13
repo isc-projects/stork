@@ -1051,4 +1051,40 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             this.reloadData(table)
         }
     }
+
+    /**
+     * Checks whether given table has any active filters applied.
+     * @param table table which filters are checked
+     */
+    hasFilter(table: Table) {
+        let filtersBlank = true
+        if (table.filters) {
+            for (const [filterKey, filterMetadata] of Object.entries(table.filters)) {
+                if (this.appId != null && filterKey == 'appId') {
+                    // If this is filtered view by appId from queryParams, don't count it as active filter.
+                    continue
+                }
+
+                if (Array.isArray(filterMetadata)) {
+                    for (let filter of filterMetadata) {
+                        if (filter.value) {
+                            filtersBlank = false
+                            break
+                        }
+                    }
+
+                    if (!filtersBlank) {
+                        break
+                    }
+                } else if (filterMetadata) {
+                    if (filterMetadata.value) {
+                        filtersBlank = false
+                        break
+                    }
+                }
+            }
+        }
+
+        return !filtersBlank
+    }
 }
