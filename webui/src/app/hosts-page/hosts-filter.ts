@@ -1,13 +1,13 @@
 /**
  * Specifies the filter parameters for fetching hosts that may be specified
- * in the URL query parameters.
+ * either in the URL query parameters or programmatically.
  */
-export interface QueryParamsFilter {
+export interface HostsFilter {
     text?: string
     appId?: number
     subnetId?: number
     keaSubnetId?: number
-    global?: boolean
+    isGlobal?: boolean
     conflict?: boolean
     migrationError?: boolean
 }
@@ -16,7 +16,7 @@ export interface QueryParamsFilter {
  * Returns the keys of the boolean properties of the QueryParamsFilter.
  * @returns List of keys.
  */
-export function getBooleanQueryParamsFilterKeys(): (keyof QueryParamsFilter)[] {
+export function getBooleanQueryParamsFilterKeys(): (keyof HostsFilter)[] {
     return [] // currently no boolean query params are needed
 }
 
@@ -24,8 +24,8 @@ export function getBooleanQueryParamsFilterKeys(): (keyof QueryParamsFilter)[] {
  * Returns the keys of the boolean filters.
  * @returns List of keys.
  */
-export function getBooleanFilterKeys(): (keyof QueryParamsFilter)[] {
-    return ['global', 'conflict', 'migrationError']
+export function getBooleanFilterKeys(): (keyof HostsFilter)[] {
+    return ['isGlobal', 'conflict', 'migrationError']
 }
 
 /**
@@ -34,7 +34,7 @@ export function getBooleanFilterKeys(): (keyof QueryParamsFilter)[] {
  * e.g. to list of hosts that belong to appId=1.
  * @returns List of keys.
  */
-export function getNumericQueryParamsFilterKeys(): (keyof QueryParamsFilter)[] {
+export function getNumericQueryParamsFilterKeys(): (keyof HostsFilter)[] {
     return ['appId']
 }
 
@@ -42,6 +42,6 @@ export function getNumericQueryParamsFilterKeys(): (keyof QueryParamsFilter)[] {
  * Returns the keys of all the numeric filters.
  * @returns List of keys.
  */
-export function getNumericFilterKeys(): (keyof QueryParamsFilter)[] {
+export function getNumericFilterKeys(): (keyof HostsFilter)[] {
     return ['appId', 'subnetId', 'keaSubnetId']
 }

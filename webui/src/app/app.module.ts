@@ -114,6 +114,7 @@ import { LocaltimePipe } from './pipes/localtime.pipe'
 import { SurroundPipe } from './pipes/surround.pipe'
 import { AccessPointKeyComponent } from './access-point-key/access-point-key.component'
 import { PlaceholderPipe } from './pipes/placeholder.pipe'
+import { PluralizePipe } from './pipes/pluralize.pipe'
 import { SubnetTabComponent } from './subnet-tab/subnet-tab.component'
 import { AddressPoolBarComponent } from './address-pool-bar/address-pool-bar.component'
 import { UtilizationStatsChartComponent } from './utilization-stats-chart/utilization-stats-chart.component'
@@ -208,6 +209,7 @@ export function cfgFactory() {
         ArrayValueSetFormComponent,
         HostDataSourceLabelComponent,
         PriorityErrorsPanelComponent,
+        PluralizePipe,
     ],
     imports: [
         BrowserModule,

@@ -1,17 +1,13 @@
-import {
-    QueryParamsFilter,
-    getBooleanQueryParamsFilterKeys,
-    getNumericQueryParamsFilterKeys,
-} from './query-params-filter'
+import { HostsFilter, getBooleanFilterKeys, getNumericFilterKeys } from './hosts-filter'
 
 describe('QueryParamsFilter', () => {
-    let filter: Required<QueryParamsFilter>
+    let filter: Required<HostsFilter>
 
     beforeEach(() => {
         filter = {
             appId: 0,
             conflict: false,
-            global: false,
+            isGlobal: false,
             keaSubnetId: 0,
             migrationError: false,
             subnetId: 0,
@@ -21,7 +17,7 @@ describe('QueryParamsFilter', () => {
 
     it('should return the boolean keys', () => {
         // Act
-        const keys = getBooleanQueryParamsFilterKeys()
+        const keys = getBooleanFilterKeys()
 
         // Assert
         // Check if all keys refer to boolean values.
@@ -31,14 +27,14 @@ describe('QueryParamsFilter', () => {
         // Check if all boolean keys are listed.
         for (let key of Object.keys(filter)) {
             if (typeof filter[key] === 'boolean') {
-                expect(keys).toContain(key as keyof QueryParamsFilter)
+                expect(keys).toContain(key as keyof HostsFilter)
             }
         }
     })
 
     it('should return the numeric keys', () => {
         // Act
-        const keys = getNumericQueryParamsFilterKeys()
+        const keys = getNumericFilterKeys()
 
         // Assert
         // Check if all keys refer to numeric values.
@@ -48,14 +44,14 @@ describe('QueryParamsFilter', () => {
         // Check if all numeric keys are listed.
         for (let key of Object.keys(filter)) {
             if (typeof filter[key] === 'number') {
-                expect(keys).toContain(key as keyof QueryParamsFilter)
+                expect(keys).toContain(key as keyof HostsFilter)
             }
         }
     })
 
     it('should not have unlisted keys', () => {
         // Act
-        const keys = ['text', ...getNumericQueryParamsFilterKeys(), ...getBooleanQueryParamsFilterKeys()].sort()
+        const keys = ['text', ...getNumericFilterKeys(), ...getBooleanFilterKeys()].sort()
 
         // Assert
         expect(keys).toEqual(Object.keys(filter).sort())

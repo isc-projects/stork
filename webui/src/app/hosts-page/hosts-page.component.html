@@ -24,7 +24,7 @@
             role="menuitem"
             pRipple
             [routerLink]="item.routerLink"
-            [queryParams]="i === 0 ? validHostFilter : null"
+            [queryParams]="i === 0 ? validFilter : null"
             class="p-ripple p-element p-menuitem-link"
         >
             <div style="display: flex; justify-content: space-between">
@@ -87,17 +87,17 @@
             [paginator]="true"
             [rows]="10"
             [lazy]="true"
-            [loading]="hostsLoading"
-            (onLazyLoad)="loadHosts($event)"
+            [loading]="dataLoading"
+            (onLazyLoad)="loadData($event)"
             [lazyLoadOnInit]="false"
             (onStateRestore)="stateRestored($event, hostsTable)"
             (onStateSave)="stateSaved(hostsTable)"
-            [totalRecords]="totalHosts"
-            [rowsPerPageOptions]="[10, 30, 100]"
+            [totalRecords]="totalRecords"
+            [rowsPerPageOptions]="[1, 10, 30, 100]"
             [showCurrentPageReport]="true"
             stateStorage="session"
             [stateKey]="stateKey"
-            currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            [currentPageReportTemplate]="currentPageReportTemplate"
             styleClass="alternate-list"
         >
             <ng-template pTemplate="caption">
@@ -118,7 +118,7 @@
                                 [useGrouping]="false"
                                 (onInput)="hostsTable.filter($event.value, 'appId', 'equals')"
                                 [ngModel]="hostsTable.filters.appId?.[0]?.value"
-                                [disabled]="appId != null"
+                                [disabled]="hasPrefilter()"
                             ></p-inputNumber>
                             <label for="app-id">Kea App Id</label>
                         </span>
@@ -332,8 +332,7 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="paginatorright" let-paginatorState>
-                Total: {{ paginatorState.totalRecords > 0 ? paginatorState.totalRecords : '0' }}
-                {{ paginatorState.totalRecords === 1 ? 'host' : 'hosts' }}
+                Total: {{ paginatorState.totalRecords | pluralize: 'host' }}
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
