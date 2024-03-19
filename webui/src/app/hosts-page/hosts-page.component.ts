@@ -450,7 +450,10 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
 
         // Now let's compare all filterBooleanKeys filters.
         for (let k of this.filterBooleanKeys) {
-            if (this.validFilter[k] && this.validFilter[k] != this.table.filters[k]?.[0]?.value) {
+            if (
+                this.validFilter.hasOwnProperty(k) &&
+                this.validFilter[k] != (this.table.filters[k] as FilterMetadata)?.value
+            ) {
                 return true
             }
         }
@@ -481,8 +484,8 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
         }
 
         for (let k of this.filterBooleanKeys) {
-            if (this.validFilter[k]) {
-                filter[k as string] = [{ value: this.validFilter[k], matchMode: 'equals' }]
+            if (this.validFilter.hasOwnProperty(k)) {
+                filter[k as string] = { value: this.validFilter[k], matchMode: 'equals' }
             }
         }
 
