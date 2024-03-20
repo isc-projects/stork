@@ -59,6 +59,17 @@ type Agent struct {
 	Stats    AgentStats
 }
 
+// The GRPC client callback to perform extra verification of the peer
+// certificate.
+// The callback is running at the end of server certificate verification.
+func verifyPeer(params *advancedtls.VerificationFuncParams) (*advancedtls.VerificationResults, error) {
+	// The peer must have the extended key usage set.
+	if len(params.Leaf.ExtKeyUsage) == 0 {
+		return nil, errors.New("peer certificate does not have the extended key usage set")
+	}
+	return &advancedtls.VerificationResults{}, nil
+}
+
 // Prepare TLS credentials with configured certs and verification options.
 func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials.TransportCredentials, error) {
 	// Load the certificates from disk
@@ -99,6 +110,7 @@ func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials
 		// and it always uses TLS 1.3.
 		MinVersion: tls.VersionTLS13,
 		MaxVersion: tls.VersionTLS13,
+		VerifyPeer: verifyPeer,
 	}
 	creds, err := advancedtls.NewClientCreds(options)
 	if err != nil {

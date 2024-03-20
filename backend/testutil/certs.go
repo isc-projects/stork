@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"crypto/x509"
 	"net"
 	"os"
 
@@ -21,6 +22,7 @@ func CreateTestCerts(sb *Sandbox) (serverCert, serverKey, rootCert string, err e
 		[]net.IP{net.ParseIP("127.0.0.1")},
 		24,
 		rootCA, privateServerKey,
+		x509.ExtKeyUsageServerAuth,
 	)
 	if err != nil {
 		return

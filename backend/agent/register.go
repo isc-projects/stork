@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/term"
+	storkutil "isc.org/stork/util"
 )
 
 // Prompt user for server token. If user hits enter key then empty
@@ -75,14 +76,26 @@ func generateCSR(certStore *CertStore, agentAddr string, regenKey bool) ([]byte,
 		// Problem with access to the files.
 		return nil, err
 	}
-	if empty {
+	switch {
+	case empty:
 		log.Info("There are no agent certificates - they will be generated.")
 		regenKey = true
-	} else if regenKey {
+	case regenKey:
 		log.Info("Forced agent certificates regeneration.")
-	} else if err := certStore.IsValid(); err != nil {
-		log.WithError(err).Warn("The agent certificates are invalid - they will be regenerated.")
-		regenKey = true
+	default:
+		// Special case for the agent that was authorized before 1.15.1.
+		// Create an server cert fingerprint file with zero value.
+		if ok, err := certStore.IsServerCertFingerprintFileExist(); !ok && err == nil {
+			err := certStore.WriteServerCertFingerprint([32]byte{})
+			if err != nil {
+				return nil, errors.WithMessage(err, "cannot write zero server cert fingerprint")
+			}
+		}
+
+		if err := certStore.IsValid(); err != nil {
+			log.WithError(err).Warn("The agent certificates are invalid - they will be regenerated.")
+			regenKey = true
+		}
 	}
 
 	if regenKey {
@@ -109,13 +122,14 @@ func generateCSR(certStore *CertStore, agentAddr string, regenKey bool) ([]byte,
 }
 
 // Prepare agent registration request payload to Stork Server in JSON format.
-func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, agentAddr string, agentPort int) (*bytes.Buffer, error) {
+func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, agentAddr string, agentPort int, caCertFingerprint [32]byte) (*bytes.Buffer, error) {
 	values := map[string]interface{}{
-		"address":     agentAddr,
-		"agentPort":   agentPort,
-		"agentCSR":    string(csrPEM),
-		"serverToken": serverToken,
-		"agentToken":  agentToken,
+		"address":           agentAddr,
+		"agentPort":         agentPort,
+		"agentCSR":          string(csrPEM),
+		"serverToken":       serverToken,
+		"agentToken":        agentToken,
+		"caCertFingerprint": storkutil.BytesToHex(caCertFingerprint[:]),
 	}
 	jsonValue, err := json.Marshal(values)
 	if err != nil {
@@ -129,9 +143,8 @@ func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, a
 // is established. This case is used when agent automatically tries to register
 // during startup.
 // If the agent is already registered then only ID is returned, the certificates are empty.
-func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (int64, string, string, error) {
+func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (machineID int64, serverCACert []byte, agentCert []byte, serverCertFingerprint [32]byte, err error) {
 	url, _ := baseSrvURL.Parse("api/machines")
-	var err error
 	var resp *http.Response
 	for {
 		resp, err = client.Call(url.String(), reqPayload)
@@ -148,13 +161,13 @@ func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *
 			log.Println("Sleeping for 10 seconds before next registration attempt")
 			time.Sleep(10 * time.Second)
 		} else {
-			return 0, "", "", errors.Wrapf(err, "problem registering machine")
+			return 0, nil, nil, [32]byte{}, errors.Wrapf(err, "problem registering machine")
 		}
 	}
 	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return 0, "", "", errors.Wrapf(err, "problem reading server's response while registering the machine")
+		return 0, nil, nil, [32]byte{}, errors.Wrapf(err, "problem reading server's response while registering the machine")
 	}
 
 	// Special case - the agent is already registered
@@ -162,19 +175,19 @@ func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *
 		location := resp.Header.Get("Location")
 		lastSeparatorIdx := strings.LastIndex(location, "/")
 		if lastSeparatorIdx < 0 || lastSeparatorIdx+1 >= len(location) {
-			return 0, "", "", errors.New("missing machine ID in response from server for registration request")
+			return 0, nil, nil, [32]byte{}, errors.New("missing machine ID in response from server for registration request")
 		}
 		machineID, err := strconv.Atoi(location[lastSeparatorIdx+1:])
 		if err != nil {
-			return 0, "", "", errors.New("bad machine ID in response from server for registration request")
+			return 0, nil, nil, [32]byte{}, errors.New("bad machine ID in response from server for registration request")
 		}
-		return int64(machineID), "", "", nil
+		return int64(machineID), nil, nil, [32]byte{}, nil
 	}
 
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return 0, "", "", errors.Wrapf(err, "problem parsing server's response while registering the machine: %v", result)
+		return 0, nil, nil, [32]byte{}, errors.Wrapf(err, "problem parsing server's response while registering the machine: %v", result)
 	}
 	errTxt := result["error"]
 	if errTxt != nil {
@@ -183,7 +196,7 @@ func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *
 		if ok {
 			msg = fmt.Sprintf("problem registering machine: %s", errTxtStr)
 		}
-		return 0, "", "", errors.New(msg)
+		return 0, nil, nil, [32]byte{}, errors.New(msg)
 	}
 	if resp.StatusCode >= http.StatusBadRequest {
 		errTxt = result["message"]
@@ -198,40 +211,60 @@ func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *
 		} else {
 			msg = fmt.Sprintf("problem registering machine: http status code %d", resp.StatusCode)
 		}
-		return 0, "", "", errors.New(msg)
+		return 0, nil, nil, [32]byte{}, errors.New(msg)
 	}
 
 	// check received machine ID
 	if result["id"] == nil {
-		return 0, "", "", errors.New("missing ID in response from server for registration request")
+		return 0, nil, nil, [32]byte{}, errors.New("missing ID in response from server for registration request")
 	}
-	machineID, ok := result["id"].(float64)
+	machineIDFloat64, ok := result["id"].(float64)
 	if !ok {
-		return 0, "", "", errors.New("bad ID in response from server for registration request")
+		return 0, nil, nil, [32]byte{}, errors.New("bad ID in response from server for registration request")
 	}
+	machineID = int64(machineIDFloat64)
+
 	// check received serverCACert
 	if result["serverCACert"] == nil {
-		return 0, "", "", errors.New("missing serverCACert in response from server for registration request")
+		return 0, nil, nil, [32]byte{}, errors.New("missing serverCACert in response from server for registration request")
 	}
-	serverCACert, ok := result["serverCACert"].(string)
+	serverCACertStr, ok := result["serverCACert"].(string)
 	if !ok {
-		return 0, "", "", errors.New("bad serverCACert in response from server for registration request")
+		return 0, nil, nil, [32]byte{}, errors.New("bad serverCACert in response from server for registration request")
 	}
+	serverCACert = []byte(serverCACertStr)
+
 	// check received agentCert
 	if result["agentCert"] == nil {
-		return 0, "", "", errors.New("missing agentCert in response from server for registration request")
+		return 0, nil, nil, [32]byte{}, errors.New("missing agentCert in response from server for registration request")
 	}
-	agentCert, ok := result["agentCert"].(string)
+	agentCertStr, ok := result["agentCert"].(string)
 	if !ok {
-		return 0, "", "", errors.New("bad agentCert in response from server for registration request")
+		return 0, nil, nil, [32]byte{}, errors.New("bad agentCert in response from server for registration request")
 	}
+	agentCert = []byte(agentCertStr)
+
+	// Check received Stork server cert fingerprint.
+	if result["serverCertFingerprint"] == nil {
+		return 0, nil, nil, [32]byte{}, errors.New("missing serverCertFingerprint in response from server for registration request")
+	}
+	serverCertFingerprintRaw, ok := result["serverCertFingerprint"].(string)
+	if !ok {
+		return 0, nil, nil, [32]byte{}, errors.New("bad serverCertFingerprint in response from server for registration request")
+	}
+	serverCertFingerprintBytes := storkutil.HexToBytes(serverCertFingerprintRaw)
+	if len(serverCertFingerprintBytes) != 32 {
+		return 0, nil, nil, [32]byte{}, errors.New("invalid length of serverCertFingerprint in response from server for registration request")
+	}
+	serverCertFingerprint = [32]byte(serverCertFingerprintBytes)
+
 	// all ok
 	log.Printf("Machine registered")
-	return int64(machineID), serverCACert, agentCert, nil
+	return machineID, serverCACert, agentCert, serverCertFingerprint, nil
 }
 
 // Check certs received from server.
-func checkAndStoreCerts(certStore *CertStore, serverCACert, agentCert []byte) error {
+func checkAndStoreCerts(certStore *CertStore, serverCACert, agentCert []byte, serverCertFingerprint [32]byte) error {
 	err := certStore.WriteRootCAPEM(serverCACert)
 	if err != nil {
 		return errors.WithMessage(err, "cannot write agent cert")
@@ -240,6 +273,11 @@ func checkAndStoreCerts(certStore *CertStore, serverCACert, agentCert []byte) er
 	err = certStore.WriteCertPEM(agentCert)
 	if err != nil {
 		return errors.WithMessage(err, "cannot write server CA cert")
+	}
+
+	err = certStore.WriteServerCertFingerprint(serverCertFingerprint)
+	if err != nil {
+		return errors.WithMessage(err, "cannot write server cert fingerprint")
 	}
 
 	log.Info("Stored agent-signed cert and CA cert")
@@ -343,6 +381,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	}
 
 	certStore := NewCertStoreDefault()
+
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, err := generateCSR(certStore, agentAddr, regenCerts)
 	if err != nil {
@@ -353,6 +392,12 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	agentToken, err := certStore.ReadToken()
 	if err != nil {
 		log.WithError(err).Error("cannot load the agent token")
+		return false
+	}
+
+	caCertFingerprint, err := certStore.ReadRootCAFingerprint()
+	if err != nil {
+		log.WithError(err).Error("cannot load the CA cert fingerprint")
 		return false
 	}
 
@@ -372,24 +417,28 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	}
 
 	// register new machine i.e. current agent
-	reqPayload, err := prepareRegistrationRequestPayload(csrPEM, serverToken2, agentToken, agentAddr, agentPortInt)
+	reqPayload, err := prepareRegistrationRequestPayload(csrPEM, serverToken2, agentToken, agentAddr, agentPortInt, caCertFingerprint)
 	if err != nil {
 		log.Errorln(err.Error())
 		return false
 	}
 	log.Println("Try to register agent in Stork Server")
-	machineID, serverCACert, agentCert, err := registerAgentInServer(httpClient, baseSrvURL, reqPayload, retry)
+	// If the machine is already registered then the ID is returned. If the
+	// agent certificate was signed by the current server CA cert then the
+	// server CA cert and agent cert are empty. Otherwise they are returned
+	// and should be stored.
+	machineID, serverCACert, agentCert, serverCertFingerprint, err := registerAgentInServer(httpClient, baseSrvURL, reqPayload, retry)
 	if err != nil {
-		log.Errorln(err.Error())
+		log.WithError(err).Error("Problem registering machine")
 		return false
 	}
 
 	// store certs
 	// if server and agent CA certs are empty then the agent should use existing ones
-	if serverCACert != "" && agentCert != "" {
-		err = checkAndStoreCerts(certStore, []byte(serverCACert), []byte(agentCert))
+	if serverCACert != nil && agentCert != nil {
+		err = checkAndStoreCerts(certStore, serverCACert, agentCert, serverCertFingerprint)
 		if err != nil {
-			log.Errorf("Problem with certs: %s", err)
+			log.WithError(err).Errorf("Problem with certs")
 			return false
 		}
 	}
@@ -402,12 +451,12 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 				break
 			}
 			if i < 3 {
-				log.Errorf("Retrying ping %d/3 due to error: %s", i, err)
+				log.WithError(err).Errorf("Retrying ping %d/3 due to error", i)
 				time.Sleep(2 * time.Duration(i) * time.Second)
 			}
 		}
 		if err != nil {
-			log.Errorf("Cannot ping machine: %s", err)
+			log.WithError(err).Errorf("Cannot ping machine")
 			return false
 		}
 	}
