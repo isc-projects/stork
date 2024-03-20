@@ -27,6 +27,7 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/pki"
 )
 
 // Global Stork Agent state.
@@ -102,6 +103,38 @@ func createGetIdentityCertificatesForServerHandler(certStore *CertStore) func(ch
 	}
 }
 
+// Creates the GRPC server callback to perform extra verification of the peer
+// certificate.
+// The callback is running at the end of client certificate verification.
+// Accepts the fingerprint of the GRPC client allowed to establish the
+// connection.
+//
+// Warning: The GRPC library doesn't perform the verification of the
+// client IP addresses/DNS names fields.
+// The client (Stork server) host is unknown for the agent if the
+// standalone register command is used. Other problematic case is
+// when the Stork server is running behind the reverse proxy or inside
+// the container - the hostname from the agent side (the side that
+// verifies the cert) may not match the hostname from the server side
+// (certificate issuer and client).
+func createVerifyPeer(allowedCertFingerprint [32]byte) advancedtls.CustomVerificationFunc {
+	return func(params *advancedtls.VerificationFuncParams) (*advancedtls.VerificationResults, error) {
+		// The peer must have the extended key usage set.
+		if len(params.Leaf.ExtKeyUsage) == 0 {
+			return nil, errors.New("peer certificate does not have the extended key usage set")
+		}
+
+		// Verify the peer certificate fingerprint. Only single Stork
+		// server is allowed to connect.
+		actualFingerprint := pki.CalculateFingerprint(params.Leaf)
+		if actualFingerprint != allowedCertFingerprint {
+			return nil, errors.New("peer certificate fingerprint does not match the allowed one")
+		}
+
+		return &advancedtls.VerificationResults{}, nil
+	}
+}
+
 // Prepare gRPC server with configured TLS.
 func newGRPCServerWithTLS() (*grpc.Server, error) {
 	// Prepare structure for advanced TLS. It defines hook functions
@@ -111,6 +144,20 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 	// Beside that there is enabled client authentication and forced
 	// cert and host verification.
 	certStore := NewCertStoreDefault()
+
+	// Only Stork server is allowed to connect to Stork agent over GRPC. This
+	// function accepts the fingerprint of the certificate of the allowed GRPC
+	// client. This fingerprint is obtained during the registration process.
+	allowedCertFingerprint, err := certStore.ReadServerCertFingerprint()
+	if err != nil {
+		// TODO: The agent should not start if the certificates are not
+		// obtained as nobody is allowed to connect. But the main function and
+		// a lot of test rely on the fact that the agent can be always setup.
+		log.WithError(err).Warning("Cannot read the cert fingerprint of the " +
+			"allowed GRPC client; nobody could connect to the agent over GRPC")
+		allowedCertFingerprint = [32]byte{}
+	}
+
 	options := &advancedtls.ServerOptions{
 		// Pull latest root CA cert for stork server cert verification.
 		RootOptions: advancedtls.RootCertificateOptions{
@@ -130,6 +177,7 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 		// and it always uses TLS 1.3.
 		MinVersion: tls.VersionTLS13,
 		MaxVersion: tls.VersionTLS13,
+		VerifyPeer: createVerifyPeer(allowedCertFingerprint),
 	}
 	creds, err := advancedtls.NewServerCreds(options)
 	if err != nil {

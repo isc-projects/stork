@@ -74,6 +74,12 @@
           this way to the Stork server requires separate authorization
           that can be made in the Stork server UI or using server API.
           It cannot be empty.
+      caCertFingerprint:
+        type: string
+        description: The SHA256 of the CA certificate stored by the agent in
+          hex format without delimiters.
+          The server will generate new certificates if an agent has out-of-date
+          CA. It is optional to preserve backward compatibility.
 
   NewMachineResp:
     type: object
@@ -87,6 +93,11 @@
       agentCert:
         type: string
         description: Signed agent's certificate.
+      serverCertFingerprint:
+        type: string
+        description: The SHA256 sum of the server GRPC certificate. It's a hex
+          representation without delimiters. Agent won't accept the connection
+          secured by a different certificate.
 
   Machine:
     type: object

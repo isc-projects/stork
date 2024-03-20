@@ -10,7 +10,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
@@ -316,28 +315,82 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	// Check if a machine is already registered with a provided agent token
-	if dbMachine != nil && dbMachine.AgentToken == *params.Machine.AgentToken {
-		link := fmt.Sprintf("/machines/%d", dbMachine.ID)
-		rsp := services.NewCreateMachineConflict().WithLocation(link)
+	rootCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCACert)
+	if err != nil {
+		msg := "Problem loading server CA cert"
+		log.WithError(err).Error(msg)
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
 		return rsp
 	}
 
-	// check server token
-	machineAuthorized, httpRspCode, rspMsg := r.checkServerToken(params.Machine.ServerToken, true)
-	if httpRspCode != 0 {
-		rsp := services.NewCreateMachineDefault(httpRspCode).WithPayload(&models.APIError{
-			Message: &rspMsg,
-		})
-		return rsp
+	machineAuthorized := false
+
+	// Check if a machine is already registered with a provided agent token
+	if dbMachine != nil && dbMachine.AgentToken == *params.Machine.AgentToken {
+		// Check if the CA cert has been updated since the machine was last
+		// registered. If the CA was updated, the agent cert must be
+		// re-generated but we want to keep the authorization status.
+		var caCertFingerprint [32]byte
+		if params.Machine.CaCertFingerprint != "" {
+			// The legacy machines that don't send the serial number in the
+			// registration request will receive a new agent certificate on
+			// every run. This shouldn't be a big problem as long as the
+			// authorization status is preserved.
+			rawFingerprint := storkutil.HexToBytes(params.Machine.CaCertFingerprint)
+			if len(rawFingerprint) == 32 {
+				caCertFingerprint = [32]byte(rawFingerprint)
+			} else {
+				rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+					Message: storkutil.Ptr("Invalid CA cert fingerprint"),
+				})
+				return rsp
+			}
+		}
+
+		rootCertFingerprint, err := pki.CalculateFingerprintFromPEM(rootCertPEM)
+		if err != nil {
+			msg := "Problem calculating fingerprint of server CA cert"
+			log.WithError(err).Error(msg)
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+
+		if rootCertFingerprint == caCertFingerprint {
+			link := fmt.Sprintf("/machines/%d", dbMachine.ID)
+			rsp := services.NewCreateMachineConflict().WithLocation(link)
+			return rsp
+		}
+
+		// Preserve the current authorization status because the host and agent
+		// token are correct.
+		machineAuthorized = dbMachine.Authorized
+	}
+
+	if !machineAuthorized {
+		// check server token
+		var (
+			httpRspCode int
+			rspMsg      string
+		)
+		machineAuthorized, httpRspCode, rspMsg = r.checkServerToken(params.Machine.ServerToken, true)
+		if httpRspCode != 0 {
+			rsp := services.NewCreateMachineDefault(httpRspCode).WithPayload(&models.APIError{
+				Message: &rspMsg,
+			})
+			return rsp
+		}
 	}
 
 	// sign agent cert
 	agentCSR := []byte(*params.Machine.AgentCSR)
 	certSerialNumber, err := dbmodel.GetNewCertSerialNumber(r.DB)
 	if err != nil {
-		log.Error(err)
 		msg := "Problem generating serial number for cert"
+		log.WithError(err).Error(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -347,34 +400,45 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	// secrets to avoid multiple database roundtrips.
 	rootKeyPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCAKey)
 	if err != nil {
-		log.Error(err)
 		msg := "Problem loading server CA private key"
+		log.WithError(err).Error(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
-	rootCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCACert)
-	if err != nil {
-		log.Error(err)
-		msg := "Problem loading server CA cert"
-		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
+
 	agentCertPEM, agentCertFingerprint, paramsErr, innerErr := pki.SignCert(agentCSR, certSerialNumber, rootCertPEM, rootKeyPEM)
 	if paramsErr != nil {
-		log.Error(paramsErr)
 		msg := "Problem with agent CSR"
+		log.WithError(paramsErr).Error(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if innerErr != nil {
-		log.Error(innerErr)
 		msg := "Problem signing agent CSR"
+		log.WithError(innerErr).Error(msg)
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	serverCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerCert)
+	if err != nil {
+		msg := "Problem loading server cert"
+		log.WithError(err).Error(msg)
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	serverCertFingerprint, err := pki.CalculateFingerprintFromPEM(serverCertPEM)
+	if err != nil {
+		msg := "Problem calculating fingerprint of server cert"
+		log.WithError(err).Error(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -399,8 +463,8 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		}
 		err = dbmodel.AddMachine(r.DB, dbMachine)
 		if err != nil {
-			log.Error(err)
 			msg := fmt.Sprintf("Cannot store machine %s", addr)
+			log.WithError(err).Error(msg)
 			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -413,8 +477,8 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		dbMachine.Authorized = machineAuthorized
 		err = dbmodel.UpdateMachine(r.DB, dbMachine)
 		if err != nil {
-			log.Error(err)
 			msg := fmt.Sprintf("Cannot update machine %s in database", addr)
+			log.WithError(err).Error(msg)
 			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -424,9 +488,10 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	}
 
 	m := &models.NewMachineResp{
-		ID:           dbMachine.ID,
-		ServerCACert: string(rootCertPEM),
-		AgentCert:    string(agentCertPEM),
+		ID:                    dbMachine.ID,
+		ServerCACert:          string(rootCertPEM),
+		AgentCert:             string(agentCertPEM),
+		ServerCertFingerprint: storkutil.BytesToHex(serverCertFingerprint[:]),
 	}
 	rsp := services.NewCreateMachineOK().WithPayload(m)
 
@@ -1307,7 +1372,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 
 	if dbApp == nil {
 		msg := fmt.Sprintf("Cannot find app with ID %d", params.ID)
-		log.Warn(pkgerrors.New(msg))
+		log.Warn(msg)
 		rsp := services.NewGetAppDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
