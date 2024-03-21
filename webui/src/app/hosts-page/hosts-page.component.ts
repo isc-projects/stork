@@ -215,6 +215,44 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
     }
 
     /**
+     * Returns table filter value for the given filter key-name.
+     *
+     * PrimeNG Table has a little confusing logic with keeping table's filters
+     * as either FilterMetadata or an array of FilterMetadata:
+     * table.filters: {[p: string]: FilterMetadata | FilterMetadata[]}
+     *
+     * This helper method checks if the filter value exists firstly in FilterMetadata[].
+     * If not, then it checks if it exists as value in FilterMetadata.
+     *
+     * If no filter value is found, null is returned.
+     *
+     * @param k filter name key
+     */
+    getTableFilterVal(k: string): any {
+        return this.table?.filters?.hasOwnProperty(k) ? this.table.filters[k][0]?.value ?? (this.table.filters[k] as FilterMetadata).value : null
+    }
+
+    /**
+     * Callback method called when PrimeNG table was filtered.
+     */
+    onFilter(): void {
+        console.log("onFilter")
+
+        let change = false
+        for (const k of Object.keys(this.validFilter)) {
+            if (this.validFilter[k] != null && this.getTableFilterVal(k) != this.validFilter[k]) {
+                // This filter was either cleared or edited, so delete it from validFilter.
+                change = true
+                delete this.validFilter[k]
+            }
+        }
+
+        if (change) {
+            this.updateQueryParameters()
+        }
+    }
+
+    /**
      * Returns true if prefilter by Id from queryParam was applied; false otherwise.
      */
     hasPrefilter(): boolean {
@@ -224,35 +262,28 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
     /**
      * Clears filtering on the table and stores table's state.
      * @param table table where filters are to be cleared
-     * @param lazyLoad flag to control whether to reload table data after filters are cleared
-     * @param updateQueryParams flag to control whether to update queryParams after filters are cleared
      */
-    clearFilters(table: Table, lazyLoad: boolean = true, updateQueryParams: boolean = true): void {
+    clearFilters(table: Table): void {
         // Clear filters in table.
         table.clearFilterValues()
 
-        if (updateQueryParams) {
-            // Clear queryParams accordingly.
-            this.clearQueryParameters()
-            // Clear filters in validated filter.
-            this.validFilter = {} as FilterInterface
-            this.filterTextFormatErrors = []
-        }
+        // Clear queryParam filters parsing errors.
+        this.filterTextFormatErrors = []
 
         // Even when all filters are cleared, restore "by Id" filter if it was given in queryParams.
         // Note that other queryParam filters are also cleared here.
         if (this.hasPrefilter()) {
-            table.filters[this.prefilterKey as string] = [{ value: this.tableId, matchMode: 'equals' }]
-            this.validFilter[this.prefilterKey as string] = this.tableId
+            table.filters[this.prefilterKey as string] = { value: this.tableId, matchMode: 'equals' }
         }
 
         table.first = 0
         table.firstChange.emit(table.first)
         table.saveState()
 
-        if (lazyLoad) {
-            this.reloadData(table)
-        }
+        // Reload data with cleared filters.
+        this.reloadData(table)
+
+        table.onFilter.emit()
     }
 
     /**
@@ -292,7 +323,7 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
      */
     updateFilterFromQueryParameters(params: ParamMap): void {
         const numericKeys =
-            this.prefilterKey in this.queryParamNumericKeys
+            !this.prefilterKey || this.prefilterKey in this.queryParamNumericKeys
                 ? this.queryParamNumericKeys
                 : [this.prefilterKey, ...this.queryParamNumericKeys]
 
@@ -353,8 +384,9 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
                 if (this.table) {
                     if (this.validatedFilterAndTableFilterDiffer()) {
                         console.log('queryParams vs restored filter differs, overwrite')
-                        this.clearFilters(this.table, false, false)
 
+                        this.table.first = 0
+                        this.table.firstChange.emit(this.table.first)
                         this.table.filters = this.createTableFilter()
 
                         this.table.saveState()
@@ -380,16 +412,19 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
     }
 
     /**
-     * Clear URL queryParameters.
-     * @private
+     * Update the URL query parameters basing on current validFilter.
+     *
+     * This function uses the Location provider instead Router or
+     * ActivatedRoute to avoid re-rendering the component.
      */
-    private clearQueryParameters(): void {
+    private updateQueryParameters() {
+        console.log("updateQueryParameters " + JSON.stringify(this.validFilter))
         const params = []
 
-        if (this.hasPrefilter()) {
-            params.push(
-                `${encodeURIComponent(this.prefilterKey as string)}=${encodeURIComponent(this.validFilter[this.prefilterKey as string])}`
-            )
+        for (let key of Object.keys(this.validFilter)) {
+            if (this.validFilter[key] != null) {
+                params.push(`${encodeURIComponent(key)}=${encodeURIComponent(this.validFilter[key])}`)
+            }
         }
 
         const baseUrl = this._router.url.split('?')[0]
@@ -430,20 +465,19 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
     private validatedFilterAndTableFilterDiffer(): boolean {
         // If prefilterKey is defined, it is always being checked.
         if (
-            this.validFilter[this.prefilterKey] &&
-            this.validFilter[this.prefilterKey] != this.table.filters[this.prefilterKey]?.[0]?.value
+            this.validFilter.hasOwnProperty(this.prefilterKey) && this.validFilter[this.prefilterKey] != this.getTableFilterVal(this.prefilterKey as string)
         ) {
             return true
         }
 
         // 'text' queryParam filter may always be there, so it is also always checked.
-        if (this.validFilter.text && this.validFilter.text != this.table.filters.text?.[0]?.value) {
+        if (this.validFilter.text && this.validFilter.text != this.getTableFilterVal('text')) {
             return true
         }
 
         // Now let's compare all filterNumericKeys filters.
         for (let k of this.filterNumericKeys) {
-            if (this.validFilter[k] && this.validFilter[k] != this.table.filters[k]?.[0]?.value) {
+            if (this.validFilter.hasOwnProperty(k) && this.validFilter[k] != this.getTableFilterVal(k as string)) {
                 return true
             }
         }
@@ -452,7 +486,7 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
         for (let k of this.filterBooleanKeys) {
             if (
                 this.validFilter.hasOwnProperty(k) &&
-                this.validFilter[k] != (this.table.filters[k] as FilterMetadata)?.value
+                this.validFilter[k] != this.getTableFilterVal(k as string)
             ) {
                 return true
             }
@@ -469,24 +503,26 @@ abstract class PrefilteredTableClass<FilterInterface extends BaseQueryParamFilte
     private createTableFilter(): { [p: string]: FilterMetadata | FilterMetadata[] } {
         const filter: { [s: string]: FilterMetadata | FilterMetadata[] } = {}
 
-        if (this.validFilter[this.prefilterKey]) {
-            filter[this.prefilterKey as string] = [{ value: this.validFilter[this.prefilterKey], matchMode: 'equals' }]
+        if (this.prefilterKey && this.validFilter.hasOwnProperty(this.prefilterKey)) {
+            filter[this.prefilterKey as string] = { value: this.validFilter[this.prefilterKey], matchMode: 'equals' }
+        } else if (this.prefilterKey) {
+            filter[this.prefilterKey as string] = { value: null, matchMode: 'equals' }
         }
 
-        if (this.validFilter.text) {
+        if (this.validFilter.hasOwnProperty('text')) {
             filter['text'] = [{ value: this.validFilter.text, matchMode: 'contains' }]
         }
 
         for (let k of this.filterNumericKeys) {
-            if (this.validFilter[k]) {
-                filter[k as string] = [{ value: this.validFilter[k], matchMode: 'equals' }]
-            }
+
+                filter[k as string] = { value: this.validFilter[k] ?? null, matchMode: 'equals' }
+
         }
 
         for (let k of this.filterBooleanKeys) {
-            if (this.validFilter.hasOwnProperty(k)) {
-                filter[k as string] = { value: this.validFilter[k], matchMode: 'equals' }
-            }
+
+                filter[k as string] = { value: this.validFilter.hasOwnProperty(k) ? this.validFilter[k] : null, matchMode: 'equals' }
+
         }
 
         return filter
@@ -577,8 +613,8 @@ export class HostTab {
     styleUrls: ['./hosts-page.component.sass'],
 })
 export class HostsPageComponent extends PrefilteredTableClass<HostsFilter> implements OnInit, OnDestroy {
-    queryParamNumericKeys: (keyof HostsFilter)[] = []
-    queryParamBooleanKeys: (keyof HostsFilter)[] = []
+    queryParamNumericKeys: (keyof HostsFilter)[] = ['subnetId']
+    queryParamBooleanKeys: (keyof HostsFilter)[] = ['isGlobal']
     filterNumericKeys: (keyof HostsFilter)[] = ['appId', 'subnetId', 'keaSubnetId']
     filterBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict', 'migrationError']
     subscriptions = new Subscription()
@@ -992,12 +1028,12 @@ export class HostsPageComponent extends PrefilteredTableClass<HostsFilter> imple
             .getHosts(
                 event.first,
                 event.rows,
-                this.tableId ?? event.filters.appId?.[0]?.value,
-                event.filters.subnetId?.[0]?.value ?? (event.filters.subnetId as FilterMetadata)?.value,
-                event.filters.keaSubnetId?.[0]?.value ?? (event.filters.keaSubnetId as FilterMetadata)?.value,
-                event.filters.text?.[0]?.value ?? (event.filters.text as FilterMetadata)?.value,
-                event.filters.isGlobal?.[0]?.value ?? (event.filters.isGlobal as FilterMetadata)?.value,
-                event.filters.conflict?.[0]?.value ?? (event.filters.conflict as FilterMetadata)?.value
+                this.tableId ?? this.getTableFilterVal('appId'),
+                this.getTableFilterVal('subnetId'),
+                this.getTableFilterVal('keaSubnetId'),
+                this.getTableFilterVal('text'),
+                this.getTableFilterVal('isGlobal'),
+                this.getTableFilterVal('conflict')
             )
             .toPromise()
             .then((data) => {

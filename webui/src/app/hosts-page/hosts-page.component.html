@@ -92,6 +92,7 @@
             [lazyLoadOnInit]="false"
             (onStateRestore)="stateRestored($event, hostsTable)"
             (onStateSave)="stateSaved(hostsTable)"
+            (onFilter)="onFilter()"
             [totalRecords]="totalRecords"
             [rowsPerPageOptions]="[1, 10, 30, 100]"
             [showCurrentPageReport]="true"
@@ -111,41 +112,67 @@
                     ></button>
                     <div class="flex-auto"></div>
                     <div class="flex-initial align-items-center">
-                        <span class="p-float-label">
-                            <p-inputNumber
-                                inputId="app-id"
-                                mode="decimal"
-                                [useGrouping]="false"
-                                (onInput)="hostsTable.filter($event.value, 'appId', 'equals')"
-                                [ngModel]="hostsTable.filters.appId?.[0]?.value"
-                                [disabled]="hasPrefilter()"
-                            ></p-inputNumber>
-                            <label for="app-id">Kea App Id</label>
-                        </span>
+                        <p-columnFilter
+                                field="appId"
+                                matchMode="equals"
+                                [showMenu]="false"
+                                [showClearButton]="!hasPrefilter()"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <span class="p-float-label">
+                                    <p-inputNumber
+                                            inputId="app-id"
+                                            mode="decimal"
+                                            [useGrouping]="false"
+                                            (onInput)="filter($event.value)"
+                                            [ngModel]="value"
+                                            [disabled]="hasPrefilter()"
+                                    ></p-inputNumber>
+                                    <label for="app-id">Kea App Id</label>
+                                </span>
+                            </ng-template>
+                        </p-columnFilter>
                     </div>
                     <div class="flex-initial align-items-center">
-                        <span class="p-float-label">
-                            <p-inputNumber
-                                inputId="subnet-id"
-                                mode="decimal"
-                                [useGrouping]="false"
-                                (onInput)="hostsTable.filter($event.value, 'subnetId', 'equals')"
-                                [ngModel]="hostsTable.filters.subnetId?.[0]?.value"
-                            ></p-inputNumber>
-                            <label for="subnet-id">Subnet Id</label>
-                        </span>
+                        <p-columnFilter
+                                field="subnetId"
+                                matchMode="equals"
+                                [showMenu]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <span class="p-float-label">
+                                    <p-inputNumber
+                                            inputId="subnet-id"
+                                            mode="decimal"
+                                            [useGrouping]="false"
+                                            (onInput)="filter($event.value)"
+                                            [ngModel]="value"
+                                    ></p-inputNumber>
+                                    <label for="subnet-id">Subnet Id</label>
+                                </span>
+                            </ng-template>
+                        </p-columnFilter>
                     </div>
                     <div class="flex-initial align-items-center">
-                        <span class="p-float-label">
-                            <p-inputNumber
-                                inputId="kea-subnet-id"
-                                mode="decimal"
-                                [useGrouping]="false"
-                                (onInput)="hostsTable.filter($event.value, 'keaSubnetId', 'equals')"
-                                [ngModel]="hostsTable.filters.keaSubnetId?.[0]?.value"
-                            ></p-inputNumber>
-                            <label for="kea-subnet-id">Kea Subnet Id</label>
-                        </span>
+                        <p-columnFilter
+                                field="keaSubnetId"
+                                matchMode="equals"
+                                [showMenu]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <span class="p-float-label">
+                                    <p-inputNumber
+                                            inputId="kea-subnet-id"
+                                            mode="decimal"
+                                            [useGrouping]="false"
+                                            (onInput)="filter($event.value)"
+                                            [ngModel]="value"
+                                    ></p-inputNumber>
+                                    <label for="kea-subnet-id">Kea Subnet Id</label>
+                                </span>
+
+                            </ng-template>
+                        </p-columnFilter>
                     </div>
                     <div class="flex align-items-center">
                         Global
