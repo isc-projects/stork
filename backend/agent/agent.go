@@ -152,9 +152,9 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 	if err != nil {
 		// TODO: The agent should not start if the certificates are not
 		// obtained as nobody is allowed to connect. But the main function and
-		// a lot of test rely on the fact that the agent can be always setup.
+		// many tests rely on the fact that the agent can be always started.
 		log.WithError(err).Warning("Cannot read the cert fingerprint of the " +
-			"allowed GRPC client; nobody could connect to the agent over GRPC")
+			"Stork server; the server will not be able to connect to the agent over GRPC")
 		allowedCertFingerprint = [32]byte{}
 	}
 
