@@ -84,7 +84,7 @@ func generateCSR(certStore *CertStore, agentAddr string, regenKey bool) ([]byte,
 		log.Info("Forced agent certificates regeneration.")
 	default:
 		// Special case for the agent that was authorized before 1.15.1.
-		// Create an server cert fingerprint file with zero value.
+		// Create a server cert fingerprint file with zero value.
 		if ok, err := certStore.IsServerCertFingerprintFileExist(); !ok && err == nil {
 			err := certStore.WriteServerCertFingerprint([32]byte{})
 			if err != nil {
