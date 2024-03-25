@@ -75,6 +75,7 @@ func TestLoadGRPCCertificatesMissingCerts(t *testing.T) {
 	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
 	RootCAFile = path.Join(sb.BasePath, "rootCA-not-exists.pem")
 	AgentTokenFile = path.Join(sb.BasePath, "agentToken-not-exists")
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
 
 	client := NewHTTPClient()
 

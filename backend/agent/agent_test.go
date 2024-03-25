@@ -47,6 +47,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
 	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists")
 	CredentialsFile = path.Join(sb.BasePath, "credentials-not-exists.json")
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
@@ -735,6 +736,10 @@ func TestGetIdentityCertificatesForServer(t *testing.T) {
 
 // Check if newGRPCServerWithTLS can create gRPC server.
 func TestNewGRPCServerWithTLS(t *testing.T) {
+	cleanup, err := GenerateSelfSignedCerts()
+	require.NoError(t, err)
+	defer cleanup()
+
 	srv, err := newGRPCServerWithTLS()
 	require.NoError(t, err)
 	require.NotNil(t, srv)

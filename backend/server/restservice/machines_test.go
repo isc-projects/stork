@@ -449,6 +449,9 @@ func TestCreateMachine(t *testing.T) {
 	require.True(t, m1.Authorized)
 	certFingerprint1 := m1.CertFingerprint
 
+	serverCACertFingerprint, err := pki.CalculateFingerprintFromPEM([]byte(okRsp.Payload.ServerCACert))
+	require.NoError(t, err)
+
 	// ok, now lets ping the machine if it is alive
 	pingParams := services.PingMachineParams{
 		ID: m1.ID,
@@ -468,11 +471,12 @@ func TestCreateMachine(t *testing.T) {
 	// re-register (the same) machine (it should be break)
 	params = services.CreateMachineParams{
 		Machine: &models.NewMachineReq{
-			Address:     &addr,
-			AgentPort:   8080,
-			AgentCSR:    &agentCSR,
-			ServerToken: serverToken,
-			AgentToken:  &agentToken,
+			Address:           &addr,
+			AgentPort:         8080,
+			AgentCSR:          &agentCSR,
+			ServerToken:       serverToken,
+			AgentToken:        &agentToken,
+			CaCertFingerprint: storkutil.BytesToHex(serverCACertFingerprint[:]),
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)

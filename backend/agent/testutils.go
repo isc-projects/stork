@@ -13,6 +13,7 @@ func RememberPaths() func() {
 	originalRootCAFile := RootCAFile
 	originalAgentTokenFile := AgentTokenFile
 	originalCredentialsFile := CredentialsFile
+	originalServerCertFingerprintFile := ServerCertFingerprintFile
 
 	return func() {
 		KeyPEMFile = originalKeyPEMFile
@@ -20,6 +21,7 @@ func RememberPaths() func() {
 		RootCAFile = originalRootCAFile
 		AgentTokenFile = originalAgentTokenFile
 		CredentialsFile = originalCredentialsFile
+		ServerCertFingerprintFile = originalServerCertFingerprintFile
 	}
 }
 
@@ -45,9 +47,16 @@ func GenerateSelfSignedCerts() (func(), error) {
 	CertPEMFile = cert
 	RootCAFile = ca
 
-	var fingerprint [32]byte
-	token := storkutil.BytesToHex(fingerprint[:])
-	AgentTokenFile, err = sb.Write("token.txt", token)
+	token := [32]byte{24}
+	tokenHex := storkutil.BytesToHex(token[:])
+	AgentTokenFile, err = sb.Write("token.txt", tokenHex)
+	if err != nil {
+		return nil, err
+	}
+
+	fingerprint := [32]byte{42}
+	fingerprintHex := storkutil.BytesToHex(fingerprint[:])
+	ServerCertFingerprintFile, err = sb.Write("server-cert.sha256", fingerprintHex)
 	if err != nil {
 		return nil, err
 	}

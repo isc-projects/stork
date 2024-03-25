@@ -31,8 +31,8 @@ def test_update_stork_from_the_latest_released_version(
     assert agent_version <= expected_version_info
     assert server_version <= expected_version_info
 
-    package_service.update_agent_to_latest_version()
     package_service.update_server_to_latest_version()
+    package_service.update_agent_to_latest_version()
 
     state = package_service.wait_for_next_machine_states(wait_for_apps=False)[0]
     agent_version = version.parse_version_info(state.agent_version)

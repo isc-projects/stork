@@ -52,6 +52,7 @@ func TestGenKeyCert(t *testing.T) {
 	ipAddresses := []net.IP{net.ParseIP("192.0.2.1")}
 	dnsNames := []string{"name"}
 	serialNumber := int64(1)
+	keyUsage := x509.ExtKeyUsageClientAuth
 	parentKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 
@@ -75,19 +76,19 @@ func TestGenKeyCert(t *testing.T) {
 	require.NoError(t, err)
 
 	// empty DNS names
-	_, _, err = GenKeyCert(name, nil, ipAddresses, 1, parentCert, parentKey)
+	_, _, err = GenKeyCert(name, nil, ipAddresses, 1, parentCert, parentKey, keyUsage)
 	require.EqualError(t, err, "DNS names cannot be empty")
 
 	// empty parent key
-	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, nil)
+	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, nil, keyUsage)
 	require.EqualError(t, err, "parent key cannot be empty")
 
 	// empty parent cert
-	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, nil, parentKey)
+	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, nil, parentKey, keyUsage)
 	require.EqualError(t, err, "parent cert cannot be empty")
 
 	// it should be ok
-	certPEM, privKeyPEM, err := GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, parentKey)
+	certPEM, privKeyPEM, err := GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, parentKey, keyUsage)
 	require.NoError(t, err)
 	require.NotEmpty(t, certPEM)
 	require.NotEmpty(t, privKeyPEM)

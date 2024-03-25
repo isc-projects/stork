@@ -195,7 +195,11 @@ namespace :unittest do
 
                         # This file contains the wrapper for the "gopsutil" package to allow mocking
                         # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
-                        'isc.org/stork/agent/process.go'
+                        'isc.org/stork/agent/process.go',
+
+                        # We plan to cover the below functions in the later MR.
+                        "createVerifyPeer", "CalculateFingerprintFromPEM",
+                        "IsInternalCert", "IsSelfSigned", "verifyPeer"
                     ]
                     if short == 'true'
                         ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
