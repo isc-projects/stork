@@ -3,7 +3,7 @@ Stork 1.15.1 released on 2024-03-27.
 * 382 [sec] ! slawek
 
     Fixed CVE-2024-28872 vulnerability.
-    (#1328)
+    (Gitlab #1328)
 
 Stork 1.15.0 released on 2024-02-07.
 
