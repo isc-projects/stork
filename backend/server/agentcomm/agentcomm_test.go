@@ -1,9 +1,11 @@
 package agentcomm
 
 import (
+	"crypto/x509"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/security/advancedtls"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
 
@@ -222,4 +224,39 @@ func TestPrepareTLSCreds(t *testing.T) {
 	creds, err := prepareTLSCreds(CACertPEM, ServerCertPEM, ServerKeyPEM)
 	require.NoError(t, err)
 	require.NotNil(t, creds)
+}
+
+// The verification function must deny access if the extended key usage is
+// missing.
+func TestVerifyPeerMissingExtendedKeyUsage(t *testing.T) {
+	// Arrange
+	cert := &x509.Certificate{Raw: []byte("foo")}
+
+	// Act
+	rsp, err := verifyPeer(&advancedtls.VerificationFuncParams{
+		Leaf: cert,
+	})
+
+	// Assert
+	require.Nil(t, rsp)
+	require.ErrorContains(t, err, "peer certificate does not have the extended key usage set")
+}
+
+// Test that the verification function allows access if the certificate meets
+// the requirements.
+func TestVerifyPeerCorrectCertificate(t *testing.T) {
+	// Arrange
+	cert := &x509.Certificate{
+		Raw:         []byte("foo"),
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+
+	// Act
+	rsp, err := verifyPeer(&advancedtls.VerificationFuncParams{
+		Leaf: cert,
+	})
+
+	// Assert
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
 }

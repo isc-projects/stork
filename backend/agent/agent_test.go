@@ -2,7 +2,9 @@ package agent
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"math/rand"
 	"os"
@@ -769,4 +771,79 @@ func TestHostAndPortParams(t *testing.T) {
 	stdoutStr := string(stdout)
 	require.Contains(t, stdoutStr, "127.0.0.1")
 	require.Contains(t, stdoutStr, "9876")
+}
+
+// Tests the peer verification function creation.
+func TestCreateVerifyPeer(t *testing.T) {
+	// Arrange
+	allowedFingerprint := [32]byte{42}
+
+	// Act
+	verify := createVerifyPeer(allowedFingerprint)
+
+	// Assert
+	require.NotNil(t, verify)
+}
+
+// The verification function must deny access if the extended key usage is
+// missing.
+func TestVerifyPeerMissingExtendedKeyUsage(t *testing.T) {
+	// Arrange
+	cert := &x509.Certificate{Raw: []byte("foo")}
+	fingerprint := sha256.Sum256(cert.Raw)
+
+	verify := createVerifyPeer(fingerprint)
+
+	// Act
+	rsp, err := verify(&advancedtls.VerificationFuncParams{
+		Leaf: cert,
+	})
+
+	// Assert
+	require.Nil(t, rsp)
+	require.ErrorContains(t, err, "peer certificate does not have the extended key usage set")
+}
+
+// The verification function must deny access if the certificate fingerprint
+// doesn't match the allowed one.
+func TestVerifyPeerFingerprintMismatch(t *testing.T) {
+	// Arrange
+	cert := &x509.Certificate{
+		Raw:         []byte("foo"),
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	fingerprint := [32]byte{42}
+
+	verify := createVerifyPeer(fingerprint)
+
+	// Act
+	rsp, err := verify(&advancedtls.VerificationFuncParams{
+		Leaf: cert,
+	})
+
+	// Assert
+	require.Nil(t, rsp)
+	require.ErrorContains(t, err, "peer certificate fingerprint does not match the allowed one")
+}
+
+// Test that the verification function allows access if the certificate meets
+// the requirements.
+func TestVerifyPeerCorrectCertificate(t *testing.T) {
+	// Arrange
+	cert := &x509.Certificate{
+		Raw:         []byte("foo"),
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	fingerprint := sha256.Sum256(cert.Raw)
+
+	verify := createVerifyPeer(fingerprint)
+
+	// Act
+	rsp, err := verify(&advancedtls.VerificationFuncParams{
+		Leaf: cert,
+	})
+
+	// Assert
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
 }

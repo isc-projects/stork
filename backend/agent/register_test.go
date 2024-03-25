@@ -109,6 +109,12 @@ func TestRegisterBasic(t *testing.T) {
 	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
 	require.True(t, res)
 
+	// verify the server cert fingerprint is written to the file
+	fingerprintFromFile, err := os.ReadFile(ServerCertFingerprintFile)
+	require.NoError(t, err)
+	expectedFingerprint := [32]byte{42}
+	require.Equal(t, storkutil.BytesToHex(expectedFingerprint[:]), string(fingerprintFromFile))
+
 	// register with agent token
 	serverToken = ""
 	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
@@ -144,10 +150,12 @@ func TestRegisterBadServer(t *testing.T) {
 	withID := true
 	withServerCert := true
 	withAgentCert := true
+	withServerCertFingerprint := true
 
 	var idValue interface{}
 	var serverCertValue interface{}
 	var agentCertValue interface{}
+	var serverCertFingerprint interface{}
 	idValue = 10
 	serverCertValue = nil
 	agentCertValue = nil
@@ -195,6 +203,10 @@ func TestRegisterBadServer(t *testing.T) {
 				resp["agentCert"] = agentCertValue
 			}
 
+			if serverCertFingerprint != nil {
+				resp["serverCertFingerprint"] = serverCertFingerprint
+			}
+
 			if !withID {
 				delete(resp, "id")
 			}
@@ -203,6 +215,9 @@ func TestRegisterBadServer(t *testing.T) {
 			}
 			if !withAgentCert {
 				delete(resp, "agentCert")
+			}
+			if !withServerCertFingerprint {
+				delete(resp, "serverCertFingerprint")
 			}
 
 			json.NewEncoder(w).Encode(resp)
@@ -228,9 +243,13 @@ func TestRegisterBadServer(t *testing.T) {
 
 	serverURL := ts.URL
 
+	// initially all is OK
+	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
+	require.True(t, res)
+
 	// missing ID in response
 	withID = false
-	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
 	require.False(t, res)
 	withID = true
 
@@ -263,6 +282,22 @@ func TestRegisterBadServer(t *testing.T) {
 	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
 	require.False(t, res)
 	agentCertValue = nil // restore proper value
+
+	// missing serverCertFingerprint in response
+	withServerCertFingerprint = false
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
+	require.False(t, res)
+	withServerCertFingerprint = true
+
+	// bad serverCertFingerprint in response
+	serverCertFingerprint = "bad-fingerprint"
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
+	require.False(t, res)
+	serverCertFingerprint = nil // restore proper value
+
+	// finally all is OK
+	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenKey, retry, NewHTTPClient())
+	require.True(t, res)
 }
 
 // Check Register response to bad arguments or how it behaves in bad environment.
@@ -308,6 +343,12 @@ func TestRegisterNegative(t *testing.T) {
 	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, NewHTTPClient())
 	require.False(t, res)
 	AgentTokenFile = path.Join(sb.BasePath, "tokens/agent-token.txt") // restore proper value
+
+	// bad folder for server cert fingerprint
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "non-existing-dir/server-cert.sha256")
+	res = Register("http:://localhost:54333", "", "1.2.3.4", "8080", false, false, NewHTTPClient())
+	require.False(t, res)
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert.sha256")
 
 	// not running agent on 54444 port
 	res = Register("http://localhost:54333", "serverToken", "localhost", "54444", false, false, NewHTTPClient())
@@ -396,6 +437,26 @@ func TestGenerateCSRHelper(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM3)
 	require.NotEqualValues(t, privKeyPEM2, privKeyPEM3)
+	evaluateCSR(csrPEM3)
+
+	// 4) generate again but the server cert fingerprint is missing
+	regenKey = false
+	_ = os.Remove(ServerCertFingerprintFile)
+	csrPEM4, err := generateCSR(certStore, agentAddr, regenKey)
+	require.NoError(t, err)
+	require.NotEmpty(t, csrPEM2)
+	agentToken4, err := certStore.ReadToken()
+	require.NoError(t, err)
+	require.NotEmpty(t, agentToken4)
+	// CSR is regenerated but no agent token
+	require.NotEqualValues(t, csrPEM3, csrPEM4)
+	require.EqualValues(t, agentToken3, agentToken4)
+	// but key in the file is the same
+	privKeyPEM4, err := os.ReadFile(KeyPEMFile)
+	require.NoError(t, err)
+	require.NotEmpty(t, privKeyPEM4)
+	require.EqualValues(t, privKeyPEM3, privKeyPEM4)
+	evaluateCSR(csrPEM4)
 }
 
 // Check if generating agent token file works and a value in the file
@@ -444,6 +505,7 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 			agentToken := req["agentToken"].(string)
 			require.NotEmpty(t, agentToken)
 			lastRegisterAgentToken = agentToken
+			require.NotEmpty(t, req["caCertFingerprint"].(string))
 
 			agentCSR := []byte(req["agentCSR"].(string))
 			require.NotEmpty(t, agentCSR)
@@ -548,6 +610,7 @@ func TestRepeatRegister(t *testing.T) {
 			if serverToken != "" {
 				require.EqualValues(t, serverToken, serverTokenReceived)
 			}
+			require.NotEmpty(t, req["caCertFingerprint"])
 
 			if agentToken == lastAgentToken {
 				w.Header().Add("Location", locationHeaderValue)
@@ -610,6 +673,8 @@ func TestRepeatRegister(t *testing.T) {
 	require.NoError(t, err)
 	rootCA1, err := os.ReadFile(RootCAFile)
 	require.NoError(t, err)
+	serverCertFingerprint1, err := os.ReadFile(ServerCertFingerprintFile)
+	require.NoError(t, err)
 
 	// re-register with the same agent token
 	serverToken = ""
@@ -624,11 +689,14 @@ func TestRepeatRegister(t *testing.T) {
 	require.NoError(t, err)
 	rootCA2, err := os.ReadFile(RootCAFile)
 	require.NoError(t, err)
+	serverCertFingerprint2, err := os.ReadFile(ServerCertFingerprintFile)
+	require.NoError(t, err)
 
 	require.Equal(t, privKeyPEM1, privKeyPEM2)
 	require.Equal(t, agentToken1, agentToken2)
 	require.Equal(t, certPEM1, certPEM2)
 	require.Equal(t, rootCA1, rootCA2)
+	require.Equal(t, serverCertFingerprint1, serverCertFingerprint2)
 
 	// Regenerate certs
 	regenKey = true
@@ -644,11 +712,15 @@ func TestRepeatRegister(t *testing.T) {
 	require.NoError(t, err)
 	rootCA3, err := os.ReadFile(RootCAFile)
 	require.NoError(t, err)
+	serverCertFingerprint3, err := os.ReadFile(ServerCertFingerprintFile)
+	require.NoError(t, err)
 
 	require.NotEqual(t, privKeyPEM1, privKeyPEM3)
 	require.NotEqual(t, agentToken1, agentToken3)
 	require.NotEqual(t, certPEM1, certPEM3)
 	require.NotEqual(t, rootCA1, rootCA3)
+	// The server cert has not been changed.
+	require.Equal(t, serverCertFingerprint1, serverCertFingerprint3)
 
 	// Re-registration, but invalid header is returned
 	regenKey = false

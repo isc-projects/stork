@@ -441,6 +441,12 @@ func TestCreateMachine(t *testing.T) {
 	okRsp := rsp.(*services.CreateMachineOK)
 	require.NotEmpty(t, okRsp.Payload.ID)
 	require.NotEmpty(t, okRsp.Payload.ServerCACert)
+	require.EqualValues(t, caCertPEM1, okRsp.Payload.ServerCACert)
+	require.NotEmpty(t, okRsp.Payload.ServerCertFingerprint)
+	expectedServerCertFingerprint, _ := pki.CalculateFingerprintFromPEM(serverCertPEM1)
+	expectedServerCertFingerprintHex := storkutil.BytesToHex(expectedServerCertFingerprint[:])
+	require.Equal(t, expectedServerCertFingerprintHex, okRsp.Payload.ServerCertFingerprint)
+
 	require.NotEmpty(t, okRsp.Payload.AgentCert)
 	machines, err := dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)
@@ -494,6 +500,68 @@ func TestCreateMachine(t *testing.T) {
 	// agent cert isn't re-signed so fingerprint should be the same
 	require.Equal(t, certFingerprint1, m1.CertFingerprint)
 	require.True(t, m1.LastVisitedAt.IsZero())
+
+	// Re-register (the same) machine but with different CA cert fingerprint.
+	// Server should generate new agent cert. The authorization status should
+	// be preserved.
+	nonMatchingFingerprint := [32]byte{42}
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:   &addr,
+			AgentPort: 8080,
+			AgentCSR:  &agentCSR,
+			// Missing server token.
+			AgentToken:        &agentToken,
+			CaCertFingerprint: storkutil.BytesToHex(nonMatchingFingerprint[:]),
+		},
+	}
+
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineOK{}, rsp)
+	okRsp2 := rsp.(*services.CreateMachineOK)
+	require.Equal(t, okRsp.Payload.ID, okRsp2.Payload.ID)
+	require.EqualValues(t, caCertPEM1, okRsp2.Payload.ServerCACert)
+	require.Equal(t, expectedServerCertFingerprintHex, okRsp2.Payload.ServerCertFingerprint)
+	require.NotEqual(t, okRsp.Payload.AgentCert, okRsp2.Payload.AgentCert)
+
+	machines, err = dbmodel.GetAllMachines(db, nil)
+	require.NoError(t, err)
+	require.Len(t, machines, 1)
+	m1 = machines[0]
+	require.True(t, m1.Authorized)
+	// agent cert is re-signed so fingerprint shouldn't be the same
+	require.NotEqual(t, certFingerprint1, m1.CertFingerprint)
+	require.True(t, m1.LastVisitedAt.IsZero())
+
+	// De-authorize and repeat. The machine cannot be authorized.
+	m1.Authorized = false
+	err = dbmodel.UpdateMachine(db, &m1)
+	require.NoError(t, err)
+
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:   &addr,
+			AgentPort: 8080,
+			AgentCSR:  &agentCSR,
+			// Missing server token.
+			AgentToken:        &agentToken,
+			CaCertFingerprint: storkutil.BytesToHex(nonMatchingFingerprint[:]),
+		},
+	}
+
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineOK{}, rsp)
+	okRsp3 := rsp.(*services.CreateMachineOK)
+	require.Equal(t, okRsp.Payload.ID, okRsp3.Payload.ID)
+	require.EqualValues(t, caCertPEM1, okRsp3.Payload.ServerCACert)
+	require.Equal(t, expectedServerCertFingerprintHex, okRsp3.Payload.ServerCertFingerprint)
+	require.NotEqual(t, okRsp.Payload.AgentCert, okRsp3.Payload.AgentCert)
+
+	machines, err = dbmodel.GetAllMachines(db, nil)
+	require.NoError(t, err)
+	require.Len(t, machines, 1)
+	m1 = machines[0]
+	require.False(t, m1.Authorized)
 
 	// add another machine but with no server token (agent token is used for authorization)
 	addr = "5.6.7.8"

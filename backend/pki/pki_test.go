@@ -4,15 +4,18 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	storkutil "isc.org/stork/util"
 )
 
 // Check if GenCACert function works properly, i.e. returns non-empty
@@ -36,6 +39,12 @@ func TestGenCAKeyCert(t *testing.T) {
 	require.WithinDuration(t, now, rootCert.NotBefore, time.Second*10)
 	require.WithinDuration(t, now.AddDate(CertValidityYears, 0, 0), rootCert.NotAfter, time.Second*10)
 	require.True(t, rootCert.IsCA)
+	// check key usage
+	require.Equal(t, x509.KeyUsageCertSign|x509.KeyUsageDigitalSignature, rootCert.KeyUsage)
+	// check extended key usage
+	require.Contains(t, rootCert.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
+	require.Contains(t, rootCert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
+	require.Len(t, rootCert.ExtKeyUsage, 2)
 
 	// check cert PEM
 	pemBlock, _ := pem.Decode(rootPEM)
@@ -87,6 +96,14 @@ func TestGenKeyCert(t *testing.T) {
 	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, nil, parentKey, keyUsage)
 	require.EqualError(t, err, "parent cert cannot be empty")
 
+	// any key usage
+	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, parentKey, x509.ExtKeyUsageAny)
+	require.ErrorContains(t, err, "invalid extended key usage")
+
+	// unsupported key usage
+	_, _, err = GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, parentKey, x509.ExtKeyUsageEmailProtection)
+	require.ErrorContains(t, err, "invalid extended key usage")
+
 	// it should be ok
 	certPEM, privKeyPEM, err := GenKeyCert(name, dnsNames, ipAddresses, 1, parentCert, parentKey, keyUsage)
 	require.NoError(t, err)
@@ -102,6 +119,9 @@ func TestGenKeyCert(t *testing.T) {
 	require.False(t, cert.IsCA)
 	err = cert.CheckSignatureFrom(parentCert)
 	require.NoError(t, err)
+	require.Equal(t, cert.ExtKeyUsage[0], keyUsage)
+	require.Len(t, cert.ExtKeyUsage, 1)
+	require.Equal(t, parentCert.Subject, cert.Issuer)
 }
 
 // Test if GenCSRUsingKey checks arguments passed to it and if
@@ -225,33 +245,214 @@ func TestSignCert(t *testing.T) {
 	csrPEM, _, err := GenCSRUsingKey(name, dnsNames, ipAddresses, privKeyPEM)
 	require.NoError(t, err)
 
-	// empty CSR
-	_, _, paramsErr, innerErr := SignCert(nil, serialNumber, parentCertPEM, parentKeyPEM)
-	require.EqualError(t, paramsErr, "CSR PEM cannot be empty")
-	require.NoError(t, innerErr)
+	t.Run("empty CSR", func(t *testing.T) {
+		_, _, paramsErr, innerErr := SignCert(nil, serialNumber, parentCertPEM, parentKeyPEM)
+		require.EqualError(t, paramsErr, "CSR PEM cannot be empty")
+		require.NoError(t, innerErr)
+	})
 
-	// empty parentKeyPEM
-	_, _, paramsErr, innerErr = SignCert(csrPEM, serialNumber, parentCertPEM, nil)
-	require.EqualError(t, paramsErr, "parent key PEM cannot be empty")
-	require.NoError(t, innerErr)
+	t.Run("empty parentKeyPEM", func(t *testing.T) {
+		_, _, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, nil)
+		require.EqualError(t, paramsErr, "parent key PEM cannot be empty")
+		require.NoError(t, innerErr)
+	})
 
-	// empty parentCertPEM
-	_, _, paramsErr, innerErr = SignCert(csrPEM, serialNumber, nil, parentKeyPEM)
-	require.EqualError(t, paramsErr, "parent cert PEM cannot be empty")
-	require.NoError(t, innerErr)
+	t.Run("empty parentCertPEM", func(t *testing.T) {
+		_, _, paramsErr, innerErr := SignCert(csrPEM, serialNumber, nil, parentKeyPEM)
+		require.EqualError(t, paramsErr, "parent cert PEM cannot be empty")
+		require.NoError(t, innerErr)
+	})
 
-	// it should be ok
-	certPEM, fingerprint, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, parentKeyPEM)
-	require.NoError(t, paramsErr)
-	require.NoError(t, innerErr)
-	require.NotEmpty(t, certPEM)
-	require.NotEmpty(t, fingerprint)
+	t.Run("it should be ok", func(t *testing.T) {
+		certPEM, fingerprint, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, parentKeyPEM)
+		require.NoError(t, paramsErr)
+		require.NoError(t, innerErr)
+		require.NotEmpty(t, certPEM)
+		require.NotEmpty(t, fingerprint)
 
-	// check cert PEM
-	pemBlock, _ := pem.Decode(certPEM)
-	cert, err := x509.ParseCertificate(pemBlock.Bytes)
+		// check cert PEM
+		pemBlock, _ := pem.Decode(certPEM)
+		cert, err := x509.ParseCertificate(pemBlock.Bytes)
+		require.NoError(t, err)
+		require.False(t, cert.IsCA)
+		require.EqualValues(t, dnsNames[0], cert.DNSNames[0])
+		require.True(t, ipAddresses[0].Equal(cert.IPAddresses[0]))
+	})
+
+	t.Run("unknown public key type - it cannot panic", func(t *testing.T) {
+		// Generate CSR with another public key type.
+		privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		require.NoError(t, err)
+		pemBlock, _ := pem.Decode(csrPEM)
+		csrTemplate, err := x509.ParseCertificateRequest(pemBlock.Bytes)
+		require.NoError(t, err)
+		csrTemplate.SignatureAlgorithm = x509.SHA512WithRSA
+		csrTemplate.PublicKeyAlgorithm = x509.RSA
+		csrBytes, err := x509.CreateCertificateRequest(rand.Reader, csrTemplate, privKey)
+		require.NoError(t, err)
+		csrPEM = toPEM("CERTIFICATE REQUEST", csrBytes)
+
+		certPEM, fingerprint, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, parentKeyPEM)
+		require.NoError(t, paramsErr)
+		require.ErrorContains(t, innerErr, "unrecognized public key type")
+		require.Empty(t, certPEM)
+		require.Empty(t, fingerprint)
+	})
+}
+
+// Test that the fingerprint is calculated using the SHA256 algorithm.
+func TestCalculateFingerprint(t *testing.T) {
+	// Arrange
+	cert := &x509.Certificate{Raw: []byte("foo")}
+	expectedFingerprint := strings.ToUpper(
+		"2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+	)
+
+	// Act
+	fingerprint := CalculateFingerprint(cert)
+	fingerprintHex := storkutil.BytesToHex(fingerprint[:])
+
+	// Assert
+	require.Equal(t, expectedFingerprint, fingerprintHex)
+}
+
+// Test that the fingerprint from PEM is calculated using the SHA256 algorithm.
+func TestCalculateFingerprintFromPEM(t *testing.T) {
+	// Arrange
+	parentKey, _, parentCert, _, err := GenCAKeyCert(42)
 	require.NoError(t, err)
-	require.False(t, cert.IsCA)
-	require.EqualValues(t, dnsNames[0], cert.DNSNames[0])
-	require.True(t, ipAddresses[0].Equal(cert.IPAddresses[0]))
+	certPEM, _, err := GenKeyCert("foo", []string{"bar"}, nil, 1, parentCert, parentKey, x509.ExtKeyUsageClientAuth)
+	require.NoError(t, err)
+	cert, _ := ParseCert(certPEM)
+
+	// Act
+	fingerprintX509 := CalculateFingerprint(cert)
+	fingerprintPEM, err := CalculateFingerprintFromPEM(certPEM)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, fingerprintX509, fingerprintPEM)
+}
+
+// Test that the internal certificates are correctly identified.
+func TestIsInternalCert(t *testing.T) {
+	t.Run("internal cert", func(t *testing.T) {
+		// Arrange
+		cert := x509.Certificate{
+			Subject: pkix.Name{
+				Organization: []string{"ISC Stork"},
+			},
+		}
+
+		// Act
+		isInternal := IsInternalCert(&cert)
+
+		// Assert
+		require.True(t, isInternal)
+	})
+
+	t.Run("external cert", func(t *testing.T) {
+		// Arrange
+		cert := x509.Certificate{
+			Subject: pkix.Name{
+				Organization: []string{"Not ISC Stork"},
+			},
+		}
+
+		// Act
+		isInternal := IsInternalCert(&cert)
+
+		// Assert
+		require.False(t, isInternal)
+	})
+
+	t.Run("mixed cert", func(t *testing.T) {
+		// Arrange
+		cert := x509.Certificate{
+			Subject: pkix.Name{
+				Organization: []string{"ISC Stork", "Not ISC Stork"},
+			},
+		}
+
+		// Act
+		isInternal := IsInternalCert(&cert)
+
+		// Assert
+		require.False(t, isInternal)
+	})
+}
+
+// Test that the self-signed certificates are correctly identified.
+func TestIsSelfSigned(t *testing.T) {
+	// Arrange
+	names := []pkix.Name{
+		{
+			Country: []string{"US"},
+		},
+		{
+			Organization: []string{"organization"},
+		},
+		{
+			OrganizationalUnit: []string{"unit"},
+		},
+		{
+			Locality: []string{"locality"},
+		},
+		{
+			Province: []string{"province"},
+		},
+		{
+			StreetAddress: []string{"street"},
+		},
+		{
+			PostalCode: []string{"postal"},
+		},
+		{
+			SerialNumber: "serial",
+		},
+		{
+			CommonName: "common",
+		},
+		{
+			Country:            []string{"US"},
+			Organization:       []string{"organization"},
+			OrganizationalUnit: []string{"unit"},
+			Locality:           []string{"locality"},
+			Province:           []string{"province"},
+			StreetAddress:      []string{"street"},
+			PostalCode:         []string{"postal"},
+			SerialNumber:       "serial",
+			CommonName:         "common",
+		},
+	}
+
+	t.Run("same issuer and subject", func(t *testing.T) {
+		for _, name := range names {
+			cert := &x509.Certificate{
+				Subject: name,
+				Issuer:  name,
+			}
+
+			// Act
+			isSelfSigned := IsSelfSigned(cert)
+
+			// Assert
+			require.True(t, isSelfSigned)
+		}
+	})
+
+	t.Run("different issuer and subject", func(t *testing.T) {
+		for _, name := range names {
+			cert := &x509.Certificate{
+				Subject: name,
+				Issuer:  pkix.Name{},
+			}
+
+			// Act
+			isSelfSigned := IsSelfSigned(cert)
+
+			// Assert
+			require.False(t, isSelfSigned)
+		}
+	})
 }

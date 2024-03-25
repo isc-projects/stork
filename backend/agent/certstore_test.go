@@ -55,6 +55,41 @@ func TestReadTLSCert(t *testing.T) {
 	require.NotNil(t, cert)
 }
 
+// Test that the store reads and parses a proper agent token.
+func TestReadAgentToken(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	store := NewCertStoreDefault()
+
+	// Act
+	token, err := store.ReadToken()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, token)
+	require.Equal(t,
+		"1800000000000000000000000000000000000000000000000000000000000000",
+		token,
+	)
+}
+
+// Test that the store reads and parses a proper server certificate fingerprint.
+func TestReadServerCertFingerprint(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	store := NewCertStoreDefault()
+
+	// Act
+	fingerprint, err := store.ReadServerCertFingerprint()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, fingerprint)
+	require.Equal(t, [32]byte{42}, fingerprint)
+}
+
 // Test that the performing the key regeneration changes the content of the
 // key file and removes other store files.
 func TestCreateKey(t *testing.T) {
@@ -197,6 +232,23 @@ func TestWriteCertPEMInvalid(t *testing.T) {
 	require.ErrorContains(t, err, "content is invalid")
 }
 
+// Test that the server certificate fingerprint is saved properly.
+func TestWriteServerCertFingerprint(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	store := NewCertStoreDefault()
+	fingerprint := [32]byte{42, 42, 42}
+
+	// Act
+	err := store.WriteServerCertFingerprint(fingerprint)
+
+	// Assert
+	require.NoError(t, err)
+	savedFingerprint, _ := store.ReadServerCertFingerprint()
+	require.Equal(t, fingerprint, savedFingerprint)
+}
+
 // Test that the cert store is recognized as valid if all certificate files
 // are valid.
 func TestCertStoreIsValid(t *testing.T) {
@@ -304,4 +356,84 @@ func TestCertStoreIsNotEmpty(t *testing.T) {
 			require.False(t, isEmpty)
 		})
 	}
+}
+
+// Test that the fingerprint of the CA certificate is read properly.
+func TestReadCACertFingerprint(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	store := NewCertStoreDefault()
+
+	// Act
+	actualFingerprint, err := store.ReadRootCAFingerprint()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotEqual(t, [32]byte{}, actualFingerprint)
+}
+
+// Test that the fingerprint is zero if the CA certificate is missing.
+func TestReadCACertFingerprintForMissingCA(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
+	store := NewCertStoreDefault()
+
+	// Act
+	fingerprint, err := store.ReadRootCAFingerprint()
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, [32]byte{}, fingerprint)
+}
+
+// Test that the fingerprint cannot be read from the invalid CA cert.
+func TestReadCACertFingerprintForInvalidCA(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	store := NewCertStoreDefault()
+	_ = os.WriteFile(RootCAFile, []byte("invalid"), 0o644)
+
+	// Act
+	fingerprint, err := store.ReadRootCAFingerprint()
+
+	// Assert
+	require.ErrorContains(t, err, "could not calculate fingerprint for Root CA cert")
+	require.Zero(t, fingerprint)
+}
+
+// Test that the existence of the server certificate fingerprint file is
+// recognized properly.
+func TestIsServerCertFingerprintFileExist(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	store := NewCertStoreDefault()
+
+	t.Run("exists", func(t *testing.T) {
+		// Act
+		exists, err := store.IsServerCertFingerprintFileExist()
+
+		// Assert
+		require.NoError(t, err)
+		require.True(t, exists)
+	})
+
+	t.Run("not exists", func(t *testing.T) {
+		// Arrange
+		_ = os.Remove(ServerCertFingerprintFile)
+
+		// Act
+		exists, err := store.IsServerCertFingerprintFileExist()
+
+		// Assert
+		require.NoError(t, err)
+		require.False(t, exists)
+	})
 }
