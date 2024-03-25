@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/pki"
 	"isc.org/stork/testutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Check if registration works in basic situation.
@@ -30,6 +31,7 @@ func TestRegisterBasic(t *testing.T) {
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
 
 	// register arguments
 	serverToken := "serverToken"
@@ -55,8 +57,10 @@ func TestRegisterBasic(t *testing.T) {
 			require.EqualValues(t, int(req["agentPort"].(float64)), agentPort)
 			serverTokenReceived := req["serverToken"].(string)
 			agentToken := req["agentToken"].(string)
+			caCertFingerprint := req["caCertFingerprint"].(string)
 
 			require.NotEmpty(t, agentToken)
+			require.NotEmpty(t, caCertFingerprint)
 			if serverToken != "" {
 				require.EqualValues(t, serverToken, serverTokenReceived)
 			}
@@ -71,10 +75,12 @@ func TestRegisterBasic(t *testing.T) {
 			require.NoError(t, innerErr)
 
 			w.WriteHeader(http.StatusOK)
+			fingerprint := [32]byte{42}
 			resp := map[string]interface{}{
-				"id":           10,
-				"serverCACert": string(rootCertPEM),
-				"agentCert":    string(agentCertPEM),
+				"id":                    10,
+				"serverCACert":          string(rootCertPEM),
+				"agentCert":             string(agentCertPEM),
+				"serverCertFingerprint": storkutil.BytesToHex(fingerprint[:]),
 			}
 			json.NewEncoder(w).Encode(resp)
 		}
@@ -126,6 +132,7 @@ func TestRegisterBadServer(t *testing.T) {
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cer.sha256")
 
 	// register arguments
 	serverToken := "serverToken"
@@ -170,12 +177,14 @@ func TestRegisterBadServer(t *testing.T) {
 			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
 			require.NoError(t, paramsErr)
 			require.NoError(t, innerErr)
+			initialFingerprint := [32]byte{42}
 
 			w.WriteHeader(http.StatusOK)
 			resp := map[string]interface{}{
-				"id":           idValue,
-				"serverCACert": string(rootCertPEM),
-				"agentCert":    string(agentCertPEM),
+				"id":                    idValue,
+				"serverCACert":          string(rootCertPEM),
+				"agentCert":             string(agentCertPEM),
+				"serverCertFingerprint": storkutil.BytesToHex(initialFingerprint[:]),
 			}
 
 			if serverCertValue != nil {
@@ -270,6 +279,7 @@ func TestRegisterNegative(t *testing.T) {
 	CertPEMFile = path.Join(sb.BasePath, "certs/cert.pem")
 	RootCAFile = path.Join(sb.BasePath, "certs/ca.pem")
 	AgentTokenFile = path.Join(sb.BasePath, "tokens/agent-token.txt")
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "tokens/server-cert.sha256")
 
 	// bad server URL
 	res := Register("12:3", "serverToken", "1.2.3.4", "8080", false, false, NewHTTPClient())
@@ -323,6 +333,7 @@ func TestGenerateCSRHelper(t *testing.T) {
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
 
 	certStore := NewCertStoreDefault()
 	// By-pass evaluating CSR.
@@ -335,6 +346,7 @@ func TestGenerateCSRHelper(t *testing.T) {
 
 		certStore.WriteRootCAPEM(rootCAPEM)
 		certStore.WriteCertPEM(childCertPEM)
+		certStore.WriteServerCertFingerprint([32]byte{42})
 	}
 
 	// 1) just generate
@@ -402,6 +414,7 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
 
 	// register arguments
 	serverToken := "serverToken"
@@ -442,10 +455,12 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 			require.NoError(t, innerErr)
 
 			w.WriteHeader(http.StatusOK)
+			fingerprint := [32]byte{42}
 			resp := map[string]interface{}{
-				"id":           10,
-				"serverCACert": string(rootCertPEM),
-				"agentCert":    string(agentCertPEM),
+				"id":                    10,
+				"serverCACert":          string(rootCertPEM),
+				"agentCert":             string(agentCertPEM),
+				"serverCertFingerprint": storkutil.BytesToHex(fingerprint[:]),
 			}
 			json.NewEncoder(w).Encode(resp)
 		}
@@ -499,6 +514,7 @@ func TestRepeatRegister(t *testing.T) {
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
 
 	// register arguments
 	serverToken := "serverToken"
@@ -551,10 +567,12 @@ func TestRepeatRegister(t *testing.T) {
 			require.NoError(t, innerErr)
 
 			w.WriteHeader(http.StatusOK)
+			fingerprint := [32]byte{42}
 			resp := map[string]interface{}{
-				"id":           10,
-				"serverCACert": string(rootCertPEM),
-				"agentCert":    string(agentCertPEM),
+				"id":                    10,
+				"serverCACert":          string(rootCertPEM),
+				"agentCert":             string(agentCertPEM),
+				"serverCertFingerprint": storkutil.BytesToHex(fingerprint[:]),
 			}
 			json.NewEncoder(w).Encode(resp)
 		}

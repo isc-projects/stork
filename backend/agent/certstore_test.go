@@ -22,6 +22,7 @@ func TestNewCertStoreDefault(t *testing.T) {
 	require.Equal(t, CertPEMFile, store.certPEMPath)
 	require.Equal(t, RootCAFile, store.rootCAPEMPath)
 	require.Equal(t, AgentTokenFile, store.agentTokenPath)
+	require.Equal(t, ServerCertFingerprintFile, store.serverCertFingerprintPath)
 }
 
 // Test that the store reads and parses a proper root CA certificate.
@@ -215,10 +216,11 @@ func TestCertStoreIsValid(t *testing.T) {
 func TestCertStoreIsNotValidForMissingFiles(t *testing.T) {
 	// Arrange
 	pathGetters := map[string]func(s *CertStore) string{
-		"key":     func(s *CertStore) string { return s.keyPEMPath },
-		"cert":    func(s *CertStore) string { return s.certPEMPath },
-		"root CA": func(s *CertStore) string { return s.rootCAPEMPath },
-		"token":   func(s *CertStore) string { return s.agentTokenPath },
+		"key":                func(s *CertStore) string { return s.keyPEMPath },
+		"cert":               func(s *CertStore) string { return s.certPEMPath },
+		"root CA":            func(s *CertStore) string { return s.rootCAPEMPath },
+		"token":              func(s *CertStore) string { return s.agentTokenPath },
+		"server fingerprint": func(s *CertStore) string { return s.serverCertFingerprintPath },
 	}
 	for label, pathGetter := range pathGetters {
 		t.Run(label, func(t *testing.T) {
@@ -249,6 +251,7 @@ func TestCertStoreIsEmpty(t *testing.T) {
 	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
 	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
 	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists.json")
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
 
 	store := NewCertStoreDefault()
 
@@ -275,12 +278,14 @@ func TestCertStoreIsNotEmpty(t *testing.T) {
 	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
 	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
 	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists.json")
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
 
 	pathPointers := map[string]*string{
-		"key":     &KeyPEMFile,
-		"root CA": &RootCAFile,
-		"cert":    &CertPEMFile,
-		"token":   &AgentTokenFile,
+		"key":                &KeyPEMFile,
+		"root CA":            &RootCAFile,
+		"cert":               &CertPEMFile,
+		"token":              &AgentTokenFile,
+		"server fingerprint": &ServerCertFingerprintFile,
 	}
 
 	for label, pathPointer := range pathPointers {
