@@ -5,13 +5,12 @@ import { MenuItem, MessageService } from 'primeng/api'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
-import { extractKeyValsAndPrepareQueryParams, getErrorMessage } from '../utils'
+import { getErrorMessage } from '../utils'
 import { concat, EMPTY, of, Subscription } from 'rxjs'
 import { catchError, filter, take } from 'rxjs/operators'
 import { HostForm } from '../forms/host-form'
 import { Host, LocalHost } from '../backend'
 import { hasDifferentLocalHostData } from '../hosts'
-import { HostsFilter } from './hosts-filter'
 import { Location } from '@angular/common'
 import { PrefilteredTable } from '../table'
 
@@ -86,6 +85,20 @@ export class HostTab {
 }
 
 /**
+ * Specifies the filter parameters for fetching hosts that may be specified
+ * either in the URL query parameters or programmatically.
+ */
+export interface HostsFilter {
+    text?: string
+    appId?: number
+    subnetId?: number
+    keaSubnetId?: number
+    isGlobal?: boolean
+    conflict?: boolean
+    migrationError?: boolean
+}
+
+/**
  * This component implements a page which displays hosts along with
  * their DHCP identifiers and IP reservations. The list of hosts is
  * paged and can be filtered by a reserved IP address. The list
@@ -99,8 +112,8 @@ export class HostTab {
     styleUrls: ['./hosts-page.component.sass'],
 })
 export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements OnInit, OnDestroy {
-    queryParamNumericKeys: (keyof HostsFilter)[] = ['subnetId']
-    queryParamBooleanKeys: (keyof HostsFilter)[] = ['isGlobal']
+    queryParamNumericKeys: (keyof HostsFilter)[] = []
+    queryParamBooleanKeys: (keyof HostsFilter)[] = []
     filterNumericKeys: (keyof HostsFilter)[] = ['appId', 'subnetId', 'keaSubnetId']
     filterBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict', 'migrationError']
     subscriptions = new Subscription()
@@ -159,11 +172,6 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
             })
         )
     }
-
-    /**
-     * The filter input box content.
-     */
-    filterText: string = ''
 
     /**
      * Array of tabs with host information.
@@ -593,26 +601,6 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
             return 'conflict'
         } else {
             return 'duplicate'
-        }
-    }
-
-    /**
-     * Filters the list of hosts by text. The text may contain key=val
-     * pairs allowing filtering by various keys. Filtering is realized
-     * server-side.
-     */
-    keyUpFilterText(event: Pick<KeyboardEvent, 'key'>) {
-        if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const filter = extractKeyValsAndPrepareQueryParams<HostsFilter>(
-                this.filterText,
-                this.filterNumericKeys,
-                this.filterBooleanKeys
-            )
-
-            this.filter$.next({
-                source: 'input',
-                filter: filter,
-            })
         }
     }
 

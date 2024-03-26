@@ -40,6 +40,8 @@ import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { TagModule } from 'primeng/tag'
 import { MessagesModule } from 'primeng/messages'
+import { InputNumberModule } from 'primeng/inputnumber'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -91,6 +93,7 @@ describe('HostsPageComponent', () => {
                 TreeModule,
                 TagModule,
                 MessagesModule,
+                InputNumberModule,
             ],
             declarations: [
                 EntityLinkComponent,
@@ -106,6 +109,7 @@ describe('HostsPageComponent', () => {
                 DhcpOptionSetFormComponent,
                 DhcpOptionSetViewComponent,
                 HostDataSourceLabelComponent,
+                PluralizePipe,
             ],
         }).compileComponents()
     }))
@@ -150,7 +154,6 @@ describe('HostsPageComponent', () => {
         expect(component).toBeTruthy()
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
-        expect(component.filterText.length).toBe(0)
     })
 
     it('host table should have valid app name and app link', () => {
@@ -1094,12 +1097,11 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'appId:2'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.filter$.next({ source: 'callback', filter: { appId: 2 } })
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, 2, undefined, undefined, undefined, undefined, undefined)
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, 2, null, null, null, null, null)
 
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
@@ -1110,16 +1112,15 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'appId:abc'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'foo' }))
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).not.toHaveBeenCalled()
+        expect(dhcpApi.getHosts).toHaveBeenCalled()
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
-        expect(errMsg.nativeElement.innerText).toBe('Please specify appId as a number (e.g., appId:2).')
+        expect(errMsg.nativeElement.innerText).toBe('Please specify appId as a number (e.g., appId=2).')
     }))
 
     it('hosts list should be filtered by subnetId', fakeAsync(() => {
@@ -1128,12 +1129,11 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'subnetId:89'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.filter$.next({ source: 'callback', filter: { subnetId: 89 } })
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, undefined, 89, undefined, undefined, undefined, undefined)
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, 89, null, null, null, null)
 
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
@@ -1144,16 +1144,16 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'subnetId:abc'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.queryParamNumericKeys = ['subnetId']
+        component.updateFilterFromQueryParameters(convertToParamMap({ subnetId: 'abc' }))
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).not.toHaveBeenCalled()
+        expect(dhcpApi.getHosts).toHaveBeenCalled()
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
-        expect(errMsg.nativeElement.innerText).toBe('Please specify subnetId as a number (e.g., subnetId:2).')
+        expect(errMsg.nativeElement.innerText).toBe('Please specify subnetId as a number (e.g., subnetId=2).')
     }))
 
     it('hosts list should be filtered by conflicts', fakeAsync(() => {
@@ -1162,21 +1162,11 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'is:conflict'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.filter$.next({ source: 'callback', filter: { conflict: true } })
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(
-            0,
-            10,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            true
-        )
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, true)
 
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
@@ -1187,21 +1177,11 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'not:conflict'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.filter$.next({ source: 'callback', filter: { conflict: false } })
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(
-            0,
-            10,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            false
-        )
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, false)
 
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
@@ -1212,12 +1192,11 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'keaSubnetId:101'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.filter$.next({ source: 'callback', filter: { keaSubnetId: 101 } })
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, undefined, undefined, 101, undefined, undefined, undefined)
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, 101, null, null, null)
 
         expect(fixture.debugElement.query(By.css('.p-error'))).toBeFalsy()
     }))
@@ -1228,16 +1207,16 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'keaSubnetId:abc'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.queryParamNumericKeys = ['keaSubnetId']
+        component.updateFilterFromQueryParameters(convertToParamMap({ keaSubnetId: 'abc' }))
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).not.toHaveBeenCalledWith()
+        expect(dhcpApi.getHosts).toHaveBeenCalled()
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
-        expect(errMsg.nativeElement.innerText).toBe('Please specify keaSubnetId as a number (e.g., keaSubnetId:2).')
+        expect(errMsg.nativeElement.innerText).toBe('Please specify keaSubnetId as a number (e.g., keaSubnetId=2).')
     }))
 
     it('should display multiple error message for each invalid value', fakeAsync(() => {
@@ -1246,12 +1225,15 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filterText = 'appId:foo subnetId:bar keaSubnetId:abc'
-        component.keyUpFilterText({ key: 'Enter' })
+        component.queryParamNumericKeys = ['subnetId']
+        component.queryParamBooleanKeys = ['isGlobal']
+        component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'foo', subnetId: 'bar', isGlobal: 'tru' }))
+
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).not.toHaveBeenCalled()
+        // If queryParams filter is not validated, hosts list is retrieved unfiltered.
+        expect(dhcpApi.getHosts).toHaveBeenCalled()
 
         const errMsgs = fixture.debugElement.queryAll(By.css('.p-error'))
         expect(errMsgs.length).toBe(3)
