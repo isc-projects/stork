@@ -13,7 +13,7 @@ import { Host, LocalHost } from '../backend'
 import { hasDifferentLocalHostData } from '../hosts'
 import { HostsFilter } from './hosts-filter'
 import { Location } from '@angular/common'
-import {PrefilteredTable} from "../table";
+import { PrefilteredTable } from '../table'
 
 /**
  * Enumeration for different host tab types displayed by the component.
@@ -333,7 +333,7 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
                     } else {
                         // In case of failed Id parsing, open list tab.
                         this.switchToTab(0)
-                        this.filter$.next({source: "callback", filter: {}})
+                        this.filter$.next({ source: 'callback', filter: {} })
                     }
                 })
         )

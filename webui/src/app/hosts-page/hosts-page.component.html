@@ -113,20 +113,20 @@
                     <div class="flex-auto"></div>
                     <div class="flex-initial align-items-center">
                         <p-columnFilter
-                                field="appId"
-                                matchMode="equals"
-                                [showMenu]="false"
-                                [showClearButton]="!hasPrefilter()"
+                            field="appId"
+                            matchMode="equals"
+                            [showMenu]="false"
+                            [showClearButton]="!hasPrefilter()"
                         >
                             <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                                 <span class="p-float-label">
                                     <p-inputNumber
-                                            inputId="app-id"
-                                            mode="decimal"
-                                            [useGrouping]="false"
-                                            (onInput)="filter($event.value)"
-                                            [ngModel]="value"
-                                            [disabled]="hasPrefilter()"
+                                        inputId="app-id"
+                                        mode="decimal"
+                                        [useGrouping]="false"
+                                        (onInput)="filter($event.value)"
+                                        [ngModel]="value"
+                                        [disabled]="hasPrefilter()"
                                     ></p-inputNumber>
                                     <label for="app-id">Kea App Id</label>
                                 </span>
@@ -134,19 +134,15 @@
                         </p-columnFilter>
                     </div>
                     <div class="flex-initial align-items-center">
-                        <p-columnFilter
-                                field="subnetId"
-                                matchMode="equals"
-                                [showMenu]="false"
-                        >
+                        <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false">
                             <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                                 <span class="p-float-label">
                                     <p-inputNumber
-                                            inputId="subnet-id"
-                                            mode="decimal"
-                                            [useGrouping]="false"
-                                            (onInput)="filter($event.value)"
-                                            [ngModel]="value"
+                                        inputId="subnet-id"
+                                        mode="decimal"
+                                        [useGrouping]="false"
+                                        (onInput)="filter($event.value)"
+                                        [ngModel]="value"
                                     ></p-inputNumber>
                                     <label for="subnet-id">Subnet Id</label>
                                 </span>
@@ -154,23 +150,18 @@
                         </p-columnFilter>
                     </div>
                     <div class="flex-initial align-items-center">
-                        <p-columnFilter
-                                field="keaSubnetId"
-                                matchMode="equals"
-                                [showMenu]="false"
-                        >
+                        <p-columnFilter field="keaSubnetId" matchMode="equals" [showMenu]="false">
                             <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                                 <span class="p-float-label">
                                     <p-inputNumber
-                                            inputId="kea-subnet-id"
-                                            mode="decimal"
-                                            [useGrouping]="false"
-                                            (onInput)="filter($event.value)"
-                                            [ngModel]="value"
+                                        inputId="kea-subnet-id"
+                                        mode="decimal"
+                                        [useGrouping]="false"
+                                        (onInput)="filter($event.value)"
+                                        [ngModel]="value"
                                     ></p-inputNumber>
                                     <label for="kea-subnet-id">Kea Subnet Id</label>
                                 </span>
-
                             </ng-template>
                         </p-columnFilter>
                     </div>

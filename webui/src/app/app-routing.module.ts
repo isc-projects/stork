@@ -174,27 +174,24 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
     /**
      * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
      * Hence, this method is not implemented. Nothing will be retrieved.
-     * @param route previously stored route
      */
-    retrieve(route: ActivatedRouteSnapshot): DetachedRouteHandle | null {
+    retrieve(): DetachedRouteHandle | null {
         return null
     }
 
     /**
      * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
      * Hence, this method always returns false.
-     * @param route route to be attached
      */
-    shouldAttach(route: ActivatedRouteSnapshot): boolean {
+    shouldAttach(): boolean {
         return false
     }
 
     /**
      * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
      * Hence, this method always returns false.
-     * @param route route to be detached
      */
-    shouldDetach(route: ActivatedRouteSnapshot): boolean {
+    shouldDetach(): boolean {
         return false
     }
 
@@ -225,10 +222,8 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
     /**
      * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
      * Hence, this method is not implemented. Nothing will be stored.
-     * @param route route to be stored
-     * @param handle detached route handle to be stored for reuse
      */
-    store(route: ActivatedRouteSnapshot, handle: DetachedRouteHandle | null): void {
+    store(): void {
         // no-op
     }
 }
