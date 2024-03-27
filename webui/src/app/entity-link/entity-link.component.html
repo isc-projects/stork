@@ -26,7 +26,7 @@
     <!-- subnet -->
     <ng-container *ngSwitchCase="'subnet'">
         {{ showEntityName ? 'subnet ' : '' }}
-        <a id="subnet-link" routerLink="/dhcp/subnets/{{ attrs.id }}">
+        <a id="subnet-link" routerLink="/dhcp/subnets/{{ attrs.id }}" class="white-space-nowrap">
             {{ attrs.subnet }}
         </a>
     </ng-container>
