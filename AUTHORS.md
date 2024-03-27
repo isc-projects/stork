@@ -36,4 +36,4 @@ We have received the following contributions:
  - Kevin Fleming
    - 2022-03: Automatic Stork services restart on failure
  - Mark Tinberg (University of Wisconsin-Madison)
-   - 2024-02: Enhanced the RPM package installation scripts
+   - 2024-02: Enhanced the package installation scripts
