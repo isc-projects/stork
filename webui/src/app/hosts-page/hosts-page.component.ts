@@ -526,12 +526,12 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
             .getHosts(
                 event.first,
                 event.rows,
-                this.tableId ?? this.getTableFilterVal('appId'),
-                this.getTableFilterVal('subnetId'),
-                this.getTableFilterVal('keaSubnetId'),
-                this.getTableFilterVal('text'),
-                this.getTableFilterVal('isGlobal'),
-                this.getTableFilterVal('conflict')
+                this.tableId ?? this.getTableFilterVal('appId', event.filters),
+                this.getTableFilterVal('subnetId', event.filters),
+                this.getTableFilterVal('keaSubnetId', event.filters),
+                this.getTableFilterVal('text', event.filters),
+                this.getTableFilterVal('isGlobal', event.filters),
+                this.getTableFilterVal('conflict', event.filters)
             )
             .toPromise()
             .then((data) => {

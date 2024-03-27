@@ -226,11 +226,16 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
      * If no filter value is found, null is returned.
      *
      * @param k filter name key
+     * @param filters filters object where the filter is checked. If undefined, this.table property filters are checked.
      */
-    getTableFilterVal(k: string): any {
-        return this.table?.filters?.hasOwnProperty(k)
-            ? this.table.filters[k][0]?.value ?? (this.table.filters[k] as FilterMetadata).value
-            : null
+    getTableFilterVal(k: string, filters?: { [p: string]: FilterMetadata | FilterMetadata[] }): any {
+        if (!filters) {
+            return this.table?.filters?.hasOwnProperty(k)
+                ? this.table.filters[k][0]?.value ?? (this.table.filters[k] as FilterMetadata).value
+                : null
+        } else {
+            return filters?.hasOwnProperty(k) ? filters[k][0]?.value ?? (filters[k] as FilterMetadata).value : null
+        }
     }
 
     /**
