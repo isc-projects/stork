@@ -464,6 +464,60 @@ namespace :lint do
             sh BLACK, "--check", *python_files
         end
     end
+
+    desc 'Check unreleased changelog files
+        FIX - fix linting issues - default: false'
+    task :changelog => [FOLD, SED] do
+        changelog_dir = 'changelog_unreleased'
+        files = Dir.entries(changelog_dir)
+        exit_code = 0
+
+        files.each do |filename|
+
+            # Skip hidden files.
+            if filename.start_with? '.'
+                next
+            end
+
+            file = File.join(changelog_dir, filename)
+
+            # Filter out non-files.
+            if !File.file?(file)
+                next
+            end
+
+            lines_too_long = []
+            File.readlines(file).each_with_index do |line, line_number|
+                # Wrap rows to width 73 == 72 + newline. Historically, number 72 has something to do with punch cards.
+                if line.length > 73
+                    lines_too_long.append [line_number, line]
+                    exit_code = 1
+                end
+            end
+            if ! lines_too_long.empty?
+                puts 'ERROR: Changelog entry ' + filename + ' has too long lines. Should be < 73 characters.'
+                lines_too_long.each do |pair|
+                    puts "    #{pair[0]} #{pair[1]} ( #{pair[1].length} characters )"
+                end
+            end
+            if ! lines_too_long.empty? && ENV["FIX"] == "true"
+                output = ''
+                Open3.pipeline_rw [
+                    # Wrap rows to width 73 == 72 + newline. Historically, number 72 has something to do with punch cards.
+                    FOLD, '-sw', '73', file
+                ], [
+                    # Remove trailing blank spaces.
+                    SED, 's/ *$//g'
+                ] do |stdin, stdout, _ts|
+                  output = stdout.read
+                end
+                File.open(file, 'w') do |file_w|
+                    file_w.write(output)
+                end
+            end
+        end
+        exit exit_code
+    end
 end
 
 

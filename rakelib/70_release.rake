@@ -184,6 +184,10 @@ namespace :release do
         release_notes_filename_in = release_notes_filename + ".in"
         release_notes_file = File.new(release_notes_filename, 'w' )
 
+        at_exit {
+          sh 'rm', '-f', release_notes_filename_in
+        }
+
         fetch_file("https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md", release_notes_filename_in)
 
         Open3.pipeline [
@@ -198,11 +202,13 @@ namespace :release do
             # Replaces square brackets with round brackets for hyperlinks.
             PERL, '-pe', 's|\[(http.*?)\]\(http.*\)|\1|',
         ], [
-            # Wraps rows to a specific width.
+            # Wrap rows to width 73 == 72 + newline. Historically, number 72 has something to do with punch cards.
             FOLD, '-sw', '73'
+        ], [
+            # Remove trailing blank spaces.
+            SED, 's/ *$//g'
         ], :out => release_notes_file
 
-        sh "rm", "-f", release_notes_filename_in
     end
 
     desc 'Prepare release tarball with Stork sources'
