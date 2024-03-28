@@ -233,6 +233,13 @@
                     </td>
                 </tr>
             </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="8">
+                        No subnets found.
+                    </td>
+                </tr>
+            </ng-template>
             <ng-template pTemplate="paginatorright" let-state>
                 Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
                 {{ state.totalRecords === 1 ? 'subnet' : 'subnets' }}
