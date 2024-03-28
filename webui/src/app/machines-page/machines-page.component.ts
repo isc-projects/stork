@@ -398,32 +398,42 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      *
      * @param machine machine object
      * @param authorized bool, true or false
+     * @param machinesTable table where authorized/unauthorized machine belong
      */
-    _changeMachineAuthorization(machine, authorized, machinesTable) {
+    _changeMachineAuthorization(machine: Machine, authorized: boolean, machinesTable: Table) {
+        // Block table UI when machine authorization is in progress.
+        this.dataLoading = true
+        const state_backup = machine.authorized
+
         machine.authorized = authorized
-        const txt = 'Machine ' + (authorized ? '' : 'un')
-        this.servicesApi.updateMachine(machine.id, machine).subscribe(
-            (/* data */) => {
+        const prefix = authorized ? '' : 'un'
+        this.servicesApi.updateMachine(machine.id, machine).subscribe({
+            next: (m) => {
                 this.msgSrv.add({
                     severity: 'success',
-                    summary: txt + 'authorized',
-                    detail: txt + 'authorization succeeded.',
+                    summary: `Machine ${prefix}authorized`,
+                    detail: `Machine ${m.address} ${prefix}authorization succeeded.`,
                 })
                 this.refreshMachinesList(machinesTable)
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
             },
-            (err) => {
+            error: (err) => {
+                machine.authorized = state_backup
+                this.dataLoading = false
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: txt + 'authorization failed',
-                    detail: txt + 'authorization attempt failed: ' + msg,
+                    summary: `Machine ${prefix}authorization failed`,
+                    detail: `Machine ${prefix}authorization attempt failed: ${msg}`,
                     life: 10000,
                 })
-            }
-        )
+            },
+            complete: () => {
+                this.dataLoading = false
+            },
+        })
     }
 
     /**
