@@ -877,7 +877,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			if keaStats != nil {
 				agentStats.GetMutex().RLock()
 				dmn.CaCommErrors = keaStats.GetErrorCount(agentcomm.KeaDaemonCA)
-				dmn.DaemonCommErrors = keaStats.GetErrorCount(agentcomm.KeaDaemonTypeFromName(d.Name))
+				dmn.DaemonCommErrors = keaStats.GetErrorCount(agentcomm.GetKeaDaemonTypeFromName(d.Name))
 				agentStats.GetMutex().RUnlock()
 			}
 			keaDaemons = append(keaDaemons, dmn)
@@ -1497,7 +1497,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				agentErrors = agentStats.GetTotalErrorCount()
 				keaErrors := agentStats.GetKeaCommErrorStats(dbApp.ID)
 				caErrors = keaErrors.GetErrorCount(agentcomm.KeaDaemonCA)
-				daemonErrors = keaErrors.GetErrorCount(agentcomm.KeaDaemonTypeFromName(dbDaemon.Name))
+				daemonErrors = keaErrors.GetErrorCount(agentcomm.GetKeaDaemonTypeFromName(dbDaemon.Name))
 			}
 			daemon := &models.DhcpDaemon{
 				MachineID:        dbApp.MachineID,

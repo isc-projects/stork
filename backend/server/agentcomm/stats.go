@@ -96,7 +96,7 @@ func encodeAsCommStatsRequestName(request any) string {
 }
 
 // Convenience function converting a Kea daemon name to its type.
-func KeaDaemonTypeFromName(daemonName string) KeaDaemonType {
+func GetKeaDaemonTypeFromName(daemonName string) KeaDaemonType {
 	switch daemonName {
 	case "dhcp4":
 		return KeaDaemonDHCPv4

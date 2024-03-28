@@ -13,12 +13,12 @@ type requestTypeBar struct{}
 
 // Test conversion of the daemon names to daemon types.
 func TestKeaDaemonTypeFromName(t *testing.T) {
-	require.Equal(t, KeaDaemonDHCPv4, KeaDaemonTypeFromName("dhcp4"))
-	require.Equal(t, KeaDaemonDHCPv6, KeaDaemonTypeFromName("dhcp6"))
-	require.Equal(t, KeaDaemonD2, KeaDaemonTypeFromName("d2"))
-	require.Equal(t, KeaDaemonCA, KeaDaemonTypeFromName(""))
-	require.Equal(t, KeaDaemonCA, KeaDaemonTypeFromName("ca"))
-	require.Equal(t, KeaDaemonUnknown, KeaDaemonTypeFromName("foo"))
+	require.Equal(t, KeaDaemonDHCPv4, GetKeaDaemonTypeFromName("dhcp4"))
+	require.Equal(t, KeaDaemonDHCPv6, GetKeaDaemonTypeFromName("dhcp6"))
+	require.Equal(t, KeaDaemonD2, GetKeaDaemonTypeFromName("d2"))
+	require.Equal(t, KeaDaemonCA, GetKeaDaemonTypeFromName(""))
+	require.Equal(t, KeaDaemonCA, GetKeaDaemonTypeFromName("ca"))
+	require.Equal(t, KeaDaemonUnknown, GetKeaDaemonTypeFromName("foo"))
 }
 
 // Test instantiating a structure holding Kea communication errors.
