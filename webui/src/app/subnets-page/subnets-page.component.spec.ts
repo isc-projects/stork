@@ -361,9 +361,7 @@ describe('SubnetsPageComponent', () => {
             ['/dhcp/subnets'],
             jasmine.objectContaining({
                 queryParams: {
-                    text: null,
-                    subnetId: '1',
-                    appId: null,
+                    subnetId: 1,
                 },
             })
         )
