@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 
 import { MessageService, MenuItem } from 'primeng/api'
-import { Subscription } from 'rxjs'
+import { concat, Observable, Subscription } from 'rxjs'
 import { Machine } from '../backend'
 
 import { ServicesService } from '../backend/api/api'
@@ -637,13 +637,50 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      *
      * @param table table where selected machines are to be authorized.
      */
-    authorizeSelectedMachines(table) {
-        // Calling _changeMachineAuthorization sequentially for all selected machines.
+    authorizeSelectedMachines(table: Table) {
+        // Calling servicesApi.updateMachine() API sequentially for all selected machines.
         // Max expected count of selected machines is max machines per table page,
         // which currently is 50.
+        let authorizations$: Observable<Machine> = concat()
         for (const m of this.selectedMachines) {
-            this._changeMachineAuthorization(m, true, table)
+            m.authorized = true
+            // Use concat to call servicesApi sequentially.
+            authorizations$ = concat(authorizations$, this.servicesApi.updateMachine(m.id, m))
         }
+
+        // Block table UI when bulk machines authorization is in progress.
+        this.dataLoading = true
+        authorizations$.subscribe({
+            next: (m) => {
+                this.msgSrv.add({
+                    severity: 'success',
+                    summary: 'Machine authorized',
+                    detail: `Machine ${m.address} authorization succeeded.`,
+                })
+            },
+            error: (err) => {
+                const msg = getErrorMessage(err)
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Machine authorization failed',
+                    detail: 'Machine authorization attempt failed: ' + msg,
+                    life: 10000,
+                })
+                this.dataLoading = false
+                this.refreshMachinesList(table)
+                // Force menu adjustments to take into account that there
+                // is new machine and apps available.
+                this.serverData.forceReloadAppsStats()
+            },
+            complete: () => {
+                this.dataLoading = false
+                this.refreshMachinesList(table)
+                // Force menu adjustments to take into account that there
+                // is new machine and apps available.
+                this.serverData.forceReloadAppsStats()
+            },
+        })
+
         // Clear selection after.
         this.selectedMachines = []
 
