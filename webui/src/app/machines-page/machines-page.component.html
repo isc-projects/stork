@@ -255,6 +255,7 @@ sudo ./stork-install-agent.sh</textarea
                     [options]="viewSelectionOptions"
                     [(ngModel)]="showUnauthorized"
                     (onChange)="refreshMachinesList(machinesTable)"
+                    [allowEmpty]="false"
                     id="unauthorized-select-button"
                 ></p-selectButton>
             </div>
