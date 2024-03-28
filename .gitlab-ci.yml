@@ -166,6 +166,11 @@ lint_backend:
   script:
     - rake lint:backend
 
+lint_changelog:
+  extends: .base_build_debian
+  script:
+    - rake lint:changelog
+
 lint_python_pylint:
   extends: .base_build_debian
   script:
