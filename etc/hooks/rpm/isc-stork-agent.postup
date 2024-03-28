@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# restart the systemD service
+# check if the SystemD is available
 has_active_systemd=0
 if command -v systemctl > /dev/null; then
     status=$(systemctl is-system-running || true)
@@ -9,6 +9,7 @@ if command -v systemctl > /dev/null; then
     fi
 fi
 
+# restart the systemD service
 if [ $has_active_systemd -eq 1 ]; then
     is_active_service=$(systemctl is-active isc-stork-agent || false)
     if [ "${is_active_service}" = "active" ]; then
