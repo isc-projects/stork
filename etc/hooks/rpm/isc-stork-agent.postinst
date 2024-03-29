@@ -2,28 +2,60 @@
 
 set -eu
 
-# create folders for storing certs and agent token,
-# they should be available to owner ie. stork-agent user
-home_dir=/var/lib/stork-agent
-mkdir -p "${home_dir}/certs"
-mkdir -p "${home_dir}/tokens"
-chmod 700 "${home_dir}/certs"
-chmod 700 "${home_dir}/tokens"
+after_install() {
+    # create folders for storing certs and agent token,
+    # they should be available to owner ie. stork-agent user
+    home_dir=/var/lib/stork-agent
+    mkdir -p "${home_dir}/certs"
+    mkdir -p "${home_dir}/tokens"
+    chmod 700 "${home_dir}/certs"
+    chmod 700 "${home_dir}/tokens"
 
-# add stork-agent user if does not exist
-if ! getent passwd stork-agent > /dev/null; then
-    useradd --system --home-dir "${home_dir}" stork-agent
+    # add stork-agent user if does not exist
+    if ! getent passwd stork-agent > /dev/null; then
+        useradd --system --home-dir "${home_dir}" stork-agent
+    fi
+
+    # add stork-agent user to named so it can read its config files
+    if getent group named > /dev/null; then
+        usermod -aG named stork-agent
+    fi
+
+    # add stork-agent user to kea so it can read its config files
+    if getent group _kea > /dev/null; then
+        usermod -aG _kea stork-agent
+    fi
+
+    # change ownership of all folders and files in home dir to stork-agent user
+    chown -R stork-agent "${home_dir}"
+}
+
+after_upgrade() {
+    # check if the SystemD is available
+    has_active_systemd=0
+    if command -v systemctl > /dev/null; then
+        status=$(systemctl is-system-running || true)
+        if [ "${status}" = "running" ] || [ "${status}" = "degraded" ] || [ "${status}" = "maintenance" ]; then
+            has_active_systemd=1
+        fi
+    fi
+
+    # restart the systemD service
+    if [ $has_active_systemd -eq 1 ]; then
+        is_active_service=$(systemctl is-active isc-stork-agent || false)
+        if [ "${is_active_service}" = "active" ]; then
+            systemctl restart isc-stork-agent
+        fi
+    fi
+}
+
+
+if [ "${1}" -eq 1 ]
+then
+    # "after install" goes here
+    after_install
+elif [ "${1}" -gt 1 ]
+then
+    # "after upgrade" goes here
+    after_upgrade
 fi
-
-# add stork-agent user to named so it can read its config files
-if getent group named > /dev/null; then
-    usermod -aG named stork-agent
-fi
-
-# add stork-agent user to kea so it can read its config files
-if getent group _kea > /dev/null; then
-    usermod -aG _kea stork-agent
-fi
-
-# change ownership of all folders and files in home dir to stork-agent user
-chown -R stork-agent "${home_dir}"

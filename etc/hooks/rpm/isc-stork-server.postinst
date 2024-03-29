@@ -2,7 +2,39 @@
 
 set -eu
 
-# add stork-server user if does not exist
-if ! getent passwd stork-server > /dev/null; then
-    useradd --system --base-dir /var/lib/ stork-server
+after_install() {
+    # add stork-server user if does not exist
+    if ! getent passwd stork-server > /dev/null; then
+        useradd --system --base-dir /var/lib/ stork-server
+    fi
+}
+
+after_upgrade() {
+    # check if the SystemD is available
+    has_active_systemd=0
+    if command -v systemctl > /dev/null; then
+        status=$(systemctl is-system-running || true)
+        if [ "${status}" = "running" ] || [ "${status}" = "degraded" ] || [ "${status}" = "maintenance" ]; then
+            has_active_systemd=1
+        fi
+    fi
+
+    # restart the systemD service
+    if [ $has_active_systemd -eq 1 ]; then
+        is_active_service=$(systemctl is-active isc-stork-server || false)
+        if [ "${is_active_service}" = "active" ]; then
+            systemctl restart isc-stork-server
+        fi
+    fi
+}
+
+
+if [ "${1}" -eq 1 ]
+then
+    # "after install" goes here
+    after_install
+elif [ "${1}" -gt 1 ]
+then
+    # "after upgrade" goes here
+    after_upgrade
 fi
