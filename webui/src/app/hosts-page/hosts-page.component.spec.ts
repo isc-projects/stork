@@ -131,6 +131,11 @@ describe('HostsPageComponent', () => {
         spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
 
         fixture.detectChanges()
+
+        // PrimeNG table is stateful in the component, so clear stored filter between tests.
+        component.table.clearFilterValues()
+
+        fixture.detectChanges()
     })
 
     /**
@@ -1122,11 +1127,12 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'foo' }))
+        component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'abc' }))
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalled()
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with default params.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
@@ -1159,7 +1165,8 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalled()
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with default params.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
@@ -1222,7 +1229,8 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getHosts).toHaveBeenCalled()
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with default params.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
@@ -1242,8 +1250,8 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        // If queryParams filter is not validated, hosts list is retrieved unfiltered.
-        expect(dhcpApi.getHosts).toHaveBeenCalled()
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with default params.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsgs = fixture.debugElement.queryAll(By.css('.p-error'))
         expect(errMsgs.length).toBe(3)
