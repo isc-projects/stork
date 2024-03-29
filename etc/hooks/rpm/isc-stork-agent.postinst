@@ -2,7 +2,7 @@
 
 set -eu
 
-after_install() {
+after_install () {
     # create folders for storing certs and agent token,
     # they should be available to owner ie. stork-agent user
     home_dir=/var/lib/stork-agent
@@ -30,7 +30,7 @@ after_install() {
     chown -R stork-agent "${home_dir}"
 }
 
-after_upgrade() {
+after_upgrade () {
     # check if the SystemD is available
     has_active_systemd=0
     if command -v systemctl > /dev/null; then
@@ -42,7 +42,7 @@ after_upgrade() {
 
     # restart the systemD service
     if [ $has_active_systemd -eq 1 ]; then
-        is_active_service=$(systemctl is-active isc-stork-agent || false)
+        is_active_service=$(systemctl is-active isc-stork-agent || true)
         if [ "${is_active_service}" = "active" ]; then
             systemctl restart isc-stork-agent
         fi

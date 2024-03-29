@@ -2,9 +2,10 @@
 
 set -eu
 
-after_remove() {
+after_remove () {
     deluser --system stork-agent >/dev/null || /bin/true
 }
+
 
 if [ "${1}" = "remove" -o "${1}" = "abort-install" ]
 then
@@ -13,7 +14,7 @@ then
     #   In that case, this script, which should be idemptoent, is run
     #   to ensure a clean roll-back of the installation.
     after_remove
-elif [ "${1}" = "purge" -a -z "${2}" ]
+elif [ "${1}" = "purge" ]
 then
     # Runs after purge.
     # like "on remove", but executes after dpkg deletes config files

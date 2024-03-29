@@ -2,62 +2,24 @@
 
 set -eu
 
-vercomp () {
-    # compare two version strings
-    # accepts two arguments, version strings
-    # returns 0 if they are equal, 1 if the first is greater, 2 if the second
-    # is greater
-    # source: https://stackoverflow.com/a/4025065
-    if [[ $1 == $2 ]]
-    then
-        return 0
-    fi
-    local IFS=.
-    local i ver1=($1) ver2=($2)
-    # fill empty fields in ver1 with zeros
-    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
-    do
-        ver1[i]=0
-    done
-    for ((i=0; i<${#ver1[@]}; i++))
-    do
-        if [[ -z ${ver2[i]} ]]
-        then
-            # fill empty fields in ver2 with zeros
-            ver2[i]=0
-        fi
-        if ((10#${ver1[i]} > 10#${ver2[i]}))
-        then
-            return 1
-        fi
-        if ((10#${ver1[i]} < 10#${ver2[i]}))
-        then
-            return 2
-        fi
-    done
-    return 0
-}
-
-setup_user() {
+setup_user () {
     # sets up the stork-agent user and its home directory
     adduser --quiet --system --group --home /var/lib/stork-server \
         --no-create-home --disabled-password --disabled-login \
         --gecos "Stork Server User" stork-server >/dev/null
 }
 
-after_install() {
+after_install () {
     setup_user
 }
 
-after_upgrade() {
+after_upgrade () {
     # prior Stork 1.16.0 the update case was not specifically handled
     # the postrm script deleted the user and the postinst recreated it
     # the user is preserved during the upgrade if the version is 1.16.0 or
     # higher
     # for the older versions, the user must be recreated
-    if vercomp "${upgradeFromVersion}" "1.16.0" -eq 2; then
-        setup_user
-    fi
+    setup_user
 
     # check if the SystemD is available
     has_active_systemd=0
@@ -70,15 +32,15 @@ after_upgrade() {
     
     # restart the systemD service
     if [ $has_active_systemd -eq 1 ]; then
-        is_active_service=$(systemctl is-active isc-stork-server || false)
+        is_active_service=$(systemctl is-active isc-stork-server || true)
         if [ "${is_active_service}" = "active" ]; then
                 systemctl restart isc-stork-server
         fi
     fi
 }
 
-if [ "${1}" = "configure" -a -z "${2}" ] || \
-   [ "${1}" = "abort-remove" ]
+
+if [ "${1}" = "abort-remove" ] || [ "${1}" = "configure" -a -z "${2}" ]
 then
     # "after install" here
     # "abort-remove" happens when the pre-removal script failed.

@@ -2,7 +2,7 @@
 
 set -eu
 
-before_remove() {
+before_remove () {
     has_active_systemd=0
     if command -v systemctl > /dev/null; then
         status=$(systemctl is-system-running || true)
@@ -17,7 +17,8 @@ before_remove() {
     fi
 }
 
-if [ "${1}" = "remove" -a -z "${2}" ]
+
+if [ "${1}" = "remove" ]
 then
     before_remove
 elif [ "${1}" = "upgrade" ]
