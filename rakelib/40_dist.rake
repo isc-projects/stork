@@ -149,9 +149,18 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + age
             "-a", get_target_go_arch(),
             "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
             "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postinst",
-            "--after-upgrade", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postup",
             "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postrm",
             "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.prerm",
+            # Warning! Don't use the --before-update, --after-update, or --deb-systemd-* flags.
+            # They cause to wrap the original scripts with the additional logic.
+            # It is problematic when the packages generated with these flags
+            # are updated. The old package scripts execute their prerm and
+            # postrm scripts, so the update scripts of the new package must
+            # repeat the postinstall logic and then execute the upgrade logic.
+            # To avoid such problems, adding the non-obvious wrapper, and to
+            # improve the readability of the scripts, we decided to implement
+            # the code that differentiates the installation from the update
+            # directly in the scripts.
             "--config-files", "etc/stork/agent.env",
             "--config-files", "etc/stork/agent-credentials.json.template",
             "--description", "ISC Stork Agent",
@@ -271,8 +280,17 @@ file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + s
             "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
             "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-server.postinst",
             "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.postrm",
-            "--after-upgrade", "../../etc/hooks/#{pkg_type}/isc-stork-server.postup",
             "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.prerm",
+            # Warning! Don't use the --before-update, --after-update, or --deb-systemd-* flags.
+            # They cause to wrap the original scripts with the additional logic.
+            # It is problematic when the packages generated with these flags
+            # are updated. The old package scripts execute their prerm and
+            # postrm scripts, so the update scripts of the new package must
+            # repeat the postinstall logic and then execute the upgrade logic.
+            # To avoid such problems, adding the non-obvious wrapper, and to
+            # improve the readability of the scripts, we decided to implement
+            # the code that differentiates the installation from the update
+            # directly in the scripts.
             "--config-files", "etc/stork/server.env",
             "--description", "ISC Stork Server",
             "--license", "MPL 2.0",

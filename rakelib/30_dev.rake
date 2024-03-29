@@ -417,7 +417,7 @@ namespace :lint do
         files = []
         Open3.pipeline_r(
             [GIT, "ls-files"],
-            ["grep", "-E", "\.sh$|\.prerm$|\.postinst|\.postup"],
+            ["grep", "-E", "\.sh$|\.prerm$|\.postinst"],
         ) {|output|
           output.each_line {|line|
             files.append line.rstrip
