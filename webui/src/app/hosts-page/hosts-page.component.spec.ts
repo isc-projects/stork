@@ -1062,12 +1062,22 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(1)
         expect(dhcpApi.getHosts).toHaveBeenCalledTimes(0)
 
+        // Mock router.navigate(['/dhcp/hosts/all']) to call fake navigation.
+        // The navigation happens when closing current Host tab.
+        spyOn(router, 'navigate')
+            .withArgs(['/dhcp/hosts/all'])
+            .and.callFake(() => {
+                navigate({ id: 'all' })
+                return Promise.resolve(true)
+            })
+
         // Closing the existing host should result in closing its tab.
         // It should select the first tab and reload the hosts.
         component.onHostDelete({ id: 1 })
         fixture.detectChanges()
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
+        expect(router.navigate).toHaveBeenCalledTimes(1)
         expect(dhcpApi.getHosts).toHaveBeenCalledTimes(1)
     }))
 
