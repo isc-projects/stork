@@ -2,28 +2,122 @@
 
 set -eu
 
-# create folders for storing certs and agent token,
-# they should be available to owner ie. stork-agent user
-home_dir=/var/lib/stork-agent
-mkdir -p "${home_dir}/certs"
-mkdir -p "${home_dir}/tokens"
-chmod 700 "${home_dir}/certs"
-chmod 700 "${home_dir}/tokens"
+vercomp () {
+    # compare two version strings
+    # accepts two arguments, version strings
+    # returns 0 if they are equal, 1 if the first is greater, 2 if the second
+    # is greater
+    # source: https://stackoverflow.com/a/4025065
+    if [[ $1 == $2 ]]
+    then
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            return 2
+        fi
+    done
+    return 0
+}
 
-# add stork-agent user
-adduser --quiet --system --group --home $home_dir \
-        --no-create-home --disabled-password --disabled-login \
-        --gecos "Stork Agent User" stork-agent >/dev/null
+setup_user() {
+    # sets up the stork-agent user and its home directory
+    # create folders for storing certs and agent token,
+    # they should be available to owner ie. stork-agent user
+    home_dir=/var/lib/stork-agent
+    mkdir -p "${home_dir}/certs"
+    mkdir -p "${home_dir}/tokens"
+    chmod 700 "${home_dir}/certs"
+    chmod 700 "${home_dir}/tokens"
 
-# add stork-agent user to bind so it can read its config files
-if getent group bind > /dev/null; then
-    usermod -aG bind stork-agent
+    # add stork-agent user
+    adduser --quiet --system --group --home $home_dir \
+            --no-create-home --disabled-password --disabled-login \
+            --gecos "Stork Agent User" stork-agent >/dev/null
+
+    # add stork-agent user to bind so it can read its config files
+    if getent group bind > /dev/null; then
+        usermod -aG bind stork-agent
+    fi
+
+    # add stork-agent user to kea so it can read its config files
+    if getent group _kea > /dev/null; then
+        usermod -aG _kea stork-agent
+    fi
+
+    # change ownership of all folders and files in home dir to stork-agent user
+    chown -R stork-agent "${home_dir}"
+}
+
+after_install() {
+    setup_user
+}
+
+after_upgrade() {
+    # prior Stork 1.16.0 the update case was not specifically handled
+    # the postrm script deleted the user and the postinst recreated it
+    # the user is preserved during the upgrade if the version is 1.16.0 or
+    # higher
+    # for the older versions, the user must be recreated
+    if vercomp "${upgradeFromVersion}" "1.16.0" -eq 2; then
+        setup_user
+    fi
+
+    # check if the SystemD is available
+    has_active_systemd=0
+    if command -v systemctl > /dev/null; then
+        status=$(systemctl is-system-running || true)
+        if [ "${status}" = "running" ] || [ "${status}" = "degraded" ] || [ "${status}" = "maintenance" ]; then
+            has_active_systemd=1
+        fi
+    fi
+
+    # restart the systemD service if needed
+    if [ $has_active_systemd -eq 1 ]; then
+        is_active_service=$(systemctl is-active isc-stork-agent || false)
+        if [ "${is_active_service}" = "active" ]; then
+            systemctl restart isc-stork-agent
+        fi
+    fi
+}
+
+if [ "${1}" = "configure" -a -z "${2}" ] || \
+   [ "${1}" = "abort-remove" ]
+then
+    # "after install" here
+    # "abort-remove" happens when the pre-removal script failed.
+    #   In that case, this script, which should be idemptoent, is run
+    #   to ensure a clean roll-back of the removal.
+    after_install
+elif [ "${1}" = "configure" -a -n "${2}" ]
+then
+    upgradeFromVersion="${2}"
+    # "after upgrade" here
+    # NOTE: This slot is also used when deb packages are removed,
+    # but their config files aren't, but a newer version of the
+    # package is installed later, called "Config-Files" state.
+    # basically, that still looks a _lot_ like an upgrade to me.
+    after_upgrade "${2}"
+elif echo "${1}" | grep -E -q "(abort|fail)"
+then
+    echo "Failed to install before the post-installation script was run." >&2
+    exit 1
 fi
-
-# add stork-agent user to kea so it can read its config files
-if getent group _kea > /dev/null; then
-    usermod -aG _kea stork-agent
-fi
-
-# change ownership of all folders and files in home dir to stork-agent user
-chown -R stork-agent "${home_dir}"

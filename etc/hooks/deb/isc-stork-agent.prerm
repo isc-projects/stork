@@ -2,17 +2,36 @@
 
 set -eu
 
-has_active_systemd=0
-if command -v systemctl > /dev/null; then
-    status=$(systemctl is-system-running || true)
-    if [ "${status}" = "running" ] || [ "${status}" = "degraded" ] || [ "${status}" = "maintenance" ]; then
-        has_active_systemd=1
+before_remove() {
+    has_active_systemd=0
+    if command -v systemctl > /dev/null; then
+        status=$(systemctl is-system-running || true)
+        if [ "${status}" = "running" ] || [ "${status}" = "degraded" ] || [ "${status}" = "maintenance" ]; then
+            has_active_systemd=1
+        fi
     fi
-fi
 
-if [ $has_active_systemd -eq 1 ]; then
-    systemctl disable isc-stork-agent
-    systemctl stop isc-stork-agent
-fi
+    if [ $has_active_systemd -eq 1 ]; then
+        systemctl disable isc-stork-agent
+        systemctl stop isc-stork-agent
+    fi
 
-usermod -G "" stork-agent
+    usermod -G "" stork-agent
+}
+
+if [ "${1}" = "remove" -a -z "${2}" ]
+then
+    before_remove
+elif [ "${1}" = "upgrade" ]
+then
+    # Executed before the old version is removed
+    # upon upgrade.
+    # We should generally not do anything here. The newly installed package
+    # should do the upgrade, not the uninstalled one, since it can't anticipate
+    # what new things it will have to do to upgrade for the new version.
+    :
+elif echo "${1}" | grep -E -q "(fail|abort)"
+then
+    echo "Failed to install before the pre-removal script was run." >&2
+    exit 1
+fi
