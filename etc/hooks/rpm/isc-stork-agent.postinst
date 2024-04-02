@@ -3,35 +3,35 @@
 set -eu
 
 after_install () {
-    # create folders for storing certs and agent token,
-    # they should be available to owner ie. stork-agent user
+    # Create folders for storing certs and agent token, they should be
+    # available to owner ie. stork-agent user.
     home_dir=/var/lib/stork-agent
     mkdir -p "${home_dir}/certs"
     mkdir -p "${home_dir}/tokens"
     chmod 700 "${home_dir}/certs"
     chmod 700 "${home_dir}/tokens"
 
-    # add stork-agent user if does not exist
+    # Add stork-agent user if does not exist.
     if ! getent passwd stork-agent > /dev/null; then
         useradd --system --home-dir "${home_dir}" stork-agent
     fi
 
-    # add stork-agent user to named so it can read its config files
+    # Add stork-agent user to named so it can read its config files.
     if getent group named > /dev/null; then
         usermod -aG named stork-agent
     fi
 
-    # add stork-agent user to kea so it can read its config files
+    # Add stork-agent user to kea so it can read its config files.
     if getent group _kea > /dev/null; then
         usermod -aG _kea stork-agent
     fi
 
-    # change ownership of all folders and files in home dir to stork-agent user
+    # Change ownership of all folders and files in home dir to stork-agent user.
     chown -R stork-agent "${home_dir}"
 }
 
 after_upgrade () {
-    # check if the SystemD is available
+    # Check if the SystemD is available.
     has_active_systemd=0
     if command -v systemctl > /dev/null; then
         status=$(systemctl is-system-running || true)
@@ -40,7 +40,7 @@ after_upgrade () {
         fi
     fi
 
-    # restart the systemD service
+    # Restart the systemD service.
     if [ $has_active_systemd -eq 1 ]; then
         is_active_service=$(systemctl is-active isc-stork-agent || true)
         if [ "${is_active_service}" = "active" ]; then
@@ -52,10 +52,10 @@ after_upgrade () {
 
 if [ "${1}" -eq 1 ]
 then
-    # "after install" goes here
+    # "after install" goes here.
     after_install
 elif [ "${1}" -gt 1 ]
 then
-    # "after upgrade" goes here
+    # "after upgrade" goes here.
     after_upgrade
 fi

@@ -3,7 +3,7 @@
 set -eu
 
 setup_user () {
-    # sets up the stork-agent user and its home directory
+    # Sets up the stork-agent user and its home directory.
     adduser --quiet --system --group --home /var/lib/stork-server \
         --no-create-home --disabled-password --disabled-login \
         --gecos "Stork Server User" stork-server >/dev/null
@@ -14,14 +14,13 @@ after_install () {
 }
 
 after_upgrade () {
-    # prior Stork 1.16.0 the update case was not specifically handled
-    # the postrm script deleted the user and the postinst recreated it
-    # the user is preserved during the upgrade if the version is 1.16.0 or
-    # higher
-    # for the older versions, the user must be recreated
+    # Prior Stork 1.16.0 the update case was not specifically handled. The
+    # postrm script deleted the user and the postinst recreated it.
+    # The user is preserved during the upgrade if the version is 1.16.0 or
+    # higher. For the older versions, the user must be recreated.
     setup_user
 
-    # check if the SystemD is available
+    # Check if the SystemD is available.
     has_active_systemd=0
     if command -v systemctl > /dev/null; then
         status=$(systemctl is-system-running || true)
@@ -30,7 +29,7 @@ after_upgrade () {
         fi
     fi
     
-    # restart the systemD service
+    # Restart the systemD service.
     if [ $has_active_systemd -eq 1 ]; then
         is_active_service=$(systemctl is-active isc-stork-server || true)
         if [ "${is_active_service}" = "active" ]; then

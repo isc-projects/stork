@@ -25,8 +25,7 @@ then
     before_remove
 elif [ "${1}" = "upgrade" ]
 then
-    # Executed before the old version is removed
-    # upon upgrade.
+    # Executed before the old version is removed upon upgrade.
     # We should generally not do anything here. The newly installed package
     # should do the upgrade, not the uninstalled one, since it can't anticipate
     # what new things it will have to do to upgrade for the new version.

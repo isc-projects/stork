@@ -2,8 +2,8 @@
 
 set -eu
 
-# create folders for storing certs and agent token,
-# they should be available to owner ie. stork-agent user
+# Create folders for storing certs and agent token, they should be available
+# to owner ie. stork-agent user.
 home_dir=/var/lib/stork-agent
 mkdir -p "${home_dir}/certs"
 mkdir -p "${home_dir}/tokens"
@@ -13,15 +13,15 @@ chmod 700 "${home_dir}/tokens"
 addgroup -S stork-agent >/dev/null
 adduser -h "${home_dir}" -D -S -H -g "Stork Agent User" -G stork-agent stork-agent >/dev/null
 
-# add stork-agent user to bind so it can read its config files
+# Add stork-agent user to bind so it can read its config files.
 if getent group bind > /dev/null; then
     addgroup stork-agent bind
 fi
 
-# add stork-agent user to kea so it can read its config files
+# Add stork-agent user to kea so it can read its config files.
 if getent group _kea > /dev/null; then
     addgroup stork-agent _kea
 fi
 
-# change ownership of all folders and files in home dir to stork-agent user
+# Change ownership of all folders and files in home dir to stork-agent user.
 chown -R stork-agent "${home_dir}"

@@ -7,6 +7,6 @@ case "$1" in
         userdel stork-server >/dev/null || /bin/true
         ;;
     1)  # This is a yum/dnf upgrade.
-        # do nothing
+        # Do nothing.
         ;;
 esac
