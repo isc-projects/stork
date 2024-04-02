@@ -212,3 +212,31 @@ func TestGetBind9CommErrorStats(t *testing.T) {
 	require.EqualValues(t, 1, stats.GetBind9CommErrorStats(1).GetErrorCount(Bind9ChannelRNDC))
 	require.Zero(t, stats.GetBind9CommErrorStats(2).GetErrorCount(Bind9ChannelRNDC))
 }
+
+// Test that returned statistics is locked and can be unlocked with the
+// call to the Close function.
+func TestAgentCommStatsWrapperLock(t *testing.T) {
+	stats := NewAgentStats()
+	wrapper := NewAgentCommStatsWrapper(stats)
+	require.NotNil(t, wrapper)
+	mutex := wrapper.GetStats().mutex
+	// The mutext should be locked for updates. This attempt should
+	// fail and return false.
+	require.False(t, mutex.TryLock())
+	// Call Close to release the mutex lock. Protect against panics because
+	// double release could cause it.
+	require.NotPanics(t, func() { wrapper.Close() })
+	// This time locking should succeed.
+	require.True(t, mutex.TryLock())
+	defer mutex.Unlock()
+}
+
+// Test extracting statistics from the returned statistics wrapper.
+func TestAgentCommStatsWrapperGetStats(t *testing.T) {
+	stats := NewAgentStats()
+	wrapper := NewAgentCommStatsWrapper(stats)
+	require.NotNil(t, wrapper)
+	defer wrapper.Close()
+	returnedStats := wrapper.GetStats()
+	require.Equal(t, stats, returnedStats)
+}

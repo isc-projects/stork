@@ -854,13 +854,12 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
 
 	agentErrors := int64(0)
-	var agentStats *agentcomm.AgentCommStats
+	var agentStats *agentcomm.AgentCommStatsWrapper
 	if dbApp.Machine != nil {
-		agentStats = r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
+		agentStats = r.Agents.GetConnectedAgentStatsWrapper(dbApp.Machine.Address, dbApp.Machine.AgentPort)
 		if agentStats != nil {
-			agentStats.GetMutex().RLock()
-			agentErrors = agentStats.GetTotalErrorCount()
-			agentStats.GetMutex().RUnlock()
+			defer agentStats.Close()
+			agentErrors = agentStats.GetStats().GetTotalErrorCount()
 		}
 	}
 
@@ -868,17 +867,15 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	case isKeaApp:
 		var keaStats *agentcomm.KeaAppCommErrorStats
 		if agentStats != nil {
-			keaStats = agentStats.GetKeaCommErrorStats(app.ID)
+			keaStats = agentStats.GetStats().GetKeaCommErrorStats(app.ID)
 		}
 		keaDaemons := []*models.KeaDaemon{}
 		for _, d := range dbApp.Daemons {
 			dmn := keaDaemonToRestAPI(d)
 			dmn.AgentCommErrors = agentErrors
 			if keaStats != nil {
-				agentStats.GetMutex().RLock()
 				dmn.CaCommErrors = keaStats.GetErrorCount(agentcomm.KeaDaemonCA)
 				dmn.DaemonCommErrors = keaStats.GetErrorCount(agentcomm.GetKeaDaemonTypeFromName(d.Name))
-				agentStats.GetMutex().RUnlock()
 			}
 			keaDaemons = append(keaDaemons, dmn)
 		}
@@ -945,11 +942,9 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 
 		if agentStats != nil {
-			agentStats.GetMutex().RLock()
-			bind9Errors := agentStats.GetBind9CommErrorStats(app.ID)
+			bind9Errors := agentStats.GetStats().GetBind9CommErrorStats(app.ID)
 			bind9Daemon.RndcCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelRNDC)
 			bind9Daemon.StatsCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelStats)
-			agentStats.GetMutex().RUnlock()
 		}
 		app.Details = struct {
 			models.AppKea
@@ -1492,10 +1487,11 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			agentErrors := int64(0)
 			caErrors := int64(0)
 			daemonErrors := int64(0)
-			agentStats := r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
+			agentStats := r.Agents.GetConnectedAgentStatsWrapper(dbApp.Machine.Address, dbApp.Machine.AgentPort)
 			if agentStats != nil {
-				agentErrors = agentStats.GetTotalErrorCount()
-				keaErrors := agentStats.GetKeaCommErrorStats(dbApp.ID)
+				defer agentStats.Close()
+				agentErrors = agentStats.GetStats().GetTotalErrorCount()
+				keaErrors := agentStats.GetStats().GetKeaCommErrorStats(dbApp.ID)
 				caErrors = keaErrors.GetErrorCount(agentcomm.KeaDaemonCA)
 				daemonErrors = keaErrors.GetErrorCount(agentcomm.GetKeaDaemonTypeFromName(dbDaemon.Name))
 			}

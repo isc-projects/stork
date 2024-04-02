@@ -261,13 +261,13 @@ func (agents *connectedAgentsData) Ping(ctx context.Context, machine dbmodel.Mac
 	req := &agentapi.PingReq{}
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 
-	stats := agents.GetConnectedAgentStats(machine.GetAddress(), machine.GetAgentPort())
+	stats := agents.getConnectedAgentStats(machine.GetAddress(), machine.GetAgentPort())
 	if stats == nil {
 		return errors.Errorf("failed to get statistics for the non-existing agent %s", addrPort)
 	}
 
-	stats.GetMutex().Lock()
-	defer stats.GetMutex().Unlock()
+	stats.mutex.Lock()
+	defer stats.mutex.Unlock()
 
 	// Check connectivity with the Stork agent by examining the returned error.
 	commState, details := agents.checkAgentCommState(stats, req, err)
@@ -304,13 +304,13 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, machine dbmodel
 	req := &agentapi.GetStateReq{}
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 
-	stats := agents.GetConnectedAgentStats(machine.GetAddress(), machine.GetAgentPort())
+	stats := agents.getConnectedAgentStats(machine.GetAddress(), machine.GetAgentPort())
 	if stats == nil {
 		return nil, errors.Errorf("failed to get statistics for the non-existing agent %s", addrPort)
 	}
 
-	stats.GetMutex().Lock()
-	defer stats.GetMutex().Unlock()
+	stats.mutex.Lock()
+	defer stats.mutex.Unlock()
 
 	// Check connectivity with the Stork agent by examining the returned error.
 	commState, details := agents.checkAgentCommState(stats, req, err)
@@ -418,13 +418,13 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app C
 	// Send the command to the Stork Agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 
-	stats := agents.GetConnectedAgentStats(agentAddress, agentPort)
+	stats := agents.getConnectedAgentStats(agentAddress, agentPort)
 	if stats == nil {
 		return nil, errors.Errorf("failed to get statistics for the non-existing agent %s", addrPort)
 	}
 
-	stats.GetMutex().Lock()
-	defer stats.GetMutex().Unlock()
+	stats.mutex.Lock()
+	defer stats.mutex.Unlock()
 
 	// Check connectivity with the Stork agent by examining the returned error.
 	commState, details := agents.checkAgentCommState(stats, req, err)
@@ -542,13 +542,13 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, app 
 	// Send the commands to the Stork Agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 
-	stats := agents.GetConnectedAgentStats(app.GetMachineTag().GetAddress(), app.GetMachineTag().GetAgentPort())
+	stats := agents.getConnectedAgentStats(app.GetMachineTag().GetAddress(), app.GetMachineTag().GetAgentPort())
 	if stats == nil {
 		return errors.Errorf("failed to get statistics for the non-existing agent %s", addrPort)
 	}
 
-	stats.GetMutex().Lock()
-	defer stats.GetMutex().Unlock()
+	stats.mutex.Lock()
+	defer stats.mutex.Unlock()
 
 	// Check connectivity with the Stork agent by examining the returned error.
 	commState, details := agents.checkAgentCommState(stats, req, err)
@@ -717,13 +717,13 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 
 	// Check the communication issues with the Stork agent.
-	stats := agents.GetConnectedAgentStats(app.GetMachineTag().GetAddress(), app.GetMachineTag().GetAgentPort())
+	stats := agents.getConnectedAgentStats(app.GetMachineTag().GetAddress(), app.GetMachineTag().GetAgentPort())
 	if stats == nil {
 		return nil, errors.Errorf("failed to get statistics for the non-existing agent %s", addrPort)
 	}
 
-	stats.GetMutex().Lock()
-	defer stats.GetMutex().Unlock()
+	stats.mutex.Lock()
+	defer stats.mutex.Unlock()
 
 	// Check connectivity with the Stork agent by examining the returned error.
 	commState, details := agents.checkAgentCommState(stats, req, err)
@@ -850,13 +850,13 @@ func (agents *connectedAgentsData) TailTextFile(ctx context.Context, machine dbm
 	// Send the request via queue.
 	agentResponse, err := agents.sendAndRecvViaQueue(addrPort, req)
 
-	stats := agents.GetConnectedAgentStats(machine.GetAddress(), machine.GetAgentPort())
+	stats := agents.getConnectedAgentStats(machine.GetAddress(), machine.GetAgentPort())
 	if stats == nil {
 		return nil, errors.Errorf("failed to get statistics for the non-existing agent %s", addrPort)
 	}
 
-	stats.GetMutex().Lock()
-	defer stats.GetMutex().Unlock()
+	stats.mutex.Lock()
+	defer stats.mutex.Unlock()
 
 	// Check connectivity with the Stork agent by examining the returned error.
 	commIssue, details := agents.checkAgentCommState(stats, req, err)

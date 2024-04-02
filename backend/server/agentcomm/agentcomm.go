@@ -114,7 +114,7 @@ func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []
 type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
-	GetConnectedAgentStats(address string, port int64) *AgentCommStats
+	GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper
 	Ping(ctx context.Context, machine dbmodel.MachineTag) error
 	GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error)
 	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
@@ -138,7 +138,7 @@ type connectedAgentsData struct {
 }
 
 // Create new ConnectedAgents objects.
-func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM []byte) ConnectedAgents {
+func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM []byte) *connectedAgentsData {
 	agents := connectedAgentsData{
 		Settings:      settings,
 		EventCenter:   eventCenter,
@@ -203,7 +203,7 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 // Returns statistics for the connected agent. The statistics include number
 // of errors to communicate with the agent and the number of errors to
 // communicate with the apps behind the agent.
-func (agents *connectedAgentsData) GetConnectedAgentStats(address string, port int64) *AgentCommStats {
+func (agents *connectedAgentsData) getConnectedAgentStats(address string, port int64) *AgentCommStats {
 	if port != 0 {
 		address = net.JoinHostPort(address, strconv.FormatInt(port, 10))
 	}
@@ -214,4 +214,14 @@ func (agents *connectedAgentsData) GetConnectedAgentStats(address string, port i
 		return agent.Stats
 	}
 	return nil
+}
+
+// Returns a wrapper for statistics. The wrapper can be used to safely
+// access the returned statistics for reading in other packages.
+func (agents *connectedAgentsData) GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper {
+	stats := agents.getConnectedAgentStats(address, port)
+	if stats == nil {
+		return nil
+	}
+	return NewAgentCommStatsWrapper(stats)
 }

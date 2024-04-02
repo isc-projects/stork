@@ -9,6 +9,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var _ agentcomm.ConnectedAgents = (*FakeAgents)(nil)
+
 // Helper struct to mock Agents behavior.
 type FakeAgents struct {
 	RecordedURLs     []string
@@ -88,9 +90,8 @@ func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error
 }
 
 // Returns fake statistics for the selected connected agent.
-func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentcomm.AgentCommStats {
-	stats := agentcomm.NewAgentStats()
-	return stats
+func (fa *FakeAgents) GetConnectedAgentStatsWrapper(address string, port int64) *agentcomm.AgentCommStatsWrapper {
+	return agentcomm.NewAgentCommStatsWrapper(agentcomm.NewAgentStats())
 }
 
 // FakeAgents specific implementation of the GetState.

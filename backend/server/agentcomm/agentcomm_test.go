@@ -196,7 +196,7 @@ func TestConnectingToAgent(t *testing.T) {
 	// connect one agent and check if it is in agents map
 	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
-	_, ok := agents.(*connectedAgentsData).AgentsMap["127.0.0.1:8080"]
+	_, ok := agents.AgentsMap["127.0.0.1:8080"]
 	require.True(t, ok)
 
 	// Initially, there should be no stats.
@@ -210,10 +210,11 @@ func TestConnectingToAgent(t *testing.T) {
 
 	// We should be able to get pointer to stats via the convenience
 	// function.
-	stats := agents.GetConnectedAgentStats("127.0.0.1", 8080)
+	stats := agents.GetConnectedAgentStatsWrapper("127.0.0.1", 8080)
 	require.NotNil(t, stats)
-	require.Len(t, agent.Stats.agentCommErrors, 1)
-	require.Contains(t, agent.Stats.agentCommErrors, "foo")
+	defer stats.Close()
+	require.Len(t, stats.GetStats().agentCommErrors, 1)
+	require.Contains(t, stats.GetStats().agentCommErrors, "foo")
 }
 
 // Check if credentials for TLS can be prepared using prepareTLSCreds.

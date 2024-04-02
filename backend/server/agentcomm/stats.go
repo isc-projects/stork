@@ -1,9 +1,12 @@
 package agentcomm
 
 import (
+	"io"
 	"reflect"
 	"sync"
 )
+
+var _ io.Closer = (*AgentCommStatsWrapper)(nil)
 
 // Enumeration representing a type of the communication state transition
 // while the server tries to send a gRPC command to an agent.
@@ -54,6 +57,13 @@ type Bind9AppCommErrorStats struct {
 	errorCounts map[Bind9ChannelType]int64
 }
 
+// A wrapper for AgentCommStats which locks the stats for reading and
+// implements the Closer interface releasing the lock when desired.
+type AgentCommStatsWrapper struct {
+	/// Agent communication stats to be made available in a safe manner.
+	agentCommStats *AgentCommStats
+}
+
 // Holds runtime statistics of the communication with a given agent and
 // with the apps behind this agent. The statistics are maintained by the
 // logic in the agentcomm package but can be read from other packages.
@@ -81,6 +91,25 @@ type AgentCommStats struct {
 	// mutex is returned to the caller and the caller is responsible
 	// for locking and unlocking the mutex.
 	mutex *sync.RWMutex
+}
+
+// Instantiates the stats wrapper and locks the stats for reading.
+func NewAgentCommStatsWrapper(stats *AgentCommStats) *AgentCommStatsWrapper {
+	stats.mutex.RLock()
+	return &AgentCommStatsWrapper{
+		agentCommStats: stats,
+	}
+}
+
+// Returns the wrapped agent communication stats.
+func (wrapper *AgentCommStatsWrapper) GetStats() *AgentCommStats {
+	return wrapper.agentCommStats
+}
+
+// Releases the lock.
+func (wrapper *AgentCommStatsWrapper) Close() error {
+	wrapper.agentCommStats.mutex.RUnlock()
+	return nil
 }
 
 // Communication errors with an agent are grouped by the type of the
@@ -215,12 +244,6 @@ func NewAgentStats() *AgentCommStats {
 		bind9CommErrors: make(map[int64]*Bind9AppCommErrorStats),
 		mutex:           &sync.RWMutex{},
 	}
-}
-
-// Returns a mutex to be used when the data is accessed or updated.
-// A caller is responsible for locking and unlocking the mutex.
-func (stats *AgentCommStats) GetMutex() *sync.RWMutex {
-	return stats.mutex
 }
 
 // Increases communication error count with an agent by 1. Returns
