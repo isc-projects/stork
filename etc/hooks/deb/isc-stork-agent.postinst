@@ -70,8 +70,6 @@ then
     after_install
 elif [ "${1}" = "configure" ] && [ -n "${2}" ]
 then
-    # upgradeFromVersion="${2}"
-
     # "after upgrade" here.
     # NOTE: This slot is also used when deb packages are removed,
     # but their config files aren't, but a newer version of the
