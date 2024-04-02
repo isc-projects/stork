@@ -101,7 +101,8 @@ func NewAgentCommStatsWrapper(stats *AgentCommStats) *AgentCommStatsWrapper {
 	}
 }
 
-// Returns the wrapped agent communication stats.
+// Returns the wrapped agent communication stats. The returned stats are locked
+// for reading. An attempt to write to the stats can cause a race condition.
 func (wrapper *AgentCommStatsWrapper) GetStats() *AgentCommStats {
 	return wrapper.agentCommStats
 }
