@@ -28,7 +28,7 @@ after_upgrade () {
                 has_active_systemd=1
         fi
     fi
-    
+
     # Restart the systemD service.
     if [ $has_active_systemd -eq 1 ]; then
         is_active_service=$(systemctl is-active isc-stork-server || true)
