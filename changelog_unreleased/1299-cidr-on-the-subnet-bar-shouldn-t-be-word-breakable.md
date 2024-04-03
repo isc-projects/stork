@@ -1,6 +1,6 @@
 [bug] piotrek
 
-    Fixed minor UI issue where longer Subnet label could break in
-    two lines in Subnets table. Now Subnet label should be always
+    Fixed a minor UI issue where a longer subnet prefix could break in
+    two lines in the subnet bar. Now, the subnet bar should always be
     displayed in one line.
     (Gitlab #1299)
