@@ -146,6 +146,19 @@ Changelog
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
+**Tag: 4**
+
+    Introduced in the #1353 ticket to provide new Alpine 3.18 image,
+    which includes updated Go 1.22.2 package.
+
+    - ``alpine.Dockerfile``:
+
+        - Base: ``golang:1.22-alpine3.18``
+        - Frozen all dependency versions
+        - Updated to Ruby 3.2, Python 3.11, NPM 9.6, Make 4.4, Binutils-gold 2.40
+
+    Other images were not changed.
+
 **Tag: 3**
 
     Introduced in the #1178 ticket to add the missing ``ssh`` dependency.
