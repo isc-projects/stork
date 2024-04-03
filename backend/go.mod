@@ -22,7 +22,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.0
-	github.com/prometheus/common v0.51.1
+	github.com/prometheus/common v0.52.2
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
@@ -31,7 +31,7 @@ require (
 	golang.org/x/net v0.22.0
 	golang.org/x/term v0.18.0
 	google.golang.org/grpc v1.62.1
-	google.golang.org/grpc/security/advancedtls v0.0.0-20240401225322-4ec830737929
+	google.golang.org/grpc/security/advancedtls v0.0.0-20240403162742-b7346ae1028c
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/h2non/gock.v1 v1.0.15
 	muzzammil.xyz/jsonc v1.0.0
@@ -57,7 +57,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_model v0.6.0 // indirect
+	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/procfs v0.13.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
