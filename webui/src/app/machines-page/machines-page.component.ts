@@ -403,7 +403,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     _changeMachineAuthorization(machine: Machine, authorized: boolean, machinesTable: Table) {
         // Block table UI when machine authorization is in progress.
         this.dataLoading = true
-        const state_backup = machine.authorized
+        const stateBackup = machine.authorized
 
         machine.authorized = authorized
         const prefix = authorized ? '' : 'un'
@@ -420,7 +420,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this.serverData.forceReloadAppsStats()
             },
             error: (err) => {
-                machine.authorized = state_backup
+                machine.authorized = stateBackup
                 this.dataLoading = false
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
@@ -641,12 +641,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         // Calling servicesApi.updateMachine() API sequentially for all selected machines.
         // Max expected count of selected machines is max machines per table page,
         // which currently is 50.
-        let authorizations$: Observable<Machine> = concat()
+        const updateObservables: Observable<Machine>[] = []
         for (const m of this.selectedMachines) {
             m.authorized = true
-            // Use concat to call servicesApi sequentially.
-            authorizations$ = concat(authorizations$, this.servicesApi.updateMachine(m.id, m))
+            updateObservables.push(this.servicesApi.updateMachine(m.id, m))
         }
+
+        // Use concat to call servicesApi sequentially.
+        const authorizations$: Observable<Machine> = concat(...updateObservables)
 
         // Block table UI when bulk machines authorization is in progress.
         this.dataLoading = true
