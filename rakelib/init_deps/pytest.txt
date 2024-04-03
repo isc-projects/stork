@@ -10,21 +10,21 @@ exceptiongroup==1.2.0
     # via pytest
 iniconfig==2.0.0
     # via pytest
-packaging==23.2
+packaging==24.0
     # via pytest
 pluggy==1.4.0
     # via pytest
-pydantic==2.6.0
+pydantic==2.6.4
     # via -r rakelib/init_deps/pytest.in
-pydantic-core==2.16.1
+pydantic-core==2.16.3
     # via pydantic
-pytest==8.0.0
+pytest==8.1.1
     # via
     #   -r rakelib/init_deps/pytest.in
     #   pytest-timeout
-pytest-timeout==2.2.0
+pytest-timeout==2.3.1
     # via -r rakelib/init_deps/pytest.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via -r rakelib/init_deps/pytest.in
 pyyaml==6.0.1
     # via -r rakelib/init_deps/pytest.in
@@ -32,9 +32,9 @@ six==1.16.0
     # via python-dateutil
 tomli==2.0.1
     # via pytest
-typing-extensions==4.9.0
+typing-extensions==4.10.0
     # via
     #   pydantic
     #   pydantic-core
-urllib3==2.2.0
+urllib3==2.2.1
     # via -r rakelib/init_deps/pytest.in

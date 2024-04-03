@@ -28,10 +28,10 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.1
 	go.uber.org/mock v0.3.0
-	golang.org/x/net v0.22.0
+	golang.org/x/net v0.23.0
 	golang.org/x/term v0.18.0
 	google.golang.org/grpc v1.62.1
-	google.golang.org/grpc/security/advancedtls v0.0.0-20240403162742-b7346ae1028c
+	google.golang.org/grpc/security/advancedtls v0.0.0-20240403183053-f1cf6bf0b787
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/h2non/gock.v1 v1.0.15
 	muzzammil.xyz/jsonc v1.0.0

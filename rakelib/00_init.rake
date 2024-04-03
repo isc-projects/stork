@@ -553,9 +553,9 @@ npm_ver='10.4.0'
 storybook_ver='7.4.5'
 yamlinc_ver='0.1.10'
 bundler_ver='2.3.26'
-shellcheck_ver='0.9.0'
-pip_tools_ver='7.3.0'
-pip_audit_ver='2.7.0'
+shellcheck_ver='0.10.0'
+pip_tools_ver='7.4.1'
+pip_audit_ver='2.7.2'
 
 # System-dependent variables
 case OS
