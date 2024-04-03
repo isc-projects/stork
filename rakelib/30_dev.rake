@@ -188,18 +188,35 @@ namespace :unittest do
                         # this requires interacting with terminal
                         'GetSecretInTerminal', 'IsRunningInTerminal',
 
-                        # Testing coverage should ignore testutil because we don't require writing
-                        # tests for testing code. They can still be written but we shouldn't fail
-                        # if they are not.
-                        'isc.org/stork/testutil',
-
                         # This file contains the wrapper for the "gopsutil" package to allow mocking
                         # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
                         'isc.org/stork/agent/process.go',
 
                         # We plan to cover the below functions in the later MR.
                         "createVerifyPeer", "CalculateFingerprintFromPEM",
-                        "IsInternalCert", "IsSelfSigned", "verifyPeer"
+                        "IsInternalCert", "IsSelfSigned", "verifyPeer",
+
+                        # The main server function is currently untestable.
+                        'isc.org/stork/cmd/stork-server/main.go',
+
+                        # Skip auto-generated files.
+                        'isc.org/stork/server/gen',
+                        'isc.org/stork/api/agent.pb.go',
+                        'isc.org/stork/api/agent.pb.go',
+                        'isc.org/stork/api/agent_grpc.pb.go',
+
+                        # Skip test utils.
+                        # Testing coverage should ignore testutil because we don't require writing
+                        # tests for testing code. They can still be written but we shouldn't fail
+                        # if they are not.
+                        'isc.org/stork/server/test',
+                        'isc.org/stork/server/agentcomm/test',
+                        'isc.org/stork/server/database/test',
+                        'isc.org/stork/server/database/model/test',
+                        'isc.org/stork/testutil',
+
+                        # Skip hook boilerplate,
+                        'isc.org/stork/hooksutil/boilerplate'
                     ]
                     if short == 'true'
                         ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
