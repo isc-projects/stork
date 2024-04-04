@@ -729,7 +729,7 @@ func TestGetDDNSParameters(t *testing.T) {
 	require.NotNil(t, cfg.GetDDNSParameters().DDNSUseConflictResolution)
 	require.True(t, *cfg.GetDDNSParameters().DDNSUseConflictResolution)
 	require.NotNil(t, cfg.GetDDNSParameters().DDNSTTLPercent)
-	require.EqualValues(t, float32(0.55), *cfg.GetDDNSParameters().DDNSTTLPercent)
+	require.Equal(t, float32(0.55), *cfg.GetDDNSParameters().DDNSTTLPercent)
 }
 
 // Test that hostname char parameters are parsed and returned correctly.

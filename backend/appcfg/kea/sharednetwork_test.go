@@ -449,8 +449,8 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	require.True(t, *network4.ReservationsOutOfPool)
 	require.Equal(t, "hostname.example.org", *network4.ServerHostname)
 	require.True(t, *network4.StoreExtendedInfo)
-	require.EqualValues(t, float32(0.32), *network4.T1Percent)
-	require.EqualValues(t, float32(0.44), *network4.T2Percent)
+	require.Equal(t, float32(0.32), *network4.T1Percent)
+	require.Equal(t, float32(0.44), *network4.T2Percent)
 	require.EqualValues(t, 1001, *network4.ValidLifetime)
 }
 
@@ -576,7 +576,7 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	require.True(t, *network6.ReservationsInSubnet)
 	require.True(t, *network6.ReservationsOutOfPool)
 	require.True(t, *network6.StoreExtendedInfo)
-	require.EqualValues(t, float32(0.32), *network6.T1Percent)
-	require.EqualValues(t, float32(0.44), *network6.T2Percent)
+	require.Equal(t, float32(0.32), *network6.T1Percent)
+	require.Equal(t, float32(0.44), *network6.T2Percent)
 	require.EqualValues(t, 1001, *network6.ValidLifetime)
 }

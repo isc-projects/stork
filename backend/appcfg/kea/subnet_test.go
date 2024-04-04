@@ -527,8 +527,8 @@ func TestCreateSubnet4(t *testing.T) {
 	require.Equal(t, "hostname.example.org", *subnet4.ServerHostname)
 	require.True(t, *subnet4.StoreExtendedInfo)
 	require.Equal(t, "192.0.2.0/24", subnet4.Subnet)
-	require.EqualValues(t, float32(0.32), *subnet4.T1Percent)
-	require.EqualValues(t, float32(0.44), *subnet4.T2Percent)
+	require.Equal(t, float32(0.32), *subnet4.T1Percent)
+	require.Equal(t, float32(0.44), *subnet4.T2Percent)
 	require.EqualValues(t, 1001, *subnet4.ValidLifetime)
 }
 
@@ -726,8 +726,8 @@ func TestCreateSubnet6(t *testing.T) {
 	require.True(t, *subnet6.ReservationsOutOfPool)
 	require.True(t, *subnet6.StoreExtendedInfo)
 	require.Equal(t, "2001:db8:1::/64", subnet6.Subnet)
-	require.EqualValues(t, float32(0.32), *subnet6.T1Percent)
-	require.EqualValues(t, float32(0.44), *subnet6.T2Percent)
+	require.Equal(t, float32(0.32), *subnet6.T1Percent)
+	require.Equal(t, float32(0.44), *subnet6.T2Percent)
 	require.EqualValues(t, 1001, *subnet6.ValidLifetime)
 }
 
