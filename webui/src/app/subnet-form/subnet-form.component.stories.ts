@@ -1,4 +1,4 @@
-import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { SubnetFormComponent } from './subnet-form.component'
 import { toastDecorator } from '../utils-stories'
 import { FieldsetModule } from 'primeng/fieldset'
@@ -545,27 +545,30 @@ export default {
     },
 } as Meta
 
-const Template: Story<SubnetFormComponent> = (args: SubnetFormComponent) => ({
-    props: args,
-})
+type Story = StoryObj<SubnetFormComponent>
 
-export const NewSubnet = Template.bind({})
-NewSubnet.args = {}
-
-export const UpdatedSubnet4 = Template.bind({})
-UpdatedSubnet4.args = {
-    subnetId: 123,
+export const NewSubnet: Story = {
+    args: {},
 }
 
-export const UpdatedSubnet6 = Template.bind({})
-UpdatedSubnet6.args = {
-    subnetId: 234,
+export const UpdatedSubnet4: Story = {
+    args: {
+        subnetId: 123,
+    },
 }
 
-export const NoSubnetId = Template.bind({})
-NoSubnetId.args = {}
+export const UpdatedSubnet6: Story = {
+    args: {
+        subnetId: 234,
+    },
+}
 
-export const ErrorMessage = Template.bind({})
-ErrorMessage.args = {
-    subnetId: 345,
+export const NoSubnetId: Story = {
+    args: {},
+}
+
+export const ErrorMessage: Story = {
+    args: {
+        subnetId: 345,
+    },
 }

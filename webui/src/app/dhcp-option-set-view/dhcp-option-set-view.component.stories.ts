@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
+import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { DhcpOptionSetViewComponent } from './dhcp-option-set-view.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TagModule } from 'primeng/tag'
@@ -33,108 +33,107 @@ export default {
     ],
 } as Meta
 
-const Template: Story<DhcpOptionSetViewComponent> = (args: DhcpOptionSetViewComponent) => ({
-    props: args,
-})
+type Story = StoryObj<DhcpOptionSetViewComponent>
 
-export const CombinedOptions = Template.bind({})
-CombinedOptions.args = {
-    levels: ['subnet', 'global'],
-    options: [
-        [
-            {
-                alwaysSend: true,
-                code: 1024,
-                fields: [
-                    {
-                        fieldType: 'uint32',
-                        values: ['111'],
-                    },
-                    {
-                        fieldType: 'ipv6-prefix',
-                        values: ['3000::', '64'],
-                    },
-                ],
-                universe: 6,
-                options: [
-                    {
-                        code: 1025,
-                        universe: 6,
-                    },
-                    {
-                        code: 1026,
-                        fields: [
-                            {
-                                fieldType: 'ipv6-address',
-                                values: ['2001:db8:1::1'],
-                            },
-                            {
-                                fieldType: 'ipv6-address',
-                                values: ['2001:db8:2::1'],
-                            },
-                        ],
-                        universe: 6,
-                    },
-                ],
-            },
-            {
-                code: 1027,
-                fields: [
-                    {
-                        fieldType: 'bool',
-                        values: ['true'],
-                    },
-                ],
-                universe: 6,
-            },
-            {
-                code: 1028,
-                options: [
-                    {
-                        code: 1029,
-                        fields: [
-                            {
-                                fieldType: 'string',
-                                values: ['foo'],
-                            },
-                        ],
-                        options: [
-                            {
-                                code: 1030,
-                                options: [
-                                    {
-                                        code: 1031,
-                                    },
-                                ],
-                            },
-                        ],
-                        universe: 6,
-                    },
-                ],
-                universe: 6,
-            },
+export const CombinedOptions: Story = {
+    args: {
+        levels: ['subnet', 'global'],
+        options: [
+            [
+                {
+                    alwaysSend: true,
+                    code: 1024,
+                    fields: [
+                        {
+                            fieldType: 'uint32',
+                            values: ['111'],
+                        },
+                        {
+                            fieldType: 'ipv6-prefix',
+                            values: ['3000::', '64'],
+                        },
+                    ],
+                    universe: 6,
+                    options: [
+                        {
+                            code: 1025,
+                            universe: 6,
+                        },
+                        {
+                            code: 1026,
+                            fields: [
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['2001:db8:1::1'],
+                                },
+                                {
+                                    fieldType: 'ipv6-address',
+                                    values: ['2001:db8:2::1'],
+                                },
+                            ],
+                            universe: 6,
+                        },
+                    ],
+                },
+                {
+                    code: 1027,
+                    fields: [
+                        {
+                            fieldType: 'bool',
+                            values: ['true'],
+                        },
+                    ],
+                    universe: 6,
+                },
+                {
+                    code: 1028,
+                    options: [
+                        {
+                            code: 1029,
+                            fields: [
+                                {
+                                    fieldType: 'string',
+                                    values: ['foo'],
+                                },
+                            ],
+                            options: [
+                                {
+                                    code: 1030,
+                                    options: [
+                                        {
+                                            code: 1031,
+                                        },
+                                    ],
+                                },
+                            ],
+                            universe: 6,
+                        },
+                    ],
+                    universe: 6,
+                },
+            ],
+            [
+                {
+                    code: 1027,
+                    fields: [
+                        {
+                            fieldType: 'bool',
+                            values: ['false'],
+                        },
+                    ],
+                    universe: 6,
+                },
+                {
+                    code: 1030,
+                    fields: [
+                        {
+                            fieldType: 'ipv4-address',
+                            values: ['1.1.1.1'],
+                        },
+                    ],
+                    universe: 6,
+                },
+            ],
         ],
-        [
-            {
-                code: 1027,
-                fields: [
-                    {
-                        fieldType: 'bool',
-                        values: ['false'],
-                    },
-                ],
-                universe: 6,
-            },
-            {
-                code: 1030,
-                fields: [
-                    {
-                        fieldType: 'ipv4-address',
-                        values: ['1.1.1.1'],
-                    },
-                ],
-                universe: 6,
-            },
-        ],
-    ],
+    },
 }

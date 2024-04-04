@@ -1,6 +1,6 @@
 import { ConfigCheckerPreferencePickerComponent } from './config-checker-preference-picker.component'
 
-import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { ConfigChecker } from '../backend'
 import { TableModule } from 'primeng/table'
 import { ChipModule } from 'primeng/chip'
@@ -50,9 +50,7 @@ export default {
     },
 } as Meta
 
-const Template: Story<ConfigCheckerPreferencePickerComponent> = (args: ConfigCheckerPreferencePickerComponent) => ({
-    props: args,
-})
+type Story = StoryObj<ConfigCheckerPreferencePickerComponent>
 
 const mockData: ConfigChecker[] = [
     {
@@ -88,24 +86,28 @@ const mockData: ConfigChecker[] = [
     },
 ]
 
-export const Primary = Template.bind({})
-Primary.args = {
-    checkers: mockData,
+export const Primary: Story = {
+    args: {
+        checkers: mockData,
+    },
 }
 
-export const Empty = Template.bind({})
-Empty.args = {
-    checkers: [],
+export const Empty: Story = {
+    args: {
+        checkers: [],
+    },
 }
 
-export const Loading = Template.bind({})
-Loading.args = {
-    checkers: null,
-    loading: true,
+export const Loading: Story = {
+    args: {
+        checkers: null,
+        loading: true,
+    },
 }
 
-export const Minimal = Template.bind({})
-Minimal.args = {
-    minimal: true,
-    checkers: mockData,
+export const Minimal: Story = {
+    args: {
+        minimal: true,
+        checkers: mockData,
+    },
 }

@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
+import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { ChartModule } from 'primeng/chart'
 import { UtilizationStatsChartComponent } from './utilization-stats-chart.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
@@ -20,65 +20,68 @@ export default {
     ],
 } as Meta
 
-const Template: Story<UtilizationStatsChartComponent> = (args: UtilizationStatsChartComponent) => ({
-    props: args,
-})
+type Story = StoryObj<UtilizationStatsChartComponent>
 
-export const AllDHCPv4StatsAvailable = Template.bind({})
-AllDHCPv4StatsAvailable.args = {
-    leaseType: 'address',
-    network: {
-        addrUtilization: 30,
-        stats: {
-            'total-addresses': 240,
-            'assigned-addresses': 70,
-            'declined-addresses': 10,
+export const AllDHCPv4StatsAvailable: Story = {
+    args: {
+        leaseType: 'na',
+        network: {
+            addrUtilization: 30,
+            stats: {
+                'total-addresses': 240,
+                'assigned-addresses': 70,
+                'declined-addresses': 10,
+            },
         },
     },
 }
 
-export const AllDHCPv6StatsAvailable = Template.bind({})
-AllDHCPv6StatsAvailable.args = {
-    leaseType: 'na',
-    network: {
-        addrUtilization: 30,
-        stats: {
-            'total-nas': 240,
-            'assigned-nas': 70,
-            'declined-nas': 10,
+export const AllDHCPv6StatsAvailable: Story = {
+    args: {
+        leaseType: 'na',
+        network: {
+            addrUtilization: 30,
+            stats: {
+                'total-nas': 240,
+                'assigned-nas': 70,
+                'declined-nas': 10,
+            },
         },
     },
 }
 
-export const AllPrefixStatsAvailable = Template.bind({})
-AllPrefixStatsAvailable.args = {
-    leaseType: 'pd',
-    network: {
-        pdUtilization: 15,
-        stats: {
-            'total-pds': 6400,
-            'assigned-pds': 800,
+export const AllPrefixStatsAvailable: Story = {
+    args: {
+        leaseType: 'pd',
+        network: {
+            pdUtilization: 15,
+            stats: {
+                'total-pds': 6400,
+                'assigned-pds': 800,
+            },
         },
     },
 }
 
-export const NoUtilization = Template.bind({})
-NoUtilization.args = {
-    leaseType: 'address',
-    network: {
-        stats: {
-            'total-addresses': 240,
-            'assigned-addresses': 70,
-            'declined-addresses': 10,
+export const NoUtilization: Story = {
+    args: {
+        leaseType: 'na',
+        network: {
+            stats: {
+                'total-addresses': 240,
+                'assigned-addresses': 70,
+                'declined-addresses': 10,
+            },
         },
     },
 }
 
-export const NoDetailedStats = Template.bind({})
-NoDetailedStats.args = {
-    leaseType: 'address',
-    network: {
-        addrUtilization: 50,
-        stats: {},
+export const NoDetailedStats: Story = {
+    args: {
+        leaseType: 'na',
+        network: {
+            addrUtilization: 50,
+            stats: {},
+        },
     },
 }

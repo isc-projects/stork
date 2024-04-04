@@ -1,6 +1,6 @@
 import { JsonTreeComponent } from './json-tree.component'
 
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { StoryObj, Meta, moduleMetadata } from '@storybook/angular'
 import { PaginatorModule } from 'primeng/paginator'
 
 export default {
@@ -19,29 +19,28 @@ export default {
     },
 } as Meta
 
-const Template: Story<JsonTreeComponent> = (args: JsonTreeComponent) => ({
-    props: args,
-})
+type Story = StoryObj<JsonTreeComponent>
 
-export const Basic = Template.bind({})
-
-Basic.args = {
-    key: 'key',
-    value: {
-        foo: 42,
-        bar: {
-            a: 1,
-            b: true,
-            password: 'secret',
+export const Basic: Story = {
+    args: {
+        key: 'key',
+        value: {
+            foo: 42,
+            bar: {
+                a: 1,
+                b: true,
+                password: 'secret',
+            },
         },
     },
 }
 
-export const LongList = Template.bind({})
-LongList.args = {
-    key: 'key',
-    value: {
-        foo: [...Array(100).keys()],
+export const LongList: Story = {
+    args: {
+        key: 'key',
+        value: {
+            foo: [...Array(100).keys()],
+        },
+        forceOpenThisLevel: true,
     },
-    forceOpenThisLevel: true,
 }

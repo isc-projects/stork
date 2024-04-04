@@ -1,5 +1,5 @@
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { applicationConfig, Meta, moduleMetadata, Story } from '@storybook/angular'
+import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { DividerModule } from 'primeng/divider'
@@ -189,11 +189,10 @@ export default {
     },
 } as Meta
 
-const Template: Story<ConfigReviewPanelComponent> = (args: ConfigReviewPanelComponent) => ({
-    props: args,
-})
+type Story = StoryObj<ConfigReviewPanelComponent>
 
-export const Primary = Template.bind({})
-Primary.args = {
-    daemonId: 1,
+export const Primary: Story = {
+    args: {
+        daemonId: 1,
+    },
 }

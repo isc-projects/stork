@@ -1,6 +1,6 @@
 import { JsonTreeRootComponent } from './json-tree-root.component'
 
-import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { Router, RouterModule } from '@angular/router'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
@@ -39,38 +39,36 @@ export default {
     },
 } as Meta
 
-const Template: Story<JsonTreeRootComponent> = (args: JsonTreeRootComponent) => ({
-    props: args,
-})
+type Story = StoryObj<JsonTreeRootComponent>
 
-export const Basic = Template.bind({})
-
-Basic.args = {
-    value: 42,
+export const Basic: Story = {
+    args: {
+        value: 42,
+    },
 }
 
-export const Complex = Template.bind({})
-
-Complex.args = {
-    value: {
-        foo: {
-            bar: {
-                baz: [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    {
-                        a: true,
-                        b: false,
-                        secret: 'password',
-                        password: 'secret',
-                    },
-                    7,
-                    8,
-                    9,
-                ],
+export const Complex: Story = {
+    args: {
+        value: {
+            foo: {
+                bar: {
+                    baz: [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        {
+                            a: true,
+                            b: false,
+                            secret: 'password',
+                            password: 'secret',
+                        },
+                        7,
+                        8,
+                        9,
+                    ],
+                },
             },
         },
     },

@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
+import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SettingsPageComponent } from './settings-page.component'
 import { importProvidersFrom } from '@angular/core'
 import { provideAnimations, provideNoopAnimations } from '@angular/platform-browser/animations'
@@ -80,8 +80,6 @@ export default {
     },
 } as Meta
 
-const Template: Story<SettingsPageComponent> = (args: SettingsPageComponent) => ({
-    props: args,
-})
+type Story = StoryObj<SettingsPageComponent>
 
-export const SettingsForm = Template.bind({})
+export const SettingsForm: Story = {}

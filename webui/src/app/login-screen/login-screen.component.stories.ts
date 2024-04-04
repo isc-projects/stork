@@ -1,4 +1,4 @@
-import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { HttpClientModule } from '@angular/common/http'
@@ -86,19 +86,16 @@ export default {
     },
 } as Meta
 
-const Template: Story<LoginScreenComponent> = (args: LoginScreenComponent) => ({
-    props: args,
-})
+type Story = StoryObj<LoginScreenComponent>
 
-export const Primary = Template.bind({})
+export const Primary: Story = {}
 
-export const Loading = Template.bind({})
-
-Loading.parameters = {
-    mockData: [],
+export const Loading: Story = {
+    parameters: {
+        mockData: [],
+    },
 }
 
-export const ManyButtons = Template.bind({})
 const items: AuthenticationMethod[] = Array(40)
     .fill(0)
     .map((_, i) => ({
@@ -109,58 +106,60 @@ const items: AuthenticationMethod[] = Array(40)
         name: `Method ${i}`,
     }))
 
-ManyButtons.parameters = {
-    mockData: [
-        {
-            url: 'http://localhost/api/authentication-methods',
-            method: 'GET',
-            status: 200,
-            delay: 0,
-            response: {
-                total: items.length,
-                items,
-            } as AuthenticationMethods,
-        },
-    ],
-}
-
-export const SingleMethod = Template.bind({})
-
-SingleMethod.parameters = {
-    mockData: [
-        {
-            url: 'http://localhost/api/authentication-methods',
-            method: 'GET',
-            status: 200,
-            delay: 0,
-            response: {
-                total: 4,
-                items: [
-                    {
-                        description: 'LDAP',
-                        formLabelIdentifier: 'Login',
-                        formLabelSecret: 'Password',
-                        id: 'ldap',
-                        name: 'LDAP',
-                    },
-                ],
-            } as AuthenticationMethods,
-        },
-    ],
-}
-
-export const FailedFetch = Template.bind({})
-
-FailedFetch.parameters = {
-    mockData: [
-        {
-            url: 'http://localhost/api/authentication-methods',
-            method: 'GET',
-            status: 500,
-            delay: 500,
-            response: () => {
-                action('onFetchAuthenticationMethods')()
+export const ManyButtons: Story = {
+    parameters: {
+        mockData: [
+            {
+                url: 'http://localhost/api/authentication-methods',
+                method: 'GET',
+                status: 200,
+                delay: 0,
+                response: {
+                    total: items.length,
+                    items,
+                } as AuthenticationMethods,
             },
-        },
-    ],
+        ],
+    },
+}
+
+export const SingleMethod: Story = {
+    parameters: {
+        mockData: [
+            {
+                url: 'http://localhost/api/authentication-methods',
+                method: 'GET',
+                status: 200,
+                delay: 0,
+                response: {
+                    total: 4,
+                    items: [
+                        {
+                            description: 'LDAP',
+                            formLabelIdentifier: 'Login',
+                            formLabelSecret: 'Password',
+                            id: 'ldap',
+                            name: 'LDAP',
+                        },
+                    ],
+                } as AuthenticationMethods,
+            },
+        ],
+    },
+}
+
+export const FailedFetch: Story = {
+    parameters: {
+        mockData: [
+            {
+                url: 'http://localhost/api/authentication-methods',
+                method: 'GET',
+                status: 500,
+                delay: 500,
+                response: () => {
+                    action('onFetchAuthenticationMethods')()
+                },
+            },
+        ],
+    },
 }

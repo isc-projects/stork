@@ -1,6 +1,6 @@
 import { HostFormComponent } from './host-form.component'
 
-import { Story, Meta, moduleMetadata } from '@storybook/angular'
+import { StoryObj, Meta, moduleMetadata } from '@storybook/angular'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule, ReactiveFormsModule, UntypedFormBuilder } from '@angular/forms'
 import { HttpClientModule } from '@angular/common/http'
@@ -208,14 +208,14 @@ export default {
     },
 } as Meta
 
-const Template: Story<HostFormComponent> = (args: HostFormComponent) => ({
-    props: args,
-})
+type Story = StoryObj<HostFormComponent>
 
-export const NewHost = Template.bind({})
-NewHost.args = {}
+export const NewHost: Story = {
+    args: {},
+}
 
-export const UpdatedHost = Template.bind({})
-UpdatedHost.args = {
-    hostId: 123,
+export const UpdatedHost: Story = {
+    args: {
+        hostId: 123,
+    },
 }

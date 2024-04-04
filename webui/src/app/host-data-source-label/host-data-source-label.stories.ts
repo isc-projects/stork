@@ -1,28 +1,28 @@
 import { HostDataSourceLabelComponent } from './host-data-source-label.component'
 
-import { Story, Meta } from '@storybook/angular'
+import { StoryObj, Meta } from '@storybook/angular'
 
 export default {
     title: 'App/HostDataSourceLabel',
     component: HostDataSourceLabelComponent,
 } as Meta
 
-const Template: Story<HostDataSourceLabelComponent> = (args: HostDataSourceLabelComponent) => ({
-    props: args,
-})
+type Story = StoryObj<HostDataSourceLabelComponent>
 
-export const Config = Template.bind({})
-
-Config.args = {
-    dataSource: 'config',
+export const Config: Story = {
+    args: {
+        dataSource: 'config',
+    },
 }
 
-export const Api = Template.bind({})
-Api.args = {
-    dataSource: 'api',
+export const Api: Story = {
+    args: {
+        dataSource: 'api',
+    },
 }
 
-export const Unknown = Template.bind({})
-Unknown.args = {
-    dataSource: 'unknown',
+export const Unknown: Story = {
+    args: {
+        dataSource: 'unknown',
+    },
 }

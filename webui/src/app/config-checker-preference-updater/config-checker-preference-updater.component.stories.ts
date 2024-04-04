@@ -1,6 +1,6 @@
 import { HttpClientModule } from '@angular/common/http'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { applicationConfig, Meta, moduleMetadata, Story } from '@storybook/angular'
+import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ChipModule } from 'primeng/chip'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -105,16 +105,16 @@ export default {
     },
 } as Meta
 
-const Template: Story<ConfigCheckerPreferenceUpdaterComponent> = (args: ConfigCheckerPreferenceUpdaterComponent) => ({
-    props: args,
-})
+type Story = StoryObj<ConfigCheckerPreferenceUpdaterComponent>
 
-export const GlobalCheckers = Template.bind({})
-GlobalCheckers.args = {
-    daemonID: null,
+export const GlobalCheckers: Story = {
+    args: {
+        daemonID: null,
+    },
 }
 
-export const DaemonCheckers = Template.bind({})
-DaemonCheckers.args = {
-    daemonID: 1,
+export const DaemonCheckers: Story = {
+    args: {
+        daemonID: 1,
+    },
 }

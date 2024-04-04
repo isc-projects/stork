@@ -1,6 +1,6 @@
 import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view.component'
 
-import { Story, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
+import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/angular'
 import { ChipModule } from 'primeng/chip'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
@@ -21,16 +21,16 @@ export default {
     ],
 } as Meta
 
-const Template: Story<DhcpClientClassSetViewComponent> = (args: DhcpClientClassSetViewComponent) => ({
-    props: args,
-})
+type Story = StoryObj<DhcpClientClassSetViewComponent>
 
-export const SomeClasses = Template.bind({})
-SomeClasses.args = {
-    clientClasses: ['access-point', 'router', 'DROP', 'custom'],
+export const SomeClasses: Story = {
+    args: {
+        clientClasses: ['access-point', 'router', 'DROP', 'custom'],
+    },
 }
 
-export const NoClasses = Template.bind({})
-NoClasses.args = {
-    clientClasses: [],
+export const NoClasses: Story = {
+    args: {
+        clientClasses: [],
+    },
 }

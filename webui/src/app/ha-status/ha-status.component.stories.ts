@@ -1,4 +1,4 @@
-import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular'
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
 import { MessageModule } from 'primeng/message'
 import { PanelModule } from 'primeng/panel'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
@@ -9,7 +9,6 @@ import { ServicesService, ServicesStatus } from '../backend'
 import { MessageService } from 'primeng/api'
 import { importProvidersFrom } from '@angular/core'
 import { HttpClientModule } from '@angular/common/http'
-import { HaStatusPanelComponent } from '../ha-status-panel/ha-status-panel.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -164,7 +163,7 @@ export default {
             declarations: [
                 EntityLinkComponent,
                 HaStatusComponent,
-                HaStatusPanelComponent,
+                HaStatusComponent,
                 HelpTipComponent,
                 LocaltimePipe,
                 PlaceholderPipe,
@@ -192,18 +191,18 @@ export default {
     },
 } as Meta
 
-const Template: Story<HaStatusComponent> = (args: HaStatusComponent) => ({
-    props: args,
-})
+type Story = StoryObj<HaStatusComponent>
 
-export const hubAndSpoke = Template.bind({})
-hubAndSpoke.args = {
-    appId: 123,
-    daemonName: 'dhcp4',
+export const hubAndSpoke: Story = {
+    args: {
+        appId: 123,
+        daemonName: 'dhcp4',
+    },
 }
 
-export const passiveBackup = Template.bind({})
-passiveBackup.args = {
-    appId: 234,
-    daemonName: 'dhcp4',
+export const passiveBackup: Story = {
+    args: {
+        appId: 234,
+        daemonName: 'dhcp4',
+    },
 }

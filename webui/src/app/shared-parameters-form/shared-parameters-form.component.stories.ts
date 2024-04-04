@@ -1,4 +1,4 @@
-import { moduleMetadata, Meta, Story, applicationConfig } from '@storybook/angular'
+import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TableModule } from 'primeng/table'
@@ -60,67 +60,64 @@ export default {
     ],
 } as Meta
 
-const Template: Story<SharedParametersFormComponent<SubnetForm>> = (
-    args: SharedParametersFormComponent<SubnetForm>
-) => ({
-    props: args,
-})
+type Story = StoryObj<SharedParametersFormComponent<SubnetForm>>
 
-export const VariousParameters = Template.bind({})
-VariousParameters.args = {
-    servers: ['server 1', 'server 2'],
-    formGroup: new FormGroup<SubnetForm>({
-        allocator: new SharedParameterFormGroup<string>(
-            {
-                type: 'string',
-                values: ['iterative', 'random', 'flq'],
-            },
-            [new FormControl<string>('iterative'), new FormControl<string>(null)]
-        ),
+export const VariousParameters: Story = {
+    args: {
+        servers: ['server 1', 'server 2'],
+        formGroup: new FormGroup<SubnetForm>({
+            allocator: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: ['iterative', 'random', 'flq'],
+                },
+                [new FormControl<string>('iterative'), new FormControl<string>(null)]
+            ),
 
-        cacheMaxAge: new SharedParameterFormGroup(
-            {
-                type: 'number',
-            },
-            [new FormControl(1000), new FormControl(2000)]
-        ),
-        cacheThreshold: new SharedParameterFormGroup(
-            {
-                type: 'number',
-                min: 0,
-                max: 1,
-                fractionDigits: 2,
-            },
-            [new FormControl(0.25), new FormControl(0.5)]
-        ),
-        ddnsGeneratedPrefix: new SharedParameterFormGroup(
-            {
-                type: 'string',
-                invalidText: 'Please specify a valid prefix.',
-            },
-            [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
-        ),
-        ddnsOverrideClientUpdate: new SharedParameterFormGroup(
-            {
-                type: 'boolean',
-            },
-            [new FormControl<boolean>(true), new FormControl<boolean>(true)]
-        ),
-        relayAddresses: new SharedParameterFormGroup(
-            {
-                type: 'string',
-                isArray: true,
-            },
-            [
-                new FormControl<string[]>(['192.0.2.1', '192.0.2.2', '192.0.2.3'], StorkValidators.ipv4()),
-                new FormControl<string[]>(['192.0.2.1', '192.0.2.2'], StorkValidators.ipv4()),
-            ]
-        ),
-        requireClientClasses: new SharedParameterFormGroup(
-            {
-                type: 'client-classes',
-            },
-            [new FormControl(['foo', 'bar']), new FormControl(['foo', 'bar', 'auf'])]
-        ),
-    }),
+            cacheMaxAge: new SharedParameterFormGroup(
+                {
+                    type: 'number',
+                },
+                [new FormControl(1000), new FormControl(2000)]
+            ),
+            cacheThreshold: new SharedParameterFormGroup(
+                {
+                    type: 'number',
+                    min: 0,
+                    max: 1,
+                    fractionDigits: 2,
+                },
+                [new FormControl(0.25), new FormControl(0.5)]
+            ),
+            ddnsGeneratedPrefix: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    invalidText: 'Please specify a valid prefix.',
+                },
+                [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
+            ),
+            ddnsOverrideClientUpdate: new SharedParameterFormGroup(
+                {
+                    type: 'boolean',
+                },
+                [new FormControl<boolean>(true), new FormControl<boolean>(true)]
+            ),
+            relayAddresses: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    isArray: true,
+                },
+                [
+                    new FormControl<string[]>(['192.0.2.1', '192.0.2.2', '192.0.2.3'], StorkValidators.ipv4()),
+                    new FormControl<string[]>(['192.0.2.1', '192.0.2.2'], StorkValidators.ipv4()),
+                ]
+            ),
+            requireClientClasses: new SharedParameterFormGroup(
+                {
+                    type: 'client-classes',
+                },
+                [new FormControl(['foo', 'bar']), new FormControl(['foo', 'bar', 'auf'])]
+            ),
+        }),
+    },
 }

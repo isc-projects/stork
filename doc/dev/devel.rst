@@ -1181,25 +1181,22 @@ It allows you to change their values from the Storybook UI.
     Storybook can discover the component's properties automatically but this
     feature is currently disabled due to the `bug in Storybook for Angular <https://github.com/storybookjs/storybook/issues/17004>`_.
 
-Next, create the template object instance by passing the component type as
-generic type:
+Next, create the Story type by passing the component type as generic type:
 
 .. code-block:: typescript
 
-    const Template: Story<JsonTreeComponent> = (args: JsonTreeComponent) => ({
-        props: args,
-    })
+    type Story = StoryObj<JsonTreeComponent>
 
-Finally, bind the template object and provide its arguments:
+Finally, create a Story object and provide its arguments:
 
 .. code-block:: typescript
 
-    export const Basic = Template.bind({})
-
-    Basic.args = {
-        key: 'key',
-        value: {
-            foo: 42
+    const Basic: Story = {
+        args: {
+            key: 'key',
+            value: {
+                foo: 42
+            }
         }
     }
 

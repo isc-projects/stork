@@ -1,6 +1,6 @@
 import { HttpClientModule } from '@angular/common/http'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { applicationConfig, Meta, moduleMetadata, Story } from '@storybook/angular'
+import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
 import { ChipModule } from 'primeng/chip'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -144,8 +144,6 @@ export default {
     },
 } as Meta
 
-const Template: Story<ConfigCheckerPreferencePageComponent> = (args: ConfigCheckerPreferencePageComponent) => ({
-    props: args,
-})
+type Story = StoryObj<ConfigCheckerPreferencePageComponent>
 
-export const Primary = Template.bind({})
+export const Primary: Story = {}
