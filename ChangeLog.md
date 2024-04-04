@@ -1,3 +1,112 @@
+Stork 1.16.0 released on 2024-04-10.
+
+* 398 [build] piotrek
+
+    Updated dependencies including the Go 1.22.2, Angular 17.3.2,
+    and several Python packages. Updated Alpine CI image to include
+    new Go 1.22.2 package.
+    (Gitlab #1353)
+
+* 397 [func] piotrek
+
+    Improved UI/UX when Machine is being authorized. This process may
+    take some time, so for the time when this operation is in progress,
+    machines table UI is greyed out. The same improvement was added
+    when authorizing more than one machine at once.
+    (Gitlab #1269)
+
+* 396 [func] piotrek
+
+    Added information about empty dataset to tables in views:
+    Hosts list, Shared networks list, Subnets list, Users list.
+    Now, whenever there is no data to be displayed, the feedback
+    about that fact is shown.
+    (Gitlab #1307)
+
+* 395 [bug] piotrek
+
+    Fixed a minor UI issue where a longer subnet prefix could break in
+    two lines in the subnet bar. Now, the subnet bar should always be
+    displayed in one line.
+    (Gitlab #1299)
+
+* 394 [build] slawek
+
+    Improved the package installation scripts to avoid turning off the
+    Stork systemD service on update.
+    (Gitlab #1319)
+
+* 393 [bug] slawek
+
+    Stork now respects the minimum DUID length of 3 enforced by Kea
+    2.3.8+ and does not query it for leases when too short DUID is
+    specified in the lease search box.
+    (Gitlab #1301)
+
+* 392 [func] marcin
+
+    High Availability status for a daemon now contains the state of
+    all HA relationships. It facilitates monitoring the hub-and-spoke
+    configuration recently implemented in Kea.
+    (Gitlab #1274)
+
+* 391 [bug] marcin
+
+    Enabled some dead events for BIND 9 and added the events panel on
+    the BIND9 app tab.
+    (Gitlab #1303)
+
+* 390 [doc] marcin
+
+    Added reference to the ISC KB article describing how to generate
+    the certificates and keys.
+    (Gitlab #1341)
+
+* 389 [bug] slawek
+
+    Fixed unavailable Prometheus metrics endpoint of the Stork server in
+    the demo environment. Use Stork server logger in the Prometheus
+    metrics collector.
+    (Gitlab #1289)
+
+* 388 [func] slawek
+
+    Stork now detects a given daemon's inconsistent or duplicated DHCP
+    data in different host data sources and displays them as labels on
+    the host list.
+    (Gitlab #977)
+
+* 387 [bug] slawek
+
+    Fixed filtering global host reservations with a combination of other
+    filters. Previously, global hosts were appended to the hosts
+    returned by other filters. Now, a subset of global hosts matching
+    other filters is returned.
+    (Gitlab #1282)
+
+* 386 [bug] slawek
+
+    Fixed setting the application state puller interval. Its input box
+    value was not used.
+    (Gitlab #1258)
+
+* 385 [func] marcin
+
+    Show an alert in a prominent place about the connectivity issues
+    between the Stork server and the monitored machines.
+    (Gitlab #1222)
+
+* 384 [build] marcin
+
+    Enabled building Stork and the demo on Apple M3 chipset.
+    (Gitlab #1321)
+
+* 383 [bug] marcin
+
+    Prevent a hang in the Stork server shutdown when there are
+    open SSE connections.
+    (Gitlab #1244)
+
 Stork 1.15.1 released on 2024-03-27.
 
 * 382 [sec] ! slawek
