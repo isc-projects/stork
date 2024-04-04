@@ -202,7 +202,6 @@ namespace :unittest do
                         # Skip auto-generated files.
                         'isc.org/stork/server/gen',
                         'isc.org/stork/api/agent.pb.go',
-                        'isc.org/stork/api/agent.pb.go',
                         'isc.org/stork/api/agent_grpc.pb.go',
 
                         # Skip test utils.

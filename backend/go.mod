@@ -30,8 +30,8 @@ require (
 	go.uber.org/mock v0.3.0
 	golang.org/x/net v0.23.0
 	golang.org/x/term v0.18.0
-	google.golang.org/grpc v1.62.1
-	google.golang.org/grpc/security/advancedtls v0.0.0-20240403183053-f1cf6bf0b787
+	google.golang.org/grpc v1.63.0
+	google.golang.org/grpc/security/advancedtls v0.0.0-20240403225043-c31cec33dd5d
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/h2non/gock.v1 v1.0.15
 	muzzammil.xyz/jsonc v1.0.0
@@ -48,7 +48,6 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-pg/zerochecker v0.2.0 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
