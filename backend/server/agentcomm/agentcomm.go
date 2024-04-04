@@ -108,7 +108,7 @@ func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []
 	}
 
 	// Setup new connection
-	grpcConn, err := grpc.Dial(
+	grpcConn, err := grpc.NewClient(
 		agent.Address,
 		grpc.WithTransportCredentials(creds),
 	)
