@@ -1,4 +1,4 @@
-Stork 1.16.0 released on 2024-04-10.
+Stork 1.16.0 released on 2024-04-05.
 
 * 398 [build] piotrek
 
