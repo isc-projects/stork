@@ -13,8 +13,8 @@ charset-normalizer==3.3.2
 click==8.1.7
     # via flask
 flask==3.0.2
-    # via -r tests/sim/../../rakelib/init_deps/flask.in
-idna==3.6
+    # via -r ../../rakelib/init_deps/flask.in
+idna==3.7
     # via requests
 itsdangerous==2.1.2
     # via flask
@@ -25,7 +25,7 @@ markupsafe==2.1.5
     #   jinja2
     #   werkzeug
 requests==2.31.0
-    # via -r tests/sim/../../rakelib/init_deps/flask.in
+    # via -r ../../rakelib/init_deps/flask.in
 urllib3==2.2.1
     # via requests
 werkzeug==3.0.2
