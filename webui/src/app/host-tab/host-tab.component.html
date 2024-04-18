@@ -293,8 +293,8 @@
             </ng-container>
         </div>
     </div>
-    <div class="mt-6 mb-3">
-        <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()" class="mb-2">
+    <div class="mb-4">
+        <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()" class="mb-4">
             <p-message
                 severity="warn"
                 text='The "Edit" and "Delete" operations affect only the configurations stored in the host database (labeled as "host_cmds").'
