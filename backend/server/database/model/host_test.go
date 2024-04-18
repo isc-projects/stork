@@ -1604,6 +1604,8 @@ func TestGetHostsByPageWithoutReservedIPFilteredByIdentifier(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	apps := addMachineAppDaemonsAndSubnets(t, db)
+
 	// Create a host with no IP address.
 	host := &Host{
 		SubnetID: 0,
@@ -1612,8 +1614,12 @@ func TestGetHostsByPageWithoutReservedIPFilteredByIdentifier(t *testing.T) {
 			Type:  "hw-address",
 			Value: []byte{0x66, 0x6f, 0x6f, 0x62, 0x61, 0x72},
 		}},
-		Hostname:       "foo",
-		IPReservations: nil,
+		LocalHosts: []LocalHost{{
+			DaemonID:       apps[0].Daemons[0].ID,
+			DataSource:     HostDataSourceAPI,
+			Hostname:       "foo",
+			IPReservations: nil,
+		}},
 	}
 	err := AddHost(db, host)
 	require.NoError(t, err)
@@ -1628,7 +1634,8 @@ func TestGetHostsByPageWithoutReservedIPFilteredByIdentifier(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, hosts, 1)
-	require.Equal(t, "foo", hosts[0].Hostname)
+	require.Len(t, hosts[0].LocalHosts, 1)
+	require.Equal(t, "foo", hosts[0].LocalHosts[0].Hostname)
 }
 
 // Test that page of the hosts can be fetched by daemon ID.

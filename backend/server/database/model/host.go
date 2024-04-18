@@ -150,7 +150,8 @@ func addHostIdentifiers(tx *pg.Tx, host *Host) error {
 // Associates a host with IP reservations.
 func addIPReservations(tx *pg.Tx, host *Host) error {
 	for _, lh := range host.LocalHosts {
-		for i, r := range lh.IPReservations {
+		for i := range lh.IPReservations {
+			r := &lh.IPReservations[i]
 			r.LocalHostID = lh.ID
 			_, err := tx.Model(r).
 				OnConflict("DO NOTHING").
@@ -160,7 +161,6 @@ func addIPReservations(tx *pg.Tx, host *Host) error {
 					r.Address, host.ID)
 				return err
 			}
-			lh.IPReservations[i] = r
 		}
 	}
 	return nil
