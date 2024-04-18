@@ -283,7 +283,7 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 	require.EqualValues(t, 6, family)
 }
 
-// Asserts the two hosts list equality
+// Asserts equality of two hosts list.
 func assertAreHostsTheSame(t *testing.T, expected, actual []dbmodel.Host) {
 	require.Equal(t, len(expected), len(actual))
 
