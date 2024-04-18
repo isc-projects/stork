@@ -283,33 +283,13 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 	require.EqualValues(t, 6, family)
 }
 
-// Test that the 56 migration passes if the local_host table is not empty.
-func TestMigrationFrom55To56(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
+// Asserts the two hosts list equality
+func assertAreHostsTheSame(t *testing.T, expected, actual []dbmodel.Host) {
+	require.Equal(t, len(expected), len(actual))
 
-	// Add test data.
-	_, _ = storktestdbmodel.AddTestHosts(t, db)
-	expectedHosts, err := dbmodel.GetAllHosts(db, 0)
-	require.NoError(t, err)
-
-	// Act
-	// Down to the previous migration.
-	_, _, errDown := dbops.Migrate(db, "down", "55")
-	// And back to the 56 migration.
-	_, _, errUp := dbops.Migrate(db, "up")
-
-	// Assert
-	require.NoError(t, errDown)
-	require.NoError(t, errUp)
-	actualHosts, _ := dbmodel.GetAllHosts(db, 0)
-	require.NotEmpty(t, expectedHosts)
-	require.Equal(t, len(expectedHosts), len(actualHosts))
-
-	for i := range expectedHosts {
-		expectedHost := expectedHosts[i]
-		actualHost := actualHosts[i]
+	for i := range expected {
+		expectedHost := expected[i]
+		actualHost := actual[i]
 		require.True(t, expectedHost.IsSame(&actualHost))
 
 		// Check if the data after the down and up migrations are exactly equal
@@ -363,4 +343,188 @@ func TestMigrationFrom55To56(t *testing.T) {
 			}
 		}
 	}
+}
+
+// Test that the 58 migration passes if the local_host table is not empty.
+func TestMigrationFrom57To58(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add test data.
+	_, _ = storktestdbmodel.AddTestHosts(t, db)
+
+	expectedHosts, err := dbmodel.GetAllHosts(db, 0)
+	require.NoError(t, err)
+
+	// Act
+	// Down to the previous migration.
+	_, _, errDown := dbops.Migrate(db, "down", "57")
+	// And back to the 56 migration.
+	_, _, errUp := dbops.Migrate(db, "up")
+
+	// Assert
+	require.NoError(t, errDown)
+	require.NoError(t, errUp)
+	actualHosts, _ := dbmodel.GetAllHosts(db, 0)
+	require.NotEmpty(t, expectedHosts)
+
+	assertAreHostsTheSame(t, expectedHosts, actualHosts)
+}
+
+// Test that the 56 migration passes if the local_host table is not empty and
+// the host details differ between the daemons.
+// Some data are lost: the association between particular IP reservation and
+// a daemon and the hostnames defined in the other local hosts than the first
+// one.
+func TestMigrationFrom57To58DifferentHostData(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{Address: "cool.example.org", AgentPort: 8080}
+	_ = dbmodel.AddMachine(db, m)
+
+	subnet := &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+	}
+	_ = dbmodel.AddSubnet(db, subnet)
+
+	var apps []*dbmodel.App
+	for i := 0; i < 2; i++ {
+		accessPoints := []*dbmodel.AccessPoint{}
+		accessPoints = dbmodel.AppendAccessPoint(accessPoints,
+			dbmodel.AccessPointControl, "localhost", "", int64(1234+i), true)
+
+		app := &dbmodel.App{
+			MachineID:    m.ID,
+			Type:         dbmodel.AppTypeKea,
+			Name:         fmt.Sprintf("kea-%d", i),
+			Active:       true,
+			AccessPoints: accessPoints,
+			Daemons: []*dbmodel.Daemon{
+				dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
+			},
+		}
+
+		_ = app.Daemons[0].SetConfigFromJSON(`{
+			"Dhcp4": {
+				"client-classes": [
+					{
+						"name": "class2"
+					},
+					{
+						"name": "class1"
+					}
+				],
+				"subnet4": [
+					{
+						"id": 111,
+						"subnet": "192.0.2.0/24"
+					}
+				],
+				"hooks-libraries": [
+					{
+						"library": "libdhcp_host_cmds.so"
+					}
+				]
+			}
+		}`)
+
+		_, _ = dbmodel.AddApp(db, app)
+		apps = append(apps, app)
+	}
+
+	// Associate the daemons with the subnets.
+	_ = dbmodel.AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
+
+	host := &dbmodel.Host{
+		SubnetID: 1,
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				DaemonID:       apps[0].Daemons[0].ID,
+				Hostname:       "foo.example.org",
+				DataSource:     dbmodel.HostDataSourceAPI,
+				NextServer:     "192.2.2.1",
+				ServerHostname: "foo.example.org",
+				BootFileName:   "/tmp/foo.xyz",
+				IPReservations: []dbmodel.IPReservation{
+					{
+						Address: "192.0.2.2",
+					},
+					{
+						Address: "192.0.2.3",
+					},
+				},
+			},
+			{
+				DaemonID:       apps[1].Daemons[0].ID,
+				Hostname:       "bar.example.org",
+				DataSource:     dbmodel.HostDataSourceAPI,
+				NextServer:     "192.2.2.4",
+				ServerHostname: "bar.example.org",
+				BootFileName:   "/tmp/bar.xyz",
+				IPReservations: []dbmodel.IPReservation{
+					{
+						Address: "192.0.2.5",
+					},
+					{
+						Address: "192.0.2.6",
+					},
+				},
+			},
+		},
+	}
+	err := dbmodel.AddHost(db, host)
+	require.NoError(t, err)
+
+	initialHosts, _ := dbmodel.GetAllHosts(db, 0)
+
+	// Act
+	// Down to the previous migration.
+	_, _, errDown := dbops.Migrate(db, "down", "57")
+	// And back to the 58 migration.
+	_, _, errUp := dbops.Migrate(db, "up")
+
+	// Assert
+	require.NoError(t, errDown)
+	require.NoError(t, errUp)
+	actualHosts, _ := dbmodel.GetAllHosts(db, 0)
+	require.NotEmpty(t, initialHosts)
+
+	// The IP reservations has been merged.
+	for i := 0; i < 2; i++ {
+		require.Len(t,
+			actualHosts[0].LocalHosts[i].IPReservations,
+			len(initialHosts[0].LocalHosts[0].IPReservations)+
+				len(initialHosts[0].LocalHosts[1].IPReservations),
+		)
+	}
+
+	// Check the second local host has the same hostname as the first one.
+	require.Equal(t,
+		actualHosts[0].LocalHosts[0].Hostname,
+		actualHosts[0].LocalHosts[1].Hostname,
+	)
+	require.Equal(t,
+		initialHosts[0].LocalHosts[0].Hostname,
+		actualHosts[0].LocalHosts[1].Hostname,
+	)
+
+	// Remove differences.
+	for i := 0; i < 2; i++ {
+		// Remove the IP reservations copied from another daemon.
+		actualHosts[0].LocalHosts[i].IPReservations = initialHosts[0].LocalHosts[i].IPReservations[0:2]
+	}
+	// Restore the proper hostname of the second local host.
+	actualHosts[0].LocalHosts[1].Hostname = initialHosts[0].LocalHosts[1].Hostname
+
+	assertAreHostsTheSame(t, initialHosts, actualHosts)
 }
