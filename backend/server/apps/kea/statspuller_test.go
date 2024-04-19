@@ -3,6 +3,7 @@ package kea
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"math"
 	"math/big"
 	"testing"
@@ -1141,7 +1142,6 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	_ = json.Unmarshal(statisticGetAllBigNumbersJSON, &response)
 
 	// Seed database.
-
 	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
 	_ = dbmodel.AddMachine(db, machine)
 
@@ -1154,6 +1154,22 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 		},
 	}
 	daemons, _ := dbmodel.AddApp(db, app)
+
+	for i := 1; i <= 3; i++ {
+		subnet := &dbmodel.Subnet{
+			Prefix: fmt.Sprintf("3001:%d::/48", i),
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					DaemonID:      daemons[0].ID,
+					LocalSubnetID: int64(i),
+				},
+			},
+		}
+		err := dbmodel.AddSubnet(db, subnet)
+		require.NoError(t, err)
+		err = dbmodel.AddLocalSubnets(db, subnet)
+		require.NoError(t, err)
+	}
 
 	// Act
 	err := puller.processAppResponses(app, []*keactrl.Command{{Command: "stat-lease6-get"}}, daemons, []any{&response})
