@@ -50,7 +50,6 @@ func (s *SubnetStats) GetAny(key string) any {
 func (s *SubnetStats) Has(key string) bool {
 	_, ok := s.data[key]
 	return ok
-
 }
 
 func (s *SubnetStats) TryGetAny(key string) (any, bool) {
@@ -88,11 +87,12 @@ func (s *SubnetStats) SetInt64(key string, value int64) {
 }
 
 func (s *SubnetStats) SetBigInt(key string, value *big.Int) {
-	if value.IsUint64() {
+	switch {
+	case value.IsUint64():
 		s.SetUint64(key, value.Uint64())
-	} else if value.IsInt64() {
+	case value.IsInt64():
 		s.SetInt64(key, value.Int64())
-	} else {
+	default:
 		s.data[key] = value
 	}
 }

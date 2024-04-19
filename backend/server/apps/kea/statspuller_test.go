@@ -1160,5 +1160,4 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-
 }
