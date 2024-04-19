@@ -250,7 +250,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 				}
 
 				// Store the value as a best fit type to preserve compatibility
-				// with the existing code. Some features expect the IPv
+				// with the existing code. Some features expect the IPv4
 				// statistics to be always stored as uint64, while IPv6 can be
 				// uint64 or big int.
 				stats.SetBigInt(name, value)
