@@ -27,12 +27,14 @@ type SubnetStats struct {
 	data map[string]any
 }
 
+// Constructs a new SubnetStats instance.
 func NewSubnetStats() *SubnetStats {
 	return &SubnetStats{
 		data: make(map[string]any),
 	}
 }
 
+// Constructs a new SubnetStats instance from a map.
 func NewSubnetStatsFromMap(data map[string]any) *SubnetStats {
 	subnetStats := NewSubnetStats()
 
@@ -43,20 +45,26 @@ func NewSubnetStatsFromMap(data map[string]any) *SubnetStats {
 	return subnetStats
 }
 
+// Returns the statistic value in its native type.
 func (s *SubnetStats) GetAny(key string) any {
 	return s.data[key]
 }
 
+// Indicates if the statistic value is present for the specified key.
 func (s *SubnetStats) Has(key string) bool {
 	_, ok := s.data[key]
 	return ok
 }
 
+// Returns the statistic value in its native type and the boolean value
+// indicating if the value was found.
 func (s *SubnetStats) TryGetAny(key string) (any, bool) {
 	value, ok := s.data[key]
 	return value, ok
 }
 
+// Returns the statistic value as uint64 and the boolean value indicating
+// if the value was found and it does not exceed the uint64 range.
 func (s *SubnetStats) TryGetUint64(key string) (uint64, bool) {
 	value, ok := s.data[key]
 	if !ok {
@@ -75,10 +83,13 @@ func (s *SubnetStats) TryGetUint64(key string) (uint64, bool) {
 	return 0, false
 }
 
+// Sets the uint64 statistic value for the specified key.
 func (s *SubnetStats) SetUint64(key string, value uint64) {
 	s.data[key] = value
 }
 
+// Sets the int64 statistic value for the specified key. If the value is
+// non-negative, it is stored as uint64.
 func (s *SubnetStats) SetInt64(key string, value int64) {
 	if value >= 0 {
 		s.SetUint64(key, uint64(value))
@@ -87,6 +98,9 @@ func (s *SubnetStats) SetInt64(key string, value int64) {
 	}
 }
 
+// Sets the big.Int statistic value for the specified key. If the value is in
+// the uint64 range, it is stored as uint64. If the value is in the int64
+// range, it is stored as int64. Otherwise, it is stored as big.Int.
 func (s *SubnetStats) SetBigInt(key string, value *big.Int) {
 	switch {
 	case value.IsUint64():
@@ -98,6 +112,11 @@ func (s *SubnetStats) SetBigInt(key string, value *big.Int) {
 	}
 }
 
+// Sets the statistic value for the specified key. If the value is a positive
+// int64, it is stored as uint64. If the value is a big integer and it fits
+// into the uint64 range, it is stored as uint64. If it fits into the int64
+// range, it is stored as int64. Otherwise, it is stored as big.Int.
+// If the value has a different type, it is stored as is.
 func (s *SubnetStats) SetAny(key string, value any) {
 	switch value := value.(type) {
 	case int64:
@@ -111,6 +130,7 @@ func (s *SubnetStats) SetAny(key string, value any) {
 	}
 }
 
+// Returns the internal map representation of the subnet statistics.
 func (s *SubnetStats) ToMap() map[string]any {
 	return s.data
 }
