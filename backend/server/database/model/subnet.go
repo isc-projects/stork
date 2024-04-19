@@ -82,8 +82,9 @@ func (s *SubnetStats) SetUint64(key string, value uint64) {
 func (s *SubnetStats) SetInt64(key string, value int64) {
 	if value >= 0 {
 		s.SetUint64(key, uint64(value))
+	} else {
+		s.data[key] = value
 	}
-	s.data[key] = value
 }
 
 func (s *SubnetStats) SetBigInt(key string, value *big.Int) {
@@ -145,15 +146,6 @@ func (s SubnetStats) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toMarshal)
 }
 
-// An interface for a wrapper of subnet statistics that encapsulates the
-// utilization calculations. It corresponds to the
-// `statisticscounter.subnetStats` interface and prevents the dependency cycle.
-type utilizationStats interface {
-	GetAddressUtilization() float64
-	GetDelegatedPrefixUtilization() float64
-	GetStatistics() *SubnetStats
-}
-
 // Deserialize statistics and convert back the strings to int64 or uint64.
 // I assume that the statistics will always contain numeric data, no string
 // that look like integers.
@@ -204,6 +196,15 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// An interface for a wrapper of subnet statistics that encapsulates the
+// utilization calculations. It corresponds to the
+// `statisticscounter.subnetStats` interface and prevents the dependency cycle.
+type utilizationStats interface {
+	GetAddressUtilization() float64
+	GetDelegatedPrefixUtilization() float64
+	GetStatistics() *SubnetStats
 }
 
 // This structure holds subnet information retrieved from an app. Multiple
