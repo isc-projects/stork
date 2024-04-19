@@ -9,6 +9,7 @@ from core.prometheus_parser import text_fd_to_metric_families
 
 class Agent(ComposeServiceWrapper):
     """A wrapper for the Stork Agent docker-compose service."""
+
     prometheus_exporter_port = 0  # Unknown port
 
     def __init__(
@@ -75,9 +76,7 @@ class Agent(ComposeServiceWrapper):
         data = data.split("\n")
 
         metrics_list = text_fd_to_metric_families(data)
-        metrics_dict = {
-            metric.name: metric for metric in metrics_list
-        }
+        metrics_dict = {metric.name: metric for metric in metrics_list}
         return metrics_dict
 
     def restart_stork_agent(self):

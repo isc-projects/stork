@@ -111,22 +111,20 @@ def test_communication_with_kea_using_basic_auth(
 
 @kea_parametrize(suppress_registration=True, version="2.5.6-isc20240226130228")
 def test_kea_integer_overflow_in_statistics(kea_service: Kea):
-    '''
+    """
     Kea from version ~2.3 no longer returns the negative number if the
     statistic value overflows the int64 range. Instead, it throws an error like
     below after receiving statistics-get-all command:
-    
+
     > internal server error: unable to parse server's answer to the forwarded
     > message: Number overflow: 2417851639229258349412352 in <wire>:0:5379
 
     We cannot work around this issue in the Stork Agent. TODO: Explain.
-    '''
+    """
     kea_service.wait_for_detect_kea_applications()
     metrics = kea_service.read_prometheus_metrics()
     assert len(metrics) > 0
     assert "kea_dhcp6_na_total" in metrics
     assert metrics["kea_dhcp6_na_total"].samples[0].value > 0
-    expected_nas = pow(2, 128-80) * 4 + pow(2, 128 - 48) * 2
+    expected_nas = pow(2, 128 - 80) * 4 + pow(2, 128 - 48) * 2
     assert metrics["kea_dhcp6_na_total"].samples[0].value == expected_nas
-
-    

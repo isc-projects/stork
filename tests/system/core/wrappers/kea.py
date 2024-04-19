@@ -9,6 +9,7 @@ class Kea(Agent):
     """
     A wrapper for the docker-compose service containing Kea and Stork Agent.
     """
+
     prometheus_exporter_port = 9547
 
     def read_lease_file(self, family: int):
@@ -42,24 +43,33 @@ class Kea(Agent):
 
     def wait_for_detect_kea_applications(self, expected_apps=1):
         """Wait for the Stork Agent to detect the Kea applications."""
-        @wait_for_success(wait_msg="Waiting for the Kea applications to be detected...", max_tries=5)
+
+        @wait_for_success(
+            wait_msg="Waiting for the Kea applications to be detected...", max_tries=5
+        )
         def worker():
             metrics = self.wait_for_next_prometheus_metrics()
 
             # Wait for applications.
-            monitored_apps = Kea._get_metric_int_value(metrics, "storkagent_appmonitor_monitored_kea_apps_total", 0)
+            monitored_apps = Kea._get_metric_int_value(
+                metrics, "storkagent_appmonitor_monitored_kea_apps_total", 0
+            )
             if monitored_apps < expected_apps:
                 raise NoSuccessException()
 
             # Wait for daemons.
-            active_dhcp4_daemons, configured_dhcp4_daemons, \
-            active_dhcp6_daemons, configured_dhcp6_daemons = [
+            (
+                active_dhcp4_daemons,
+                configured_dhcp4_daemons,
+                active_dhcp6_daemons,
+                configured_dhcp6_daemons,
+            ) = [
                 Kea._get_metric_int_value(metrics, m, 0)
                 for m in (
                     "storkagent_promkeaexporter_active_dhcp4_daemons_total",
                     "storkagent_promkeaexporter_configured_dhcp4_daemons_total",
                     "storkagent_promkeaexporter_active_dhcp6_daemons_total",
-                    "storkagent_promkeaexporter_configured_dhcp6_daemons_total"
+                    "storkagent_promkeaexporter_configured_dhcp6_daemons_total",
                 )
             ]
 
@@ -68,6 +78,7 @@ class Kea(Agent):
 
             if active_dhcp6_daemons != configured_dhcp6_daemons:
                 raise NoSuccessException()
+
         worker()
 
     def wait_for_next_prometheus_metrics(self):
@@ -78,15 +89,20 @@ class Kea(Agent):
         internal puller. This method waits for the metrics to be updated.
         """
         uptime_metric_name = "storkagent_promkeaexporter_uptime_seconds"
-        initial_uptime = Kea._get_metric_value(self.read_prometheus_metrics(), uptime_metric_name)
+        initial_uptime = Kea._get_metric_value(
+            self.read_prometheus_metrics(), uptime_metric_name
+        )
 
-        @wait_for_success(wait_msg="Waiting to update Prometheus metrics...", max_tries=5)
+        @wait_for_success(
+            wait_msg="Waiting to update Prometheus metrics...", max_tries=5
+        )
         def worker():
             metrics = self.read_prometheus_metrics()
             uptime = Kea._get_metric_value(metrics, uptime_metric_name)
             if uptime == initial_uptime:
                 raise NoSuccessException()
             return metrics
+
         return worker()
 
     @staticmethod
@@ -97,7 +113,7 @@ class Kea(Agent):
         if len(metric.samples) == 0:
             return default_
         return metric.samples[0].value
-    
+
     @staticmethod
     def _get_metric_int_value(metrics, name, default_=None):
         value = Kea._get_metric_value(metrics, name)

@@ -48,7 +48,9 @@ def _agent_parametrize(
     )
 
 
-def kea_parametrize(service_name="agent-kea", suppress_registration=False, version=None):
+def kea_parametrize(
+    service_name="agent-kea", suppress_registration=False, version=None
+):
     """
     Helper for parametrizing the Kea fixture.
 
@@ -64,7 +66,9 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False, versi
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return _agent_parametrize("kea_service", service_name, suppress_registration, version)
+    return _agent_parametrize(
+        "kea_service", service_name, suppress_registration, version
+    )
 
 
 def ha_pair_parametrize(
@@ -230,7 +234,7 @@ def kea_service(request):
         request=request,
         service_name=param["service_name"],
         suppress_registration=param["suppress_registration"],
-        version=param["version"]
+        version=param["version"],
     )
 
 
@@ -273,7 +277,11 @@ def ha_pair_service(request):
 
 
 def _prepare_kea_wrapper(
-    request, service_name: str, suppress_registration: bool, config_dirname="kea", version: str=None
+    request,
+    service_name: str,
+    suppress_registration: bool,
+    config_dirname="kea",
+    version: str = None,
 ):
     """
     The helper function setting up the Kea Server service and guarantees that
@@ -309,9 +317,12 @@ def _prepare_kea_wrapper(
     if version is not None:
         version_tuple = tuple(version.split(".", 2))
         if len(version_tuple) < 2:
-            raise ValueError("Invalid version format, expected at least the "
-                             "major and minor components")
-        elif len(version_tuple) == 2:
+            raise ValueError(
+                "Invalid version format, expected at least the "
+                "major and minor components"
+            )
+
+        if len(version_tuple) == 2:
             version += ".*"
         elif "-" not in version:
             version += "-*"
