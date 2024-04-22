@@ -30,7 +30,6 @@ def detect_compose_binary():
 
 def create_docker_compose(
     extra_env_vars: Dict[str, str] = None,
-    build_args: Dict[str, str] = None,
     compose_detector=detect_compose_binary,
     base_env_vars: Dict[str, str] = None,
 ) -> DockerCompose:
@@ -73,7 +72,6 @@ def create_docker_compose(
         compose_file_name=docker_compose_file,
         project_name="stork_tests",
         env_vars=env_vars,
-        build_args=build_args,
         build=True,
         default_mapped_hostname=env_vars.get("DEFAULT_MAPPED_ADDRESS", "localhost"),
         compose_base=compose_detector(),
