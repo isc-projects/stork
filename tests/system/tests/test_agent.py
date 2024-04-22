@@ -132,12 +132,16 @@ def test_kea_integer_overflow_in_statistics(kea_service: Kea):
         assert len(metrics) > 0
         assert "kea_dhcp6_na_total" in metrics
         expected_nas = pow(2, 128 - 80) * 4 + (-1)
-        assert sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
-    elif kea_version >= (2, 3) and kea_version < (2, 5, 3):
+        assert (
+            sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
+        )
+    elif kea_version < (2, 5, 3):
         assert kea_service.has_number_overflow_log_entry()
         assert "kea_dhcp6_na_total" not in metrics
     else:
         assert len(metrics) > 0
         assert "kea_dhcp6_na_total" in metrics
         expected_nas = pow(2, 128 - 80) * 4 + pow(2, 128 - 48) * 2
-        assert sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
+        assert (
+            sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
+        )
