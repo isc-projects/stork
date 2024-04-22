@@ -125,6 +125,5 @@ def test_kea_integer_overflow_in_statistics(kea_service: Kea):
     metrics = kea_service.read_prometheus_metrics()
     assert len(metrics) > 0
     assert "kea_dhcp6_na_total" in metrics
-    assert metrics["kea_dhcp6_na_total"].samples[0].value > 0
     expected_nas = pow(2, 128 - 80) * 4 + pow(2, 128 - 48) * 2
-    assert metrics["kea_dhcp6_na_total"].samples[0].value == expected_nas
+    assert sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
