@@ -106,8 +106,9 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 	require.Len(t, counter.sharedNetworks, 0)
 }
 
-// Test that the non-uint64 statistics aren't supported.
-func TestCounterAddSubnetUsingNonUint64(t *testing.T) {
+// Test that the statistics data types other than uint64 and int64 aren't
+// supported.
+func TestCounterAddSubnetUsingNonUint64OrInt64(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 0,
@@ -115,7 +116,7 @@ func TestCounterAddSubnetUsingNonUint64(t *testing.T) {
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: dbmodel.NewSubnetStatsFromMap(map[string]any{
-					"total-nas":    int64(100),
+					"total-nas":    uint(100),
 					"assigned-nas": int32(40),
 					"declined-nas": int16(30),
 					"total-pds":    int(20),

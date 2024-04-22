@@ -1990,7 +1990,7 @@ func TestNewSubnetStatsFromMapAndGetAny(t *testing.T) {
 	require.NotNil(t, stats.data)
 	require.Equal(t, 42, stats.GetAny("int"))
 	require.Equal(t, -42, stats.GetAny("negative int"))
-	require.Equal(t, int64(42), stats.GetAny("int64"))
+	require.Equal(t, uint64(42), stats.GetAny("int64"))
 	require.Equal(t, int64(-42), stats.GetAny("negative int64"))
 	require.Equal(t, uint64(42), stats.GetAny("uint64"))
 	require.Equal(t, uint64(42), stats.GetAny("small bigint"))

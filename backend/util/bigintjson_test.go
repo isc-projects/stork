@@ -106,3 +106,12 @@ func TestBigIntJSONUnmarshal(t *testing.T) {
 		})
 	}
 }
+
+// Test that the big int JSON is constructed from int64.
+func TestNewBigIntJSONFromInt64(t *testing.T) {
+	require.Equal(t, big.NewInt(0), NewBigIntJSONFromInt64(0).BigInt())
+	require.Equal(t, big.NewInt(42), NewBigIntJSONFromInt64(42).BigInt())
+	require.Equal(t, big.NewInt(-42), NewBigIntJSONFromInt64(-42).BigInt())
+	require.Equal(t, big.NewInt(math.MaxInt64), NewBigIntJSONFromInt64(math.MaxInt64).BigInt())
+	require.Equal(t, big.NewInt(math.MinInt64), NewBigIntJSONFromInt64(math.MinInt64).BigInt())
+}
