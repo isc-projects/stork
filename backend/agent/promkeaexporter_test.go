@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
+	storkutil "isc.org/stork/util"
 )
 
 // Fake app monitor that returns some predefined list of apps.
@@ -309,8 +311,10 @@ type FakeKeaCASender struct {
 func newFakeKeaCASender() *FakeKeaCASender {
 	defaultResponse := []subnetListJSON{
 		{
-			Result: 0,
-			Text:   nil,
+			responseHeader: responseHeader{
+				Result: 0,
+				Text:   nil,
+			},
 			Arguments: &subnetListJSONArguments{
 				Subnets: []subnetListJSONArgumentsSubnet{
 					{
@@ -611,4 +615,132 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Contains(t, pke.ignoredStats, "foo")
+}
+
+// Test that the success status in the Kea response is recognized properly.
+func TestResponseHeaderHasSuccessStatus(t *testing.T) {
+	for i := -4; i < 4; i++ {
+		t.Run(fmt.Sprintf("Status %d", i), func(t *testing.T) {
+			// Arrange
+			header := &responseHeader{Result: int64(i)}
+
+			// Act
+			success := header.HasSuccessStatus()
+
+			// Assert
+			require.Equal(t, i == 0, success)
+		})
+	}
+}
+
+// Test that the unsupported operation status in the Kea response is recognized
+// properly.
+func TestResponseHeaderHasUnsupportedOperationStatus(t *testing.T) {
+	for i := -4; i < 4; i++ {
+		t.Run(fmt.Sprintf("Status %d", i), func(t *testing.T) {
+			// Arrange
+			header := &responseHeader{Result: int64(i)}
+
+			// Act
+			unsupported := header.HasUnsupportedOperationStatus()
+
+			// Assert
+			require.Equal(t, i == 2, unsupported)
+		})
+	}
+}
+
+// Test that the error message is constructed properly.
+func TestResponseHeaderError(t *testing.T) {
+	t.Run("no error", func(t *testing.T) {
+		require.Empty(t, (responseHeader{Result: 0}).Error())
+	})
+
+	t.Run("error without text", func(t *testing.T) {
+		require.Equal(t,
+			"response result from Kea != 0: 42",
+			(responseHeader{Result: 42}).Error(),
+		)
+	})
+
+	t.Run("error with text", func(t *testing.T) {
+		require.Equal(t,
+			"response result from Kea != 0: 42, text: foobar",
+			(responseHeader{
+				Result: 42,
+				Text:   storkutil.Ptr("foobar"),
+			}).Error(),
+		)
+	})
+}
+
+// Test that the connectivity issue is recognized properly.
+func TestResponseHeaderIsConnectivityIssue(t *testing.T) {
+	t.Run("no error", func(t *testing.T) {
+		require.False(t, (responseHeader{Result: 0}).IsConnectivityIssue())
+	})
+
+	t.Run("missing text", func(t *testing.T) {
+		require.False(t, (responseHeader{
+			Result: 1,
+		}).IsConnectivityIssue())
+	})
+
+	t.Run("another error", func(t *testing.T) {
+		require.False(t, (responseHeader{
+			Result: 1,
+			Text:   storkutil.Ptr("foobar"),
+		}).IsConnectivityIssue())
+	})
+
+	t.Run("daemon offline", func(t *testing.T) {
+		require.True(t, (responseHeader{
+			Result: 1,
+			Text:   storkutil.Ptr("foo server is likely to be offline bar"),
+		}).IsConnectivityIssue())
+	})
+
+	t.Run("socket is not configured", func(t *testing.T) {
+		require.True(t, (responseHeader{
+			Result: 1,
+			Text: storkutil.Ptr(
+				"foo forwarding socket is not configured for the server type bar",
+			),
+		}).IsConnectivityIssue())
+	})
+
+	t.Run("daemon offline text but success status", func(t *testing.T) {
+		// It should never happen.
+		require.True(t, (responseHeader{
+			Result: 0,
+			Text:   storkutil.Ptr("foo server is likely to be offline bar"),
+		}).IsConnectivityIssue())
+	})
+}
+
+// Test that the number overflow issue is recognized properly.
+func TestResponseHeaderIsNumberOverflowIssue(t *testing.T) {
+	t.Run("no error", func(t *testing.T) {
+		require.False(t, (responseHeader{Result: 0}).IsNumberOverflowIssue())
+	})
+
+	t.Run("missing text", func(t *testing.T) {
+		require.False(t, (responseHeader{
+			Result: 1,
+		}).IsNumberOverflowIssue())
+	})
+
+	t.Run("another error", func(t *testing.T) {
+		require.False(t, (responseHeader{
+			Result: 1,
+			Text:   storkutil.Ptr("foobar"),
+		}).IsNumberOverflowIssue())
+	})
+
+	t.Run("number overflow", func(t *testing.T) {
+		require.True(t, (responseHeader{
+			Result: 1,
+			Text:   storkutil.Ptr("Number overflow"),
+		}).IsNumberOverflowIssue())
+	})
 }

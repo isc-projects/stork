@@ -109,7 +109,7 @@ def test_communication_with_kea_using_basic_auth(
     assert leases.total == 1
 
 
-@kea_parametrize(suppress_registration=True, version="2.5.6-isc20240226130228")
+@kea_parametrize(suppress_registration=True)
 def test_kea_integer_overflow_in_statistics(kea_service: Kea):
     """
     Kea from version ~2.3 no longer returns the negative number if the
@@ -119,11 +119,25 @@ def test_kea_integer_overflow_in_statistics(kea_service: Kea):
     > internal server error: unable to parse server's answer to the forwarded
     > message: Number overflow: 2417851639229258349412352 in <wire>:0:5379
 
-    We cannot work around this issue in the Stork Agent. TODO: Explain.
+    We cannot work around this issue in the Stork Agent. The Kea doesn't
+    provide the possibility to omit the statistics that are too big.
+
+    The big numbers support was added in Kea 2.5.3.
     """
     kea_service.wait_for_detect_kea_applications()
+    kea_version = kea_service.get_version()
     metrics = kea_service.read_prometheus_metrics()
-    assert len(metrics) > 0
-    assert "kea_dhcp6_na_total" in metrics
-    expected_nas = pow(2, 128 - 80) * 4 + pow(2, 128 - 48) * 2
-    assert sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
+
+    if kea_version < (2, 3):
+        assert len(metrics) > 0
+        assert "kea_dhcp6_na_total" in metrics
+        expected_nas = pow(2, 128 - 80) * 4 + (-1)
+        assert sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
+    elif kea_version >= (2, 3) and kea_version < (2, 5, 3):
+        assert kea_service.has_number_overflow_log_entry()
+        assert "kea_dhcp6_na_total" not in metrics
+    else:
+        assert len(metrics) > 0
+        assert "kea_dhcp6_na_total" in metrics
+        expected_nas = pow(2, 128 - 80) * 4 + pow(2, 128 - 48) * 2
+        assert sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas

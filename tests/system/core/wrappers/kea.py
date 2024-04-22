@@ -41,6 +41,22 @@ class Kea(Agent):
         stdout, _ = self._compose.logs(self._service_name)
         return "Encountered unsupported stat" in stdout
 
+    def has_number_overflow_log_entry(self):
+        """Check if any number overflow error from Kea is present in the logs."""
+        stdout, _ = self._compose.logs(self._service_name)
+        return ("response result from Kea != 0: 1, text: internal server "
+            "error: unable to parse server's answer to the forwarded message: "
+            "Number overflow:") in stdout
+
+    def get_version(self):
+        """Returns the Kea version as a tuple."""
+        stdout: str
+        _, stdout, _ = self._compose.exec(
+            self._service_name,
+            ["kea-ctrl-agent", "-v"]
+        )
+        return tuple(int(i) for i in stdout.strip().split('.'))
+
     def wait_for_detect_kea_applications(self, expected_apps=1):
         """Wait for the Stork Agent to detect the Kea applications."""
 

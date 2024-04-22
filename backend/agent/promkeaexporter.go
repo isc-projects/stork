@@ -22,6 +22,54 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// The Kea response header.
+type responseHeader struct {
+	Result int64
+	Text   *string
+}
+
+// Indicates if the response has a success status.
+func (h responseHeader) HasSuccessStatus() bool {
+	return h.Result == 0
+}
+
+// Indicates if the response has an unsupported operation status.
+func (h responseHeader) HasUnsupportedOperationStatus() bool {
+	return h.Result == 2
+}
+
+// Error returns the error message.
+func (h responseHeader) Error() string {
+	if h.Result == 0 {
+		return ""
+	}
+
+	if h.Text != nil {
+		text := *h.Text
+		return fmt.Sprintf("response result from Kea != 0: %d, text: %s", h.Result, text)
+	}
+	return fmt.Sprintf("response result from Kea != 0: %d", h.Result)
+}
+
+// Indicates if the error is a connectivity issue.
+func (h responseHeader) IsConnectivityIssue() bool {
+	if h.Text != nil {
+		text := *h.Text
+		return strings.Contains(text, "server is likely to be offline") ||
+			strings.Contains(text, "forwarding socket is not configured for the server type")
+	}
+	return false
+}
+
+// Indicates if the error is caused by the number overflow.
+func (h responseHeader) IsNumberOverflowIssue() bool {
+	if h.Text != nil {
+		text := *h.Text
+		return strings.Contains(text, "Number overflow")
+	}
+	return false
+}
+
 // Parsed subnet list from Kea `subnet4-list` and `subnet6-list` response.
 type SubnetList map[int]string
 
@@ -41,8 +89,7 @@ type subnetListJSONArguments struct {
 }
 
 type subnetListJSON struct {
-	Result    int
-	Text      *string
+	responseHeader
 	Arguments *subnetListJSONArguments
 }
 
@@ -69,16 +116,12 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 	dhcpLabelsJSON := dhcpLabelsJSONs[0]
 
 	// Hook not installed. Return empty mapping
-	if dhcpLabelsJSON.Result == 2 {
+	if dhcpLabelsJSON.HasUnsupportedOperationStatus() {
 		return nil
 	}
 
-	if dhcpLabelsJSON.Result != 0 {
-		reason := "unknown"
-		if dhcpLabelsJSON.Text != nil {
-			reason = *dhcpLabelsJSON.Text
-		}
-		return errors.Errorf("problem with content of DHCP labels response from Kea: %s", reason)
+	if !dhcpLabelsJSON.HasSuccessStatus() {
+		return errors.WithMessage(dhcpLabelsJSON, "problem with content of DHCP labels response from Kea: %s")
 	}
 
 	// Result is OK, parse the mapping content
@@ -113,8 +156,7 @@ type GetAllStatisticResponseItemValue struct {
 func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 	// Raw structures - corresponding to real received JSON.
 	type ResponseRawItem struct {
-		Result int64
-		Text   *string
+		responseHeader
 		// In Go you cannot describe the JSON array with mixed-type items.
 		Arguments *map[string][][]interface{}
 	}
@@ -137,16 +179,21 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 	// Retrieve values of mixed-type arrays.
 	// Unpack the complex structure to simpler form.
 	for daemonIdx, item := range obj {
-		if item.Result != 0 {
-			if item.Text != nil {
-				text := *item.Text
-				if strings.Contains(text, "server is likely to be offline") || strings.Contains(text, "forwarding socket is not configured for the server type") {
-					log.Warnf("Problem connecting to dhcp daemon: %s", text)
-					continue
-				}
-				return errors.Errorf("response result from Kea != 0: %d, text: %s", item.Result, text)
+		// Indicates the situation when the daemon is active but the statistics
+		// endpoint doesn't return the data.
+		areStatisticsUnavailable := false
+
+		if !item.HasSuccessStatus() {
+			switch {
+			case item.IsConnectivityIssue():
+				log.WithError(item).Warn("Problem connecting to dhcp daemon")
+				continue
+			case item.IsNumberOverflowIssue():
+				log.WithError(item).Warnf("Number overflow in the statistics data")
+				areStatisticsUnavailable = true
+			default:
+				return item
 			}
-			return errors.Errorf("response result from Kea != 0: %d", item.Result)
 		}
 
 		// daemon 0 is dhcp4, 1 is dhcp6
@@ -158,6 +205,12 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		} else {
 			r.Dhcp6 = make(map[string]GetAllStatisticResponseItemValue)
 			statMap = r.Dhcp6
+		}
+
+		if areStatisticsUnavailable {
+			// The empty but not-nil stat map indicates that the daemon is
+			// responding to the requests.
+			continue
 		}
 
 		if item.Arguments == nil {
