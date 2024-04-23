@@ -135,13 +135,13 @@ func (s *SubnetStats) ToMap() map[string]any {
 	return s.data
 }
 
-// Subnet statistics may contain the integer number from the int64
-// (or uint64) range (max value is 2^63-1 (2^64-1)). The value returned by
-// the Kea and stored in the Postgres database is exact. But when the
-// frontend fetches this data, it deserializes it using the standard JSON.parse
-// function. This function treats all number literals as floating double-precision
-// numbers. This type can exact handle integers up to (2^53 - 1); greater numbers
-// are inaccurate.
+// Subnet statistics may contain the integer number within arbitrary range
+// (int64, uint64, bigint) (max value is 2^63-1, 2^64-1, or any). The value
+// returned by the Kea and stored in the Postgres database is exact. But when
+// the frontend fetches this data, it deserializes it using the standard
+// JSON.parse function. This function treats all number literals as floating
+// double-precision numbers. This type can exact handle integers up to
+// (2^53 - 1); greater numbers are inaccurate.
 // All the numeric statistics are serialized to string and next deserialized using
 // a custom function to avoid losing the precision.
 //

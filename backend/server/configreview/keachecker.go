@@ -2,6 +2,7 @@ package configreview
 
 import (
 	"fmt"
+	"math/big"
 	"net/url"
 	"sort"
 	"strconv"
@@ -1257,4 +1258,162 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 	default:
 		return nil, nil
 	}
+}
+
+// The gathering statistics is unavailable when all following conditions are met:
+//  1. Kea's version is between 2.3.0 (inclusive, but I'm not sure exactly which
+//     version the problem was introduced) and 2.5.3 (exclusive).
+//  2. There is configured a subnet or shared network with more than 2^63-1
+//     addresses or a delegated prefix with mask length 64 or less.
+//  3. The stat hook is loaded.
+func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Report, error) {
+	// Check the daemon type.
+	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
+		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
+		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
+	}
+
+	// Check the statistics hook presence.
+	config := ctx.subjectDaemon.KeaDaemon.Config
+	if _, _, present := config.GetHookLibrary("libdhcp_stat_cmds"); !present {
+		// The stat hook is not loaded.
+		return nil, nil
+	}
+
+	// Check the Kea version.
+	daemonVersion := storkutil.ParseSemanticVersionOrLatest(ctx.subjectDaemon.Version)
+	if daemonVersion.GreaterThanOrEqual(storkutil.NewSemanticVersion(2, 5, 3)) {
+		// Fully supported version.
+		return nil, nil
+	}
+
+	// Look for the subnets and shared networks with the number of addresses
+	// that cause the statistics overflow.
+	sharedNetworks := config.GetSharedNetworks(true)
+	isOverflow, overflowReason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
+	if err != nil {
+		return nil, err
+	}
+
+	// Look for the subnets and shared networks with the number of delegated
+	// prefixes that cause the statistics overflow.
+	if !isOverflow && ctx.subjectDaemon.Name == dbmodel.DaemonNameDHCPv6 {
+		isOverflow, overflowReason = findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
+	}
+
+	if !isOverflow {
+		// No overflow detected.
+		return nil, nil
+	}
+
+	if daemonVersion.LessThan(storkutil.NewSemanticVersion(2, 3, 0)) {
+		// The gathering statistics works but the exact values are not accurate.
+		return NewReport(ctx, fmt.Sprintf(
+			"The Kea {daemon} daemon has configured some enormous big "+
+				"address pools. The installed Kea version doesn't handle the "+
+				"statistics related to such pools properly. It causes the "+
+				"statistics presented by Stork and Prometheus/Grafana may "+
+				"not be accurate. Details: %s.", overflowReason,
+		)).referencingDaemon(ctx.subjectDaemon).create()
+	} else {
+		// The gathering statistics doesn't work.
+		return NewReport(ctx, fmt.Sprintf(
+			"The Kea {daemon} daemon has configured some enormous big "+
+				"address pools. The installed Kea version doesn't handle the "+
+				"statistics related to such pools properly. It causes Stork "+
+				"is not able to fetch them. Details: %s.", overflowReason,
+		)).referencingDaemon(ctx.subjectDaemon).create()
+	}
+}
+
+func findSharedNetworkExceedingAddressLimit(sharedNetworks []keaconfig.SharedNetwork) (bool, string, error) {
+	// Check the shared networks.
+	for _, sharedNetwork := range sharedNetworks {
+		sharedNetworkSize := big.NewInt(0)
+		for _, subnet := range sharedNetwork.GetSubnets() {
+			subnetSize := big.NewInt(0)
+			for _, pool := range subnet.GetPools() {
+				lower, upper, err := pool.GetBoundaries()
+				if err != nil {
+					return false, "", errors.WithMessagef(
+						err,
+						"could not parse the pool boundaries for the %s subnet",
+						subnet.GetPrefix(),
+					)
+				}
+				poolSize := storkutil.CalculateRangeSize(lower, upper)
+
+				subnetSize.Add(
+					subnetSize,
+					poolSize,
+				)
+			}
+
+			if !subnetSize.IsInt64() {
+				// Subnet itself cannot exceed the 2^63-1 addresses.
+				return true, fmt.Sprintf(
+					"the '%s' subnet has more than 2^63-1 addresses",
+					subnet.GetPrefix(),
+				), nil
+			}
+
+			sharedNetworkSize.Add(
+				sharedNetworkSize,
+				subnetSize,
+			)
+		}
+
+		if sharedNetwork.GetName() != "" && !sharedNetworkSize.IsInt64() {
+			// None of the shared networks can exceed the 2^63-1 addresses.
+			// The global subnet scope has no limit.
+			return true, fmt.Sprintf(
+				"the '%s' shared network has more than 2^63-1 addresses",
+				sharedNetwork.GetName(),
+			), nil
+		}
+	}
+	return false, "", nil
+}
+
+func findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks []keaconfig.SharedNetwork) (bool, string) {
+	// Check the shared networks.
+	for _, sharedNetwork := range sharedNetworks {
+		sharedNetworkSize := big.NewInt(0)
+		for _, subnet := range sharedNetwork.GetSubnets() {
+			subnetSize := big.NewInt(0)
+			for _, pool := range subnet.GetPDPools() {
+				poolSize := storkutil.CalculateDelegatedPrefixRangeSize(
+					pool.PrefixLen, pool.DelegatedLen,
+				)
+
+				subnetSize.Add(
+					subnetSize,
+					poolSize,
+				)
+			}
+
+			if !subnetSize.IsInt64() {
+				// Subnet itself cannot exceed the 2^63-1 addresses.
+				return true, fmt.Sprintf(
+					"the '%s' subnet has more than 2^63-1 delegated prefixes",
+					subnet.GetPrefix(),
+				)
+			}
+
+			sharedNetworkSize.Add(
+				sharedNetworkSize,
+				subnetSize,
+			)
+		}
+
+		if sharedNetwork.GetName() != "" && !sharedNetworkSize.IsInt64() {
+			// None of the shared networks can exceed the 2^63-1 addresses.
+			// The global subnet scope has no limit.
+			return true, fmt.Sprintf(
+				"the '%s' shared network has more than 2^63-1 delegated prefixes",
+				sharedNetwork.GetName(),
+			)
+		}
+	}
+	return false, ""
 }

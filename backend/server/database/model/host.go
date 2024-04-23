@@ -907,7 +907,7 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 	var res []struct {
 		SubnetID int64
 		// Stork uses the int64 data type for the host reservation ID.
-		// It means that we expect at most 2^64 out-of-pool reservations.
+		// It means that we expect at most 2^63-1 out-of-pool reservations.
 		Oop uint64
 	}
 
@@ -979,7 +979,7 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	var res []struct {
 		SubnetID int64
 		// Stork uses the int64 data type for the host reservation ID.
-		// It means that we expect at most 2^64 out-of-pool reservations.
+		// It means that we expect at most 2^63-1 out-of-pool reservations.
 		Oop uint64
 	}
 

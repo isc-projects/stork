@@ -4137,6 +4137,723 @@ func TestControlSocketsCAForNonCADaemon(t *testing.T) {
 	require.ErrorContains(t, err, "unsupported daemon")
 }
 
+// Test that the checker for the unavailable gathering statics capabilities
+// doesn't support non-DHCP daemons.
+func TestGatheringStatsUnavailableForNonDHCPDaemon(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`, "2.2.0")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.ErrorContains(t, err, "unsupported daemon")
+	require.Nil(t, report)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// does nothing if the stats hook is missing.
+func TestGatheringStatsUnavailableForMissingStatsHook(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
+		"subnet6": [ {
+			"subnet": "fe80::/16",
+			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
+		} ]
+	} }`, "2.2.0")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// does nothing if the stat hook is present and the Kea version is 2.5.3 or
+// above.
+func TestGatheringStatsUnavailableForKea253OrAbove(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
+		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
+		"subnet6": [ {
+			"subnet": "fe80::/16",
+			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
+		} ]
+	} }`, "2.5.3")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// detects the overflow in the number of addresses of the shared network.
+func TestGatheringStatsUnavailableForOverflowingSharedNetwork(t *testing.T) {
+	// Arrange
+	// Shared network with 2^112-1 addresses.
+	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
+		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
+		"shared-networks": [ {
+			"name": "foo",
+			"subnet6": [ {
+				"subnet": "fe80::/16",
+				"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
+			} ]
+		} ]
+	} }`, "2.4.0")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// detects the overflow in the number of addresses of the global subnets.
+func TestGatheringStatsUnavailableForOverflowingGlobalSubnets(t *testing.T) {
+	// Arrange
+	// Global subnet with 2^112-1 addresses.
+	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
+		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
+		"subnet6": [ {
+			"subnet": "fe80::/16",
+			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
+		} ]
+	} }`, "2.4.0")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// detects the overflow in the number of delegated prefixes of the shared
+// networks.
+func TestGatheringStatsUnavailableForOverflowingSharedNetworkDelegatedPrefixes(t *testing.T) {
+	// Arrange
+	// Shared network with 2^63 prefixes.
+	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
+		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
+		"shared-networks": [ {
+			"name": "foo",
+			"subnet6": [ {
+				"subnet": "fe80::/16",
+				"pd-pools": [ { "prefix": "fe80::", "prefix-len": 64, "delegated-len": 127 } ]
+			} ]
+		} ]
+	} }`, "2.4.0")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// detects the overflow in the number of delegated prefixes of the global
+// subnets.
+func TestGatheringStatsUnavailableForOverflowingGlobalDelegatedPrefixes(t *testing.T) {
+	// Arrange
+	// Global subnet with 2^63 prefixes.
+	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
+		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
+		"subnet6": [ {
+			"subnet": "fe80::/16",
+			"pd-pools": [ { "prefix": "fe80::", "prefix-len": 64, "delegated-len": 127 } ]
+		} ]
+	} }`, "2.4.0")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Equal(t, ctx.subjectDaemon.ID, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 1)
+	require.Contains(t, report.refDaemonIDs, ctx.subjectDaemon.ID)
+	require.NotNil(t, report.content)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// returns no report and no error if there is no overflow in the number of
+// addresses or delegated prefixes.
+func TestGatheringStatsUnavailableForNonOverflowingConfig(t *testing.T) {
+	// Arrange
+	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
+		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
+		"subnet6": [ {
+			"subnet": "fe80::/16",
+			"pools": [ { "pool": "fe80::1-fe80::2" } ],
+			"pd-pools": [ { "prefix": "fe80::", "prefix-len": 64, "delegated-len": 64 } ]
+		} ],
+		"shared-networks": [ {
+			"name": "foo",
+			"subnet6": [ {
+				"subnet": "fe81::/16",
+				"pools": [ { "pool": "fe81::1-fe81::2" } ],
+				"pd-pools": [ { "prefix": "fe81::", "prefix-len": 64, "delegated-len": 64 } ]
+			} ]
+		} ]
+	} }`, "2.4.0")
+
+	// Act
+	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Test that the checker for the unavailable gathering statics capabilities
+// produces a different report depending on the Kea version.
+func TestGatheringStatsUnavailableReportForDifferentKeaVersions(t *testing.T) {
+	// Arrange
+	config := `{ "Dhcp6": {
+		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
+		"subnet6": [ {
+			"subnet": "fe80::/16",
+			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
+		} ]
+	} }`
+
+	for major := 1; major < 5; major++ {
+		for minor := 0; minor < 5; minor++ {
+			for patch := 0; patch < 20; patch++ {
+				version := fmt.Sprintf("%d.%d.%d", major, minor, patch)
+				semanticVersion := storkutil.NewSemanticVersion(major, minor, patch)
+
+				t.Run(version, func(t *testing.T) {
+					ctx := createReviewContext(t, nil, config, version)
+
+					// Act
+					report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
+
+					// Assert
+					if semanticVersion.GreaterThan(storkutil.NewSemanticVersion(2, 5, 3)) {
+						// Patched version. No issue should be reported.
+						require.NoError(t, err)
+						require.Nil(t, report)
+						return
+					}
+
+					require.NoError(t, err)
+					require.NotNil(t, report)
+
+					expectedMessages := []string{
+						// Common report part.
+						"The Kea {daemon} daemon has configured some enormous big address pools.",
+						"the 'fe80::/16' subnet has more than 2^63-1 addresses.",
+					}
+
+					// Version-specific part.
+					if semanticVersion.LessThan(storkutil.NewSemanticVersion(2, 3, 0)) {
+						expectedMessages = append(expectedMessages,
+							"It causes the statistics presented by Stork "+
+								"and Prometheus/Grafana may not be accurate",
+						)
+					} else {
+						expectedMessages = append(expectedMessages,
+							"It causes Stork is not able to fetch them.",
+						)
+					}
+
+					for _, message := range expectedMessages {
+						require.Contains(t, *report.content, message)
+					}
+				})
+			}
+		}
+	}
+}
+
+// Test that the overflow is detected if the number of addresses in the pool
+// exceeds the limit.
+func TestFindSharedNetworkExceedingAddressLimitForSingleOverflowingSubnetPool(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					Pool: "fe80::1 - fe80:f:ffff:ffff:ffff:ffff:ffff:ffff",
+				},
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
+
+	// Assert
+	require.NoError(t, err)
+	require.True(t, isOverflow)
+	require.Contains(t, reason, "the 'fe80::/16' subnet has more than 2^63-1 addresses")
+}
+
+// Test that the overflow is not detected if the number of addresses in any
+// pool of global subnets doesn't exceed the limit.
+func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingGlobalSubnetPool(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					Pool: "fe80::1 - fe80::2",
+				},
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Name:    "foo",
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
+
+	// Assert
+	require.NoError(t, err)
+	require.False(t, isOverflow)
+	require.Empty(t, reason)
+}
+
+// Test that the overflow is not detected if the number of addresses in any
+// pool of shared networks doesn't exceed the limit.
+func TestFindSharedNetworkExceedingAddressLimitForSingleNonOverflowingSharedNetworkPool(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					Pool: "fe80::1 - fe80::2",
+				},
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
+
+	// Assert
+	require.NoError(t, err)
+	require.False(t, isOverflow)
+	require.Empty(t, reason)
+}
+
+// Test that the overflow is detected even if the number of addresses in the
+// particular pools doesn't exceed the limit but the total number of addresses
+// in the subnet does.
+func TestFindSharedNetworkExceedingAddressLimitForOverflowingSubnet(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					// 2^63-1 addresses.
+					Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+				},
+				{
+					// 1 address.
+					Pool: "fe80:42::1 - fe80:42::1",
+				},
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
+
+	// Assert
+	require.NoError(t, err)
+	require.True(t, isOverflow)
+	require.Contains(t, reason, "the 'fe80::/16' subnet has more than 2^63-1 addresses")
+}
+
+// Test that the overflow is detected even if the number of addresses in the
+// particular subnets doesn't exceed the limit but the total number of
+// addresses in the shared network does.
+func TestFindSharedNetworkExceedingAddressLimitForOverflowingSharedNetwork(t *testing.T) {
+	// Arrange
+	subnet1 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					// 2^63-1 addresses.
+					Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+				},
+			},
+		},
+	}
+
+	subnet2 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					// 1 address.
+					Pool: "fe80:42::1 - fe80:42::1",
+				},
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Name:    "foo",
+			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+		},
+	}
+
+	// Act
+	isOverflow, reason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
+
+	// Assert
+	require.NoError(t, err)
+	require.True(t, isOverflow)
+	require.Contains(t, reason, "the 'foo' shared network has more than 2^63-1 addresses")
+}
+
+// Test that the overflow is not detected even if the total number of
+// addresses of the top subnets exceed the limit.
+func TestFindSharedNetworkExceedingAddressLimitForOverflowingGlobalSubnets(t *testing.T) {
+	// Arrange
+	subnet1 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					// 2^63-1 addresses.
+					Pool: "fe80::1 - fe80::7fff:ffff:ffff:ffff",
+				},
+			},
+		},
+	}
+
+	subnet2 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		CommonSubnetParameters: keaconfig.CommonSubnetParameters{
+			Pools: []keaconfig.Pool{
+				{
+					// 1 address.
+					Pool: "fe80:42::1 - fe80:42::1",
+				},
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			// Global subnets. Shared network name is empty.
+			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+		},
+	}
+
+	// Act
+	isOverflow, reason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
+
+	// Assert
+	require.NoError(t, err)
+	require.False(t, isOverflow)
+	require.Empty(t, reason)
+}
+
+// Test that the overflow is detected if the number of delegated prefixes
+// in the pool exceeds the limit.
+func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleOverflowingSubnetPool(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80::",
+				// 2^63 delegated prefixes.
+				PrefixLen:    64,
+				DelegatedLen: 127,
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason := findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
+
+	// Assert
+	require.True(t, isOverflow)
+	require.Contains(t, reason, "the 'fe80::/16' subnet has more than 2^63-1 delegated prefixes")
+}
+
+// Test that the overflow is not detected if the number of delegated prefixes
+// in any global subnet pool doesn't exceed the limit.
+func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingGlobalSubnetPool(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80::",
+				// 1 delegated prefix.
+				PrefixLen:    64,
+				DelegatedLen: 64,
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason := findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
+
+	// Assert
+	require.False(t, isOverflow)
+	require.Empty(t, reason)
+}
+
+// Test that the overflow is not detected if the number of delegated prefixes
+// in any shared network pool doesn't exceed the limit.
+func TestFindSharedNetworkExceedingDelegatedPrefixLimitForSingleNonOverflowingSharedNetworkPool(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80::",
+				// 1 delegated prefix.
+				PrefixLen:    64,
+				DelegatedLen: 64,
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Name:    "foo",
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason := findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
+
+	// Assert
+	require.False(t, isOverflow)
+	require.Empty(t, reason)
+}
+
+// Test that the overflow is detected even if the number of delegated prefixes
+// in the particular pools doesn't exceed the limit but the total number of
+// delegated prefixes in the subnet does.
+func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSubnet(t *testing.T) {
+	// Arrange
+	subnet := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80::",
+				// 2^62 delegated prefixes.
+				PrefixLen:    64,
+				DelegatedLen: 126,
+			},
+			{
+				Prefix: "fe80:42::",
+				// 2^62 delegated prefix.
+				PrefixLen:    64,
+				DelegatedLen: 126,
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Subnet6: []keaconfig.Subnet6{subnet},
+		},
+	}
+
+	// Act
+	isOverflow, reason := findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
+
+	// Assert
+	require.True(t, isOverflow)
+	require.Contains(t, reason, "the 'fe80::/16' subnet has more than 2^63-1 delegated prefixes")
+}
+
+// Test that the overflow is detected even if the number of delegated prefixes
+// in the particular subnets doesn't exceed the limit but the total number of
+// delegated prefixes in the shared network does.
+func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingSharedNetwork(t *testing.T) {
+	// Arrange
+	subnet1 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80::",
+				// 2^62 delegated prefixes.
+				PrefixLen:    64,
+				DelegatedLen: 126,
+			},
+		},
+	}
+
+	subnet2 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80:42::",
+				// 2^62 delegated prefix.
+				PrefixLen:    64,
+				DelegatedLen: 126,
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			Name:    "foo",
+			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+		},
+	}
+
+	// Act
+	isOverflow, reason := findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
+
+	// Assert
+	require.True(t, isOverflow)
+	require.Contains(t, reason, "the 'foo' shared network has more than 2^63-1 delegated prefixes")
+}
+
+// Test that the overflow is not detected even if the total number of
+// delegated prefixes of the top subnets exceed the limit.
+func TestFindSharedNetworkExceedingDelegatedPrefixLimitForOverflowingGlobalSubnets(t *testing.T) {
+	// Arrange
+	subnet1 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80::",
+				// 2^62 delegated prefixes.
+				PrefixLen:    64,
+				DelegatedLen: 126,
+			},
+		},
+	}
+
+	subnet2 := keaconfig.Subnet6{
+		MandatorySubnetParameters: keaconfig.MandatorySubnetParameters{
+			Subnet: "fe80::/16",
+		},
+		PDPools: []keaconfig.PDPool{
+			{
+				Prefix: "fe80:42::",
+				// 2^62 delegated prefix.
+				PrefixLen:    64,
+				DelegatedLen: 126,
+			},
+		},
+	}
+
+	sharedNetworks := []keaconfig.SharedNetwork{
+		keaconfig.SharedNetwork6{
+			// Global subnets. Shared network name is empty.
+			Subnet6: []keaconfig.Subnet6{subnet1, subnet2},
+		},
+	}
+
+	// Act
+	isOverflow, reason := findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks)
+
+	// Assert
+	require.False(t, isOverflow)
+	require.Empty(t, reason)
+}
+
 // Benchmark measuring performance of a Kea configuration checker that detects
 // subnets in which the out-of-pool host reservation mode is recommended.
 func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
