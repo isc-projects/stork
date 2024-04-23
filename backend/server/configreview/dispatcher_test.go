@@ -693,6 +693,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "overlapping_subnet")
 	require.Contains(t, checkerNames, "canonical_prefix")
 	require.Contains(t, checkerNames, "subnet_cmds_and_cb_mutual_exclusion")
+	require.Contains(t, checkerNames, "gathering_statistics_unavailable_due_to_number_overflow")
 
 	checkerNames = []string{}
 	for _, p := range dispatcher.groups[KeaCADaemon].checkers {
@@ -708,8 +709,8 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ConfigModified)
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, DBHostsModified)
 
-	require.EqualValues(t, 12, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
-	require.EqualValues(t, 12, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
+	require.EqualValues(t, 13, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
+	require.EqualValues(t, 13, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
 	require.EqualValues(t, 4, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
 	require.EqualValues(t, 0, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[StorkAgentConfigModified])
 	require.EqualValues(t, 2, dispatcher.groups[KeaCADaemon].triggerRefCounts[ManualRun])
