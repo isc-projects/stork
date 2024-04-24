@@ -55,7 +55,7 @@ describe('LoginScreenComponent', () => {
     it('should extract the return URL from the query parameters', () => {
         // Arrange
         spyOnProperty(router, 'url').and.returnValue('/login')
-        route.snapshot.queryParams = { returnUrl: 'dashboard' }
+        route.snapshot.queryParams = { returnUrl: ['dashboard'] }
         spyOn(generalService, 'getVersion').and.returnValue(of({ version: '1.0.0' } as any))
         spyOn(authService, 'getAuthenticationMethods').and.returnValue(
             of([{ name: 'name', description: 'description' } as AuthenticationMethod])
@@ -65,7 +65,7 @@ describe('LoginScreenComponent', () => {
         component.ngOnInit()
 
         // Assert
-        expect(component.returnUrl).toBe('/dashboard')
+        expect(component.returnUrl).toEqual(['/', 'dashboard'])
     })
 
     it('should use the root endpoint as the return URL if the query params are empty', () => {
@@ -81,14 +81,14 @@ describe('LoginScreenComponent', () => {
         component.ngOnInit()
 
         // Assert
-        expect(component.returnUrl).toBe('/')
+        expect(component.returnUrl).toEqual(['/'])
     })
 
     it('should redirect user to the previous page after login', () => {
         // Arrange
-        component.returnUrl = '/dashboard'
+        component.returnUrl = ['/', 'dashboard']
         component.loginForm.controls = {}
-        component.authenticationMethod = { id: 'foo:' } as AuthenticationMethod
+        component.authenticationMethod = { id: 'foo' } as AuthenticationMethod
         component.loginForm.controls = {
             identifier: {
                 value: 'bar',
@@ -100,13 +100,12 @@ describe('LoginScreenComponent', () => {
             } as any,
         }
         spyOnProperty(component.loginForm, 'valid').and.returnValue(true)
-        spyOn(authService, 'login')
-        const spyNavigate = spyOn(router, 'navigate')
+        const spyLogin = spyOn(authService, 'login')
 
         // Act
         component.signIn()
 
         // Assert
-        expect(spyNavigate).toHaveBeenCalledWith(['/dashboard'])
+        expect(spyLogin).toHaveBeenCalledWith('foo', 'bar', 'baz', ['/', 'dashboard'])
     })
 })

@@ -109,7 +109,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
             } as any)
         )
 
-        authService.login('boz', 'foo', 'bar', 'baz')
+        authService.login('boz', 'foo', 'bar', ['baz'])
 
         fixture = TestBed.createComponent(KeaDaemonConfigurationPageComponent)
         component = fixture.componentInstance

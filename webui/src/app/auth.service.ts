@@ -47,9 +47,9 @@ export class AuthService {
      * @param identifier Specified identifier (e.g., user name).
      * @param secret Specified secret (e.g., password).
      * @param authenticationMethodId Specified authentication method ID.
-     * @param returnUrl URL to return to after successful login.
+     * @param returnUrl URL fragments to return to after successful login.
      */
-    login(authenticationMethodId: string, identifier: string, secret: string, returnUrl: string) {
+    login(authenticationMethodId: string, identifier: string, secret: string, returnUrl: string[]) {
         let user: User
         const credentials: SessionCredentials = { authenticationMethodId, identifier, secret }
         this.api.createSession(credentials).subscribe(
@@ -58,7 +58,7 @@ export class AuthService {
                     this.currentUserSubject.next(user)
                     localStorage.setItem('currentUser', JSON.stringify(user))
                     // ToDo: Unhandled exception from promise
-                    this.router.navigate([returnUrl])
+                    this.router.navigate(returnUrl)
                 }
             },
             (/* err */) => {
