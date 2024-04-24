@@ -358,6 +358,25 @@ func TestCertStoreIsNotEmpty(t *testing.T) {
 	}
 }
 
+// Test that the server cert fingerprint is removed properly.
+func TestRemoveServerCertFingerprint(t *testing.T) {
+	// Arrange
+	teardown, _ := GenerateSelfSignedCerts()
+	defer teardown()
+	store := NewCertStoreDefault()
+
+	// Act
+	// The fingerprint file exists.
+	errExists := store.RemoveServerCertFingerprint()
+	// The fingerprint file does not exist. Removing it should not cause an
+	// error.
+	errNotExists := store.RemoveServerCertFingerprint()
+
+	// Assert
+	require.NoError(t, errExists)
+	require.NoError(t, errNotExists)
+}
+
 // Test that the fingerprint of the CA certificate is read properly.
 func TestReadCACertFingerprint(t *testing.T) {
 	// Arrange

@@ -40,16 +40,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	httpClient.SetSkipTLSVerification(true)
 	gock.InterceptClient(httpClient.client)
 
-	restorePaths := RememberPaths()
-	sb := testutil.NewSandbox()
-
-	// Replace the default paths.
-	RootCAFile = path.Join(sb.BasePath, "ca-not-exists.pem")
-	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
-	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
-	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists")
-	CredentialsFile = path.Join(sb.BasePath, "credentials-not-exists.json")
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
+	cleanupCerts, _ := GenerateSelfSignedCerts()
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
@@ -62,12 +53,12 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	}
 
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
-	sa.Setup()
-	ctx := context.Background()
-	return sa, ctx, func() {
-		sb.Close()
-		restorePaths()
+	err := sa.Setup()
+	if err != nil {
+		panic(err)
 	}
+	ctx := context.Background()
+	return sa, ctx, cleanupCerts
 }
 
 func (fam *FakeAppMonitor) GetApps() []App {
@@ -771,6 +762,21 @@ func TestHostAndPortParams(t *testing.T) {
 	stdoutStr := string(stdout)
 	require.Contains(t, stdoutStr, "127.0.0.1")
 	require.Contains(t, stdoutStr, "9876")
+}
+
+// Test that the agent cannot be set up with invalid certificates.
+func TestAgentSetupInvalidCerts(t *testing.T) {
+	// Arrange
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+	certStore := NewCertStoreDefault()
+	certStore.RemoveServerCertFingerprint()
+
+	// Act
+	err := sa.Setup()
+
+	// Assert
+	require.ErrorContains(t, err, "cert store is not valid")
 }
 
 // Tests the peer verification function creation.

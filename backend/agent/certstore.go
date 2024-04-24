@@ -370,6 +370,11 @@ func (s *CertStore) WriteServerCertFingerprint(fingerprint [32]byte) error {
 	return s.writeServerCertFingerprint(fingerprintHex)
 }
 
+// Removes the server cert fingerprint file.
+func (s *CertStore) RemoveServerCertFingerprint() error {
+	return s.removeIfExist(s.serverCertFingerprintPath)
+}
+
 // Checks if all files managed by the cert store are valid (they exist and
 // have proper contents). Returns an error that describes all occurred
 // problems. Returns nil if all is OK.

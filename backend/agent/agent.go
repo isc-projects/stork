@@ -145,17 +145,21 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 	// cert and host verification.
 	certStore := NewCertStoreDefault()
 
+	if err := certStore.IsValid(); err != nil {
+		return nil, errors.WithMessage(err,
+			"the agent cannot start due to invalid certificates; consider "+
+				"running 'stork-agent register' to obtain valid certificates",
+		)
+	}
+
 	// Only Stork server is allowed to connect to Stork agent over GRPC. This
 	// function accepts the fingerprint of the certificate of the allowed GRPC
 	// client. This fingerprint is obtained during the registration process.
 	allowedCertFingerprint, err := certStore.ReadServerCertFingerprint()
 	if err != nil {
-		// TODO: The agent should not start if the certificates are not
-		// obtained as nobody is allowed to connect. But the main function and
-		// many tests rely on the fact that the agent can be always started.
-		log.WithError(err).Warning("Cannot read the cert fingerprint of the " +
-			"Stork server; the server will not be able to connect to the agent over GRPC")
-		allowedCertFingerprint = [32]byte{}
+		// It should never happen as the cert store is validated a few lines
+		// above.
+		return nil, err
 	}
 
 	options := &advancedtls.ServerOptions{
