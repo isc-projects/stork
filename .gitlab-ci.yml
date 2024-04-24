@@ -581,7 +581,7 @@ system_testing:
     - docker:dind
   rules:
     - when: on_success
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:2
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:4
   cache:
     key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
     paths:
