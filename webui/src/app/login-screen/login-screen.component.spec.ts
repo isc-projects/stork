@@ -11,7 +11,6 @@ import { SelectButtonModule } from 'primeng/selectbutton'
 import { ButtonModule } from 'primeng/button'
 import { ActivatedRoute, Router } from '@angular/router'
 import { of } from 'rxjs'
-import { Version } from '@angular/core'
 import { AuthService } from '../auth.service'
 
 describe('LoginScreenComponent', () => {
