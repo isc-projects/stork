@@ -57,7 +57,11 @@ export class LoginScreenComponent implements OnInit {
         }
 
         // Set the return URL.
-        this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/'
+        let returnUrl: string = this.route.snapshot.queryParams.returnUrl || '/'
+        if (!returnUrl.startsWith('/')) {
+            returnUrl = '/' + returnUrl
+        }
+        this.returnUrl = returnUrl
 
         // Initialize the login form controls.
         this.loginForm = this.formBuilder.group({
