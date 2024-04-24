@@ -53,21 +53,21 @@ func (h responseHeader) Error() string {
 
 // Indicates if the error is a connectivity issue.
 func (h responseHeader) IsConnectivityIssue() bool {
-	if h.Text != nil {
-		text := *h.Text
-		return strings.Contains(text, "server is likely to be offline") ||
-			strings.Contains(text, "forwarding socket is not configured for the server type")
+	if h.Text == nil {
+		return false
 	}
-	return false
+	text := *h.Text
+	return strings.Contains(text, "server is likely to be offline") ||
+		strings.Contains(text, "forwarding socket is not configured for the server type")
 }
 
 // Indicates if the error is caused by the number overflow.
 func (h responseHeader) IsNumberOverflowIssue() bool {
-	if h.Text != nil {
-		text := *h.Text
-		return strings.Contains(text, "Number overflow")
+	if h.Text == nil {
+		return false
 	}
-	return false
+	text := *h.Text
+	return strings.Contains(text, "Number overflow")
 }
 
 // Parsed subnet list from Kea `subnet4-list` and `subnet6-list` response.

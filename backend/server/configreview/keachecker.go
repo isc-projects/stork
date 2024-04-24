@@ -1264,7 +1264,7 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 //  1. Kea's version is between 2.3.0 (inclusive, but I'm not sure exactly which
 //     version the problem was introduced) and 2.5.3 (exclusive).
 //  2. There is configured a subnet or shared network with more than 2^63-1
-//     addresses or a delegated prefix with mask length 64 or less.
+//     addresses or a delegated prefix pool with more than 2^63-1 prefixes.
 //  3. The stat hook is loaded.
 func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Report, error) {
 	// Check the daemon type.
@@ -1326,6 +1326,14 @@ func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Rep
 	}
 }
 
+// Determines if any of the provided shared networks has more than 2^63-1
+// addresses. It is expected that one of the shared networks represents the
+// global subnet scope. The global subnet scope has no limit on the total
+// number of addresses but still have a limit on the number of addresses in
+// a single subnet.
+// Returns the boolean value indicating if the overflow is detected, the
+// reason of the overflow (overflow in a single subnet or shared network),
+// and the error if any.
 func findSharedNetworkExceedingAddressLimit(sharedNetworks []keaconfig.SharedNetwork) (bool, string, error) {
 	// Check the shared networks.
 	for _, sharedNetwork := range sharedNetworks {
@@ -1375,6 +1383,13 @@ func findSharedNetworkExceedingAddressLimit(sharedNetworks []keaconfig.SharedNet
 	return false, "", nil
 }
 
+// Determines if any of the provided shared networks has more than 2^63-1
+// delegated prefixes. It is expected that one of the shared networks
+// represents the global subnet scope. The global subnet scope has no limit
+// on the total number of delegated prefixes but still have a limit on the
+// number of delegated prefixes in a single subnet.
+// Returns the boolean value indicating if the overflow is detected, and the
+// reason of the overflow (overflow in a single subnet or shared network).
 func findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks []keaconfig.SharedNetwork) (bool, string) {
 	// Check the shared networks.
 	for _, sharedNetwork := range sharedNetworks {

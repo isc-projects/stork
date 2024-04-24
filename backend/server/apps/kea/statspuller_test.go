@@ -1176,4 +1176,35 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
+	subnets, err := dbmodel.GetAllSubnets(db, 0)
+	require.NoError(t, err)
+	require.Len(t, subnets, 3)
+
+	subnet := subnets[0]
+	require.Len(t, subnet.LocalSubnets, 1)
+	require.EqualValues(t, 1, subnet.LocalSubnets[0].LocalSubnetID)
+	stats := subnet.LocalSubnets[0].Stats
+	require.Equal(t, uint64(844424930131968), stats.GetAny("total-nas"))
+	require.Equal(t, uint64(0), stats.GetAny("cumulative-assigned-nas"))
+	require.Equal(t, uint64(9), stats.GetAny("assigned-nas"))
+	require.Equal(t, uint64(10), stats.GetAny("declined-addresses"))
+
+	subnet = subnets[1]
+	require.Len(t, subnet.LocalSubnets, 1)
+	require.EqualValues(t, 2, subnet.LocalSubnets[0].LocalSubnetID)
+	stats = subnet.LocalSubnets[0].Stats
+	require.Equal(t, uint64(281474976710656), stats.GetAny("total-nas"))
+	require.Equal(t, uint64(0), stats.GetAny("cumulative-assigned-nas"))
+	require.Equal(t, uint64(0), stats.GetAny("assigned-nas"))
+	require.Equal(t, uint64(0), stats.GetAny("declined-addresses"))
+
+	subnet = subnets[2]
+	require.Len(t, subnet.LocalSubnets, 1)
+	require.EqualValues(t, 3, subnet.LocalSubnets[0].LocalSubnetID)
+	stats = subnet.LocalSubnets[0].Stats
+	expectedTotalNAs, _ := big.NewInt(0).SetString("2417851639229258349412352", 10)
+	require.Equal(t, expectedTotalNAs, stats.GetAny("total-nas"))
+	require.Equal(t, uint64(0), stats.GetAny("cumulative-assigned-nas"))
+	require.Equal(t, uint64(0), stats.GetAny("assigned-nas"))
+	require.Equal(t, uint64(0), stats.GetAny("declined-addresses"))
 }
