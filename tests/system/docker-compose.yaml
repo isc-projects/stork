@@ -255,6 +255,8 @@ services:
   agent-kea-ha2:
     extends: agent-kea
     hostname: agent-kea-ha2
+    ports: !override
+      - "42548:9547"
     environment:
       STORK_AGENT_HOST: 172.42.42.101
     networks:
