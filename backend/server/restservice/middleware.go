@@ -189,7 +189,7 @@ systemctl enable isc-stork-agent
 systemctl restart isc-stork-agent
 systemctl status isc-stork-agent
 
-su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
+su stork-agent -s /bin/sh -c 'stork-agent register -u {{.Scheme}}://{{.ServerAddress}}'
 
 `
 
@@ -249,6 +249,7 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 
 			data := map[string]string{
 				"ServerAddress": r.Host,
+				"Scheme":        r.URL.Scheme,
 			}
 
 			for extension, path := range packageFiles {
