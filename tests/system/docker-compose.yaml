@@ -231,7 +231,7 @@ services:
     extends: agent-kea-premium-host-database-base
     volumes:
       - $PWD/tests/system/config/kea-premium-radius/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
-      - $PWD/tests/system/config/kea-premium-radius/dictionary:/usr/local/etc/freeradius/dictionary
+      - $PWD/tests/system/config/kea-premium-radius/dictionary:/etc/kea/radius/dictionary
       # Disable DHCPv6 due to missing dedicated configuration.
       - /etc/supervisor/conf.d/kea-dhcp6.conf
     depends_on:
