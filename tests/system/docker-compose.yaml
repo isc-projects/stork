@@ -91,8 +91,8 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: kea
       args:
-        KEA_REPO: public/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-4}
-        KEA_VERSION: ${KEA_VERSION:-2.4.0-isc20230630120747}
+        KEA_REPO: public/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-5}
+        KEA_VERSION: ${KEA_VERSION:-2.5.5-isc20240129145054}
         KEA_LEGACY_PKGS: ${KEA_LEGACY_PKGS:-false}
 
   agent-kea:
@@ -202,7 +202,7 @@ services:
     extends: agent-kea
     build:
       args:
-        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-4}-prv
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-5}-prv
         KEA_PREMIUM: "premium"
     profiles:
       - premium
