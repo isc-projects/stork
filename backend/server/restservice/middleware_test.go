@@ -211,6 +211,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 			f, err := os.Create(path.Join(packagesDir, "isc-stork-agent"+extension))
 			require.NoError(t, err)
 			f.Close()
+			defer os.Remove(f.Name())
 		}
 
 		// let do some request
@@ -229,6 +230,36 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		require.Contains(t, content, "/etc/debian_version")
 		require.Contains(t, content, "/etc/redhat-release")
 		require.Contains(t, content, "/etc/alpine-release")
+		// The request is made over HTTP, the script should contain the same
+		// scheme in the URL.
+		require.Contains(t, content, "stork-agent register -u http://localhost")
+	})
+
+	t.Run("all packages in the package directory - HTTPS", func(t *testing.T) {
+		// create all packages
+		for _, extension := range []string{".deb", ".rpm", ".apk"} {
+			f, err := os.Create(path.Join(packagesDir, "isc-stork-agent"+extension))
+			require.NoError(t, err)
+			f.Close()
+			defer os.Remove(f.Name())
+		}
+
+		// let do some request
+		req := httptest.NewRequest("GET", "https://localhost/stork-install-agent.sh", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		defer resp.Body.Close()
+		contentRaw, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		content := string(contentRaw)
+
+		require.EqualValues(t, 200, resp.StatusCode)
+		require.False(t, requestReceived)
+		// The request is made over HTTPS, the script should contain the same
+		// scheme in the URL.
+		require.Contains(t, content, "stork-agent register -u https://localhost")
 	})
 
 	t.Run("unsupported request", func(t *testing.T) {
