@@ -15,7 +15,6 @@ interface SettingsForm {
     keaHostsPullerInterval: FormControl<number>
     keaStatsPullerInterval: FormControl<number>
     keaStatusPullerInterval: FormControl<number>
-    metricsCollectorInterval: FormControl<number>
     grafanaUrl: FormControl<string>
     prometheusUrl: FormControl<string>
 }
@@ -77,11 +76,6 @@ export class SettingsPageComponent implements OnInit {
             formControlName: 'keaStatusPullerInterval',
             help: 'This puller fetches high availability status from the Kea servers.',
         },
-        {
-            title: 'Metrics Collector Interval',
-            formControlName: 'metricsCollectorInterval',
-            help: 'This collector refreshes the metrics exposed by the Stork server to Prometheus, such as the number of monitored machines, address utilization statistics etc.',
-        },
     ]
 
     /**
@@ -132,7 +126,6 @@ export class SettingsPageComponent implements OnInit {
             keaHostsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
-            metricsCollectorInterval: [0, [Validators.required, Validators.min(0)]],
             grafanaUrl: [''],
             prometheusUrl: [''],
         })

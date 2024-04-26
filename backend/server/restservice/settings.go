@@ -32,7 +32,6 @@ func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsPa
 		KeaStatusPullerInterval:  dbSettingsMap["kea_status_puller_interval"].(int64),
 		AppsStatePullerInterval:  dbSettingsMap["apps_state_puller_interval"].(int64),
 		PrometheusURL:            dbSettingsMap["prometheus_url"].(string),
-		MetricsCollectorInterval: dbSettingsMap["metrics_collector_interval"].(int64),
 	}
 	rsp := settings.NewGetSettingsOK().WithPayload(s)
 
@@ -87,11 +86,6 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		return errRsp
 	}
 	err = dbmodel.SetSettingStr(r.DB, "prometheus_url", s.PrometheusURL)
-	if err != nil {
-		log.Error(err)
-		return errRsp
-	}
-	err = dbmodel.SetSettingInt(r.DB, "metrics_collector_interval", s.MetricsCollectorInterval)
 	if err != nil {
 		log.Error(err)
 		return errRsp

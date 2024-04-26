@@ -27,7 +27,6 @@ let mockGetSettingsResponse: Settings = {
     keaStatusPullerInterval: 23,
     appsStatePullerInterval: 44,
     prometheusUrl: 'http://prometheus.org',
-    metricsCollectorInterval: 11,
 }
 
 export default {

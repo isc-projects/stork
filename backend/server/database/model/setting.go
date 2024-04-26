@@ -42,13 +42,11 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 	// Init puller intervals.
 	longInterval := "60"
 	mediumInterval := "30"
-	shortInterval := "10"
 
 	if initialPullerInterval > 0 {
 		interval := fmt.Sprint(initialPullerInterval)
 		longInterval = interval
 		mediumInterval = interval
-		shortInterval = interval
 	}
 
 	// list of all stork settings with default values
@@ -87,11 +85,6 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 			Name:    "prometheus_url",
 			ValType: SettingValTypeStr,
 			Value:   "",
-		},
-		{
-			Name:    "metrics_collector_interval",
-			ValType: SettingValTypeInt,
-			Value:   shortInterval, // in seconds
 		},
 	}
 

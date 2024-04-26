@@ -47,7 +47,6 @@ func TestSettings(t *testing.T) {
 			KeaHostsPullerInterval:   3,
 			KeaStatsPullerInterval:   4,
 			KeaStatusPullerInterval:  5,
-			MetricsCollectorInterval: 6,
 			GrafanaURL:               "http://foo:3000",
 			PrometheusURL:            "http://bar:3000",
 		},
@@ -66,7 +65,6 @@ func TestSettings(t *testing.T) {
 	require.EqualValues(t, 3, okRsp.Payload.KeaHostsPullerInterval)
 	require.EqualValues(t, 4, okRsp.Payload.KeaStatsPullerInterval)
 	require.EqualValues(t, 5, okRsp.Payload.KeaStatusPullerInterval)
-	require.EqualValues(t, 6, okRsp.Payload.MetricsCollectorInterval)
 
 	require.EqualValues(t, "http://foo:3000", okRsp.Payload.GrafanaURL)
 	require.EqualValues(t, "http://bar:3000", okRsp.Payload.PrometheusURL)

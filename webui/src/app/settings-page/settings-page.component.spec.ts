@@ -92,7 +92,6 @@ describe('SettingsPageComponent', () => {
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
             prometheusUrl: 'http://notlocalhost:2222',
-            metricsCollectorInterval: 33,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         component.ngOnInit()
@@ -106,7 +105,6 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(30)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(31)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
-        expect(component.settingsForm.get('metricsCollectorInterval')?.value).toBe(33)
         expect(component.settingsForm.get('prometheusUrl')?.value).toBe('http://notlocalhost:2222')
     }))
 
@@ -141,7 +139,6 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
-            metricsCollectorInterval: 33,
             prometheusUrl: 'http://notlocalhost:2222',
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
@@ -161,7 +158,6 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: null,
             keaStatsPullerInterval: null,
             keaStatusPullerInterval: null,
-            metricsCollectorInterval: null,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()

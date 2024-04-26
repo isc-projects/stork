@@ -15,8 +15,6 @@
         type: integer
       prometheusUrl:
         type: string
-      metricsCollectorInterval:
-        type: integer
 
   Puller:
     type: object
