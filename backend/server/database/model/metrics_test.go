@@ -21,6 +21,8 @@ func TestEmptyDatabaseMetrics(t *testing.T) {
 	require.Zero(t, metrics.AuthorizedMachines)
 	require.Zero(t, metrics.UnauthorizedMachines)
 	require.Zero(t, metrics.UnreachableMachines)
+	require.Nil(t, metrics.SubnetMetrics)
+	require.Nil(t, metrics.SharedNetworkMetrics)
 }
 
 // Metrics based on the machines should be properly calculated.
@@ -86,14 +88,17 @@ func TestFilledSubnetsDatabaseMetrics(t *testing.T) {
 	require.EqualValues(t, "3001:1::/64", metrics.SubnetMetrics[0].Label)
 	require.EqualValues(t, 10, metrics.SubnetMetrics[0].AddrUtilization)
 	require.EqualValues(t, 15, metrics.SubnetMetrics[0].PdUtilization)
+	require.EqualValues(t, 6, metrics.SubnetMetrics[0].Family)
 
 	require.EqualValues(t, "3001:2::/64", metrics.SubnetMetrics[1].Label)
 	require.EqualValues(t, 20, metrics.SubnetMetrics[1].AddrUtilization)
 	require.EqualValues(t, 25, metrics.SubnetMetrics[1].PdUtilization)
+	require.EqualValues(t, 6, metrics.SubnetMetrics[1].Family)
 
 	require.EqualValues(t, "192.168.2.1/32", metrics.SubnetMetrics[2].Label)
 	require.Zero(t, metrics.SubnetMetrics[2].AddrUtilization)
 	require.Zero(t, metrics.SubnetMetrics[2].PdUtilization)
+	require.EqualValues(t, 4, metrics.SubnetMetrics[2].Family)
 }
 
 // Metrics per shared network should be properly calculated.
@@ -106,6 +111,12 @@ func TestFilledSharedNetworksDatabaseMetrics(t *testing.T) {
 		AddrUtilization: 10,
 		PdUtilization:   15,
 		Family:          4,
+	})
+	_ = AddSharedNetwork(db, &SharedNetwork{
+		Name:            "alice",
+		AddrUtilization: 5,
+		PdUtilization:   30,
+		Family:          6,
 	})
 	_ = AddSharedNetwork(db, &SharedNetwork{
 		Name:            "bob",
@@ -123,17 +134,25 @@ func TestFilledSharedNetworksDatabaseMetrics(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Len(t, metrics.SharedNetworkMetrics, 3)
+	require.Len(t, metrics.SharedNetworkMetrics, 4)
 
 	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[0].Label)
 	require.EqualValues(t, 10, metrics.SharedNetworkMetrics[0].AddrUtilization)
 	require.EqualValues(t, 15, metrics.SharedNetworkMetrics[0].PdUtilization)
+	require.EqualValues(t, 4, metrics.SharedNetworkMetrics[0].Family)
 
-	require.EqualValues(t, "bob", metrics.SharedNetworkMetrics[1].Label)
-	require.EqualValues(t, 20, metrics.SharedNetworkMetrics[1].AddrUtilization)
-	require.EqualValues(t, 25, metrics.SharedNetworkMetrics[1].PdUtilization)
+	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[1].Label)
+	require.EqualValues(t, 5, metrics.SharedNetworkMetrics[1].AddrUtilization)
+	require.EqualValues(t, 30, metrics.SharedNetworkMetrics[1].PdUtilization)
+	require.EqualValues(t, 6, metrics.SharedNetworkMetrics[1].Family)
 
-	require.EqualValues(t, "eva", metrics.SharedNetworkMetrics[2].Label)
-	require.Zero(t, metrics.SharedNetworkMetrics[2].AddrUtilization)
-	require.Zero(t, metrics.SharedNetworkMetrics[2].PdUtilization)
+	require.EqualValues(t, "bob", metrics.SharedNetworkMetrics[2].Label)
+	require.EqualValues(t, 20, metrics.SharedNetworkMetrics[2].AddrUtilization)
+	require.EqualValues(t, 25, metrics.SharedNetworkMetrics[2].PdUtilization)
+	require.EqualValues(t, 4, metrics.SharedNetworkMetrics[2].Family)
+
+	require.EqualValues(t, "eva", metrics.SharedNetworkMetrics[3].Label)
+	require.Zero(t, metrics.SharedNetworkMetrics[3].AddrUtilization)
+	require.Zero(t, metrics.SharedNetworkMetrics[3].PdUtilization)
+	require.EqualValues(t, 6, metrics.SharedNetworkMetrics[3].Family)
 }

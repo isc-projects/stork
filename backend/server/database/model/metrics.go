@@ -9,6 +9,8 @@ import (
 type CalculatedNetworkMetrics struct {
 	// Subnet prefix or shared network name.
 	Label string
+	// IP family.
+	Family int
 	// Address utilization in percentage multiplied by 10.
 	AddrUtilization int16
 	// Delegated prefix utilization in percentage multiplied by 10.
@@ -40,6 +42,7 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 	err = db.Model().
 		Table("subnet").
 		ColumnExpr("\"prefix\" AS \"label\"").
+		ColumnExpr("family(\"prefix\") AS \"family\"").
 		Column("addr_utilization", "pd_utilization").
 		Select(&metrics.SubnetMetrics)
 
@@ -50,6 +53,7 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 	err = db.Model().
 		Table("shared_network").
 		ColumnExpr("\"name\" AS \"label\"").
+		ColumnExpr("\"inet_family\" AS \"family\"").
 		Column("addr_utilization", "pd_utilization").
 		Select(&metrics.SharedNetworkMetrics)
 

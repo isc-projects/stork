@@ -187,11 +187,13 @@ func TestCollectorDescribe(t *testing.T) {
 				Label:           "subnet4",
 				AddrUtilization: 5,
 				PdUtilization:   6,
+				Family:          7,
 			}},
 			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{{
-				Label:           "shared7",
-				AddrUtilization: 8,
-				PdUtilization:   9,
+				Label:           "shared8",
+				AddrUtilization: 9,
+				PdUtilization:   10,
+				Family:          11,
 			}},
 		})
 
@@ -238,11 +240,13 @@ func TestCollectorCollect(t *testing.T) {
 				// 1000 (in DB) = 100% = 1.0 (in real)
 				AddrUtilization: 4000,
 				PdUtilization:   5000,
+				Family:          4,
 			}},
 			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{{
 				Label:           "shared",
 				AddrUtilization: 6000,
 				PdUtilization:   7000,
+				Family:          6,
 			}},
 		})
 
@@ -276,11 +280,13 @@ func TestCollectorCollect(t *testing.T) {
 					// 1000 (in DB) = 100% = 1.0 (in real)
 					AddrUtilization: 4000,
 					PdUtilization:   5000,
+					Family:          4,
 				},
 				{
 					Label:           "subnetB",
 					AddrUtilization: 6000,
 					PdUtilization:   7000,
+					Family:          6,
 				},
 			},
 			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{
@@ -288,11 +294,13 @@ func TestCollectorCollect(t *testing.T) {
 					Label:           "sharedA",
 					AddrUtilization: 8000,
 					PdUtilization:   9000,
+					Family:          4,
 				},
 				{
 					Label:           "sharedB",
 					AddrUtilization: 10000,
 					PdUtilization:   11000,
+					Family:          6,
 				},
 			},
 		})
@@ -312,6 +320,66 @@ func TestCollectorCollect(t *testing.T) {
 			err := metric.Write(metricDTO)
 			require.NoError(t, err)
 			require.EqualValues(t, i, *metricDTO.Gauge.Value)
+		}
+	})
+
+	t.Run("metrics values with a shared network containing IPv4 and IPv6 addresses", func(t *testing.T) {
+		source.Set(dbmodel.CalculatedMetrics{
+			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{
+				{
+					Label:           "shared",
+					AddrUtilization: 1000,
+					PdUtilization:   2000,
+					Family:          4,
+				},
+				{
+					Label:           "shared",
+					AddrUtilization: 3000,
+					PdUtilization:   4000,
+					Family:          6,
+				},
+			},
+		})
+
+		metricsChannel := make(chan prometheus.Metric, 100)
+
+		// Act
+		promCollector.Collect(metricsChannel)
+
+		// Assert
+		close(metricsChannel)
+		i := 0
+		for metric := range metricsChannel {
+			i++
+
+			metricDTO := &dto.Metric{}
+			err := metric.Write(metricDTO)
+			require.NoError(t, err)
+
+			var labelNames []string
+			for _, label := range metricDTO.Label {
+				labelNames = append(labelNames, *label.Name)
+			}
+
+			switch i {
+			case 1, 2, 3:
+				continue
+			case 4:
+				require.EqualValues(t, 1, *metricDTO.Gauge.Value)
+				require.Len(t, metricDTO.Label, 2)
+				require.Contains(t, labelNames, "name")
+				require.Contains(t, labelNames, "family")
+			case 5:
+				require.EqualValues(t, 3, *metricDTO.Gauge.Value)
+				require.Len(t, metricDTO.Label, 2)
+				require.Contains(t, labelNames, "name")
+				require.Contains(t, labelNames, "family")
+			case 6:
+				require.EqualValues(t, 4, *metricDTO.Gauge.Value)
+				// PD utilization hasn't the family label.
+				require.Len(t, metricDTO.Label, 1)
+				require.Contains(t, labelNames, "name")
+			}
 		}
 	})
 }

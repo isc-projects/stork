@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -103,7 +104,7 @@ func NewCollector(source MetricsSource) (Collector, error) {
 		sharedNetworkAddressUtilizationDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "shared_network", "address_utilization"),
 			"Shared-network address utilization",
-			[]string{"name"}, nil,
+			[]string{"name", "family"}, nil,
 		),
 		sharedNetworkPdUtilizationDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "shared_network", "pd_utilization"),
@@ -186,10 +187,12 @@ func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.sharedNetworkAddressUtilizationDesc,
 			prometheus.GaugeValue,
 			float64(networkMetrics.AddrUtilization)/1000.,
-			networkMetrics.Label)
-		ch <- prometheus.MustNewConstMetric(c.sharedNetworkPdUtilizationDesc,
-			prometheus.GaugeValue,
-			float64(networkMetrics.PdUtilization)/1000.,
-			networkMetrics.Label)
+			networkMetrics.Label, fmt.Sprint(networkMetrics.Family))
+		if networkMetrics.Family == 6 {
+			ch <- prometheus.MustNewConstMetric(c.sharedNetworkPdUtilizationDesc,
+				prometheus.GaugeValue,
+				float64(networkMetrics.PdUtilization)/1000.,
+				networkMetrics.Label)
+		}
 	}
 }
