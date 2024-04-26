@@ -293,13 +293,13 @@ func TestCollectorCollect(t *testing.T) {
 				{
 					Label:           "sharedA",
 					AddrUtilization: 8000,
-					PdUtilization:   9000,
+					PdUtilization:   0,
 					Family:          4,
 				},
 				{
 					Label:           "sharedB",
-					AddrUtilization: 10000,
-					PdUtilization:   11000,
+					AddrUtilization: 9000,
+					PdUtilization:   10000,
 					Family:          6,
 				},
 			},
