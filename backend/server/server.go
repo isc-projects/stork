@@ -193,7 +193,9 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	}
 
 	if ss.GeneralSettings.EnableMetricsEndpoint {
-		ss.MetricsCollector, err = metrics.NewCollector(ss.DB)
+		ss.MetricsCollector, err = metrics.NewCollector(
+			metrics.NewDatabaseMetricsSource(ss.DB),
+		)
 		if err != nil {
 			return err
 		}

@@ -7,10 +7,31 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
 )
+
+// Interface of the metrics source. It is responsible for returning the
+// current metric values. It is used to allow testing the collector without
+// extensive seeding of the database.
+type MetricsSource interface {
+	GetCalculatedMetrics() (*dbmodel.CalculatedMetrics, error)
+}
+
+// The production implementation of the metrics source based on the database.
+type databaseMetricsSource struct {
+	db *pg.DB
+}
+
+// Creates an instance of the metrics source based on the database.
+func NewDatabaseMetricsSource(db *pg.DB) MetricsSource {
+	return &databaseMetricsSource{db: db}
+}
+
+// Returns the current metric values from the database.
+func (s *databaseMetricsSource) GetCalculatedMetrics() (*dbmodel.CalculatedMetrics, error) {
+	return dbmodel.GetCalculatedMetrics(s.db)
+}
 
 // Interface of the metrics collector. Metric collector is
 // a background worker which collect various metrics
@@ -28,7 +49,7 @@ type Collector interface {
 // Metrics collector created on top of
 // Prometheus library.
 type prometheusCollector struct {
-	db       *pg.DB
+	source   MetricsSource
 	registry *prometheus.Registry
 
 	authorizedMachineTotalDesc          *prometheus.Desc
@@ -45,13 +66,13 @@ var _ prometheus.Collector = (*prometheusCollector)(nil)
 // Creates an instance of the metrics collector and starts
 // collecting the metrics according to the interval
 // specified in the database.
-func NewCollector(db *pg.DB) (Collector, error) {
+func NewCollector(source MetricsSource) (Collector, error) {
 	registry := prometheus.NewRegistry()
 
 	namespace := "storkserver"
 
 	collector := &prometheusCollector{
-		db:       db,
+		source:   source,
 		registry: registry,
 
 		authorizedMachineTotalDesc: prometheus.NewDesc(
@@ -98,7 +119,7 @@ func NewCollector(db *pg.DB) (Collector, error) {
 // Creates standard Prometheus HTTP handler.
 func (c *prometheusCollector) GetHTTPHandler(next http.Handler) http.Handler {
 	return promhttp.HandlerFor(c.registry, promhttp.HandlerOpts{
-		ErrorLog: logrus.StandardLogger(),
+		ErrorLog: log.StandardLogger(),
 	})
 }
 
@@ -138,7 +159,7 @@ func (c *prometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
-	calculatedMetrics, err := dbmodel.GetCalculatedMetrics(c.db)
+	calculatedMetrics, err := c.source.GetCalculatedMetrics()
 	if err != nil {
 		log.WithError(err).Error("Failed to fetch metrics from the database")
 		return

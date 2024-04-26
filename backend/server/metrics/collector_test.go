@@ -5,14 +5,35 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 )
+
+// The easy to mock metrics source.
+type mockMetricsSource struct {
+	calculatedMetrics dbmodel.CalculatedMetrics
+}
+
+// Creates an instance of the mock metrics source.
+func newMockMetricsSource() *mockMetricsSource {
+	return &mockMetricsSource{}
+}
+
+// Creates an instance of the mock metrics source.
+func (s *mockMetricsSource) GetCalculatedMetrics() (*dbmodel.CalculatedMetrics, error) {
+	return &s.calculatedMetrics, nil
+}
+
+// Sets the calculated metrics for the mock source.
+func (s *mockMetricsSource) Set(metrics dbmodel.CalculatedMetrics) {
+	s.calculatedMetrics = metrics
+}
 
 // Helper function to extract number of authorized machines
 // from Prometheus metrics.
@@ -43,14 +64,14 @@ func parseAuthorizedMachinesFromPrometheus(input io.Reader) (int64, error) {
 }
 
 // Test that the collector is properly created.
-func TestConstructController(t *testing.T) {
+func TestCollectorConstruct(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	_ = dbmodel.InitializeSettings(db, 0)
 
 	// Act
-	collector, err := NewCollector(db)
+	collector, err := NewCollector(NewDatabaseMetricsSource(db))
 	defer collector.Shutdown()
 
 	// Assert
@@ -68,11 +89,11 @@ func TestConstructController(t *testing.T) {
 }
 
 // Test that the HTTP handler is created.
-func TestCreateHttpHandler(t *testing.T) {
+func TestCollectorCreateHttpHandler(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	collector, _ := NewCollector(db)
+	collector, _ := NewCollector(NewDatabaseMetricsSource(db))
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
@@ -84,11 +105,11 @@ func TestCreateHttpHandler(t *testing.T) {
 }
 
 // Test that the handler responses with proper content.
-func TestHandlerResponse(t *testing.T) {
+func TestCollectorHandlerResponse(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	collector, _ := NewCollector(db)
+	collector, _ := NewCollector(NewDatabaseMetricsSource(db))
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := collector.GetHTTPHandler(nextHandler)
@@ -108,44 +129,200 @@ func TestHandlerResponse(t *testing.T) {
 }
 
 // Test that the metrics are updated on demand.
-func TestCollect(t *testing.T) {
+func TestCollectorCollectUsingDatabase(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	collector, _ := NewCollector(db)
+	collector, _ := NewCollector(NewDatabaseMetricsSource(db))
 	defer collector.Shutdown()
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := collector.GetHTTPHandler(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
 
-	// Act
 	_ = dbmodel.AddMachine(db, &dbmodel.Machine{
 		Address:    "127.0.0.1",
 		AgentPort:  8000,
 		Authorized: true,
 	})
 
-	require.Eventually(t, func() bool {
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		resp := w.Result()
-		defer resp.Body.Close()
-		authorizedCount, _ := parseAuthorizedMachinesFromPrometheus(resp.Body)
+	// Act
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	authorizedCount, _ := parseAuthorizedMachinesFromPrometheus(resp.Body)
+
+	// Assert
+	require.EqualValues(t, 1, authorizedCount)
+}
+
+// Test that the metrics are described.
+func TestCollectorDescribe(t *testing.T) {
+	// Arrange
+	source := newMockMetricsSource()
+	collector, _ := NewCollector(source)
+	promCollector := collector.(prometheus.Collector)
+	expectedDescriptionCount := 7
+
+	t.Run("initial metrics values", func(t *testing.T) {
+		source.Set(dbmodel.CalculatedMetrics{})
+		descriptionsChannel := make(chan *prometheus.Desc, 100)
+
+		// Act
+		promCollector.Describe(descriptionsChannel)
 
 		// Assert
-		return authorizedCount == 1
-	}, 5*time.Second, 100*time.Millisecond)
+		close(descriptionsChannel)
+		require.Len(t, descriptionsChannel, expectedDescriptionCount)
+	})
+
+	t.Run("metrics values with data", func(t *testing.T) {
+		source.Set(dbmodel.CalculatedMetrics{
+			AuthorizedMachines:   1,
+			UnauthorizedMachines: 2,
+			UnreachableMachines:  3,
+			SubnetMetrics: []dbmodel.CalculatedNetworkMetrics{{
+				Label:           "subnet4",
+				AddrUtilization: 5,
+				PdUtilization:   6,
+			}},
+			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{{
+				Label:           "shared7",
+				AddrUtilization: 8,
+				PdUtilization:   9,
+			}},
+		})
+
+		descriptionsChannel := make(chan *prometheus.Desc, 100)
+
+		// Act
+		promCollector.Describe(descriptionsChannel)
+
+		// Assert
+		close(descriptionsChannel)
+		require.Len(t, descriptionsChannel, expectedDescriptionCount)
+	})
+}
+
+// Test that the metrics are collected.
+func TestCollectorCollect(t *testing.T) {
+	// Arrange
+	source := newMockMetricsSource()
+	collector, _ := NewCollector(source)
+	promCollector := collector.(prometheus.Collector)
+
+	t.Run("initial metrics values", func(t *testing.T) {
+		source.Set(dbmodel.CalculatedMetrics{})
+		metricsChannel := make(chan prometheus.Metric, 100)
+
+		// Act
+		promCollector.Collect(metricsChannel)
+
+		// Assert
+		close(metricsChannel)
+		// Only the machine counters are initialized with 0 value.
+		// The other metrics are vectors, they have no value at the beginning.
+		require.Len(t, metricsChannel, 3)
+	})
+
+	t.Run("metrics values with data", func(t *testing.T) {
+		source.Set(dbmodel.CalculatedMetrics{
+			AuthorizedMachines:   1,
+			UnauthorizedMachines: 2,
+			UnreachableMachines:  3,
+			SubnetMetrics: []dbmodel.CalculatedNetworkMetrics{{
+				Label: "subnet",
+				// The utilizations are stored in DB multiplied by 1000.
+				// 1000 (in DB) = 100% = 1.0 (in real)
+				AddrUtilization: 4000,
+				PdUtilization:   5000,
+			}},
+			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{{
+				Label:           "shared",
+				AddrUtilization: 6000,
+				PdUtilization:   7000,
+			}},
+		})
+
+		metricsChannel := make(chan prometheus.Metric, 100)
+
+		// Act
+		promCollector.Collect(metricsChannel)
+
+		// Assert
+		close(metricsChannel)
+		require.Len(t, metricsChannel, 7)
+		i := 0
+		for metric := range metricsChannel {
+			i++
+			metricDTO := &dto.Metric{}
+			err := metric.Write(metricDTO)
+			require.NoError(t, err)
+			require.EqualValues(t, i, *metricDTO.Gauge.Value)
+		}
+	})
+
+	t.Run("metrics values with many subnets and shared networks", func(t *testing.T) {
+		source.Set(dbmodel.CalculatedMetrics{
+			AuthorizedMachines:   1,
+			UnauthorizedMachines: 2,
+			UnreachableMachines:  3,
+			SubnetMetrics: []dbmodel.CalculatedNetworkMetrics{
+				{
+					Label: "subnetA",
+					// The utilizations are stored in DB multiplied by 1000.
+					// 1000 (in DB) = 100% = 1.0 (in real)
+					AddrUtilization: 4000,
+					PdUtilization:   5000,
+				},
+				{
+					Label:           "subnetB",
+					AddrUtilization: 6000,
+					PdUtilization:   7000,
+				},
+			},
+			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{
+				{
+					Label:           "sharedA",
+					AddrUtilization: 8000,
+					PdUtilization:   9000,
+				},
+				{
+					Label:           "sharedB",
+					AddrUtilization: 10000,
+					PdUtilization:   11000,
+				},
+			},
+		})
+
+		metricsChannel := make(chan prometheus.Metric, 100)
+
+		// Act
+		promCollector.Collect(metricsChannel)
+
+		// Assert
+		close(metricsChannel)
+		require.Len(t, metricsChannel, 11)
+		i := 0
+		for metric := range metricsChannel {
+			i++
+			metricDTO := &dto.Metric{}
+			err := metric.Write(metricDTO)
+			require.NoError(t, err)
+			require.EqualValues(t, i, *metricDTO.Gauge.Value)
+		}
+	})
 }
 
 // All metrics should be unregistered.
-func TestUnregisterAllMetrics(t *testing.T) {
+func TestCollectorUnregisterAllMetrics(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	collector, _ := NewCollector(db)
+	collector, _ := NewCollector(NewDatabaseMetricsSource(db))
 	defer collector.Shutdown()
 
 	// Act
