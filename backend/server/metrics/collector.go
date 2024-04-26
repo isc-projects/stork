@@ -3,7 +3,6 @@ package metrics
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/prometheus/client_golang/prometheus"
@@ -132,21 +131,7 @@ func (c *prometheusCollector) Shutdown() {
 
 // Unregister all metrics from the Prometheus registry.
 func (c *prometheusCollector) unregisterAll() {
-	v := reflect.ValueOf(*c)
-	typeMetrics := v.Type()
-	for i := 0; i < typeMetrics.NumField(); i++ {
-		fieldObj := v.Field(i)
-		if !fieldObj.CanInterface() {
-			// Field is not exported.
-			continue
-		}
-		rawField := fieldObj.Interface()
-		collector, ok := rawField.(prometheus.Collector)
-		if !ok {
-			continue
-		}
-		c.registry.Unregister(collector)
-	}
+	c.registry.Unregister(c)
 }
 
 // Describe implements the prometheus.Collector interface. Returns the

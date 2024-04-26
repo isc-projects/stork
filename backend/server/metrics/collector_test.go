@@ -312,7 +312,7 @@ func TestCollectorCollect(t *testing.T) {
 
 		// Assert
 		close(metricsChannel)
-		require.Len(t, metricsChannel, 11)
+		require.Len(t, metricsChannel, 10)
 		i := 0
 		for metric := range metricsChannel {
 			i++
