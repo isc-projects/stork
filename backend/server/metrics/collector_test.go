@@ -56,21 +56,15 @@ func TestConstructController(t *testing.T) {
 	// Assert
 	require.NotNil(t, collector)
 	require.NoError(t, err)
-}
-
-// Test that the collector creation fails if the interval
-// setting is missing.
-func TestConstructControllerWhenIntervalSettingIsMissing(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Act
-	collector, err := NewCollector(db)
-
-	// Assert
-	require.Nil(t, collector)
-	require.Error(t, err)
+	mfs, _ := collector.(*prometheusCollector).registry.Gather()
+	// Prometheus has lazy-initialization of the metrics.
+	// Only the metrics with at least one value are
+	// enumerated by the gather.
+	// The 3 metrics are single counters (Gauge), they
+	// are initialized with 0 value at the beginning.
+	// Other metrics are vectors (GaugeVectors), they have
+	// no value at the beginning.
+	require.Len(t, mfs, 3)
 }
 
 // Test that the HTTP handler is created.
@@ -78,7 +72,6 @@ func TestCreateHttpHandler(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db, 0)
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -95,7 +88,6 @@ func TestHandlerResponse(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db, 0)
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -115,13 +107,11 @@ func TestHandlerResponse(t *testing.T) {
 	require.Zero(t, authorizedCount)
 }
 
-// Test that the metrics are updated periodically.
-func TestPeriodicMetricsUpdate(t *testing.T) {
+// Test that the metrics are updated on demand.
+func TestCollect(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	_ = dbmodel.InitializeSettings(db, 0)
-	_ = dbmodel.SetSettingInt(db, "metrics_collector_interval", 1)
 
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
@@ -147,4 +137,21 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 		// Assert
 		return authorizedCount == 1
 	}, 5*time.Second, 100*time.Millisecond)
+}
+
+// All metrics should be unregistered.
+func TestUnregisterAllMetrics(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	collector, _ := NewCollector(db)
+	defer collector.Shutdown()
+
+	// Act
+	collector.Shutdown()
+	mfs, _ := collector.(*prometheusCollector).registry.Gather()
+
+	// Arrange
+	require.Empty(t, mfs)
 }

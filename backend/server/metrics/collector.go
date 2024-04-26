@@ -2,13 +2,14 @@ package metrics
 
 import (
 	"net/http"
+	"reflect"
 
 	"github.com/go-pg/pg/v10"
-	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 // Interface of the metrics collector. Metric collector is
@@ -27,45 +28,76 @@ type Collector interface {
 // Metrics collector created on top of
 // Prometheus library.
 type prometheusCollector struct {
-	metrics *metrics
-	puller  *storkutil.PeriodicExecutor
+	db       *pg.DB
+	registry *prometheus.Registry
+
+	authorizedMachineTotalDesc          *prometheus.Desc
+	unauthorizedMachineTotalDesc        *prometheus.Desc
+	unreachableMachineTotalDesc         *prometheus.Desc
+	subnetAddressUtilizationDesc        *prometheus.Desc
+	subnetPdUtilizationDesc             *prometheus.Desc
+	sharedNetworkAddressUtilizationDesc *prometheus.Desc
+	sharedNetworkPdUtilizationDesc      *prometheus.Desc
 }
+
+var _ prometheus.Collector = (*prometheusCollector)(nil)
 
 // Creates an instance of the metrics collector and starts
 // collecting the metrics according to the interval
 // specified in the database.
 func NewCollector(db *pg.DB) (Collector, error) {
-	metrics := newMetrics(db)
-	intervalSettingName := "metrics_collector_interval"
+	registry := prometheus.NewRegistry()
 
-	// Initialize the metrics
-	err := metrics.Update()
-	if err != nil {
-		return nil, errors.WithMessage(err, "error during metrics initialization")
+	namespace := "storkserver"
+
+	collector := &prometheusCollector{
+		db:       db,
+		registry: registry,
+
+		authorizedMachineTotalDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "auth", "authorized_machine_total"),
+			"Authorized machines",
+			nil, nil,
+		),
+		unauthorizedMachineTotalDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "auth", "unauthorized_machine_total"),
+			"Unauthorized machines",
+			nil, nil,
+		),
+		unreachableMachineTotalDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "auth", "unreachable_machine_total"),
+			"Unreachable machines",
+			nil, nil,
+		),
+		subnetAddressUtilizationDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "subnet", "address_utilization"),
+			"Subnet address utilization",
+			[]string{"subnet"}, nil,
+		),
+		subnetPdUtilizationDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "subnet", "pd_utilization"),
+			"Subnet delegated-prefix utilization",
+			[]string{"subnet"}, nil,
+		),
+		sharedNetworkAddressUtilizationDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "shared_network", "address_utilization"),
+			"Shared-network address utilization",
+			[]string{"name"}, nil,
+		),
+		sharedNetworkPdUtilizationDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "shared_network", "pd_utilization"),
+			"Shared-network delegated-prefix utilization",
+			[]string{"name"}, nil,
+		),
 	}
 
-	// Starts collecting the metrics periodically.
-	metricPuller, err := storkutil.NewPeriodicExecutor("metrics collector",
-		metrics.Update,
-		func() (int64, error) {
-			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
-			return interval, errors.WithMessagef(err, "problem getting interval setting %s from db",
-				intervalSettingName)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &prometheusCollector{
-		metrics: metrics,
-		puller:  metricPuller,
-	}, nil
+	registry.MustRegister(collector)
+	return collector, nil
 }
 
 // Creates standard Prometheus HTTP handler.
 func (c *prometheusCollector) GetHTTPHandler(next http.Handler) http.Handler {
-	return promhttp.HandlerFor(c.metrics.Registry, promhttp.HandlerOpts{
+	return promhttp.HandlerFor(c.registry, promhttp.HandlerOpts{
 		ErrorLog: logrus.StandardLogger(),
 	})
 }
@@ -73,6 +105,70 @@ func (c *prometheusCollector) GetHTTPHandler(next http.Handler) http.Handler {
 // Stops periodically collecting the metrics and unregisters
 // all metrics.
 func (c *prometheusCollector) Shutdown() {
-	c.puller.Shutdown()
-	c.metrics.UnregisterAll()
+	c.unregisterAll()
+}
+
+// Unregister all metrics from the Prometheus registry.
+func (c *prometheusCollector) unregisterAll() {
+	v := reflect.ValueOf(*c)
+	typeMetrics := v.Type()
+	for i := 0; i < typeMetrics.NumField(); i++ {
+		fieldObj := v.Field(i)
+		if !fieldObj.CanInterface() {
+			// Field is not exported.
+			continue
+		}
+		rawField := fieldObj.Interface()
+		collector, ok := rawField.(prometheus.Collector)
+		if !ok {
+			continue
+		}
+		c.registry.Unregister(collector)
+	}
+}
+
+func (c *prometheusCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.authorizedMachineTotalDesc
+	ch <- c.unauthorizedMachineTotalDesc
+	ch <- c.unreachableMachineTotalDesc
+	ch <- c.subnetAddressUtilizationDesc
+	ch <- c.subnetPdUtilizationDesc
+	ch <- c.sharedNetworkAddressUtilizationDesc
+	ch <- c.sharedNetworkPdUtilizationDesc
+}
+
+func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
+	calculatedMetrics, err := dbmodel.GetCalculatedMetrics(c.db)
+	if err != nil {
+		log.WithError(err).Error("Failed to fetch metrics from the database")
+		return
+	}
+
+	ch <- prometheus.MustNewConstMetric(c.authorizedMachineTotalDesc,
+		prometheus.GaugeValue, float64(calculatedMetrics.AuthorizedMachines))
+	ch <- prometheus.MustNewConstMetric(c.unauthorizedMachineTotalDesc,
+		prometheus.GaugeValue, float64(calculatedMetrics.UnauthorizedMachines))
+	ch <- prometheus.MustNewConstMetric(c.unreachableMachineTotalDesc,
+		prometheus.GaugeValue, float64(calculatedMetrics.UnreachableMachines))
+
+	for _, networkMetrics := range calculatedMetrics.SubnetMetrics {
+		ch <- prometheus.MustNewConstMetric(c.subnetAddressUtilizationDesc,
+			prometheus.GaugeValue, float64(networkMetrics.AddrUtilization)/1000.,
+			networkMetrics.Label)
+		ch <- prometheus.MustNewConstMetric(c.subnetPdUtilizationDesc,
+			prometheus.GaugeValue,
+			float64(networkMetrics.PdUtilization)/1000.,
+			networkMetrics.Label)
+	}
+
+	for _, networkMetrics := range calculatedMetrics.SharedNetworkMetrics {
+		ch <- prometheus.MustNewConstMetric(c.sharedNetworkAddressUtilizationDesc,
+			prometheus.GaugeValue,
+			float64(networkMetrics.AddrUtilization)/1000.,
+			networkMetrics.Label)
+		ch <- prometheus.MustNewConstMetric(c.sharedNetworkPdUtilizationDesc,
+			prometheus.GaugeValue,
+			float64(networkMetrics.PdUtilization)/1000.,
+			networkMetrics.Label)
+	}
 }
