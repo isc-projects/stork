@@ -149,6 +149,8 @@ func (c *prometheusCollector) unregisterAll() {
 	}
 }
 
+// Describe implements the prometheus.Collector interface. Returns the
+// descriptors of all metrics.
 func (c *prometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.authorizedMachineTotalDesc
 	ch <- c.unauthorizedMachineTotalDesc
@@ -159,6 +161,8 @@ func (c *prometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.sharedNetworkPdUtilizationDesc
 }
 
+// Collect implements the prometheus.Collector interface. Converts the metrics
+// from the database to Prometheus format.
 func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
 	calculatedMetrics, err := c.source.GetCalculatedMetrics()
 	if err != nil {
