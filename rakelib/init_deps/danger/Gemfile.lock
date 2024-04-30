@@ -46,6 +46,7 @@ GEM
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
+    json (2.7.1)
     kramdown (2.4.0)
       rexml
     kramdown-parser-gfm (1.1.0)
@@ -78,6 +79,7 @@ DEPENDENCIES
   danger
   danger-commit_lint
   danger-gitlab
+  json
 
 BUNDLED WITH
    2.3.26

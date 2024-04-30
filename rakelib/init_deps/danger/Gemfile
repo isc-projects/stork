@@ -10,3 +10,5 @@ gem "danger-gitlab"
 
 gem "danger-commit_lint"
 
+# Dependencies of danger:
+gem "json"
