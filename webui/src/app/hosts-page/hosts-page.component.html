@@ -218,33 +218,28 @@
                             <b>192.0.2</b> as the filter text.
                         </p>
                         <p>
-                            Global hosts, i.e. the hosts valid for all subnets, can be filtered out by typing the
-                            expression
-                            <b>is:global</b>. Typing <b>not:global</b> will cause all other hosts to be returned, i.e.
-                            those that are associated with certain subnets.
+                            Global hosts, i.e. the hosts valid for all subnets, can be filtered out by using
+                            <b>Global checkbox</b> filter. Setting it to <b>false</b> state will cause all other hosts
+                            to be returned, i.e. those that are associated with certain subnets.
                         </p>
                         <p>
-                            Hosts with inconsistent DHCP configurations can be filtered by typing <b>is:conflict</b>. It
-                            returns the hosts whose configurations are repeated in the configuration file and host
-                            database with some differences. Conversely, to display all hosts lacking the configuration
-                            conflicts type <b>not:conflict</b>.
+                            Hosts with inconsistent DHCP configurations can be filtered by using
+                            <b>Conflict checkbox</b> filter. It returns the hosts whose configurations are repeated in
+                            the configuration file and host database with some differences. Conversely, to display all
+                            hosts lacking the configuration conflicts, set the checkbox to <b>false</b> state.
                         </p>
                         <p>
-                            In addition, hosts can be filtered by an explicitly selected field using the expression:
-                            <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for
-                            explicit filtering are:
+                            In addition, hosts can be filtered by an explicitly selected field using text input filters.
+                            Currently supported fields for explicit filtering are:
                         </p>
                         <ul>
-                            <li class="monospace">appId</li>
-                            <li><span class="monospace">subnetId</span> - the subnet ID used by Stork.</li>
-                            <li>
-                                <span class="monospace">keaSubnetId</span> - the subnet ID assigned to the subnet in the
-                                Kea configuration.
-                            </li>
+                            <li>Kea App Id - the ID of the Kea App used by Stork.</li>
+                            <li>Subnet Id - the subnet ID used by Stork.</li>
+                            <li>Kea Subnet Id - the subnet ID assigned to the subnet in the Kea configuration.</li>
                         </ul>
                         <p>
-                            To filter the hosts by multiple fields, separate them with a space character (e.g.,
-                            <b>appId:2 subnetId:3</b>).
+                            It is possible to filter the hosts by multiple fields. Currently, all provided filtering
+                            conditions are joined using logical AND.
                         </p>
                     </app-help-tip>
                 </div>
