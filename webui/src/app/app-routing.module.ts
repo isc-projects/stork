@@ -172,6 +172,13 @@ export class AppRoutingModule {}
 
 export class CustomRouteReuseStrategy implements RouteReuseStrategy {
     /**
+     * Array of specific components that will have custom route reuse strategy.
+     *
+     * @private
+     */
+    private specificComponents: any[] = [HostsPageComponent]
+
+    /**
      * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
      * Hence, this method is not implemented. Nothing will be retrieved.
      */
@@ -197,8 +204,13 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
 
     /**
      * Determines whether the route should be reused.
-     * It returns false when navigation happens between HostsPageComponents
-     * and when curr and future routes display list of hosts (tab index 0).
+     * It returns false when navigation happens between two same specific components,
+     * e.g. between two HostsPageComponents,
+     * and when either of below conditions apply:
+     *   - curr and future routes contain param 'id=all' (for specific components it means that list view tab
+     *     with index 0 is displayed).
+     *   - future route queryParamMap contains 'text' key i.e. global search was used
+     *     (e.g. future route looks like dhcp/hosts/all?text=foobar).
      * For other routes, true is returned whenever current route and future
      * route have exactly the same routeConfig. In this case, default Angular
      * route reuse strategy will work as usual.
@@ -207,13 +219,17 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
      */
     shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
         if (
-            future.component === HostsPageComponent &&
-            curr.component === HostsPageComponent &&
-            curr.paramMap.get('id')?.includes('all') &&
-            future.paramMap.get('id')?.includes('all')
+            this.specificComponents.includes(future.component) &&
+            future.component === curr.component &&
+            (future.queryParamMap.has('text') ||
+                (curr.paramMap.get('id')?.includes('all') && future.paramMap.get('id')?.includes('all')))
         ) {
-            // Do not reuse route when navigation happens between HostsPageComponents
-            // and when curr and future routes display list of hosts (tab index 0).
+            // Do not reuse route when navigation happens between two same specific components,
+            // (e.g. between two HostsPageComponents)
+            // and when either of below conditions apply:
+            //   - curr and future routes display list view tab (tab index 0)
+            //   - future route queryParamMap contains 'text' key i.e. global search was used
+            //     (e.g. future route looks like dhcp/hosts/all?text=foobar).
             return false
         }
         return future.routeConfig === curr.routeConfig
