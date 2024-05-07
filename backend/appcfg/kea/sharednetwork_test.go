@@ -401,6 +401,19 @@ func TestCreateSharedNetwork4(t *testing.T) {
 			Space:       "dhcp4",
 		},
 	})
+
+	// Mock a subnet within the shared network.
+	subnetMock := NewMockSubnetAccessor(controller)
+	subnetMock.EXPECT().GetID(gomock.Any()).Return(int64(5))
+	subnetMock.EXPECT().GetPrefix().Return("192.0.2.0/24")
+	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{})
+	subnetMock.EXPECT().GetKeaParameters(gomock.Any()).Return(&keaconfig.SubnetParameters{})
+	subnetMock.EXPECT().GetDHCPOptions(gomock.Any()).Return([]dhcpmodel.DHCPOptionAccessor{})
+
+	mock.EXPECT().GetSubnets(gomock.Any()).Return([]keaconfig.SubnetAccessor{
+		subnetMock,
+	})
+
 	// Do not return option definitions. This is not the area of the code
 	// that we want to test here.
 	lookupMock := NewMockDHCPOptionDefinitionLookup(controller)
@@ -452,6 +465,10 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	require.Equal(t, float32(0.32), *network4.T1Percent)
 	require.Equal(t, float32(0.44), *network4.T2Percent)
 	require.EqualValues(t, 1001, *network4.ValidLifetime)
+
+	require.Len(t, network4.Subnet4, 1)
+	require.EqualValues(t, 5, network4.Subnet4[0].ID)
+	require.Equal(t, "192.0.2.0/24", network4.Subnet4[0].Subnet)
 }
 
 // Test converting an DHCPv6 shared network in Stork into the shared network
@@ -531,6 +548,20 @@ func TestCreateSharedNetwork6(t *testing.T) {
 			Space:       "dhcp6",
 		},
 	})
+
+	// Mock a subnet within the shared network.
+	subnetMock := NewMockSubnetAccessor(controller)
+	subnetMock.EXPECT().GetID(gomock.Any()).Return(int64(5))
+	subnetMock.EXPECT().GetPrefix().Return("2001:db8:1::/64")
+	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{})
+	subnetMock.EXPECT().GetPrefixPools(gomock.Any()).Return([]dhcpmodel.PrefixPoolAccessor{})
+	subnetMock.EXPECT().GetKeaParameters(gomock.Any()).Return(&keaconfig.SubnetParameters{})
+	subnetMock.EXPECT().GetDHCPOptions(gomock.Any()).Return([]dhcpmodel.DHCPOptionAccessor{})
+
+	mock.EXPECT().GetSubnets(gomock.Any()).Return([]keaconfig.SubnetAccessor{
+		subnetMock,
+	})
+
 	// Do not return option definitions. This is not the area of the code
 	// that we want to test here.
 	lookupMock := NewMockDHCPOptionDefinitionLookup(controller)
@@ -579,4 +610,44 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	require.Equal(t, float32(0.32), *network6.T1Percent)
 	require.Equal(t, float32(0.44), *network6.T2Percent)
 	require.EqualValues(t, 1001, *network6.ValidLifetime)
+
+	require.Len(t, network6.Subnet6, 1)
+	require.EqualValues(t, 5, network6.Subnet6[0].ID)
+	require.Equal(t, "2001:db8:1::/64", network6.Subnet6[0].Subnet)
+}
+
+// Test conversion of the shared network to a structure used when deleting
+// the shared network from Kea with the subnets.
+func TestCreateSubnetCmdsDeletedSharedNetwork(t *testing.T) {
+	controller := gomock.NewController(t)
+
+	// Mock a shared network in Stork.
+	mock := NewMockSharedNetworkAccessor(controller)
+
+	// Shared network name.
+	mock.EXPECT().GetName().Return("foo")
+
+	sharedNetwork := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(1, mock, keaconfig.SharedNetworkSubnetsActionDelete)
+	require.NotNil(t, sharedNetwork)
+
+	require.Equal(t, "foo", sharedNetwork.Name)
+	require.EqualValues(t, "delete", sharedNetwork.SubnetsAction)
+}
+
+// Test conversion of the shared network to a structure used when deleting
+// the shared network from Kea with preserving subnets.
+func TestCreateSubnetCmdsDeletedSharedNetworkKeepSubnets(t *testing.T) {
+	controller := gomock.NewController(t)
+
+	// Mock a shared network in Stork.
+	mock := NewMockSharedNetworkAccessor(controller)
+
+	// Shared network name.
+	mock.EXPECT().GetName().Return("bar")
+
+	sharedNetwork := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(1, mock, keaconfig.SharedNetworkSubnetsActionKeep)
+	require.NotNil(t, sharedNetwork)
+
+	require.Equal(t, "bar", sharedNetwork.Name)
+	require.EqualValues(t, "keep", sharedNetwork.SubnetsAction)
 }

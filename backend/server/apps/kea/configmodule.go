@@ -12,7 +12,10 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-var _ config.TransactionStateAccessor = (*config.TransactionState[ConfigRecipe])(nil)
+var (
+	_ config.KeaModule                = (*ConfigModule)(nil)
+	_ config.TransactionStateAccessor = (*config.TransactionState[ConfigRecipe])(nil)
+)
 
 // Contains a Kea command along with an app instance to which the
 // command should be sent to apply configuration changes. Multiple
@@ -36,6 +39,22 @@ type HostConfigRecipeParams struct {
 	HostAfterUpdate *dbmodel.Host
 	// Edited or deleted host ID.
 	HostID *int64
+}
+
+// A structure embedded in the ConfigRecipe grouping parameters used
+// in transactions adding, updating and deleting shared networks.
+type SharedNetworkConfigRecipeParams struct {
+	// An instance of the shared network before an update. It is typically fetched
+	// at the beginning of the shared network update (e.g., when a user clicks the
+	// shared network edit button).
+	SharedNetworkBeforeUpdate *dbmodel.SharedNetwork
+	// An instance of the shared network after it has been added or updated. This
+	// instance is held in the context until it is committed  or scheduled
+	// for committing later. It is set when a new subnet is added or an
+	// existing subnet is updated.
+	SharedNetworkAfterUpdate *dbmodel.SharedNetwork
+	// Edited or deleted shared network ID.
+	SharedNetworkID *int64
 }
 
 // A structure embedded in the ConfigRecipe grouping parameters used
@@ -67,6 +86,9 @@ type ConfigRecipe struct {
 	// Embedded structure holding the parameters appropriate for the
 	// host management.
 	HostConfigRecipeParams
+	// Embedded structure holding the parameters appropriate for the
+	// shared network management.
+	SharedNetworkConfigRecipeParams
 	// Embedded structure holding the parameters appropriate for the
 	// subnet management.
 	SubnetConfigRecipeParams
@@ -116,6 +138,8 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 			ctx, err = module.commitHostUpdate(ctx)
 		case "host_delete":
 			ctx, err = module.commitHostDelete(ctx)
+		case "shared_network_update":
+			ctx, err = module.commitSharedNetworkUpdate(ctx)
 		case "subnet_add":
 			ctx, err = module.commitSubnetAdd(ctx)
 		case "subnet_update":
@@ -493,6 +517,165 @@ func (module *ConfigModule) commitChanges(ctx context.Context) (context.Context,
 				err = errors.WithMessagef(err, "%s command to %s failed", acs.Command.GetCommand(), acs.App.GetName())
 				return ctx, err
 			}
+		}
+	}
+	return ctx, nil
+}
+
+// Begins a shared network update. It fetches the specified shared network from
+// the database and stores it in the context state. Then, it locks the daemons
+// associated with the shared network for updates.
+func (module *ConfigModule) BeginSharedNetworkUpdate(ctx context.Context, sharedNetworkID int64) (context.Context, error) {
+	// Try to get the shared network to be updated from the database.
+	sharedNetwork, err := dbmodel.GetSharedNetwork(module.manager.GetDB(), sharedNetworkID)
+	if err != nil {
+		// Internal database error.
+		return ctx, err
+	}
+	// Shared network does not exist.
+	if sharedNetwork == nil {
+		return ctx, errors.WithStack(config.NewSharedNetworkNotFoundError(sharedNetworkID))
+	}
+
+	// Get the list of daemons for whose configurations must be locked for
+	// updates.
+	var daemonIDs []int64
+	for _, ls := range sharedNetwork.LocalSharedNetworks {
+		if ls.Daemon.KeaDaemon.Config == nil {
+			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
+		}
+		if _, _, exists := ls.Daemon.KeaDaemon.Config.GetHookLibrary("libdhcp_subnet_cmds"); !exists {
+			return ctx, errors.WithStack(config.NewNoSubnetCmdsHookError())
+		}
+		daemonIDs = append(daemonIDs, ls.DaemonID)
+	}
+	// Try to lock configurations.
+	ctx, err = module.manager.Lock(ctx, daemonIDs...)
+	if err != nil {
+		return ctx, errors.WithStack(config.NewLockError())
+	}
+	// Create transaction state.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "shared_network_update", daemonIDs...)
+	recipe := &ConfigRecipe{
+		SharedNetworkConfigRecipeParams: SharedNetworkConfigRecipeParams{
+			SharedNetworkBeforeUpdate: sharedNetwork,
+		},
+	}
+	if err := state.SetRecipeForUpdate(0, recipe); err != nil {
+		return ctx, err
+	}
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+	return ctx, nil
+}
+
+// Applies updated shared network. It prepares necessary commands to be sent to Kea
+// upon commit.
+func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, sharedNetwork *dbmodel.SharedNetwork) (context.Context, error) {
+	if len(sharedNetwork.LocalSharedNetworks) == 0 {
+		return ctx, errors.Errorf("applied shared network %d is not associated with any daemon", sharedNetwork.ID)
+	}
+	// Retrieve existing shared network from the context. We need it for sending
+	// the network4-del or network6-del commands.
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
+	if err != nil {
+		return ctx, err
+	}
+	existingSharedNetwork := recipe.SharedNetworkBeforeUpdate
+	if existingSharedNetwork == nil {
+		return ctx, errors.New("internal server error: shared network instance cannot be nil when committing shared network update")
+	}
+
+	var commands []ConfigCommand
+	// Update the shared network instances.
+	for _, lsn := range sharedNetwork.LocalSharedNetworks {
+		if lsn.Daemon == nil {
+			return ctx, errors.Errorf("applied shared network %d is associated with nil daemon", sharedNetwork.ID)
+		}
+		if lsn.Daemon.App == nil {
+			return ctx, errors.Errorf("applied shared network %d is associated with nil app", sharedNetwork.ID)
+		}
+		// Convert the updated shared network information to Kea shared network.
+		lookup := module.manager.GetDHCPOptionDefinitionLookup()
+		arguments := make(map[string]any)
+		appCommand := ConfigCommand{}
+		switch sharedNetwork.Family {
+		case 4:
+			deletedSharedNetwork4 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
+			appCommand.Command = keactrl.NewCommand("network4-del", []string{lsn.Daemon.Name}, deletedSharedNetwork4)
+			appCommand.App = lsn.Daemon.App
+			commands = append(commands, appCommand)
+
+			sharedNetwork4, err := keaconfig.CreateSharedNetwork4(lsn.DaemonID, lookup, sharedNetwork)
+			if err != nil {
+				return ctx, err
+			}
+			arguments["shared-networks"] = []*keaconfig.SharedNetwork4{
+				sharedNetwork4,
+			}
+			appCommand.Command = keactrl.NewCommand("network4-add", []string{lsn.Daemon.Name}, arguments)
+			commands = append(commands, appCommand)
+
+		default:
+			deletedSharedNetwork6 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
+			appCommand.Command = keactrl.NewCommand("network6-del", []string{lsn.Daemon.Name}, deletedSharedNetwork6)
+			appCommand.App = lsn.Daemon.App
+			commands = append(commands, appCommand)
+
+			sharedNetwork6, err := keaconfig.CreateSharedNetwork6(lsn.DaemonID, lookup, sharedNetwork)
+			if err != nil {
+				return ctx, err
+			}
+			arguments["shared-networks"] = []*keaconfig.SharedNetwork6{
+				sharedNetwork6,
+			}
+			appCommand.Command = keactrl.NewCommand("network6-add", []string{lsn.Daemon.Name}, arguments)
+			commands = append(commands, appCommand)
+		}
+	}
+	// Create the commands to write the updated configuration to files. The shared network
+	// changes won't persist across the servers' restarts otherwise.
+	for _, lsn := range sharedNetwork.LocalSharedNetworks {
+		commands = append(commands, ConfigCommand{
+			Command: keactrl.NewCommand("config-write", []string{lsn.Daemon.Name}, nil),
+			App:     lsn.Daemon.App,
+		})
+		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
+		// subnet_cmds hook library. Therefore, for these versions we send the config-reload
+		// command to force the statistics update. There is no lighter command to force the
+		// statistics update unfortunately.
+		version := storkutil.ParseSemanticVersionOrLatest(lsn.Daemon.Version)
+		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommand("config-reload", []string{lsn.Daemon.Name}, nil),
+				App:     lsn.Daemon.App,
+			})
+		}
+	}
+
+	// Store the data in the existing recipe.
+	recipe.SharedNetworkAfterUpdate = sharedNetwork
+	recipe.Commands = commands
+	return config.SetRecipeForUpdate(ctx, 0, recipe)
+}
+
+// Create the updated shared network in the Kea servers.
+func (module *ConfigModule) commitSharedNetworkUpdate(ctx context.Context) (context.Context, error) {
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, errors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.SharedNetworkAfterUpdate == nil {
+			return ctx, errors.New("server logic error: the update.Recipe.SharedNetworkAfterUpdate cannot be nil when committing the shared network update")
+		}
+		_, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{*update.Recipe.SharedNetworkAfterUpdate}, []dbmodel.Subnet{})
+		if err != nil {
+			return ctx, errors.WithMessagef(err, "shared network has been successfully updated in Kea but updating it in the Stork database failed")
 		}
 	}
 	return ctx, nil

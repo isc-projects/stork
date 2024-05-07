@@ -19,6 +19,23 @@ func (e HostNotFoundError) Error() string {
 	return fmt.Sprintf("host with ID %d not found", e.hostID)
 }
 
+// An error returned when specified shared network is not found in the database.
+type SharedNetworkNotFoundError struct {
+	sharedNetworkID int64
+}
+
+// Create new instance of the SharedNetworkNotFoundError.
+func NewSharedNetworkNotFoundError(sharedNetworkID int64) error {
+	return &SharedNetworkNotFoundError{
+		sharedNetworkID: sharedNetworkID,
+	}
+}
+
+// Returns error string.
+func (e SharedNetworkNotFoundError) Error() string {
+	return fmt.Sprintf("shared network with ID %d not found", e.sharedNetworkID)
+}
+
 // An error returned when specified subnet is not found in the database.
 type SubnetNotFoundError struct {
 	subnetID int64

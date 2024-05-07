@@ -1,6 +1,8 @@
 package keaconfig
 
-import dhcpmodel "isc.org/stork/datamodel/dhcp"
+import (
+	dhcpmodel "isc.org/stork/datamodel/dhcp"
+)
 
 var (
 	_ SharedNetwork = (*SharedNetwork4)(nil)
@@ -13,6 +15,7 @@ type SharedNetworkAccessor interface {
 	dhcpmodel.SharedNetworkAccessor
 	GetName() string
 	GetKeaParameters(int64) *SharedNetworkParameters
+	GetSubnets(int64) []SubnetAccessor
 }
 
 // An interface representing a shared network in Kea. It is implemented
@@ -91,6 +94,24 @@ type SharedNetwork6 struct {
 	Name        string    `json:"name"`
 	RapidCommit *bool     `json:"rapid-commit,omitempty"`
 	Subnet6     []Subnet6 `json:"subnet6,omitempty"`
+}
+
+// An operation on the subnets of a deleted shared network.
+type SharedNetworkSubnetsAction = string
+
+const (
+	// Preserve the subnets of the deleted shared network making them
+	// top-level subnets.
+	SharedNetworkSubnetsActionKeep SharedNetworkSubnetsAction = "keep"
+	// Delete subnets associated with the deleted shared network.
+	SharedNetworkSubnetsActionDelete SharedNetworkSubnetsAction = "delete"
+)
+
+// Represents deleted shared network. It includes the fields required by Kea to
+// find the shared network and delete it.
+type SubnetCmdsDeletedSharedNetwork struct {
+	Name          string                     `json:"name"`
+	SubnetsAction SharedNetworkSubnetsAction `json:"subnets-action"`
 }
 
 // Returns shared network name.
@@ -209,6 +230,13 @@ func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 		}
 		sharedNetwork4.OptionData = append(sharedNetwork4.OptionData, *optionData)
 	}
+	for _, subnet := range sharedNetwork.GetSubnets(daemonID) {
+		subnet4, err := CreateSubnet4(daemonID, lookup, subnet)
+		if err != nil {
+			return nil, err
+		}
+		sharedNetwork4.Subnet4 = append(sharedNetwork4.Subnet4, *subnet4)
+	}
 	return sharedNetwork4, nil
 }
 
@@ -248,5 +276,22 @@ func CreateSharedNetwork6(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 		}
 		sharedNetwork6.OptionData = append(sharedNetwork6.OptionData, *optionData)
 	}
+	for _, subnet := range sharedNetwork.GetSubnets(daemonID) {
+		subnet6, err := CreateSubnet6(daemonID, lookup, subnet)
+		if err != nil {
+			return nil, err
+		}
+		sharedNetwork6.Subnet6 = append(sharedNetwork6.Subnet6, *subnet6)
+	}
 	return sharedNetwork6, nil
+}
+
+// Converts a shared network in Stork to a structure accepted by the
+// network4-del and network6-del commands in Kea.
+func CreateSubnetCmdsDeletedSharedNetwork(daemonID int64, sharedNetwork SharedNetworkAccessor, subnetsAction SharedNetworkSubnetsAction) (deletedSharedNetwork *SubnetCmdsDeletedSharedNetwork) {
+	deletedSharedNetwork = &SubnetCmdsDeletedSharedNetwork{
+		Name:          sharedNetwork.GetName(),
+		SubnetsAction: subnetsAction,
+	}
+	return
 }

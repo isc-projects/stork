@@ -91,6 +91,19 @@ func (sn *SharedNetwork) GetDHCPOptions(daemonID int64) (accessors []dhcpmodel.D
 	return
 }
 
+// Returns subnets belonging to the shared network and to the
+// specified daemon.
+func (sn *SharedNetwork) GetSubnets(daemonID int64) (accessors []keaconfig.SubnetAccessor) {
+	for i, subnet := range sn.Subnets {
+		for _, ls := range subnet.LocalSubnets {
+			if ls.DaemonID == daemonID {
+				accessors = append(accessors, &sn.Subnets[i])
+			}
+		}
+	}
+	return
+}
+
 // Adds new shared network to the database in a transaction.
 func addSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
 	_, err := tx.Model(network).Insert()

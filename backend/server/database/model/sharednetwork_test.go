@@ -108,6 +108,41 @@ func TestSharedNetworkGetDHCPOptions(t *testing.T) {
 	require.Nil(t, network.GetDHCPOptions(1000))
 }
 
+// Test getting a list of subnets for a shared network by daemon ID.
+func TestSharedNetworkGetSubnets(t *testing.T) {
+	network := SharedNetwork{
+		Subnets: []Subnet{
+			{
+				Prefix: "192.0.2.0/24",
+				LocalSubnets: []*LocalSubnet{
+					{
+						DaemonID: 110,
+					},
+				},
+			},
+			{
+				Prefix: "192.0.3.0/24",
+				LocalSubnets: []*LocalSubnet{
+					{
+						DaemonID: 110,
+					},
+					{
+						DaemonID: 111,
+					},
+				},
+			},
+		},
+	}
+	subnets := network.GetSubnets(110)
+	require.Len(t, subnets, 2)
+	require.Equal(t, "192.0.2.0/24", subnets[0].GetPrefix())
+	require.Equal(t, "192.0.3.0/24", subnets[1].GetPrefix())
+
+	subnets = network.GetSubnets(111)
+	require.Len(t, subnets, 1)
+	require.Equal(t, "192.0.3.0/24", subnets[0].GetPrefix())
+}
+
 // Tests that the shared network can be added and retrieved.
 func TestAddSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
