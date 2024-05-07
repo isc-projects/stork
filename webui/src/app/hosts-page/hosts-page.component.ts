@@ -253,7 +253,6 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
      * one of the tabs or applying hosts list filtering.
      */
     ngOnInit() {
-        console.log('hosts-page onInit')
         // Initially, there is only a tab with hosts list.
         this.tabs = [{ label: 'Host Reservations', routerLink: '/dhcp/hosts/all' }]
 
@@ -515,9 +514,6 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
      * not specified, the current values are used when available.
      */
     loadData(event: TableLazyLoadEvent) {
-        const json = JSON.stringify(event)
-        console.log('loadHosts - restoringFilter ' + this.table?.restoringFilter + ' - tableLazyLoadEvent ' + json)
-
         // Indicate that hosts refresh is in progress.
         this.dataLoading = true
         // The goal is to send to backend something as simple as:

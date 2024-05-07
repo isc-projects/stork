@@ -387,8 +387,7 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
 
                 if (this.table) {
                     if (this.validatedFilterAndTableFilterDiffer()) {
-                        console.log('queryParams vs restored filter differs, overwrite')
-
+                        // queryParams vs restored filter differs, overwrite.
                         this.table.first = 0
                         this.table.firstChange.emit(this.table.first)
                         this.table.filters = this.createTableFilter()
@@ -398,12 +397,10 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
 
                     this.reloadData(this.table)
                 } else if (this.restoredTable) {
-                    console.log('hostTable undefined but restoredTable defined, call onLazyLoad() using restored state')
+                    // hostTable undefined but restoredTable defined, call onLazyLoad() using restored state.
                     this.loadData(this.restoredTable.createLazyLoadMetadata())
                 } else {
-                    console.log(
-                        'both hostTable and restoredTable undefined, calling onLazyLoad() with constructed lazyLoadEvent'
-                    )
+                    // both hostTable and restoredTable undefined, calling onLazyLoad() with constructed lazyLoadEvent.
                     const filters = this.createTableFilter()
                     this.loadData({
                         first: this.restoredFirst,
@@ -422,7 +419,6 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
      * ActivatedRoute to avoid re-rendering the component.
      */
     private updateQueryParameters() {
-        console.log('updateQueryParameters ' + JSON.stringify(this.validFilter))
         const params = []
 
         for (let key of Object.keys(this.validFilter)) {
