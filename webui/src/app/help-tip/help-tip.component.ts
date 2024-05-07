@@ -18,6 +18,16 @@ export class HelpTipComponent {
     overlay: OverlayPanel
 
     /**
+     * Target component to align the overlay of the help-tip.
+     */
+    @Input() target: any
+
+    /**
+     * Target element to attach the panel of the help-tip.
+     */
+    @Input() appendTo: any = 'body'
+
+    /**
      * Title for the help box.
      */
     @Input() title: string
@@ -25,7 +35,7 @@ export class HelpTipComponent {
     /**
      * Width of the help box.
      */
-    @Input() width = '20vw'
+    @Input() width = '40vw'
 
     /**
      * A class for icon with question mark.
@@ -36,6 +46,6 @@ export class HelpTipComponent {
 
     /** Show/hide the help tip content. */
     toggleOverlay(ev) {
-        this.overlay.toggle(ev)
+        this.overlay.toggle(ev, this.target)
     }
 }

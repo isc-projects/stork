@@ -5,9 +5,11 @@
         (click)="toggleOverlay($event)"
     ></i>
 </div>
-<p-overlayPanel [showCloseIcon]="true">
-    <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + title }}">
-        <h3 style="margin: 4px -3px 16px -3px">Help for {{ title }}</h3>
-        <ng-content></ng-content>
-    </div>
+<p-overlayPanel [showCloseIcon]="true" [appendTo]="appendTo" styleClass="help-tip-inserted">
+    <ng-template pTemplate="content">
+        <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + title }}">
+            <h3>Help for {{ title }}</h3>
+            <ng-content></ng-content>
+        </div>
+    </ng-template>
 </p-overlayPanel>
