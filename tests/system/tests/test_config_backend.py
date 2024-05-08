@@ -133,8 +133,9 @@ def test_get_host_reservations_from_radius(
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
 
-    # The RADIUS backend is initialized on the first call of the "selectSubnet"
-    # callout. Perfdhcp generates the network traffic that triggers this call.
+    # For Kea below 2.5 RADIUS backend is initialized on the first call of the
+    # "selectSubnet" callout. Perfdhcp generates the network traffic that
+    # triggers this call. It doesn't matter for Kea 2.5+.
     perfdhcp_service.generate_ipv4_traffic(
         ip_address=kea_service.get_internal_ip_address("subnet_00", family=4),
         mac_prefix="00:00",
