@@ -143,6 +143,39 @@ func TestSharedNetworkGetSubnets(t *testing.T) {
 	require.Equal(t, "192.0.3.0/24", subnets[0].GetPrefix())
 }
 
+// Test that daemon information can be populated to the existing
+// shared network instance when LocalSharedNetwork instances merely
+// contain DaemonID values.
+func TestPopulateSharedNetworkDaemons(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps to the database.
+	apps := addTestSubnetApps(t, db)
+
+	// Create bare shared network that lacks Daemon instances but has valid
+	// DaemonID values.
+	sharedNetwork := &SharedNetwork{
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+			},
+		},
+	}
+	err := sharedNetwork.PopulateDaemons(db)
+	require.NoError(t, err)
+
+	// Make sure that the daemon information was assigned to the shared network.
+	require.Len(t, sharedNetwork.LocalSharedNetworks, 2)
+	require.NotNil(t, sharedNetwork.LocalSharedNetworks[0].Daemon)
+	require.EqualValues(t, apps[0].Daemons[0].ID, sharedNetwork.LocalSharedNetworks[0].Daemon.ID)
+	require.NotNil(t, sharedNetwork.LocalSharedNetworks[1].Daemon)
+	require.EqualValues(t, apps[1].Daemons[0].ID, sharedNetwork.LocalSharedNetworks[1].Daemon.ID)
+}
+
 // Tests that the shared network can be added and retrieved.
 func TestAddSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

@@ -467,6 +467,31 @@
       total:
         type: integer
 
+  UpdateSharedNetworkBeginResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      sharedNetwork:
+        $ref: '#/definitions/SharedNetwork'
+      daemons:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemon'
+      sharedNetworks4:
+        type: array
+        items:
+          $ref: '#/definitions/SharedNetwork'
+      sharedNetworks6:
+        type: array
+        items:
+          $ref: '#/definitions/SharedNetwork'
+      clientClasses:
+        type: array
+        items:
+          type: string
+
 # Overview
 
   Dhcp4Stats:

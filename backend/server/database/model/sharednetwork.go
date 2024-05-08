@@ -104,6 +104,38 @@ func (sn *SharedNetwork) GetSubnets(daemonID int64) (accessors []keaconfig.Subne
 	return
 }
 
+// Fetches daemon information for each daemon ID within the local shared networks.
+// The shared network information can be partial when it is created from the request
+// received over the REST API. In particular, the LocalSharedNetwork can merely
+// contain DaemonID values and the Daemon pointers can be nil. In order
+// to initialize Daemon pointers, this function fetches the daemons from
+// the database and assigns them to the respective LocalSubnet instances.
+// If any of the daemons does not exist or an error occurs, the shared network
+// is not updated.
+func (sn *SharedNetwork) PopulateDaemons(dbi dbops.DBI) error {
+	var daemons []*Daemon
+	for _, lsn := range sn.LocalSharedNetworks {
+		// DaemonID is required for this function to run.
+		if lsn.DaemonID == 0 {
+			return pkgerrors.Errorf("problem with populating daemons: shared network %d lacks daemon ID", sn.ID)
+		}
+		daemon, err := GetDaemonByID(dbi, lsn.DaemonID)
+		if err != nil {
+			return pkgerrors.WithMessage(err, "problem with populating daemons")
+		}
+		// Daemon does not exist.
+		if daemon == nil {
+			return pkgerrors.Errorf("problem with populating daemons for shared network %d: daemon %d does not exist", sn.ID, lsn.DaemonID)
+		}
+		daemons = append(daemons, daemon)
+	}
+	// Everything fine. Assign fetched daemons to the shared network.
+	for i := range sn.LocalSharedNetworks {
+		sn.LocalSharedNetworks[i].Daemon = daemons[i]
+	}
+	return nil
+}
+
 // Adds new shared network to the database in a transaction.
 func addSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
 	_, err := tx.Model(network).Insert()

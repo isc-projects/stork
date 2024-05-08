@@ -598,6 +598,94 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /shared-networks/{sharedNetworkId}/transaction:
+    post:
+      summary: Begin transaction for updating an existing shared network.
+      description: >-
+        Creates a transaction in the config manager to update an existing shared network.
+        It returns the existing shared network information and a current list of available
+        DHCP servers. This information is required in the form in which the user edits
+        shared network data.
+      operationId: updateSharedNetworkBegin
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: sharedNetworkId
+          type: integer
+          required: true
+          description: Shared network ID to which the transaction pertains.
+      responses:
+        200:
+          description: New transaction successfully started.
+          schema:
+            $ref: '#/definitions/UpdateSharedNetworkBeginResponse'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /shared-networks/{sharedNetworkId}/transaction/{id}:
+    delete:
+      summary: Cancel transaction to update a shared network.
+      description: Cancels the transaction to update a shared network in the config manager.
+      operationId: updateSharedNetworkDelete
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: sharedNetworkId
+          type: integer
+          required: true
+          description: Shared network ID to which the transaction pertains.
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+      responses:
+        200:
+          description: Transaction successfully deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /shared-networks/{sharedNetworkId}/transaction/{id}/submit:
+    post:
+      summary: Submit transaction updating a shared network.
+      description: >-
+        Submits a transaction causing the server to update shared network on
+        respective DHCP servers. It applies and submits the transaction in
+        Stork config manager.
+      operationId:
+        updateSharedNetworkSubmit
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: sharedNetworkId
+          type: integer
+          required: true
+          description: Shared network ID to which the transaction pertains.
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+        - in: body
+          name: sharedNetwork
+          description: Updated shared network information.
+          schema:
+            $ref: '#/definitions/SharedNetwork'
+      responses:
+        200:
+          description: Shared network successfully updated.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /overview:
     get:
       summary: Get overview of whole DHCP state.
