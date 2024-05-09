@@ -459,6 +459,7 @@ type HostsByPageFilters struct {
 }
 
 // Fetches a collection of hosts from the database.
+// Returns the chunk of hosts, the total number of hosts or an error.
 //
 // The offset and limit specify the beginning of the page and the maximum size of the
 // page.
@@ -466,7 +467,7 @@ type HostsByPageFilters struct {
 // sortField allows indicating sort column in database and sortDir allows selection the
 // order of sorting. If sortField is empty then id is used for sorting. If SortDirAny is
 // used then ASC order is used.
-
+//
 // This function exceeds the maximum cognitive complexity (> 65), but it is a
 // consequence of a number of filters, not the complexity of the function logic.
 func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilters, sortField string, sortDir SortDirEnum) ([]Host, int64, error) { //nolint: gocyclo

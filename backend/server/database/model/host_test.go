@@ -1344,6 +1344,40 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.EqualValues(t, 4, returned[3].ID)
 }
 
+// Test that the hosts without the reserved IP addresses are included in the
+// paginated list of hosts when the filter by identifier is applied.
+func TestGetHostsByPageWithoutReservedIPFilteredByIdentifier(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a host with no IP address.
+	host := &Host{
+		SubnetID: 0,
+		Subnet:   nil,
+		HostIdentifiers: []HostIdentifier{{
+			Type:  "hw-address",
+			Value: []byte{0x66, 0x6f, 0x6f, 0x62, 0x61, 0x72},
+		}},
+		Hostname:       "foo",
+		IPReservations: nil,
+	}
+	err := AddHost(db, host)
+	require.NoError(t, err)
+
+	// Act
+	filters := HostsByPageFilters{
+		FilterText: storkutil.Ptr("66:6f:6f:62:61:72"),
+	}
+	hosts, total, err := GetHostsByPage(db, 0, 100, filters, "", SortDirAny)
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, hosts, 1)
+	require.Equal(t, "foo", hosts[0].Hostname)
+}
+
 // Test that page of the hosts can be fetched by daemon ID.
 func TestGetHostsByDaemonID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
