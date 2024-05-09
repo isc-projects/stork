@@ -109,7 +109,7 @@ func (sn *SharedNetwork) GetSubnets(daemonID int64) (accessors []keaconfig.Subne
 // received over the REST API. In particular, the LocalSharedNetwork can merely
 // contain DaemonID values and the Daemon pointers can be nil. In order
 // to initialize Daemon pointers, this function fetches the daemons from
-// the database and assigns them to the respective LocalSubnet instances.
+// the database and assigns them to the respective LocalSharedNetwork instances.
 // If any of the daemons does not exist or an error occurs, the shared network
 // is not updated.
 func (sn *SharedNetwork) PopulateDaemons(dbi dbops.DBI) error {

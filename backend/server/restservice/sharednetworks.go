@@ -302,6 +302,7 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 	return sharedNetwork, nil
 }
 
+// Get the list of shared networks for the given set of parameters.
 func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.SharedNetworks, error) {
 	// get shared networks from db
 	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage(r.DB, offset, limit, appID, family, filterText, sortField, sortDir)
@@ -491,7 +492,7 @@ func (r *RestAPI) commonCreateOrUpdateSharedNetworkDelete(ctx context.Context, t
 func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.UpdateSharedNetworkBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateSubnetBegin(ctx)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewUpdateSubnetBeginDefault(code).WithPayload(&models.APIError{

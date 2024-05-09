@@ -96,7 +96,8 @@ type SharedNetwork6 struct {
 	Subnet6     []Subnet6 `json:"subnet6,omitempty"`
 }
 
-// An operation on the subnets of a deleted shared network.
+// Denotes what to do with the subnets of a deleted shared network.
+// Kea supports two types of operations: keep and delete.
 type SharedNetworkSubnetsAction = string
 
 const (

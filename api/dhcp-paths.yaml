@@ -603,9 +603,9 @@
       summary: Begin transaction for updating an existing shared network.
       description: >-
         Creates a transaction in the config manager to update an existing shared network.
-        It returns the existing shared network information and a current list of available
-        DHCP servers. This information is required in the form in which the user edits
-        shared network data.
+        It returns the existing shared network information, a current list of available
+        DHCP servers and client classes. This information is required in the form in which
+        the user edits shared network data.
       operationId: updateSharedNetworkBegin
       tags:
         - DHCP

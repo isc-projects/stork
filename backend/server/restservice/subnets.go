@@ -565,11 +565,11 @@ func (r *RestAPI) GetSubnet(ctx context.Context, params dhcp.GetSubnetParams) mi
 	return rsp
 }
 
-// Common function for executed when creating a new transaction for when the
-// subnet is created or updated. It fetches available DHCP daemons. It also
-// creates transaction context. If an error occurs, an http error code and
-// message are returned.
-func (r *RestAPI) commonCreateOrUpdateSubnetBegin(ctx context.Context) ([]*models.KeaDaemon, []*models.SharedNetwork, []*models.SharedNetwork, []string, context.Context, int, string) {
+// Common function executed when creating a new transaction for when the
+// subnet or a shared network is created or updated. It fetches available
+// DHCP daemons. It also creates transaction context. If an error occurs,
+// an http error code and message are returned.
+func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*models.KeaDaemon, []*models.SharedNetwork, []*models.SharedNetwork, []string, context.Context, int, string) {
 	// A list of Kea DHCP daemons will be needed in the user form,
 	// so the user can select which servers send the subnet to.
 	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
@@ -741,7 +741,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetDelete(ctx context.Context, transact
 func (r *RestAPI) CreateSubnetBegin(ctx context.Context, params dhcp.CreateSubnetBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateSubnetBegin(ctx)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewCreateSubnetBeginDefault(code).WithPayload(&models.APIError{
@@ -830,7 +830,7 @@ func (r *RestAPI) CreateSubnetDelete(ctx context.Context, params dhcp.CreateSubn
 func (r *RestAPI) UpdateSubnetBegin(ctx context.Context, params dhcp.UpdateSubnetBeginParams) middleware.Responder {
 	// Execute the common part between create and update operations. It retrieves
 	// the daemons and creates a transaction context.
-	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateSubnetBegin(ctx)
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
 	if code != 0 {
 		// Error case.
 		rsp := dhcp.NewUpdateSubnetBeginDefault(code).WithPayload(&models.APIError{
