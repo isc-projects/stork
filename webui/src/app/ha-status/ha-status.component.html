@@ -56,6 +56,7 @@
                                     <app-help-tip
                                         *ngSwitchCase="'Heartbeat status'"
                                         [title]="rowData.title | lowercase"
+                                        width="40vw"
                                     >
                                         <p>
                                             The heartbeat status reports whether or not the server responds to the
@@ -83,7 +84,11 @@
                                             the servers haven't tried to exchange the heartbeats yet.
                                         </p>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'State'" [title]="rowData.title | lowercase">
+                                    <app-help-tip
+                                        *ngSwitchCase="'State'"
+                                        [title]="rowData.title | lowercase"
+                                        width="40vw"
+                                    >
                                         <p>The following are the possible server states:</p>
                                         <ul>
                                             <li>

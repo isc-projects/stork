@@ -35,7 +35,7 @@ export class HelpTipComponent {
     /**
      * Width of the help box.
      */
-    @Input() width = '40vw'
+    @Input() width = '20vw'
 
     /**
      * A class for icon with question mark.
