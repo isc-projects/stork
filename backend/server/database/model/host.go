@@ -618,7 +618,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 		// for host identifiers. We need to remove them because they are
 		// not present in the database.
 		colonlessFilterText := strings.ReplaceAll(*filters.FilterText, ":", "")
-		q = q.Join("JOIN ip_reservation AS r").JoinOn("r.host_id = host.id")
+		q = q.Join("LEFT JOIN ip_reservation AS r").JoinOn("r.host_id = host.id")
 		q = q.Join("JOIN host_identifier AS i").JoinOn("i.host_id = host.id")
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
 			q = q.WhereOr("text(r.address) ILIKE ?", "%"+*filters.FilterText+"%").
