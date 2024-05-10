@@ -114,7 +114,6 @@ export class LoginScreenComponent implements OnInit {
         Object.keys(this.loginForm.controls).forEach((k) => this.loginForm.get(k).markAsDirty())
         if (this.loginForm.valid) {
             this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
-            this.router.navigate([this.returnUrl])
         }
     }
 
