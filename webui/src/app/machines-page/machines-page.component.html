@@ -185,8 +185,9 @@ sudo ./stork-install-agent.sh</textarea
                     (input)="inputFilterText(machinesTable, $event.target?.value)"
                     (keyup.enter)="inputFilterText(machinesTable, $event.target?.value, true)"
                     [value]="machinesTable.filters?.text?.[0]?.value"
+                    #searchInput
                 />
-                <app-help-tip title="filtering" id="filtering-help-button">
+                <app-help-tip title="filtering" id="filtering-help-button" [target]="searchInput">
                     <p>
                         Machines in the table below can be filtered by entering a text in the search box; the table
                         shows all machines matching the filter text. Currently supported fields for such filtering are:

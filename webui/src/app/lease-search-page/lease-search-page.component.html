@@ -25,8 +25,9 @@
                 placeholder="IP address, MAC, client-id, DUID or hostname"
                 size="36"
                 (keyup)="handleKeyUp($event)"
+                #searchInput
             />
-            <app-help-tip title="leases search" id="leases-search-help-button" width="40vw">
+            <app-help-tip title="leases search" id="leases-search-help-button" width="40vw" [target]="searchInput">
                 <p>
                     Use the input box to specify a searched lease. You can search the lease by one of the following
                     lease properties:

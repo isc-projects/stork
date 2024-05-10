@@ -35,9 +35,10 @@
                 [(ngModel)]="filterText"
                 placeholder="network or any other field"
                 (keyup)="keyupFilterText($event)"
+                #searchInput
             />
 
-            <app-help-tip title="filtering" id="filtering-help-button">
+            <app-help-tip title="filtering" id="filtering-help-button" [target]="searchInput">
                 <p>
                     Shared networks in the table below can be filtered by entering a text in the search box; the table
                     shows all shared networks matching the filter text. Currently supported field for such filtering is:

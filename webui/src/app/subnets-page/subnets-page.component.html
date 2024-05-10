@@ -45,8 +45,9 @@
                     [(ngModel)]="filterText"
                     placeholder="subnet or any other field"
                     (keyup)="keyupFilterText($event)"
+                    #searchInput
                 />
-                <app-help-tip title="filtering" id="filtering-help-button">
+                <app-help-tip title="filtering" id="filtering-help-button" [target]="searchInput">
                     <p>
                         Subnets in the table below can be filtered by entering a text in the search box; the table shows
                         all subnets matching the filter text. Currently supported fields for such filtering are:
