@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { Router, RouterStateSnapshot, UrlTree } from '@angular/router'
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router'
 import { Observable } from 'rxjs'
 
 import { AuthService } from './auth.service'
@@ -18,6 +18,7 @@ export class AuthGuard {
 
     /** Indicates if a user has a permission to activate a given route. */
     canActivate(
+        route: ActivatedRouteSnapshot,
         state: RouterStateSnapshot
     ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
         const currentUser = this.auth.currentUserValue
@@ -34,7 +35,6 @@ export class AuthGuard {
         }
 
         // not logged in so redirect to login page with the return url
-        this.router.navigate(['/login'], { queryParams: { returnUrl: state.url } })
-        return false
+        return this.router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } })
     }
 }
