@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -214,9 +213,6 @@ type subnetPrefixLookup interface {
 	// Returns the subnet prefix based on the subnet ID and IP family.
 	// If the prefix isn't available returns the empty string and false value.
 	getPrefix(subnetID int) (string, bool)
-	// Returns the subnet prefix based on the subnet ID and IP family.
-	// If the prefix isn't available returns default name.
-	getPrefixOrDefault(subnetID int) string
 	// Sets the IP family to use during lookup (4 or 6).
 	setFamily(int8)
 }
@@ -299,16 +295,6 @@ func (l *lazySubnetPrefixLookup) getPrefix(subnetID int) (string, bool) {
 
 	name, ok := names[subnetID]
 	return name, ok
-}
-
-// Returns the subnet prefix if available or subnet ID as string.
-func (l *lazySubnetPrefixLookup) getPrefixOrDefault(subnetID int) string {
-	name, ok := l.getPrefix(subnetID)
-	if ok {
-		return name
-	}
-
-	return fmt.Sprint(subnetID)
 }
 
 // Sets the family used during name lookups.
