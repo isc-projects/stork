@@ -71,14 +71,9 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     private _location: Location
 
     /**
-     * The provided filter.
-     * The source property indicates where the filter comes from:
-     * - input - the filter is set by the user in the input box,
-     * - callback - the filter is set by the child component,
-     * - query - the filter is set by the URL query parameters,
-     * - state - the filter is restored from saved state.
+     * The provided filter RxJS Subject.
      */
-    filter$ = new Subject<{ source: 'input' | 'callback' | 'query' | 'state'; filter: FilterInterface }>()
+    filter$ = new Subject<{ filter: FilterInterface }>()
 
     /**
      * The recent filter applied to the table data. Only filters that pass the
@@ -110,10 +105,10 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     abstract stateKey: string
 
     /**
-     * Keeps table unique Id which comes from queryParam filtering by Id (e.g. kea app Id).
+     * Keeps value of the "by Id" pre-filter from queryParam (e.g. by kea app Id).
      * If no pre-filtering by Id is used, it will be null.
      */
-    tableId: number
+    prefilterValue: number
 
     /**
      * Table's index of the first row to be displayed, restored from browser's storage.
@@ -173,7 +168,7 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
      */
     parseIdFromQueryParam(queryParamMap: ParamMap): void {
         const id = parseInt(queryParamMap.get(this.prefilterKey as string))
-        this.tableId = isNaN(id) ? null : id
+        this.prefilterValue = isNaN(id) ? null : id
     }
 
     /**
@@ -228,14 +223,16 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
      * @param k filter name key
      * @param filters filters object where the filter is checked. If undefined, this.table property filters are checked.
      */
-    getTableFilterVal(k: string, filters?: { [p: string]: FilterMetadata | FilterMetadata[] }): any {
-        if (!filters) {
-            return this.table?.filters?.hasOwnProperty(k)
-                ? this.table.filters[k][0]?.value ?? (this.table.filters[k] as FilterMetadata).value
-                : null
-        } else {
+    getTableFilterValue(k: string, filters?: { [p: string]: FilterMetadata | FilterMetadata[] }): any {
+        if (filters) {
             return filters?.hasOwnProperty(k) ? filters[k][0]?.value ?? (filters[k] as FilterMetadata).value : null
         }
+
+        if (!this.table?.filters?.hasOwnProperty(k)) {
+            return null
+        }
+
+        return this.table.filters[k][0]?.value ?? (this.table.filters[k] as FilterMetadata).value
     }
 
     /**
@@ -244,7 +241,7 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     onFilter(): void {
         let change = false
         for (const k of Object.keys(this.validFilter)) {
-            if (this.validFilter[k] != null && this.getTableFilterVal(k) != this.validFilter[k]) {
+            if (this.validFilter[k] != null && this.getTableFilterValue(k) != this.validFilter[k]) {
                 // This filter was either cleared or edited, so delete it from validFilter.
                 change = true
                 delete this.validFilter[k]
@@ -260,7 +257,7 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
      * Returns true if prefilter by Id from queryParam was applied; false otherwise.
      */
     hasPrefilter(): boolean {
-        return this.tableId != null
+        return this.prefilterValue != null
     }
 
     /**
@@ -277,7 +274,7 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
         // Even when all filters are cleared, restore "by Id" filter if it was given in queryParams.
         // Note that other queryParam filters are also cleared here.
         if (this.hasPrefilter()) {
-            table.filters[this.prefilterKey as string] = { value: this.tableId, matchMode: 'equals' }
+            table.filters[this.prefilterKey as string] = { value: this.prefilterValue, matchMode: 'equals' }
         }
 
         table.first = 0
@@ -352,7 +349,6 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
         }
 
         this.filter$.next({
-            source: 'query',
             filter: filter as FilterInterface,
         })
     }
@@ -466,26 +462,26 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
         // If prefilterKey is defined, it is always being checked.
         if (
             this.validFilter.hasOwnProperty(this.prefilterKey) &&
-            this.validFilter[this.prefilterKey] != this.getTableFilterVal(this.prefilterKey as string)
+            this.validFilter[this.prefilterKey] != this.getTableFilterValue(this.prefilterKey as string)
         ) {
             return true
         }
 
         // 'text' queryParam filter may always be there, so it is also always checked.
-        if (this.validFilter.text && this.validFilter.text != this.getTableFilterVal('text')) {
+        if (this.validFilter.text && this.validFilter.text != this.getTableFilterValue('text')) {
             return true
         }
 
         // Now let's compare all filterNumericKeys filters.
         for (let k of this.filterNumericKeys) {
-            if (this.validFilter.hasOwnProperty(k) && this.validFilter[k] != this.getTableFilterVal(k as string)) {
+            if (this.validFilter.hasOwnProperty(k) && this.validFilter[k] != this.getTableFilterValue(k as string)) {
                 return true
             }
         }
 
         // Now let's compare all filterBooleanKeys filters.
         for (let k of this.filterBooleanKeys) {
-            if (this.validFilter.hasOwnProperty(k) && this.validFilter[k] != this.getTableFilterVal(k as string)) {
+            if (this.validFilter.hasOwnProperty(k) && this.validFilter[k] != this.getTableFilterValue(k as string)) {
                 return true
             }
         }

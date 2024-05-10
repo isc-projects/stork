@@ -95,7 +95,6 @@ export interface HostsFilter {
     keaSubnetId?: number
     isGlobal?: boolean
     conflict?: boolean
-    migrationError?: boolean
 }
 
 /**
@@ -112,11 +111,38 @@ export interface HostsFilter {
     styleUrls: ['./hosts-page.component.sass'],
 })
 export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements OnInit, OnDestroy {
+    /**
+     * Array of all numeric keys that are supported when filtering hosts via URL queryParams.
+     * Note that it doesn't have to contain hosts prefilterKey, which is 'appId'.
+     * prefilterKey by default is considered as a primary queryParam filter key.
+     */
     queryParamNumericKeys: (keyof HostsFilter)[] = []
+
+    /**
+     * Array of all boolean keys that are supported when filtering hosts via URL queryParams.
+     * Currently, no boolean key is supported in queryParams filtering.
+     */
     queryParamBooleanKeys: (keyof HostsFilter)[] = []
+
+    /**
+     * Array of all numeric keys that can be used to filter hosts.
+     */
     filterNumericKeys: (keyof HostsFilter)[] = ['appId', 'subnetId', 'keaSubnetId']
-    filterBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict', 'migrationError']
+
+    /**
+     * Array of all boolean keys that can be used to filter hosts.
+     */
+    filterBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict']
+
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     */
     subscriptions = new Subscription()
+
+    /**
+     * PrimeNG table with hosts.
+     */
     @ViewChild('hostsTable') table: Table
 
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Host Reservations' }]
@@ -265,7 +291,9 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
         const id = paramMap.get('id')
         if (!id || id === 'all') {
             this.parseIdFromQueryParam(queryParamMap)
-            this.stateKey = this.hasPrefilter() ? `hosts-table-session-${this.tableId}` : 'hosts-table-session-all'
+            if (this.hasPrefilter()) {
+                this.stateKey = `hosts-table-session-${this.prefilterValue}`
+            }
         }
 
         this.subscribeFilterValidation()
@@ -340,7 +368,7 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
                     } else {
                         // In case of failed Id parsing, open list tab.
                         this.switchToTab(0)
-                        this.filter$.next({ source: 'callback', filter: {} })
+                        this.filter$.next({ filter: {} })
                     }
                 })
         )
@@ -522,12 +550,12 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
             .getHosts(
                 event.first,
                 event.rows,
-                this.tableId ?? this.getTableFilterVal('appId', event.filters),
-                this.getTableFilterVal('subnetId', event.filters),
-                this.getTableFilterVal('keaSubnetId', event.filters),
-                this.getTableFilterVal('text', event.filters),
-                this.getTableFilterVal('isGlobal', event.filters),
-                this.getTableFilterVal('conflict', event.filters)
+                this.prefilterValue ?? this.getTableFilterValue('appId', event.filters),
+                this.getTableFilterValue('subnetId', event.filters),
+                this.getTableFilterValue('keaSubnetId', event.filters),
+                this.getTableFilterValue('text', event.filters),
+                this.getTableFilterValue('isGlobal', event.filters),
+                this.getTableFilterValue('conflict', event.filters)
             )
             .toPromise()
             .then((data) => {
@@ -598,16 +626,6 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
         } else {
             return 'duplicate'
         }
-    }
-
-    /**
-     * Event handler triggered when a host list needs to be filtered.
-     */
-    onRequestedFiltering(filter: HostsFilter) {
-        this.filter$.next({
-            source: 'callback',
-            filter,
-        })
     }
 
     /**

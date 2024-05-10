@@ -1112,7 +1112,7 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ source: 'callback', filter: { appId: 2 } })
+        component.filter$.next({ filter: { appId: 2 } })
         tick()
         fixture.detectChanges()
 
@@ -1145,7 +1145,7 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ source: 'callback', filter: { subnetId: 89 } })
+        component.filter$.next({ filter: { subnetId: 89 } })
         tick()
         fixture.detectChanges()
 
@@ -1179,7 +1179,7 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ source: 'callback', filter: { conflict: true } })
+        component.filter$.next({ filter: { conflict: true } })
         tick()
         fixture.detectChanges()
 
@@ -1194,7 +1194,7 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ source: 'callback', filter: { conflict: false } })
+        component.filter$.next({ filter: { conflict: false } })
         tick()
         fixture.detectChanges()
 
@@ -1209,7 +1209,7 @@ describe('HostsPageComponent', () => {
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ source: 'callback', filter: { keaSubnetId: 101 } })
+        component.filter$.next({ filter: { keaSubnetId: 101 } })
         tick()
         fixture.detectChanges()
 
