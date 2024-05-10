@@ -85,7 +85,13 @@ func TestPromKeaExporterStart(t *testing.T) {
 	time.Sleep(1500 * time.Millisecond)
 
 	// check if assigned-addresses is 13
-	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(prometheus.Labels{"subnet": "7"})
+	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+		prometheus.Labels{
+			"subnet": "7",
+			"id":     "7",
+			"prefix": "",
+		},
+	)
 	require.Equal(t, 13.0, testutil.ToFloat64(metric))
 
 	// check if pkt4-nak-received is 19
@@ -281,7 +287,13 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 		return testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]) > 0
 	}, 10*time.Second, 500*time.Millisecond)
 
-	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(prometheus.Labels{"subnet": "10.0.0.0/8"})
+	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+		prometheus.Labels{
+			"id":     "7",
+			"prefix": "10.0.0.0/8",
+			"subnet": "10.0.0.0/8",
+		},
+	)
 
 	require.Equal(t, 13.0, testutil.ToFloat64(metric))
 }
