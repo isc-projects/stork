@@ -337,13 +337,13 @@ func (s *FakeKeaCASender) sendCommandToKeaCA(ctrl *AccessPoint, request string) 
 }
 
 // Test that the lazy subnet name lookup is constructed properly.
-func TestNewLazySubnetNameLookup(t *testing.T) {
+func TestNewLazySubnetPrefixLookup(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
 	accessPoint := &AccessPoint{Address: "foo"}
 
 	// Act
-	lookup := newLazySubnetNameLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
 
 	// Assert
 	require.NotNil(t, lookup)
@@ -355,13 +355,13 @@ func TestLazySubnetNameLookupFetchesNames(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
 	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetNameLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
 
 	// Act
-	name1, ok1 := lookup.getName(1)
-	name42, ok42 := lookup.getName(42)
-	name0, ok0 := lookup.getName(0)
-	nameMinus1, okMinus1 := lookup.getName(-1)
+	name1, ok1 := lookup.getPrefix(1)
+	name42, ok42 := lookup.getPrefix(42)
+	name0, ok0 := lookup.getPrefix(0)
+	nameMinus1, okMinus1 := lookup.getPrefix(-1)
 
 	// Assert
 	require.True(t, ok1)
@@ -382,14 +382,14 @@ func TestLazySubnetNameLookupFetchesOnlyOnce(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
 	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetNameLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
 
 	// Act
-	_, _ = lookup.getName(1)
-	_, _ = lookup.getName(1)
-	_, _ = lookup.getName(1)
-	_, _ = lookup.getName(42)
-	_, _ = lookup.getName(100)
+	_, _ = lookup.getPrefix(1)
+	_, _ = lookup.getPrefix(1)
+	_, _ = lookup.getPrefix(1)
+	_, _ = lookup.getPrefix(42)
+	_, _ = lookup.getPrefix(100)
 
 	// Assert
 	require.EqualValues(t, 1, sender.callCount)
@@ -402,11 +402,11 @@ func TestLazySubnetNameLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
 	sender.payload = nil
 	sender.err = errors.New("baz")
 	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetNameLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
 
 	for _, subnetID := range []int{1, 1, 1, 42, 100} {
 		// Act
-		_, ok := lookup.getName(subnetID)
+		_, ok := lookup.getPrefix(subnetID)
 		// Assert
 		require.False(t, ok)
 	}
@@ -418,13 +418,13 @@ func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
 	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetNameLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
 
 	// Act
-	_, _ = lookup.getName(1)
+	_, _ = lookup.getPrefix(1)
 	lookup.setFamily(6)
 	sender.payload = nil
-	name, ok := lookup.getName(1)
+	name, ok := lookup.getPrefix(1)
 
 	// Assert
 	require.False(t, ok)
