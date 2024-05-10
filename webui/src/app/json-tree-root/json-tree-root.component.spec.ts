@@ -3,7 +3,6 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { Router, RouterModule } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 import { AuthService } from '../auth.service'
@@ -11,6 +10,7 @@ import { UsersService } from '../backend'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 
 import { JsonTreeRootComponent } from './json-tree-root.component'
+import { RouterTestingModule } from '@angular/router/testing'
 
 describe('JsonTreeRootComponent', () => {
     let component: JsonTreeRootComponent
@@ -20,18 +20,9 @@ describe('JsonTreeRootComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterModule],
+            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterTestingModule],
             declarations: [JsonTreeRootComponent, JsonTreeComponent],
-            providers: [
-                MessageService,
-                UsersService,
-                {
-                    provide: Router,
-                    useValue: {
-                        navigate: () => {},
-                    },
-                },
-            ],
+            providers: [MessageService, UsersService],
         }).compileComponents()
         userService = TestBed.inject(UsersService)
         authService = TestBed.inject(AuthService)
