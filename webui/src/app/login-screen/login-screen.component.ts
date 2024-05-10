@@ -18,9 +18,9 @@ export class LoginScreenComponent implements OnInit {
     version = 'not available'
 
     /**
-     * The URL fragments redirected from.
+     * The URL address redirected from.
      */
-    returnUrl: string[]
+    returnUrl: string
 
     /**
      * Object representing the login form.
@@ -57,11 +57,7 @@ export class LoginScreenComponent implements OnInit {
         }
 
         // Set the return URL.
-        this.returnUrl = [
-            '/',
-            // Include the return URL from the query parameters if present.
-            ...(this.route.snapshot.queryParams.returnUrl || []),
-        ]
+        this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/'
 
         // Initialize the login form controls.
         this.loginForm = this.formBuilder.group({
@@ -118,6 +114,7 @@ export class LoginScreenComponent implements OnInit {
         Object.keys(this.loginForm.controls).forEach((k) => this.loginForm.get(k).markAsDirty())
         if (this.loginForm.valid) {
             this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
+            this.router.navigate([this.returnUrl])
         }
     }
 
