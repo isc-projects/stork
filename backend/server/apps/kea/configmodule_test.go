@@ -1914,6 +1914,9 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 					"service": [ "dhcp4" ]
 				}`,
 				marshalled)
+		// The default case is executed for the index of 8. The config-reload
+		// is only issued for Kea versions earlier than 2.6.0 that don't
+		// recount statistics until reloaded.
 		default:
 			require.JSONEq(t,
 				`{
