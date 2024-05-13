@@ -445,8 +445,8 @@ services:
     networks:
       - storknet
     volumes:
-      - $PWD/tests/system/config/radius/clients.conf:/etc/raddb/clients.conf
-      - $PWD/tests/system/config/radius/authorize:/etc/raddb/mods-config/files/authorize
+      - $PWD/tests/system/config/radius/clients.conf:/etc/raddb/clients.conf:ro
+      - $PWD/tests/system/config/radius/authorize:/etc/raddb/mods-config/files/authorize:ro
 
 networks:
   storknet:
