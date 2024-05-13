@@ -529,7 +529,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 
 	// check agent token
 	if params.Ping.AgentToken != dbMachine.AgentToken {
-		msg := fmt.Sprintf("Provided agent token is wrong (%s vs. %s)", params.Ping.AgentToken, dbMachine.AgentToken)
+		msg := "Provided agent token is wrong"
 		log.Error(msg)
 		rsp := services.NewPingMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
