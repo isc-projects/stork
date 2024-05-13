@@ -98,7 +98,7 @@ type SharedNetwork6 struct {
 
 // Denotes what to do with the subnets of a deleted shared network.
 // Kea supports two types of operations: keep and delete.
-type SharedNetworkSubnetsAction = string
+type SharedNetworkSubnetsAction string
 
 const (
 	// Preserve the subnets of the deleted shared network making them
