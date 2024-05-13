@@ -440,7 +440,7 @@ services:
 
   # Radius server for testing premium features
   radius:
-    image: freeradius/freeradius-server:3.2.3-alpine
+    image: freeradius/freeradius-server:3.2.3
     command: -X
     networks:
       - storknet
