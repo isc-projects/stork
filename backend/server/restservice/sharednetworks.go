@@ -23,9 +23,8 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 	subnets := []*models.Subnet{}
 	// Exclude the subnets that are not attached to any app. This shouldn't
 	// be the case but let's be safe.
-	for _, snTmp := range sn.Subnets {
-		sn := snTmp
-		subnet := r.convertSubnetToRestAPI(&sn)
+	for i := range sn.Subnets {
+		subnet := r.convertSubnetToRestAPI(&sn.Subnets[i])
 		subnets = append(subnets, subnet)
 	}
 	// Create shared network.
