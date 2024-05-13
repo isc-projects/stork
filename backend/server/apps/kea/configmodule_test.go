@@ -1551,7 +1551,7 @@ func TestBeginSharedNetworkUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the locks have been applied on the daemons owning
-	// the host.
+	// the shared network.
 	require.Contains(t, manager.locks, apps[0].Daemons[0].ID)
 	require.Contains(t, manager.locks, apps[1].Daemons[0].ID)
 
