@@ -391,7 +391,6 @@
                                     inputId="userPassword2"
                                     inputStyleClass="user-input"
                                     styleClass="password-component"
-                                    pattern="{{ userForm.controls['userPassword'].value }}"
                                 ></p-password>
                             </div>
                             <div class="col-12">
@@ -399,8 +398,8 @@
                                     severity="error"
                                     text="Passwords must match"
                                     *ngIf="
-                                        !userForm.controls['userPassword2'].valid &&
-                                        userForm.controls['userPassword2'].dirty
+                                        userForm.controls['userPassword2'].touched &&
+                                        userForm.errors?.['mismatchedPasswords']
                                     "
                                 ></p-message>
                             </div>

@@ -76,7 +76,7 @@ export class UserTab {
  *                           password can be found in the form.
  * @returns The validator function comparing the passwords.
  */
-function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
+export function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     return (group: UntypedFormGroup): { [key: string]: any } => {
         const password = group.controls[passwordKey]
         const confirmPassword = group.controls[confirmPasswordKey]
@@ -273,15 +273,20 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     showNewUserTab() {
         // Specify the validators for the new user form. The last two
         // validators require password and confirmed password to exist.
-        const userForm = this.formBuilder.group({
-            userLogin: ['', Validators.required],
-            userEmail: ['', Validators.email],
-            userFirst: ['', Validators.required],
-            userLast: ['', Validators.required],
-            userGroup: ['', Validators.required],
-            userPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
-            userPassword2: ['', Validators.required],
-        })
+        const userForm = this.formBuilder.group(
+            {
+                userLogin: ['', Validators.required],
+                userEmail: ['', Validators.email],
+                userFirst: ['', Validators.required],
+                userLast: ['', Validators.required],
+                userGroup: ['', Validators.required],
+                userPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
+                userPassword2: ['', Validators.required],
+            },
+            {
+                validators: [matchPasswords('userPassword', 'userPassword2')],
+            }
+        )
 
         // Search opened tabs for the 'New account' type.
         for (const i in this.openedTabs) {

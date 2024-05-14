@@ -6,6 +6,7 @@ import { MessageService } from 'primeng/api'
 import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { getErrorMessage } from '../utils'
+import { matchPasswords } from '../users-page/users-page.component'
 
 /**
  * This component allows the logged user to change the password.
@@ -28,11 +29,14 @@ export class PasswordChangePageComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.passwordChangeForm = this.formBuilder.group({
-            oldPassword: ['', Validators.required],
-            newPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
-            confirmPassword: ['', Validators.required],
-        })
+        this.passwordChangeForm = this.formBuilder.group(
+            {
+                oldPassword: ['', Validators.required],
+                newPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
+                confirmPassword: ['', Validators.required],
+            },
+            { validators: [matchPasswords('newPassword', 'confirmPassword')] }
+        )
     }
 
     /**
