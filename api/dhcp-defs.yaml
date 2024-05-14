@@ -488,11 +488,11 @@
       sharedNetworks4:
         type: array
         items:
-          $ref: '#/definitions/SharedNetwork'
+          type: string
       sharedNetworks6:
         type: array
         items:
-          $ref: '#/definitions/SharedNetwork'
+          type: string
       clientClasses:
         type: array
         items:

@@ -517,12 +517,16 @@ func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.Upda
 
 	// Return transaction ID and daemons to the user.
 	contents := &models.UpdateSharedNetworkBeginResponse{
-		ID:              cctxID,
-		SharedNetwork:   r.convertSharedNetworkToRestAPI(sharedNetwork),
-		Daemons:         respDaemons,
-		SharedNetworks4: respIPv4SharedNetworks,
-		SharedNetworks6: respIPv6SharedNetworks,
-		ClientClasses:   respClientClasses,
+		ID:            cctxID,
+		SharedNetwork: r.convertSharedNetworkToRestAPI(sharedNetwork),
+		Daemons:       respDaemons,
+		ClientClasses: respClientClasses,
+	}
+	for _, sn := range respIPv4SharedNetworks {
+		contents.SharedNetworks4 = append(contents.SharedNetworks4, sn.Name)
+	}
+	for _, sn := range respIPv6SharedNetworks {
+		contents.SharedNetworks6 = append(contents.SharedNetworks6, sn.Name)
 	}
 	rsp := dhcp.NewUpdateSharedNetworkBeginOK().WithPayload(contents)
 	return rsp
