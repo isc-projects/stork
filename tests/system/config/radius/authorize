@@ -1,4 +1,3 @@
-bob	Cleartext-Password := "test"
 01:00:00:00:00:00:00 Cleartext-Password := "00:00:00:00:00:00"
 01:00:00:00:00:00:01 Cleartext-Password := "00:00:00:00:00:01"
 01:00:00:00:00:00:02 Cleartext-Password := "00:00:00:00:00:02"
