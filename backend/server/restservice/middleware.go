@@ -248,14 +248,18 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
 				)
 			}
 
+			scheme := "http"
+			if r.TLS != nil {
+				scheme = "https"
+			}
+
 			serverAddress := url.URL{
-				Scheme: r.URL.Scheme,
+				Scheme: scheme,
 				Host:   r.Host,
 			}
 
 			data := map[string]string{
 				"ServerAddress": serverAddress.String(),
-				"Scheme":        r.URL.Scheme,
 			}
 
 			for extension, path := range packageFiles {
