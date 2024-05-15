@@ -1,5 +1,5 @@
 [func] slawek
 
-    Improved the labels of Prometheus per-subnet metrics to always
+    Added new labels of subnet metrics exported to Prometheus to always
     include subnet ID.
     (Gitlab #1323)
