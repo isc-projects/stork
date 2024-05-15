@@ -149,7 +149,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 
 		require.EqualValues(t, 200, resp.StatusCode)
 		require.False(t, requestReceived)
-		require.Contains(t, content, "localhost/assets/pkgs/isc-stork-agent.deb")
+		require.Contains(t, content, "http://localhost/assets/pkgs/isc-stork-agent.deb")
 		require.Contains(t, content, "/etc/debian_version")
 		require.NotContains(t, content, "/etc/redhat-release")
 		require.NotContains(t, content, "/etc/alpine-release")
@@ -174,7 +174,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 
 		require.EqualValues(t, 200, resp.StatusCode)
 		require.False(t, requestReceived)
-		require.Contains(t, content, "localhost/assets/pkgs/isc-stork-agent.rpm")
+		require.Contains(t, content, "http://localhost/assets/pkgs/isc-stork-agent.rpm")
 		require.NotContains(t, content, "/etc/debian_version")
 		require.Contains(t, content, "/etc/redhat-release")
 		require.NotContains(t, content, "/etc/alpine-release")
@@ -199,7 +199,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 
 		require.EqualValues(t, 200, resp.StatusCode)
 		require.False(t, requestReceived)
-		require.Contains(t, content, "localhost/assets/pkgs/isc-stork-agent.apk")
+		require.Contains(t, content, "http://localhost/assets/pkgs/isc-stork-agent.apk")
 		require.NotContains(t, content, "/etc/debian_version")
 		require.NotContains(t, content, "/etc/redhat-release")
 		require.Contains(t, content, "/etc/alpine-release")
@@ -233,6 +233,9 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		// The request is made over HTTP, the script should contain the same
 		// scheme in the URL.
 		require.Contains(t, content, "stork-agent register -u http://localhost")
+		require.Contains(t, content, "curl -o /tmp/isc-stork-agent.rpm \"http://localhost/assets/pkgs/isc-stork-agent.rpm\"")
+		require.Contains(t, content, "curl -o /tmp/isc-stork-agent.deb \"http://localhost/assets/pkgs/isc-stork-agent.deb\"")
+		require.Contains(t, content, "wget -O /tmp/isc-stork-agent.apk \"http://localhost/assets/pkgs/isc-stork-agent.apk\"")
 	})
 
 	t.Run("all packages in the package directory - HTTPS", func(t *testing.T) {
@@ -260,6 +263,9 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		// The request is made over HTTPS, the script should contain the same
 		// scheme in the URL.
 		require.Contains(t, content, "stork-agent register -u https://localhost")
+		require.Contains(t, content, "curl -o /tmp/isc-stork-agent.rpm \"https://localhost/assets/pkgs/isc-stork-agent.rpm\"")
+		require.Contains(t, content, "curl -o /tmp/isc-stork-agent.deb \"https://localhost/assets/pkgs/isc-stork-agent.deb\"")
+		require.Contains(t, content, "wget -O /tmp/isc-stork-agent.apk \"https://localhost/assets/pkgs/isc-stork-agent.apk\"")
 	})
 
 	t.Run("unsupported request", func(t *testing.T) {
