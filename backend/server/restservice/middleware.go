@@ -3,6 +3,7 @@ package restservice
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -189,7 +190,7 @@ systemctl enable isc-stork-agent
 systemctl restart isc-stork-agent
 systemctl status isc-stork-agent
 
-su stork-agent -s /bin/sh -c 'stork-agent register -u {{.Scheme}}://{{.ServerAddress}}'
+su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
 
 `
 
@@ -247,8 +248,13 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u {{.Scheme}}://{{.ServerAdd
 				)
 			}
 
+			serverAddress := url.URL{
+				Scheme: r.URL.Scheme,
+				Host:   r.Host,
+			}
+
 			data := map[string]string{
-				"ServerAddress": r.Host,
+				"ServerAddress": serverAddress.String(),
 				"Scheme":        r.URL.Scheme,
 			}
 
