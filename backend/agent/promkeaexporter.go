@@ -223,9 +223,10 @@ type keaCommandSender interface {
 }
 
 // Subnet prefix lookup that fetches the subnet prefixes only if necessary.
-// The subnet prefixes are fetched on the first call to getName() for an IP family.
-// The results are cached; no more requests are made until IP family change.
-// Therefore, the lifetime of instances should be short to avoid out-of-date names in a cache.
+// The subnet prefixes are fetched on the first call getPrefix() for an IP
+// family. The results are cached; no more requests are made until IP family
+// change. Therefore, the lifetime of instances should be short to avoid
+// out-of-date prefixes in a cache.
 type lazySubnetPrefixLookup struct {
 	sender      keaCommandSender
 	accessPoint *AccessPoint
@@ -283,21 +284,21 @@ func (l *lazySubnetPrefixLookup) fetchAndCachePrefixes() SubnetList {
 }
 
 // Returns the subnet prefix for specific subnet ID and IP family (4 or 6).
-// If the name is unavailable then it returns empty string and false.
+// If the prefix is unavailable then it returns empty string and false.
 func (l *lazySubnetPrefixLookup) getPrefix(subnetID int) (string, bool) {
-	names := l.cachedPrefixes
+	prefixes := l.cachedPrefixes
 	if !l.cached {
-		names = l.fetchAndCachePrefixes()
+		prefixes = l.fetchAndCachePrefixes()
 	}
-	if names == nil {
+	if prefixes == nil {
 		return "", false
 	}
 
-	name, ok := names[subnetID]
-	return name, ok
+	prefix, ok := prefixes[subnetID]
+	return prefix, ok
 }
 
-// Sets the family used during name lookups.
+// Sets the family used during prefix lookups.
 func (l *lazySubnetPrefixLookup) setFamily(family int8) {
 	l.family = family
 	l.cached = false
@@ -757,7 +758,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 
 			labels := prometheus.Labels{"id": subnetIDRaw, "prefix": ""}
 			subnetID, err := strconv.Atoi(subnetIDRaw)
-			legacyLabel := subnetIDRaw // Subnet ID or name if available.
+			legacyLabel := subnetIDRaw // Subnet ID or prefix if available.
 			if err == nil {
 				subnetPrefix, ok := prefixLookup.getPrefix(subnetID)
 				if ok {
