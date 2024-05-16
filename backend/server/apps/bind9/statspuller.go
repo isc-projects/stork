@@ -65,11 +65,18 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 // Get stats from given bind9 app.
 func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
-	// if app or daemon not active then do nothing
+	// If the BIND 9 process has been detected but the connection to the
+	// daemon cannot be established, then the statistics cannot be pulled.
+	if len(dbApp.Daemons) == 0 {
+		return nil
+	}
+
+	// If app or daemon not active then do nothing.
 	if len(dbApp.Daemons) > 0 && !dbApp.Daemons[0].Active {
 		return nil
 	}
-	// prepare URL to statistics-channel
+
+	// Prepare URL to statistics-channel.
 	statsChannel, err := dbApp.GetAccessPoint(dbmodel.AccessPointStatistics)
 	if err != nil {
 		return err
