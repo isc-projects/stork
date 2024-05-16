@@ -14,14 +14,21 @@ import {
     DelegatedPrefixPool,
     KeaConfigPoolParameters,
     KeaConfigSubnetDerivedParameters,
+    LocalSharedNetwork,
     LocalSubnet,
     Pool,
+    SharedNetwork,
     Subnet,
 } from '../backend'
 import { StorkValidators } from '../validators'
 import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { IPType } from '../iptype'
-import { extractUniqueSubnetPools, hasDifferentLocalPoolOptions, hasDifferentSubnetLevelOptions } from '../subnets'
+import {
+    extractUniqueSubnetPools,
+    hasDifferentLocalPoolOptions,
+    hasDifferentSharedNetworkLevelOptions,
+    hasDifferentSubnetLevelOptions,
+} from '../subnets'
 import { AddressRange } from '../address-range'
 import { GenericFormService } from './generic-form.service'
 
@@ -227,6 +234,33 @@ export interface SubnetForm {
      * Daemon IDs selected with a multi-select component.
      *
      * Selected daemons are associated with the subnet.
+     */
+    selectedDaemons: FormControl<number[]>
+}
+
+/**
+ * An interface describing the form for editing a shared network.
+ */
+export interface SharedNetworkForm {
+    /**
+     * Shared network name.
+     */
+    name: FormControl<string>
+
+    /**
+     * Kea-specific parameters for a shared network.
+     */
+    parameters: FormGroup<KeaSubnetParametersForm>
+
+    /**
+     * DHCP options in a shared network.
+     */
+    options: FormGroup<OptionsForm>
+
+    /**
+     * Daemon IDs selected with a multi-select component.
+     *
+     * Selected daemons are associated with the shared network.
      */
     selectedDaemons: FormControl<number[]>
 }
@@ -994,6 +1028,48 @@ export class SubnetSetFormService {
     }
 
     /**
+     * Converts shared network data to a form.
+     *
+     * @param ipType universe (i.e., IPv4 or IPv6 shared network)
+     * @param sharedNetwork shared network data.
+     * @param sharedNetworkNames list of names of the existing shared networks.
+     * @returns A form created for a shared network.
+     */
+    convertSharedNetworkToForm(
+        sharedNetwork: SharedNetwork,
+        sharedNetworkNames: string[]
+    ): FormGroup<SharedNetworkForm> {
+        let formGroup = new FormGroup<SharedNetworkForm>({
+            name: new FormControl(
+                sharedNetwork.name,
+                Validators.compose([Validators.required, StorkValidators.valueInList(sharedNetworkNames)])
+            ),
+            parameters: this.convertKeaSubnetParametersToForm(
+                sharedNetwork.universe,
+                sharedNetwork.localSharedNetworks?.map(
+                    (lsn) => lsn.keaConfigSharedNetworkParameters.sharedNetworkLevelParameters
+                ) || []
+            ),
+            options: new FormGroup({
+                unlocked: new FormControl(hasDifferentSharedNetworkLevelOptions(sharedNetwork)),
+                data: new UntypedFormArray(
+                    sharedNetwork.localSharedNetworks?.map((lsn) =>
+                        this.optionService.convertOptionsToForm(
+                            sharedNetwork.universe,
+                            lsn.keaConfigSharedNetworkParameters.sharedNetworkLevelParameters.options
+                        )
+                    ) || []
+                ),
+            }),
+            selectedDaemons: new FormControl<number[]>(
+                sharedNetwork.localSharedNetworks?.map((lsn) => lsn.daemonId) || [],
+                Validators.required
+            ),
+        })
+        return formGroup
+    }
+
+    /**
      * Creates a default form for a subnet.
      *
      * When the subnet is specified, the subnet control is disabled and the subnet
@@ -1029,8 +1105,7 @@ export class SubnetSetFormService {
     /**
      * Converts a form holding subnet data to a subnet instance.
      *
-     * It currently only converts the simple DHCP parameters and options. It
-     * excludes complex parameters, such as relay specification or pools.
+     * It currently only converts the simple DHCP parameters and options.
      *
      * @param form a form comprising subnet data.
      * @returns A subnet instance converted from the form.
@@ -1079,6 +1154,53 @@ export class SubnetSetFormService {
             }
         }
         return subnet
+    }
+
+    /**
+     * Converts a form holding shared network data to a shared network instance.
+     *
+     * @param ipType universe (i.e., IPv4 or IPv6 shared network)
+     * @param form a form comprising subnet data.
+     * @returns A subnet instance converted from the form.
+     */
+    convertFormToSharedNetwork(ipType: IPType, form: FormGroup<SharedNetworkForm>): SharedNetwork {
+        let sharedNetwork: SharedNetwork = {
+            name: form.get('name')?.value,
+            universe: ipType === IPType.IPv6 ? 6 : 4,
+            localSharedNetworks:
+                form.get('selectedDaemons')?.value.map((sd) => {
+                    let lsn: LocalSharedNetwork = {
+                        daemonId: sd,
+                    }
+                    return lsn
+                }) || [],
+        }
+        // Convert the simple DHCP parameters and options.
+        const params = this.convertFormToKeaSubnetParameters(
+            form.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        )
+        const options = form.get('options') as UntypedFormGroup
+        for (let i = 0; i < sharedNetwork.localSharedNetworks.length; i++) {
+            sharedNetwork.localSharedNetworks[i].keaConfigSharedNetworkParameters = {
+                sharedNetworkLevelParameters: {},
+            }
+            if (params?.length > i) {
+                sharedNetwork.localSharedNetworks[i].keaConfigSharedNetworkParameters = {
+                    sharedNetworkLevelParameters: params[i],
+                }
+            }
+            const data = options.get('data') as UntypedFormArray
+            if (data?.length > i) {
+                sharedNetwork.localSharedNetworks[
+                    i
+                ].keaConfigSharedNetworkParameters.sharedNetworkLevelParameters.options =
+                    this.optionService.convertFormToOptions(
+                        ipType,
+                        data.at(!!options.get('unlocked')?.value ? i : 0) as UntypedFormArray
+                    )
+            }
+        }
+        return sharedNetwork
     }
 
     /**

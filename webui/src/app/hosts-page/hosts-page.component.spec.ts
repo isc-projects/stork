@@ -264,7 +264,7 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(1)
 
         // Ensure an error is emitted when transaction is deleted.
-        component.openedTabs[0].form.transactionId = 123
+        component.openedTabs[0].state.transactionId = 123
         spyOn(dhcpApi, 'createHostDelete').and.returnValue(throwError({ status: 404 }))
         spyOn(messageService, 'add')
 
@@ -409,7 +409,7 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(1)
 
         // Make sure an error is returned when closing the tab.
-        component.openedTabs[0].form.transactionId = 123
+        component.openedTabs[0].state.transactionId = 123
         spyOn(dhcpApi, 'updateHostDelete').and.returnValue(throwError({ status: 404 }))
         spyOn(messageService, 'add')
 
@@ -675,10 +675,10 @@ describe('HostsPageComponent', () => {
         fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(1)
-        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[0].form.transactionId).toBe(123)
+        expect(component.openedTabs[0].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].state.transactionId).toBe(123)
 
-        component.onHostFormSubmit(component.openedTabs[0].form)
+        component.onHostFormSubmit(component.openedTabs[0].state)
         tick()
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
@@ -726,8 +726,8 @@ describe('HostsPageComponent', () => {
         fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(1)
-        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[0].form.transactionId).toBe(123)
+        expect(component.openedTabs[0].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].state.transactionId).toBe(123)
 
         component.closeHostTab(null, 1)
         tick()
@@ -778,8 +778,8 @@ describe('HostsPageComponent', () => {
         fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(1)
-        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[0].form.transactionId).toBe(123)
+        expect(component.openedTabs[0].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].state.transactionId).toBe(123)
 
         // Cancel editing. It should close the tab and the transaction should be deleted.
         component.onHostFormCancel(0)
@@ -870,8 +870,8 @@ describe('HostsPageComponent', () => {
         expect(dhcpApi.updateHostDelete).not.toHaveBeenCalled()
 
         expect(component.openedTabs.length).toBe(1)
-        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[0].form.transactionId).toBe(123)
+        expect(component.openedTabs[0].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].state.transactionId).toBe(123)
 
         component.closeHostTab(null, 1)
         tick()
@@ -962,8 +962,8 @@ describe('HostsPageComponent', () => {
         expect(dhcpApi.updateHostDelete).not.toHaveBeenCalled()
 
         expect(component.openedTabs.length).toBe(1)
-        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
-        expect(component.openedTabs[0].form.transactionId).toBe(123)
+        expect(component.openedTabs[0].state.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].state.transactionId).toBe(123)
 
         component.onHostFormCancel(component.hosts[0].id)
         tick()

@@ -186,5 +186,19 @@
 
 <!-- Shared network tab template -->
 <ng-template #openedTabBlock>
-    <app-shared-network-tab [sharedNetwork]="openedSharedNetworks[activeTabIndex]"></app-shared-network-tab>
+    <div [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component">
+        <app-shared-network-tab
+            *ngSwitchCase="SharedNetworkTabType.Display"
+            [sharedNetwork]="openedTabs[activeTabIndex].tabSubject"
+            (sharedNetworkEditBegin)="onSharedNetworkEditBegin(openedTabs[activeTabIndex].tabSubject)"
+        ></app-shared-network-tab>
+        <app-shared-network-form
+            *ngSwitchCase="SharedNetworkTabType.Edit"
+            [state]="openedTabs[activeTabIndex].state"
+            [sharedNetworkId]="openedTabs[activeTabIndex].tabSubject.id"
+            (formDestroy)="onSharedNetworkFormDestroy($event)"
+            (formSubmit)="onSharedNetworkFormSubmit($event)"
+            (formCancel)="onSharedNetworkFormCancel(openedTabs[activeTabIndex].tabSubject.id)"
+        ></app-shared-network-form>
+    </div>
 </ng-template>

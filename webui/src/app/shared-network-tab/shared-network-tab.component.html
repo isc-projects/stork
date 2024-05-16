@@ -119,4 +119,15 @@
             </p-fieldset>
         </div>
     </ng-container>
+    <div class="flex mt-6">
+        <button
+            *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
+            type="button"
+            pButton
+            label="Edit"
+            icon="pi pi-pencil"
+            class="p-button-info ml-2"
+            (click)="onSharedNetworkEditBegin()"
+        ></button>
+    </div>
 </div>

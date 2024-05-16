@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
 import { SharedNetworkWithUniquePools, hasDifferentLocalSharedNetworkOptions } from '../subnets'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { DHCPOption, KeaConfigSubnetDerivedParameters } from '../backend'
@@ -13,6 +13,12 @@ export class SharedNetworkTabComponent implements OnInit {
      * Shared network data.
      */
     @Input() sharedNetwork: SharedNetworkWithUniquePools
+
+    /**
+     * An event emitter notifying a parent that user has clicked the
+     * Edit button to modify the shared network.
+     */
+    @Output() sharedNetworkEditBegin = new EventEmitter<any>()
 
     /**
      * DHCP parameters structured for display by the @link CascadedParametersBoard.
@@ -63,5 +69,15 @@ export class SharedNetworkTabComponent implements OnInit {
      */
     allDaemonsHaveEqualDhcpOptions(): boolean {
         return !hasDifferentLocalSharedNetworkOptions(this.sharedNetwork)
+    }
+
+    /**
+     * Event handler called when user begins shared network editing.
+     *
+     * It emits an event to the parent component to notify that shared network
+     * is now edited.
+     */
+    onSharedNetworkEditBegin(): void {
+        this.sharedNetworkEditBegin.emit(this.sharedNetwork)
     }
 }

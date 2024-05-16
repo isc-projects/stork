@@ -740,7 +740,7 @@ export class StorkValidators {
      * A validator checking if the specified subnet prefix does not already exist.
      *
      * @param prefixes a list of existing subnet prefixes.
-     * @returns validator errors or null of the prefix does not exist.
+     * @returns validator errors or null if the prefix does not exist.
      */
     static prefixInList(prefixes: string[]): ValidatorFn {
         const prefixSet = new Set(prefixes)
@@ -766,6 +766,25 @@ export class StorkValidators {
             }
             if (prefixSet.has(cidr)) {
                 return { prefixInList: true }
+            }
+            return null
+        }
+    }
+
+    /**
+     * A validator checking if the specified value does not already exist in a list.
+     *
+     * @param values a list of existing values.
+     * @returns validation errors or null if the value does not exist.
+     */
+    static valueInList(values: string[]): ValidatorFn {
+        const valuesSet = new Set(values)
+        return (control: AbstractControl): ValidationErrors | null => {
+            if (control.value === null || typeof control.value !== 'string' || control.value.length === 0) {
+                return null
+            }
+            if (valuesSet.has(control.value)) {
+                return { valueInList: true }
             }
             return null
         }

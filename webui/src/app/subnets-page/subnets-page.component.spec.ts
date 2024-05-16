@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
-import { SubnetTabType, SubnetsPageComponent } from './subnets-page.component'
+import { SubnetsPageComponent } from './subnets-page.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
@@ -52,6 +52,7 @@ import { AccordionModule } from 'primeng/accordion'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { HttpEvent } from '@angular/common/http'
+import { TabType } from '../tab'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -483,7 +484,7 @@ describe('SubnetsPageComponent', () => {
         expect(component.tabs.length).toBe(2)
         expect(component.openedTabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
-        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
+        expect(component.openedTabs[1].tabType).toBe(TabType.Display)
 
         expect(dhcpService.createSubnetDelete).not.toHaveBeenCalled()
     }))
@@ -556,7 +557,7 @@ describe('SubnetsPageComponent', () => {
         expect(component.tabs.length).toBe(2)
         expect(component.openedTabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
-        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
+        expect(component.openedTabs[1].tabType).toBe(TabType.Display)
 
         expect(dhcpService.updateSubnetDelete).not.toHaveBeenCalled()
     }))
@@ -629,7 +630,7 @@ describe('SubnetsPageComponent', () => {
         expect(component.tabs.length).toBe(2)
         expect(component.openedTabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
-        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
+        expect(component.openedTabs[1].tabType).toBe(TabType.Display)
 
         expect(dhcpService.updateSubnetDelete).not.toHaveBeenCalled()
     }))
@@ -802,7 +803,7 @@ describe('SubnetsPageComponent', () => {
         expect(component.tabs.length).toBe(2)
         expect(component.openedTabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
-        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
+        expect(component.openedTabs[1].tabType).toBe(TabType.Display)
 
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
     }))
@@ -876,7 +877,7 @@ describe('SubnetsPageComponent', () => {
         expect(component.tabs.length).toBe(2)
         expect(component.openedTabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
-        expect(component.openedTabs[1].tabType).toBe(SubnetTabType.Subnet)
+        expect(component.openedTabs[1].tabType).toBe(TabType.Display)
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
     })

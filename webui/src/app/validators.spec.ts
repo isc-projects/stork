@@ -984,4 +984,13 @@ describe('StorkValidators', () => {
         expect(StorkValidators.prefixInList(subnets)(formBuilder.control('192.0.5.0/24'))).toBeFalsy()
         expect(StorkValidators.prefixInList(subnets)(formBuilder.control('2001:db8:3::/72'))).toBeFalsy()
     })
+
+    it('validates that a value is not in the list', () => {
+        const values = ['foo', 'bar', 'baz']
+        expect(StorkValidators.valueInList(values)(formBuilder.control('foo'))).toBeTruthy()
+        expect(StorkValidators.valueInList(values)(formBuilder.control('baz'))).toBeTruthy()
+        expect(StorkValidators.valueInList(values)(formBuilder.control(''))).toBeFalsy()
+        expect(StorkValidators.valueInList(values)(formBuilder.control(null))).toBeFalsy()
+        expect(StorkValidators.valueInList(values)(formBuilder.control('wall'))).toBeFalsy()
+    })
 })

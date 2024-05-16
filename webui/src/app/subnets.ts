@@ -465,3 +465,24 @@ export function hasDifferentLocalSharedNetworkOptions(sharedNetwork: SharedNetwo
             )
     )
 }
+
+/**
+ * Utility function checking if there are differences between shared-network-level
+ * DHCP options in the shared network.
+ *
+ * @param sharedNetwork shared network instance.
+ * @returns true if there are differences in DHCP options, false otherwise.
+ */
+export function hasDifferentSharedNetworkLevelOptions(sharedNetwork: SharedNetwork) {
+    return (
+        !!(sharedNetwork.localSharedNetworks?.length > 0) &&
+        sharedNetwork.localSharedNetworks
+            .slice(1)
+            .some(
+                (ls) =>
+                    ls.keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters?.optionsHash !==
+                    sharedNetwork.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                        ?.optionsHash
+            )
+    )
+}

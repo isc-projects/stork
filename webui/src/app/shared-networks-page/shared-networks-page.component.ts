@@ -17,6 +17,8 @@ import { Subscription, lastValueFrom } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { SharedNetwork } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
+import { Tab, TabType } from '../tab'
+import { SharedNetworkFormState } from '../forms/shared-network-form'
 
 /**
  * Specifies the filter parameters for fetching shared networks that may be
@@ -37,6 +39,8 @@ interface QueryParamsFilter {
     styleUrls: ['./shared-networks-page.component.sass'],
 })
 export class SharedNetworksPageComponent implements OnInit, OnDestroy {
+    SharedNetworkTabType = TabType
+
     private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Shared Networks' }]
 
@@ -71,6 +75,16 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     tabs: MenuItem[] = [{ label: 'Shared Networks', routerLink: '/dhcp/shared-networks/all' }]
 
     /**
+     * Holds the information about specific shared networks presented in the tabs.
+     *
+     * The entry corresponding to shared networks list is not related to any specific
+     * shared network. Its ID is 0.
+     */
+    openedTabs: Tab<SharedNetworkFormState, SharedNetworkWithUniquePools>[] = [
+        new Tab(SharedNetworkFormState, TabType.List, { id: 0 }),
+    ]
+
+    /**
      * Selected tab menu index.
      *
      * The first tab has an index of 0.
@@ -81,14 +95,6 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * Indicates if the component is loading data from the server.
      */
     loading: boolean = false
-
-    /**
-     * Holds the information about specific shared networks presented in the tabs.
-     *
-     * The entry corresponding to shared networks list is not related to any specific
-     * shared network. Its ID is 0.
-     */
-    openedSharedNetworks: SharedNetworkWithUniquePools[] = [{ id: 0 }]
 
     /**
      * Constructor.
@@ -329,10 +335,10 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * @param sharedNetworkId Shared network ID or a NaN for subnet list.
      */
     openTabBySharedNetworkId(sharedNetworkId: number) {
-        const tabIndex = this.openedSharedNetworks.map((t) => t.id).indexOf(sharedNetworkId)
+        const tabIndex = this.openedTabs.map((t) => t.tabSubject.id).indexOf(sharedNetworkId)
         if (tabIndex < 0) {
             this.createTab(sharedNetworkId).then(() => {
-                this.switchToTab(this.openedSharedNetworks.length - 1)
+                this.switchToTab(this.openedTabs.length - 1)
             })
         } else {
             this.switchToTab(tabIndex)
@@ -350,7 +356,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             return
         }
 
-        this.openedSharedNetworks.splice(index, 1)
+        this.openedTabs.splice(index, 1)
         this.tabs = [...this.tabs.slice(0, index), ...this.tabs.slice(index + 1)]
 
         if (this.activeTabIndex === index) {
@@ -417,7 +423,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * @param sharedNetwork Shared network data.
      */
     private appendTab(sharedNetwork: SharedNetwork) {
-        this.openedSharedNetworks.push(sharedNetwork)
+        this.openedTabs.push(new Tab(SharedNetworkFormState, TabType.Display, sharedNetwork))
         this.tabs = [
             ...this.tabs,
             {
@@ -437,5 +443,117 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
             return
         }
         this.activeTabIndex = index
+    }
+
+    /**
+     * Event handler triggered when a user starts editing a shared network.
+     *
+     * It replaces the shared network view with the shared network edit form
+     * in the current tab.
+     *
+     * @param sharedNetwork an instance carrying shared network information.
+     */
+    onSharedNetworkEditBegin(sharedNetwork): void {
+        let index = this.openedTabs.findIndex(
+            (t) => (t.tabType === TabType.Display || t.tabType === TabType.Edit) && t.tabSubject.id === sharedNetwork.id
+        )
+        if (index >= 0) {
+            if (this.openedTabs[index].tabType !== TabType.Edit) {
+                this.tabs[index].icon = 'pi pi-pencil'
+                this.openedTabs[index].setTabType(TabType.Edit)
+            }
+            this.switchToTab(index)
+        }
+    }
+
+    /**
+     * Event handler triggered when user saves the edited shared network.
+     *
+     * @param event an event holding updated form data.
+     */
+    onSharedNetworkFormSubmit(event): void {
+        // Find the form matching the form for which the notification has
+        // been sent.
+        const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
+        if (index >= 0) {
+            this.dhcpApi
+                .getSharedNetwork(event.sharedNetworkId)
+                .toPromise()
+                .then((sharedNetwork) => {
+                    this.openedTabs[index].tabSubject = sharedNetwork
+                    const existingIndex = this.networks.findIndex((n) => n.id === sharedNetwork.id)
+                    if (existingIndex >= 0) {
+                        this.networks[existingIndex] = sharedNetwork
+                    }
+                })
+                .catch((error) => {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot load updated shared network',
+                        detail: getErrorMessage(error),
+                    })
+                })
+                .finally(() => {
+                    this.tabs[index].icon = ''
+                    this.tabs[index].label = this.openedTabs[index].tabSubject.name
+                    this.tabs[index].routerLink = `/dhcp/shared-networks/${event.sharedNetworkId}`
+                    this.openedTabs[index].setTabType(TabType.Display)
+                    this.router.navigate([this.tabs[index].routerLink])
+                })
+        }
+    }
+
+    /**
+     * Event handler triggered when shared network form editing is canceled.
+     *
+     * If the event comes from the new shared network form, the tab is closed. If the
+     * event comes from the shared network update form, the tab is turned into the
+     * shared network view. In both cases, the transaction is deleted in the server.
+     *
+     * @param sharedNetworkId shared network identifier or null for new shared
+     *        network case.
+     */
+    onSharedNetworkFormCancel(sharedNetworkId?: number): void {
+        const index = this.openedTabs.findIndex(
+            (t) => t.tabSubject?.id === sharedNetworkId || (t.tabType === TabType.New && !sharedNetworkId)
+        )
+        if (index >= 0) {
+            if (
+                sharedNetworkId &&
+                this.openedTabs[index].state?.transactionId &&
+                this.openedTabs[index].tabType === TabType.Edit
+            ) {
+                this.dhcpApi
+                    .updateSharedNetworkDelete(sharedNetworkId, this.openedTabs[index].state.transactionId)
+                    .toPromise()
+                    .catch((err) => {
+                        let msg = getErrorMessage(err)
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Failed to delete configuration transaction',
+                            detail: 'Failed to delete configuration transaction: ' + msg,
+                            life: 10000,
+                        })
+                    })
+                this.tabs[index].icon = ''
+                this.openedTabs[index].setTabType(TabType.Display)
+            }
+        }
+    }
+    /**
+     * Event handler triggered when a shared network form tab is being destroyed.
+     *
+     * The shared network form component is being destroyed and thus this parent
+     * component must save the updated form data in case a user re-opens
+     * the form tab.
+     *
+     * @param event an event holding updated form data.
+     */
+    onSharedNetworkFormDestroy(event): void {
+        const tab = this.openedTabs.find((t) => t.state?.transactionId === event.transactionId)
+        if (tab) {
+            // Found the matching form. Update it.
+            tab.state = event
+        }
     }
 }

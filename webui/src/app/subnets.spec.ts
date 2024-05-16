@@ -17,6 +17,7 @@ import {
     getStatisticValue,
     PoolWithLocalPools,
     hasDifferentLocalPoolOptions,
+    hasDifferentSharedNetworkLevelOptions,
 } from './subnets'
 
 describe('subnets', () => {
@@ -1082,6 +1083,7 @@ describe('subnets', () => {
                 },
             ],
         }
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeTrue()
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
     })
 
@@ -1111,6 +1113,7 @@ describe('subnets', () => {
                 },
             ],
         }
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeTrue()
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
     })
 
@@ -1138,6 +1141,7 @@ describe('subnets', () => {
                 },
             ],
         }
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeTrue()
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
     })
 
@@ -1164,6 +1168,7 @@ describe('subnets', () => {
                 },
             ],
         }
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeTrue()
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
     })
 
@@ -1193,10 +1198,41 @@ describe('subnets', () => {
                 },
             ],
         }
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeFalse()
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeFalse()
     })
 
     it('detects the same shared network options for servers for null hashes', () => {
+        const sharedNetwork = {
+            name: 'foo',
+            localSharedNetworks: [
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: null,
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+                {
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            optionsHash: null,
+                        },
+                        globalParameters: {
+                            optionsHash: '345',
+                        },
+                    },
+                },
+            ],
+        }
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeFalse()
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeFalse()
+    })
+
+    it('detects the same shared network level options but different local options', () => {
         const sharedNetwork = {
             name: 'foo',
             localSharedNetworks: [
@@ -1216,13 +1252,14 @@ describe('subnets', () => {
                             optionsHash: '234',
                         },
                         globalParameters: {
-                            optionsHash: '345',
+                            optionsHash: '111',
                         },
                     },
                 },
             ],
         }
-        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeFalse()
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeFalse()
+        expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
     })
 
     it('detects different shared network options for servers', () => {
@@ -1251,6 +1288,7 @@ describe('subnets', () => {
                 },
             ],
         }
+        expect(hasDifferentSharedNetworkLevelOptions(sharedNetwork)).toBeTrue()
         expect(hasDifferentLocalSharedNetworkOptions(sharedNetwork)).toBeTrue()
     })
 

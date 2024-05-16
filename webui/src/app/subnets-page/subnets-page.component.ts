@@ -19,76 +19,7 @@ import { map } from 'rxjs/operators'
 import { Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 import { SubnetFormState } from '../forms/subnet-form'
-
-/**
- * Enumeration for different subnet tab types displayed by the component.
- */
-export enum SubnetTabType {
-    List = 1,
-    NewSubnet,
-    EditSubnet,
-    Subnet,
-}
-
-/**
- * A class representing the contents of a tab displayed by the component.
- */
-export class SubnetTab {
-    /**
-     * Preserves information specified in a subnet form.
-     */
-    state: SubnetFormState
-
-    /**
-     * Indicates if the form has been submitted.
-     */
-    submitted = false
-
-    /**
-     * Constructor.
-     *
-     * @param tabType subnet tab type.
-     * @param subnet subnet information displayed in the tab.
-     */
-    constructor(
-        public tabType: SubnetTabType,
-        public subnet?: Subnet
-    ) {
-        this.setSubnetTabTypeInternal(tabType)
-    }
-
-    /**
-     * Sets new subnet tab type and initializes the form accordingly.
-     *
-     * It is a private function variant that does not check whether the type
-     * is already set to the desired value.
-     */
-    private setSubnetTabTypeInternal(tabType: SubnetTabType): void {
-        switch (tabType) {
-            case SubnetTabType.NewSubnet:
-            case SubnetTabType.EditSubnet:
-                this.state = new SubnetFormState()
-                break
-            default:
-                this.state = null
-                break
-        }
-        this.submitted = false
-        this.tabType = tabType
-    }
-
-    /**
-     * Sets new subnet tab type and initializes the form accordingly.
-     *
-     * It does nothing when the type is already set to the desired value.
-     */
-    public setSubnetTabType(tabType: SubnetTabType): void {
-        if (this.tabType === tabType) {
-            return
-        }
-        this.setSubnetTabTypeInternal(tabType)
-    }
-}
+import { Tab, TabType } from '../tab'
 
 /**
  * Specifies the filter parameters for fetching subnets that may be specified
@@ -110,6 +41,11 @@ interface QueryParamsFilter {
     styleUrls: ['./subnets-page.component.sass'],
 })
 export class SubnetsPageComponent implements OnInit, OnDestroy {
+    /**
+     * Enumeration for different subnet tab types displayed by the component.
+     */
+    SubnetTabType = TabType
+
     private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Subnets' }]
 
@@ -161,12 +97,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * The entry corresponding to subnets list is not related to any specific
      * subnet. Its ID is 0.
      */
-    openedTabs: SubnetTab[] = [new SubnetTab(SubnetTabType.List, { id: 0 })]
-
-    /**
-     * Enumeration for different tab types displayed in this component.
-     */
-    SubnetTabType = SubnetTabType
+    openedTabs: Tab<SubnetFormState, Subnet>[] = [new Tab(SubnetFormState, TabType.List, { id: 0 })]
 
     grafanaUrl: string
 
@@ -424,7 +355,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * Opens an existing or new subnet tab for creating a subnet.
      */
     openNewSubnetTab() {
-        let index = this.openedTabs.findIndex((t) => t.tabType === SubnetTabType.NewSubnet)
+        let index = this.openedTabs.findIndex((t) => t.tabType === TabType.New)
         if (index >= 0) {
             this.switchToTab(index)
             return
@@ -443,7 +374,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * @param subnetId Subnet ID or a NaN for subnet list.
      */
     openTabBySubnetId(subnetId: number) {
-        const tabIndex = this.openedTabs.map((t) => t.subnet?.id).indexOf(subnetId)
+        const tabIndex = this.openedTabs.map((t) => t.tabSubject?.id).indexOf(subnetId)
         if (tabIndex >= 0) {
             this.switchToTab(tabIndex)
             return
@@ -465,13 +396,13 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         }
 
         if (
-            this.openedTabs[index].tabType === SubnetTabType.EditSubnet &&
-            this.openedTabs[index].subnet?.id > 0 &&
+            this.openedTabs[index].tabType === TabType.Edit &&
+            this.openedTabs[index].tabSubject?.id > 0 &&
             this.openedTabs[index].state?.transactionId > 0 &&
             !this.openedTabs[index].submitted
         ) {
             this.dhcpApi
-                .updateSubnetDelete(this.openedTabs[index].subnet.id, this.openedTabs[index].state.transactionId)
+                .updateSubnetDelete(this.openedTabs[index].tabSubject.id, this.openedTabs[index].state.transactionId)
                 .toPromise()
                 .catch((err) => {
                     let msg = err.statusText
@@ -486,7 +417,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                     })
                 })
         } else if (
-            this.openedTabs[index].tabType === SubnetTabType.NewSubnet &&
+            this.openedTabs[index].tabType === TabType.New &&
             this.openedTabs[index].state?.transactionId > 0 &&
             !this.openedTabs[index].submitted
         ) {
@@ -566,7 +497,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * Appends a tab for creating a new subnet.
      */
     private appendNewTab() {
-        this.openedTabs.push(new SubnetTab(SubnetTabType.NewSubnet))
+        this.openedTabs.push(new Tab(SubnetFormState, TabType.New))
         this.tabs = [
             ...this.tabs,
             {
@@ -583,7 +514,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      * @param subnet Subnet data.
      */
     private appendTab(subnet: Subnet) {
-        this.openedTabs.push(new SubnetTab(SubnetTabType.Subnet, subnet))
+        this.openedTabs.push(new Tab(SubnetFormState, TabType.Display, subnet))
         this.tabs = [
             ...this.tabs,
             {
@@ -641,14 +572,12 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     onSubnetEditBegin(subnet): void {
         let index = this.openedTabs.findIndex(
-            (t) =>
-                (t.tabType === SubnetTabType.Subnet || t.tabType === SubnetTabType.EditSubnet) &&
-                t.subnet.id === subnet.id
+            (t) => (t.tabType === TabType.Display || t.tabType === TabType.Edit) && t.tabSubject.id === subnet.id
         )
         if (index >= 0) {
-            if (this.openedTabs[index].tabType !== SubnetTabType.EditSubnet) {
+            if (this.openedTabs[index].tabType !== TabType.Edit) {
                 this.tabs[index].icon = 'pi pi-pencil'
-                this.openedTabs[index].setSubnetTabType(SubnetTabType.EditSubnet)
+                this.openedTabs[index].setTabType(TabType.Edit)
             }
             this.switchToTab(index)
         }
@@ -677,7 +606,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 )
                 .toPromise()
                 .then((subnet) => {
-                    this.openedTabs[index].subnet = subnet
+                    this.openedTabs[index].tabSubject = subnet
                     const existingIndex = this.subnets.findIndex((s) => s.id === subnet.id)
                     if (existingIndex >= 0) {
                         this.subnets[existingIndex] = subnet
@@ -692,9 +621,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 })
                 .finally(() => {
                     this.tabs[index].icon = ''
-                    this.tabs[index].label = this.openedTabs[index].subnet.subnet
+                    this.tabs[index].label = this.openedTabs[index].tabSubject.subnet
                     this.tabs[index].routerLink = `/dhcp/subnets/${event.subnetId}`
-                    this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
+                    this.openedTabs[index].setTabType(TabType.Display)
                     this.router.navigate([this.tabs[index].routerLink])
                 })
         }
@@ -711,13 +640,13 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     onSubnetFormCancel(subnetId?: number): void {
         const index = this.openedTabs.findIndex(
-            (t) => t.subnet?.id === subnetId || (t.tabType === SubnetTabType.NewSubnet && !subnetId)
+            (t) => t.tabSubject?.id === subnetId || (t.tabType === TabType.New && !subnetId)
         )
         if (index >= 0) {
             if (
                 subnetId &&
                 this.openedTabs[index].state?.transactionId &&
-                this.openedTabs[index].tabType === SubnetTabType.EditSubnet
+                this.openedTabs[index].tabType === TabType.Edit
             ) {
                 this.dhcpApi
                     .updateSubnetDelete(subnetId, this.openedTabs[index].state.transactionId)
@@ -732,11 +661,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                         })
                     })
                 this.tabs[index].icon = ''
-                this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
-            } else if (
-                this.openedTabs[index].state?.transactionId &&
-                this.openedTabs[index].tabType === SubnetTabType.NewSubnet
-            ) {
+                this.openedTabs[index].setTabType(TabType.Display)
+            } else if (this.openedTabs[index].state?.transactionId && this.openedTabs[index].tabType === TabType.New) {
                 this.dhcpApi
                     .createSubnetDelete(this.openedTabs[index].state.transactionId)
                     .toPromise()
@@ -753,7 +679,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                         })
                     })
                 this.tabs[index].icon = ''
-                this.openedTabs[index].setSubnetTabType(SubnetTabType.Subnet)
+                this.openedTabs[index].setTabType(TabType.Display)
             } else {
                 this.closeTabByIndex(index)
             }
@@ -785,7 +711,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
      */
     onSubnetDelete(subnet: Subnet): void {
         // Try to find a suitable tab by subnet id.
-        const index = this.openedTabs.findIndex((t) => t.subnet && t.subnet.id === subnet.id)
+        const index = this.openedTabs.findIndex((t) => t.tabSubject && t.tabSubject.id === subnet.id)
         if (index >= 0) {
             // Close the tab.
             this.closeTabByIndex(index)

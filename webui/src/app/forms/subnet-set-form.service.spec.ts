@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing'
 
 import { KeaPoolParametersForm, KeaSubnetParametersForm, SubnetSetFormService } from './subnet-set-form.service'
-import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, Subnet } from '../backend'
+import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, SharedNetwork, Subnet } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { IPType } from '../iptype'
@@ -2136,6 +2136,176 @@ describe('SubnetSetFormService', () => {
         ).toBe(1)
         expect(
             subnet1.localSubnets[1].keaConfigSubnetParameters.subnetLevelParameters.options[0].fields[0].values[0]
+        ).toBe('192.0.2.1')
+    })
+
+    it('should convert a form to shared network', () => {
+        // It is easier to create a shared network instance and convert it to a
+        // form rather than creating the form manually.
+        const sharedNetwork0: SharedNetwork = {
+            name: 'stanza',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            options: [
+                                {
+                                    alwaysSend: true,
+                                    code: 5,
+                                    encapsulate: '',
+                                    fields: [
+                                        {
+                                            fieldType: 'ipv4-address',
+                                            values: ['192.0.2.1'],
+                                        },
+                                    ],
+                                    options: [],
+                                    universe: 4,
+                                },
+                            ],
+                            optionsHash: '123',
+                        },
+                    },
+                },
+                {
+                    daemonId: 2,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            allocator: 'random',
+                        },
+                    },
+                },
+            ],
+        }
+        const formGroup = service.convertSharedNetworkToForm(sharedNetwork0, [])
+
+        const sharedNetwork1 = service.convertFormToSharedNetwork(IPType.IPv4, formGroup)
+
+        expect(sharedNetwork1.name).toBe('stanza')
+        expect(sharedNetwork1.localSharedNetworks.length).toBe(2)
+
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options?.length
+        ).toBe(1)
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options[0].code
+        ).toBe(5)
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options[0].alwaysSend
+        ).toBeTrue()
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options[0].fields.length
+        ).toBe(1)
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options[0].fields[0].fieldType
+        ).toBe('ipv4-address')
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options[0].fields[0].values.length
+        ).toBe(1)
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options[0].fields[0].values[0]
+        ).toBe('192.0.2.1')
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options[0].universe
+        ).toBe(4)
+
+        expect(
+            sharedNetwork1.localSharedNetworks[1].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.allocator
+        ).toBe('random')
+        expect(
+            sharedNetwork1.localSharedNetworks[1].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.options.length
+        ).toBe(0)
+    })
+
+    it('should convert a form to shared network when options are locked', () => {
+        const sharedNetwork0: SharedNetwork = {
+            name: 'stanza',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            options: [
+                                {
+                                    alwaysSend: true,
+                                    code: 5,
+                                    encapsulate: '',
+                                    fields: [
+                                        {
+                                            fieldType: 'ipv4-address',
+                                            values: ['192.0.2.1'],
+                                        },
+                                    ],
+                                    options: [],
+                                    universe: 4,
+                                },
+                            ],
+                            optionsHash: '123',
+                        },
+                    },
+                },
+                {
+                    daemonId: 2,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            allocator: 'random',
+                            options: [
+                                {
+                                    alwaysSend: true,
+                                    code: 5,
+                                    encapsulate: '',
+                                    fields: [
+                                        {
+                                            fieldType: 'ipv4-address',
+                                            values: ['192.0.2.1'],
+                                        },
+                                    ],
+                                    options: [],
+                                    universe: 4,
+                                },
+                            ],
+                            optionsHash: '123',
+                        },
+                    },
+                },
+            ],
+        }
+        const formGroup = service.convertSharedNetworkToForm(sharedNetwork0, [])
+
+        // Both servers have the same options so the options are locked by default.
+        // Let's now modify the second option instance while they are locked. The
+        // second conversion should ignore this modification and take the first
+        // option for each server.
+        formGroup.get('options.data.1.0.optionFields.0.control')?.setValue('10.1.1.1')
+
+        const subnet1 = service.convertFormToSharedNetwork(IPType.IPv4, formGroup)
+        expect(subnet1.localSharedNetworks.length).toBe(2)
+        expect(
+            subnet1.localSharedNetworks[1].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters?.options
+                ?.length
+        ).toBe(1)
+        expect(
+            subnet1.localSharedNetworks[1].keaConfigSharedNetworkParameters.sharedNetworkLevelParameters.options[0]
+                .fields.length
+        ).toBe(1)
+        expect(
+            subnet1.localSharedNetworks[1].keaConfigSharedNetworkParameters.sharedNetworkLevelParameters.options[0]
+                .fields[0].values.length
+        ).toBe(1)
+        expect(
+            subnet1.localSharedNetworks[1].keaConfigSharedNetworkParameters.sharedNetworkLevelParameters.options[0]
+                .fields[0].values[0]
         ).toBe('192.0.2.1')
     })
 })

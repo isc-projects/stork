@@ -251,25 +251,25 @@
 <ng-template #openedTabBlock>
     <div [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component">
         <app-subnet-tab
-            *ngSwitchCase="SubnetTabType.Subnet"
-            [subnet]="openedTabs[activeTabIndex].subnet"
-            (subnetEditBegin)="onSubnetEditBegin(openedTabs[activeTabIndex].subnet)"
-            (subnetDelete)="onSubnetDelete(openedTabs[activeTabIndex].subnet)"
+            *ngSwitchCase="SubnetTabType.Display"
+            [subnet]="openedTabs[activeTabIndex].tabSubject"
+            (subnetEditBegin)="onSubnetEditBegin(openedTabs[activeTabIndex].tabSubject)"
+            (subnetDelete)="onSubnetDelete(openedTabs[activeTabIndex].tabSubject)"
         ></app-subnet-tab>
         <app-subnet-form
-            *ngSwitchCase="SubnetTabType.NewSubnet"
+            *ngSwitchCase="SubnetTabType.New"
             [state]="openedTabs[activeTabIndex].state"
             (formDestroy)="onSubnetFormDestroy($event)"
             (formSubmit)="onSubnetFormSubmit($event)"
             (formCancel)="onSubnetFormCancel()"
         ></app-subnet-form>
         <app-subnet-form
-            *ngSwitchCase="SubnetTabType.EditSubnet"
+            *ngSwitchCase="SubnetTabType.Edit"
             [state]="openedTabs[activeTabIndex].state"
-            [subnetId]="openedTabs[activeTabIndex].subnet.id"
+            [subnetId]="openedTabs[activeTabIndex].tabSubject.id"
             (formDestroy)="onSubnetFormDestroy($event)"
             (formSubmit)="onSubnetFormSubmit($event)"
-            (formCancel)="onSubnetFormCancel(openedTabs[activeTabIndex].subnet.id)"
+            (formCancel)="onSubnetFormCancel(openedTabs[activeTabIndex].tabSubject.id)"
         ></app-subnet-form>
     </div>
 </ng-template>

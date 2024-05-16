@@ -1,0 +1,120 @@
+<ng-container *ngIf="!state.initError; else showInitError">
+    <ng-container *ngIf="state.loaded; else showSpinner" [formGroup]="state.group">
+        <p-fieldset legend="Shared Network" styleClass="mt-4">
+            <span class="p-float-label mt-4 mb-2">
+                <input id="name" pInputText formControlName="name" class="w-full" />
+                <label for="name">Name</label>
+            </span>
+            <ng-container
+                *ngIf="
+                    state.group.get('name').invalid &&
+                    (state.group.get('name').dirty || state.group.get('name').touched)
+                "
+            >
+                <small *ngIf="state.group.get('name').hasError('valueInList')" class="p-error block"
+                    >A shared network with this name already exists.
+                </small>
+                <small *ngIf="!state.group.get('name').hasError('valueInList')" class="p-error block"
+                    >A shared network name is required.</small
+                >
+            </ng-container>
+        </p-fieldset>
+        <p-fieldset legend="Assignments" styleClass="mt-4">
+            <div class="mt-4" [formGroup]="state.group">
+                <span class="p-float-label mb-2">
+                    <p-multiSelect
+                        inputId="servers-select"
+                        optionLabel="label"
+                        optionValue="id"
+                        [options]="state.filteredDaemons"
+                        formControlName="selectedDaemons"
+                        display="chip"
+                        [showToggleAll]="false"
+                        styleClass="w-full"
+                        (onChange)="onDaemonsChange($event)"
+                    >
+                    </p-multiSelect>
+                    <label for="servers-select">DHCP Servers</label>
+                </span>
+                <small
+                    *ngIf="
+                        state.group.get('selectedDaemons').invalid &&
+                        (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
+                    "
+                    class="p-error block"
+                    >At least one server must be selected.
+                </small>
+            </div>
+        </p-fieldset>
+        <p-fieldset legend="DHCP Parameters" styleClass="mt-4">
+            <app-shared-parameters-form
+                [clientClasses]="state.clientClasses"
+                [servers]="state.servers"
+                [formGroup]="state.group.get('parameters')"
+            >
+            </app-shared-parameters-form>
+        </p-fieldset>
+        <p-fieldset [formGroup]="state.group.get('options')" legend="DHCP Options" styleClass="mt-4">
+            <div class="flex mt-2 pb-4">
+                <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
+                <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
+            </div>
+            <ng-container *ngFor="let optionSet of state.group.get('options.data')?.controls; let i = index">
+                <div
+                    *ngIf="i === 0 || state.group.get('options.unlocked')?.value"
+                    class="mb-3 mt-3 host-form-abs-width"
+                >
+                    <div *ngIf="state.group.get('options.unlocked')?.value" class="pb-5">
+                        <p-divider *ngIf="state.group.get('options.data')?.length > 1" align="center">
+                            <p-tag [severity]="getServerTagSeverity(i)">
+                                {{ state.servers[i] }}
+                            </p-tag>
+                        </p-divider>
+                    </div>
+                    <app-dhcp-option-set-form
+                        [v6]="state.dhcpv6"
+                        [formArray]="optionSet"
+                        (optionAdd)="onOptionAdd(i)"
+                    ></app-dhcp-option-set-form>
+                </div>
+            </ng-container>
+        </p-fieldset>
+        <div class="flex align-items-center m-5">
+            <p-button
+                *ngIf="sharedNetworkId"
+                icon="pi pi-replay"
+                label="Revert Changes"
+                styleClass="mr-2 p-button-secondary"
+                (onClick)="onRevert()"
+            ></p-button>
+            <p-button label="Cancel" styleClass="mr-2 p-button-secondary" (onClick)="onCancel()"></p-button>
+            <p-button label="Submit" [disabled]="state.group?.invalid" (onClick)="onSubmit()"></p-button>
+        </div>
+    </ng-container>
+</ng-container>
+<ng-template #showSpinner>
+    <p-progressSpinner></p-progressSpinner>
+</ng-template>
+<ng-template #showInitError>
+    <p-fieldset legend="Errors" styleClass="mt-4">
+        <p-messages severity="error">
+            <ng-template pTemplate>
+                <div class="flex flex-column">
+                    <div class="flex align-items-center m-4">
+                        In order to apply configuration changes, the server should begin a transaction between the user
+                        and the server. The server should also return current data required in the form where the host
+                        information is specified. Unfortunately, starting the new transaction failed with the following
+                        error:
+                    </div>
+                    <div class="flex align-items-center m-4 font-italic">
+                        {{ state.initError }}
+                    </div>
+                    <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+                </div>
+            </ng-template>
+        </p-messages>
+        <div class="mt-3">
+            <p-button label="Retry" (onClick)="onRetry()"></p-button>
+        </div>
+    </p-fieldset>
+</ng-template>

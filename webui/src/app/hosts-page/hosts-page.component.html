@@ -252,25 +252,25 @@
 <ng-template #openedTabBlock>
     <div [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
         <app-host-tab
-            *ngSwitchCase="HostTabType.Host"
-            [host]="openedTabs[activeTabIndex - 1].host"
-            (hostEditBegin)="onHostEditBegin(openedTabs[activeTabIndex - 1].host)"
-            (hostDelete)="onHostDelete(openedTabs[activeTabIndex - 1].host)"
+            *ngSwitchCase="HostTabType.Display"
+            [host]="openedTabs[activeTabIndex - 1].tabSubject"
+            (hostEditBegin)="onHostEditBegin(openedTabs[activeTabIndex - 1].tabSubject)"
+            (hostDelete)="onHostDelete(openedTabs[activeTabIndex - 1].tabSubject)"
         ></app-host-tab>
         <app-host-form
-            [form]="openedTabs[activeTabIndex - 1].form"
+            [form]="openedTabs[activeTabIndex - 1].state"
             (formDestroy)="onHostFormDestroy($event)"
             (formSubmit)="onHostFormSubmit($event)"
             (formCancel)="onHostFormCancel(0)"
-            *ngSwitchCase="HostTabType.NewHost"
+            *ngSwitchCase="HostTabType.New"
         ></app-host-form>
         <app-host-form
-            [form]="openedTabs[activeTabIndex - 1].form"
-            [hostId]="openedTabs[activeTabIndex - 1].host.id"
+            [form]="openedTabs[activeTabIndex - 1].state"
+            [hostId]="openedTabs[activeTabIndex - 1].tabSubject.id"
             (formDestroy)="onHostFormDestroy($event)"
             (formSubmit)="onHostFormSubmit($event)"
-            (formCancel)="onHostFormCancel(openedTabs[activeTabIndex - 1].host.id)"
-            *ngSwitchCase="HostTabType.EditHost"
+            (formCancel)="onHostFormCancel(openedTabs[activeTabIndex - 1].tabSubject.id)"
+            *ngSwitchCase="HostTabType.Edit"
         ></app-host-form>
     </div>
 </ng-template>
