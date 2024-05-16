@@ -326,7 +326,7 @@ class NonWorldWritableFileTask < Rake::FileTask
 
         # Clear the other write permission if needed.
         if mode & 0002 != 0    
-            mode &= 0777775
+            mode &= ~0002
             
             # Set the new mode.
             File.chmod(mode, name)
