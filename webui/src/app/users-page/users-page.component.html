@@ -204,9 +204,9 @@
 </div>
 
 <div *ngIf="newUserTab || editedUserTab" class="p-component">
-    <div style="display: flex; margin: 10px">
+    <div class="m-2 max-w-100rem">
         <div class="grid">
-            <div class="col-3">
+            <div class="col-12 lg:col-4">
                 <p-panel header="Creating new account" *ngIf="newUserTab">
                     <p>
                         To create a new user account, please specify user login, first name, and last name. An email
@@ -241,7 +241,7 @@
                     </p-message>
                 </p-panel>
             </div>
-            <div class="col-7">
+            <div class="col-12 lg:col-8">
                 <form [formGroup]="userForm">
                     <p-panel header="User account">
                         <div class="field grid" *ngIf="isInternalUser">

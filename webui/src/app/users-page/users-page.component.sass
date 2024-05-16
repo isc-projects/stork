@@ -6,8 +6,16 @@
   color: #FFFFFF
   margin-left: 5px
 
-:host ::ng-deep .user-input
-  width: 80%
-
-:host ::ng-deep .password-component
+// Make the form inputs full width on smaller screens.
+// On wider screens prevent the form inputs from growing too wide.
+:host ::ng-deep .user-input, :host ::ng-deep .password-component
   width: 100%
+  max-width: 30rem
+
+// Prevent the content from growing too wide on larger displays.
+.max-w-100rem
+  max-width: 100rem
+
+// Add little top margin to separate form input from validation feedback message.
+.col-9 + .col-12
+  margin-top: 0.5rem
