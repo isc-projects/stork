@@ -2486,6 +2486,27 @@ func TestAppToRestAPIForNilKeaConfig(t *testing.T) {
 	require.NotNil(t, restApp)
 }
 
+// Test that converting app with partially detected BIND9 instance doesn't
+// cause panic.
+func TestAppToRestAPIForPartiallyDetectedBind9(t *testing.T) {
+	// Arrange
+	app := &dbmodel.App{
+		MachineID: 1,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons:   []*dbmodel.Daemon{},
+	}
+	rapi, err := NewRestAPI(&dbops.DatabaseSettings{})
+	require.NoError(t, err)
+
+	// Act & Assert
+	var restApp *models.App
+	require.NotPanics(t, func() {
+		restApp = rapi.appToRestAPI(app)
+	})
+
+	require.NotNil(t, restApp)
+}
+
 // Test conversion of a KeaDaemon to REST API format.
 func TestKeaDaemonToRestAPI(t *testing.T) {
 	daemon := &dbmodel.Daemon{
