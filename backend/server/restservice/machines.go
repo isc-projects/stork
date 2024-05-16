@@ -1000,10 +1000,11 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 				QueryHitRatio:   queryHitRatio,
 				AgentCommErrors: agentErrors,
 			}
-		}
-		if bind9DaemonDB.Bind9Daemon != nil {
-			bind9Daemon.ZoneCount = bind9DaemonDB.Bind9Daemon.Stats.ZoneCount
-			bind9Daemon.AutoZoneCount = bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount
+
+			if bind9DaemonDB.Bind9Daemon != nil {
+				bind9Daemon.ZoneCount = bind9DaemonDB.Bind9Daemon.Stats.ZoneCount
+				bind9Daemon.AutoZoneCount = bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount
+			}
 		}
 
 		if agentStats != nil {
