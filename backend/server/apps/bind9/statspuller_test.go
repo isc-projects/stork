@@ -245,3 +245,63 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	daemon = app1.Daemons[0]
 	require.Empty(t, daemon.Bind9Daemon.Stats.NamedStats.Views)
 }
+
+// Test that the stats puller doesn't crash if the BIND 9 process has been
+// detected but the communication with the named instance cannot be
+// established. In this case, the daemon reference in the app is nil.
+func TestStatsPullerPullStatsForPartiallyDetectedDaemon(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Prepare fake agents.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+
+	// Prepare bind9 app.
+	var err error
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints,
+		dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953, false)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints,
+		dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000, false)
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "192.0.1.0",
+		AgentPort: 1111,
+	}
+	err = dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+	dbApp := dbmodel.App{
+		Type:         dbmodel.AppTypeBind9,
+		AccessPoints: accessPoints,
+		MachineID:    machine.ID,
+		Machine:      machine,
+		Daemons:      nil,
+	}
+	err = CommitAppIntoDB(db, &dbApp, fec)
+	require.NoError(t, err)
+
+	// Set one setting that is needed by puller.
+	setting := dbmodel.Setting{
+		Name:    "bind9_stats_puller_interval",
+		ValType: dbmodel.SettingValTypeInt,
+		Value:   "60",
+	}
+	_, err = db.Model(&setting).Insert()
+	require.NoError(t, err)
+
+	// Prepare stats puller.
+	sp, err := NewStatsPuller(db, fa, fec)
+	require.NoError(t, err)
+	// Shutdown stats puller at the end.
+	defer sp.Shutdown()
+
+	// Act & Assert
+	require.NotPanics(t, func() {
+		err = sp.pullStats()
+	})
+	require.NoError(t, err)
+}
