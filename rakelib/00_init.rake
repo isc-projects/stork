@@ -296,6 +296,58 @@ task :always_rebuild_this_task do |this|
     end
 end
 
+# Defines a file task that is able to clear its write permission for the
+# others.
+# The reason to define this task is the write permissions are not managed by
+# the git repository. But some Docker services require the configuration files
+# to be non-world-writable.
+class NonWorldWritableFileTask < Rake::FileTask
+    # Returns true if the file is world writable or it doesn't exist.
+    # or it is out-of-date.
+    def needed?
+        if File.exist?(name)
+            if File.world_writable?(name)
+                return true
+            end
+        end
+        super
+    end
+
+    # Call the base invoke method if the file is not ready.  After that it
+    # clears the write permission for the others.
+    def invoke(*args)
+        # Call the parent method only if the parent needed? method returns true.
+        if method(:needed?).super_method.call
+            super
+        end
+        
+        # Retrieve the current mode.
+        mode = File.stat(name).mode
+
+        # Clear the other write permission if needed.
+        if mode & 0002 != 0    
+            mode &= 0777775
+            
+            # Set the new mode.
+            File.chmod(mode, name)
+        end
+    end
+end
+
+# Registers the Rake-style Domain Specific Language (DSL) helper for the
+# NonWorldWritableFileTask.
+module DSL
+    def non_world_writable_file(*args, &block)
+        NonWorldWritableFileTask.define_task(*args, &block)
+    end
+end
+self.extend DSL
+
+# Create a new file task that fails if the file is world writable.
+def create_non_world_writable_file_task(path)
+    NonWorldWritableFileTask.define_task(path)
+end
+
 # Create a new file task that fails if the executable doesn't exist.
 # It accepts a path to the executable.
 def create_manually_installed_file_task(path)
