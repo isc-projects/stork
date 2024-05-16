@@ -343,11 +343,6 @@ module DSL
 end
 self.extend DSL
 
-# Create a new file task that fails if the file is world writable.
-def create_non_world_writable_file_task(path)
-    NonWorldWritableFileTask.define_task(path)
-end
-
 # Create a new file task that fails if the executable doesn't exist.
 # It accepts a path to the executable.
 def create_manually_installed_file_task(path)
