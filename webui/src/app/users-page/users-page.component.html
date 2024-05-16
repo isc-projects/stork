@@ -254,6 +254,7 @@
                                     id="userLogin"
                                     class="user-input"
                                     pattern="[a-zA-Z0-9_]+"
+                                    title="Login must only contain letters, digits, or underscore."
                                 />
                             </div>
                             <div class="col-12">
@@ -275,6 +276,7 @@
                                     class="user-input"
                                     formControlName="userEmail"
                                     id="userEmail"
+                                    title="User email address."
                                 />
                             </div>
                             <div class="col-12">
@@ -298,13 +300,14 @@
                                     formControlName="userFirst"
                                     id="userFirst"
                                     class="user-input"
-                                    pattern="^[\S](?:\w|\s)*[\S]$"
+                                    pattern="^[\w](?!.*\s{2,}).*[\w]$"
+                                    title="Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                 />
                             </div>
                             <div class="col-12">
                                 <p-message
                                     severity="error"
-                                    text="First name is invalid"
+                                    text="First name is invalid. Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                     *ngIf="
                                         !userForm.controls['userFirst'].valid &&
                                         userForm.controls['userFirst'].dirty &&
@@ -322,13 +325,14 @@
                                     formControlName="userLast"
                                     id="userLast"
                                     class="user-input"
-                                    pattern="^[\S](?:\w|\s)*[\S]$"
+                                    pattern="^[\w](?!.*\s{2,}).*[\w]$"
+                                    title="Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                 />
                             </div>
                             <div class="col-12">
                                 <p-message
                                     severity="error"
-                                    text="Last name is invalid"
+                                    text="Last name is invalid. Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                     *ngIf="
                                         !userForm.controls['userLast'].valid &&
                                         userForm.controls['userLast'].dirty &&
@@ -345,6 +349,7 @@
                                     formControlName="userGroup"
                                     id="userGroup"
                                     [style]="{ width: '14em' }"
+                                    title="Group where user will belong to."
                                 ></p-dropdown>
                             </div>
                             <div class="col-12">
@@ -368,6 +373,7 @@
                                     inputStyleClass="user-input"
                                     styleClass="password-component"
                                     pattern="[a-zA-Z0-9@.!\+\-]*"
+                                    title="Must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long."
                                 ></p-password>
                             </div>
                             <div class="col-12">
@@ -391,6 +397,7 @@
                                     inputId="userPassword2"
                                     inputStyleClass="user-input"
                                     styleClass="password-component"
+                                    title="Must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long."
                                 ></p-password>
                             </div>
                             <div class="col-12">
