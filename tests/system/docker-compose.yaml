@@ -440,7 +440,10 @@ services:
 
   # Radius server for testing premium features
   radius:
-    image: freeradius/freeradius-server:3.2.3-alpine
+    build:
+      context: .
+      dockerfile: $PWD/docker/images/stork.Dockerfile
+      target: radius
     networks:
       - storknet
     volumes:

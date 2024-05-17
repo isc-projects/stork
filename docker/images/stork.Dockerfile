@@ -387,6 +387,15 @@ RUN mkdir -p /chroot/etc \
         && mkdir -p /chroot/usr/share \
         && cp -R -p /usr/share/dns /chroot/usr/share
 
+FROM freeradius/freeradius-server:3.2.3-alpine AS radius
+# The RADIUS container running in CI reports the "/opt/etc/raddb/clients.conf"
+# file is globally writable. It refuses to start in this case. I cannot
+# reproduce this issue locally. This file is not mounted as a volume or managed
+# by Stork system test framework in any way.
+# I failed to find the root cause of this issue. The workaround is to remove
+# the write permission from the file explicitly.
+RUN chmod -R o-w /opt/etc/raddb
+
 #################
 ### Packaging ###
 #################
