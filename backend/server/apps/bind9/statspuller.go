@@ -67,12 +67,8 @@ func (statsPuller *StatsPuller) pullStats() error {
 func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// If the BIND 9 process has been detected but the connection to the
 	// daemon cannot be established, then the statistics cannot be pulled.
-	if len(dbApp.Daemons) == 0 {
-		return nil
-	}
-
 	// If app or daemon not active then do nothing.
-	if len(dbApp.Daemons) > 0 && !dbApp.Daemons[0].Active {
+	if len(dbApp.Daemons) == 0 || !dbApp.Daemons[0].Active {
 		return nil
 	}
 
