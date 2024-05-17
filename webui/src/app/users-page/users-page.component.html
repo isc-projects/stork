@@ -257,12 +257,14 @@
                                     title="Login must only contain letters, digits, or underscore."
                                 />
                             </div>
-                            <div class="col-12">
+                            <div class="col-12" *ngIf="isFeedbackNeeded('userLogin')">
                                 <p-message
                                     severity="error"
-                                    text="Login must only contain letters, digits, or underscore"
-                                    *ngIf="
-                                        !userForm.controls['userLogin'].valid && userForm.controls['userLogin'].dirty
+                                    [text]="
+                                        buildFeedbackMessage(
+                                            'userLogin',
+                                            'Login must only contain letters, digits, or underscore'
+                                        )
                                     "
                                 ></p-message>
                             </div>
@@ -279,16 +281,8 @@
                                     title="User email address."
                                 />
                             </div>
-                            <div class="col-12">
-                                <p-message
-                                    severity="error"
-                                    text="Email is incorrect"
-                                    *ngIf="
-                                        !userForm.controls['userEmail'].valid &&
-                                        userForm.controls['userEmail'].dirty &&
-                                        userForm.controls['userEmail'].touched
-                                    "
-                                ></p-message>
+                            <div class="col-12" *ngIf="isFeedbackNeeded('userEmail')">
+                                <p-message severity="error" [text]="buildFeedbackMessage('userEmail')"></p-message>
                             </div>
                         </div>
                         <div class="field grid" *ngIf="isInternalUser">
@@ -304,14 +298,14 @@
                                     title="Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                 />
                             </div>
-                            <div class="col-12">
+                            <div class="col-12" *ngIf="isFeedbackNeeded('userFirst')">
                                 <p-message
                                     severity="error"
-                                    text="First name is invalid. Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
-                                    *ngIf="
-                                        !userForm.controls['userFirst'].valid &&
-                                        userForm.controls['userFirst'].dirty &&
-                                        userForm.controls['userFirst'].touched
+                                    [text]="
+                                        buildFeedbackMessage(
+                                            'userFirst',
+                                            'Must contain at least 2 word characters. Can\'t begin nor end with whitespace. Only single whitespaces are allowed.'
+                                        )
                                     "
                                 ></p-message>
                             </div>
@@ -329,14 +323,14 @@
                                     title="Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                 />
                             </div>
-                            <div class="col-12">
+                            <div class="col-12" *ngIf="isFeedbackNeeded('userLast')">
                                 <p-message
                                     severity="error"
-                                    text="Last name is invalid. Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
-                                    *ngIf="
-                                        !userForm.controls['userLast'].valid &&
-                                        userForm.controls['userLast'].dirty &&
-                                        userForm.controls['userLast'].touched
+                                    [text]="
+                                        buildFeedbackMessage(
+                                            'userLast',
+                                            'Must contain at least 2 word characters. Can\'t begin nor end with whitespace. Only single whitespaces are allowed.'
+                                        )
                                     "
                                 ></p-message>
                             </div>
@@ -352,16 +346,8 @@
                                     title="Group where user will belong to."
                                 ></p-dropdown>
                             </div>
-                            <div class="col-12">
-                                <p-message
-                                    severity="error"
-                                    text="Please select a group"
-                                    *ngIf="
-                                        !userForm.controls['userGroup'].valid &&
-                                        userForm.controls['userGroup'].dirty &&
-                                        userForm.controls['userGroup'].touched
-                                    "
-                                ></p-message>
+                            <div class="col-12" *ngIf="isFeedbackNeeded('userGroup')">
+                                <p-message severity="error" [text]="buildFeedbackMessage('userGroup')"></p-message>
                             </div>
                         </div>
                         <div class="field grid" *ngIf="isInternalUser">
@@ -376,14 +362,14 @@
                                     title="Must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long."
                                 ></p-password>
                             </div>
-                            <div class="col-12">
+                            <div class="col-12" *ngIf="isFeedbackNeeded('userPassword')">
                                 <p-message
                                     severity="error"
-                                    text="Password must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long"
-                                    *ngIf="
-                                        !userForm.controls['userPassword'].valid &&
-                                        userForm.controls['userPassword'].dirty &&
-                                        userForm.controls['userPassword'].touched
+                                    [text]="
+                                        buildFeedbackMessage(
+                                            'userPassword',
+                                            'Password must only contain letters, digits, @, ., !, +, -'
+                                        )
                                     "
                                 ></p-message>
                             </div>
@@ -400,14 +386,13 @@
                                     title="Must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long."
                                 ></p-password>
                             </div>
-                            <div class="col-12">
+                            <div
+                                class="col-12"
+                                *ngIf="isFeedbackNeeded('userPassword2') || userForm.errors?.['mismatchedPasswords']"
+                            >
                                 <p-message
                                     severity="error"
-                                    text="Passwords must match"
-                                    *ngIf="
-                                        userForm.controls['userPassword2'].touched &&
-                                        userForm.errors?.['mismatchedPasswords']
-                                    "
+                                    [text]="buildFeedbackMessage('userPassword2', '', true)"
                                 ></p-message>
                             </div>
                         </div>

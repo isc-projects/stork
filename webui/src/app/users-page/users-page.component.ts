@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { UntypedFormBuilder, UntypedFormGroup, Validators, ValidatorFn } from '@angular/forms'
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormControl } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { ConfirmationService, MenuItem, MessageService, SelectItem } from 'primeng/api'
 
@@ -78,10 +78,10 @@ export class UserTab {
  */
 export function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     return (group: UntypedFormGroup): { [key: string]: any } => {
-        const password = group.controls[passwordKey]
-        const confirmPassword = group.controls[confirmPasswordKey]
+        const password = group.get(passwordKey)
+        const confirmPassword = group.get(confirmPasswordKey)
 
-        if (password.value !== confirmPassword.value) {
+        if (password?.value !== confirmPassword?.value) {
             return {
                 mismatchedPasswords: true,
             }
@@ -117,6 +117,11 @@ export class UsersPageComponent implements OnInit, OnDestroy {
 
     // form data
     userGroups: SelectItem[]
+
+    /**
+     * Max input length allowed to be provided by a user. This is used in form validation.
+     */
+    maxInputLen = 120
 
     constructor(
         private route: ActivatedRoute,
@@ -220,26 +225,33 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         // validator which checks if the password and confirmed password
         // match. The validator allows leaving an empty password in which
         // case the password won't be modified.
-        const formConfig: Record<string, [string, ValidatorFn?]> = {
-            userLogin: ['', Validators.required],
-            userEmail: ['', Validators.email],
-            userFirst: [''],
-            userLast: [''],
-            userGroup: ['', Validators.required],
-            userPassword: ['', Validators.minLength(8)],
-            userPassword2: ['', Validators.minLength(8)],
-        }
+        const userForm = this.formBuilder.group(
+            {
+                userLogin: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
+                userFirst: ['', Validators.maxLength(this.maxInputLen)],
+                userLast: ['', Validators.maxLength(this.maxInputLen)],
+                userGroup: ['', Validators.required],
+                userPassword: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
+                userPassword2: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
+            },
+            {
+                validators: [matchPasswords('userPassword', 'userPassword2')],
+            }
+        )
 
         // The authentication hooks may not support returning profile details
         // as email, first and last names, or groups.
         if (this.isInternalUser) {
-            formConfig.userFirst.push(Validators.required)
-            formConfig.userLast.push(Validators.required)
+            userForm.setControl(
+                'userFirst',
+                new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
+            )
+            userForm.setControl(
+                'userLast',
+                new FormControl('', [Validators.required, Validators.maxLength(this.maxInputLen)])
+            )
         }
-
-        const userForm = this.formBuilder.group(formConfig, {
-            validators: [matchPasswords('userPassword', 'userPassword2')],
-        })
 
         // Modify the current tab type to 'edit'.
         tab.tabType = UserTabType.EditedUser
@@ -275,13 +287,19 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         // validators require password and confirmed password to exist.
         const userForm = this.formBuilder.group(
             {
-                userLogin: ['', Validators.required],
-                userEmail: ['', Validators.email],
-                userFirst: ['', Validators.required],
-                userLast: ['', Validators.required],
+                userLogin: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
+                userFirst: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
+                userLast: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
                 userGroup: ['', Validators.required],
-                userPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
-                userPassword2: ['', Validators.required],
+                userPassword: [
+                    '',
+                    [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
+                ],
+                userPassword2: [
+                    '',
+                    [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
+                ],
             },
             {
                 validators: [matchPasswords('userPassword', 'userPassword2')],
@@ -610,6 +628,55 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         const authenticationMethodId = this.userTab.user?.authenticationMethodId
         // Empty or null or internal.
         return !authenticationMethodId || authenticationMethodId === 'internal'
+    }
+
+    /**
+     * Utility function which builds feedback message when form field validation failed.
+     *
+     * @param name FormControl name for which the feedback is to be generated
+     * @param formatFeedback optional feedback message when pattern validation failed
+     * @param comparePasswords when true, feedback about passwords mismatch is also appended; defaults to false
+     */
+    buildFeedbackMessage(name: string, formatFeedback?: string, comparePasswords = false): string | null {
+        const errors: string[] = []
+
+        if (this.userTab.userForm.get(name).errors?.['required']) {
+            errors.push('This field is required.')
+        }
+
+        if (this.userTab.userForm.get(name).errors?.['minlength']) {
+            errors.push('This field value is too short.')
+        }
+
+        if (this.userTab.userForm.get(name).errors?.['maxlength']) {
+            errors.push('This field value is too long.')
+        }
+
+        if (this.userTab.userForm.get(name).errors?.['email']) {
+            errors.push('Email is incorrect.')
+        }
+
+        if (this.userTab.userForm.get(name).errors?.['pattern']) {
+            errors.push(formatFeedback ?? 'This field value is wrong.')
+        }
+
+        if (comparePasswords && this.userTab.userForm.errors?.['mismatchedPasswords']) {
+            errors.push('Passwords must match.')
+        }
+
+        return errors.join(' ')
+    }
+
+    /**
+     * Utility function which checks if feedback for given FormControl shall be displayed.
+     *
+     * @param name FormControl name for which the check is done
+     */
+    isFeedbackNeeded(name: string): boolean {
+        return (
+            this.userTab.userForm.get(name).invalid &&
+            (this.userTab.userForm.get(name).dirty || this.userTab.userForm.get(name).touched)
+        )
     }
 
     /**
