@@ -37,3 +37,6 @@ We have received the following contributions:
    - 2022-03: Automatic Stork services restart on failure
  - Mark Tinberg (University of Wisconsin-Madison)
    - 2024-02: Enhanced the package installation scripts
+ - Robin Berger
+   - 2024-03: Separated DN used in various contexts in the LDAP hook.
+
