@@ -82,9 +82,10 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     validFilter: FilterInterface = {} as FilterInterface
 
     /**
-     * An array of errors in specifying filter text.
+     * An array of errors found during filter validation.
      *
-     * This array holds errors displayed next to the host filtering input box.
+     * This array holds errors that were found during filter validation.
+     * The intention is to use it to display feedback about errors in UI.
      */
     filterTextFormatErrors: string[] = []
 
@@ -122,8 +123,8 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
 
     /**
      * Keeps restored PrimeNG table. PrimeNG restores table's state from browser storage in ngOnChanges lifecycle hook of the table component,
-     * that's why it can be accessed even before ngOnInit lifecycle hook. Restored table may be used to create LazyLoadMetadata when hostsTable
-     * is not yet defined.
+     * that's why it can be accessed even before ngOnInit lifecycle hook. Restored table may be used to create LazyLoadMetadata when PrimeNG
+     * table is not yet defined.
      */
     restoredTable: Table
 
@@ -188,24 +189,24 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     /**
      * Callback method called when PrimeNG table's state was restored from browser's storage.
      * @param state restored state
-     * @param hostsTable table which state was restored
+     * @param table table which state was restored
      */
-    stateRestored(state: any, hostsTable: Table): void {
-        if (hostsTable.restoringFilter) {
+    stateRestored(state: any, table: Table): void {
+        if (table.restoringFilter) {
             // Force set this flag to false.
             // This is a workaround of the issue in PrimeNG,
             // where for stateful table, sometimes when filtering is applied,
             // table.first property is not set to 0 as expected.
-            hostsTable.restoringFilter = false
+            table.restoringFilter = false
         }
 
         // Backup restored data to properties.
-        // They will be used when hostTable is not available.
+        // They will be used when PrimeNG table is not available.
         // Use case: navigation back from detailed host view tab (index > 0)
         // to hosts' list view tab (index 0).
         this.restoredFirst = state.first
         this.restoredRows = state.rows
-        this.restoredTable = hostsTable
+        this.restoredTable = table
     }
 
     /**
@@ -354,10 +355,10 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     }
 
     /**
-     * Pipes filter validation to the hostFilter$ subject.
+     * Pipes filter validation to the filter$ subject.
      */
     subscribeFilterValidation(): void {
-        // Pipe the valid filter to the hostFilter$ subject.
+        // Pipe the valid filter to the filter$ subject.
         this.subscriptions.add(
             this.filter$
                 .pipe(
@@ -393,10 +394,10 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
 
                     this.reloadData(this.table)
                 } else if (this.restoredTable) {
-                    // hostTable undefined but restoredTable defined, call onLazyLoad() using restored state.
+                    // PrimeNG table undefined but restoredTable defined, call onLazyLoad() using restored state.
                     this.loadData(this.restoredTable.createLazyLoadMetadata())
                 } else {
-                    // both hostTable and restoredTable undefined, calling onLazyLoad() with constructed lazyLoadEvent.
+                    // both PrimeNG table and restoredTable undefined, calling onLazyLoad() with constructed lazyLoadEvent.
                     const filters = this.createTableFilter()
                     this.loadData({
                         first: this.restoredFirst,
