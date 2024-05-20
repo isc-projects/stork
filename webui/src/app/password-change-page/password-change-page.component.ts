@@ -136,10 +136,6 @@ export class PasswordChangePageComponent implements OnInit {
             errors.push('This field value is too long.')
         }
 
-        if (this.passwordChangeForm.get(name).errors?.['email']) {
-            errors.push('Email is incorrect.')
-        }
-
         if (this.passwordChangeForm.get(name).errors?.['pattern']) {
             errors.push(formatFeedback ?? 'This field value is wrong.')
         }
