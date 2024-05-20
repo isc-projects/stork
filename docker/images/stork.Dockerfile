@@ -395,6 +395,9 @@ FROM freeradius/freeradius-server:3.2.3-alpine AS radius
 # I failed to find the root cause of this issue. The workaround is to remove
 # the write permission from the file explicitly.
 RUN chmod -R o-w /opt/etc/raddb
+ARG freerad_uid=101
+ARG freerad_gid=101
+USER ${freerad_uid}
 
 #################
 ### Packaging ###
