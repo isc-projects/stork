@@ -386,10 +386,7 @@
                                     title="Must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long."
                                 ></p-password>
                             </div>
-                            <div
-                                class="col-12"
-                                *ngIf="isFeedbackNeeded('userPassword2') || userForm.errors?.['mismatchedPasswords']"
-                            >
+                            <div class="col-12" *ngIf="isFeedbackNeeded('userPassword2', true)">
                                 <p-message
                                     severity="error"
                                     [text]="buildFeedbackMessage('userPassword2', '', true)"

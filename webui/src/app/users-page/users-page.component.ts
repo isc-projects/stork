@@ -671,10 +671,12 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * Utility function which checks if feedback for given FormControl shall be displayed.
      *
      * @param name FormControl name for which the check is done
+     * @param comparePasswords when true, passwords mismatch is also checked; defaults to false
      */
-    isFeedbackNeeded(name: string): boolean {
+    isFeedbackNeeded(name: string, comparePasswords = false): boolean {
         return (
-            this.userTab.userForm.get(name).invalid &&
+            (this.userTab.userForm.get(name).invalid ||
+                (comparePasswords && this.userTab.userForm.errors?.['mismatchedPasswords'])) &&
             (this.userTab.userForm.get(name).dirty || this.userTab.userForm.get(name).touched)
         )
     }
