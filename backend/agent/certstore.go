@@ -371,6 +371,11 @@ func (s *CertStore) WriteServerCertFingerprint(fingerprint [32]byte) error {
 }
 
 // Removes the server cert fingerprint file.
+//
+// This function is used currently only for testing purposes. It is necessary
+// because is it called by the tests located in another package. The members
+// of the CertStore structure are not exported, so the cleanup cannot be done
+// directly by the tests.
 func (s *CertStore) RemoveServerCertFingerprint() error {
 	return s.removeIfExist(s.serverCertFingerprintPath)
 }
