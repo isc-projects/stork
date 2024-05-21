@@ -1861,7 +1861,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 
 	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 10)
+	require.Len(t, commands, 12)
 
 	// Validate the commands to be sent to Kea.
 	for i := range commands {
@@ -1869,7 +1869,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 		marshalled := command.Marshal()
 
 		switch i {
-		case 0, 2, 4:
+		case 0, 2, 4, 6:
 			require.JSONEq(t,
 				`{
 					"command": "network4-del",
@@ -1906,7 +1906,7 @@ func TestApplySharedNetworkUpdate(t *testing.T) {
 					}
 				}`,
 				marshalled)
-		case 6, 7, 9:
+		case 7, 8, 10, 11:
 			require.JSONEq(t,
 				`{
 					"command": "config-write",
@@ -2007,8 +2007,8 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 	// the database upon commit.
 	modifiedSharedNetwork := sharedNetworks[0]
 	modifiedSharedNetwork.CreatedAt = time.Time{}
+	modifiedSharedNetwork.LocalSharedNetworks = sharedNetworks[0].LocalSharedNetworks[0:1]
 	modifiedSharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator = storkutil.Ptr("random")
-	modifiedSharedNetwork.LocalSharedNetworks[1].KeaParameters.Allocator = storkutil.Ptr("random")
 
 	ctx, err = module.ApplySharedNetworkUpdate(ctx, &modifiedSharedNetwork)
 	require.NoError(t, err)
@@ -2018,17 +2018,14 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the correct number of commands were sent.
-	require.Len(t, agents.RecordedURLs, 6)
-	require.Len(t, agents.RecordedCommands, 6)
+	require.Len(t, agents.RecordedURLs, 5)
+	require.Len(t, agents.RecordedCommands, 5)
 
 	// The respective commands should be sent to different servers.
 	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
-	require.NotEqual(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
-	require.NotEqual(t, agents.RecordedURLs[4], agents.RecordedURLs[5])
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[4])
 	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
-	require.Equal(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
-	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[4])
-	require.Equal(t, agents.RecordedURLs[2], agents.RecordedURLs[5])
+	require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
 
 	// Validate the sent commands and URLS.
 	for i, command := range agents.RecordedCommands {
@@ -2045,7 +2042,7 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 					}
 				}`,
 				marshalled)
-		case 1, 3:
+		case 1:
 			require.JSONEq(t,
 				`{
 					"command": "network4-add",
@@ -2078,9 +2075,6 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters)
 	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator)
 	require.Equal(t, "random", *updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator)
-	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[1].KeaParameters)
-	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[1].KeaParameters.Allocator)
-	require.Equal(t, "random", *updatedSharedNetwork.LocalSharedNetworks[1].KeaParameters.Allocator)
 }
 
 // Test that error is returned when Kea response contains error status code.
