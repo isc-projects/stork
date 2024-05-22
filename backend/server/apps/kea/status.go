@@ -371,11 +371,8 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	if err != nil {
 		return nil, err
 	}
-	if cmdsResult.Error != nil && len(cmdsResult.CmdsErrors) == 0 {
-		return nil, cmdsResult.Error
-	}
-	if cmdsResult.CmdsErrors[0] != nil {
-		return nil, cmdsResult.CmdsErrors[0]
+	if err = cmdsResult.GetFirstError(); err != nil {
+		return nil, err
 	}
 
 	// Extract the status value.

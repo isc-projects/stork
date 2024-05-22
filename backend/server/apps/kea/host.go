@@ -391,12 +391,8 @@ func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation,
 		return []keaconfig.Reservation{}, keactrl.ResponseError, err
 	}
 
-	if respResult.Error != nil {
-		return []keaconfig.Reservation{}, keactrl.ResponseError, respResult.Error
-	}
-
-	if len(respResult.CmdsErrors) > 0 && respResult.CmdsErrors[0] != nil {
-		return []keaconfig.Reservation{}, keactrl.ResponseError, respResult.CmdsErrors[0]
+	if err = respResult.GetFirstError(); err != nil {
+		return []keaconfig.Reservation{}, keactrl.ResponseError, err
 	}
 
 	if len(response) == 0 {
