@@ -54,9 +54,11 @@
                 <button
                     pButton
                     label="Clear"
-                    class="p-button-outlined"
+                    [class.p-button-warning]="hasFilter(hostsTable)"
+                    [class.p-button-secondary]="!hasFilter(hostsTable)"
                     icon="pi pi-filter-slash"
                     (click)="clearFilters(hostsTable)"
+                    [disabled]="!hasFilter(hostsTable)"
                 ></button>
                 <div class="flex-auto"></div>
                 <div class="flex-initial align-items-center">
@@ -286,7 +288,19 @@
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td colspan="6">No hosts found.</td>
+                <td colspan="6">
+                    No hosts found.
+                    <span *ngIf="hasFilter(hostsTable)">
+                        Try to clear filtering.
+                        <button
+                            pButton
+                            label="Clear"
+                            class="p-button-outlined"
+                            icon="pi pi-filter-slash"
+                            (click)="clearFilters(hostsTable)"
+                        ></button>
+                    </span>
+                </td>
             </tr>
         </ng-template>
     </p-table>

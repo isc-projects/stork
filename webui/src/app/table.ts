@@ -366,12 +366,12 @@ export abstract class PrefilteredTable<
 
                 if (Array.isArray(filterMetadata)) {
                     for (let filter of filterMetadata) {
-                        if (filter.value) {
+                        if (filter.value !== null) {
                             return true
                         }
                     }
                 } else if (filterMetadata) {
-                    if (filterMetadata.value) {
+                    if (filterMetadata.value !== null) {
                         return true
                     }
                 }
