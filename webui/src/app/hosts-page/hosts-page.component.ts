@@ -1,18 +1,15 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute, EventType } from '@angular/router'
 
 import { MenuItem, MessageService } from 'primeng/api'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
 import { concat, EMPTY, of, Subscription } from 'rxjs'
 import { catchError, filter, take } from 'rxjs/operators'
 import { HostForm } from '../forms/host-form'
-import { Host, LocalHost } from '../backend'
-import { hasDifferentLocalHostData } from '../hosts'
-import { Location } from '@angular/common'
-import { PrefilteredTable } from '../table'
+import { Host } from '../backend'
+import { HostsTableComponent } from '../hosts-table/hosts-table.component'
 
 /**
  * Enumeration for different host tab types displayed by the component.
@@ -85,55 +82,23 @@ export class HostTab {
 }
 
 /**
- * Specifies the filter parameters for fetching hosts that may be specified
- * either in the URL query parameters or programmatically.
- */
-export interface HostsFilter {
-    text?: string
-    appId?: number
-    subnetId?: number
-    keaSubnetId?: number
-    isGlobal?: boolean
-    conflict?: boolean
-}
-
-/**
  * This component implements a page which displays hosts along with
  * their DHCP identifiers and IP reservations. The list of hosts is
- * paged and can be filtered by a reserved IP address. The list
- * contains host reservations for all subnets and in the future it
- * will also contain global reservations, i.e. those that are not
- * associated with any particular subnet.
+ * paged and can be filtered by provided URL queryParams or by
+ * using form inputs responsible for filtering. The list
+ * contains hosts reservations for all subnets and also contain global
+ * reservations, i.e. those that are not associated with any particular
+ * subnet.
+ *
+ * This component is also responsible for viewing given host reservation
+ * details in tab view, switching between tabs, closing them etc.
  */
 @Component({
     selector: 'app-hosts-page',
     templateUrl: './hosts-page.component.html',
     styleUrls: ['./hosts-page.component.sass'],
 })
-export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements OnInit, OnDestroy {
-    /**
-     * Array of all numeric keys that are supported when filtering hosts via URL queryParams.
-     * Note that it doesn't have to contain hosts prefilterKey, which is 'appId'.
-     * prefilterKey by default is considered as a primary queryParam filter key.
-     */
-    queryParamNumericKeys: (keyof HostsFilter)[] = []
-
-    /**
-     * Array of all boolean keys that are supported when filtering hosts via URL queryParams.
-     * Currently, no boolean key is supported in queryParams filtering.
-     */
-    queryParamBooleanKeys: (keyof HostsFilter)[] = []
-
-    /**
-     * Array of all numeric keys that can be used to filter hosts.
-     */
-    filterNumericKeys: (keyof HostsFilter)[] = ['appId', 'subnetId', 'keaSubnetId']
-
-    /**
-     * Array of all boolean keys that can be used to filter hosts.
-     */
-    filterBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict']
-
+export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
      * at once onDestroy.
@@ -141,63 +106,11 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
     subscriptions = new Subscription()
 
     /**
-     * PrimeNG table with hosts.
+     * Table with hosts component.
      */
-    @ViewChild('hostsTable') table: Table
+    @ViewChild('hostsTableComponent') table: HostsTableComponent
 
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Host Reservations' }]
-
-    /**
-     * Holds all currently displayed host reservations.
-     */
-    _hosts: Host[]
-
-    /**
-     * Holds local hosts of all currently displayed host reservations grouped by app ID.
-     * It is indexed by host ID.
-     */
-    localHostsGroupedByApp: Record<number, LocalHost[][]>
-
-    /**
-     * Returns all currently displayed host reservations.
-     */
-    get hosts(): Host[] {
-        return this._hosts
-    }
-
-    /**
-     * Sets hosts reservations to be displayed.
-     * Groups the local hosts by app ID and stores the result in
-     * @this.localHostsGroupedByApp.
-     */
-    set hosts(hosts: Host[]) {
-        this._hosts = hosts
-
-        // For each host group the local hosts by app ID.
-        this.localHostsGroupedByApp = Object.fromEntries(
-            (hosts || []).map((host) => {
-                if (!host.localHosts) {
-                    return [host.id, []]
-                }
-
-                return [
-                    host.id,
-                    Object.values(
-                        // Group the local hosts by app ID.
-                        host.localHosts.reduce<Record<number, LocalHost[]>>((accApp, localHost) => {
-                            if (!accApp[localHost.appId]) {
-                                accApp[localHost.appId] = []
-                            }
-
-                            accApp[localHost.appId].push(localHost)
-
-                            return accApp
-                        }, {})
-                    ),
-                ]
-            })
-        )
-    }
 
     /**
      * Array of tabs with host information.
@@ -227,78 +140,43 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
     openedTabs = []
 
     /**
-     * Unique identifier of a stateful table to use in state storage.
-     */
-    stateKey: string = 'hosts-table-session-all'
-
-    /**
-     * queryParam keyword of the filter by appId.
-     */
-    prefilterKey: keyof HostsFilter = 'appId'
-
-    /**
      * Constructor.
      *
      * @param route activated route used to gather parameters from the URL.
      * @param router router used to navigate between tabs.
      * @param dhcpApi server API used to gather hosts information.
      * @param messageService message service used to display error messages to a user.
-     * @param location location service used to update queryParams
      */
     constructor(
         private route: ActivatedRoute,
         private router: Router,
         private dhcpApi: DHCPService,
-        private messageService: MessageService,
-        private location: Location
-    ) {
-        super(router, location)
-    }
+        private messageService: MessageService
+    ) {}
 
     ngOnDestroy(): void {
-        this.filter$.complete()
         this.subscriptions.unsubscribe()
     }
 
     /**
      * Component lifecycle hook called upon initialization.
      *
-     * It configures the component according to the parameters and the query parameters.
-     * The id parameter can be set to all or be a numeric host identifier. In the former
-     * case, a single tab holding a hosts list is displayed. In the latter case, a tab
-     * with host details is automatically opened in addition to the hosts list tab.
-     *
-     * The query parameters control hosts filtering. If they are specified during the
-     * component initialization the hosts list will be filtered when it is first
-     * displayed and the filters will be visible in the filtering box. This is useful
-     * when a user is directed from other views after clicking on a link and wants to
-     * see only selected host reservations.
-     *
-     * This function also subscribes to changes in the parameters and query parameters
-     * which allows for dynamically changing the content, e.g. as a result of selecting
-     * one of the tabs or applying hosts list filtering.
+     * It configures initial state of PrimeNG Menu tabs.
      */
     ngOnInit() {
         // Initially, there is only a tab with hosts list.
         this.tabs = [{ label: 'Host Reservations', routerLink: '/dhcp/hosts/all' }]
+    }
 
-        this.dataLoading = true
-
-        const paramMap = this.route.snapshot.paramMap
-        const queryParamMap = this.route.snapshot.queryParamMap
-
-        // Get host id and appId.
-        const id = paramMap.get('id')
-        if (!id || id === 'all') {
-            this.parseIdFromQueryParam(queryParamMap)
-            if (this.hasPrefilter()) {
-                this.stateKey = `hosts-table-session-${this.prefilterValue}`
-            }
-        }
-
-        this.subscribeFilterValidation()
-        this.subscribeFilterHandler()
-
+    /**
+     * Component lifecycle hook called after Angular completed the initialization of the
+     * component's view.
+     *
+     * We subscribe to router events to act upon URL and/or queryParams changes.
+     * This is done at this step, because we have to be sure that all child components,
+     * especially PrimeNG table in HostsTableComponent, are initialized.
+     */
+    ngAfterViewInit(): void {
         this.subscriptions.add(
             // This component is responsible for routing of multiple
             // components: hosts list, host details, and host forms.
@@ -351,7 +229,7 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
                     const id = paramMap.get('id')
                     if (!id || id === 'all') {
                         // Update the filter only if the target is host list.
-                        this.updateFilterFromQueryParameters(queryParamMap)
+                        this.table?.updateFilterFromQueryParameters(queryParamMap)
                         this.switchToTab(0)
                         return
                     }
@@ -368,7 +246,7 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
                     } else {
                         // In case of failed Id parsing, open list tab.
                         this.switchToTab(0)
-                        this.filter$.next({ filter: {} })
+                        this.table?.loadDataWithoutFilter()
                     }
                 })
         )
@@ -392,8 +270,8 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
         }
         // Check if the host info is already available.
         let hostInfo: any
-        if (this.hosts) {
-            const filteredHosts = this.hosts.filter((host) => host.id === id)
+        if (this.table?.hosts) {
+            const filteredHosts = this.table.hosts.filter((host) => host.id === id)
             if (filteredHosts.length > 0) {
                 hostInfo = filteredHosts[0]
             }
@@ -535,48 +413,6 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
     }
 
     /**
-     * Loads hosts from the database into the component.
-     *
-     * @param event Event object containing an index if the first row, maximum
-     * number of rows to be returned and a text for hosts filtering. If it is
-     * not specified, the current values are used when available.
-     */
-    loadData(event: TableLazyLoadEvent) {
-        // Indicate that hosts refresh is in progress.
-        this.dataLoading = true
-        // The goal is to send to backend something as simple as:
-        // this.someApi.getHosts(JSON.stringify(event))
-        this.dhcpApi
-            .getHosts(
-                event.first,
-                event.rows,
-                this.prefilterValue ?? this.getTableFilterValue('appId', event.filters),
-                this.getTableFilterValue('subnetId', event.filters),
-                this.getTableFilterValue('keaSubnetId', event.filters),
-                this.getTableFilterValue('text', event.filters),
-                this.getTableFilterValue('isGlobal', event.filters),
-                this.getTableFilterValue('conflict', event.filters)
-            )
-            .toPromise()
-            .then((data) => {
-                this.hosts = data.items ?? []
-                this.totalRecords = data.total ?? 0
-            })
-            .catch((err) => {
-                const msg = getErrorMessage(err)
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Cannot get host reservations list',
-                    detail: 'Error getting host reservations list: ' + msg,
-                    life: 10000,
-                })
-            })
-            .finally(() => {
-                this.dataLoading = false
-            })
-    }
-
-    /**
      * Generates a host tab label.
      *
      * Different host reservation properties may be used to generate the label,
@@ -604,28 +440,6 @@ export class HostsPageComponent extends PrefilteredTable<HostsFilter> implements
             return host.hostIdentifiers[0].idType + '=' + host.hostIdentifiers[0].idHexValue
         }
         return '[' + host.id + ']'
-    }
-
-    /**
-     * Returns the state of the local hosts from the same application/daemon.
-     * The state is null if the host reservations are defined only in the
-     * configuration file or host database. If they are defined in both places
-     * the state is one of the following:
-     * - duplicate - reservations have the same boot fields, client classes, and
-     *               DHCP options
-     * - conflict - reservations are configured differently.
-     *
-     * @param localHosts local hosts to be checked.
-     */
-    getLocalHostsState(localHosts: LocalHost[]): 'conflict' | 'duplicate' | null {
-        if (localHosts.length <= 1) {
-            return null
-        }
-        if (hasDifferentLocalHostData(localHosts)) {
-            return 'conflict'
-        } else {
-            return 'duplicate'
-        }
     }
 
     /**

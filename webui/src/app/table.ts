@@ -1,5 +1,5 @@
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { ParamMap, Router } from '@angular/router'
+import { ActivatedRoute, ParamMap } from '@angular/router'
 import { Location } from '@angular/common'
 import { Subject, Subscription } from 'rxjs'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
@@ -14,8 +14,13 @@ export interface BaseQueryParamFilter {
 
 /**
  * Abstract class unifying all components using PrimeNG table with data lazyLoading.
+ * The class takes one generic argument, which is the type of the single record object
+ * to be displayed in the table.
+ * Derived class must implement abstract members:
+ * - table field
+ * - loadData(event) method
  */
-export abstract class LazyLoadTable {
+export abstract class LazyLoadTable<RecordType> {
     /**
      * Holds the total amount of all records.
      */
@@ -27,14 +32,19 @@ export abstract class LazyLoadTable {
     dataLoading: boolean = false
 
     /**
-     * PrimeNG table instance.
+     * Array collection of objects to display in the table.
      */
-    abstract table: Table
+    dataCollection: RecordType[]
 
     /**
      * Template of the current page report element.
      */
     currentPageReportTemplate: string = '{currentPage} of {totalPages} pages'
+
+    /**
+     * PrimeNG table instance.
+     */
+    abstract table: Table
 
     /**
      * Callback to invoke when paging, sorting or filtering happens in lazy mode.
@@ -56,19 +66,39 @@ export abstract class LazyLoadTable {
  * additionally provide filtering possibility. It is possible to pre-filter table data using
  * URL queryParams. Filtering is stateful, meaning that it's state is saved to browser's session
  * storage and restored when needed. So is table's pagination and sorting.
+ * The class takes two generic arguments:
+ * - filter interface defining all supported filter fields
+ * - the type of the single record object to be displayed in the table.
+ *
+ * Derived class must implement abstract members:
+ * - fields where supported filters are configured
+ * - field "table" which is abstract in base LazyLoadTable abstract class
+ * - "loadData(event)" method which is abstract in base LazyLoadTable abstract class
+ *
+ * Derived class must also call onInit() in ngOnInit() and onDestroy() in ngOnDestroy().
  */
-export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFilter> extends LazyLoadTable {
+export abstract class PrefilteredTable<
+    FilterInterface extends BaseQueryParamFilter,
+    RecordType,
+> extends LazyLoadTable<RecordType> {
     /**
-     * Router service used to update queryParams.
+     * ActivatedRoute used to get params from provided URL.
      * @private
      */
-    private _router: Router
+    private _route: ActivatedRoute
 
     /**
      * Location service used to update queryParams.
      * @private
      */
     private _location: Location
+
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     * @private
+     */
+    private _subscriptions: Subscription = new Subscription()
 
     /**
      * The provided filter RxJS Subject.
@@ -90,20 +120,26 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     filterTextFormatErrors: string[] = []
 
     /**
-     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
-     * at once onDestroy.
-     */
-    abstract subscriptions: Subscription
-
-    /**
      * queryParam keyword of the filter by Id.
      */
     abstract prefilterKey: keyof FilterInterface
 
     /**
+     * Prefix of the stateKey. Will be used to evaluate stateKey by appending either '-all' suffix or
+     * numeric value, e.g. '-1'.
+     *
+     * Example:
+     * stateKeyPrefix = 'hosts-table'
+     * stateKey = 'hosts-table-all'
+     * or
+     * stateKey = 'hosts-table-3'
+     */
+    abstract stateKeyPrefix: string
+
+    /**
      * Unique identifier of a stateful table used to store table's state in browser's storage.
      */
-    abstract stateKey: string
+    stateKey: string
 
     /**
      * Keeps value of the "by Id" pre-filter from queryParam (e.g. by kea app Id).
@@ -113,20 +149,23 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
 
     /**
      * Table's index of the first row to be displayed, restored from browser's storage.
+     * @private
      */
-    restoredFirst: number = 0
+    private _restoredFirst: number = 0
 
     /**
      * Table's number of rows to display per page, restored from browser's storage.
+     * @private
      */
-    restoredRows: number = 10
+    private _restoredRows: number = 10
 
     /**
      * Keeps restored PrimeNG table. PrimeNG restores table's state from browser storage in ngOnChanges lifecycle hook of the table component,
      * that's why it can be accessed even before ngOnInit lifecycle hook. Restored table may be used to create LazyLoadMetadata when PrimeNG
      * table is not yet defined.
+     * @private
      */
-    restoredTable: Table
+    private _restoredTable: Table
 
     /**
      * Array of all numeric keys of the FilterInterface.
@@ -151,25 +190,16 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     abstract queryParamBooleanKeys: (keyof FilterInterface)[]
 
     /**
-     * Constructor of PrefilteredTable class. It requires Router and Location services to be passed by derived
+     * Constructor of PrefilteredTable class. It requires ActivatedRoute and Location service to be passed by derived
      * class.
-     * @param router Router service used to update queryParams.
+     * @param route ActivatedRoute used to get params from provided URL.
      * @param location Location service used to update queryParams.
      * @protected
      */
-    protected constructor(router: Router, location: Location) {
+    protected constructor(route: ActivatedRoute, location: Location) {
         super()
-        this._router = router
+        this._route = route
         this._location = location
-    }
-
-    /**
-     * Parses value for the queryParam "by Id" keyword and stores this value under tableId.
-     * @param queryParamMap
-     */
-    parseIdFromQueryParam(queryParamMap: ParamMap): void {
-        const id = parseInt(queryParamMap.get(this.prefilterKey as string))
-        this.prefilterValue = isNaN(id) ? null : id
     }
 
     /**
@@ -204,9 +234,9 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
         // They will be used when PrimeNG table is not available.
         // Use case: navigation back from detailed host view tab (index > 0)
         // to hosts' list view tab (index 0).
-        this.restoredFirst = state.first
-        this.restoredRows = state.rows
-        this.restoredTable = table
+        this._restoredFirst = state.first
+        this._restoredRows = state.rows
+        this._restoredTable = table
     }
 
     /**
@@ -234,6 +264,40 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
         }
 
         return this.table.filters[k][0]?.value ?? (this.table.filters[k] as FilterMetadata).value
+    }
+
+    /**
+     * Clean-up which should be done at ngOnDestroy() of derived class.
+     */
+    onDestroy(): void {
+        this.filter$.complete()
+        this._subscriptions.unsubscribe()
+    }
+
+    /**
+     * Initialization method which should be called at ngOnInit() of derived class.
+     *
+     * It extracts prefilterKey from ActivatedRoute snapshot queryParams, if it was provided.
+     * Filter validation and filter handler are subscribed.
+     */
+    onInit(): void {
+        // this.table = table
+        this.dataLoading = true
+
+        const paramMap = this._route.snapshot.paramMap
+        const queryParamMap = this._route.snapshot.queryParamMap
+
+        // Get param id and queryParam value for prefilerKey Id.
+        const id = paramMap.get('id')
+        if (!id || id === 'all') {
+            this.parseIdFromQueryParam(queryParamMap)
+            this.stateKey = this.hasPrefilter()
+                ? `${this.stateKeyPrefix}-${this.prefilterValue}`
+                : `${this.stateKeyPrefix}-all`
+        }
+
+        this.subscribeFilterValidation()
+        this.subscribeFilterHandler()
     }
 
     /**
@@ -355,11 +419,19 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
     }
 
     /**
-     * Pipes filter validation to the filter$ subject.
+     * Triggers data load in the table without any filtering applied.
      */
-    subscribeFilterValidation(): void {
+    loadDataWithoutFilter(): void {
+        this.filter$.next({ filter: {} as FilterInterface })
+    }
+
+    /**
+     * Pipes filter validation to the filter$ subject.
+     * @private
+     */
+    private subscribeFilterValidation(): void {
         // Pipe the valid filter to the filter$ subject.
-        this.subscriptions.add(
+        this._subscriptions.add(
             this.filter$
                 .pipe(
                     // Valid filter has no validation errors.
@@ -375,10 +447,11 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
 
     /**
      * Subscribes handler to the filter$ observable.
+     * @private
      */
-    subscribeFilterHandler(): void {
+    private subscribeFilterHandler(): void {
         // Update the filter representation when the filtering parameters change.
-        this.subscriptions.add(
+        this._subscriptions.add(
             this.filter$.subscribe((f) => {
                 this.filterTextFormatErrors = this.validateFilter(f.filter)
 
@@ -393,15 +466,15 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
                     }
 
                     this.reloadData(this.table)
-                } else if (this.restoredTable) {
+                } else if (this._restoredTable) {
                     // PrimeNG table undefined but restoredTable defined, call onLazyLoad() using restored state.
-                    this.loadData(this.restoredTable.createLazyLoadMetadata())
+                    this.loadData(this._restoredTable.createLazyLoadMetadata())
                 } else {
                     // both PrimeNG table and restoredTable undefined, calling onLazyLoad() with constructed lazyLoadEvent.
                     const filters = this.createTableFilter()
                     this.loadData({
-                        first: this.restoredFirst,
-                        rows: this.restoredRows,
+                        first: this._restoredFirst,
+                        rows: this._restoredRows,
                         filters: filters,
                     })
                 }
@@ -414,6 +487,7 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
      *
      * This function uses the Location provider instead Router or
      * ActivatedRoute to avoid re-rendering the component.
+     * @private
      */
     private updateQueryParameters() {
         const params = []
@@ -424,8 +498,8 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
             }
         }
 
-        const baseUrl = this._router.url.split('?')[0]
-        this._location.go(baseUrl, params.join('&'))
+        const baseUrl = this._route.snapshot.url.join('/')
+        this._location.go(`/${baseUrl}`, params.join('&'))
     }
 
     /**
@@ -433,6 +507,7 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
      * @param filter A filter to validate
      * @returns List of validation issues. If the list is empty, the filter is
      * valid.
+     * @private
      */
     private validateFilter(filter: FilterInterface): string[] {
         const errors: string[] = []
@@ -520,5 +595,15 @@ export abstract class PrefilteredTable<FilterInterface extends BaseQueryParamFil
         }
 
         return filter
+    }
+
+    /**
+     * Parses value for the queryParam "by Id" keyword and stores this value under tableId.
+     * @param queryParamMap
+     * @private
+     */
+    private parseIdFromQueryParam(queryParamMap: ParamMap): void {
+        const id = parseInt(queryParamMap.get(this.prefilterKey as string))
+        this.prefilterValue = isNaN(id) ? null : id
     }
 }

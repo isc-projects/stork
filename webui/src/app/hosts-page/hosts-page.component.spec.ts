@@ -42,6 +42,7 @@ import { TagModule } from 'primeng/tag'
 import { MessagesModule } from 'primeng/messages'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { HostsTableComponent } from '../hosts-table/hosts-table.component'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -110,6 +111,7 @@ describe('HostsPageComponent', () => {
                 DhcpOptionSetViewComponent,
                 HostDataSourceLabelComponent,
                 PluralizePipe,
+                HostsTableComponent,
             ],
         }).compileComponents()
     }))
@@ -133,7 +135,7 @@ describe('HostsPageComponent', () => {
         fixture.detectChanges()
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
-        component.table.clearFilterValues()
+        component.table.table.clearFilterValues()
 
         fixture.detectChanges()
     })
@@ -162,7 +164,7 @@ describe('HostsPageComponent', () => {
     })
 
     it('host table should have valid app name and app link', () => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
         // Table rows have ids created by appending host id to the host-row- string.
         const row = fixture.debugElement.query(By.css('#host-row-1'))
@@ -182,7 +184,7 @@ describe('HostsPageComponent', () => {
 
     it('should open and close host tabs', fakeAsync(() => {
         // Create a list with two hosts.
-        component.hosts = [
+        component.table.hosts = [
             {
                 id: 1,
                 hostIdentifiers: [
@@ -304,7 +306,7 @@ describe('HostsPageComponent', () => {
 
     it('should switch a tab to host editing mode', fakeAsync(() => {
         // Create a list with two hosts.
-        component.hosts = [
+        component.table.hosts = [
             {
                 id: 1,
                 hostIdentifiers: [
@@ -360,7 +362,7 @@ describe('HostsPageComponent', () => {
         expect(component.tabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
 
-        component.onHostEditBegin(component.hosts[0])
+        component.onHostEditBegin(component.table.hosts[0])
         fixture.detectChanges()
         expect(component.tabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
@@ -388,7 +390,7 @@ describe('HostsPageComponent', () => {
 
     it('should emit an error when deleting transaction for updating a host fails', fakeAsync(() => {
         // Create a list with two hosts.
-        component.hosts = [
+        component.table.hosts = [
             {
                 id: 1,
                 hostIdentifiers: [
@@ -424,7 +426,7 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(1)
 
         // Simulate clicking on Edit.
-        component.onHostEditBegin(component.hosts[0])
+        component.onHostEditBegin(component.table.hosts[0])
         fixture.detectChanges()
         expect(component.tabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
@@ -562,7 +564,7 @@ describe('HostsPageComponent', () => {
         // to a textual format. Another host uses a hw-address which is
         // by default displayed in the hex format. Third host uses a
         // flex-id which is not convertible to a textual format.
-        component.hosts = [
+        component.table.hosts = [
             {
                 id: 1,
                 hostIdentifiers: [
@@ -795,7 +797,7 @@ describe('HostsPageComponent', () => {
     }))
 
     it('should cancel update transaction when a tab is closed', fakeAsync(() => {
-        component.hosts = [
+        component.table.hosts = [
             {
                 id: 1,
                 subnetId: 1,
@@ -857,7 +859,7 @@ describe('HostsPageComponent', () => {
                 },
             ],
             clientClasses: ['router', 'cable-modem'],
-            host: component.hosts[0],
+            host: component.table.hosts[0],
         }
         const okResp: any = {
             status: 200,
@@ -865,7 +867,7 @@ describe('HostsPageComponent', () => {
         spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(updateHostBeginResp))
         spyOn(dhcpApi, 'updateHostDelete').and.returnValue(of(okResp))
 
-        component.onHostEditBegin(component.hosts[0])
+        component.onHostEditBegin(component.table.hosts[0])
         fixture.detectChanges()
         tick()
 
@@ -886,7 +888,7 @@ describe('HostsPageComponent', () => {
     }))
 
     it('should cancel update transaction cancel button is clicked', fakeAsync(() => {
-        component.hosts = [
+        component.table.hosts = [
             {
                 id: 1,
                 subnetId: 1,
@@ -948,7 +950,7 @@ describe('HostsPageComponent', () => {
                 },
             ],
             clientClasses: ['router', 'cable-modem'],
-            host: component.hosts[0],
+            host: component.table.hosts[0],
         }
         const okResp: any = {
             status: 200,
@@ -956,7 +958,7 @@ describe('HostsPageComponent', () => {
         spyOn(dhcpApi, 'updateHostBegin').and.returnValue(of(updateHostBeginResp))
         spyOn(dhcpApi, 'updateHostDelete').and.returnValue(of(okResp))
 
-        component.onHostEditBegin(component.hosts[0])
+        component.onHostEditBegin(component.table.hosts[0])
         fixture.detectChanges()
         tick()
 
@@ -967,7 +969,7 @@ describe('HostsPageComponent', () => {
         expect(component.openedTabs[0].state.hasOwnProperty('transactionId')).toBeTrue()
         expect(component.openedTabs[0].state.transactionId).toBe(123)
 
-        component.onHostFormCancel(component.hosts[0].id)
+        component.onHostFormCancel(component.table.hosts[0].id)
         tick()
         fixture.detectChanges()
         expect(component.tabs.length).toBe(2)
@@ -981,7 +983,7 @@ describe('HostsPageComponent', () => {
 
     it('should close a tab after deleting a host', fakeAsync(() => {
         // Create a list with two hosts.
-        component.hosts = [
+        component.table.hosts = [
             {
                 id: 1,
                 hostIdentifiers: [
@@ -1107,12 +1109,12 @@ describe('HostsPageComponent', () => {
     })
 
     it('hosts list should be filtered by appId', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ filter: { appId: 2 } })
+        component.table.filter$.next({ filter: { appId: 2 } })
         tick()
         fixture.detectChanges()
 
@@ -1122,12 +1124,12 @@ describe('HostsPageComponent', () => {
     }))
 
     it('should display error message when appId is invalid', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'abc' }))
+        component.table.updateFilterFromQueryParameters(convertToParamMap({ appId: 'abc' }))
         tick()
         fixture.detectChanges()
 
@@ -1140,12 +1142,12 @@ describe('HostsPageComponent', () => {
     }))
 
     it('hosts list should be filtered by subnetId', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ filter: { subnetId: 89 } })
+        component.table.filter$.next({ filter: { subnetId: 89 } })
         tick()
         fixture.detectChanges()
 
@@ -1155,13 +1157,13 @@ describe('HostsPageComponent', () => {
     }))
 
     it('should display error message when subnetId is invalid', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.queryParamNumericKeys = ['subnetId']
-        component.updateFilterFromQueryParameters(convertToParamMap({ subnetId: 'abc' }))
+        component.table.queryParamNumericKeys = ['subnetId']
+        component.table.updateFilterFromQueryParameters(convertToParamMap({ subnetId: 'abc' }))
         tick()
         fixture.detectChanges()
 
@@ -1174,12 +1176,12 @@ describe('HostsPageComponent', () => {
     }))
 
     it('hosts list should be filtered by conflicts', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ filter: { conflict: true } })
+        component.table.filter$.next({ filter: { conflict: true } })
         tick()
         fixture.detectChanges()
 
@@ -1189,12 +1191,12 @@ describe('HostsPageComponent', () => {
     }))
 
     it('hosts list should be filtered by non-conflicts', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ filter: { conflict: false } })
+        component.table.filter$.next({ filter: { conflict: false } })
         tick()
         fixture.detectChanges()
 
@@ -1204,12 +1206,12 @@ describe('HostsPageComponent', () => {
     }))
 
     it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.filter$.next({ filter: { keaSubnetId: 101 } })
+        component.table.filter$.next({ filter: { keaSubnetId: 101 } })
         tick()
         fixture.detectChanges()
 
@@ -1219,13 +1221,13 @@ describe('HostsPageComponent', () => {
     }))
 
     it('should display error message when keaSubnetId is invalid', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.queryParamNumericKeys = ['keaSubnetId']
-        component.updateFilterFromQueryParameters(convertToParamMap({ keaSubnetId: 'abc' }))
+        component.table.queryParamNumericKeys = ['keaSubnetId']
+        component.table.updateFilterFromQueryParameters(convertToParamMap({ keaSubnetId: 'abc' }))
         tick()
         fixture.detectChanges()
 
@@ -1238,14 +1240,16 @@ describe('HostsPageComponent', () => {
     }))
 
     it('should display multiple error message for each invalid value', fakeAsync(() => {
-        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        component.table.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
 
         spyOn(dhcpApi, 'getHosts').and.callThrough()
 
-        component.queryParamNumericKeys = ['subnetId']
-        component.queryParamBooleanKeys = ['isGlobal']
-        component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'foo', subnetId: 'bar', isGlobal: 'tru' }))
+        component.table.queryParamNumericKeys = ['subnetId']
+        component.table.queryParamBooleanKeys = ['isGlobal']
+        component.table.updateFilterFromQueryParameters(
+            convertToParamMap({ appId: 'foo', subnetId: 'bar', isGlobal: 'tru' })
+        )
 
         tick()
         fixture.detectChanges()
@@ -1288,8 +1292,8 @@ describe('HostsPageComponent', () => {
             ],
         } as Host
 
-        component.hosts = [host]
-        const groups = component.localHostsGroupedByApp[host.id]
+        component.table.hosts = [host]
+        const groups = component.table.localHostsGroupedByApp[host.id]
 
         expect(groups.length).toBe(3)
         for (let group of groups) {
@@ -1318,7 +1322,7 @@ describe('HostsPageComponent', () => {
             },
         ] as LocalHost[]
 
-        let state = component.getLocalHostsState(localHosts)
+        let state = component.table.getLocalHostsState(localHosts)
         expect(state).toBe('conflict')
 
         // Duplicate
@@ -1335,7 +1339,7 @@ describe('HostsPageComponent', () => {
             },
         ] as LocalHost[]
 
-        state = component.getLocalHostsState(localHosts)
+        state = component.table.getLocalHostsState(localHosts)
         expect(state).toBe('duplicate')
 
         // Null
@@ -1347,7 +1351,7 @@ describe('HostsPageComponent', () => {
             },
         ] as LocalHost[]
 
-        state = component.getLocalHostsState(localHosts)
+        state = component.table.getLocalHostsState(localHosts)
         expect(state).toBeNull()
     })
 })
