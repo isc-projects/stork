@@ -118,6 +118,13 @@ func CreateEvent(level dbmodel.EventLevel, text string, objects ...interface{}) 
 		case []error:
 			var errors []string
 			for _, err := range entity {
+				if err == nil {
+					// The error list are used when some subsequent or parallel
+					// operations are performed and some of them may fail. If
+					// the error is nil, it means that the operation was
+					// successful, so we must skip it.
+					continue
+				}
 				errors = append(errors, err.Error())
 			}
 			details = strings.Join(errors, "; ")
