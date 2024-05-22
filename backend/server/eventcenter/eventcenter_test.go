@@ -359,6 +359,23 @@ func TestCreateEventErrorArrayDetails(t *testing.T) {
 	require.EqualValues(t, "first error; second error", ev.Details)
 }
 
+// Test that event details are set from an array of errors that contains nil.
+func TestCreateEventErrorArrayWithNilDetails(t *testing.T) {
+	// Arrange
+	errs := []error{
+		pkgerrors.New("first error"),
+		nil,
+		pkgerrors.New("second error"),
+	}
+
+	// Act
+	ev := CreateEvent(dbmodel.EvInfo, "foo bar baz", errs)
+
+	// Assert
+	require.EqualValues(t, "foo bar baz", ev.Text)
+	require.EqualValues(t, "first error; second error", ev.Details)
+}
+
 // Test that the event without tags is created properly.
 func TestCreateEventNoTags(t *testing.T) {
 	// Act
