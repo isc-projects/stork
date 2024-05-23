@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -704,9 +705,18 @@ func (module *ConfigModule) commitSharedNetworkUpdate(ctx context.Context) (cont
 		if update.Recipe.SharedNetworkAfterUpdate == nil {
 			return ctx, errors.New("server logic error: the update.Recipe.SharedNetworkAfterUpdate cannot be nil when committing the shared network update")
 		}
-		_, err := dbmodel.CommitNetworksIntoDB(module.manager.GetDB(), []dbmodel.SharedNetwork{*update.Recipe.SharedNetworkAfterUpdate}, []dbmodel.Subnet{})
+		err = module.manager.GetDB().RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			// Remove associations between the daemons and the shared network because it is possible
+			// that user has removed some of the associations. The ones left will be recreated.
+			err := dbmodel.DeleteDaemonsFromSharedNetwork(tx, update.Recipe.SharedNetworkAfterUpdate.ID)
+			if err == nil {
+				// Recreate the associations.
+				_, err = dbmodel.CommitNetworksIntoDB(tx, []dbmodel.SharedNetwork{*update.Recipe.SharedNetworkAfterUpdate}, []dbmodel.Subnet{})
+			}
+			return errors.WithMessagef(err, "shared network has been successfully updated in Kea but updating it in the Stork database failed")
+		})
 		if err != nil {
-			return ctx, errors.WithMessagef(err, "shared network has been successfully updated in Kea but updating it in the Stork database failed")
+			return ctx, err
 		}
 	}
 	return ctx, nil

@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -811,4 +812,85 @@ func TestJoinSharedNetworks(t *testing.T) {
 	require.EqualValues(t, 1, sharedNetwork0.LocalSharedNetworks[0].DaemonID)
 	require.EqualValues(t, 2, sharedNetwork0.LocalSharedNetworks[1].DaemonID)
 	require.EqualValues(t, 3, sharedNetwork0.LocalSharedNetworks[2].DaemonID)
+}
+
+// Test that deleting daemons from a shared network removes the associations of
+// the shared network with daemons but also the associations of the subnets
+// with daemons.
+func TestDeleteDaemonsFromSharedNetwork(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestSubnetApps(t, db)
+
+	// Add some shared networks with subnets. Each of them is associated
+	// with multiple daemons.
+	var networks []*SharedNetwork
+	for i := 0; i < 2; i++ {
+		network := &SharedNetwork{
+			Name:   fmt.Sprintf("network%d", i),
+			Family: 4,
+			LocalSharedNetworks: []*LocalSharedNetwork{
+				{
+					DaemonID: apps[0].Daemons[0].ID,
+				},
+				{
+					DaemonID: apps[1].Daemons[0].ID,
+				},
+			},
+			Subnets: []Subnet{
+				{
+					Prefix: fmt.Sprintf("192.0.%d.0/24", i),
+					LocalSubnets: []*LocalSubnet{
+						{
+							DaemonID: apps[0].Daemons[0].ID,
+						},
+						{
+							DaemonID: apps[1].Daemons[0].ID,
+						},
+					},
+				},
+			},
+		}
+		err := AddSharedNetwork(db, network)
+		require.NoError(t, err)
+		require.NotZero(t, network.ID)
+
+		err = AddLocalSharedNetworks(db, network)
+		require.NoError(t, err)
+
+		err = AddLocalSubnets(db, &network.Subnets[0])
+		require.NoError(t, err)
+
+		networks = append(networks, network)
+	}
+
+	// Ensure that the shared network is associated with multiple daemons and
+	// the subnets are also associated with multiple daemons.
+	network0, err := GetSharedNetwork(db, networks[0].ID)
+	require.NoError(t, err)
+	require.Len(t, network0.LocalSharedNetworks, 2)
+	require.Len(t, network0.Subnets, 1)
+	require.Len(t, network0.Subnets[0].LocalSubnets, 2)
+
+	// Delete daemons from the first shared network.
+	err = DeleteDaemonsFromSharedNetwork(db, network0.ID)
+	require.NoError(t, err)
+
+	// Ensure that neither the shared network nor the subnets are
+	// associated with the daemons.
+	network0, err = GetSharedNetwork(db, networks[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, network0)
+	require.Empty(t, network0.LocalSharedNetworks, 0)
+	require.Len(t, network0.Subnets, 1)
+	require.Empty(t, network0.Subnets[0].LocalSubnets, 0)
+
+	// It should not affect the second shared network.
+	network1, err := GetSharedNetwork(db, networks[1].ID)
+	require.NoError(t, err)
+	require.NotNil(t, network1)
+	require.Len(t, network1.LocalSharedNetworks, 2)
+	require.Len(t, network1.Subnets, 1)
+	require.Len(t, network1.Subnets[0].LocalSubnets, 2)
 }

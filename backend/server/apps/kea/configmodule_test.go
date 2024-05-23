@@ -2071,7 +2071,7 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 	updatedSharedNetwork, err := dbmodel.GetSharedNetwork(db, sharedNetworks[0].ID)
 	require.NoError(t, err)
 	require.NotNil(t, updatedSharedNetwork)
-	require.Len(t, updatedSharedNetwork.LocalSharedNetworks, 2)
+	require.Len(t, updatedSharedNetwork.LocalSharedNetworks, 1)
 	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters)
 	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator)
 	require.Equal(t, "random", *updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator)

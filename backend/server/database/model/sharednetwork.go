@@ -225,6 +225,28 @@ func DeleteDaemonFromSharedNetworks(dbi dbops.DBI, daemonID int64) (int64, error
 	return int64(result.RowsAffected()), nil
 }
 
+// Dissociates daemons from the shared network and from its subnets.
+func DeleteDaemonsFromSharedNetwork(dbi dbops.DBI, sharedNetworkID int64) error {
+	// Delete local shared networks.
+	_, err := dbi.Model((*LocalSharedNetwork)(nil)).
+		Where("shared_network_id = ?", sharedNetworkID).
+		Delete()
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem deleting daemons from shared network %d", sharedNetworkID)
+		return err
+	}
+	// Delete local subnets from all the subnets belonging to the shared network.
+	subnets := dbi.Model((*Subnet)(nil)).ColumnExpr("id").Where("shared_network_id = ?", sharedNetworkID)
+	_, err = dbi.Model((*LocalSubnet)(nil)).
+		Where("subnet_id IN (?)", subnets).
+		Delete()
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem deleting daemons from subnets belonging to the shared network %d", sharedNetworkID)
+		return err
+	}
+	return nil
+}
+
 // Fetches all shared networks without subnets. The family argument specifies
 // whether only IPv4 shared networks should be fetched (if 4), only IPv6 shared
 // networks should be fetched (if 6) or both otherwise.
