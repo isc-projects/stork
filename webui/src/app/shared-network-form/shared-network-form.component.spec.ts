@@ -100,6 +100,28 @@ describe('SharedNetworkFormComponent', () => {
                     },
                 },
             ],
+            subnets: [
+                {
+                    id: 123,
+                    subnet: '192.0.2.0/24',
+                    sharedNetwork: 'floor3',
+                    sharedNetworkId: 3,
+                    localSubnets: [
+                        {
+                            id: 123,
+                            appId: 234,
+                            daemonId: 1,
+                            appName: 'server 1',
+                        },
+                        {
+                            id: 234,
+                            appId: 345,
+                            daemonId: 2,
+                            appName: 'server 2',
+                        },
+                    ],
+                },
+            ],
         },
         daemons: [
             {
@@ -135,6 +157,13 @@ describe('SharedNetworkFormComponent', () => {
                 name: 'dhcp6',
                 app: {
                     name: 'third',
+                },
+            },
+            {
+                id: 6,
+                name: 'dhcp4',
+                app: {
+                    name: 'fifth',
                 },
             },
         ],
@@ -306,7 +335,11 @@ describe('SharedNetworkFormComponent', () => {
         expect(component.state.transactionId).toBe(123)
         expect(component.state.ipType).toBe(IPType.IPv4)
         expect(component.state.group).toBeTruthy()
-        expect(component.state.filteredDaemons.length).toBe(2)
+        expect(component.state.filteredDaemons.length).toBe(3)
+
+        component.state.group.get('selectedDaemons').setValue([1, 6])
+        component.state.updateFormForSelectedDaemons([1, 6])
+        component.state.updateServers([1, 6])
 
         const okResp: any = {
             status: 200,
@@ -322,7 +355,24 @@ describe('SharedNetworkFormComponent', () => {
             id: 123,
             name: 'stanza',
             universe: 4,
-            subnets: undefined,
+            subnets: [
+                {
+                    id: 123,
+                    subnet: '192.0.2.0/24',
+                    sharedNetwork: 'floor3',
+                    sharedNetworkId: 3,
+                    localSubnets: [
+                        {
+                            id: 123,
+                            daemonId: 1,
+                        },
+                        {
+                            id: 123,
+                            daemonId: 6,
+                        },
+                    ],
+                },
+            ],
             localSharedNetworks: [
                 {
                     daemonId: 1,
@@ -348,7 +398,7 @@ describe('SharedNetworkFormComponent', () => {
                     },
                 },
                 {
-                    daemonId: 2,
+                    daemonId: 6,
                     keaConfigSharedNetworkParameters: {
                         sharedNetworkLevelParameters: {
                             allocator: 'iterative',

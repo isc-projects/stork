@@ -11,6 +11,7 @@ import {
     uncamelCase,
     getSeverityByIndex,
     formatNoun,
+    deepCopy,
 } from './utils'
 
 describe('utils', () => {
@@ -323,5 +324,53 @@ describe('utils', () => {
         expect(formatNoun(0, 'access', 'es')).toBe('0 accesses')
         expect(formatNoun(-2, 'access', 'es')).toBe('-2 accesses')
         expect(formatNoun(6, 'access', 'es')).toBe('6 accesses')
+    })
+
+    it('should deep copy structure', () => {
+        interface ThreeType {
+            four: boolean
+        }
+        interface FiveType {
+            six: number
+        }
+        interface CopiedType {
+            one: string
+            two: number
+            three: ThreeType
+            five: FiveType[]
+        }
+        // Create a structure to be copied.
+        const original: CopiedType = {
+            one: 'one',
+            two: 2,
+            three: {
+                four: true,
+            },
+            five: [
+                {
+                    six: 6,
+                },
+            ],
+        }
+        // Copy the structure.
+        const copy: CopiedType = deepCopy(original)
+        expect(copy.one).toBe('one')
+        expect(copy.two).toBe(2)
+        expect(copy.three.four).toBeTrue()
+        expect(copy.five.length).toBe(1)
+        expect(copy.five[0].six).toBe(6)
+
+        // Modifying the contents of the copied structure should not
+        // affect the original.
+        copy.one = 'foo'
+        copy.two = 10
+        copy.three.four = false
+        copy.five[0].six = 123
+
+        expect(original.one).toBe('one')
+        expect(original.two).toBe(2)
+        expect(original.three.four).toBeTrue()
+        expect(original.five.length).toBe(1)
+        expect(original.five[0].six).toBe(6)
     })
 })

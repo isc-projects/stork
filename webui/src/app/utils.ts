@@ -575,3 +575,15 @@ export function formatNoun(count: number, noun, postfix: string): string {
     }
     return `${count} ${noun}`
 }
+
+/**
+ * Deeply copies the object.
+ *
+ * The copied object must be convertible to JSON.
+ *
+ * @param obj object to be copied.
+ * @returns copied object.
+ */
+export function deepCopy<T>(obj: T): T {
+    return JSON.parse(JSON.stringify(obj))
+}

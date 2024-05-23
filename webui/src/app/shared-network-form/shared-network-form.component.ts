@@ -3,7 +3,7 @@ import { DHCPService, SharedNetwork, UpdateSharedNetworkBeginResponse } from '..
 import { GenericFormService } from '../forms/generic-form.service'
 import { MessageService } from 'primeng/api'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
-import { getErrorMessage, getSeverityByIndex } from '../utils'
+import { deepCopy, getErrorMessage, getSeverityByIndex } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
@@ -255,12 +255,48 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         let sharedNetwork: SharedNetwork
 
         try {
+            // Convert the shared network data from. It currently excludes subnets.
             sharedNetwork = this.subnetSetFormService.convertFormToSharedNetwork(this.state.ipType, this.state.group)
+            // Copy the subnets from the original shared network.
             sharedNetwork.subnets = this.state.savedSharedNetworkBeginData?.sharedNetwork?.subnets
+            // A part of the shared network update can be to deselect some of the daemons
+            // from the shared network. These daemons must also be deselected in the subnets
+            // belonging to this shared network.
+            sharedNetwork.subnets?.forEach(
+                (s) =>
+                    (s.localSubnets = s.localSubnets.filter((ls) =>
+                        // Only leave the associations that also exist for the shared network.
+                        sharedNetwork.localSharedNetworks.find((lsn) => lsn.daemonId === ls.daemonId)
+                    ))
+            )
+            // Another case is that the user has added some new associations.
+            sharedNetwork.localSharedNetworks?.forEach((lsn) => {
+                // Ensure the associations are correct for each subnet.
+                sharedNetwork.subnets?.forEach((s) => {
+                    // If we cannot find the particular association in the subnet add one.
+                    if (s.localSubnets.length > 0 && !s.localSubnets.find((ls) => ls.daemonId === lsn.daemonId)) {
+                        // Everything can be copied except the IDs.
+                        let newLocalSubnet = deepCopy(s.localSubnets[0])
+                        newLocalSubnet.daemonId = lsn.daemonId
+                        s.localSubnets.push(newLocalSubnet)
+                    }
+                })
+            })
+            // Sanitize the local subnets and shared networks.
+            sharedNetwork.subnets?.forEach((s) => {
+                s.localSubnets.forEach((ls) => {
+                    delete ls['appId']
+                    delete ls['appName']
+                })
+            })
+            sharedNetwork.localSharedNetworks.forEach((lsn) => {
+                delete lsn['appId']
+                delete lsn['appName']
+            })
         } catch (err) {
             this.messageService.add({
                 severity: 'error',
-                summary: 'Cannot commit the sharde network',
+                summary: 'Cannot commit the shared network',
                 detail: 'Processing the shared network form failed: ' + err,
                 life: 10000,
             })
