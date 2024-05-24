@@ -26,6 +26,13 @@ export class PasswordChangePageComponent implements OnInit {
      */
     maxInputLen = 120
 
+    /**
+     * RegExp pattern to validate password fields.
+     * It allows uppercase and lowercase letters A-Z,
+     * numbers 0-9 and all special characters.
+     */
+    passwordPattern: RegExp = /[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?]+/
+
     constructor(
         private formBuilder: UntypedFormBuilder,
         private usersApi: UsersService,

@@ -358,8 +358,8 @@
                                     inputId="userPassword"
                                     inputStyleClass="user-input"
                                     styleClass="password-component"
-                                    pattern="[a-zA-Z0-9@.!\+\-]*"
-                                    title="Must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long."
+                                    [pattern]="passwordPattern"
+                                    title="Must only contain letters, digits, or special characters and must be at least 8 characters long."
                                 ></p-password>
                             </div>
                             <div class="col-12" *ngIf="isFeedbackNeeded('userPassword')">
@@ -368,7 +368,7 @@
                                     [text]="
                                         buildFeedbackMessage(
                                             'userPassword',
-                                            'Password must only contain letters, digits, @, ., !, +, -'
+                                            'Password must only contain letters, digits, or special characters.'
                                         )
                                     "
                                 ></p-message>
@@ -383,7 +383,7 @@
                                     inputId="userPassword2"
                                     inputStyleClass="user-input"
                                     styleClass="password-component"
-                                    title="Must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long."
+                                    title="Must only contain letters, digits, or special characters and must be at least 8 characters long."
                                 ></p-password>
                             </div>
                             <div class="col-12" *ngIf="isFeedbackNeeded('userPassword2', true)">

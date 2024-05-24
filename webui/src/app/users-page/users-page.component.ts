@@ -101,6 +101,13 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Users' }]
 
+    /**
+     * RegExp pattern to validate password fields.
+     * It allows uppercase and lowercase letters A-Z,
+     * numbers 0-9 and all special characters.
+     */
+    passwordPattern: RegExp = /[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?]+/
+
     // ToDo: Strict typing
     private groups: any[] = []
     // users table
