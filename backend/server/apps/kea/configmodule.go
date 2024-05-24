@@ -639,34 +639,32 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 	}
 	// Identify the daemons which no longer exist in the updated shared network.
 	// Remove the shared network from these daemons.
-	var removedLocalSharedNetworks []*dbmodel.LocalSharedNetwork
+	var deletedLocalSharedNetworks []*dbmodel.LocalSharedNetwork
 	for i, exln := range existingSharedNetwork.LocalSharedNetworks {
-		removedLocalSharedNetwork := existingSharedNetwork.LocalSharedNetworks[i]
+		deletedLocalSharedNetwork := existingSharedNetwork.LocalSharedNetworks[i]
 		for _, ln := range sharedNetwork.LocalSharedNetworks {
 			if exln.DaemonID == ln.DaemonID {
 				// Daemon still exists. Do not remove.
-				removedLocalSharedNetwork = nil
+				deletedLocalSharedNetwork = nil
 				break
 			}
 		}
-		if removedLocalSharedNetwork != nil {
+		if deletedLocalSharedNetwork != nil {
 			appCommand := ConfigCommand{}
-			switch sharedNetwork.Family {
-			case 4:
-				deletedSharedNetwork4 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(removedLocalSharedNetwork.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
-				appCommand.Command = keactrl.NewCommand("network4-del", []string{removedLocalSharedNetwork.Daemon.Name}, deletedSharedNetwork4)
-			default:
-				deletedSharedNetwork6 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(removedLocalSharedNetwork.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
-				appCommand.Command = keactrl.NewCommand("network6-del", []string{removedLocalSharedNetwork.Daemon.Name}, deletedSharedNetwork6)
+			deletedKeaSharedNetwork := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(deletedLocalSharedNetwork.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
+			commandName := "network4-del"
+			if sharedNetwork.Family == 6 {
+				commandName = "network6-del"
 			}
-			appCommand.App = removedLocalSharedNetwork.Daemon.App
+			appCommand.Command = keactrl.NewCommand(commandName, []string{deletedLocalSharedNetwork.Daemon.Name}, deletedKeaSharedNetwork)
+			appCommand.App = deletedLocalSharedNetwork.Daemon.App
 			commands = append(commands, appCommand)
-			removedLocalSharedNetworks = append(removedLocalSharedNetworks, removedLocalSharedNetwork)
+			deletedLocalSharedNetworks = append(deletedLocalSharedNetworks, deletedLocalSharedNetwork)
 		}
 	}
 	// Create the commands to write the updated configuration to files. The shared network
 	// changes won't persist across the servers' restarts otherwise.
-	for _, lsn := range append(sharedNetwork.LocalSharedNetworks, removedLocalSharedNetworks...) {
+	for _, lsn := range append(sharedNetwork.LocalSharedNetworks, deletedLocalSharedNetworks...) {
 		commands = append(commands, ConfigCommand{
 			Command: keactrl.NewCommand("config-write", []string{lsn.Daemon.Name}, nil),
 			App:     lsn.Daemon.App,

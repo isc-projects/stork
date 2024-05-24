@@ -184,10 +184,7 @@
                 <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
             </div>
             <ng-container *ngFor="let optionSet of state.group.get('options.data')?.controls; let i = index">
-                <div
-                    *ngIf="i === 0 || state.group.get('options.unlocked')?.value"
-                    class="mb-3 mt-3 host-form-abs-width"
-                >
+                <div *ngIf="i === 0 || state.group.get('options.unlocked')?.value" class="mb-3 mt-3">
                     <div *ngIf="state.group.get('options.unlocked')?.value" class="pb-5">
                         <p-divider *ngIf="state.group.get('options.data')?.length > 1" align="center">
                             <p-tag [severity]="getServerTagSeverity(i)">
@@ -238,7 +235,7 @@
                 <div class="flex flex-column">
                     <div class="flex align-items-center m-4">
                         In order to apply configuration changes, the server should begin a transaction between the user
-                        and the server. The server should also return current data required in the form where the host
+                        and the server. The server should also return current data required in the form where the subnet
                         information is specified. Unfortunately, starting the new transaction failed with the following
                         error:
                     </div>
