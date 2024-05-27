@@ -221,7 +221,7 @@ func updateHost(tx *pg.Tx, host *Host) error {
 }
 
 // Attempts to update a host and its local hosts with in an existing transaction.
-func updateHostWithReferences(tx *pg.Tx, host *Host) error {
+func updateHostWithLocalHosts(tx *pg.Tx, host *Host) error {
 	err := updateHost(tx, host)
 	if err != nil {
 		return err
@@ -243,10 +243,10 @@ func updateHostWithReferences(tx *pg.Tx, host *Host) error {
 func UpdateHost(dbi dbops.DBI, host *Host) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return updateHostWithReferences(tx, host)
+			return updateHostWithLocalHosts(tx, host)
 		})
 	}
-	return updateHostWithReferences(dbi.(*pg.Tx), host)
+	return updateHostWithLocalHosts(dbi.(*pg.Tx), host)
 }
 
 // Fetch the host by ID.
@@ -760,7 +760,7 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64) (err error) {
 				return err
 			}
 		} else {
-			err = updateHostWithReferences(tx, &hosts[i])
+			err = updateHostWithLocalHosts(tx, &hosts[i])
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to update detected host in the database")
 				return err
