@@ -2486,8 +2486,11 @@ func TestAppToRestAPIForNilKeaConfig(t *testing.T) {
 	require.NotNil(t, restApp)
 }
 
-// Test that converting app with partially detected BIND9 instance doesn't
-// cause panic.
+// Test that converting BIND9 app with no daemons doesn't cause panic.
+// The daemon list is empty when the Stork agent detects the BIND9 process but
+// it fails to establish connection to it through the RNDC control channel
+// (e.g. due to insufficient permissions to BIND9 configurations of the Stork
+// agent user).
 func TestAppToRestAPIForPartiallyDetectedBind9(t *testing.T) {
 	// Arrange
 	app := &dbmodel.App{
