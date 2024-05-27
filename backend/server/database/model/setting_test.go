@@ -49,8 +49,15 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 30, val)
 
-	// change the setting
+	boolVal, err := GetSettingBool(db, "enable_machine_registration")
+	require.NoError(t, err)
+	require.True(t, boolVal)
+
+	// change the settings
 	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
+	require.NoError(t, err)
+
+	err = SetSettingBool(db, "enable_machine_registration", false)
 	require.NoError(t, err)
 
 	// reinitialize settings, nothing should change
@@ -58,10 +65,14 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, settings, count)
 
-	// this changed setting should not be reset
+	// the modified settings should not be reset
 	val, err = GetSettingInt(db, "kea_stats_puller_interval")
 	require.NoError(t, err)
 	require.EqualValues(t, 123, val)
+
+	boolVal, err = GetSettingBool(db, "enable_machine_registration")
+	require.NoError(t, err)
+	require.False(t, boolVal)
 
 	// get all settings
 	settingsMap, err := GetAllSettings(db)

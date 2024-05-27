@@ -277,7 +277,8 @@ func TestCreateMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	ec := NewEndpointControl()
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, ec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -589,6 +590,52 @@ func TestCreateMachine(t *testing.T) {
 		m2 = machines[1]
 	}
 	require.False(t, m2.Authorized)
+}
+
+// Test that HTTP Forbidden status code is returned when machine registration
+// endpoint is disabled.
+func TestCreateMachineForbidden(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	ec := NewEndpointControl()
+	ec.SetEnabled(EndpointOpCreateNewMachine, false)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, ec)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Create certs.
+	_, _, _, err = certs.SetupServerCerts(db)
+	require.NoError(t, err)
+
+	privKeyPEM, err := pki.GenKey()
+	require.NoError(t, err)
+	csrPEM, _, err := pki.GenCSRUsingKey("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")}, privKeyPEM)
+	require.NoError(t, err)
+	agentCSR := string(csrPEM)
+
+	dbServerToken, err := dbmodel.GetSecret(db, dbmodel.SecretServerToken)
+	require.NoError(t, err)
+
+	// Send a request to register new machine while the registration is disabled.
+	params := services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     storkutil.Ptr("1.2.3.4"),
+			AgentPort:   8080,
+			AgentCSR:    &agentCSR,
+			ServerToken: string(dbServerToken),
+			AgentToken:  storkutil.Ptr("agentToken"),
+		},
+	}
+	rsp := rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	defaultRsp := rsp.(*services.CreateMachineDefault)
+	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+	require.Equal(t, "Machine registration is administratively disabled", *defaultRsp.Payload.Message)
 }
 
 func TestGetMachines(t *testing.T) {

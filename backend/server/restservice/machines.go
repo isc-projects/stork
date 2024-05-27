@@ -454,6 +454,14 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	}
 
 	if dbMachine == nil {
+		if r.EndpointControl.IsDisabled(EndpointOpCreateNewMachine) {
+			log.Info("Machine registration prevented because it is administratively disabled")
+			rsp := services.NewCreateMachineDefault(http.StatusForbidden).WithPayload(&models.APIError{
+				Message: storkutil.Ptr("Machine registration is administratively disabled"),
+			})
+			return rsp
+		}
+
 		dbMachine = &dbmodel.Machine{
 			Address:         addr,
 			AgentPort:       params.Machine.AgentPort,

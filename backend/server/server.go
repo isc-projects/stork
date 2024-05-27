@@ -212,11 +212,21 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	// server startup.
 	ss.ConfigManager = apps.NewManager(ss)
 
+	// Check if the machine registration endpoint should be disabled.
+	enableMachineRegistration, err := dbmodel.GetSettingBool(ss.DB, "enable_machine_registration")
+	if err != nil {
+		return err
+	}
+
+	// Endpoint control holds the list of explicitly disabled REST API endpoints.
+	endpointControl := restservice.NewEndpointControl()
+	endpointControl.SetEnabled(restservice.EndpointOpCreateNewMachine, enableMachineRegistration)
+
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
 		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
-		ss.DHCPOptionDefinitionLookup, ss.HookManager)
+		ss.DHCPOptionDefinitionLookup, ss.HookManager, endpointControl)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()

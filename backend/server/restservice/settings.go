@@ -25,13 +25,14 @@ func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsPa
 	}
 
 	s := &models.Settings{
-		Bind9StatsPullerInterval: dbSettingsMap["bind9_stats_puller_interval"].(int64),
-		GrafanaURL:               dbSettingsMap["grafana_url"].(string),
-		KeaHostsPullerInterval:   dbSettingsMap["kea_hosts_puller_interval"].(int64),
-		KeaStatsPullerInterval:   dbSettingsMap["kea_stats_puller_interval"].(int64),
-		KeaStatusPullerInterval:  dbSettingsMap["kea_status_puller_interval"].(int64),
-		AppsStatePullerInterval:  dbSettingsMap["apps_state_puller_interval"].(int64),
-		PrometheusURL:            dbSettingsMap["prometheus_url"].(string),
+		Bind9StatsPullerInterval:  dbSettingsMap["bind9_stats_puller_interval"].(int64),
+		GrafanaURL:                dbSettingsMap["grafana_url"].(string),
+		KeaHostsPullerInterval:    dbSettingsMap["kea_hosts_puller_interval"].(int64),
+		KeaStatsPullerInterval:    dbSettingsMap["kea_stats_puller_interval"].(int64),
+		KeaStatusPullerInterval:   dbSettingsMap["kea_status_puller_interval"].(int64),
+		AppsStatePullerInterval:   dbSettingsMap["apps_state_puller_interval"].(int64),
+		PrometheusURL:             dbSettingsMap["prometheus_url"].(string),
+		EnableMachineRegistration: dbSettingsMap["enable_machine_registration"].(bool),
 	}
 	rsp := settings.NewGetSettingsOK().WithPayload(s)
 
@@ -90,6 +91,12 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		log.Error(err)
 		return errRsp
 	}
+	err = dbmodel.SetSettingBool(r.DB, "enable_machine_registration", s.EnableMachineRegistration)
+	if err != nil {
+		log.Error(err)
+		return errRsp
+	}
+	r.EndpointControl.SetEnabled(EndpointOpCreateNewMachine, s.EnableMachineRegistration)
 
 	rsp := settings.NewUpdateSettingsOK()
 	return rsp

@@ -23,7 +23,8 @@ func TestSettings(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, nil, fd, nil)
+	ec := NewEndpointControl()
+	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, fd, ec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -42,13 +43,14 @@ func TestSettings(t *testing.T) {
 	// Update settings.
 	paramsUS := settings.UpdateSettingsParams{
 		Settings: &models.Settings{
-			Bind9StatsPullerInterval: 1,
-			AppsStatePullerInterval:  2,
-			KeaHostsPullerInterval:   3,
-			KeaStatsPullerInterval:   4,
-			KeaStatusPullerInterval:  5,
-			GrafanaURL:               "http://foo:3000",
-			PrometheusURL:            "http://bar:3000",
+			Bind9StatsPullerInterval:  1,
+			AppsStatePullerInterval:   2,
+			KeaHostsPullerInterval:    3,
+			KeaStatsPullerInterval:    4,
+			KeaStatusPullerInterval:   5,
+			GrafanaURL:                "http://foo:3000",
+			PrometheusURL:             "http://bar:3000",
+			EnableMachineRegistration: false,
 		},
 	}
 	rsp = rapi.UpdateSettings(ctx, paramsUS)
@@ -68,4 +70,6 @@ func TestSettings(t *testing.T) {
 
 	require.EqualValues(t, "http://foo:3000", okRsp.Payload.GrafanaURL)
 	require.EqualValues(t, "http://bar:3000", okRsp.Payload.PrometheusURL)
+
+	require.False(t, okRsp.Payload.EnableMachineRegistration)
 }

@@ -86,6 +86,11 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 			ValType: SettingValTypeStr,
 			Value:   "",
 		},
+		{
+			Name:    "enable_machine_registration",
+			ValType: SettingValTypeBool,
+			Value:   "true",
+		},
 	}
 
 	// Check if there are new settings vs existing ones. Add new ones to DB.

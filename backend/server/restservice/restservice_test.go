@@ -31,6 +31,24 @@ type authenticationCalloutCarrier interface { //nolint:unused
 //go:generate mockgen -package=restservice -destination=authenticationcalloutsmock_test.go -source=../../hooks/server/authenticationcallouts/authenticationcallouts.go isc.org/server/hookmanager AuthenticationMetadata
 //go:generate mockgen -package=restservice -destination=authenticationcalloutcarriermock_test.go -source=restservice_test.go -mock_names=authenticationCalloutCarrier=MockAuthenticationCalloutCarrier isc.org/server/hookmanager authenticationCalloutCarrier
 
+// Test instantiating EndpointControl.
+func TestNewEndpointControl(t *testing.T) {
+	control := NewEndpointControl()
+	require.False(t, control.IsDisabled(EndpointOpCreateNewMachine))
+}
+
+// Test setting the endpoint state to disabled and enabled.
+func TestSetEnabled(t *testing.T) {
+	control := NewEndpointControl()
+	require.False(t, control.IsDisabled(EndpointOpCreateNewMachine))
+
+	control.SetEnabled(EndpointOpCreateNewMachine, true)
+	require.False(t, control.IsDisabled(EndpointOpCreateNewMachine))
+
+	control.SetEnabled(EndpointOpCreateNewMachine, false)
+	require.True(t, control.IsDisabled(EndpointOpCreateNewMachine))
+}
+
 // Tests instantiating RestAPI.
 func TestNewRestAPI(t *testing.T) {
 	db, dbs, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -48,9 +66,10 @@ func TestNewRestAPI(t *testing.T) {
 		DB:     db,
 		Agents: agents,
 	})
+	endpointControl := NewEndpointControl()
 
 	// Specify all supported structures.
-	api, err := NewRestAPI(settings, dbs, db, agents, eventcenter, pullers, dispatcher, collector, configManager)
+	api, err := NewRestAPI(settings, dbs, db, agents, eventcenter, pullers, dispatcher, collector, configManager, endpointControl)
 	require.NoError(t, err)
 	require.NotNil(t, api)
 	require.Equal(t, api.Settings, settings)
@@ -61,9 +80,10 @@ func TestNewRestAPI(t *testing.T) {
 	require.Equal(t, api.ReviewDispatcher, dispatcher)
 	require.Equal(t, api.MetricsCollector, collector)
 	require.Equal(t, api.ConfigManager, configManager)
+	require.Equal(t, api.EndpointControl, endpointControl)
 
 	// Reverse their order.
-	api, err = NewRestAPI(configManager, collector, dispatcher, pullers, eventcenter, agents, db, dbs, settings)
+	api, err = NewRestAPI(endpointControl, configManager, collector, dispatcher, pullers, eventcenter, agents, db, dbs, settings)
 	require.NoError(t, err)
 	require.NotNil(t, api)
 	require.Equal(t, api.Settings, settings)
@@ -74,6 +94,7 @@ func TestNewRestAPI(t *testing.T) {
 	require.Equal(t, api.ReviewDispatcher, dispatcher)
 	require.Equal(t, api.MetricsCollector, collector)
 	require.Equal(t, api.ConfigManager, configManager)
+	require.Equal(t, api.EndpointControl, endpointControl)
 
 	// Specify one structure and one interface.
 	api, err = NewRestAPI(dbs, dispatcher)

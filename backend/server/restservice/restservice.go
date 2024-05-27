@@ -40,6 +40,27 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// A REST API endpoint operation.
+//
+// It is used internally by the REST API handler to detect if a specific
+// operation on the REST API endpoint has been disabled by the user.
+type EndpointOp int
+
+// An operation to create/register a new machine.
+const EndpointOpCreateNewMachine EndpointOp = iota
+
+// Holds a collection of selected endpoint operations' states.
+//
+// Some REST API operations can be explicitly disabled by a user. This
+// structure allows for checking if a particular operation has been disabled.
+// By default all operations are enabled.
+//
+// An operation can refer to the entire endpoint or some particular logic
+// within the endpoint handler.
+type EndpointControl struct {
+	disabledState map[EndpointOp]bool
+}
+
 // The container for REST API settings. It contains the struct tags with the
 // CLI flags specification.
 type RestAPISettings struct {
@@ -75,6 +96,7 @@ type RestAPI struct {
 	ConfigManager              config.Manager
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
 	HookManager                *hookmanager.HookManager
+	EndpointControl            *EndpointControl
 
 	Agents agentcomm.ConnectedAgents
 
@@ -86,6 +108,23 @@ type RestAPI struct {
 	hasListeners bool
 	Host         string // actual host for listening
 	Port         int    // actual port for listening
+}
+
+// Instantiates the EndpointControl.
+func NewEndpointControl() *EndpointControl {
+	return &EndpointControl{
+		disabledState: make(map[EndpointOp]bool),
+	}
+}
+
+// Checks if the specified endpont is disabled.
+func (ctl *EndpointControl) IsDisabled(endpointType EndpointOp) bool {
+	return ctl.disabledState[endpointType]
+}
+
+// Sets the endpoint state to enabled or disabled.
+func (ctl *EndpointControl) SetEnabled(endpointType EndpointOp, enabled bool) {
+	ctl.disabledState[endpointType] = !enabled
 }
 
 // Instantiates RestAPI structure.
@@ -102,6 +141,7 @@ type RestAPI struct {
 // - *dbops.DatabaseSettings,
 // - *pg.DB,
 // - *apps.Pullers,
+// - *EndpointControl
 //
 // Accepted interfaces:
 // - agentcomm.ConnectedAgents,
@@ -191,6 +231,10 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 		if argType.AssignableTo(reflect.TypeOf((*hookmanager.HookManager)(nil))) {
 			api.HookManager = arg.(*hookmanager.HookManager)
+			continue
+		}
+		if argType.AssignableTo(reflect.TypeOf((*EndpointControl)(nil))) {
+			api.EndpointControl = arg.(*EndpointControl)
 			continue
 		}
 		return nil, pkgerrors.Errorf("unknown argument type %s specified for NewRestAPI", argType.Elem().Name())
