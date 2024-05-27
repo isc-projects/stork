@@ -295,10 +295,17 @@
     </div>
     <div class="mb-4">
         <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()" class="mb-4">
-            <p-message
-                severity="warn"
-                text='The "Edit" and "Delete" operations affect only the configurations stored in the host database (labeled as "host_cmds").'
-            ></p-message>
+            <p-messages severity="warn">
+                <ng-template pTemplate>
+                    <p>
+                        The <span class="font-bold">Edit</span> and <span class="font-bold">Delete</span> operations
+                        affect only the configurations stored in the host database (<app-host-data-source-label
+                            dataSource="api"
+                        ></app-host-data-source-label
+                        >).
+                    </p>
+                </ng-template>
+            </p-messages>
         </div>
         <div class="flex">
             <button
