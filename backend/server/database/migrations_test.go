@@ -284,7 +284,7 @@ func TestMigration13AddInetFamilyColumn(t *testing.T) {
 }
 
 // Asserts equality of two hosts list.
-func assertAreHostsTheSame(t *testing.T, expected, actual []dbmodel.Host) {
+func assertHostsTheSame(t *testing.T, expected, actual []dbmodel.Host) {
 	require.Equal(t, len(expected), len(actual))
 
 	for i := range expected {
@@ -369,7 +369,7 @@ func TestMigrationFrom57To58(t *testing.T) {
 	actualHosts, _ := dbmodel.GetAllHosts(db, 0)
 	require.NotEmpty(t, expectedHosts)
 
-	assertAreHostsTheSame(t, expectedHosts, actualHosts)
+	assertHostsTheSame(t, expectedHosts, actualHosts)
 }
 
 // Test that the 56 migration passes if the local_host table is not empty and
@@ -526,5 +526,5 @@ func TestMigrationFrom57To58DifferentHostData(t *testing.T) {
 	// Restore the proper hostname of the second local host.
 	actualHosts[0].LocalHosts[1].Hostname = initialHosts[0].LocalHosts[1].Hostname
 
-	assertAreHostsTheSame(t, initialHosts, actualHosts)
+	assertHostsTheSame(t, initialHosts, actualHosts)
 }
