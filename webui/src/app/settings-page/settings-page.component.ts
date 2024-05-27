@@ -17,6 +17,7 @@ interface SettingsForm {
     keaStatusPullerInterval: FormControl<number>
     grafanaUrl: FormControl<string>
     prometheusUrl: FormControl<string>
+    enableMachineRegistration: FormControl<boolean>
 }
 
 /**
@@ -128,6 +129,7 @@ export class SettingsPageComponent implements OnInit {
             keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
             grafanaUrl: [''],
             prometheusUrl: [''],
+            enableMachineRegistration: [false],
         })
     }
 

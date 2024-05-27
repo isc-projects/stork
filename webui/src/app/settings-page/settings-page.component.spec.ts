@@ -18,6 +18,7 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { DividerModule } from 'primeng/divider'
 import { of, throwError } from 'rxjs'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { CheckboxModule } from 'primeng/checkbox'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
@@ -30,6 +31,7 @@ describe('SettingsPageComponent', () => {
             imports: [
                 BreadcrumbModule,
                 BrowserAnimationsModule,
+                CheckboxModule,
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
@@ -63,6 +65,15 @@ describe('SettingsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+        expect(component.settingsForm.get('appsStatePullerInterval')?.value).toBe(0)
+        expect(component.settingsForm.get('bind9StatsPullerInterval')?.value).toBe(0)
+        expect(component.settingsForm.get('grafanaUrl')?.value).toBe('')
+        expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(0)
+        expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(0)
+        expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(0)
+        expect(component.settingsForm.get('metricsCollectorInterval')?.value).toBe(0)
+        expect(component.settingsForm.get('prometheusUrl')?.value).toBe('')
+        expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeFalse()
     })
 
     it('should have breadcrumbs', () => {
@@ -92,6 +103,7 @@ describe('SettingsPageComponent', () => {
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
             prometheusUrl: 'http://notlocalhost:2222',
+            enableMachineRegistration: true,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         component.ngOnInit()
@@ -106,6 +118,7 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(31)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
         expect(component.settingsForm.get('prometheusUrl')?.value).toBe('http://notlocalhost:2222')
+        expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeTrue()
     }))
 
     it('should display error message upon getting the settings', fakeAsync(() => {
@@ -140,6 +153,7 @@ describe('SettingsPageComponent', () => {
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
             prometheusUrl: 'http://notlocalhost:2222',
+            enableMachineRegistration: true,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()

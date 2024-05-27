@@ -33,6 +33,27 @@
         <form [formGroup]="settingsForm">
             <div class="grid">
                 <div class="col-6">
+                    <p-fieldset legend="Security">
+                        <div class="flex align-items-center">
+                            <p-checkbox
+                                formControlName="enableMachineRegistration"
+                                [binary]="true"
+                                inputId="machine-registration-checkbox"
+                            />
+                            <label class="ml-2" for="machine-registration-checkbox">Enable machine registration</label>
+                            <app-help-tip title="Enable Machine Registration">
+                                New machines begin registration in the Stork server using a dedicated REST API endpoint.
+                                The same endpoint is used for re-registering already connected machines when they are
+                                restarted. Since new machines are registered rarely it is practical to disable this
+                                option to prevent malicious registration attempts of the fake machines. An administrator
+                                can re-enable it at any time when new registrations are expected. Disabling this option
+                                does not affect an ability to re-register existing machines.
+                            </app-help-tip>
+                        </div>
+                    </p-fieldset>
+                </div>
+                <div class="col-6"></div>
+                <div class="col-6">
                     <p-fieldset legend="Intervals">
                         <div *ngFor="let setting of intervalSettings" class="w-full">
                             <div class="flex align-items-end">
@@ -59,6 +80,7 @@
                         </div>
                     </p-fieldset>
                 </div>
+                <div class="col-6"></div>
 
                 <div class="col-6">
                     <p-fieldset legend="Grafana & Prometheus">

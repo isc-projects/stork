@@ -18,6 +18,7 @@ import { HttpClientModule } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { CheckboxModule } from 'primeng/checkbox'
 
 let mockGetSettingsResponse: Settings = {
     bind9StatsPullerInterval: 10,
@@ -27,6 +28,7 @@ let mockGetSettingsResponse: Settings = {
     keaStatusPullerInterval: 23,
     appsStatePullerInterval: 44,
     prometheusUrl: 'http://prometheus.org',
+    enableMachineRegistration: true,
 }
 
 export default {
@@ -45,6 +47,7 @@ export default {
             imports: [
                 BreadcrumbModule,
                 ButtonModule,
+                CheckboxModule,
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
