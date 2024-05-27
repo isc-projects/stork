@@ -29,6 +29,7 @@ import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { MessageModule } from 'primeng/message'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { MessagesModule } from 'primeng/messages'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -55,7 +56,7 @@ describe('HostTabComponent', () => {
                 ToggleButtonModule,
                 TreeModule,
                 TagModule,
-                MessageModule,
+                MessagesModule,
                 ProgressSpinnerModule,
             ],
             declarations: [
