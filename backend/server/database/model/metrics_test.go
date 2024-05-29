@@ -106,6 +106,10 @@ func TestFilledSharedNetworksDatabaseMetrics(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	// The "alice" share network is specified for both IPv4 and IPv6 families.
+	// We do it to test if the metrics are calculated separately for each
+	// family and the one family doesn't overwrite the other. This bug was
+	// present in the previous implementation.
 	_ = AddSharedNetwork(db, &SharedNetwork{
 		Name:            "alice",
 		AddrUtilization: 10,
