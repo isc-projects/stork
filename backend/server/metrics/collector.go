@@ -23,7 +23,7 @@ type databaseMetricsSource struct {
 	db *pg.DB
 }
 
-// Creates an instance of the metrics source based on the database.
+// Creates an instance of the metrics source for a database.
 func NewDatabaseMetricsSource(db *pg.DB) MetricsSource {
 	return &databaseMetricsSource{db: db}
 }
