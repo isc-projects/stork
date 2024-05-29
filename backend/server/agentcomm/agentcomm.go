@@ -36,12 +36,12 @@ type Agent struct {
 // The GRPC client callback to perform extra verification of the peer
 // certificate.
 // The callback is running at the end of server certificate verification.
-func verifyPeer(params *advancedtls.VerificationFuncParams) (*advancedtls.VerificationResults, error) {
+func verifyPeer(params *advancedtls.HandshakeVerificationInfo) (*advancedtls.PostHandshakeVerificationResults, error) {
 	// The peer must have the extended key usage set.
 	if len(params.Leaf.ExtKeyUsage) == 0 {
 		return nil, errors.New("peer certificate does not have the extended key usage set")
 	}
-	return &advancedtls.VerificationResults{}, nil
+	return &advancedtls.PostHandshakeVerificationResults{}, nil
 }
 
 // Prepare TLS credentials with configured certs and verification options.

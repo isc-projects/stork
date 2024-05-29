@@ -45,7 +45,6 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		ColumnExpr("family(\"prefix\") AS \"family\"").
 		Column("addr_utilization", "pd_utilization").
 		Select(&metrics.SubnetMetrics)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot calculate subnet metrics")
 	}
@@ -56,7 +55,6 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		ColumnExpr("\"inet_family\" AS \"family\"").
 		Column("addr_utilization", "pd_utilization").
 		Select(&metrics.SharedNetworkMetrics)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot calculate shared network metrics")
 	}

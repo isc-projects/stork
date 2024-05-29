@@ -390,7 +390,6 @@ func addSubnet(tx *pg.Tx, subnet *Subnet) (err error) {
 func updateSubnet(dbi dbops.DBI, subnet *Subnet) (err error) {
 	// Update the subnet first.
 	_, err = dbi.Model(subnet).WherePK().ExcludeColumn("created_at").Update()
-
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem updating subnet with prefix %s", subnet.Prefix)
 		return err

@@ -128,7 +128,6 @@ func (statsPuller *StatsPuller) pullStats() error {
 			statsPuller.DB,
 			su,
 		)
-
 		if err != nil {
 			lastErr = err
 			log.Errorf("Cannot update utilization (%.3f, %.3f) in subnet %d: %s",
@@ -142,7 +141,6 @@ func (statsPuller *StatsPuller) pullStats() error {
 		err = dbmodel.UpdateStatisticsInSharedNetwork(
 			statsPuller.DB, sharedNetworkID, u,
 		)
-
 		if err != nil {
 			lastErr = err
 			log.Errorf("Cannot update utilization (%.3f, %.3f) in shared network %d: %s",

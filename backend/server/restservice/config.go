@@ -340,7 +340,6 @@ func (r *RestAPI) PutDaemonConfigCheckerPreferences(ctx context.Context, params 
 		}
 
 		err = r.ReviewDispatcher.SetCheckerState(daemon, change.Name, state)
-
 		if err != nil {
 			log.Error(err)
 			msg := fmt.Sprintf("Cannot set the state for the %s checker", change.Name)

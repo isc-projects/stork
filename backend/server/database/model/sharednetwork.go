@@ -288,7 +288,6 @@ func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, e
 		Relation("Subnets.LocalSubnets.Daemon.App.Machine").
 		Where("shared_network.id = ?", networkID).
 		Select()
-
 	if err != nil {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil

@@ -42,7 +42,13 @@ func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, erro
 			msg += fmt.Sprintf(" [%s]: ", agentAddrTip)
 		}
 		fmt.Print(msg)
-		fmt.Scanln(&agentAddr)
+		_, err = fmt.Scanln(&agentAddr)
+		if err != nil {
+			err = errors.Wrap(err, "cannot read agent address from stdin")
+			log.WithError(err).Error("Problem getting agent address")
+			return "", 0, err
+		}
+
 		agentAddr = strings.TrimSpace(agentAddr)
 		if agentAddr == "" {
 			agentAddr = agentAddrTip
@@ -51,7 +57,13 @@ func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, erro
 
 	if agentPort == "" {
 		fmt.Printf(">>>> Port number that Stork Agent will listen on [8080]: ")
-		fmt.Scanln(&agentPort)
+		_, err := fmt.Scanln(&agentPort)
+		if err != nil {
+			err = errors.Wrap(err, "cannot read agent port from stdin")
+			log.WithError(err).Error("Problem getting agent port")
+			return "", 0, err
+		}
+
 		agentPort = strings.TrimSpace(agentPort)
 		if agentPort == "" {
 			agentPort = "8080"
@@ -60,7 +72,8 @@ func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, erro
 
 	agentPortInt, err := strconv.Atoi(agentPort)
 	if err != nil {
-		log.Errorf("%s is not a valid agent port number: %s", agentPort, err)
+		err = errors.Wrap(err, "cannot convert agent port to integer")
+		log.WithError(err).Errorf("%s is not a valid agent port number", agentPort)
 		return "", 0, err
 	}
 	return agentAddr, agentPortInt, nil

@@ -73,16 +73,16 @@ func NewStorkAgent(host string, port int, appMonitor AppMonitor, httpClient, kea
 
 // Creates the GRPC server callback using the provided cert store. The callback
 // returns the root CA on demand.
-func createGetRootCertificatesHandler(certStore *CertStore) func(*advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
+func createGetRootCertificatesHandler(certStore *CertStore) func(*advancedtls.ConnectionInfo) (*advancedtls.RootCertificates, error) {
 	// Read the latest root CA cert from file for Stork Server's cert verification.
-	return func(params *advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
+	return func(params *advancedtls.ConnectionInfo) (*advancedtls.RootCertificates, error) {
 		certPool, err := certStore.ReadRootCA()
 		if err != nil {
 			log.WithError(err).Error("Cannot extract root CA")
 			return nil, err
 		}
 		log.Info("Loaded CA cert")
-		return &advancedtls.GetRootCAsResults{
+		return &advancedtls.RootCertificates{
 			TrustCerts: certPool,
 		}, nil
 	}
@@ -117,8 +117,8 @@ func createGetIdentityCertificatesForServerHandler(certStore *CertStore) func(ch
 // the container - the hostname from the agent side (the side that
 // verifies the cert) may not match the hostname from the server side
 // (certificate issuer and client).
-func createVerifyPeer(allowedCertFingerprint [32]byte) advancedtls.CustomVerificationFunc {
-	return func(params *advancedtls.VerificationFuncParams) (*advancedtls.VerificationResults, error) {
+func createVerifyPeer(allowedCertFingerprint [32]byte) advancedtls.PostHandshakeVerificationFunc {
+	return func(params *advancedtls.HandshakeVerificationInfo) (*advancedtls.PostHandshakeVerificationResults, error) {
 		// The peer must have the extended key usage set.
 		if len(params.Leaf.ExtKeyUsage) == 0 {
 			return nil, errors.New("peer certificate does not have the extended key usage set")
@@ -131,7 +131,7 @@ func createVerifyPeer(allowedCertFingerprint [32]byte) advancedtls.CustomVerific
 			return nil, errors.New("peer certificate fingerprint does not match the allowed one")
 		}
 
-		return &advancedtls.VerificationResults{}, nil
+		return &advancedtls.PostHandshakeVerificationResults{}, nil
 	}
 }
 

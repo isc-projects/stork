@@ -233,7 +233,7 @@ func TestVerifyPeerMissingExtendedKeyUsage(t *testing.T) {
 	cert := &x509.Certificate{Raw: []byte("foo")}
 
 	// Act
-	rsp, err := verifyPeer(&advancedtls.VerificationFuncParams{
+	rsp, err := verifyPeer(&advancedtls.HandshakeVerificationInfo{
 		Leaf: cert,
 	})
 
@@ -252,7 +252,7 @@ func TestVerifyPeerCorrectCertificate(t *testing.T) {
 	}
 
 	// Act
-	rsp, err := verifyPeer(&advancedtls.VerificationFuncParams{
+	rsp, err := verifyPeer(&advancedtls.HandshakeVerificationInfo{
 		Leaf: cert,
 	})
 

@@ -637,7 +637,7 @@ func TestTailTextFile(t *testing.T) {
 // Checks if getRootCertificates:
 // - returns an error if the cert file doesn't exist.
 func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
-	params := &advancedtls.GetRootCAsParams{}
+	params := &advancedtls.ConnectionInfo{}
 
 	// Prepare temp dir for cert files.
 	tmpDir, err := os.MkdirTemp("", "reg")
@@ -671,7 +671,7 @@ func TestGetRootCertificates(t *testing.T) {
 	// All should be ok.
 	certStore := NewCertStoreDefault()
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
-	params := &advancedtls.GetRootCAsParams{}
+	params := &advancedtls.ConnectionInfo{}
 	result, err := getRootCertificates(params)
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -801,7 +801,7 @@ func TestVerifyPeerMissingExtendedKeyUsage(t *testing.T) {
 	verify := createVerifyPeer(fingerprint)
 
 	// Act
-	rsp, err := verify(&advancedtls.VerificationFuncParams{
+	rsp, err := verify(&advancedtls.HandshakeVerificationInfo{
 		Leaf: cert,
 	})
 
@@ -823,7 +823,7 @@ func TestVerifyPeerFingerprintMismatch(t *testing.T) {
 	verify := createVerifyPeer(fingerprint)
 
 	// Act
-	rsp, err := verify(&advancedtls.VerificationFuncParams{
+	rsp, err := verify(&advancedtls.HandshakeVerificationInfo{
 		Leaf: cert,
 	})
 
@@ -845,7 +845,7 @@ func TestVerifyPeerCorrectCertificate(t *testing.T) {
 	verify := createVerifyPeer(fingerprint)
 
 	// Act
-	rsp, err := verify(&advancedtls.VerificationFuncParams{
+	rsp, err := verify(&advancedtls.HandshakeVerificationInfo{
 		Leaf: cert,
 	})
 
