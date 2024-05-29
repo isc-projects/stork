@@ -807,9 +807,31 @@ namespace :update do
             sh NPX, "ng", "update", *opts,
                 "@angular/core@#{version}",
                 "@angular/cli@#{version}",
-                "@angular/cdk@#{version}",
+                "@angular/cdk@#{version}"
+        end
+    end
+
+    desc 'Update Angular ESLint
+    VERSION - target ESLint version, hint: use only major and minor - required
+    FORCE - ignore warnings - optional, default: false'
+    task :angular_eslint => [NPX] do
+        version=ENV["VERSION"]
+        if version.nil?
+            fail "Provide VERSION variable"
+        end
+
+        opts = []
+        if ENV["FORCE"] == "true"
+            opts.append "--force"
+        end
+
+        Dir.chdir("webui") do
+            sh NPX, "ng", "update", *opts,
+                "@angular-eslint/builder@#{version}",
+                "@angular-eslint/eslint-plugin@#{version}",
+                "@angular-eslint/eslint-plugin-template@#{version}",
                 "@angular-eslint/schematics@#{version}",
-                "@angular-eslint/eslint-plugin@#{version}"
+                "@angular-eslint/template-parser@#{version}"
         end
     end
 
