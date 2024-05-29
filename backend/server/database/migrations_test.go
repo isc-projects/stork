@@ -19,7 +19,7 @@ import (
 
 // Current schema version. This value must be bumped up every
 // time the schema is updated.
-const expectedSchemaVersion int64 = 58
+const expectedSchemaVersion int64 = 59
 
 // Common function which tests a selected migration action.
 func testMigrateAction(t *testing.T, db *dbops.PgDB, expectedOldVersion, expectedNewVersion int64, action ...string) {
@@ -527,4 +527,27 @@ func TestMigrationFrom57To58DifferentHostData(t *testing.T) {
 	actualHosts[0].LocalHosts[1].Hostname = initialHosts[0].LocalHosts[1].Hostname
 
 	assertHostsTheSame(t, initialHosts, actualHosts)
+}
+
+// Test that the interval of the removed metrics puller is deleted.
+func TestMigration59DeleteUnusedMetricsInterval(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	dbmodel.InitializeSettings(db, 0)
+
+	// Act
+	_, _, errDown := dbops.Migrate(db, "down", "58")
+	settingBefore, errBefore := dbmodel.GetSetting(db, "metrics_collector_interval")
+	_, _, errUp := dbops.Migrate(db, "up", "59")
+	settingAfter, errAfter := dbmodel.GetSetting(db, "metrics_collector_interval")
+
+	// Assert
+	require.NoError(t, errDown)
+	require.NoError(t, errUp)
+	require.NoError(t, errBefore)
+	require.ErrorAs(t, errAfter, &pg.ErrNoRows)
+	require.NotNil(t, settingBefore)
+	require.Equal(t, "10", settingBefore.Value)
+	require.Nil(t, settingAfter)
 }
