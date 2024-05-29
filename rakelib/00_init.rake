@@ -535,14 +535,14 @@ macos_arm64_system = OS == "macos" && arm64_system
 any_system = true
 
 ### Define package versions
-go_ver='1.22.2'
-goswagger_ver='v0.30.5'
-protoc_ver='25.2'
-protoc_gen_go_ver='v1.32.0'
+go_ver='1.22.3'
+goswagger_ver='v0.31.0'
+protoc_ver='26.1'
+protoc_gen_go_ver='v1.34.1'
 protoc_gen_go_grpc_ver='v1.3.0'
 richgo_ver='v0.3.12'
-govulncheck_ver='v1.0.4'
-mockery_ver='v2.40.3'
+govulncheck_ver='v1.1.1'
+mockery_ver='v2.43.2'
 mockgen_ver='v0.4.0'
 golangcilint_ver='1.55.2'
 dlv_ver='v1.22.1'
