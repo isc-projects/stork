@@ -555,7 +555,7 @@ yamlinc_ver='0.1.10'
 bundler_ver='2.3.26'
 shellcheck_ver='0.10.0'
 pip_tools_ver='7.4.1'
-pip_audit_ver='2.7.2'
+pip_audit_ver='2.7.3'
 
 # System-dependent variables
 case OS
