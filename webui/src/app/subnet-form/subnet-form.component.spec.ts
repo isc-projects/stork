@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
 
 import { SubnetFormComponent } from './subnet-form.component'
 import { ButtonModule } from 'primeng/button'
@@ -470,6 +470,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').invalid).toBeFalse()
 
         component.onSubnetProceed()
+        fixture.detectChanges()
+
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
@@ -538,6 +540,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').invalid).toBeFalse()
 
         component.onSubnetProceed()
+        fixture.detectChanges()
+
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
@@ -586,6 +590,8 @@ describe('SubnetFormComponent', () => {
         component.subnetId = 123
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
+
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionId).toBe(123)
@@ -704,6 +710,8 @@ describe('SubnetFormComponent', () => {
         component.subnetId = 234
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
+
         expect(component.state).toBeTruthy()
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionId).toBe(345)
@@ -939,6 +947,7 @@ describe('SubnetFormComponent', () => {
         component.ngOnInit()
         tick()
         fixture.detectChanges()
+        tick()
 
         const poolsPanel = fixture.debugElement.query(By.css('[legend="Pools"]'))
         expect(poolsPanel).toBeTruthy()
@@ -954,6 +963,7 @@ describe('SubnetFormComponent', () => {
         component.ngOnInit()
         tick()
         fixture.detectChanges()
+        tick()
 
         const poolsPanel = fixture.debugElement.query(By.css('[legend="Prefix Delegation Pools"]'))
         expect(poolsPanel).toBeTruthy()
@@ -993,6 +1003,7 @@ describe('SubnetFormComponent', () => {
         component.onDaemonsChange({
             itemValue: 1,
         })
+        tick()
         fixture.detectChanges()
 
         expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(1)
@@ -1026,6 +1037,7 @@ describe('SubnetFormComponent', () => {
         const link = tab.query(By.css('a'))
         expect(link).toBeTruthy()
         link.nativeElement.click()
+        tick()
         fixture.detectChanges()
 
         expect(component.addressPoolComponents.length).toBe(1)
@@ -1035,6 +1047,7 @@ describe('SubnetFormComponent', () => {
         component.onDaemonsChange({
             itemValue: 5,
         })
+        tick()
         fixture.detectChanges()
 
         expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(5)
@@ -1059,11 +1072,13 @@ describe('SubnetFormComponent', () => {
         component.subnetId = 123
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
 
         component.state.group.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
+        tick()
         fixture.detectChanges()
 
         let options = component.state.group.get('options.data') as UntypedFormArray
@@ -1094,6 +1109,7 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         component.onAddressPoolAdd()
+        tick()
         fixture.detectChanges()
 
         const poolsPanel = fixture.debugElement.query(By.css('[legend="Pools"]'))
@@ -1105,6 +1121,7 @@ describe('SubnetFormComponent', () => {
         const link = tabs[1].query(By.css('a'))
         expect(link).toBeTruthy()
         link.nativeElement.click()
+        tick()
         fixture.detectChanges()
 
         expect(tabs[1].nativeElement.innerText).toContain('New Pool')
@@ -1117,6 +1134,8 @@ describe('SubnetFormComponent', () => {
 
         spyOn(messageService, 'add').and.callThrough()
         component.onAddressPoolDelete(1)
+        tick()
+        fixture.detectChanges()
         pools = component.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         expect(pools).toBeTruthy()
         expect(pools.length).toBe(1)
@@ -1131,6 +1150,7 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         component.onPrefixPoolAdd()
+        tick()
         fixture.detectChanges()
 
         const poolsPanel = fixture.debugElement.query(By.css('[legend="Prefix Delegation Pools"]'))
@@ -1142,6 +1162,7 @@ describe('SubnetFormComponent', () => {
         const link = tabs[1].query(By.css('a'))
         expect(link).toBeTruthy()
         link.nativeElement.click()
+        tick()
         fixture.detectChanges()
 
         expect(tabs[1].nativeElement.innerText).toContain('New Pool')
@@ -1154,6 +1175,9 @@ describe('SubnetFormComponent', () => {
 
         spyOn(messageService, 'add').and.callThrough()
         component.onPrefixPoolDelete(1)
+        tick()
+        fixture.detectChanges()
+
         pools = component.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
         expect(pools).toBeTruthy()
         expect(pools.length).toBe(1)
@@ -1189,6 +1213,7 @@ describe('SubnetFormComponent', () => {
         component.onRetry()
         tick()
         fixture.detectChanges()
+        tick()
 
         expect(fixture.debugElement.query(By.css('p-messages'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()

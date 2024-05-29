@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
 import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
@@ -1146,6 +1146,8 @@ describe('HostFormComponent', () => {
         expect(dhcpApi.createHostSubmit).toHaveBeenCalledWith(component.form.transactionId, host)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
+
+        flush()
     }))
 
     it('should present an error message when processing options fails', fakeAsync(() => {
@@ -1453,6 +1455,8 @@ describe('HostFormComponent', () => {
         expect(component.getBootFieldsGroup(1).get('serverHostname').value).toBe('myserver')
         expect(component.getBootFieldsGroup(0).get('bootFileName').value).toBe('/tmp/boot')
         expect(component.getBootFieldsGroup(1).get('bootFileName').value).toBe('/tmp/boot')
+
+        flush()
     }))
 
     it('should open a form for editing dhcpv4 host', fakeAsync(() => {
