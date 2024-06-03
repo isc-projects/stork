@@ -20,7 +20,7 @@ linters:
     - gocritic
     - gocyclo
     - godot
-    - goerr113
+    - err113
     - gofmt
     - gofumpt
     - goheader
@@ -45,16 +45,13 @@ linters:
   disable:
     - depguard        # From 1.54.2 it requires to be strictly configured. Otherwise, it blocks all dependencies, including internals.
     - godox
-    - maligned
     - lll
     - funlen
     - prealloc
     - wsl              # TODO: reenable later
-    - interfacer       # A tool that suggests interfaces is prone to bad suggestions, so its usefulness in real code is limited.
     - dupl             # there are some false positives (identical code but operating on different types so no possibility to unify)
     - testpackage      # Requires rewriting a lot of unit tests and blocks the ability to test unexported functions.
     - wrapcheck        # We currently use pkg/errors tool that deals with the issue on its own.
-    - exhaustivestruct # Most of the time you don't want to initialize all fields.
     - gomnd            # This may be useful but in many cases creating artificial constants, e.g. in tests is counter productive.
     - paralleltest     # This enforces t.Parallel() usage but some of our tests seem to work incorrectly. Need to fix it first.
     - nlreturn         # This seems to be overkill and sometimes new lines before continue or break is useless.
