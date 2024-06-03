@@ -123,7 +123,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
 
         // If we update an existing shared network the shared network information should be
         // in the response.
-        if (this.sharedNetworkId && 'sharedNetwork' in response && response.sharedNetwork) {
+        if (this.sharedNetworkId && response.sharedNetwork) {
             // Initialize the shared network form controls.
             this.state.group = this.subnetSetFormService.convertSharedNetworkToForm(
                 response.sharedNetwork,
