@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { SubnetFormComponent } from './subnet-form.component'
 import { ButtonModule } from 'primeng/button'
