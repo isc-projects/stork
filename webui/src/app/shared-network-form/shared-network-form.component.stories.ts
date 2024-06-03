@@ -40,6 +40,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
     sharedNetwork: {
         id: 123,
         name: 'stanza',
+        universe: 4,
         localSharedNetworks: [
             {
                 appId: 234,

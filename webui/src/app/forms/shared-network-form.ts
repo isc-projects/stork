@@ -312,9 +312,9 @@ export class SharedNetworkFormState {
                 return this._allDaemons.find((d) => d.id === ss && d.name === 'dhcp6')
             })
         }
-        // If user unselected DHCPv4 servers, unselected DHCPv6 servers or selected
-        // DHCPv6 servers, it is a breaking change.
-        const breakingChange = (this._dhcpv4 && !dhcpv4) || this._dhcpv6 !== dhcpv6
+        // If user selected or unselected DHCP servers of a certain kind it is a
+        // breaking change.
+        const breakingChange = this._dhcpv4 !== dhcpv4 || this._dhcpv6 !== dhcpv6
 
         // Remember new states.
         this._dhcpv4 = dhcpv4
