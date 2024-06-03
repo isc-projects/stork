@@ -61,7 +61,17 @@ Configuration Settings
 
 It is possible to control some of the Stork configuration settings from
 the web interface. Click on the ``Configuration`` menu and choose ``Settings``.
-There are two classes of settings available: ``Intervals`` and ``Grafana & Prometheus``.
+There are three classes of settings available: ``Security``, ``Intervals`` and
+``Grafana & Prometheus``.
+
+``Security`` settings currently contain only one option, controlling whether
+or not the machines registration REST API endpoint is enabled. New machines
+connect to this endpoint when they begin the registration. In order to avoid
+malicious attempts to register fake machines in the Stork server it is practical
+to uncheck the ``Enable machine registration`` option when no new registrations
+are expected. The option can be re-enabled at any time when new registrations
+are required. Unchecking the option does not affect the ability to re-register
+the existing machines.
 
 ``Intervals`` settings specify the configuration of "pullers." A puller is a
 mechanism in Stork which triggers a specific action at the
