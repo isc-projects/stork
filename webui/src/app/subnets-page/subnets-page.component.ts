@@ -662,24 +662,6 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                     })
                 this.tabs[index].icon = ''
                 this.openedTabs[index].setTabType(TabType.Display)
-            } else if (this.openedTabs[index].state?.transactionId && this.openedTabs[index].tabType === TabType.New) {
-                this.dhcpApi
-                    .createSubnetDelete(this.openedTabs[index].state.transactionId)
-                    .toPromise()
-                    .catch((err) => {
-                        let msg = err.statusText
-                        if (err.error && err.error.message) {
-                            msg = err.error.message
-                        }
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Failed to delete configuration transaction',
-                            detail: 'Failed to delete configuration transaction: ' + msg,
-                            life: 10000,
-                        })
-                    })
-                this.tabs[index].icon = ''
-                this.openedTabs[index].setTabType(TabType.Display)
             } else {
                 this.closeTabByIndex(index)
             }

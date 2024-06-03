@@ -800,10 +800,10 @@ describe('SubnetsPageComponent', () => {
         fixture.detectChanges()
         tick()
 
-        expect(component.tabs.length).toBe(2)
-        expect(component.openedTabs.length).toBe(2)
-        expect(component.activeTabIndex).toBe(1)
-        expect(component.openedTabs[1].tabType).toBe(TabType.Display)
+        expect(component.tabs.length).toBe(1)
+        expect(component.openedTabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+        expect(component.openedTabs[0].tabType).toBe(TabType.List)
 
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
     }))
