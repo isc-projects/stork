@@ -34,6 +34,9 @@ import { DividerModule } from 'primeng/divider'
 import { ChartModule } from 'primeng/chart'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { MockParamMap } from '../utils'
+import { TabType } from '../tab'
+import { SharedNetworkFormComponent } from '../shared-network-form/shared-network-form.component'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -52,6 +55,7 @@ describe('SharedNetworksPageComponent', () => {
                 HttpClientTestingModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
+                ProgressSpinnerModule,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'dhcp/shared-networks',
@@ -77,6 +81,7 @@ describe('SharedNetworksPageComponent', () => {
                 LocalNumberPipe,
                 DelegatedPrefixBarComponent,
                 PlaceholderPipe,
+                SharedNetworkFormComponent,
                 SharedNetworksPageComponent,
                 SharedNetworkTabComponent,
                 SubnetBarComponent,
@@ -448,5 +453,110 @@ describe('SharedNetworksPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
+    }))
+
+    it('should cancel transaction when cancel button is clicked', fakeAsync(() => {
+        component.loadNetworks({})
+        tick()
+        fixture.detectChanges()
+
+        const updateSharedNetworkBeginResp: any = {
+            id: 123,
+            sharedNetwork: {
+                id: 1,
+                name: 'stanza',
+                universe: 4,
+                localSharedNetworks: [
+                    {
+                        appId: 234,
+                        daemonId: 1,
+                        appName: 'server 1',
+                        keaConfigSharedNetworkParameters: {
+                            sharedNetworkLevelParameters: {
+                                allocator: 'random',
+                                options: [
+                                    {
+                                        alwaysSend: true,
+                                        code: 5,
+                                        encapsulate: '',
+                                        fields: [
+                                            {
+                                                fieldType: 'ipv4-address',
+                                                values: ['192.0.2.1'],
+                                            },
+                                        ],
+                                        options: [],
+                                        universe: 4,
+                                    },
+                                ],
+                                optionsHash: '123',
+                            },
+                        },
+                    },
+                ],
+                subnets: [
+                    {
+                        id: 123,
+                        subnet: '192.0.2.0/24',
+                        sharedNetwork: 'floor3',
+                        sharedNetworkId: 3,
+                        localSubnets: [
+                            {
+                                id: 123,
+                                appId: 234,
+                                daemonId: 1,
+                                appName: 'server 1',
+                            },
+                        ],
+                    },
+                ],
+            },
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+            sharedNetworks4: [],
+            sharedNetworks6: [],
+            clientClasses: [],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'updateSharedNetworkBegin').and.returnValue(of(updateSharedNetworkBeginResp))
+        spyOn(dhcpService, 'updateSharedNetworkDelete').and.returnValue(of(okResp))
+
+        component.openTabBySharedNetworkId(1)
+        tick()
+        fixture.detectChanges()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        component.onSharedNetworkEditBegin({ id: 1 })
+        fixture.detectChanges()
+        tick()
+
+        expect(dhcpService.updateSharedNetworkBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        // Cancel editing. It should close the form and the transaction should be deleted.
+        component.onSharedNetworkFormCancel(1)
+        fixture.detectChanges()
+        tick()
+
+        expect(component.tabs.length).toBe(2)
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.activeTabIndex).toBe(1)
+        expect(component.openedTabs[1].tabType).toBe(TabType.Display)
+
+        expect(dhcpService.updateSharedNetworkDelete).toHaveBeenCalled()
     }))
 })
