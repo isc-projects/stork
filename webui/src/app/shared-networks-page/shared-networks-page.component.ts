@@ -495,7 +495,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                 })
                 .finally(() => {
                     this.tabs[index].icon = ''
-                    this.tabs[index].label = this.openedTabs[index].tabSubject.name
+                    this.tabs[index].label = event.group?.get('name')?.value || this.openedTabs[index].tabSubject.name
                     this.tabs[index].routerLink = `/dhcp/shared-networks/${event.sharedNetworkId}`
                     this.openedTabs[index].setTabType(TabType.Display)
                     this.router.navigate([this.tabs[index].routerLink])
