@@ -280,7 +280,7 @@ describe('SharedNetworkFormState', () => {
     it('should update filtered daemons for selected daemons', () => {
         let state = new SharedNetworkFormState()
         state.initStateFromServerResponse(response)
-        expect(state.updateFormForSelectedDaemons([3, 4]))
+        expect(state.updateFormForSelectedDaemons([3, 4])).toBeTrue()
         expect(state.filteredDaemons.length).toBe(3)
         expect(state.filteredDaemons).toContain({
             id: 3,
