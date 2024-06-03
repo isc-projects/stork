@@ -88,6 +88,8 @@ linters-settings:
     max-func-lines: 70
   goconst:
     ignore-tests: true
+  dogsled:
+    max-blank-identifiers: 3
 
 issues:
   max-same-issues: 3
