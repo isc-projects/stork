@@ -31,7 +31,7 @@ export class PasswordChangePageComponent implements OnInit {
      * It allows uppercase and lowercase letters A-Z,
      * numbers 0-9 and all special characters.
      */
-    passwordPattern: RegExp = /[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?]+/
+    passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?]+$/
 
     constructor(
         private formBuilder: UntypedFormBuilder,

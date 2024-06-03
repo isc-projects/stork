@@ -257,7 +257,7 @@
                                     title="Login must only contain letters, digits, or underscore."
                                 />
                             </div>
-                            <div class="col-12" *ngIf="isFeedbackNeeded('userLogin')">
+                            <div class="col-9 col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userLogin')">
                                 <p-message
                                     severity="error"
                                     [text]="
@@ -281,7 +281,7 @@
                                     title="User email address."
                                 />
                             </div>
-                            <div class="col-12" *ngIf="isFeedbackNeeded('userEmail')">
+                            <div class="col-9 col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userEmail')">
                                 <p-message severity="error" [text]="buildFeedbackMessage('userEmail')"></p-message>
                             </div>
                         </div>
@@ -298,7 +298,7 @@
                                     title="Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                 />
                             </div>
-                            <div class="col-12" *ngIf="isFeedbackNeeded('userFirst')">
+                            <div class="col-9 col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userFirst')">
                                 <p-message
                                     severity="error"
                                     [text]="
@@ -323,7 +323,7 @@
                                     title="Must contain at least 2 word characters. Can't begin nor end with whitespace. Only single whitespaces are allowed."
                                 />
                             </div>
-                            <div class="col-12" *ngIf="isFeedbackNeeded('userLast')">
+                            <div class="col-9 col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userLast')">
                                 <p-message
                                     severity="error"
                                     [text]="
@@ -346,7 +346,7 @@
                                     title="Group where user will belong to."
                                 ></p-dropdown>
                             </div>
-                            <div class="col-12" *ngIf="isFeedbackNeeded('userGroup')">
+                            <div class="col-9 col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userGroup')">
                                 <p-message severity="error" [text]="buildFeedbackMessage('userGroup')"></p-message>
                             </div>
                         </div>
@@ -362,7 +362,7 @@
                                     title="Must only contain letters, digits, or special characters and must be at least 8 characters long."
                                 ></p-password>
                             </div>
-                            <div class="col-12" *ngIf="isFeedbackNeeded('userPassword')">
+                            <div class="col-9 col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userPassword')">
                                 <p-message
                                     severity="error"
                                     [text]="
@@ -386,7 +386,7 @@
                                     title="Must only contain letters, digits, or special characters and must be at least 8 characters long."
                                 ></p-password>
                             </div>
-                            <div class="col-12" *ngIf="isFeedbackNeeded('userPassword2', true)">
+                            <div class="col-9 col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userPassword2', true)">
                                 <p-message
                                     severity="error"
                                     [text]="buildFeedbackMessage('userPassword2', '', true)"
