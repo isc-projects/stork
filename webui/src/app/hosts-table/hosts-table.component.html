@@ -123,17 +123,22 @@
                     Conflict
                     <p-columnFilter type="boolean" field="conflict" matchMode="equals" class="ml-1"></p-columnFilter>
                 </div>
-
-                <span class="p-input-icon-left">
-                    <i class="pi pi-search"></i>
-                    <input
-                        pInputText
-                        type="text"
-                        (input)="hostsTable.filter($event.target.value, 'text', 'contains')"
-                        [value]="hostsTable.filters.text?.[0]?.value"
-                        placeholder="Search IP or identifier"
-                    />
-                </span>
+                <div class="flex align-items-center">
+                    <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
+                        <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                            <span class="p-input-icon-left">
+                                <i class="pi pi-search"></i>
+                                <input
+                                    pInputText
+                                    type="text"
+                                    (input)="filter($event.target.value)"
+                                    [ngModel]="value"
+                                    placeholder="Search IP or identifier"
+                                />
+                            </span>
+                        </ng-template>
+                    </p-columnFilter>
+                </div>
                 <app-help-tip title="filtering" id="filtering-help-button">
                     <p>
                         Hosts in the table below can be filtered by entering a text in the search box; the table shows

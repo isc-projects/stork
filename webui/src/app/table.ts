@@ -595,8 +595,9 @@ export abstract class PrefilteredTable<
             filter[this.prefilterKey as string] = { value: null, matchMode: 'equals' }
         }
 
-        if (this.validFilter.hasOwnProperty('text')) {
-            filter['text'] = [{ value: this.validFilter.text, matchMode: 'contains' }]
+        filter['text'] = {
+            value: this.validFilter.hasOwnProperty('text') ? this.validFilter.text : null,
+            matchMode: 'contains',
         }
 
         for (let k of this.filterNumericKeys) {
