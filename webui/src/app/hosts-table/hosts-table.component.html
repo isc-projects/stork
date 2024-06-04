@@ -1,4 +1,4 @@
-<div class="mb-3" style="display: flex; justify-content: space-between">
+<div class="mb-3 flex justify-content-between">
     <div class="flex align-items-center">
         <div *ngIf="filterTextFormatErrors?.length > 0">
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
@@ -239,7 +239,7 @@
                     ></app-entity-link>
                 </td>
                 <td>
-                    {{ h.hostname ? h.hostname : '' }}
+                    {{ h.hostname }}
                 </td>
                 <td *ngIf="h.subnetId; else globalSubnetBlock">
                     <app-entity-link

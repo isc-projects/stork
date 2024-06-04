@@ -197,13 +197,13 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      * Component lifecycle hook called to perform clean-up when destroying the component.
      */
     ngOnDestroy(): void {
-        this.onDestroy()
+        super.onDestroy()
     }
 
     /**
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        this.onInit()
+        super.onInit()
     }
 }
