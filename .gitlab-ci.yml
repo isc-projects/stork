@@ -30,6 +30,15 @@ variables:
   # not cloned by default.
   GIT_SUBMODULE_STRATEGY: none
 
+default:
+  # AWS can interrupt the spot instance anytime, so let's retry the job when
+  # the interruption event happens to avoid a pipeline failure.
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
 # stages order
 stages:
   - checks
