@@ -7,8 +7,14 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { DHCPService, Host, LocalHost } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { ActivatedRoute, ActivatedRouteSnapshot, convertToParamMap, NavigationEnd, Router } from '@angular/router'
-import { RouterTestingModule } from '@angular/router/testing'
+import {
+    ActivatedRoute,
+    ActivatedRouteSnapshot,
+    convertToParamMap,
+    NavigationEnd,
+    Router,
+    RouterModule,
+} from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { of, throwError, BehaviorSubject } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -63,7 +69,7 @@ describe('HostsPageComponent', () => {
                 FormsModule,
                 TableModule,
                 HttpClientTestingModule,
-                RouterTestingModule.withRoutes([
+                RouterModule.forRoot([
                     {
                         path: 'dhcp/hosts',
                         pathMatch: 'full',
@@ -79,15 +85,11 @@ describe('HostsPageComponent', () => {
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 TooltipModule,
-                FormsModule,
                 FieldsetModule,
                 ProgressSpinnerModule,
-                TableModule,
                 ToggleButtonModule,
-                ButtonModule,
                 CheckboxModule,
                 DropdownModule,
-                FieldsetModule,
                 MultiSelectModule,
                 ReactiveFormsModule,
                 ConfirmDialogModule,

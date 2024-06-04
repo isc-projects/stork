@@ -2,6 +2,16 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { HostsTableComponent } from './hosts-table.component'
 import { TableModule } from 'primeng/table'
+import { RouterModule } from '@angular/router'
+import { HostsPageComponent } from '../hosts-page/hosts-page.component'
+import { MessageService } from 'primeng/api'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { ButtonModule } from 'primeng/button'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { InputNumberModule } from 'primeng/inputnumber'
+import { FormsModule } from '@angular/forms'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -9,8 +19,27 @@ describe('HostsTableComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [TableModule],
-            declarations: [HostsTableComponent],
+            providers: [MessageService],
+            imports: [
+                TableModule,
+                HttpClientTestingModule,
+                RouterModule.forRoot([
+                    {
+                        path: 'dhcp/hosts',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/hosts/all',
+                    },
+                    {
+                        path: 'dhcp/hosts/:id',
+                        component: HostsPageComponent,
+                    },
+                ]),
+                ButtonModule,
+                OverlayPanelModule,
+                InputNumberModule,
+                FormsModule,
+            ],
+            declarations: [HostsTableComponent, HelpTipComponent, PluralizePipe],
         }).compileComponents()
     }))
 
