@@ -69,8 +69,9 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      */
     prefilterKey: keyof HostsFilter = 'appId'
 
-    // @Input() subscriptions: Subscription
-
+    /**
+     * PrimeNG table instance.
+     */
     @ViewChild('hostsTable') table: Table
 
     constructor(

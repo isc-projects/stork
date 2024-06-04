@@ -4,6 +4,7 @@ import { Location } from '@angular/common'
 import { Subject, Subscription } from 'rxjs'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { filter, map } from 'rxjs/operators'
+import { TableState } from 'primeng/api'
 
 /**
  * Interface containing base properties that are supported when filtering table via URL queryParams.
@@ -20,34 +21,52 @@ export interface BaseQueryParamFilter {
  * - table field
  * - loadData(event) method
  */
-export abstract class LazyLoadTable<RecordType> {
+export abstract class LazyLoadTable<TRecord> {
     /**
      * Holds the total amount of all records.
+     * This field is supposed to be bound to PrimeNG Table "totalRecords" input property.
+     * e.g. [totalRecords]="totalRecords".
+     * It should be updated whenever table's data is lazily loaded from the backend.
      */
     totalRecords: number = 0
 
     /**
      * Indicates if the data is being fetched from the server.
+     * This field is supposed to be bound to PrimeNG Table "loading" input property.
+     * e.g. [loading]="dataLoading".
+     * It should be updated whenever we want to indicate that data loading is in progress.
      */
     dataLoading: boolean = false
 
     /**
      * Array collection of objects to display in the table.
+     * This field is supposed to be bound to PrimeNG Table "value" input property.
+     * e.g. [value]="dataCollection".
+     * It should be updated with fetched data whenever table's data is lazily loaded from the backend.
+     * If no records were fetched from the backend, it should be an empty array.
      */
-    dataCollection: RecordType[]
+    dataCollection: TRecord[]
 
     /**
      * Template of the current page report element.
+     * This field is supposed to be bound to PrimeNG Table "currentPageReportTemplate" input property.
+     * e.g. [currentPageReportTemplate]="currentPageReportTemplate".
      */
     currentPageReportTemplate: string = '{currentPage} of {totalPages} pages'
 
     /**
      * PrimeNG table instance.
+     * This field is supposed to be implemented in derived class.
+     * Angular ViewChild decorator can be used to achieve that, e.g.
+     * @ViewChild('someTable') table: Table
      */
     abstract table: Table
 
     /**
      * Callback to invoke when paging, sorting or filtering happens in lazy mode.
+     * This method is supposed to be implemented in derived class and bound to
+     * PrimeNG Table "onLazyLoad" output property EventEmitter.
+     * e.g. (onLazyLoad)="loadData($event)"
      * @param {TableLazyLoadEvent} event - lazy load event which holds information about pagination, sorting and filtering
      */
     abstract loadData(event: TableLazyLoadEvent): void
@@ -79,20 +98,8 @@ export abstract class LazyLoadTable<RecordType> {
  */
 export abstract class PrefilteredTable<
     FilterInterface extends BaseQueryParamFilter,
-    RecordType,
-> extends LazyLoadTable<RecordType> {
-    /**
-     * ActivatedRoute used to get params from provided URL.
-     * @private
-     */
-    private _route: ActivatedRoute
-
-    /**
-     * Location service used to update queryParams.
-     * @private
-     */
-    private _location: Location
-
+    TRecord,
+> extends LazyLoadTable<TRecord> {
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
      * at once onDestroy.
@@ -138,6 +145,8 @@ export abstract class PrefilteredTable<
 
     /**
      * Unique identifier of a stateful table used to store table's state in browser's storage.
+     * This field is supposed to be bound to PrimeNG Table "stateKey" input property.
+     * e.g. [stateKey]="stateKey".
      */
     stateKey: string
 
@@ -192,18 +201,21 @@ export abstract class PrefilteredTable<
     /**
      * Constructor of PrefilteredTable class. It requires ActivatedRoute and Location service to be passed by derived
      * class.
-     * @param route ActivatedRoute used to get params from provided URL.
-     * @param location Location service used to update queryParams.
+     * @param _route ActivatedRoute used to get params from provided URL.
+     * @param _location Location service used to update queryParams.
      * @protected
      */
-    protected constructor(route: ActivatedRoute, location: Location) {
+    protected constructor(
+        private _route: ActivatedRoute,
+        private _location: Location
+    ) {
         super()
-        this._route = route
-        this._location = location
     }
 
     /**
      * Callback method called when PrimeNG table's state was saved to browser's storage.
+     * This method is supposed to be bound to PrimeNG Table "onStateSave" output property EventEmitter.
+     * e.g. (onStateSave)="stateSaved(table)"
      * @param table table which state was saved
      */
     stateSaved(table: Table): void {
@@ -218,10 +230,12 @@ export abstract class PrefilteredTable<
 
     /**
      * Callback method called when PrimeNG table's state was restored from browser's storage.
+     * This method is supposed to be bound to PrimeNG Table "onStateRestore" output property EventEmitter.
+     * e.g. (onStateRestore)="stateRestored($event, table)"
      * @param state restored state
      * @param table table which state was restored
      */
-    stateRestored(state: any, table: Table): void {
+    stateRestored(state: TableState, table: Table): void {
         if (table.restoringFilter) {
             // Force set this flag to false.
             // This is a workaround of the issue in PrimeNG,
@@ -302,6 +316,8 @@ export abstract class PrefilteredTable<
 
     /**
      * Callback method called when PrimeNG table was filtered.
+     * This method is supposed to be bound to PrimeNG Table "onFilter" output property EventEmitter.
+     * e.g. (onFilter)="onFilter()"
      */
     onFilter(): void {
         let change = false
