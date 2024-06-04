@@ -863,6 +863,13 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet)
 					network.Name)
 				return nil, err
 			}
+		} else {
+			err = UpdateSharedNetwork(tx, network)
+			if err != nil {
+				err = pkgerrors.WithMessagef(err, "unable to update shared network %s in the database",
+					network.Name)
+				return nil, err
+			}
 		}
 		if err = AddLocalSharedNetworks(tx, network); err != nil {
 			return nil, err

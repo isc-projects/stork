@@ -2006,6 +2006,7 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 	// Copy the shared network and modify it. The modifications should be applied in
 	// the database upon commit.
 	modifiedSharedNetwork := sharedNetworks[0]
+	modifiedSharedNetwork.Name = "bar"
 	modifiedSharedNetwork.CreatedAt = time.Time{}
 	modifiedSharedNetwork.LocalSharedNetworks = sharedNetworks[0].LocalSharedNetworks[0:1]
 	modifiedSharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator = storkutil.Ptr("random")
@@ -2051,7 +2052,7 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 						"shared-networks": [
 							{
 								"allocator": "random",
-								"name": "foo"
+								"name": "bar"
 							}
 						]
 					}
@@ -2071,6 +2072,7 @@ func TestCommitSharedNetworkUpdate(t *testing.T) {
 	updatedSharedNetwork, err := dbmodel.GetSharedNetwork(db, sharedNetworks[0].ID)
 	require.NoError(t, err)
 	require.NotNil(t, updatedSharedNetwork)
+	require.Equal(t, "bar", updatedSharedNetwork.Name)
 	require.Len(t, updatedSharedNetwork.LocalSharedNetworks, 1)
 	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters)
 	require.NotNil(t, updatedSharedNetwork.LocalSharedNetworks[0].KeaParameters.Allocator)
