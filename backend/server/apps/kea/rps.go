@@ -177,8 +177,8 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]int
 		return nil, err
 	}
 
-	if statsResp[0].Result != 0 {
-		err := errors.Errorf("error result in RPS response: %+v", statsResp)
+	if err := statsResp[0].GetError(); err != nil {
+		err := errors.WithMessage(err, "error result in RPS response")
 		return nil, err
 	}
 
@@ -202,8 +202,8 @@ func (rpsWorker *RpsWorker) extractSamples6(statsResp []StatGetResponse6) ([]int
 		return nil, err
 	}
 
-	if statsResp[0].Result != 0 {
-		err := errors.Errorf("error result in RPS response: %+v", statsResp)
+	if err := statsResp[0].GetError(); err != nil {
+		err := errors.WithMessage(err, "error result in RPS response")
 		return nil, err
 	}
 

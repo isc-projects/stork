@@ -64,8 +64,8 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 // sent periodically by the server to the agents and by the
 // DetectAllowedLogs when the agent is started.
 func collectKeaAllowedLogs(response *keactrl.Response) []string {
-	if response.Result > 0 {
-		log.Warn("Skipped refreshing viewable log files because config-get returned unsuccessful result")
+	if err := response.GetError(); err != nil {
+		log.WithError(err).Warn("Skipped refreshing viewable log files because config-get returned unsuccessful result")
 		return nil
 	}
 	if response.Arguments == nil {
@@ -124,8 +124,12 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	// It does not make sense to proceed if the CA returned non-success status
 	// because this response neither contains logging configuration nor
 	// sockets configurations.
-	if responses[0].Result != 0 {
-		return nil, errors.Errorf("unsuccessful response %d received from Kea CA to config-get command sent to %s:%d", responses[0].Result, ap.Address, ap.Port)
+	if err := responses[0].GetError(); err != nil {
+		return nil, errors.WithMessagef(
+			err,
+			"unsuccessful response received from Kea CA to config-get command sent to %s:%d",
+			ap.Address, ap.Port,
+		)
 	}
 
 	// Allow the log files used by the CA.

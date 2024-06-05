@@ -95,19 +95,21 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	// if no error in the version-get response then copy retrieved info about CA to its record
 	dmn := daemonsMap["ca"]
 	err = cmdsResult.CmdsErrors[0]
-	if err != nil || len(versionGetResp) == 0 || versionGetResp[0].Result != 0 {
+
+	switch {
+	case err != nil:
+		// Use the error as-is.
+	case len(versionGetResp) == 0:
+		err = errors.Errorf("empty response")
+	default:
+		err = versionGetResp[0].GetError()
+	}
+
+	if err != nil {
 		dmn.Active = false
-		errStr := "problem with version-get response from CA: "
-		switch {
-		case err != nil:
-			errStr += fmt.Sprintf("%s", err)
-		case len(versionGetResp) == 0:
-			errStr += "empty response"
-		default:
-			errStr += fmt.Sprintf("result == %d, msg: %s", versionGetResp[0].Result, versionGetResp[0].Text)
-		}
-		log.Warnf(errStr)
-		daemonsErrors["ca"] = errStr
+		err = errors.WithMessage(err, "problem with version-get response from CA")
+		log.WithError(err).Warn("Problem with version-get response from CA")
+		daemonsErrors["ca"] = err.Error()
 		return nil, nil, err
 	}
 
@@ -118,16 +120,19 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	}
 
 	// if no error in the config-get response then copy retrieved info about available daemons
-	if len(caConfigGetResp) == 0 || caConfigGetResp[0].Arguments == nil || caConfigGetResp[0].Result != 0 {
+	if len(caConfigGetResp) == 0 {
+		err = errors.Errorf("empty response")
+	} else if err = caConfigGetResp[0].GetError(); err != nil {
+		// Use the response error.
+	} else if caConfigGetResp[0].Arguments == nil {
+		err = errors.Errorf("empty arguments")
+	}
+
+	if err != nil {
 		dmn.Active = false
-		errStr := "problem with config-get response from CA: "
-		if len(caConfigGetResp) == 0 || caConfigGetResp[0].Arguments == nil {
-			errStr += "response is empty"
-		} else {
-			errStr += fmt.Sprintf("result == %d, msg: %s", caConfigGetResp[0].Result, caConfigGetResp[0].Text)
-		}
-		log.Warnf(errStr)
-		daemonsErrors["ca"] = errStr
+		err = errors.WithMessage(err, "problem with config-get response from CA")
+		log.WithError(err).Warn("Problem with config-get response from CA")
+		daemonsErrors["ca"] = err.Error()
 		return nil, nil, err
 	}
 
@@ -208,11 +213,11 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 			log.Warnf("Unrecognized daemon in version-get response: %v", vRsp)
 			continue
 		}
-		if vRsp.Result != 0 {
+		if err := vRsp.GetError(); err != nil {
 			dmn.Active = false
-			errStr := fmt.Sprintf("problem with version-get and kea daemon %s: %s", vRsp.Daemon, vRsp.Text)
-			log.Warnf(errStr)
-			daemonsErrors[dmn.Name] = errStr
+			err = errors.WithMessage(err, "problem with version-get response")
+			log.WithError(err).Warn("Problem with version-get response")
+			daemonsErrors[dmn.Name] = err.Error()
 			continue
 		}
 
@@ -234,11 +239,11 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 			log.Warnf("Unrecognized daemon in status-get response: %v", sRsp)
 			continue
 		}
-		if sRsp.Result != 0 {
+		if err := sRsp.GetError(); err != nil {
 			dmn.Active = false
-			errStr := fmt.Sprintf("problem with status-get and kea daemon %s: %s", sRsp.Daemon, sRsp.Text)
-			log.Warnf(errStr)
-			daemonsErrors[dmn.Name] = errStr
+			err = errors.WithMessage(err, "problem with status-get and kea daemon")
+			log.WithError(err).Warn("Problem with status-get and kea daemon")
+			daemonsErrors[dmn.Name] = err.Error()
 			continue
 		}
 
@@ -260,11 +265,11 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 			log.Warnf("Unrecognized daemon in config-get response: %v", cRsp)
 			continue
 		}
-		if cRsp.Result != 0 {
+		if err := cRsp.GetError(); err != nil {
 			dmn.Active = false
-			errStr := fmt.Sprintf("problem with config-get and kea daemon %s: %s", cRsp.Daemon, cRsp.Text)
-			log.Warnf(errStr)
-			daemonsErrors[dmn.Name] = errStr
+			err = errors.WithMessage(err, "problem with config-get and kea daemon")
+			log.WithError(err).Warn("Problem with config-get and kea daemon")
+			daemonsErrors[dmn.Name] = err.Error()
 			continue
 		}
 

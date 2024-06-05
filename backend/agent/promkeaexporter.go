@@ -68,13 +68,13 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 
 	dhcpLabelsJSON := dhcpLabelsJSONs[0]
 
-	// Hook not installed. Return empty mapping
-	if dhcpLabelsJSON.HasUnsupportedOperationStatus() {
-		return nil
-	}
-
-	if !dhcpLabelsJSON.HasSuccessStatus() {
-		return errors.WithMessage(dhcpLabelsJSON, "problem with content of DHCP labels response from Kea: %s")
+	// Check the response error.
+	if err := dhcpLabelsJSON.GetError(); err != nil {
+		if errors.As(err, &keactrl.UnsupportedOperationKeaError{}) {
+			// Hook not installed. Return empty mapping
+			return nil
+		}
+		return errors.WithMessage(dhcpLabelsJSON.GetError(), "problem with content of DHCP labels response from Kea: %s")
 	}
 
 	// Result is OK, parse the mapping content
@@ -126,8 +126,10 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		if err != nil {
 			return outerError
 		}
-		if !singleItem.HasSuccessStatus() {
-			return singleItem
+
+		err = singleItem.GetError()
+		if err != nil {
+			return err
 		}
 		return errors.Errorf("unexpected but non-error response from Kea: %+v", obj)
 	}
@@ -139,17 +141,16 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		// endpoint doesn't return the data.
 		areStatisticsUnavailable := false
 
-		if !item.HasSuccessStatus() {
-			switch {
-			case item.HasConnectivityIssue():
-				log.WithError(item).Warn("Problem connecting to dhcp daemon")
-				continue
-			case item.HasNumberOverflowIssue():
-				log.WithError(item).Warnf("Number overflow in the statistics data")
-				areStatisticsUnavailable = true
-			default:
-				return item
-			}
+		err := item.GetError()
+		switch {
+		case errors.As(err, &keactrl.ConnectivityIssueKeaError{}):
+			log.WithError(err).Warn("Problem connecting to dhcp daemon")
+			continue
+		case errors.As(err, &keactrl.NumberOverflowKeaError{}):
+			log.WithError(err).Warnf("Number overflow in the statistics data")
+			areStatisticsUnavailable = true
+		case err != nil:
+			return err
 		}
 
 		// daemon 0 is dhcp4, 1 is dhcp6

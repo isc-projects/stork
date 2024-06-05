@@ -61,6 +61,59 @@ type Response struct {
 // A list of responses from multiple Kea daemons by the Kea Control Agent.
 type ResponseList []Response
 
+// Represents an error returned by Kea CA.
+type KeaError struct {
+	result int
+	text   string
+}
+
+// Returns the error message.
+func (e KeaError) Error() string {
+	if e.text != "" {
+		return fmt.Sprintf(
+			"non-success response result from Kea: %d, text: %s",
+			e.result, e.text,
+		)
+	}
+	return fmt.Sprintf("non-success response result from Kea: %d", e.result)
+}
+
+// Represents an error returned by Kea CA when the number overflow occurs.
+type NumberOverflowKeaError struct {
+	KeaError
+}
+
+// Represents an error returned by Kea CA when the DHCP daemon is likely to be
+// offline.
+type ConnectivityIssueKeaError struct {
+	KeaError
+}
+
+// Represents an error returned by Kea CA when the operation is not supported
+// (e.g., the specific hook is not loaded).
+type UnsupportedOperationKeaError struct {
+	KeaError
+}
+
+// The factory function to create a new KeaError instance based on the result
+// and text received from Kea CA.
+// It returns a most specific error type based on the text.
+func newKeaError(result int, text string) error {
+	if result == ResponseSuccess {
+		return nil
+	}
+	if result == ResponseCommandUnsupported {
+		return UnsupportedOperationKeaError{KeaError{result, text}}
+	}
+	if strings.Contains(text, "Number overflow") {
+		return NumberOverflowKeaError{KeaError{result, text}}
+	}
+	if strings.Contains(text, "server is likely to be offline") {
+		return ConnectivityIssueKeaError{KeaError{result, text}}
+	}
+	return errors.WithStack(KeaError{result, text})
+}
+
 // Represents unmarshaled response from Kea daemon with hash value computed
 // from the arguments.
 type HashedResponse struct {
@@ -268,49 +321,9 @@ func (r Response) GetArguments() *map[string]interface{} {
 	return r.Arguments
 }
 
-// Indicates if the response has a success status.
-func (h ResponseHeader) HasSuccessStatus() bool {
-	return h.Result == ResponseSuccess
-}
-
-// Indicates if the response has an unsupported operation status.
-func (h ResponseHeader) HasUnsupportedOperationStatus() bool {
-	return h.Result == ResponseCommandUnsupported
-}
-
-// Error returns the error message.
-func (h ResponseHeader) Error() string {
-	if h.Result == ResponseSuccess {
-		return ""
-	}
-
-	if h.Text != "" {
-		return fmt.Sprintf(
-			"non-success response result from Kea: %d, text: %s",
-			h.Result, h.Text,
-		)
-	}
-	return fmt.Sprintf("non-success response result from Kea: %d", h.Result)
-}
-
-// Indicates if the error is a connectivity issue.
-func (h ResponseHeader) HasConnectivityIssue() bool {
-	if h.Text == "" {
-		return false
-	}
-	return strings.Contains(h.Text, "server is likely to be offline") ||
-		strings.Contains(
-			h.Text,
-			"forwarding socket is not configured for the server type",
-		)
-}
-
-// Indicates if the error is caused by the number overflow.
-func (h ResponseHeader) HasNumberOverflowIssue() bool {
-	if h.Text == "" {
-		return false
-	}
-	return strings.Contains(h.Text, "Number overflow")
+// Error returns the error returned by Kea.
+func (r ResponseHeader) GetError() error {
+	return newKeaError(r.Result, r.Text)
 }
 
 // Returns status code.

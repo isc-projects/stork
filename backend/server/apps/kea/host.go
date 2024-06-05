@@ -401,13 +401,16 @@ func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation,
 
 	// An error is likely to be a communication problem between Kea Control
 	// Agent and some other daemon.
-	if response[0].Result == keactrl.ResponseError {
-		return []keaconfig.Reservation{}, response[0].Result, errors.Errorf("error returned by Kea in response to reservation-get-page command: %s", response[0].Text)
-	}
+	if err := response[0].GetError(); err != nil {
+		// If the command is not supported by this Kea server, simply stop.
+		if errors.As(err, &keactrl.UnsupportedOperationKeaError{}) {
+			return []keaconfig.Reservation{}, keactrl.ResponseCommandUnsupported, nil
+		}
 
-	// If the command is not supported by this Kea server, simply stop.
-	if response[0].Result == keactrl.ResponseCommandUnsupported {
-		return []keaconfig.Reservation{}, response[0].Result, nil
+		return []keaconfig.Reservation{}, response[0].Result,
+			errors.WithMessage(err,
+				"error returned by Kea in response to reservation-get-page command",
+			)
 	}
 
 	if response[0].Arguments == nil {

@@ -378,8 +378,12 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	// Extract the status value.
 	appStatus := appStatus{}
 	for _, r := range response {
-		if r.Result != 0 && (len(r.Daemon) > 0) {
-			log.Warnf("status-get command failed for Kea daemon %s", r.Daemon)
+		if err := r.GetError(); err != nil {
+			if len(r.Daemon) > 0 {
+				log.WithError(err).Warnf("status-get command failed for Kea daemon %s", r.Daemon)
+			} else {
+				log.WithError(err).Warn("status-get command failed")
+			}
 		} else if r.Arguments != nil {
 			daemonStatus := daemonStatus{
 				StatusGetRespArgs: *r.Arguments,
