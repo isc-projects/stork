@@ -331,6 +331,8 @@ describe('SharedNetworkFormComponent', () => {
         component.sharedNetworkId = 123
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
+
         expect(component.state).toBeTruthy()
         expect(component.state.loaded).toBeTrue()
         expect(component.state.transactionId).toBe(123)
@@ -438,6 +440,8 @@ describe('SharedNetworkFormComponent', () => {
         component.sharedNetworkId = 234
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
+
         expect(component.state).toBeTruthy()
         expect(component.state.loaded).toBeTrue()
         expect(component.state.transactionId).toBe(234)
@@ -525,6 +529,7 @@ describe('SharedNetworkFormComponent', () => {
         component.sharedNetworkId = 123
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
         // We cannot use contains() function here because it returns false for
         // disabled controls.
         expect(component.state).toBeTruthy()
@@ -548,6 +553,8 @@ describe('SharedNetworkFormComponent', () => {
         expect(data.length).toBe(2)
         expect(data.get('0.0.optionCode')?.value).toBe(5)
         expect(data.get('1.0.optionCode')?.value).toBe(5)
+
+        tick()
     }))
 
     it('should initialize the form controls for an IPv6 subnet', fakeAsync(() => {
@@ -555,6 +562,7 @@ describe('SharedNetworkFormComponent', () => {
         component.sharedNetworkId = 234
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
         // We cannot use contains() function here because it returns false for
         // disabled controls.
         expect(component.state).toBeTruthy()
@@ -577,6 +585,8 @@ describe('SharedNetworkFormComponent', () => {
         expect(data?.length).toBe(2)
         expect(data.get('0.0.optionCode')?.value).toBe(23)
         expect(data.get('1.0.optionCode')?.value).toBe(23)
+
+        tick()
     }))
 
     it('should return correct server tag severity', () => {
@@ -598,6 +608,7 @@ describe('SharedNetworkFormComponent', () => {
         component.onDaemonsChange({
             itemValue: 1,
         })
+        tick()
         fixture.detectChanges()
 
         const options = component.state.group.get('options.data') as UntypedFormArray
@@ -625,6 +636,7 @@ describe('SharedNetworkFormComponent', () => {
         component.onDaemonsChange({
             itemValue: 5,
         })
+        tick()
         fixture.detectChanges()
 
         const options = component.state.group.get('options.data') as UntypedFormArray
@@ -646,11 +658,13 @@ describe('SharedNetworkFormComponent', () => {
         component.sharedNetworkId = 123
         component.ngOnInit()
         tick()
+        fixture.detectChanges()
 
         component.state.group.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
+        tick()
         fixture.detectChanges()
 
         let options = component.state.group.get('options.data') as UntypedFormArray
@@ -706,5 +720,7 @@ describe('SharedNetworkFormComponent', () => {
         expect(fixture.debugElement.query(By.css('p-messages'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
+
+        tick()
     }))
 })
