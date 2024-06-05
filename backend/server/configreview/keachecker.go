@@ -1429,7 +1429,6 @@ func findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks []keaconfig.S
 				)
 			}
 		}
-
 	}
 	return false, ""
 }
