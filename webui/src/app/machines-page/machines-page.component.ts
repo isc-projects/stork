@@ -3,9 +3,9 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 
 import { MessageService, MenuItem } from 'primeng/api'
 import { concat, Observable, Subscription } from 'rxjs'
-import { Machine } from '../backend'
+import { Machine, Settings } from '../backend'
 
-import { ServicesService } from '../backend/api/api'
+import { ServicesService, SettingsService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 import { copyToClipboard, getErrorMessage } from '../utils'
 import { Table } from 'primeng/table'
@@ -60,12 +60,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
     displayAgentInstallationInstruction = false
 
+    // Indicates if the machines registration is administratively disabled.
+    registrationDisabled = false
+
     constructor(
         private route: ActivatedRoute,
         private router: Router,
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
-        private serverData: ServerDataService
+        private serverData: ServerDataService,
+        private settingsService: SettingsService
     ) {}
 
     ngOnDestroy(): void {
@@ -218,6 +222,24 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                         )
                     }
                 }
+            })
+        )
+
+        // Settings are needed to check whether or not the machines registration is disabled.
+        this.subscriptions.add(
+            this.settingsService.getSettings().subscribe({
+                next: (settings: Settings) => {
+                    this.registrationDisabled = !settings.enableMachineRegistration
+                },
+                error: (err) => {
+                    const msg = getErrorMessage(err)
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Cannot get settings',
+                        detail: 'Failed to get settings: ' + msg,
+                        life: 10000,
+                    })
+                },
             })
         )
 

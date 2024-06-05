@@ -10,7 +10,7 @@ import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
 import { MachinesPageComponent } from './machines-page.component'
-import { ServicesService, UsersService } from '../backend'
+import { ServicesService, SettingsService, UsersService } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
@@ -23,12 +23,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { MessagesModule } from 'primeng/messages'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
     let fixture: ComponentFixture<MachinesPageComponent>
     let servicesApi: ServicesService
     let msgService: MessageService
+    let settingsService: SettingsService
 
     beforeEach(fakeAsync(() => {
         TestBed.configureTestingModule({
@@ -46,6 +48,7 @@ describe('MachinesPageComponent', () => {
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
+                MessagesModule,
             ],
             declarations: [
                 MachinesPageComponent,
@@ -61,6 +64,7 @@ describe('MachinesPageComponent', () => {
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         msgService = fixture.debugElement.injector.get(MessageService)
+        settingsService = fixture.debugElement.injector.get(SettingsService)
         fixture.detectChanges()
         tick()
     }))
@@ -338,4 +342,76 @@ describe('MachinesPageComponent', () => {
         expect(textContent).toContain('CA')
         expect(textContent).toContain('named')
     })
+
+    it('should display a warning about disabled registration', fakeAsync(() => {
+        // Get references to select buttons
+        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
+        const unauthSelectBtnEl = selectButtons[1]
+
+        // Prepare response for the call to getMachines().
+        const getMachinesResp: any = {
+            items: [],
+            total: 0,
+        }
+        spyOn(servicesApi, 'getMachines').and.returnValue(of(getMachinesResp))
+
+        // Simulate disabled machine registration.
+        const getSettingsResp: any = {
+            enableMachineRegistration: false,
+        }
+        spyOn(settingsService, 'getSettings').and.returnValue(of(getSettingsResp))
+
+        component.ngOnInit()
+        tick()
+
+        // Initially, we show authorized machines. In that case we don't show a warning.
+        expect(component.showUnauthorized).toBeFalse()
+        let messages = fixture.debugElement.query(By.css('p-messages'))
+        expect(messages).toBeFalsy()
+
+        // Show unauthorized machines.
+        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+        expect(component.showUnauthorized).toBeTrue()
+
+        // This time we should show the warning that the machines registration is disabled.
+        messages = fixture.debugElement.query(By.css('p-messages'))
+        expect(messages).toBeTruthy()
+        expect(messages.nativeElement.innerText).toContain('Registration of the new machines is disabled')
+    }))
+
+    it('should not display a warning about disabled registration', fakeAsync(() => {
+        // Get references to select buttons
+        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
+        const unauthSelectBtnEl = selectButtons[1]
+
+        // Prepare response for the call to getMachines().
+        const getMachinesResp: any = {
+            items: [],
+            total: 0,
+        }
+        spyOn(servicesApi, 'getMachines').and.returnValue(of(getMachinesResp))
+
+        const getSettingsResp: any = {
+            enableMachineRegistration: true,
+        }
+        spyOn(settingsService, 'getSettings').and.returnValue(of(getSettingsResp))
+
+        component.ngOnInit()
+        tick()
+
+        // Showing authorized machines. The warning is never displayed in such a case.
+        expect(component.showUnauthorized).toBeFalse()
+        let messages = fixture.debugElement.query(By.css('p-messages'))
+        expect(messages).toBeFalsy()
+
+        // Show unauthorized machines.
+        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+        expect(component.showUnauthorized).toBeTrue()
+
+        // The warning should not be displayed because the registration is enabled.
+        messages = fixture.debugElement.query(By.css('p-messages'))
+        expect(messages).toBeFalsy()
+    }))
 })

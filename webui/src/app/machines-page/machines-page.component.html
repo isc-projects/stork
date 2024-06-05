@@ -174,7 +174,7 @@ sudo ./stork-install-agent.sh</textarea
 <div *ngIf="activeTabIdx === 0">
     <div style="display: flex; justify-content: space-between; margin: 10px">
         <div>
-            <span>
+            <div class="flex align-items-center">
                 <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
                 Filter machines:
                 <input
@@ -185,6 +185,7 @@ sudo ./stork-install-agent.sh</textarea
                     (input)="inputFilterText(machinesTable, $event.target?.value)"
                     (keyup.enter)="inputFilterText(machinesTable, $event.target?.value, true)"
                     [value]="machinesTable.filters?.text?.[0]?.value"
+                    class="ml-2"
                     #searchInput
                 />
                 <app-help-tip title="filtering" id="filtering-help-button" [target]="searchInput">
@@ -218,7 +219,7 @@ sudo ./stork-install-agent.sh</textarea
                     icon="pi pi-filter-slash"
                     (click)="clearFilters(machinesTable)"
                 ></button>
-            </span>
+            </div>
             <!-- <span style="margin-left: 40px;"> -->
             <!--   App: -->
             <!--   <p-dropdown [options]="appTypes" [(ngModel)]="selectedAppType" optionLabel="name" (onChange)="filterByApp(machinesTable)"></p-dropdown> -->
@@ -262,6 +263,17 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </div>
     </div>
+
+    <p-messages *ngIf="showUnauthorized && registrationDisabled" severity="warn">
+        <ng-template pTemplate>
+            <span class="pi pi-exclamation-triangle"></span>
+            <div class="ml-2">
+                Registration of the new machines is disabled. Navigate to the
+                <span class="font-semibold">Settings</span> page to enable the registration if you expect new machines
+                on the list below.
+            </div>
+        </ng-template>
+    </p-messages>
 
     <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
     <p-table
