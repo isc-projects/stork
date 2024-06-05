@@ -38,7 +38,7 @@ func TestNewEndpointControl(t *testing.T) {
 }
 
 // Test setting the endpoint state to disabled and enabled.
-func TestSetEnabled(t *testing.T) {
+func TestEndpointControlSetEnabled(t *testing.T) {
 	control := NewEndpointControl()
 	require.False(t, control.IsDisabled(EndpointOpCreateNewMachine))
 
