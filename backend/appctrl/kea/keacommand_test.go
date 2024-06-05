@@ -2,6 +2,7 @@ package keactrl
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -581,6 +582,132 @@ func TestGetResponseSuccess(t *testing.T) {
 		},
 	}
 	require.Nil(t, GetResponseError(response))
+}
+
+// Test that the success status in the Kea response is recognized properly.
+func TestResponseHeaderHasSuccessStatus(t *testing.T) {
+	for i := -4; i < 4; i++ {
+		t.Run(fmt.Sprintf("Status %d", i), func(t *testing.T) {
+			// Arrange
+			header := &ResponseHeader{Result: i}
+
+			// Act
+			success := header.HasSuccessStatus()
+
+			// Assert
+			require.Equal(t, i == 0, success)
+		})
+	}
+}
+
+// Test that the unsupported operation status in the Kea response is recognized
+// properly.
+func TestResponseHeaderHasUnsupportedOperationStatus(t *testing.T) {
+	for i := -4; i < 4; i++ {
+		t.Run(fmt.Sprintf("Status %d", i), func(t *testing.T) {
+			// Arrange
+			header := &ResponseHeader{Result: i}
+
+			// Act
+			unsupported := header.HasUnsupportedOperationStatus()
+
+			// Assert
+			require.Equal(t, i == 2, unsupported)
+		})
+	}
+}
+
+// Test that the error message is constructed properly.
+func TestResponseHeaderError(t *testing.T) {
+	t.Run("no error", func(t *testing.T) {
+		require.Empty(t, (ResponseHeader{Result: 0}).Error())
+	})
+
+	t.Run("error without text", func(t *testing.T) {
+		require.Equal(t,
+			"non-success response result from Kea: 42",
+			(ResponseHeader{Result: 42}).Error(),
+		)
+	})
+
+	t.Run("error with text", func(t *testing.T) {
+		require.Equal(t,
+			"non-success response result from Kea: 42, text: foobar",
+			(ResponseHeader{
+				Result: 42,
+				Text:   "foobar",
+			}).Error(),
+		)
+	})
+}
+
+// Test that the connectivity issue is recognized properly.
+func TestResponseHeaderHasConnectivityIssue(t *testing.T) {
+	t.Run("no error", func(t *testing.T) {
+		require.False(t, (ResponseHeader{Result: 0}).HasConnectivityIssue())
+	})
+
+	t.Run("missing text", func(t *testing.T) {
+		require.False(t, (ResponseHeader{
+			Result: 1,
+		}).HasConnectivityIssue())
+	})
+
+	t.Run("another error", func(t *testing.T) {
+		require.False(t, (ResponseHeader{
+			Result: 1,
+			Text:   "foobar",
+		}).HasConnectivityIssue())
+	})
+
+	t.Run("daemon offline", func(t *testing.T) {
+		require.True(t, (ResponseHeader{
+			Result: 1,
+			Text:   "foo server is likely to be offline bar",
+		}).HasConnectivityIssue())
+	})
+
+	t.Run("socket is not configured", func(t *testing.T) {
+		require.True(t, (ResponseHeader{
+			Result: 1,
+			Text:   "foo forwarding socket is not configured for the server type bar",
+		}).HasConnectivityIssue())
+	})
+
+	t.Run("daemon offline text but success status", func(t *testing.T) {
+		// It should never happen.
+		require.True(t, (ResponseHeader{
+			Result: 0,
+			Text:   "foo server is likely to be offline bar",
+		}).HasConnectivityIssue())
+	})
+}
+
+// Test that the number overflow issue is recognized properly.
+func TestResponseHeaderIsNumberOverflowIssue(t *testing.T) {
+	t.Run("no error", func(t *testing.T) {
+		require.False(t, (ResponseHeader{Result: 0}).HasNumberOverflowIssue())
+	})
+
+	t.Run("missing text", func(t *testing.T) {
+		require.False(t, (ResponseHeader{
+			Result: 1,
+		}).HasNumberOverflowIssue())
+	})
+
+	t.Run("another error", func(t *testing.T) {
+		require.False(t, (ResponseHeader{
+			Result: 1,
+			Text:   "foobar",
+		}).HasNumberOverflowIssue())
+	})
+
+	t.Run("number overflow", func(t *testing.T) {
+		require.True(t, (ResponseHeader{
+			Result: 1,
+			Text:   "Number overflow",
+		}).HasNumberOverflowIssue())
+	})
 }
 
 // Runs two benchmarks checking performance of Kea response unmarshalling

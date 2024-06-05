@@ -19,56 +19,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 
+	keactrl "isc.org/stork/appctrl/kea"
 	storkutil "isc.org/stork/util"
 )
-
-// The Kea response header.
-type responseHeader struct {
-	Result int64
-	Text   *string
-}
-
-// Indicates if the response has a success status.
-func (h responseHeader) HasSuccessStatus() bool {
-	return h.Result == 0
-}
-
-// Indicates if the response has an unsupported operation status.
-func (h responseHeader) HasUnsupportedOperationStatus() bool {
-	return h.Result == 2
-}
-
-// Error returns the error message.
-func (h responseHeader) Error() string {
-	if h.Result == 0 {
-		return ""
-	}
-
-	if h.Text != nil {
-		text := *h.Text
-		return fmt.Sprintf("response result from Kea != 0: %d, text: %s", h.Result, text)
-	}
-	return fmt.Sprintf("response result from Kea != 0: %d", h.Result)
-}
-
-// Indicates if the error is a connectivity issue.
-func (h responseHeader) IsConnectivityIssue() bool {
-	if h.Text == nil {
-		return false
-	}
-	text := *h.Text
-	return strings.Contains(text, "server is likely to be offline") ||
-		strings.Contains(text, "forwarding socket is not configured for the server type")
-}
-
-// Indicates if the error is caused by the number overflow.
-func (h responseHeader) IsNumberOverflowIssue() bool {
-	if h.Text == nil {
-		return false
-	}
-	text := *h.Text
-	return strings.Contains(text, "Number overflow")
-}
 
 // Parsed subnet list from Kea `subnet4-list` and `subnet6-list` response.
 type SubnetList map[int]string
@@ -89,7 +42,7 @@ type subnetListJSONArguments struct {
 }
 
 type subnetListJSON struct {
-	responseHeader
+	keactrl.ResponseHeader
 	Arguments *subnetListJSONArguments
 }
 
@@ -156,7 +109,7 @@ type GetAllStatisticResponseItemValue struct {
 func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 	// Raw structures - corresponding to real received JSON.
 	type ResponseRawItem struct {
-		responseHeader
+		keactrl.ResponseHeader
 		// In Go you cannot describe the JSON array with mixed-type items.
 		Arguments *map[string][][]interface{}
 	}
@@ -173,7 +126,10 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		if err != nil {
 			return outerError
 		}
-		return errors.Errorf("Kea error response - status: %d, message: %s", singleItem.Result, *singleItem.Text)
+		if !singleItem.HasSuccessStatus() {
+			return singleItem
+		}
+		return errors.Errorf("unexpected but non-error response from Kea: %+v", obj)
 	}
 
 	// Retrieve values of mixed-type arrays.
@@ -185,10 +141,10 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 
 		if !item.HasSuccessStatus() {
 			switch {
-			case item.IsConnectivityIssue():
+			case item.HasConnectivityIssue():
 				log.WithError(item).Warn("Problem connecting to dhcp daemon")
 				continue
-			case item.IsNumberOverflowIssue():
+			case item.HasNumberOverflowIssue():
 				log.WithError(item).Warnf("Number overflow in the statistics data")
 				areStatisticsUnavailable = true
 			default:

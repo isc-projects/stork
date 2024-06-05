@@ -2,8 +2,10 @@ package keactrl
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
@@ -264,6 +266,51 @@ func (r Response) GetDaemon() string {
 // Returns response arguments.
 func (r Response) GetArguments() *map[string]interface{} {
 	return r.Arguments
+}
+
+// Indicates if the response has a success status.
+func (h ResponseHeader) HasSuccessStatus() bool {
+	return h.Result == ResponseSuccess
+}
+
+// Indicates if the response has an unsupported operation status.
+func (h ResponseHeader) HasUnsupportedOperationStatus() bool {
+	return h.Result == ResponseCommandUnsupported
+}
+
+// Error returns the error message.
+func (h ResponseHeader) Error() string {
+	if h.Result == ResponseSuccess {
+		return ""
+	}
+
+	if h.Text != "" {
+		return fmt.Sprintf(
+			"non-success response result from Kea: %d, text: %s",
+			h.Result, h.Text,
+		)
+	}
+	return fmt.Sprintf("non-success response result from Kea: %d", h.Result)
+}
+
+// Indicates if the error is a connectivity issue.
+func (h ResponseHeader) HasConnectivityIssue() bool {
+	if h.Text == "" {
+		return false
+	}
+	return strings.Contains(h.Text, "server is likely to be offline") ||
+		strings.Contains(
+			h.Text,
+			"forwarding socket is not configured for the server type",
+		)
+}
+
+// Indicates if the error is caused by the number overflow.
+func (h ResponseHeader) HasNumberOverflowIssue() bool {
+	if h.Text == "" {
+		return false
+	}
+	return strings.Contains(h.Text, "Number overflow")
 }
 
 // Returns status code.

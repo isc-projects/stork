@@ -45,7 +45,7 @@ class Kea(Agent):
         """Check if any number overflow error from Kea is present in the logs."""
         stdout, _ = self._compose.logs(self._service_name)
         return (
-            "response result from Kea != 0: 1, text: internal server "
+            "non-success response result from Kea: 1, text: internal server "
             "error: unable to parse server's answer to the forwarded message: "
             "Number overflow:"
         ) in stdout
