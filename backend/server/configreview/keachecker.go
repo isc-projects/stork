@@ -1310,7 +1310,7 @@ func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Rep
 		// The gathering statistics works but the exact values are not accurate.
 		return NewReport(ctx, fmt.Sprintf(
 			"The Kea {daemon} daemon has configured some very large "+
-				"address pools. The installed Kea version doesn't handle the "+
+				"pools. The installed Kea version doesn't handle the "+
 				"statistics for so large pools properly. The "+
 				"statistics presented by Stork and Prometheus/Grafana may "+
 				"be inaccurate. Details: %s.", overflowReason,
@@ -1319,7 +1319,7 @@ func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Rep
 		// The gathering statistics doesn't work.
 		return NewReport(ctx, fmt.Sprintf(
 			"The Kea {daemon} daemon has configured some very large "+
-				"address pools. The installed Kea version doesn't handle the "+
+				"pools. The installed Kea version doesn't handle the "+
 				"statistics for so large pools properly. Stork "+
 				"is unable to fetch them. Details: %s.", overflowReason,
 		)).referencingDaemon(ctx.subjectDaemon).create()
