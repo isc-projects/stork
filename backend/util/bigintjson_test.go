@@ -58,7 +58,7 @@ func TestBigIntJSONMarshal(t *testing.T) {
 }
 
 // Test that the big integer is unmarshaled from JSON numeric literal without
-// casting it intermediate to float64 and losing precision.
+// casting it to an intermediate float64 type and losing precision.
 func TestBigIntJSONUnmarshal(t *testing.T) {
 	// Arrange
 	bigInts := []*big.Int{

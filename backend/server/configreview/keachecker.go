@@ -1260,12 +1260,12 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 	}
 }
 
-// The gathering statistics is unavailable when all following conditions are met:
+// Gathering statistics is unavailable when all of the following conditions are met:
 //  1. Kea's version is between 2.3.0 (inclusive, but I'm not sure exactly which
 //     version the problem was introduced) and 2.5.3 (exclusive).
 //  2. There is configured a subnet or shared network with more than 2^63-1
 //     addresses or a delegated prefix pool with more than 2^63-1 prefixes.
-//  3. The stat hook is loaded.
+//  3. The stat_cmds hook is loaded.
 func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Report, error) {
 	// Check the daemon type.
 	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
@@ -1309,19 +1309,19 @@ func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Rep
 	if daemonVersion.LessThan(storkutil.NewSemanticVersion(2, 3, 0)) {
 		// The gathering statistics works but the exact values are not accurate.
 		return NewReport(ctx, fmt.Sprintf(
-			"The Kea {daemon} daemon has configured some enormous big "+
+			"The Kea {daemon} daemon has configured some very large "+
 				"address pools. The installed Kea version doesn't handle the "+
-				"statistics related to such pools properly. It causes the "+
+				"statistics for so large pools properly. The "+
 				"statistics presented by Stork and Prometheus/Grafana may "+
-				"not be accurate. Details: %s.", overflowReason,
+				"be inaccurate. Details: %s.", overflowReason,
 		)).referencingDaemon(ctx.subjectDaemon).create()
 	} else {
 		// The gathering statistics doesn't work.
 		return NewReport(ctx, fmt.Sprintf(
-			"The Kea {daemon} daemon has configured some enormous big "+
+			"The Kea {daemon} daemon has configured some very large "+
 				"address pools. The installed Kea version doesn't handle the "+
-				"statistics related to such pools properly. It causes Stork "+
-				"is not able to fetch them. Details: %s.", overflowReason,
+				"statistics for so large pools properly. Stork "+
+				"is unable to fetch them. Details: %s.", overflowReason,
 		)).referencingDaemon(ctx.subjectDaemon).create()
 	}
 }
@@ -1329,11 +1329,11 @@ func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Rep
 // Determines if any of the provided shared networks has more than 2^63-1
 // addresses. It is expected that one of the shared networks represents the
 // global subnet scope. The global subnet scope has no limit on the total
-// number of addresses but still have a limit on the number of addresses in
+// number of addresses but still has a limit on the number of addresses in
 // a single subnet.
 // Returns the boolean value indicating if the overflow is detected, the
 // reason of the overflow (overflow in a single subnet or shared network),
-// and the error if any.
+// and an error, if any.
 func findSharedNetworkExceedingAddressLimit(sharedNetworks []keaconfig.SharedNetwork) (bool, string, error) {
 	// Check the shared networks.
 	for _, sharedNetwork := range sharedNetworks {
