@@ -74,7 +74,7 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 			// Hook not installed. Return empty mapping
 			return nil
 		}
-		return errors.WithMessage(dhcpLabelsJSON.GetError(), "problem with content of DHCP labels response from Kea: %s")
+		return errors.WithMessage(err, "problem with content of DHCP labels response from Kea")
 	}
 
 	// Result is OK, parse the mapping content
@@ -131,7 +131,7 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		if err != nil {
 			return err
 		}
-		return errors.Errorf("unexpected but non-error response from Kea: %+v", obj)
+		return errors.Errorf("cannot parse response from Kea")
 	}
 
 	// Retrieve values of mixed-type arrays.
