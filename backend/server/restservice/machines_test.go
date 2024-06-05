@@ -638,6 +638,56 @@ func TestCreateMachineForbidden(t *testing.T) {
 	require.Equal(t, "Machine registration is administratively disabled", *defaultRsp.Payload.Message)
 }
 
+// Test that machine can be re-registered when the registration of the
+// new machines is disabled.
+func TestReregisterCreatedMachineNotForbidden(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	ec := NewEndpointControl()
+	ec.SetEnabled(EndpointOpCreateNewMachine, true)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, ec)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Create certs.
+	_, _, _, err = certs.SetupServerCerts(db)
+	require.NoError(t, err)
+
+	privKeyPEM, err := pki.GenKey()
+	require.NoError(t, err)
+	csrPEM, _, err := pki.GenCSRUsingKey("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")}, privKeyPEM)
+	require.NoError(t, err)
+	agentCSR := string(csrPEM)
+
+	dbServerToken, err := dbmodel.GetSecret(db, dbmodel.SecretServerToken)
+	require.NoError(t, err)
+
+	// Send a request to register new machine while the registration is enabled.
+	params := services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     storkutil.Ptr("1.2.3.4"),
+			AgentPort:   8080,
+			AgentCSR:    &agentCSR,
+			ServerToken: string(dbServerToken),
+			AgentToken:  storkutil.Ptr("agentToken"),
+		},
+	}
+	rsp := rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineOK{}, rsp)
+
+	// Disable registration of the new machines.
+	rapi.EndpointControl.SetEnabled(EndpointOpCreateNewMachine, false)
+
+	// Ensure that re-registration of the already registered machine is successful.
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineOK{}, rsp)
+}
+
 func TestGetMachines(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
