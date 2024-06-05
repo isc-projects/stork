@@ -693,7 +693,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "overlapping_subnet")
 	require.Contains(t, checkerNames, "canonical_prefix")
 	require.Contains(t, checkerNames, "subnet_cmds_and_cb_mutual_exclusion")
-	require.Contains(t, checkerNames, "gathering_statistics_unavailable_due_to_number_overflow")
+	require.Contains(t, checkerNames, "statistics_unavailable_due_to_number_overflow")
 
 	checkerNames = []string{}
 	for _, p := range dispatcher.groups[KeaCADaemon].checkers {

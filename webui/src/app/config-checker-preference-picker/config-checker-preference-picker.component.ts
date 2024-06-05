@@ -221,7 +221,7 @@ export class ConfigCheckerPreferencePickerComponent {
                 )
             case 'ca_control_sockets':
                 return 'The checker verifying if the Kea Control Agent configuration includes the control sockets.'
-            case 'gathering_statistics_unavailable_due_to_number_overflow':
+            case 'statistics_unavailable_due_to_number_overflow':
                 return (
                     'The checker verifying if the statistics gathering is ' +
                     'unavailable or inaccurate due to the number overflow in ' +
