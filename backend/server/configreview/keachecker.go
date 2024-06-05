@@ -1355,29 +1355,29 @@ func findSharedNetworkExceedingAddressLimit(sharedNetworks []keaconfig.SharedNet
 					subnetSize,
 					poolSize,
 				)
-			}
 
-			if !subnetSize.IsInt64() {
-				// Subnet itself cannot exceed the 2^63-1 addresses.
-				return true, fmt.Sprintf(
-					"the '%s' subnet has more than 2^63-1 addresses",
-					subnet.GetPrefix(),
-				), nil
+				if !subnetSize.IsInt64() {
+					// Subnet itself cannot exceed the 2^63-1 addresses.
+					return true, fmt.Sprintf(
+						"the '%s' subnet has more than 2^63-1 addresses",
+						subnet.GetPrefix(),
+					), nil
+				}
 			}
 
 			sharedNetworkSize.Add(
 				sharedNetworkSize,
 				subnetSize,
 			)
-		}
 
-		if sharedNetwork.GetName() != "" && !sharedNetworkSize.IsInt64() {
-			// None of the shared networks can exceed the 2^63-1 addresses.
-			// The global subnet scope has no limit.
-			return true, fmt.Sprintf(
-				"the '%s' shared network has more than 2^63-1 addresses",
-				sharedNetwork.GetName(),
-			), nil
+			if sharedNetwork.GetName() != "" && !sharedNetworkSize.IsInt64() {
+				// None of the shared networks can exceed the 2^63-1 addresses.
+				// The global subnet scope has no limit.
+				return true, fmt.Sprintf(
+					"the '%s' shared network has more than 2^63-1 addresses",
+					sharedNetwork.GetName(),
+				), nil
+			}
 		}
 	}
 	return false, "", nil
@@ -1405,30 +1405,31 @@ func findSharedNetworkExceedingDelegatedPrefixLimit(sharedNetworks []keaconfig.S
 					subnetSize,
 					poolSize,
 				)
-			}
 
-			if !subnetSize.IsInt64() {
-				// Subnet itself cannot exceed the 2^63-1 addresses.
-				return true, fmt.Sprintf(
-					"the '%s' subnet has more than 2^63-1 delegated prefixes",
-					subnet.GetPrefix(),
-				)
+				if !subnetSize.IsInt64() {
+					// Subnet itself cannot exceed the 2^63-1 addresses.
+					return true, fmt.Sprintf(
+						"the '%s' subnet has more than 2^63-1 delegated prefixes",
+						subnet.GetPrefix(),
+					)
+				}
 			}
 
 			sharedNetworkSize.Add(
 				sharedNetworkSize,
 				subnetSize,
 			)
+
+			if sharedNetwork.GetName() != "" && !sharedNetworkSize.IsInt64() {
+				// None of the shared networks can exceed the 2^63-1 addresses.
+				// The global subnet scope has no limit.
+				return true, fmt.Sprintf(
+					"the '%s' shared network has more than 2^63-1 delegated prefixes",
+					sharedNetwork.GetName(),
+				)
+			}
 		}
 
-		if sharedNetwork.GetName() != "" && !sharedNetworkSize.IsInt64() {
-			// None of the shared networks can exceed the 2^63-1 addresses.
-			// The global subnet scope has no limit.
-			return true, fmt.Sprintf(
-				"the '%s' shared network has more than 2^63-1 delegated prefixes",
-				sharedNetwork.GetName(),
-			)
-		}
 	}
 	return false, ""
 }
