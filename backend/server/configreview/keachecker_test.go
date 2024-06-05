@@ -4366,19 +4366,19 @@ func TestGatheringStatsUnavailableReportForDifferentKeaVersions(t *testing.T) {
 
 					expectedMessages := []string{
 						// Common report part.
-						"The Kea {daemon} daemon has configured some enormous big address pools.",
+						"The Kea {daemon} daemon has configured some very large pools.",
 						"the 'fe80::/16' subnet has more than 2^63-1 addresses.",
 					}
 
 					// Version-specific part.
 					if semanticVersion.LessThan(storkutil.NewSemanticVersion(2, 3, 0)) {
 						expectedMessages = append(expectedMessages,
-							"It causes the statistics presented by Stork "+
-								"and Prometheus/Grafana may not be accurate",
+							"The statistics presented by Stork "+
+								"and Prometheus/Grafana may be inaccurate",
 						)
 					} else {
 						expectedMessages = append(expectedMessages,
-							"It causes Stork is not able to fetch them.",
+							"Stork is unable to fetch them.",
 						)
 					}
 
