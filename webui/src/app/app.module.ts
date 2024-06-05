@@ -129,6 +129,7 @@ import { PrefixPoolFormComponent } from './prefix-pool-form/prefix-pool-form.com
 import { ArrayValueSetFormComponent } from './array-value-set-form/array-value-set-form.component'
 import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
 import { RouteReuseStrategy } from '@angular/router'
+import { SharedNetworkFormComponent } from './shared-network-form/shared-network-form.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -210,6 +211,7 @@ export function cfgFactory() {
         HostDataSourceLabelComponent,
         PriorityErrorsPanelComponent,
         PluralizePipe,
+        SharedNetworkFormComponent,
     ],
     imports: [
         BrowserModule,

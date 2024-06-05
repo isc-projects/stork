@@ -10,76 +10,7 @@ import { catchError, filter, take } from 'rxjs/operators'
 import { HostForm } from '../forms/host-form'
 import { Host } from '../backend'
 import { HostsTableComponent } from '../hosts-table/hosts-table.component'
-
-/**
- * Enumeration for different host tab types displayed by the component.
- */
-export enum HostTabType {
-    List = 1,
-    NewHost,
-    EditHost,
-    Host,
-}
-
-/**
- * A class representing the contents of a tab displayed by the component.
- */
-export class HostTab {
-    /**
-     * Preserves information specified in a host form.
-     */
-    form: HostForm
-
-    /**
-     * Indicates if the form has been submitted.
-     */
-    submitted = false
-
-    /**
-     * Constructor.
-     *
-     * @param tabType host tab type.
-     * @param host host information displayed in the tab.
-     */
-    constructor(
-        public tabType: HostTabType,
-        public host?: Host
-    ) {
-        this._setHostTabType(tabType)
-    }
-
-    /**
-     * Sets new host tab type and initializes the form accordingly.
-     *
-     * It is a private function variant that does not check whether the type
-     * is already set to the desired value.
-     */
-    private _setHostTabType(tabType: HostTabType): void {
-        switch (tabType) {
-            case HostTabType.NewHost:
-            case HostTabType.EditHost:
-                this.form = new HostForm()
-                break
-            default:
-                this.form = null
-                break
-        }
-        this.submitted = false
-        this.tabType = tabType
-    }
-
-    /**
-     * Sets new host tab type and initializes the form accordingly.
-     *
-     * It does nothing when the type is already set to the desired value.
-     */
-    public setHostTabType(tabType: HostTabType): void {
-        if (this.tabType === tabType) {
-            return
-        }
-        this._setHostTabType(tabType)
-    }
-}
+import { Tab, TabType } from '../tab'
 
 /**
  * This component implements a page which displays hosts along with
@@ -120,9 +51,9 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
     tabs: MenuItem[]
 
     /**
-     * Enumeration for different tab types displayed in this component.
+     * Enumeration for different host tab types displayed by the component.
      */
-    HostTabType = HostTabType
+    HostTabType = TabType
 
     /**
      * Selected tab index.
@@ -137,7 +68,7 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * The tab holding hosts list is not included in this tab. If only a tab
      * with the hosts list is displayed, this array is empty.
      */
-    openedTabs = []
+    openedTabs: Tab<HostForm, Host>[] = []
 
     /**
      * Constructor.
@@ -262,7 +193,7 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     private openHostTab(id: number) {
         let index = this.openedTabs.findIndex(
-            (t) => (t.tabType === HostTabType.Host || t.tabType === HostTabType.EditHost) && t.host.id === id
+            (t) => (t.tabType === TabType.Display || t.tabType === TabType.Edit) && t.tabSubject.id === id
         )
         if (index >= 0) {
             this.switchToTab(index + 1)
@@ -282,7 +213,7 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
             .pipe(take(1))
             .subscribe(
                 (data) => {
-                    this.openedTabs.push(new HostTab(HostTabType.Host, data))
+                    this.openedTabs.push(new Tab(HostForm, TabType.Display, data))
                     this.createMenuItem(this.getHostLabel(data), `/dhcp/hosts/${id}`)
                 },
                 (err) => {
@@ -301,12 +232,12 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Opens an existing or new host tab for creating new host.
      */
     private openNewHostTab() {
-        let index = this.openedTabs.findIndex((t) => t.tabType === HostTabType.NewHost)
+        let index = this.openedTabs.findIndex((t) => t.tabType === TabType.New)
         if (index >= 0) {
             this.switchToTab(index + 1)
             return
         }
-        this.openedTabs.push(new HostTab(HostTabType.NewHost))
+        this.openedTabs.push(new Tab(HostForm, TabType.New))
         this.createMenuItem('New Host', '/dhcp/hosts/new')
         return
     }
@@ -323,12 +254,12 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     closeHostTab(event: Event, tabIndex: number) {
         if (
-            this.openedTabs[tabIndex - 1].tabType === HostTabType.NewHost &&
-            this.openedTabs[tabIndex - 1].form.transactionId > 0 &&
+            this.openedTabs[tabIndex - 1].tabType === TabType.New &&
+            this.openedTabs[tabIndex - 1].state.transactionId > 0 &&
             !this.openedTabs[tabIndex - 1].submitted
         ) {
             this.dhcpApi
-                .createHostDelete(this.openedTabs[tabIndex - 1].form.transactionId)
+                .createHostDelete(this.openedTabs[tabIndex - 1].state.transactionId)
                 .toPromise()
                 .catch((err) => {
                     let msg = err.statusText
@@ -343,15 +274,15 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     })
                 })
         } else if (
-            this.openedTabs[tabIndex - 1].tabType === HostTabType.EditHost &&
-            this.openedTabs[tabIndex - 1].host.id > 0 &&
-            this.openedTabs[tabIndex - 1].form.transactionId > 0 &&
+            this.openedTabs[tabIndex - 1].tabType === TabType.Edit &&
+            this.openedTabs[tabIndex - 1].tabSubject.id > 0 &&
+            this.openedTabs[tabIndex - 1].state.transactionId > 0 &&
             !this.openedTabs[tabIndex - 1].submitted
         ) {
             this.dhcpApi
                 .updateHostDelete(
-                    this.openedTabs[tabIndex - 1].host.id,
-                    this.openedTabs[tabIndex - 1].form.transactionId
+                    this.openedTabs[tabIndex - 1].tabSubject.id,
+                    this.openedTabs[tabIndex - 1].state.transactionId
                 )
                 .toPromise()
                 .catch((err) => {
@@ -454,10 +385,10 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
     onHostFormDestroy(event): void {
         // Find the form matching the form for which the notification has
         // been sent.
-        const tab = this.openedTabs.find((t) => t.form && t.form.transactionId === event.transactionId)
+        const tab = this.openedTabs.find((t) => t.state && t.state.transactionId === event.transactionId)
         if (tab) {
             // Found the matching form. Update it.
-            tab.form = event
+            tab.state = event
         }
     }
 
@@ -472,7 +403,7 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
     onHostFormSubmit(event): void {
         // Find the form matching the form for which the notification has
         // been sent.
-        const index = this.openedTabs.findIndex((t) => t.form && t.form.transactionId === event.transactionId)
+        const index = this.openedTabs.findIndex((t) => t.state && t.state.transactionId === event.transactionId)
         if (index >= 0) {
             this.openedTabs[index].submitted = true
             this.closeHostTab(null, index + 1)
@@ -492,17 +423,17 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
         // Find the form matching the form for which the notification has
         // been sent.
         const index = this.openedTabs.findIndex(
-            (t) => (t.host && t.host.id === hostId) || (t.tabType === HostTabType.NewHost && !hostId)
+            (t) => t.tabSubject?.id === hostId || (t.tabType === TabType.New && !hostId)
         )
         if (index >= 0) {
             if (
                 hostId &&
-                this.openedTabs[index].form?.transactionId &&
-                this.openedTabs[index].tabType !== HostTabType.Host
+                this.openedTabs[index].state?.transactionId &&
+                this.openedTabs[index].tabType !== TabType.Display
             ) {
-                this.dhcpApi.updateHostDelete(hostId, this.openedTabs[index].form.transactionId).toPromise()
+                this.dhcpApi.updateHostDelete(hostId, this.openedTabs[index].state.transactionId).toPromise()
                 this.tabs[index + 1].icon = ''
-                this.openedTabs[index].setHostTabType(HostTabType.Host)
+                this.openedTabs[index].setTabType(TabType.Display)
             } else {
                 this.closeHostTab(null, index + 1)
             }
@@ -518,12 +449,12 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     onHostEditBegin(host: Host): void {
         let index = this.openedTabs.findIndex(
-            (t) => (t.tabType === HostTabType.Host || t.tabType === HostTabType.EditHost) && t.host.id === host.id
+            (t) => (t.tabType === TabType.Display || t.tabType === TabType.Edit) && t.tabSubject.id === host.id
         )
         if (index >= 0) {
-            if (this.openedTabs[index].tabType !== HostTabType.EditHost) {
+            if (this.openedTabs[index].tabType !== TabType.Edit) {
                 this.tabs[index + 1].icon = 'pi pi-pencil'
-                this.openedTabs[index].setHostTabType(HostTabType.EditHost)
+                this.openedTabs[index].setTabType(TabType.Edit)
             }
             this.switchToTab(index + 1)
         }
@@ -537,7 +468,7 @@ export class HostsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     onHostDelete(host: Host): void {
         // Try to find a suitable tab by host id.
-        const index = this.openedTabs.findIndex((t) => t.host && t.host.id === host.id)
+        const index = this.openedTabs.findIndex((t) => t.tabSubject && t.tabSubject.id === host.id)
         if (index >= 0) {
             // Close the tab.
             this.closeHostTab(null, index + 1)

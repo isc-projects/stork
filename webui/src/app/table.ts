@@ -295,7 +295,6 @@ export abstract class PrefilteredTable<
      * Filter validation and filter handler are subscribed.
      */
     onInit(): void {
-        // this.table = table
         this.dataLoading = true
 
         const paramMap = this._route.snapshot.paramMap
