@@ -106,8 +106,8 @@ describe('SettingsPageComponent', () => {
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         component.ngOnInit()
-        tick()
         fixture.detectChanges()
+        tick()
 
         expect(settingsApi.getSettings).toHaveBeenCalled()
         expect(component.settingsForm.get('appsStatePullerInterval')?.value).toBe(28)
@@ -124,8 +124,8 @@ describe('SettingsPageComponent', () => {
         spyOn(settingsApi, 'getSettings').and.returnValue(throwError({ status: 404 }))
         spyOn(messageService, 'add').and.callThrough()
         component.ngOnInit()
-        tick()
         fixture.detectChanges()
+        tick()
 
         // Error message should have been displayed and the retry button should be displayed.
         expect(messageService.add).toHaveBeenCalledTimes(1)
@@ -157,8 +157,8 @@ describe('SettingsPageComponent', () => {
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
         component.ngOnInit()
-        tick()
         fixture.detectChanges()
+        tick()
 
         component.saveSettings()
         expect(settingsApi.updateSettings).toHaveBeenCalledWith(settings)
@@ -175,8 +175,8 @@ describe('SettingsPageComponent', () => {
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
         component.ngOnInit()
-        tick()
         fixture.detectChanges()
+        tick()
 
         // Iteratively correct the values.
         for (const key of Object.keys(settings)) {
