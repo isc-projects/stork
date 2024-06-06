@@ -152,15 +152,15 @@ func (statsPuller *StatsPuller) pullStats() error {
 	}
 
 	// global stats to collect
-	statsMap := map[dbmodel.SubnetStatsLabel]*big.Int{
-		dbmodel.SubnetStatsLabelTotalAddresses:    counter.global.totalIPv4Addresses.ToBigInt(),
-		dbmodel.SubnetStatsLabelAssignedAddresses: counter.global.totalAssignedIPv4Addresses.ToBigInt(),
-		dbmodel.SubnetStatsLabelDeclinedAddresses: counter.global.totalDeclinedIPv4Addresses.ToBigInt(),
-		dbmodel.SubnetStatsLabelTotalNAs:          counter.global.totalIPv6Addresses.ToBigInt(),
-		dbmodel.SubnetStatsLabelAssignedNAs:       counter.global.totalAssignedIPv6Addresses.ToBigInt(),
-		dbmodel.SubnetStatsLabelDeclinedNAs:       counter.global.totalDeclinedIPv6Addresses.ToBigInt(),
-		dbmodel.SubnetStatsLabelAssignedPDs:       counter.global.totalAssignedDelegatedPrefixes.ToBigInt(),
-		dbmodel.SubnetStatsLabelTotalPDs:          counter.global.totalDelegatedPrefixes.ToBigInt(),
+	statsMap := map[dbmodel.SubnetStatsName]*big.Int{
+		dbmodel.SubnetStatsNameTotalAddresses:    counter.global.totalIPv4Addresses.ToBigInt(),
+		dbmodel.SubnetStatsNameAssignedAddresses: counter.global.totalAssignedIPv4Addresses.ToBigInt(),
+		dbmodel.SubnetStatsNameDeclinedAddresses: counter.global.totalDeclinedIPv4Addresses.ToBigInt(),
+		dbmodel.SubnetStatsNameTotalNAs:          counter.global.totalIPv6Addresses.ToBigInt(),
+		dbmodel.SubnetStatsNameAssignedNAs:       counter.global.totalAssignedIPv6Addresses.ToBigInt(),
+		dbmodel.SubnetStatsNameDeclinedNAs:       counter.global.totalDeclinedIPv6Addresses.ToBigInt(),
+		dbmodel.SubnetStatsNameAssignedPDs:       counter.global.totalAssignedDelegatedPrefixes.ToBigInt(),
+		dbmodel.SubnetStatsNameTotalPDs:          counter.global.totalDelegatedPrefixes.ToBigInt(),
 	}
 
 	// update global statistics in db

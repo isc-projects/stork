@@ -10,7 +10,7 @@ import (
 
 // Represents a statistic held in statistic table in the database.
 type Statistic struct {
-	Name SubnetStatsLabel `pg:",pk"`
+	Name SubnetStatsName `pg:",pk"`
 	// The maximal IPv6 prefix is 128.
 	// How many decimal digits we need to store the total number of available addresses?
 	// 2^128 = 10^x
@@ -38,14 +38,14 @@ type Statistic struct {
 func InitializeStats(db *pg.DB) error {
 	// list of all stork global statistics
 	statsList := []Statistic{
-		{Name: SubnetStatsLabelAssignedAddresses, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsLabelTotalAddresses, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsLabelDeclinedAddresses, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsLabelAssignedNAs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsLabelTotalNAs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsLabelAssignedPDs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsLabelTotalPDs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsLabelDeclinedNAs, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameAssignedAddresses, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameTotalAddresses, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameDeclinedAddresses, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameAssignedNAs, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameTotalNAs, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameAssignedPDs, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameTotalPDs, Value: newIntegerDecimalZero()},
+		{Name: SubnetStatsNameDeclinedNAs, Value: newIntegerDecimalZero()},
 	}
 
 	// Check if there are new statistics vs existing ones. Add new ones to DB.

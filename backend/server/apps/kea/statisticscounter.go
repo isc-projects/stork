@@ -90,10 +90,10 @@ func (s *sharedNetworkStats) GetDelegatedPrefixUtilization() float64 {
 // a given shared network.
 func (s *sharedNetworkStats) GetStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
-		dbmodel.SubnetStatsLabelTotalNAs:    s.totalAddresses.ConvertToNativeType(),
-		dbmodel.SubnetStatsLabelAssignedNAs: s.totalAssignedAddresses.ConvertToNativeType(),
-		dbmodel.SubnetStatsLabelTotalPDs:    s.totalDelegatedPrefixes.ConvertToNativeType(),
-		dbmodel.SubnetStatsLabelAssignedPDs: s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameTotalNAs:    s.totalAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameAssignedNAs: s.totalAssignedAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameTotalPDs:    s.totalDelegatedPrefixes.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameAssignedPDs: s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
 	}
 }
 
@@ -137,9 +137,9 @@ func (s *subnetIPv4Stats) GetDelegatedPrefixUtilization() float64 {
 // a given IPv4 subnet.
 func (s *subnetIPv4Stats) GetStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
-		dbmodel.SubnetStatsLabelTotalAddresses:    s.totalAddresses,
-		dbmodel.SubnetStatsLabelAssignedAddresses: s.totalAssignedAddresses,
-		dbmodel.SubnetStatsLabelDeclinedAddresses: s.totalDeclinedAddresses,
+		dbmodel.SubnetStatsNameTotalAddresses:    s.totalAddresses,
+		dbmodel.SubnetStatsNameAssignedAddresses: s.totalAssignedAddresses,
+		dbmodel.SubnetStatsNameDeclinedAddresses: s.totalDeclinedAddresses,
 	}
 }
 
@@ -167,11 +167,11 @@ func (s *subnetIPv6Stats) GetDelegatedPrefixUtilization() float64 {
 // a given IPv6 network.
 func (s *subnetIPv6Stats) GetStatistics() dbmodel.SubnetStats {
 	return dbmodel.SubnetStats{
-		dbmodel.SubnetStatsLabelTotalNAs:    s.totalAddresses.ConvertToNativeType(),
-		dbmodel.SubnetStatsLabelAssignedNAs: s.totalAssignedAddresses.ConvertToNativeType(),
-		dbmodel.SubnetStatsLabelDeclinedNAs: s.totalDeclinedAddresses.ConvertToNativeType(),
-		dbmodel.SubnetStatsLabelTotalPDs:    s.totalDelegatedPrefixes.ConvertToNativeType(),
-		dbmodel.SubnetStatsLabelAssignedPDs: s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameTotalNAs:    s.totalAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameAssignedNAs: s.totalAssignedAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameDeclinedNAs: s.totalDeclinedAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameTotalPDs:    s.totalDelegatedPrefixes.ConvertToNativeType(),
+		dbmodel.SubnetStatsNameAssignedPDs: s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
 	}
 }
 
@@ -256,9 +256,9 @@ func (c *statisticsCounter) add(subnet *dbmodel.Subnet) subnetStats {
 // that Kea does not include in its statistics.
 func (c *statisticsCounter) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
-		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsLabelTotalAddresses, c.excludedDaemons) + outOfPool,
-		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsLabelAssignedAddresses, c.excludedDaemons),
-		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsLabelDeclinedAddresses, c.excludedDaemons),
+		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsNameTotalAddresses, c.excludedDaemons) + outOfPool,
+		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsNameAssignedAddresses, c.excludedDaemons),
+		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsNameDeclinedAddresses, c.excludedDaemons),
 	}
 
 	if subnet.SharedNetworkID != 0 {
@@ -276,11 +276,11 @@ func (c *statisticsCounter) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint
 // calculated similarly.
 func (c *statisticsCounter) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelTotalNAs, c.excludedDaemons).AddUint64(outOfPoolTotalAddresses),
-		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelAssignedNAs, c.excludedDaemons),
-		totalDeclinedAddresses:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelDeclinedNAs, c.excludedDaemons),
-		totalDelegatedPrefixes:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelTotalPDs, c.excludedDaemons).AddUint64(outOfPoolDelegatedPrefixes),
-		totalAssignedDelegatedPrefixes: sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelAssignedPDs, c.excludedDaemons),
+		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsNameTotalNAs, c.excludedDaemons).AddUint64(outOfPoolTotalAddresses),
+		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsNameAssignedNAs, c.excludedDaemons),
+		totalDeclinedAddresses:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsNameDeclinedNAs, c.excludedDaemons),
+		totalDelegatedPrefixes:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsNameTotalPDs, c.excludedDaemons).AddUint64(outOfPoolDelegatedPrefixes),
+		totalAssignedDelegatedPrefixes: sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsNameAssignedPDs, c.excludedDaemons),
 	}
 
 	if subnet.SharedNetworkID != 0 {

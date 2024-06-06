@@ -23,35 +23,35 @@ import (
 var _ keaconfig.SubnetAccessor = (*Subnet)(nil)
 
 // Identifier of the well-known subnet statistics.
-type SubnetStatsLabel = string
+type SubnetStatsName = string
 
 const (
 	// Total number of network addresses.
-	SubnetStatsLabelTotalNAs SubnetStatsLabel = "total-nas"
+	SubnetStatsNameTotalNAs SubnetStatsName = "total-nas"
 	// Number of assigned network addresses.
-	SubnetStatsLabelAssignedNAs SubnetStatsLabel = "assigned-nas"
+	SubnetStatsNameAssignedNAs SubnetStatsName = "assigned-nas"
 	// Number of declined network addresses.
-	SubnetStatsLabelDeclinedNAs SubnetStatsLabel = "declined-nas"
+	SubnetStatsNameDeclinedNAs SubnetStatsName = "declined-nas"
 	// Total number of delegated prefixes.
-	SubnetStatsLabelTotalPDs SubnetStatsLabel = "total-pds"
+	SubnetStatsNameTotalPDs SubnetStatsName = "total-pds"
 	// Number of assigned delegated prefixes.
-	SubnetStatsLabelAssignedPDs SubnetStatsLabel = "assigned-pds"
+	SubnetStatsNameAssignedPDs SubnetStatsName = "assigned-pds"
 	// Total number of addresses.
-	SubnetStatsLabelTotalAddresses SubnetStatsLabel = "total-addresses"
+	SubnetStatsNameTotalAddresses SubnetStatsName = "total-addresses"
 	// Number of assigned addresses.
-	SubnetStatsLabelAssignedAddresses SubnetStatsLabel = "assigned-addresses"
+	SubnetStatsNameAssignedAddresses SubnetStatsName = "assigned-addresses"
 	// Number of declined addresses.
-	SubnetStatsLabelDeclinedAddresses SubnetStatsLabel = "declined-addresses"
+	SubnetStatsNameDeclinedAddresses SubnetStatsName = "declined-addresses"
 	// Cumulative number of assigned network addresses.
-	SubnetStatsLabelCumulativeAssignedAddresses SubnetStatsLabel = "cumulative-assigned-addresses"
+	SubnetStatsNameCumulativeAssignedAddresses SubnetStatsName = "cumulative-assigned-addresses"
 )
 
 // Custom statistic type to redefine JSON marshalling.
 type SubnetStats map[string]interface{}
 
-// Returns the value of the statistic with the specified label as a big counter.
-func (s SubnetStats) GetBigCounter(label string) *storkutil.BigCounter {
-	value, ok := s[label]
+// Returns the value of the statistic with the specified name as a big counter.
+func (s SubnetStats) GetBigCounter(name string) *storkutil.BigCounter {
+	value, ok := s[name]
 	if !ok {
 		return nil
 	}
@@ -68,9 +68,9 @@ func (s SubnetStats) GetBigCounter(label string) *storkutil.BigCounter {
 	}
 }
 
-// Sets the value of the statistic with the specified label as a big counter.
-func (s SubnetStats) SetBigCounter(label string, counter *storkutil.BigCounter) {
-	s[label] = counter.ConvertToNativeType()
+// Sets the value of the statistic with the specified name as a big counter.
+func (s SubnetStats) SetBigCounter(name string, counter *storkutil.BigCounter) {
+	s[name] = counter.ConvertToNativeType()
 }
 
 // Subnet statistics may contain the integer number within arbitrary range
