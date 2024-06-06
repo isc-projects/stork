@@ -7,10 +7,10 @@ supported:
 
 | Version | Supported          | End-Of-Life           |
 | ------- | ------------------ | --------------------- |
-| 1.16.0  | :white_check_mark: | on release of 1.17.0  |
+| 1.17.0  | :white_check_mark: | on release of 1.18.0  |
+| 1.16.0  | :x:                | 2024 June 12          |
 | 1.15.1  | :x:                | 2024 April 5          |
 | earlier | :x:                |                       |
-
 
 The first stable version will be 2.0.0. Once stable is released, the stable versions, denoted with even minor number,
 will be supported for at least 6 months. The development versions will reach EOL as soon as next development or stable
@@ -37,13 +37,19 @@ severity and the process in detail: https://kb.isc.org/docs/aa-00861
 
 ## Release Policy
 
+Once the first stable (2.0.0) is published, we expect to have new stable versions (2.2.0, 2.4.0, ...) published
+every six months or so. Once a new stable version is released, a new development cycle starts with monthly
+development releases.
+
+---
+
 Stork team runs various security auditing tools. If a high severity issue is found in one of its dependencies, and the
 underlying problem affects Stork, a release process is triggered that will lead to a Stork maintenance release.
 If we would be unable to determine if Stork is affected, we will assume it is and will continue with the release.
 
-For lower severity issues, the Stork team might publish Operational notices that say that we are not vulnerable to
-the vulnerability in one of our dependencies, explain that the vulnerability is minor or provide workarounds how to
-mitigate.
+For lower severity issues, the Stork team might choose to publish Operational notices that say that we are not
+vulnerable to the vulnerability in one of our dependencies, explain that the vulnerability is minor or provide
+workarounds how to mitigate.
 
 The Stork team MUST NOT release a release with high or critical severity in any of its dependencies, if a fixed version
 is available.
@@ -55,12 +61,6 @@ is high or not.
 The rules above apply to stable versions only. For development versions, it is uncommon to do a release out of the
 ordinary release cycle.
 
-Once the first stable (2.0.0) is published, we expect to have new stable versions (2.2.0, 2.4.0, ...) published
-every six months or so. Once a new stable version is released, a new development cycle starts with monthly
-development releases.
-
-
-EXAMPLE: 2.0.1 maintenance release would be published for stable 2.0.0.
 
 ## Further reading
 
