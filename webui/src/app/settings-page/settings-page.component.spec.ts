@@ -71,7 +71,6 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(0)
-        expect(component.settingsForm.get('metricsCollectorInterval')?.value).toBe(0)
         expect(component.settingsForm.get('prometheusUrl')?.value).toBe('')
         expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeFalse()
     })
