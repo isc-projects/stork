@@ -22,117 +22,55 @@ import (
 // Interface checks.
 var _ keaconfig.SubnetAccessor = (*Subnet)(nil)
 
+// Identifier of the well-known subnet statistics.
+type SubnetStatsLabel = string
+
+const (
+	// Total number of network addresses.
+	SubnetStatsLabelTotalNAs SubnetStatsLabel = "total-nas"
+	// Number of assigned network addresses.
+	SubnetStatsLabelAssignedNAs SubnetStatsLabel = "assigned-nas"
+	// Number of declined network addresses.
+	SubnetStatsLabelDeclinedNAs SubnetStatsLabel = "declined-nas"
+	// Total number of delegated prefixes.
+	SubnetStatsLabelTotalPDs SubnetStatsLabel = "total-pds"
+	// Number of assigned delegated prefixes.
+	SubnetStatsLabelAssignedPDs SubnetStatsLabel = "assigned-pds"
+	// Total number of addresses.
+	SubnetStatsLabelTotalAddresses SubnetStatsLabel = "total-addresses"
+	// Number of assigned addresses.
+	SubnetStatsLabelAssignedAddresses SubnetStatsLabel = "assigned-addresses"
+	// Number of declined addresses.
+	SubnetStatsLabelDeclinedAddresses SubnetStatsLabel = "declined-addresses"
+	// Cumulative number of assigned network addresses.
+	SubnetStatsLabelCumulativeAssignedAddresses SubnetStatsLabel = "cumulative-assigned-addresses"
+)
+
 // Custom statistic type to redefine JSON marshalling.
-type SubnetStats struct {
-	data map[string]any
-}
+type SubnetStats map[string]interface{}
 
-// Constructs a new SubnetStats instance.
-func NewSubnetStats() *SubnetStats {
-	return &SubnetStats{
-		data: make(map[string]any),
-	}
-}
-
-// Constructs a new SubnetStats instance from a map.
-func NewSubnetStatsFromMap(data map[string]any) *SubnetStats {
-	subnetStats := NewSubnetStats()
-
-	for k, v := range data {
-		subnetStats.SetAny(k, v)
-	}
-
-	return subnetStats
-}
-
-// Returns the statistic value in its native type.
-func (s *SubnetStats) GetAny(key string) any {
-	return s.data[key]
-}
-
-// Indicates if the statistic value is present for the specified key.
-func (s *SubnetStats) Has(key string) bool {
-	_, ok := s.data[key]
-	return ok
-}
-
-// Returns the statistic value in its native type and the boolean value
-// indicating if the value was found.
-func (s *SubnetStats) TryGetAny(key string) (any, bool) {
-	value, ok := s.data[key]
-	return value, ok
-}
-
-// Returns the statistic value as uint64 and the boolean value indicating
-// if the value was found and it does not exceed the uint64 range.
-func (s *SubnetStats) TryGetUint64(key string) (uint64, bool) {
-	value, ok := s.data[key]
+// Returns the value of the statistic with the specified label as a big counter.
+func (s SubnetStats) GetBigCounter(label string) *storkutil.BigCounter {
+	value, ok := s[label]
 	if !ok {
-		return 0, false
+		return nil
 	}
 
 	switch v := value.(type) {
-	case uint64:
-		return v, true
-	case int64:
-		return uint64(v), v >= 0
 	case *big.Int:
-		return v.Uint64(), v.IsUint64()
-	}
-
-	return 0, false
-}
-
-// Sets the uint64 statistic value for the specified key.
-func (s *SubnetStats) SetUint64(key string, value uint64) {
-	s.data[key] = value
-}
-
-// Sets the int64 statistic value for the specified key. If the value is
-// non-negative, it is stored as uint64.
-func (s *SubnetStats) SetInt64(key string, value int64) {
-	if value >= 0 {
-		s.SetUint64(key, uint64(value))
-	} else {
-		s.data[key] = value
-	}
-}
-
-// Sets the big.Int statistic value for the specified key. If the value is in
-// the uint64 range, it is stored as uint64. If the value is in the int64
-// range, it is stored as int64. Otherwise, it is stored as big.Int.
-func (s *SubnetStats) SetBigInt(key string, value *big.Int) {
-	switch {
-	case value.IsUint64():
-		s.SetUint64(key, value.Uint64())
-	case value.IsInt64():
-		s.SetInt64(key, value.Int64())
-	default:
-		s.data[key] = value
-	}
-}
-
-// Sets the statistic value for the specified key. If the value is a positive
-// int64, it is stored as uint64. If the value is a big integer and it fits
-// into the uint64 range, it is stored as uint64. If it fits into the int64
-// range, it is stored as int64. Otherwise, it is stored as big.Int.
-// If the value has a different type, it is stored as is.
-func (s *SubnetStats) SetAny(key string, value any) {
-	switch value := value.(type) {
+		return storkutil.NewBigCounterFromBigInt(v)
 	case int64:
-		s.SetInt64(key, value)
+		return storkutil.NewBigCounterFromInt64(v)
 	case uint64:
-		s.SetUint64(key, value)
-	case *big.Int:
-		s.SetBigInt(key, value)
+		return storkutil.NewBigCounter(v)
 	default:
-		s.data[key] = value
+		return nil
 	}
 }
 
-// Returns the internal map representation of the subnet statistics.
-func (s *SubnetStats) ToMap() map[string]any {
-	return s.data
+// Sets the value of the statistic with the specified label as a big counter.
+func (s SubnetStats) SetBigCounter(label string, counter *storkutil.BigCounter) {
+	s[label] = counter.ConvertToNativeType()
 }
 
 // Subnet statistics may contain the integer number within arbitrary range
@@ -148,13 +86,13 @@ func (s *SubnetStats) ToMap() map[string]any {
 // It doesn't use the pointer to receiver type for compatibility with go-pg serialization
 // during inserting to the database.
 func (s SubnetStats) MarshalJSON() ([]byte, error) {
-	if s.data == nil {
+	if s == nil {
 		return json.Marshal(nil)
 	}
 
-	toMarshal := make(map[string]interface{}, len(s.data))
+	toMarshal := make(map[string]interface{}, len(s))
 
-	for k, v := range s.data {
+	for k, v := range s {
 		switch value := v.(type) {
 		case *big.Int, int64, uint64:
 			toMarshal[k] = fmt.Sprint(value)
@@ -179,40 +117,40 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 	}
 
 	if toUnmarshal == nil {
-		s.data = nil
+		*s = nil
 		return nil
 	}
 
-	if s.data == nil {
-		s.data = make(map[string]any)
+	if *s == nil {
+		*s = SubnetStats{}
 	}
 
 	for k, v := range toUnmarshal {
 		vStr, ok := v.(string)
 		if !ok {
-			s.data[k] = v
+			(*s)[k] = v
 			continue
 		}
 
 		vUint64, err := strconv.ParseUint(vStr, 10, 64)
 		if err == nil {
-			s.SetUint64(k, vUint64)
+			(*s)[k] = vUint64
 			continue
 		}
 
 		vInt64, err := strconv.ParseInt(vStr, 10, 64)
 		if err == nil {
-			s.SetInt64(k, vInt64)
+			(*s)[k] = vInt64
 			continue
 		}
 
 		vBigInt, ok := new(big.Int).SetString(vStr, 10)
 		if ok {
-			s.SetBigInt(k, vBigInt)
+			(*s)[k] = vBigInt
 			continue
 		}
 
-		s.data[k] = v
+		(*s)[k] = v
 	}
 
 	return nil
@@ -224,7 +162,7 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 type utilizationStats interface {
 	GetAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
-	GetStatistics() *SubnetStats
+	GetStatistics() SubnetStats
 }
 
 // This structure holds subnet information retrieved from an app. Multiple
@@ -245,7 +183,7 @@ type LocalSubnet struct {
 	Subnet        *Subnet `pg:"rel:has-one"`
 	LocalSubnetID int64
 
-	Stats            *SubnetStats
+	Stats            SubnetStats
 	StatsCollectedAt time.Time
 
 	AddressPools []AddressPool `pg:"rel:has-many"`
@@ -270,7 +208,7 @@ type Subnet struct {
 
 	AddrUtilization  int16
 	PdUtilization    int16
-	Stats            *SubnetStats
+	Stats            SubnetStats
 	StatsCollectedAt time.Time
 }
 
@@ -1037,7 +975,7 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 }
 
 // Update stats pulled for given local subnet.
-func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats *SubnetStats) error {
+func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 	lsn.Stats = stats
 	lsn.StatsCollectedAt = storkutil.UTCNow()
 	q := dbi.Model(lsn)

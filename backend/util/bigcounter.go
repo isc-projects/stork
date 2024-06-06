@@ -133,18 +133,22 @@ func (n *BigCounter) ToInt64() int64 {
 	return int64(n.base)
 }
 
-// Returns the counting value as uint64. If the value is above the range
-// then returns the maximum value of uint64. If the value is below the range
-// then returns 0.
-func (n *BigCounter) ToUint64() uint64 {
+// Returns the counting value as uint64. If the value is in range, returns it
+// and true. If the value is above the range then returns the maximum value of
+// uint64 and false. If the value is below the range then returns 0 and false.
+func (n *BigCounter) ToUint64() (uint64, bool) {
 	if n.isExtended() {
 		if n.extended.IsUint64() {
-			return n.extended.Uint64()
+			return n.extended.Uint64(), true
 		}
-		return math.MaxUint64
+		// Is below the range.
+		if n.extended.Cmp(big.NewInt(0)) == -1 {
+			return 0, false
+		}
+		return math.MaxUint64, false
 	}
 
-	return n.base
+	return n.base, true
 }
 
 // Returns the counting value as big int.
@@ -170,5 +174,31 @@ func NewBigCounter(val uint64) *BigCounter {
 	return &BigCounter{
 		base:     val,
 		extended: nil,
+	}
+}
+
+// Constructs a new big counter instance from the int64 value.
+func NewBigCounterFromInt64(val int64) *BigCounter {
+	if val < 0 {
+		// The negative value is not supported.
+		return nil
+	}
+	return NewBigCounter(uint64(val))
+}
+
+// Constructs a new big counter instance from the big.Int value.
+func NewBigCounterFromBigInt(val *big.Int) *BigCounter {
+	if val.IsUint64() {
+		return NewBigCounter(val.Uint64())
+	}
+
+	// The negative value is not supported.
+	if val.Cmp(big.NewInt(0)) == -1 {
+		return nil
+	}
+
+	return &BigCounter{
+		base:     math.MaxUint64,
+		extended: big.NewInt(0).Set(val),
 	}
 }

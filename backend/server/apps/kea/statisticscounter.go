@@ -1,9 +1,6 @@
 package kea
 
 import (
-	"math/big"
-
-	log "github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -56,7 +53,7 @@ func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 type subnetStats interface {
 	GetAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
-	GetStatistics() *dbmodel.SubnetStats
+	GetStatistics() dbmodel.SubnetStats
 }
 
 // Sum of the subnet statistics from the single shared network.
@@ -91,13 +88,13 @@ func (s *sharedNetworkStats) GetDelegatedPrefixUtilization() float64 {
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given shared network.
-func (s *sharedNetworkStats) GetStatistics() *dbmodel.SubnetStats {
-	return dbmodel.NewSubnetStatsFromMap(map[string]any{
-		"total-nas":    s.totalAddresses.ConvertToNativeType(),
-		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),
-		"total-pds":    s.totalDelegatedPrefixes.ConvertToNativeType(),
-		"assigned-pds": s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
-	})
+func (s *sharedNetworkStats) GetStatistics() dbmodel.SubnetStats {
+	return dbmodel.SubnetStats{
+		dbmodel.SubnetStatsLabelTotalNAs:    s.totalAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsLabelAssignedNAs: s.totalAssignedAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsLabelTotalPDs:    s.totalDelegatedPrefixes.ConvertToNativeType(),
+		dbmodel.SubnetStatsLabelAssignedPDs: s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
+	}
 }
 
 // Add the IPv4 subnet statistics to the shared network state.
@@ -138,12 +135,12 @@ func (s *subnetIPv4Stats) GetDelegatedPrefixUtilization() float64 {
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given IPv4 subnet.
-func (s *subnetIPv4Stats) GetStatistics() *dbmodel.SubnetStats {
-	return dbmodel.NewSubnetStatsFromMap(map[string]any{
-		"total-addresses":    s.totalAddresses,
-		"assigned-addresses": s.totalAssignedAddresses,
-		"declined-addresses": s.totalDeclinedAddresses,
-	})
+func (s *subnetIPv4Stats) GetStatistics() dbmodel.SubnetStats {
+	return dbmodel.SubnetStats{
+		dbmodel.SubnetStatsLabelTotalAddresses:    s.totalAddresses,
+		dbmodel.SubnetStatsLabelAssignedAddresses: s.totalAssignedAddresses,
+		dbmodel.SubnetStatsLabelDeclinedAddresses: s.totalDeclinedAddresses,
+	}
 }
 
 // IPv6 statistics retrieved from the single subnet.
@@ -168,14 +165,14 @@ func (s *subnetIPv6Stats) GetDelegatedPrefixUtilization() float64 {
 
 // Returns set of accumulated statistics from all local subnets belonging to
 // a given IPv6 network.
-func (s *subnetIPv6Stats) GetStatistics() *dbmodel.SubnetStats {
-	return dbmodel.NewSubnetStatsFromMap(map[string]any{
-		"total-nas":    s.totalAddresses.ConvertToNativeType(),
-		"assigned-nas": s.totalAssignedAddresses.ConvertToNativeType(),
-		"declined-nas": s.totalDeclinedAddresses.ConvertToNativeType(),
-		"total-pds":    s.totalDelegatedPrefixes.ConvertToNativeType(),
-		"assigned-pds": s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
-	})
+func (s *subnetIPv6Stats) GetStatistics() dbmodel.SubnetStats {
+	return dbmodel.SubnetStats{
+		dbmodel.SubnetStatsLabelTotalNAs:    s.totalAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsLabelAssignedNAs: s.totalAssignedAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsLabelDeclinedNAs: s.totalDeclinedAddresses.ConvertToNativeType(),
+		dbmodel.SubnetStatsLabelTotalPDs:    s.totalDelegatedPrefixes.ConvertToNativeType(),
+		dbmodel.SubnetStatsLabelAssignedPDs: s.totalAssignedDelegatedPrefixes.ConvertToNativeType(),
+	}
 }
 
 // Statistics Counter is a helper for calculating the global IPv4 and IPv6
@@ -259,9 +256,9 @@ func (c *statisticsCounter) add(subnet *dbmodel.Subnet) subnetStats {
 // that Kea does not include in its statistics.
 func (c *statisticsCounter) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
-		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses", c.excludedDaemons) + outOfPool,
-		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, "assigned-addresses", c.excludedDaemons),
-		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, "declined-addresses", c.excludedDaemons),
+		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsLabelTotalAddresses, c.excludedDaemons) + outOfPool,
+		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsLabelAssignedAddresses, c.excludedDaemons),
+		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, dbmodel.SubnetStatsLabelDeclinedAddresses, c.excludedDaemons),
 	}
 
 	if subnet.SharedNetworkID != 0 {
@@ -279,11 +276,11 @@ func (c *statisticsCounter) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint
 // calculated similarly.
 func (c *statisticsCounter) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, "total-nas", c.excludedDaemons).AddUint64(outOfPoolTotalAddresses),
-		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, "assigned-nas", c.excludedDaemons),
-		totalDeclinedAddresses:         sumStatLocalSubnetsIPv6(subnet, "declined-nas", c.excludedDaemons),
-		totalDelegatedPrefixes:         sumStatLocalSubnetsIPv6(subnet, "total-pds", c.excludedDaemons).AddUint64(outOfPoolDelegatedPrefixes),
-		totalAssignedDelegatedPrefixes: sumStatLocalSubnetsIPv6(subnet, "assigned-pds", c.excludedDaemons),
+		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelTotalNAs, c.excludedDaemons).AddUint64(outOfPoolTotalAddresses),
+		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelAssignedNAs, c.excludedDaemons),
+		totalDeclinedAddresses:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelDeclinedNAs, c.excludedDaemons),
+		totalDelegatedPrefixes:         sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelTotalPDs, c.excludedDaemons).AddUint64(outOfPoolDelegatedPrefixes),
+		totalAssignedDelegatedPrefixes: sumStatLocalSubnetsIPv6(subnet, dbmodel.SubnetStatsLabelAssignedPDs, c.excludedDaemons),
 	}
 
 	if subnet.SharedNetworkID != 0 {
@@ -300,36 +297,17 @@ func (c *statisticsCounter) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotal
 // The local subnets that belong to excluded daemons will not be processed.
 func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string, excludedDaemons map[int64]bool) *storkutil.BigCounter {
 	sum := storkutil.NewBigCounter(0)
-	hasNegativeStatistic := false
 	for _, localSubnet := range subnet.LocalSubnets {
 		if _, ok := excludedDaemons[localSubnet.DaemonID]; ok {
 			continue
 		}
 
-		if localSubnet.Stats == nil {
+		value := localSubnet.Stats.GetBigCounter(statName)
+		if value == nil {
 			continue
 		}
 
-		value, ok := localSubnet.Stats.TryGetAny(statName)
-		if !ok {
-			continue
-		}
-
-		valueUint, ok := value.(uint64)
-		if ok {
-			sum.AddUint64(valueUint)
-			continue
-		}
-
-		valueBigInt, ok := value.(*big.Int)
-		if ok {
-			_, ok = sum.AddBigInt(valueBigInt)
-			hasNegativeStatistic = hasNegativeStatistic || ok
-		}
-	}
-
-	if hasNegativeStatistic {
-		log.Warnf("Subnet %d contains negative value for statistic: %s", subnet.ID, statName)
+		sum.Add(value)
 	}
 	return sum
 }
@@ -344,16 +322,12 @@ func sumStatLocalSubnetsIPv4(subnet *dbmodel.Subnet, statName string, excludedDa
 			continue
 		}
 
-		if localSubnet.Stats == nil {
+		value := localSubnet.Stats.GetBigCounter(statName)
+		if value == nil {
 			continue
 		}
 
-		value, ok := localSubnet.Stats.TryGetAny(statName)
-		if !ok {
-			continue
-		}
-
-		valueUint, ok := value.(uint64)
+		valueUint, ok := value.ToUint64()
 		if !ok {
 			continue
 		}

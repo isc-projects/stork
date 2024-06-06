@@ -301,42 +301,42 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 		totalShift := shift * 2
 		switch sn.LocalSubnetID {
 		case 10:
-			require.Equal(t, uint64(111+shift), sn.Stats.GetAny("assigned-addresses"))
-			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("declined-addresses"))
-			require.Equal(t, uint64(256+totalShift), sn.Stats.GetAny("total-addresses"))
+			require.Equal(t, uint64(111+shift), sn.Stats["assigned-addresses"])
+			require.Equal(t, uint64(0+shift), sn.Stats["declined-addresses"])
+			require.Equal(t, uint64(256+totalShift), sn.Stats["total-addresses"])
 			snCnt++
 		case 20:
-			require.Equal(t, uint64(2034+shift), sn.Stats.GetAny("assigned-addresses"))
-			require.Equal(t, uint64(4+shift), sn.Stats.GetAny("declined-addresses"))
-			require.Equal(t, uint64(4098+totalShift), sn.Stats.GetAny("total-addresses"))
+			require.Equal(t, uint64(2034+shift), sn.Stats["assigned-addresses"])
+			require.Equal(t, uint64(4+shift), sn.Stats["declined-addresses"])
+			require.Equal(t, uint64(4098+totalShift), sn.Stats["total-addresses"])
 			snCnt++
 		case 30:
-			require.Equal(t, uint64(2400+shift), sn.Stats.GetAny("assigned-nas"))
-			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("assigned-pds"))
-			require.Equal(t, uint64(3+shift), sn.Stats.GetAny("declined-nas"))
-			require.Equal(t, uint64(4096+totalShift), sn.Stats.GetAny("total-nas"))
-			require.Equal(t, uint64(0+totalShift), sn.Stats.GetAny("total-pds"))
+			require.Equal(t, uint64(2400+shift), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(0+shift), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(3+shift), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(4096+totalShift), sn.Stats["total-nas"])
+			require.Equal(t, uint64(0+totalShift), sn.Stats["total-pds"])
 			snCnt++
 		case 40:
-			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("assigned-nas"))
-			require.Equal(t, uint64(233+shift), sn.Stats.GetAny("assigned-pds"))
-			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("declined-nas"))
-			require.Equal(t, uint64(0+totalShift), sn.Stats.GetAny("total-nas"))
-			require.Equal(t, uint64(1048+totalShift), sn.Stats.GetAny("total-pds"))
+			require.Equal(t, uint64(0+shift), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(233+shift), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(0+shift), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(0+totalShift), sn.Stats["total-nas"])
+			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
 			snCnt++
 		case 50:
-			require.Equal(t, uint64(60+shift), sn.Stats.GetAny("assigned-nas"))
-			require.Equal(t, uint64(15+shift), sn.Stats.GetAny("assigned-pds"))
-			require.Equal(t, uint64(0+shift), sn.Stats.GetAny("declined-nas"))
-			require.Equal(t, uint64(256+totalShift), sn.Stats.GetAny("total-nas"))
-			require.Equal(t, uint64(1048+totalShift), sn.Stats.GetAny("total-pds"))
+			require.Equal(t, uint64(60+shift), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(15+shift), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(0+shift), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(256+totalShift), sn.Stats["total-nas"])
+			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
 			snCnt++
 		case 60:
-			require.Equal(t, uint64(math.MaxUint64), sn.Stats.GetAny("total-nas"))
-			require.Equal(t, uint64(math.MaxInt64), sn.Stats.GetAny("assigned-nas"))
-			require.Equal(t, uint64(0), sn.Stats.GetAny("declined-nas"))
-			require.Equal(t, uint64(math.MaxUint64)-1, sn.Stats.GetAny("total-pds"))
-			require.Equal(t, uint64(math.MaxUint64)-2, sn.Stats.GetAny("assigned-pds"))
+			require.Equal(t, uint64(math.MaxUint64), sn.Stats["total-nas"])
+			require.Equal(t, uint64(math.MaxInt64), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(0), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(math.MaxUint64)-1, sn.Stats["total-pds"])
+			require.Equal(t, uint64(math.MaxUint64)-2, sn.Stats["assigned-pds"])
 			snCnt++
 		case 70:
 			require.Nil(t, sn.Stats)
@@ -1184,27 +1184,27 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	require.Len(t, subnet.LocalSubnets, 1)
 	require.EqualValues(t, 1, subnet.LocalSubnets[0].LocalSubnetID)
 	stats := subnet.LocalSubnets[0].Stats
-	require.Equal(t, uint64(844424930131968), stats.GetAny("total-nas"))
-	require.Equal(t, uint64(0), stats.GetAny("cumulative-assigned-nas"))
-	require.Equal(t, uint64(9), stats.GetAny("assigned-nas"))
-	require.Equal(t, uint64(10), stats.GetAny("declined-addresses"))
+	require.Equal(t, uint64(844424930131968), stats["total-nas"])
+	require.Equal(t, uint64(0), stats["cumulative-assigned-nas"])
+	require.Equal(t, uint64(9), stats["assigned-nas"])
+	require.Equal(t, uint64(10), stats["declined-addresses"])
 
 	subnet = subnets[1]
 	require.Len(t, subnet.LocalSubnets, 1)
 	require.EqualValues(t, 2, subnet.LocalSubnets[0].LocalSubnetID)
 	stats = subnet.LocalSubnets[0].Stats
-	require.Equal(t, uint64(281474976710656), stats.GetAny("total-nas"))
-	require.Equal(t, uint64(0), stats.GetAny("cumulative-assigned-nas"))
-	require.Equal(t, uint64(0), stats.GetAny("assigned-nas"))
-	require.Equal(t, uint64(0), stats.GetAny("declined-addresses"))
+	require.Equal(t, uint64(281474976710656), stats["total-nas"])
+	require.Equal(t, uint64(0), stats["cumulative-assigned-nas"])
+	require.Equal(t, uint64(0), stats["assigned-nas"])
+	require.Equal(t, uint64(0), stats["declined-addresses"])
 
 	subnet = subnets[2]
 	require.Len(t, subnet.LocalSubnets, 1)
 	require.EqualValues(t, 3, subnet.LocalSubnets[0].LocalSubnetID)
 	stats = subnet.LocalSubnets[0].Stats
 	expectedTotalNAs, _ := big.NewInt(0).SetString("2417851639229258349412352", 10)
-	require.Equal(t, expectedTotalNAs, stats.GetAny("total-nas"))
-	require.Equal(t, uint64(0), stats.GetAny("cumulative-assigned-nas"))
-	require.Equal(t, uint64(0), stats.GetAny("assigned-nas"))
-	require.Equal(t, uint64(0), stats.GetAny("declined-addresses"))
+	require.Equal(t, expectedTotalNAs, stats["total-nas"])
+	require.Equal(t, uint64(0), stats["cumulative-assigned-nas"])
+	require.Equal(t, uint64(0), stats["assigned-nas"])
+	require.Equal(t, uint64(0), stats["declined-addresses"])
 }

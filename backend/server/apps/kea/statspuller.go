@@ -152,15 +152,15 @@ func (statsPuller *StatsPuller) pullStats() error {
 	}
 
 	// global stats to collect
-	statsMap := map[string]*big.Int{
-		"total-addresses":    counter.global.totalIPv4Addresses.ToBigInt(),
-		"assigned-addresses": counter.global.totalAssignedIPv4Addresses.ToBigInt(),
-		"declined-addresses": counter.global.totalDeclinedIPv4Addresses.ToBigInt(),
-		"total-nas":          counter.global.totalIPv6Addresses.ToBigInt(),
-		"assigned-nas":       counter.global.totalAssignedIPv6Addresses.ToBigInt(),
-		"declined-nas":       counter.global.totalDeclinedIPv6Addresses.ToBigInt(),
-		"assigned-pds":       counter.global.totalAssignedDelegatedPrefixes.ToBigInt(),
-		"total-pds":          counter.global.totalDelegatedPrefixes.ToBigInt(),
+	statsMap := map[dbmodel.SubnetStatsLabel]*big.Int{
+		dbmodel.SubnetStatsLabelTotalAddresses:    counter.global.totalIPv4Addresses.ToBigInt(),
+		dbmodel.SubnetStatsLabelAssignedAddresses: counter.global.totalAssignedIPv4Addresses.ToBigInt(),
+		dbmodel.SubnetStatsLabelDeclinedAddresses: counter.global.totalDeclinedIPv4Addresses.ToBigInt(),
+		dbmodel.SubnetStatsLabelTotalNAs:          counter.global.totalIPv6Addresses.ToBigInt(),
+		dbmodel.SubnetStatsLabelAssignedNAs:       counter.global.totalAssignedIPv6Addresses.ToBigInt(),
+		dbmodel.SubnetStatsLabelDeclinedNAs:       counter.global.totalDeclinedIPv6Addresses.ToBigInt(),
+		dbmodel.SubnetStatsLabelAssignedPDs:       counter.global.totalAssignedDelegatedPrefixes.ToBigInt(),
+		dbmodel.SubnetStatsLabelTotalPDs:          counter.global.totalDelegatedPrefixes.ToBigInt(),
 	}
 
 	// update global statistics in db
@@ -221,7 +221,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 	}
 
 	for _, row := range resultSet.Rows {
-		stats := dbmodel.NewSubnetStats()
+		stats := dbmodel.SubnetStats{}
 		var sn *dbmodel.LocalSubnet
 		var lsnID int64
 		for colIdx, val := range row {
@@ -253,7 +253,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 				// with the existing code. Some features expect the IPv4
 				// statistics to be always stored as uint64, while IPv6 can be
 				// uint64 or big int.
-				stats.SetBigInt(name, value)
+				stats.SetBigCounter(name, storkutil.NewBigCounterFromBigInt(value))
 			}
 		}
 		if sn == nil {

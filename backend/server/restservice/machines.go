@@ -1509,16 +1509,16 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	dhcp4Stats := &models.Dhcp4Stats{
-		AssignedAddresses: fmt.Sprint(stats["assigned-addresses"]),
-		TotalAddresses:    fmt.Sprint(stats["total-addresses"]),
-		DeclinedAddresses: fmt.Sprint(stats["declined-addresses"]),
+		AssignedAddresses: fmt.Sprint(stats[dbmodel.SubnetStatsLabelAssignedAddresses]),
+		TotalAddresses:    fmt.Sprint(stats[dbmodel.SubnetStatsLabelTotalAddresses]),
+		DeclinedAddresses: fmt.Sprint(stats[dbmodel.SubnetStatsLabelDeclinedAddresses]),
 	}
 	dhcp6Stats := &models.Dhcp6Stats{
-		AssignedNAs: fmt.Sprint(stats["assigned-nas"]),
-		TotalNAs:    fmt.Sprint(stats["total-nas"]),
-		AssignedPDs: fmt.Sprint(stats["assigned-pds"]),
-		TotalPDs:    fmt.Sprint(stats["total-pds"]),
-		DeclinedNAs: fmt.Sprint(stats["declined-nas"]),
+		AssignedNAs: fmt.Sprint(stats[dbmodel.SubnetStatsLabelAssignedNAs]),
+		TotalNAs:    fmt.Sprint(stats[dbmodel.SubnetStatsLabelTotalNAs]),
+		AssignedPDs: fmt.Sprint(stats[dbmodel.SubnetStatsLabelAssignedPDs]),
+		TotalPDs:    fmt.Sprint(stats[dbmodel.SubnetStatsLabelTotalPDs]),
+		DeclinedNAs: fmt.Sprint(stats[dbmodel.SubnetStatsLabelDeclinedNAs]),
 	}
 
 	// get kea apps and daemons statuses

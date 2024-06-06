@@ -31,7 +31,7 @@ type SharedNetwork struct {
 
 	AddrUtilization  int16
 	PdUtilization    int16
-	Stats            *SubnetStats
+	Stats            SubnetStats
 	StatsCollectedAt time.Time
 }
 

@@ -108,8 +108,8 @@ func TestBigCounterAddUint64Shorthand(t *testing.T) {
 }
 
 // Test add in place big.Int shorthand.
-func TestBigCounterAddBigIntshorthand(t *testing.T) {
-	// Arrage
+func TestBigCounterAddBigIntShorthand(t *testing.T) {
+	// Arrange
 	expected := big.NewInt(0).Add(
 		big.NewInt(0).Add(
 			big.NewInt(111),
@@ -135,8 +135,8 @@ func TestBigCounterAddBigIntshorthand(t *testing.T) {
 }
 
 // Test that add in place big.Int ignores the negative numbers.
-func TestBigCounterAddBigIntshorthandIgnoreNegatives(t *testing.T) {
-	// Act
+func TestBigCounterAddBigIntShorthandIgnoreNegatives(t *testing.T) {
+	// Arrange & Act
 	counter := NewBigCounter(42)
 	_, ok1 := counter.AddBigInt(big.NewInt(-1))
 	_, ok2 := counter.AddBigInt(big.NewInt(-2))
@@ -244,14 +244,17 @@ func TestBigCounterToUint64(t *testing.T) {
 	counter2 := NewBigCounter(math.MaxUint64).AddUint64(1)
 
 	// Act
-	value0 := counter0.ToUint64()
-	value1 := counter1.ToUint64()
-	value2 := counter2.ToUint64()
+	value0, ok0 := counter0.ToUint64()
+	value1, ok1 := counter1.ToUint64()
+	value2, ok2 := counter2.ToUint64()
 
 	// Assert
 	require.EqualValues(t, 0, value0)
+	require.True(t, ok0)
 	require.EqualValues(t, uint64(math.MaxUint64), value1)
+	require.True(t, ok1)
 	require.EqualValues(t, uint64(math.MaxUint64), value2)
+	require.False(t, ok2)
 }
 
 // Test the big counter can be converted to big int.
@@ -288,6 +291,97 @@ func TestBigCounterToNativeType(t *testing.T) {
 		big.NewInt(0).SetUint64(math.MaxUint64),
 		big.NewInt(1),
 	), nativeExtended)
+}
+
+// Test the big counter can be constructed from the int64.
+func TestBigCounterConstructFromInt64(t *testing.T) {
+	t.Run("Construct from zero", func(t *testing.T) {
+		// Arrange
+		val := int64(0)
+
+		// Act
+		counter := NewBigCounterFromInt64(val)
+
+		// Assert
+		require.NotNil(t, counter)
+		require.EqualValues(t, big.NewInt(0), counter.ToBigInt())
+	})
+
+	t.Run("Construct from positive value", func(t *testing.T) {
+		// Arrange
+		val := int64(42)
+
+		// Act
+		counter := NewBigCounterFromInt64(val)
+
+		// Assert
+		require.NotNil(t, counter)
+		require.EqualValues(t, big.NewInt(42), counter.ToBigInt())
+	})
+
+	t.Run("Construct from negative value", func(t *testing.T) {
+		// Arrange
+		val := int64(-1)
+
+		// Act
+		counter := NewBigCounterFromInt64(val)
+
+		// Assert
+		require.Nil(t, counter)
+	})
+}
+
+// Test the big counter can be constructed from the big int.
+func TestBigCounterConstructFromBigInt(t *testing.T) {
+	t.Run("Construct from zero", func(t *testing.T) {
+		// Arrange
+		bigInt := big.NewInt(0)
+
+		// Act
+		counter := NewBigCounterFromBigInt(bigInt)
+
+		// Assert
+		require.NotNil(t, counter)
+		require.EqualValues(t, bigInt, counter.ToBigInt())
+	})
+
+	t.Run("Construct from uint64 range", func(t *testing.T) {
+		// Arrange
+		bigInt := big.NewInt(0).SetUint64(math.MaxUint64)
+
+		// Act
+		counter := NewBigCounterFromBigInt(bigInt)
+
+		// Assert
+		require.NotNil(t, counter)
+		require.EqualValues(t, bigInt, counter.ToBigInt())
+	})
+
+	t.Run("Construct from above uint64 range", func(t *testing.T) {
+		// Arrange
+		bigInt := big.NewInt(0).Add(
+			big.NewInt(0).SetUint64(math.MaxUint64),
+			big.NewInt(1),
+		)
+
+		// Act
+		counter := NewBigCounterFromBigInt(bigInt)
+
+		// Assert
+		require.NotNil(t, counter)
+		require.EqualValues(t, bigInt, counter.ToBigInt())
+	})
+
+	t.Run("Construct from negative value", func(t *testing.T) {
+		// Arrange
+		bigInt := big.NewInt(-1)
+
+		// Act
+		counter := NewBigCounterFromBigInt(bigInt)
+
+		// Assert
+		require.Nil(t, counter)
+	})
 }
 
 // Benchmarks.

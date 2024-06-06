@@ -23,10 +23,10 @@ import (
 type utilizationStatsMock struct {
 	addressUtilization         float64
 	delegatedPrefixUtilization float64
-	statistics                 *SubnetStats
+	statistics                 SubnetStats
 }
 
-func newUtilizationStatsMock(address, pd float64, stats *SubnetStats) utilizationStats {
+func newUtilizationStatsMock(address, pd float64, stats SubnetStats) utilizationStats {
 	return &utilizationStatsMock{
 		addressUtilization:         address,
 		delegatedPrefixUtilization: pd,
@@ -42,7 +42,7 @@ func (m *utilizationStatsMock) GetDelegatedPrefixUtilization() float64 {
 	return m.delegatedPrefixUtilization
 }
 
-func (m *utilizationStatsMock) GetStatistics() *SubnetStats {
+func (m *utilizationStatsMock) GetStatistics() SubnetStats {
 	return m.statistics
 }
 
@@ -806,8 +806,8 @@ func TestUpdateStats(t *testing.T) {
 	lsn := subnets[0]
 	lsn.DaemonID = apps[0].Daemons[0].ID
 	lsn.SubnetID = subnet.ID
-	stats := NewSubnetStats()
-	stats.SetInt64("hakuna-matata", 123)
+	stats := SubnetStats{}
+	stats.SetBigCounter("hakuna-matata", storkutil.NewBigCounterFromInt64(123))
 	err = lsn.UpdateStats(db, stats)
 	require.NoError(t, err)
 
@@ -819,8 +819,8 @@ func TestUpdateStats(t *testing.T) {
 	lsn = localSubnets[0]
 	require.NotZero(t, lsn.StatsCollectedAt)
 	require.NotNil(t, lsn.Stats)
-	require.True(t, lsn.Stats.Has("hakuna-matata"))
-	require.EqualValues(t, 123, lsn.Stats.GetAny("hakuna-matata"))
+	require.Contains(t, lsn.Stats, "hakuna-matata")
+	require.EqualValues(t, 123, lsn.Stats["hakuna-matata"])
 }
 
 // Test that global shared networks and subnet instances are committed
@@ -1035,12 +1035,12 @@ func TestUpdateUtilization(t *testing.T) {
 	require.Zero(t, returnedSubnet.StatsCollectedAt)
 
 	// update utilization in subnet
-	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, NewSubnetStatsFromMap(map[string]any{
+	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, SubnetStats{
 		"total-nas":    uint64(100),
 		"assigned-nas": uint64(1),
 		"total-pds":    uint64(100),
 		"assigned-pds": uint64(2),
-	})))
+	}))
 
 	// check if utilization was stored in db
 	returnedSubnet2, err := GetSubnet(db, subnet.ID)
@@ -1048,8 +1048,8 @@ func TestUpdateUtilization(t *testing.T) {
 	require.NotNil(t, returnedSubnet2)
 	require.EqualValues(t, 10, returnedSubnet2.AddrUtilization)
 	require.EqualValues(t, 20, returnedSubnet2.PdUtilization)
-	require.EqualValues(t, 1, returnedSubnet2.Stats.GetAny("assigned-nas"))
-	require.EqualValues(t, 2, returnedSubnet2.Stats.GetAny("assigned-pds"))
+	require.EqualValues(t, 1, returnedSubnet2.Stats["assigned-nas"])
+	require.EqualValues(t, 2, returnedSubnet2.Stats["assigned-pds"])
 	require.InDelta(t, time.Now().UTC().Unix(), returnedSubnet2.StatsCollectedAt.Unix(), 10.0)
 }
 
@@ -1188,7 +1188,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	// Arrange
 	localSubnet := &LocalSubnet{
-		Stats: NewSubnetStatsFromMap(map[string]any{
+		Stats: SubnetStats{
 			"maxInt64":             int64(math.MaxInt64),
 			"minInt64":             int64(math.MinInt64),
 			"maxUint64":            uint64(math.MaxUint64),
@@ -1205,7 +1205,7 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 			"bigIntBelowInt64Bounds": big.NewInt(0).Add(
 				big.NewInt(math.MinInt64), big.NewInt(math.MinInt64),
 			),
-		}),
+		},
 	}
 
 	var deserialized LocalSubnet
@@ -1219,24 +1219,24 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	require.NoError(t, fromJSONErr)
 
 	// Deserializer loses the original types (!)
-	require.Equal(t, uint64(math.MaxInt64), deserialized.Stats.GetAny("maxInt64"))
-	require.Equal(t, int64(math.MinInt64), deserialized.Stats.GetAny("minInt64"))
-	require.Equal(t, uint64(math.MaxUint64), deserialized.Stats.GetAny("maxUint64"))
-	require.Equal(t, uint64(0), deserialized.Stats.GetAny("minUint64"))
+	require.Equal(t, uint64(math.MaxInt64), deserialized.Stats["maxInt64"])
+	require.Equal(t, int64(math.MinInt64), deserialized.Stats["minInt64"])
+	require.Equal(t, uint64(math.MaxUint64), deserialized.Stats["maxUint64"])
+	require.Equal(t, uint64(0), deserialized.Stats["minUint64"])
 
-	require.Equal(t, float64(42), deserialized.Stats.GetAny("untyped"))
-	require.Equal(t, float64(16), deserialized.Stats.GetAny("int16"))
-	require.Equal(t, float64(32), deserialized.Stats.GetAny("int32"))
+	require.Equal(t, float64(42), deserialized.Stats["untyped"])
+	require.Equal(t, float64(16), deserialized.Stats["int16"])
+	require.Equal(t, float64(32), deserialized.Stats["int32"])
 
-	require.Equal(t, uint64(42), deserialized.Stats.GetAny("bigIntInUint64Bounds"))
-	require.Equal(t, int64(-42), deserialized.Stats.GetAny("bigIntInInt64Bounds"))
+	require.Equal(t, uint64(42), deserialized.Stats["bigIntInUint64Bounds"])
+	require.Equal(t, int64(-42), deserialized.Stats["bigIntInInt64Bounds"])
 	require.Equal(t, big.NewInt(0).Add(
 		big.NewInt(0).SetUint64(math.MaxUint64),
 		big.NewInt(0).SetUint64(math.MaxUint64),
-	), deserialized.Stats.GetAny("bigIntAboveUint64Bounds"))
+	), deserialized.Stats["bigIntAboveUint64Bounds"])
 	require.Equal(t, big.NewInt(0).Add(
 		big.NewInt(math.MinInt64), big.NewInt(math.MinInt64),
-	), deserialized.Stats.GetAny("bigIntBelowInt64Bounds"))
+	), deserialized.Stats["bigIntBelowInt64Bounds"])
 }
 
 // Test that the none stats are serialized as nil.
@@ -1948,516 +1948,144 @@ func TestGetMaxLocalSubnetIDEmptySet(t *testing.T) {
 	require.EqualValues(t, 0, id)
 }
 
-// Test that the subnet stats object is created properly.
-func TestNewSubnetStats(t *testing.T) {
-	// Arrange & Act
-	stats := NewSubnetStats()
-
-	// Assert
-	require.NotNil(t, stats)
-	require.NotNil(t, stats.data)
-}
-
-// Test that the subnet stats object is created properly from a map and the
-// values can be retrieved without casting.
-func TestNewSubnetStatsFromMapAndGetAny(t *testing.T) {
+// Test that the subnet statistics can be accessed though the big counter.
+func TestSubnetStatsGetBigCounter(t *testing.T) {
 	// Arrange
-	data := map[string]any{
-		"int":            42,
-		"negative int":   -42,
-		"uint":           uint(42),
-		"int64":          int64(42),
-		"negative int64": int64(-42),
+	stats := SubnetStats{
 		"uint64":         uint64(42),
-		"small bigint":   big.NewInt(42),
-		"large bigint": big.NewInt(0).Add(
+		"positive-int64": int64(42),
+		"negative-int64": int64(-42),
+		"large-bigint": big.NewInt(0).Add(
 			big.NewInt(0).SetUint64(math.MaxUint64),
-			big.NewInt(42),
+			big.NewInt(1),
 		),
-		"negative small bigint": big.NewInt(-42),
-		"negative large bigint": big.NewInt(0).Sub(
-			big.NewInt(0).SetInt64(-42),
-			big.NewInt(0).SetUint64(math.MaxUint64),
-		),
-		"string": "42",
+		"small-bigint":    big.NewInt(42),
+		"negative-bigint": big.NewInt(-42),
+		"non-numeric":     "foo",
 	}
-
-	// Act
-	stats := NewSubnetStatsFromMap(data)
-
-	// Assert
-	require.NotNil(t, stats)
-	require.NotNil(t, stats.data)
-	require.Equal(t, 42, stats.GetAny("int"))
-	require.Equal(t, -42, stats.GetAny("negative int"))
-	require.Equal(t, uint64(42), stats.GetAny("int64"))
-	require.Equal(t, int64(-42), stats.GetAny("negative int64"))
-	require.Equal(t, uint64(42), stats.GetAny("uint64"))
-	require.Equal(t, uint64(42), stats.GetAny("small bigint"))
-	expected, _ := big.NewInt(0).SetString("18446744073709551657", 10)
-	require.Equal(t, expected, stats.GetAny("large bigint"))
-	require.Equal(t, int64(-42), stats.GetAny("negative small bigint"))
-	expected, _ = big.NewInt(0).SetString("-18446744073709551657", 10)
-	require.Equal(t, expected, stats.GetAny("negative large bigint"))
-	require.Equal(t, "42", stats.GetAny("string"))
-}
-
-// Test that the presence of a key can be checked in the subnet stats object.
-func TestSubnetStatsHas(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStatsFromMap(map[string]any{
-		"foo": 42,
-	})
-
-	// Act & Assert
-	require.True(t, stats.Has("foo"))
-	require.False(t, stats.Has("bar"))
-}
-
-// Test that the values can be retrieved from the subnet stats object in a
-// guarded manner.
-func TestSubnetStatsTryGetAny(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStatsFromMap(map[string]any{
-		"foo": 42,
-	})
-
-	t.Run("existing key", func(t *testing.T) {
-		// Act
-		value, ok := stats.TryGetAny("foo")
-
-		// Assert
-		require.True(t, ok)
-		require.Equal(t, 42, value)
-	})
-
-	t.Run("non-existing key", func(t *testing.T) {
-		// Act
-		value, ok := stats.TryGetAny("bar")
-
-		// Assert
-		require.False(t, ok)
-		require.Nil(t, value)
-	})
-}
-
-// Test that the uint64 values can be retrieved from the subnet stats object in a
-// guarded manner.
-func TestSubnetStatsTryGetUint64(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStatsFromMap(map[string]any{
-		"int":            42,
-		"uint":           uint(42),
-		"positive int64": int64(42),
-		"negative int64": int64(-42),
-		"uint64":         uint64(42),
-		"string":         "42",
-		"positive bigint": big.NewInt(0).Add(
-			big.NewInt(0).SetUint64(math.MaxUint64),
-			big.NewInt(42),
-		),
-		"negative bigint": big.NewInt(0).Sub(
-			big.NewInt(-42),
-			big.NewInt(0).SetUint64(math.MaxUint64),
-		),
-	})
-
-	t.Run("int", func(t *testing.T) {
-		// Act
-		value, ok := stats.TryGetUint64("int")
-
-		// Assert
-		require.False(t, ok)
-		require.Zero(t, value)
-	})
-
-	t.Run("uint", func(t *testing.T) {
-		// Act
-		value, ok := stats.TryGetUint64("uint")
-
-		// Assert
-		require.False(t, ok)
-		require.Zero(t, value)
-	})
-
-	t.Run("positive int64", func(t *testing.T) {
-		// Act
-		value, ok := stats.TryGetUint64("positive int64")
-
-		// Assert
-		require.True(t, ok)
-		require.EqualValues(t, 42, value)
-	})
-
-	t.Run("negative int64", func(t *testing.T) {
-		// Act
-		value, ok := stats.TryGetUint64("negative int64")
-
-		// Assert
-		require.False(t, ok)
-		require.EqualValues(t, math.MaxUint64-uint64(42)+1, value)
-	})
 
 	t.Run("uint64", func(t *testing.T) {
 		// Act
-		value, ok := stats.TryGetUint64("uint64")
+		counter := stats.GetBigCounter("uint64")
 
 		// Assert
+		require.NotNil(t, counter)
+		value, ok := counter.ToUint64()
 		require.True(t, ok)
 		require.EqualValues(t, 42, value)
 	})
 
-	t.Run("string", func(t *testing.T) {
+	t.Run("positive-int64", func(t *testing.T) {
 		// Act
-		value, ok := stats.TryGetUint64("string")
+		counter := stats.GetBigCounter("positive-int64")
 
 		// Assert
-		require.False(t, ok)
-		require.Zero(t, value)
+		require.NotNil(t, counter)
+		value := counter.ToInt64()
+		require.EqualValues(t, 42, value)
 	})
 
-	t.Run("positive bigint", func(t *testing.T) {
+	t.Run("negative-int64", func(t *testing.T) {
 		// Act
-		value, ok := stats.TryGetUint64("positive bigint")
+		counter := stats.GetBigCounter("negative-int64")
 
 		// Assert
-		require.False(t, ok)
-		// Undefined return value.
-		require.NotZero(t, value)
+		require.Nil(t, counter)
 	})
 
-	t.Run("negative bigint", func(t *testing.T) {
+	t.Run("large-bigint", func(t *testing.T) {
 		// Act
-		value, ok := stats.TryGetUint64("negative bigint")
+		counter := stats.GetBigCounter("large-bigint")
 
 		// Assert
-		require.False(t, ok)
-		// Undefined return value.
-		require.NotZero(t, value)
-	})
-}
-
-// Test that the uint64 values can be set in the subnet stats object.
-func TestSubnetStatsSetUint64(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStats()
-
-	// Act
-	stats.SetUint64("foo", 42)
-
-	// Assert
-	require.Equal(t, uint64(42), stats.GetAny("foo"))
-}
-
-// Test that the int64 values can be set in the subnet stats object.
-func TestSubnetStatsSetInt64(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStats()
-
-	t.Run("positive", func(t *testing.T) {
-		// Act
-		stats.SetInt64("foo", 42)
-
-		// Assert
-		require.Equal(t, uint64(42), stats.GetAny("foo"))
+		require.NotNil(t, counter)
+		value := counter.ToBigInt()
+		require.EqualValues(t,
+			big.NewInt(0).Add(
+				big.NewInt(0).SetUint64(math.MaxUint64),
+				big.NewInt(1),
+			),
+			value,
+		)
 	})
 
-	t.Run("negative", func(t *testing.T) {
+	t.Run("small-bigint", func(t *testing.T) {
 		// Act
-		stats.SetInt64("foo", -42)
+		counter := stats.GetBigCounter("small-bigint")
 
 		// Assert
-		require.Equal(t, int64(-42), stats.GetAny("foo"))
+		require.NotNil(t, counter)
+		value, ok := counter.ToUint64()
+		require.True(t, ok)
+		require.EqualValues(t, 42, value)
+	})
+
+	t.Run("negative-bigint", func(t *testing.T) {
+		// Act
+		counter := stats.GetBigCounter("negative-bigint")
+
+		// Assert
+		require.Nil(t, counter)
 	})
 }
 
-// Test that the big.Int values can be set in the subnet stats object.
-func TestSubnetStatsSetBigInt(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStats()
-
-	t.Run("small positive bigint", func(t *testing.T) {
-		// Act
-		stats.SetBigInt("foo", big.NewInt(42))
-
-		// Assert
-		require.Equal(t, uint64(42), stats.GetAny("foo"))
-	})
-
-	t.Run("large positive bigint", func(t *testing.T) {
-		// Act
-		stats.SetBigInt("foo", big.NewInt(0).Add(
-			big.NewInt(0).SetUint64(math.MaxUint64),
-			big.NewInt(42),
-		))
-
-		// Assert
-		expected, _ := big.NewInt(0).SetString("18446744073709551657", 10)
-		require.Equal(t, expected, stats.GetAny("foo"))
-	})
-
-	t.Run("small negative bigint", func(t *testing.T) {
-		// Act
-		stats.SetBigInt("foo", big.NewInt(-42))
-
-		// Assert
-		require.Equal(t, int64(-42), stats.GetAny("foo"))
-	})
-
-	t.Run("large negative bigint", func(t *testing.T) {
-		// Act
-		stats.SetBigInt("foo", big.NewInt(0).Sub(
-			big.NewInt(-42),
-			big.NewInt(0).SetUint64(math.MaxUint64),
-		))
-
-		// Assert
-		expected, _ := big.NewInt(0).SetString("-18446744073709551657", 10)
-		require.Equal(t, expected, stats.GetAny("foo"))
-	})
-}
-
-// Test that the values can be set in the subnet stats object.
-func TestSubnetStatsSetAny(t *testing.T) {
-	t.Run("int", func(t *testing.T) {
+// Test that the subnet statistics can be set using the big counter.
+func TestSubnetStatsSetBigCounter(t *testing.T) {
+	t.Run("uint64", func(t *testing.T) {
 		// Arrange
-		stats := NewSubnetStats()
+		stats := SubnetStats{}
 
 		// Act
-		stats.SetAny("foo", 42)
+		stats.SetBigCounter("uint64", storkutil.NewBigCounter(42))
 
 		// Assert
-		require.Equal(t, 42, stats.GetAny("foo"))
-	})
-
-	t.Run("negative int", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", -42)
-
-		// Assert
-		require.Equal(t, -42, stats.GetAny("foo"))
-	})
-
-	t.Run("uint", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", uint(42))
-
-		// Assert
-		require.Equal(t, uint(42), stats.GetAny("foo"))
+		require.Len(t, stats, 1)
+		require.Equal(t, uint64(42), stats["uint64"])
 	})
 
 	t.Run("int64", func(t *testing.T) {
 		// Arrange
-		stats := NewSubnetStats()
+		stats := SubnetStats{}
 
 		// Act
-		stats.SetAny("foo", int64(42))
+		stats.SetBigCounter("positive-int64", storkutil.NewBigCounter(42))
 
 		// Assert
-		require.Equal(t, uint64(42), stats.GetAny("foo"))
+		require.Len(t, stats, 1)
+		require.Equal(t, uint64(42), stats["positive-int64"])
 	})
 
-	t.Run("negative int64", func(t *testing.T) {
+	t.Run("small-bigint", func(t *testing.T) {
 		// Arrange
-		stats := NewSubnetStats()
+		stats := SubnetStats{}
 
 		// Act
-		stats.SetAny("foo", int64(-42))
-
-		// Assert
-		require.Equal(t, int64(-42), stats.GetAny("foo"))
-	})
-
-	t.Run("uint64", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", uint64(42))
-
-		// Assert
-		require.Equal(t, uint64(42), stats.GetAny("foo"))
-	})
-
-	t.Run("small bigint", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", big.NewInt(42))
-
-		// Assert
-		require.Equal(t, uint64(42), stats.GetAny("foo"))
-	})
-
-	t.Run("large bigint", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", big.NewInt(0).Add(big.NewInt(0).SetUint64(math.MaxUint64), big.NewInt(42)))
-
-		// Assert
-		expected, _ := big.NewInt(0).SetString("18446744073709551657", 10)
-		require.Equal(t, expected, stats.GetAny("foo"))
-	})
-
-	t.Run("negative small bigint", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", big.NewInt(-42))
-
-		// Assert
-		require.Equal(t, int64(-42), stats.GetAny("foo"))
-	})
-
-	t.Run("negative large bigint", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", big.NewInt(0).Sub(big.NewInt(0).SetInt64(-42), big.NewInt(0).SetUint64(math.MaxUint64)))
-
-		// Assert
-		expected, _ := big.NewInt(0).SetString("-18446744073709551657", 10)
-		require.Equal(t, expected, stats.GetAny("foo"))
-	})
-
-	t.Run("string", func(t *testing.T) {
-		// Arrange
-		stats := NewSubnetStats()
-
-		// Act
-		stats.SetAny("foo", "42")
-
-		// Assert
-		require.Equal(t, "42", stats.GetAny("foo"))
-	})
-}
-
-// Test that the subnet stats object can be converted to a map.
-func TestSubnetStatsToMap(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStatsFromMap(map[string]any{
-		"int":            42,
-		"negative int":   -42,
-		"uint":           uint(42),
-		"int64":          int64(42),
-		"negative int64": int64(-42),
-		"uint64":         uint64(42),
-		"small bigint":   big.NewInt(42),
-		"large bigint": big.NewInt(0).Add(
-			big.NewInt(0).SetUint64(math.MaxUint64),
+		stats.SetBigCounter("bigint", storkutil.NewBigCounterFromBigInt(
 			big.NewInt(42),
-		),
-		"negative small bigint": big.NewInt(-42),
-		"negative large bigint": big.NewInt(0).Sub(
-			big.NewInt(0).SetInt64(-42),
-			big.NewInt(0).SetUint64(math.MaxUint64),
-		),
-		"string": "42",
+		))
+
+		// Assert
+		require.Len(t, stats, 1)
+		require.Equal(t, uint64(42), stats["bigint"])
 	})
 
-	// Act
-	data := stats.ToMap()
+	t.Run("large-bigint", func(t *testing.T) {
+		// Arrange
+		stats := SubnetStats{}
 
-	// Assert
-	require.Len(t, data, 11)
-	require.Equal(t, 42, data["int"])
-	require.Equal(t, -42, data["negative int"])
-	require.Equal(t, uint(42), data["uint"])
-	require.Equal(t, uint64(42), data["int64"])
-	require.Equal(t, int64(-42), data["negative int64"])
-	require.Equal(t, uint64(42), data["uint64"])
-	require.Equal(t, "42", data["string"])
-	require.Equal(t, uint64(42), data["small bigint"])
-	expected, _ := big.NewInt(0).SetString("18446744073709551657", 10)
-	require.Equal(t, expected, data["large bigint"])
-	require.Equal(t, int64(-42), data["negative small bigint"])
-	expected, _ = big.NewInt(0).SetString("-18446744073709551657", 10)
-	require.Equal(t, expected, data["negative large bigint"])
-}
+		// Act
+		stats.SetBigCounter("bigint", storkutil.NewBigCounterFromBigInt(
+			big.NewInt(0).Add(
+				big.NewInt(0).SetUint64(math.MaxUint64),
+				big.NewInt(1),
+			),
+		))
 
-// Test that the subnet stats object can be converted to JSON.
-func TestSubnetStatsMarshalJSON(t *testing.T) {
-	// Arrange
-	stats := NewSubnetStatsFromMap(map[string]any{
-		"int":            42,
-		"negative int":   -42,
-		"uint":           uint(42),
-		"int64":          int64(42),
-		"negative int64": int64(-42),
-		"uint64":         uint64(42),
-		"small bigint":   big.NewInt(42),
-		"large bigint": big.NewInt(0).Add(
+		// Assert
+		require.Len(t, stats, 1)
+		require.Equal(t, big.NewInt(0).Add(
 			big.NewInt(0).SetUint64(math.MaxUint64),
-			big.NewInt(42),
-		),
-		"negative small bigint": big.NewInt(-42),
-		"negative large bigint": big.NewInt(0).Sub(
-			big.NewInt(0).SetInt64(-42),
-			big.NewInt(0).SetUint64(math.MaxUint64),
-		),
-		"string": "42",
+			big.NewInt(1),
+		), stats["bigint"])
 	})
-
-	// Act
-	data, err := stats.MarshalJSON()
-
-	// Assert
-	require.NoError(t, err)
-	var decoded map[string]any
-	_ = json.Unmarshal(data, &decoded)
-	require.Len(t, decoded, 11)
-	require.Equal(t, float64(42), decoded["int"])
-	require.Equal(t, float64(-42), decoded["negative int"])
-	require.Equal(t, float64(42), decoded["uint"])
-	require.Equal(t, "42", decoded["int64"])
-	require.Equal(t, "-42", decoded["negative int64"])
-	require.Equal(t, "42", decoded["uint64"])
-	require.Equal(t, "42", decoded["string"])
-	require.Equal(t, "42", decoded["small bigint"])
-	require.Equal(t, "18446744073709551657", decoded["large bigint"])
-	require.Equal(t, "-42", decoded["negative small bigint"])
-	require.Equal(t, "-18446744073709551657", decoded["negative large bigint"])
-}
-
-// Test that the subnet stats object can be unmarshaled from JSON.
-func TestSubnetStatsUnmarshalJSON(t *testing.T) {
-	// Arrange
-	data := map[string]any{
-		"positive number":                   float64(42),
-		"negative number":                   float64(-42),
-		"stringified small positive number": "42",
-		"stringified large positive number": "18446744073709551657",
-		"stringified small negative number": "-42",
-		"stringified large negative number": "-18446744073709551657",
-		"string":                            "foo",
-	}
-	bytes, _ := json.Marshal(data)
-
-	// Act
-	stats := NewSubnetStats()
-	err := json.Unmarshal(bytes, stats)
-
-	// Assert
-	require.NoError(t, err)
-	require.Len(t, stats.data, 7)
-	require.Equal(t, float64(42), stats.GetAny("positive number"))
-	require.Equal(t, float64(-42), stats.GetAny("negative number"))
-	require.Equal(t, uint64(42), stats.GetAny("stringified small positive number"))
-	expected, _ := big.NewInt(0).SetString("18446744073709551657", 10)
-	require.Equal(t, expected, stats.GetAny("stringified large positive number"))
-	require.Equal(t, int64(-42), stats.GetAny("stringified small negative number"))
-	expected, _ = big.NewInt(0).SetString("-18446744073709551657", 10)
-	require.Equal(t, expected, stats.GetAny("stringified large negative number"))
-	require.Equal(t, "foo", stats.GetAny("string"))
 }
