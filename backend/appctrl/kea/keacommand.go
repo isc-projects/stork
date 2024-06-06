@@ -99,7 +99,9 @@ type UnsupportedOperationKeaError struct {
 // and text received from Kea CA.
 // It returns a most specific error type based on the text.
 func newKeaError(result int, text string) error {
-	if result == ResponseSuccess {
+	// Kea returns a proper response if the status is ResponseEmpty, so there
+	// is no need to treat it as an error.
+	if result == ResponseSuccess || result == ResponseEmpty {
 		return nil
 	}
 	if result == ResponseCommandUnsupported {

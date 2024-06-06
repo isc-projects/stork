@@ -606,6 +606,23 @@ func TestResponseHeaderError(t *testing.T) {
 		)
 	})
 
+	t.Run("empty response is not an error", func(t *testing.T) {
+		require.Nil(t, (ResponseHeader{Result: ResponseEmpty}).GetError())
+	})
+
+	t.Run("unsupported operation", func(t *testing.T) {
+		header := ResponseHeader{
+			Result: ResponseCommandUnsupported,
+			Text:   "unsupported operation",
+		}
+		err := header.GetError()
+		require.ErrorAs(t, err, &UnsupportedOperationKeaError{})
+		require.ErrorContains(t,
+			err,
+			"non-success response result from Kea: 2, text: unsupported operation",
+		)
+	})
+
 	t.Run("number overflow", func(t *testing.T) {
 		header := ResponseHeader{
 			Result: ResponseError,
