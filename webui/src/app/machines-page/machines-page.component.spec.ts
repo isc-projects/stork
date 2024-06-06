@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
-import { RouterTestingModule } from '@angular/router/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
@@ -23,6 +22,9 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { RouterModule } from '@angular/router'
+import { HttpErrorResponse } from '@angular/common/http'
+import anything = jasmine.anything
 import { MessagesModule } from 'primeng/messages'
 
 describe('MachinesPageComponent', () => {
@@ -37,7 +39,7 @@ describe('MachinesPageComponent', () => {
             providers: [MessageService, ServicesService, UsersService],
             imports: [
                 HttpClientTestingModule,
-                RouterTestingModule.withRoutes([{ path: 'machines/all', component: MachinesPageComponent }]),
+                RouterModule.forRoot([{ path: 'machines/all', component: MachinesPageComponent }]),
                 FormsModule,
                 SelectButtonModule,
                 TableModule,
@@ -228,6 +230,226 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('zzz')
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).not.toContain('aaa')
+    }))
+
+    it('should not list machine as authorized when there was 502 during authorization - bulk authorize - first machine fails', fakeAsync(() => {
+        expect(component.showUnauthorized).toBeFalse()
+
+        // get references to select buttons
+        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
+        const authSelectBtnEl = selectButtons[0]
+        const unauthSelectBtnEl = selectButtons[1]
+
+        // prepare response for call to getMachines for (un)authorized machines
+        const getUnauthorizedMachinesResp: any = {
+            items: [
+                { hostname: 'aaa', id: 1, address: 'addr1' },
+                { hostname: 'bbb', id: 2, address: 'addr2' },
+                { hostname: 'ccc', id: 3, address: 'addr3' },
+            ],
+            total: 3,
+        }
+        const getAuthorizedMachinesResp: any = { items: [{ hostname: 'zzz' }, { hostname: 'xxx' }], total: 2 }
+        const gmSpy = spyOn(servicesApi, 'getMachines')
+        gmSpy.withArgs(0, 1, null, null, false).and.returnValue(
+            of({
+                items: [{ hostname: 'aaa', id: 1, address: 'addr1' }],
+                total: 3,
+            } as any)
+        )
+        gmSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
+        gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
+
+        // show unauthorized machines
+        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        expect(component.showUnauthorized).toBeTrue()
+        expect(component.totalMachines).toBe(3)
+        expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
+
+        // check if hostnames are displayed
+        const nativeEl = fixture.nativeElement
+        expect(nativeEl.textContent).toContain('aaa')
+        expect(nativeEl.textContent).toContain('bbb')
+        expect(nativeEl.textContent).toContain('ccc')
+
+        // get references to rows' checkboxes
+        const checkboxes = fixture.nativeElement.querySelectorAll('.p-checkbox')
+        // checkboxes[0] is "select all" checkbox, skipped on purpose in this test
+        const firstCheckbox = checkboxes[1]
+        const secondCheckbox = checkboxes[2]
+
+        // select first two unauthorized machines
+        firstCheckbox.dispatchEvent(new Event('click'))
+        secondCheckbox.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        // get reference to "Authorize selected" button
+        const bulkAuthorizeBtn = fixture.nativeElement.querySelectorAll('#authorize-selected-button')?.[0]
+
+        // prepare 502 error response for the first machine of the bulk of machines to be authorized
+        const umSpy = spyOn(servicesApi, 'updateMachine')
+        const fakeError = new HttpErrorResponse({ status: 502 })
+        umSpy.withArgs(1, anything()).and.returnValue(throwError(() => fakeError))
+        umSpy
+            .withArgs(2, anything())
+            .and.returnValue(of({ hostname: 'bbb', id: 2, address: 'addr2', authorized: true } as any))
+
+        // click "Authorize selected" button
+        bulkAuthorizeBtn?.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        // we expect that unauthorized machines list was not changed due to 502 error
+        // 'updateMachine' API was called only once for the first machine
+        expect(umSpy).toHaveBeenCalledWith(1, { hostname: 'aaa', id: 1, address: 'addr1', authorized: true })
+        expect(component.showUnauthorized).toBeTrue()
+        expect(component.totalMachines).toBe(3)
+        expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
+
+        // check if hostnames are displayed
+        expect(nativeEl.textContent).toContain('aaa')
+        expect(nativeEl.textContent).toContain('bbb')
+        expect(nativeEl.textContent).toContain('ccc')
+
+        // show authorized machines
+        authSelectBtnEl.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        expect(component.showUnauthorized).toBeFalse()
+        expect(component.totalMachines).toBe(2)
+        expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
+
+        // check if hostnames are displayed
+        expect(nativeEl.textContent).toContain('zzz')
+        expect(nativeEl.textContent).toContain('xxx')
+        expect(nativeEl.textContent).not.toContain('aaa')
+        expect(nativeEl.textContent).not.toContain('bbb')
+    }))
+
+    it('should not list machine as authorized when there was 502 during authorization - bulk authorize - second machine fails', fakeAsync(() => {
+        expect(component.showUnauthorized).toBeFalse()
+
+        // get references to select buttons
+        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
+        const authSelectBtnEl = selectButtons[0]
+        const unauthSelectBtnEl = selectButtons[1]
+
+        // prepare response for call to getMachines for (un)authorized machines
+        const getUnauthorizedMachinesRespBefore: any = {
+            items: [
+                { hostname: 'aaa', id: 1, address: 'addr1' },
+                { hostname: 'bbb', id: 2, address: 'addr2' },
+                { hostname: 'ccc', id: 3, address: 'addr3' },
+            ],
+            total: 3,
+        }
+        const getUnauthorizedMachinesRespAfter: any = {
+            items: [
+                { hostname: 'bbb', id: 2, address: 'addr2' },
+                { hostname: 'ccc', id: 3, address: 'addr3' },
+            ],
+            total: 2,
+        }
+        const getAuthorizedMachinesRespAfter: any = {
+            items: [{ hostname: 'zzz' }, { hostname: 'xxx' }, { hostname: 'aaa', id: 1, address: 'addr1' }],
+            total: 3,
+        }
+
+        const gmSpy = spyOn(servicesApi, 'getMachines')
+
+        // this is only called once after authorizing selected machines
+        // and after switching back to authorized machines view; in refreshUnauthorizedMachinesCount()
+        gmSpy.withArgs(0, 1, null, null, false).and.returnValue(
+            of({
+                items: [{ hostname: 'bbb', id: 2, address: 'addr2' }],
+                total: 2,
+            } as any)
+        )
+
+        // called two times in loadMachines(event)
+        gmSpy
+            .withArgs(0, 10, undefined, undefined, false)
+            .and.returnValues(of(getUnauthorizedMachinesRespBefore), of(getUnauthorizedMachinesRespAfter))
+
+        // called one time in loadMachines(event)
+        gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesRespAfter))
+
+        // show unauthorized machines
+        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        expect(component.showUnauthorized).toBeTrue()
+        expect(component.totalMachines).toBe(3)
+        expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
+
+        // check if hostnames are displayed
+        const nativeEl = fixture.nativeElement
+        expect(nativeEl.textContent).toContain('aaa')
+        expect(nativeEl.textContent).toContain('bbb')
+        expect(nativeEl.textContent).toContain('ccc')
+
+        // get references to rows' checkboxes
+        const checkboxes = fixture.nativeElement.querySelectorAll('.p-checkbox')
+        const selectAllCheckbox = checkboxes[0]
+
+        // select all unauthorized machines
+        selectAllCheckbox.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        // get reference to "Authorize selected" button
+        const bulkAuthorizeBtn = fixture.nativeElement.querySelectorAll('#authorize-selected-button')?.[0]
+
+        // prepare 502 error response for the second machine of the bulk of machines to be authorized
+        // first machine authorization shall succeed, third shall be skipped because it was after the 502 error
+        const umSpy = spyOn(servicesApi, 'updateMachine')
+        const fakeError = new HttpErrorResponse({ status: 502 })
+        umSpy
+            .withArgs(1, anything())
+            .and.returnValue(of({ hostname: 'aaa', id: 1, address: 'addr1', authorized: true } as any))
+        umSpy.withArgs(2, anything()).and.returnValue(throwError(() => fakeError))
+        umSpy
+            .withArgs(3, anything())
+            .and.returnValue(of({ hostname: 'ccc', id: 3, address: 'addr3', authorized: true } as any))
+
+        // click "Authorize selected" button
+        bulkAuthorizeBtn?.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        // we expect that first machine of the bulk was authorized but second and third were not due to 502 error
+        expect(umSpy).toHaveBeenCalledWith(1, { hostname: 'aaa', id: 1, address: 'addr1', authorized: true })
+        expect(umSpy).toHaveBeenCalledWith(2, { hostname: 'bbb', id: 2, address: 'addr2', authorized: true })
+
+        expect(component.showUnauthorized).toBeTrue()
+        expect(component.totalMachines).toBe(2)
+        expect(component.unauthorizedMachinesCount).toBe(2)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (2)')
+
+        // check if hostnames are displayed
+        expect(nativeEl.textContent).toContain('bbb')
+        expect(nativeEl.textContent).toContain('ccc')
+
+        // show authorized machines
+        authSelectBtnEl.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        expect(gmSpy).toHaveBeenCalledTimes(4)
+
+        expect(component.showUnauthorized).toBeFalse()
+        expect(component.totalMachines).toBe(3)
+        expect(component.unauthorizedMachinesCount).toBe(2)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (2)')
+
+        // check if hostnames are displayed
+        expect(nativeEl.textContent).toContain('zzz')
+        expect(nativeEl.textContent).toContain('xxx')
+        expect(nativeEl.textContent).toContain('aaa')
+        expect(nativeEl.textContent).not.toContain('bbb')
+        expect(nativeEl.textContent).not.toContain('ccc')
     }))
 
     it('should button menu click trigger the download handler', fakeAsync(() => {
