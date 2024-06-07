@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Stork currently has no stable versions and all releases are considered development. Only the last development version is
+Stork currently has no stable versions, and all releases are considered development ones. Only the last development version is
 supported:
 
 | Version | Supported          | End-Of-Life           |
