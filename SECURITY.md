@@ -13,7 +13,7 @@ information regarding copyright ownership.
 # Security Policy
 
 ISC treats the security of its software products very seriously. ISC's Security Vulnerability Disclosure Policy
-is documented in the relevant [ISC Knowledgebase article][1].
+is documented in the relevant [ISC KnowledgeBase article][1].
 
 ## Reporting possible security issues
 
@@ -27,7 +27,7 @@ If it is not possible to create a GitLab issue, then send e-mail (encrypted if p
 Please do not discuss undisclosed security vulnerabilities on any public mailing list. ISC has a long history of
 handling reported vulnerabilities promptly and effectively and we respect and acknowledge responsible reporters.
 
-If you have a crash, you may want to consult the Knowledgebase article entitled ["What to do if your Stork has
+If you have a crash, you may want to consult the KnowledgeBase article entitled ["What to do if your Stork has
 crashed"][3].
 
 ## Supported Versions
@@ -51,7 +51,7 @@ Please contact ISC sales, using the [contact form][4].
 ## Further reading
 
 The **Past advisories** for Stork can be found on the [KnowledgeBase][6].
-On the left hand panel, see the `Security Advisiories` in the `Stork` section.
+On the left hand panel, see the `Security Advisories` in the `Stork` section.
 
 [1]: https://kb.isc.org/docs/aa-00861
 [2]: https://gitlab.isc.org/isc-projects/stork/-/issues/new?issue[confidential]=true&issuable_template=Bug
