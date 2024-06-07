@@ -1,39 +1,52 @@
+<!--
+Copyright (C) Internet Systems Consortium, Inc. ("ISC")
+
+SPDX-License-Identifier: MPL-2.0
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0.  If a copy of the MPL was not distributed with this
+file, you can obtain one at https://mozilla.org/MPL/2.0/.
+
+See the COPYRIGHT file distributed with this work for additional
+information regarding copyright ownership.
+-->
 # Security Policy
 
-## Supported Versions
+ISC treats the security of its software products very seriously. ISC's Security Vulnerability Disclosure Policy
+is documented in the relevant [ISC Knowledgebase article][1].
 
-Stork currently has no stable versions, and all releases are considered development ones. Only the last development version is
-supported:
+## Reporting possible security issues
 
-| Version | Supported          | End-Of-Life           |
-| ------- | ------------------ | --------------------- |
-| 1.17.0  | :white_check_mark: | on release of 1.18.0  |
-| 1.16.0  | :x:                | 2024 June 12          |
-| 1.15.1  | :x:                | 2024 April 5          |
-| earlier | :x:                |                       |
+To report a security vulnerability, please follow [this instruction][5].
 
-The first stable version will be 2.0.0. Stable versions, denoted with even minor numbers, will be
-supported for at least 6 months. Development versions will reach EOL as soon as the next development
-or stable version is released.
-
-Limited past EOL support may be available to higher tier customers.
-Please contact ISC sales, using this form: https://www.isc.org/contact/
-
-## Reporting a Vulnerability
-
-To report a security vulnerability, please follow this instruction:
-
-https://www.isc.org/reportbug/
-
-We prefer that you create a confidential issue on GitLab (not github). The GitLab issue creates a record, is visible
-to all ISC engineers, and provides a shared communication channel with the reporter.
+Briefly, we prefer that you [open a confidential GitLab issue][2] (not Github). The GitLab issue creates a record,
+is visible to all ISC engineers, and provides a shared communication channel with the reporter.
 
 If it is not possible to create a GitLab issue, then send e-mail (encrypted if possible) to stork-security@isc.org.
 
-## Software Defects and Security Vulnerability Disclosure Policy
+Please do not discuss undisclosed security vulnerabilities on any public mailing list. ISC has a long history of
+handling reported vulnerabilities promptly and effectively and we respect and acknowledge responsible reporters.
 
-ISC treats the security of its software products very seriously. This document discusses the evaluation of a defect
-severity and the process in detail: https://kb.isc.org/docs/aa-00861
+If you have a crash, you may want to consult the Knowledgebase article entitled ["What to do if your Stork has
+crashed"][3].
+
+## Supported Versions
+
+Stork currently has no stable versions, and all releases are considered development ones. Only the last development
+version is supported:
+
+| Version        | Supported          | End-Of-Life             |
+| -------------- | ------------------ | ----------------------- |
+| latest 1.x.0   | :white_check_mark: | on release of 1.(x+1).0 |
+| 1.16.0         | :x:                | 2024 June 12            |
+| 1.15.1         | :x:                | 2024 April 5            |
+| earlier        | :x:                |                         |
+
+The first stable version will be 2.0.0. Stable versions, denoted with even minor numbers, will be supported for at least
+6 months. Development versions will reach EOL as soon as the next development or stable version is released.
+
+Limited past EOL support may be available to higher tier customers.
+Please contact ISC sales, using the [contact form][4]
 
 ## Release Policy
 
@@ -43,9 +56,10 @@ development releases, with some exceptions.
 
 ---
 
-Stork team runs various security auditing tools. If a high severity issue is found in one of its dependencies, and the
-underlying problem affects Stork, a release process is triggered that will lead to a Stork maintenance release.
-If we would be unable to determine if Stork is affected, we will assume it is and will continue with the release.
+Stork team runs various security auditing tools. If a high or critical severity issue is found in one of its
+dependencies, and the underlying problem affects Stork, a release process is triggered that will lead to a Stork
+maintenance release. If we would be unable to determine if Stork is affected, we will assume it is and will continue
+with the release.
 
 For lower severity issues, the Stork team might choose to publish Operational notifications that say that we are not
 vulnerable in one of our dependencies, explain that the vulnerability is minor or provide workarounds on how to mitigate.
@@ -60,8 +74,13 @@ is high or not.
 The rules above apply to stable versions only. For development versions, it is uncommon to do a release out of the
 ordinary release cycle.
 
-
 ## Further reading
 
 The **Past advisories** for Stork can be found on the KB: https://kb.isc.org/docs
 On the left hand panel, see the `Security Advisiories` in the `Stork` section.
+
+[1]: https://kb.isc.org/docs/aa-00861
+[2]: https://gitlab.isc.org/isc-projects/bind9/-/issues/new?issue[confidential]=true&issuable_template=Bug
+[3]: https://kb.isc.org/docs/aa-00340
+[4]: https://www.isc.org/contact/
+[5]: https://www.isc.org/reportbug/
