@@ -65,4 +65,4 @@ ordinary release cycle.
 ## Further reading
 
 The **Past advisories** for Stork can be found on the KB: https://kb.isc.org/docs
-On the left hand panel, see the `Security Advisiories` in the `Kea DHCP` section.
+On the left hand panel, see the `Security Advisiories` in the `Stork` section.
