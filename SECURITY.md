@@ -47,12 +47,11 @@ Stork team runs various security auditing tools. If a high severity issue is fou
 underlying problem affects Stork, a release process is triggered that will lead to a Stork maintenance release.
 If we would be unable to determine if Stork is affected, we will assume it is and will continue with the release.
 
-For lower severity issues, the Stork team might choose to publish Operational notices that say that we are not
-vulnerable to the vulnerability in one of our dependencies, explain that the vulnerability is minor or provide
-workarounds on how to mitigate.
+For lower severity issues, the Stork team might choose to publish Operational notifications that say that we are not
+vulnerable in one of our dependencies, explain that the vulnerability is minor or provide workarounds on how to mitigate.
 
-The Stork team MUST NOT release a release with high or critical severity in any of its dependencies, if a fixed version
-is available.
+The Stork team MUST NOT publish a release with high or critical severity in any of its dependencies, if a fixed version
+of a dependency is available.
 
 Different external dependencies treat severity differently. If CVSS score is published, we assume that CVSS >= 7.0
 is considered high. If no CVSS score is published, the Stork team reserves the right to determine if the severity
