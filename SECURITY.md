@@ -46,7 +46,7 @@ The first stable version will be 2.0.0. Stable versions, denoted with even minor
 6 months. Development versions will reach EOL as soon as the next development or stable version is released.
 
 Limited past EOL support may be available to higher tier customers.
-Please contact ISC sales, using the [contact form][4]
+Please contact ISC sales, using the [contact form][4].
 
 ## Release Policy
 
@@ -80,7 +80,7 @@ The **Past advisories** for Stork can be found on the KB: https://kb.isc.org/doc
 On the left hand panel, see the `Security Advisiories` in the `Stork` section.
 
 [1]: https://kb.isc.org/docs/aa-00861
-[2]: https://gitlab.isc.org/isc-projects/bind9/-/issues/new?issue[confidential]=true&issuable_template=Bug
+[2]: https://gitlab.isc.org/isc-projects/stork/-/issues/new?issue[confidential]=true&issuable_template=Bug
 [3]: https://kb.isc.org/docs/aa-00340
 [4]: https://www.isc.org/contact/
 [5]: https://www.isc.org/reportbug/
