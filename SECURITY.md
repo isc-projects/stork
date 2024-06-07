@@ -49,7 +49,7 @@ If we would be unable to determine if Stork is affected, we will assume it is an
 
 For lower severity issues, the Stork team might choose to publish Operational notices that say that we are not
 vulnerable to the vulnerability in one of our dependencies, explain that the vulnerability is minor or provide
-workarounds how to mitigate.
+workarounds on how to mitigate.
 
 The Stork team MUST NOT release a release with high or critical severity in any of its dependencies, if a fixed version
 is available.
