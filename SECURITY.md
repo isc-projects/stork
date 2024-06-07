@@ -12,23 +12,23 @@ supported:
 | 1.15.1  | :x:                | 2024 April 5          |
 | earlier | :x:                |                       |
 
-The first stable version will be 2.0.0. Once stable is released, the stable versions, denoted with even minor number,
-will be supported for at least 6 months. The development versions will reach EOL as soon as next development or stable
-version is released.
+The first stable version will be 2.0.0. Stable versions, denoted with even minor numbers, will be
+supported for at least 6 months. Development versions will reach EOL as soon as the next development
+or stable version is released.
 
 Limited past EOL support may be available to higher tier customers.
 Please contact ISC sales, using this form: https://www.isc.org/contact/
 
 ## Reporting a Vulnerability
 
-To report security vulnerability, please follow this instruction:
+To report a security vulnerability, please follow this instruction:
 
 https://www.isc.org/reportbug/
 
-Briefly, we prefer confidential issue on gitlab (not github). An issue is much better, because it's easier to get more
-ISC engineers involved in it, evolve the case as more information is known, update or extra information, etc.
+We prefer that you create a confidential issue on GitLab (not github). The GitLab issue creates a record, is visible
+to all ISC engineers, and provides a shared communication channel with the reporter.
 
-Second best is to send e-mail (possibly encrypted) to stork-security@isc.org.
+If it is not possible to create a GitLab issue, then send e-mail (encrypted if possible) to stork-security@isc.org.
 
 ## Software Defects and Security Vulnerability Disclosure Policy
 
@@ -39,7 +39,7 @@ severity and the process in detail: https://kb.isc.org/docs/aa-00861
 
 Once the first stable (2.0.0) is published, we expect to have new stable versions (2.2.0, 2.4.0, ...) published
 every six months or so. Once a new stable version is released, a new development cycle starts with monthly
-development releases.
+development releases, with some exceptions.
 
 ---
 
