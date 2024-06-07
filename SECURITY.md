@@ -50,7 +50,7 @@ Please contact ISC sales, using the [contact form][4].
 
 ## Further reading
 
-The **Past advisories** for Stork can be found on the KB: https://kb.isc.org/docs
+The **Past advisories** for Stork can be found on the [KnowledgeBase][6].
 On the left hand panel, see the `Security Advisiories` in the `Stork` section.
 
 [1]: https://kb.isc.org/docs/aa-00861
@@ -58,3 +58,4 @@ On the left hand panel, see the `Security Advisiories` in the `Stork` section.
 [3]: https://kb.isc.org/docs/aa-00340
 [4]: https://www.isc.org/contact/
 [5]: https://www.isc.org/reportbug/
+[6]: https://kb.isc.org/docs
