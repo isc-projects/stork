@@ -92,13 +92,13 @@
         // Justify the authentication description.
         text-align: justify
 
-.login-screen__authentication-inputs
+:host ::ng-deep .login-screen__authentication-inputs
     // Limit the maximum width of the input area to be convenient for typing.
     max-width: 400px
     // Center the input area.
     margin: auto
 
-    input, button
+    input, button, .password-component
         // Expand to full width.
         width: 100%
 
@@ -112,7 +112,7 @@
     & > div:last-child
         // Spacing between button and above input.
         margin-top: 18px
-    ::ng-deep .p-float-label input:focus ~ label, .p-float-label input.p-filled ~ label
+    ::ng-deep .p-float-label input:focus ~ label, .p-float-label input.p-filled ~ label, .p-float-label > label
         // The default color is gray. Use white to better contrast with a blue background.
         color: var(--primary-color-text)
 

@@ -53,16 +53,15 @@
                             <label htmlFor="identifier">{{ authenticationMethod.formLabelIdentifier }}</label>
                         </div>
                         <div *ngIf="authenticationMethod.formLabelSecret" class="p-float-label">
-                            <input
-                                type="password"
+                            <p-password
                                 name="secret"
                                 id="secret"
                                 formControlName="secret"
+                                styleClass="password-component"
                                 (keyup)="keyUp($event)"
                                 [feedback]="false"
-                                pPassword
                             />
-                            <label htmlFor="secret">{{ authenticationMethod.formLabelSecret }}</label>
+                            <label for="secret">{{ authenticationMethod.formLabelSecret }}</label>
                         </div>
                         <div>
                             <button
