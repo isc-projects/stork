@@ -48,32 +48,6 @@ The first stable version will be 2.0.0. Stable versions, denoted with even minor
 Limited past EOL support may be available to higher tier customers.
 Please contact ISC sales, using the [contact form][4].
 
-## Release Policy
-
-Once the first stable (2.0.0) is published, we expect to have new stable versions (2.2.0, 2.4.0, ...) published
-every six months or so. Once a new stable version is released, a new development cycle starts with monthly
-development releases, with some exceptions.
-
----
-
-Stork team runs various security auditing tools. If a high or critical severity issue is found in one of its
-dependencies, and the underlying problem affects Stork, a release process is triggered that will lead to a Stork
-maintenance release. If we would be unable to determine if Stork is affected, we will assume it is and will continue
-with the release.
-
-For lower severity issues, the Stork team might choose to publish Operational notifications that say that we are not
-vulnerable in one of our dependencies, explain that the vulnerability is minor or provide workarounds on how to mitigate.
-
-The Stork team MUST NOT publish a release with high or critical severity in any of its dependencies, if a fixed version
-of a dependency is available.
-
-Different external dependencies treat severity differently. If CVSS score is published, we assume that CVSS >= 7.0
-is considered high. If no CVSS score is published, the Stork team reserves the right to determine if the severity
-is high or not.
-
-The rules above apply to stable versions only. For development versions, it is uncommon to do a release out of the
-ordinary release cycle.
-
 ## Further reading
 
 The **Past advisories** for Stork can be found on the KB: https://kb.isc.org/docs
