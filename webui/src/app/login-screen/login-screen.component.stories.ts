@@ -12,6 +12,7 @@ import { SelectButtonModule } from 'primeng/selectbutton'
 import { ButtonModule } from 'primeng/button'
 import { action } from '@storybook/addon-actions'
 import { importProvidersFrom } from '@angular/core'
+import { PasswordModule } from 'primeng/password'
 
 export default {
     title: 'App/LoginScreen',
@@ -30,6 +31,7 @@ export default {
                 SelectButtonModule,
                 ButtonModule,
                 ToastModule,
+                PasswordModule,
             ],
             declarations: [LoginScreenComponent],
         }),
