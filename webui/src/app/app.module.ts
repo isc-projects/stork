@@ -130,6 +130,8 @@ import { ArrayValueSetFormComponent } from './array-value-set-form/array-value-s
 import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
 import { RouteReuseStrategy } from '@angular/router'
 import { SharedNetworkFormComponent } from './shared-network-form/shared-network-form.component'
+import { CommunicationStatusTreeComponent } from './communication-status-tree/communication-status-tree.component'
+import { CommunicationStatusPageComponent } from './communication-status-page/communication-status-page.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -212,6 +214,8 @@ export function cfgFactory() {
         PriorityErrorsPanelComponent,
         PluralizePipe,
         SharedNetworkFormComponent,
+        CommunicationStatusTreeComponent,
+        CommunicationStatusPageComponent,
     ],
     imports: [
         BrowserModule,

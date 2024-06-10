@@ -12,6 +12,7 @@ import {
     getSeverityByIndex,
     formatNoun,
     deepCopy,
+    daemonNameToFriendlyName,
 } from './utils'
 
 describe('utils', () => {
@@ -372,5 +373,14 @@ describe('utils', () => {
         expect(original.three.four).toBeTrue()
         expect(original.five.length).toBe(1)
         expect(original.five[0].six).toBe(6)
+    })
+
+    it('should return friendly daemon name', () => {
+        expect(daemonNameToFriendlyName('ca')).toBe('CA')
+        expect(daemonNameToFriendlyName('d2')).toBe('DDNS')
+        expect(daemonNameToFriendlyName('dhcp4')).toBe('DHCPv4')
+        expect(daemonNameToFriendlyName('dhcp6')).toBe('DHCPv6')
+        expect(daemonNameToFriendlyName('netconf')).toBe('NETCONF')
+        expect(daemonNameToFriendlyName('named')).toBe('named')
     })
 })

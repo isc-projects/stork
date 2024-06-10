@@ -584,3 +584,26 @@ export function formatNoun(count: number, noun, postfix: string): string {
 export function deepCopy<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj))
 }
+
+/**
+ * Returns friendly daemon name.
+ *
+ * @param daemonName daemon name from the structures returned by the server.
+ * @returns Friendly daemon name.
+ */
+export function daemonNameToFriendlyName(daemonName: string): string {
+    switch (daemonName) {
+        case 'dhcp4':
+            return 'DHCPv4'
+        case 'dhcp6':
+            return 'DHCPv6'
+        case 'd2':
+            return 'DDNS'
+        case 'ca':
+            return 'CA'
+        case 'netconf':
+            return 'NETCONF'
+        default:
+            return daemonName
+    }
+}

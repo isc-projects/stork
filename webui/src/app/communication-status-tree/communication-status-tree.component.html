@@ -1,0 +1,69 @@
+<p-tree [value]="nodes" emptyMessage="No communication issues found.">
+    <ng-template let-node pTemplate="machine">
+        <div class="flex align-items-center">
+            Stork Agent on
+            <app-entity-link
+                [showEntityName]="false"
+                entity="machine"
+                [attrs]="node.data.attrs"
+                styleClass="ml-1 mr-1"
+            ></app-entity-link>
+            <span
+                *ngIf="node.data?.agentCommErrors"
+                class="ml-2 pi pi-exclamation-triangle"
+                pTooltip="Stork server reports that there are communication issues with the Stork Agent on this machine. It may be a failure of the Stork Agent or the machine can be down. Other apps on this machine may be operational but there may be no communication with them due to the issues with the Stork Agent."
+            ></span>
+        </div>
+    </ng-template>
+    <ng-template let-node pTemplate="kea">
+        <div class="flex align-items-center">
+            Kea Control Agent of
+            <app-entity-link
+                [showEntityName]="false"
+                entity="app"
+                [attrs]="node.data.attrs"
+                styleClass="ml-1 mr-1"
+            ></app-entity-link>
+            <span
+                *ngIf="node.data?.caCommErrors"
+                class="ml-2 pi pi-exclamation-triangle"
+                pTooltip="There are communication issues with the Kea Control Agent. The Stork Agent may be responding but it is unable to forward commands to Kea daemons via the Kea Control Agent."
+            ></span>
+        </div>
+    </ng-template>
+    <ng-template let-node pTemplate="kea-daemon">
+        <div class="flex align-items-center">
+            Control channel of
+            <app-entity-link
+                [showEntityName]="false"
+                entity="daemon"
+                [attrs]="node.data.attrs"
+                styleClass="ml-1 mr-1"
+            ></app-entity-link>
+            server
+            <span
+                *ngIf="node.data?.monitored && node.data?.daemonCommErrors"
+                class="ml-2 pi pi-exclamation-triangle"
+                pTooltip="There are communication issues with the daemon. The daemon may be down or failing."
+            ></span>
+            <span *ngIf="!node.data?.monitored" class="ml-2 pi pi-ban" pTooltip="This daemon is not monitored."> </span>
+        </div>
+    </ng-template>
+    <ng-template let-node pTemplate="named-channel">
+        <div class="flex align-items-center">
+            {{ node.data.channelName }} channel of
+            <app-entity-link
+                [showEntityName]="false"
+                entity="daemon"
+                [attrs]="node.data.attrs"
+                styleClass="ml-1 mr-1"
+            ></app-entity-link>
+            <span
+                *ngIf="node.data?.monitored && node.data?.channelCommErrors"
+                class="ml-2 pi pi-exclamation-triangle"
+                pTooltip="The named daemon has different communication channels for control and statistics. If only one of the channels is failing, the daemon is still operational. If both are failing, it may be an indication that the daemon is down."
+            ></span>
+            <span *ngIf="!node.data?.monitored" class="ml-2 pi pi-ban" pTooltip="This daemon is not monitored."> </span>
+        </div>
+    </ng-template>
+</p-tree>

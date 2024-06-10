@@ -20,6 +20,7 @@ import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 import { LeaseSearchPageComponent } from './lease-search-page/lease-search-page.component'
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page/kea-daemon-configuration-page.component'
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page/config-checker-preference-page.component'
+import { CommunicationStatusPageComponent } from './communication-status-page/communication-status-page.component'
 
 const routes: Routes = [
     {
@@ -48,6 +49,11 @@ const routes: Routes = [
     {
         path: 'machines/:id',
         component: MachinesPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'communication',
+        component: CommunicationStatusPageComponent,
         canActivate: [AuthGuard],
     },
     {

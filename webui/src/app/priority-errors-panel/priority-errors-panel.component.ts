@@ -104,7 +104,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
                                     'app',
                                     's'
                                 )} ` +
-                                `on the monitored machines. Please check if the apps and the Stork agents are running.`,
+                                `on the monitored machines. You can check the details <a href="/communication">here</a>.`,
                         },
                     ]
                 } else {

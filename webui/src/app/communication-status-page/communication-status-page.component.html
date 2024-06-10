@@ -1,0 +1,16 @@
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>
+            This page displays a tree of the apps and daemons for which the Stork server reports communication
+            problems. The faulty processes are colored and marked with an exclamation triangle icon.
+            Move the cursor over the icons to see the error details.
+        </p>
+    </div>
+</app-breadcrumbs>
+<div *ngIf="!loading; else loadingBlock">
+    <app-communication-status-tree *ngIf="!loading" [apps]="apps"></app-communication-status-tree>
+    <p-button *ngIf="!loading" label="Reload" styleClass="p-button-primary mt-3" (onClick)="onReload()"></p-button>
+</div>
+<ng-template #loadingBlock>
+    <p-progressSpinner></p-progressSpinner>
+</ng-template>

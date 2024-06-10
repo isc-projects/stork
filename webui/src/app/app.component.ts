@@ -133,6 +133,12 @@ export class AppComponent implements OnInit {
                         icon: 'fa fa-calendar-times',
                         routerLink: '/events',
                     },
+                    {
+                        label: 'Communication',
+                        id: 'communication',
+                        icon: 'fa fa-signal',
+                        routerLink: '/communication',
+                    },
                 ],
             },
             {
