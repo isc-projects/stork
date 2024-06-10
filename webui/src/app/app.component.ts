@@ -10,6 +10,7 @@ import { LoadingService } from './loading.service'
 import { SettingService } from './setting.service'
 import { ServerDataService } from './server-data.service'
 import { User } from './backend'
+import { ThemeService } from './theme.service'
 
 @Component({
     selector: 'app-root',
@@ -33,7 +34,8 @@ export class AppComponent implements OnInit {
         protected generalApi: GeneralService,
         private auth: AuthService,
         private loadingService: LoadingService,
-        private settingSvc: SettingService
+        private settingSvc: SettingService,
+        private themeService: ThemeService
     ) {
         this.initMenus()
 
@@ -300,5 +302,13 @@ export class AppComponent implements OnInit {
 
     signOut() {
         this.router.navigate(['/logout'])
+    }
+
+    /**
+     *
+     * @param theme
+     */
+    changeTheme(theme: string) {
+        this.themeService.switchTheme(theme)
     }
 }

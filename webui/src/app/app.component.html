@@ -1,8 +1,5 @@
-<div
-    *ngIf="currentUser"
-    style="background-color: #005b9f; margin: -8px -8px 0 -8px; justify-content: space-between; align-items: center"
->
-    <div class="flex align-items-center">
+<div *ngIf="currentUser">
+    <div class="flex align-items-center top-navbar">
         <a
             href="/"
             class="logo"
@@ -18,6 +15,9 @@
 
         <div style="flex-grow: 1">
             <p-menubar [model]="menuItems" styleClass="stork-menubar">
+                <p-button icon="pi pi-sun" [rounded]="true" (click)="changeTheme('aura-light')" />
+                <p-button icon="pi pi-moon" [rounded]="true" [outlined]="true" (click)="changeTheme('aura-dark')" />
+
                 <p-progressSpinner
                     *ngIf="(loadingInProgress | async)['state']"
                     [pTooltip]="(loadingInProgress | async)['text']"
@@ -43,7 +43,8 @@
         <app-priority-errors-panel></app-priority-errors-panel>
     </div>
 </div>
+<div class="m-2">
+    <p-toast></p-toast>
 
-<p-toast></p-toast>
-
-<router-outlet></router-outlet>
+    <router-outlet></router-outlet>
+</div>

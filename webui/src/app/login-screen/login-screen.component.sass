@@ -8,9 +8,9 @@
 
 .login-screen
     // Blue background.
-    background-color: #005b9f
+    background-color: var(--blue-700)
     // White text.
-    color: white
+    color: var(--gray-0)
     // Enable flex.
     display: flex
     // Organize the items vertically.
@@ -44,7 +44,7 @@
     margin-top: 5vh
     a
         // Override default color for links.
-        color: white
+        color: var(--gray-0)
         // Center logo text vertically.
         vertical-align: middle
         // Short spacing between icon and text.
@@ -64,7 +64,7 @@
     margin-top: 1rem
     a
         // Override default color for links.
-        color: white
+        color: var(--gray-0)
         // Add underline to links.
         text-decoration: underline
 
@@ -114,7 +114,7 @@
         margin-top: 18px
     ::ng-deep .p-float-label input:focus ~ label, .p-float-label input.p-filled ~ label, .p-float-label .p-inputwrapper-focus ~ label, .p-float-label .p-inputwrapper-filled ~ label
         // The default color is gray. Use white to better contrast with a blue background.
-        color: var(--primary-color-text)
+        color: var(--gray-0)
 
 .login-screen__authentication-loader
     // Center the loader spinner horizontally.

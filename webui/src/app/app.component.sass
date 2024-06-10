@@ -2,34 +2,37 @@
 :host ::ng-deep .stork-menubar
   &.p-menubar
     // Set the blue color of the topbar.
-    background-color: #005B9F
+    background-color: inherit
     // Remove the border.
     border-width: 0
     // Remove unecessary spacing.
     padding: 0
 
+    & .p-menuitem.p-highlight.p-focus > .p-menuitem-content
+      background: var(--highlight-bg)
+
   // Apply the below changes only if the hamburger menu is not used.
   &:not(.p-menubar-mobile-active)
     .p-menuitem
       .p-menuitem-text,.p-submenu-icon
-        // Use white text for better contrast on the blue background.
-        color: white !important
+        // Use contrasting primary color for text.
+        color: var(--primary-color-text) !important
       &:hover
         .p-menuitem-text,.p-submenu-icon
-          // On hover the background is white, so use black text.
-          color: black !important
+          // On hover the background is primary, so use contrasting normal color for text.
+          color: var(--text-color) !important
       &.p-menuitem-active
         .p-menuitem-text,.p-submenu-icon
-          // If the menu is open, the background is white, so use black text.
-          color: black !important
+          // If the menu is open, the background is primary, so use contrasting normal color for text.
+          color: var(--text-color) !important
 
   .p-menubar-button
     // Use white color for the hamburger icon for better contrast on the blue
     // background.
-    color: white !important
+    color: var(--primary-color-text) !important
     &:hover
       // On hover the background is white, so use black text.
-      color: black !important
+      color: var(--text-color) !important
 
 :host ::ng-deep .p-menubar .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus > .p-menuitem-content
   // In the newest PrimeNG version, the menu item is grayed out after clicking
@@ -77,3 +80,9 @@
   font-size: 2.3rem
   color: white
   vertical-align: super
+
+.top-navbar
+  background-color: var(--primary-700)
+
+.p-menubar .p-menuitem.p-highlight.p-focus > .p-menuitem-content
+  background: var(--highlight-bg)
