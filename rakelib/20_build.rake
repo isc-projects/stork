@@ -377,6 +377,8 @@ namespace :run do
         if ENV["REGISTER"] == "true"
             opts.append "--host", "localhost"
             opts.append "--server-url", "http://localhost:8080"
+        else
+            opts.append "--listen-prometheus-only"
         end
 
         sh AGENT_BINARY_FILE, *opts

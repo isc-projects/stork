@@ -124,6 +124,7 @@ services:
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
+      STORK_AGENT_LISTEN_PROMETHEUS_ONLY: ${STORK_AGENT_LISTEN_PROMETHEUS_ONLY-false}
       STORK_AGENT_HOST: 172.42.42.100
     healthcheck:
       interval: 250ms
@@ -305,6 +306,7 @@ services:
         ipv4_address: 172.42.42.53
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
+      STORK_AGENT_LISTEN_PROMETHEUS_ONLY: ${STORK_AGENT_LISTEN_PROMETHEUS_ONLY-false}
       STORK_AGENT_HOST: 172.42.42.53
       STORK_LOG_LEVEL: DEBUG
     ports:

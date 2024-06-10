@@ -292,7 +292,10 @@ def _prepare_kea_wrapper(
     env_vars = None
     server_service_instance = None
     if suppress_registration:
-        env_vars = {"STORK_SERVER_URL": ""}
+        env_vars = {
+            "STORK_SERVER_URL": "",
+            "STORK_AGENT_LISTEN_PROMETHEUS_ONLY": "true"
+        }
     else:
         # We need the Server to perform the registration
         server_service_instance = request.getfixturevalue("server_service")
@@ -350,7 +353,10 @@ def bind9_service(request):
     env_vars = None
     server_service_instance = None
     if param["suppress_registration"]:
-        env_vars = {"STORK_SERVER_URL": ""}
+        env_vars = {
+            "STORK_SERVER_URL": "",
+            "STORK_AGENT_LISTEN_PROMETHEUS_ONLY": "true"
+        }
     else:
         # We need the Server to perform the registration
         server_service_instance = request.getfixturevalue("server_service")
