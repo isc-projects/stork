@@ -53,7 +53,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	}
 
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
-	err := sa.Setup()
+	err := sa.SetupGRPCServer()
 	if err != nil {
 		panic(err)
 	}
@@ -773,7 +773,7 @@ func TestAgentSetupInvalidCerts(t *testing.T) {
 	certStore.RemoveServerCertFingerprint()
 
 	// Act
-	err := sa.Setup()
+	err := sa.SetupGRPCServer()
 
 	// Assert
 	require.ErrorContains(t, err, "cert store is not valid")

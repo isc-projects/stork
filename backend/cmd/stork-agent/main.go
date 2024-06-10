@@ -120,37 +120,32 @@ func runAgent(settings *generalSettings, reload bool) error {
 	// Prepare agent gRPC handler
 	storkAgent := agent.NewStorkAgent(settings.Host, settings.Port, appMonitor, httpClient, keaHTTPClient, hookManager)
 
-	prometheusKeaExporterPerSubnetStats, err := storkutil.ParseBoolFlag(settings.PrometheusKeaExporterPerSubnetStats)
-	if err != nil {
-		return errors.WithMessage(err, "wrong value of the --prometheus-kea-exporter-per-subnet-stats flag")
-	}
-
-	// Prepare Prometheus exporters.
-	promKeaExporter := agent.NewPromKeaExporter(
-		settings.PrometheusKeaExporterAddress,
-		settings.PrometheusKeaExporterPort,
-		time.Duration(settings.PrometheusKeaExporterInterval)*time.Second,
-		prometheusKeaExporterPerSubnetStats,
-		appMonitor,
-		keaHTTPClient,
-	)
-	promBind9Exporter := agent.NewPromBind9Exporter(
-		settings.PrometheusBind9ExporterAddress,
-		settings.PrometheusBind9ExporterPort,
-		appMonitor,
-		httpClient,
-	)
-
-	err = storkAgent.Setup()
-	if err != nil {
-		log.Fatalf("FATAL error: %+v", err)
-	}
-
 	// Let's start the app monitor.
 	appMonitor.Start(storkAgent)
 
 	// Only start the exporters if they're enabled.
 	if !settings.ListenStorkOnly {
+		prometheusKeaExporterPerSubnetStats, err := storkutil.ParseBoolFlag(settings.PrometheusKeaExporterPerSubnetStats)
+		if err != nil {
+			return errors.WithMessage(err, "wrong value of the --prometheus-kea-exporter-per-subnet-stats flag")
+		}
+
+		// Prepare Prometheus exporters.
+		promKeaExporter := agent.NewPromKeaExporter(
+			settings.PrometheusKeaExporterAddress,
+			settings.PrometheusKeaExporterPort,
+			time.Duration(settings.PrometheusKeaExporterInterval)*time.Second,
+			prometheusKeaExporterPerSubnetStats,
+			appMonitor,
+			keaHTTPClient,
+		)
+		promBind9Exporter := agent.NewPromBind9Exporter(
+			settings.PrometheusBind9ExporterAddress,
+			settings.PrometheusBind9ExporterPort,
+			appMonitor,
+			httpClient,
+		)
+
 		promKeaExporter.Start()
 		defer promKeaExporter.Shutdown()
 
@@ -160,6 +155,12 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 	// Only start the agent service if it's enabled.
 	if !settings.ListenPrometheusOnly {
+		err = storkAgent.SetupGRPCServer()
+		if err != nil {
+			log.WithError(err).Error("Failed to set up the gRPC server")
+			return errors.WithMessage(err, "failed to set up the gRPC server")
+		}
+
 		go func() {
 			if err := storkAgent.Serve(); err != nil {
 				log.Fatalf("Failed to serve the Stork Agent: %+v", err)
