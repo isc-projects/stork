@@ -1,3 +1,146 @@
+Stork 1.17.0 released on 2024-06-12.
+
+* 418 [bug] slawek
+
+    Added support for big numbers in the statistics introduced in Kea
+    2.5.3. Added a new Kea checker to notify about degraded or missing
+    capabilities to gather the statistics for the previous Kea versions.
+    (Gitlab #1193)
+
+* 417 [doc] tomek
+
+    The security policy document is now available as a separate
+    document.
+    (Gitlab #1276)
+
+* 416 [sec] marcin
+
+    Added a new setting to disable registering new machines in the Stork
+    server.
+    (Gitlab #1339)
+
+* 415 [build] slawek
+
+    Fixed the security vulnerabilities reported by the Github Dependabot
+    and updated dependencies including Go 1.22.4, Angular 17.3.8,
+    PrimeNG 17.17.0, GoSwagger v0.31.0, OpenAPI Generator 7.6.0 and
+    several Python and Ruby packages.
+    (Gitlab #1380)
+
+* 414 [bug] slawek
+
+    Fixed inconsistency between the utilization presented in the UI and
+    returned by the metrics endpoint. The server's metrics endpoint no
+    longer returns delayed statistics.
+    (Gitlab #1214)
+
+* 413 [func] piotrek
+
+    Reworked filtering on hosts' reservations page. Separate filters
+    are now available in the hosts' table header. Applied filters are
+    stored in the session storage of the web browser.
+    (Gitlab #1265)
+
+* 412 [func] marcin
+
+    Implemented a form for updating shared network parameters.
+    (Gitlab #1370)
+
+* 411 [bug] piotrek
+
+    Fixed a bug in UI of the password change form.
+    The problem was when user provided New password containing special
+    characters e.g. +. Even though New password and Confirm password
+    where identical, form validation was failing and user could not
+    submit New password change form. Similar issues could be
+    experienced when New user account was being created or existing user
+    account being edited by an admin. The issue there was also fixed.
+    (Gitlab #1275)
+
+* 410 [func] slawek
+
+    Refactored the IP reservation and host tables to associate the
+    reservation data with particular daemons that store them. Fixed a
+    bug causing duplication of the client class section on the host
+    page.
+    (Gitlab #1318)
+
+* 409 [bug] slawek
+
+    Fixed a bug that may cause a Stork server crash if the BIND 9
+    process was detected but the Stork agent failed to fetch its data
+    over RNDC protocol due to insufficient permissions or other
+    connectivity problems.
+    (Gitlab #1381)
+
+* 408 [bug] slawek
+
+    Fixed a server crash that occurred when a few commands were sent to
+    Kea at once and some of them (but not all) failed. Stork incorrectly
+    handled this case while generating an error event.
+    (Gitlab #1394)
+
+* 407 [func] slawek
+
+    Added new labels for subnet metrics exported to Prometheus to always
+    include subnet ID.
+    (Gitlab #1323)
+
+* 406 [func] slawek
+
+    Added validation of the existing GRPC certificates before running
+    the agent. This prevents the agent from starting if it is not able
+    to establish a connection to the server.
+    (Gitlab #1352)
+
+* 405 [func] ! robin.berger, slawek
+
+    Separated the bind user domain name (DN) from the root DN used to
+    log in users.
+    (Gitlab #1325)
+
+* 404 [sec] slawek
+
+    The server no longer reveals the correct agent token when the token
+    specified in the ping call via REST API is invalid. Previously, this
+    endpoint could be used to discover a valid agent token. However,
+    the risk was minimal because it required hijacking the server token
+    first.
+    (Gitlab #1340)
+
+* 403 [bug] slawek
+
+    Fixed not showing the hostname-only reservations (reservations
+    without assigned IP addresses) on the list while the filter was set.
+    (Gitlab #1337)
+
+* 402 [bug] slawek
+
+    Fixed the scheme of the server URL in the installation script, which
+    was always HTTP, even if the server was configured with SSL.
+    (Gitlab #1342)
+
+* 401 [build] marcin
+
+    Upgraded storybook-addon-mock to version 5.0.0. Existing stories
+    failed to run with the older version.
+    (Gitlab #1359)
+
+* 400 [bug] piotrek
+
+    Fixed a bug in Stork UI with displaying help tooltips on smaller
+    displays. Sometimes the header and part of the help tooltip was
+    not visible. Now, the whole help tooltip is visible for all screen
+    sizes.
+    (Gitlab #1305)
+
+* 399 [bug] slawek
+
+    Fixed a problem with improper redirecting after login. If the
+    non-logged user entered any subpage rather than the root page, it
+    was stuck on the login page after signing in.
+    (Gitlab #1355)
+
 Stork 1.16.0 released on 2024-04-05.
 
 * 398 [build] piotrek
