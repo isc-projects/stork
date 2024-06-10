@@ -157,7 +157,6 @@ func runAgent(settings *generalSettings, reload bool) error {
 	if !settings.ListenPrometheusOnly {
 		err = storkAgent.SetupGRPCServer()
 		if err != nil {
-			log.WithError(err).Error("Failed to set up the gRPC server")
 			return errors.WithMessage(err, "failed to set up the gRPC server")
 		}
 
