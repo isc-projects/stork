@@ -12,6 +12,9 @@ def test_kea_only_fixture(kea_service: Kea):
 
     compose = create_docker_compose()
     assert not compose.is_operational("server")
+    # If the agent is fully operational, the metrics endpoint should be
+    # available.
+    assert kea_service.read_prometheus_metrics()
 
 
 def test_kea_with_implicit_server_fixture(kea_service: Kea):
