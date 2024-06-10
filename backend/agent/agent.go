@@ -145,6 +145,11 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 	// cert and host verification.
 	certStore := NewCertStoreDefault()
 
+	if ok, _ := certStore.IsEmpty(); ok {
+		return nil, errors.New("the agent cannot start due to missing " +
+			"certificates; consider running 'stork-agent register' to obtain " +
+			"certificates or specify the --server-url to do it automatically")
+	}
 	if err := certStore.IsValid(); err != nil {
 		return nil, errors.WithMessage(err,
 			"the agent cannot start due to invalid certificates; consider "+
