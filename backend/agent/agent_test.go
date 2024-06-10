@@ -738,6 +738,42 @@ func TestNewGRPCServerWithTLS(t *testing.T) {
 	require.NotNil(t, srv)
 }
 
+// Test that the error is returned if the GRPC TLS certificate files are
+// missing.
+func TestNewGRPCServerWithTLSMissingCerts(t *testing.T) {
+	// Arrange & Act
+	server, err := newGRPCServerWithTLS()
+
+	// Assert
+	require.ErrorContains(t, err, "the agent cannot start due to missing certificates")
+	// Mention about the register command.
+	require.ErrorContains(t, err, "stork-agent register")
+	// Mention about the --server-url flag.
+	require.ErrorContains(t, err, "--server-url")
+	require.Nil(t, server)
+}
+
+// Test that the error is returned if the GRPC TLS certificate files are
+// invalid.
+func TestNewGRPCServerWithTLSInvalidCerts(t *testing.T) {
+	// Arrange
+	cleanup, _ := GenerateSelfSignedCerts()
+	defer cleanup()
+	certStore := NewCertStoreDefault()
+
+	// Make the cert store invalid.
+	certStore.RemoveServerCertFingerprint()
+
+	// Act
+	server, err := newGRPCServerWithTLS()
+
+	// Assert
+	require.ErrorContains(t, err, "cannot start due to invalid certificates")
+	// Recommend to re-register the agent.
+	require.ErrorContains(t, err, "stork-agent register")
+	require.Nil(t, server)
+}
+
 // Check if the Stork Agent prints the host and port parameters.
 func TestHostAndPortParams(t *testing.T) {
 	// Arrange
