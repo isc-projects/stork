@@ -165,6 +165,23 @@ services' states etc.
 
 The tarball can be easily sent via email or attached to a bug report.
 
+Communication Status with the Monitored Machines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The communication status with the monitored agents and daemons is shown on
+the apps pages for the respective daemons. To see the detailed status for all
+apps and daemons on a single page, navigate to ``Monitoring`` and then
+``Communication``. If this page shows no communication issues it means that
+all connected systems are online. Otherwise, it lists the hierarchical view
+of the Stork Agents, Kea Control Agents, and the daemons, highlighting the
+ones for which communication failures have occurred. The communication failures
+may be caused by a process failure (e.g., Stork Agent failure) or a machine
+failure. In the former case, it is possible that the other daemons are still
+running, but it is not guaranteed because of the lack of connectivity with
+these daemons via the failing agent. In the latter case, all processes on
+the culprit machine are down. Stork server tries to provide accurate data
+about the states of all the processes but it should be treated with caution.
+
 Monitoring Applications
 =======================
 
