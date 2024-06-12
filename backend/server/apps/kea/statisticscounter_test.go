@@ -117,7 +117,7 @@ func TestCounterAddSubnetUsingNonUint64OrInt64(t *testing.T) {
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: dbmodel.SubnetStats{
-					"total-nas":    uint(100),
+					"total-nas":    int64(100),
 					"assigned-nas": int32(40),
 					"declined-nas": int16(30),
 					"total-pds":    int(20),
