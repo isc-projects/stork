@@ -15,7 +15,7 @@ type CalculatedNetworkMetrics struct {
 	AddrUtilization int16
 	// Delegated prefix utilization in percentage multiplied by 10.
 	PdUtilization int16
-	// Statistics.
+	// Statistics. It is nil for subnets.
 	Stats SubnetStats
 }
 
@@ -45,7 +45,7 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		Table("subnet").
 		ColumnExpr("\"prefix\" AS \"label\"").
 		ColumnExpr("family(\"prefix\") AS \"family\"").
-		Column("addr_utilization", "pd_utilization", "stats").
+		Column("addr_utilization", "pd_utilization").
 		Select(&metrics.SubnetMetrics)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot calculate subnet metrics")
