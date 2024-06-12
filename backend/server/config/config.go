@@ -64,6 +64,8 @@ type KeaModule interface {
 	ApplyHostUpdate(context.Context, *dbmodel.Host) (context.Context, error)
 	BeginHostDelete(context.Context) (context.Context, error)
 	ApplyHostDelete(context.Context, *dbmodel.Host) (context.Context, error)
+	BeginSharedNetworkAdd(context.Context) (context.Context, error)
+	ApplySharedNetworkAdd(context.Context, *dbmodel.SharedNetwork) (context.Context, error)
 	BeginSharedNetworkUpdate(context.Context, int64) (context.Context, error)
 	ApplySharedNetworkUpdate(context.Context, *dbmodel.SharedNetwork) (context.Context, error)
 	BeginSubnetAdd(context.Context) (context.Context, error)

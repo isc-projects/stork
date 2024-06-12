@@ -441,6 +441,93 @@ func (r *RestAPI) commonCreateOrUpdateSharedNetworkDelete(ctx context.Context, t
 	return 0, ""
 }
 
+// Implements the POST call to create new transaction for creating a new
+// shared network (shared-networks/new/transaction).
+func (r *RestAPI) CreateSharedNetworkBegin(ctx context.Context, params dhcp.CreateSharedNetworkBeginParams) middleware.Responder {
+	// Execute the common part between create and update operations. It retrieves
+	// the daemons and creates a transaction context.
+	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
+	if code != 0 {
+		// Error case.
+		rsp := dhcp.NewCreateSubnetBeginDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Begin the transaction.
+	var err error
+	cctx, err = r.ConfigManager.GetKeaModule().BeginSharedNetworkAdd(cctx)
+	if err != nil {
+		msg := "Problem with initializing transaction for creating a shared network"
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewCreateSharedNetworkBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Retrieve the generated context ID.
+	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
+	if !ok {
+		msg := "problem with retrieving context ID for a transaction to create a shared network"
+		log.Error(msg)
+		rsp := dhcp.NewCreateSharedNetworkBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Remember the context, i.e. new transaction has been successfully created.
+	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
+
+	// Return transaction ID, daemons and client classes to the user.
+	contents := &models.CreateSharedNetworkBeginResponse{
+		ID:            cctxID,
+		Daemons:       respDaemons,
+		ClientClasses: respClientClasses,
+	}
+	for _, sn := range respIPv4SharedNetworks {
+		contents.SharedNetworks4 = append(contents.SharedNetworks4, sn.Name)
+	}
+	for _, sn := range respIPv6SharedNetworks {
+		contents.SharedNetworks6 = append(contents.SharedNetworks6, sn.Name)
+	}
+	rsp := dhcp.NewCreateSharedNetworkBeginOK().WithPayload(contents)
+	return rsp
+}
+
+// Implements the POST call and commits a new shared network
+// (shared-networks/new/transaction/{id}/submit).
+func (r *RestAPI) CreateSharedNetworkSubmit(ctx context.Context, params dhcp.CreateSharedNetworkSubmitParams) middleware.Responder {
+	code, sharedNetworkID, msg := r.commonCreateOrUpdateSharedNetworkSubmit(ctx, params.ID, params.SharedNetwork, r.ConfigManager.GetKeaModule().ApplySharedNetworkAdd)
+	if code != 0 {
+		// Error case.
+		rsp := dhcp.NewCreateSharedNetworkSubmitDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	contents := &models.CreateSharedNetworkSubmitResponse{
+		SharedNetworkID: sharedNetworkID,
+	}
+	rsp := dhcp.NewCreateSharedNetworkSubmitOK().WithPayload(contents)
+	return rsp
+}
+
+// Implements the DELETE call to cancel creating a shared network
+// (shared-networks/new/transaction/{id}).
+// It removes the specified transaction from the config manager,
+// if the transaction exists.
+func (r *RestAPI) CreateSharedNetworkDelete(ctx context.Context, params dhcp.CreateSharedNetworkDeleteParams) middleware.Responder {
+	if code, msg := r.commonCreateOrUpdateSharedNetworkDelete(ctx, params.ID); code != 0 {
+		// Error case.
+		rsp := dhcp.NewCreateSharedNetworkDeleteDefault(code).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := dhcp.NewCreateSharedNetworkDeleteOK()
+	return rsp
+}
+
 // Implements the POST call to create new transaction for updating an
 // existing shared network (shared-networks/{sharedNetworkId}/transaction).
 func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.UpdateSharedNetworkBeginParams) middleware.Responder {
@@ -449,7 +536,7 @@ func (r *RestAPI) UpdateSharedNetworkBegin(ctx context.Context, params dhcp.Upda
 	respDaemons, respIPv4SharedNetworks, respIPv6SharedNetworks, respClientClasses, cctx, code, msg := r.commonCreateOrUpdateNetworkBegin(ctx)
 	if code != 0 {
 		// Error case.
-		rsp := dhcp.NewUpdateSubnetBeginDefault(code).WithPayload(&models.APIError{
+		rsp := dhcp.NewUpdateSharedNetworkBeginDefault(code).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp

@@ -473,6 +473,36 @@
       total:
         type: integer
 
+  CreateSharedNetworkBeginResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      daemons:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemon'
+      sharedNetworks4:
+        type: array
+        items:
+          type: string
+      sharedNetworks6:
+        type: array
+        items:
+          type: string
+      clientClasses:
+        type: array
+        items:
+          type: string
+
+  CreateSharedNetworkSubmitResponse:
+    type: object
+    properties:
+      sharedNetworkId:
+        type: integer
+        format: int64
+
   UpdateSharedNetworkBeginResponse:
     type: object
     properties:

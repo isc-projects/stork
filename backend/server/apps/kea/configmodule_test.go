@@ -1478,6 +1478,639 @@ func TestCommitScheduledHostDelete(t *testing.T) {
 	require.Nil(t, returnedHost)
 }
 
+// Test first stage of adding a shared network.
+func TestBeginSharedNetworkAdd(t *testing.T) {
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	ctx, err := module.BeginSharedNetworkAdd(context.Background())
+	require.NoError(t, err)
+
+	// There should be no locks on any daemons.
+	require.Empty(t, manager.locks)
+
+	// Make sure that the transaction state has been created.
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, state.Updates, 1)
+	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
+	require.Equal(t, "shared_network_add", state.Updates[0].Operation)
+}
+
+// Test second stage of adding a shared network.
+func TestApplySharedNetworkAdd(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// Transaction state is required because typically it is created by the
+	// BeginSharedNetworkAdd function.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "shared_network_add")
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	// New shared network entry.
+	sharedNetwork := &dbmodel.SharedNetwork{
+		Name:   "bar",
+		Family: 4,
+		LocalSharedNetworks: []*dbmodel.LocalSharedNetwork{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name:    "dhcp4",
+					Version: "2.5.0",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+			},
+			{
+				DaemonID: 4,
+				Daemon: &dbmodel.Daemon{
+					Name:    "dhcp4",
+					Version: "2.6.0",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+			},
+		},
+		Subnets: []dbmodel.Subnet{
+			{
+				ID:     1,
+				Prefix: "192.0.2.0/24",
+				LocalSubnets: []*dbmodel.LocalSubnet{
+					{
+						DaemonID: 1,
+						Daemon: &dbmodel.Daemon{
+							Name: "dhcp4",
+							App: &dbmodel.App{
+								AccessPoints: []*dbmodel.AccessPoint{
+									{
+										Type:    dbmodel.AccessPointControl,
+										Address: "192.0.2.1",
+										Port:    1234,
+									},
+								},
+							},
+						},
+						AddressPools: []dbmodel.AddressPool{
+							{
+								LowerBound: "192.0.2.100",
+								UpperBound: "192.0.2.200",
+							},
+						},
+					},
+					{
+						DaemonID: 2,
+						Daemon: &dbmodel.Daemon{
+							Name:    "dhcp4",
+							Version: "2.5.0",
+							App: &dbmodel.App{
+								AccessPoints: []*dbmodel.AccessPoint{
+									{
+										Type:    dbmodel.AccessPointControl,
+										Address: "192.0.2.2",
+										Port:    2345,
+									},
+								},
+							},
+						},
+						AddressPools: []dbmodel.AddressPool{
+							{
+								LowerBound: "192.0.2.100",
+								UpperBound: "192.0.2.200",
+							},
+						},
+					},
+					{
+						DaemonID: 4,
+						Daemon: &dbmodel.Daemon{
+							Name:    "dhcp4",
+							Version: "2.6.0",
+							App: &dbmodel.App{
+								AccessPoints: []*dbmodel.AccessPoint{
+									{
+										Type:    dbmodel.AccessPointControl,
+										Address: "192.0.2.2",
+										Port:    2345,
+									},
+								},
+							},
+						},
+						AddressPools: []dbmodel.AddressPool{
+							{
+								LowerBound: "192.0.2.100",
+								UpperBound: "192.0.2.200",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	ctx, err := module.ApplySharedNetworkAdd(ctx, sharedNetwork)
+	require.NoError(t, err)
+
+	// Make sure that the transaction state exists and comprises expected data.
+	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.False(t, stateReturned.Scheduled)
+
+	require.Len(t, stateReturned.Updates, 1)
+	update := stateReturned.Updates[0]
+
+	// Basic validation of the retrieved state.
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
+	require.Equal(t, "shared_network_add", update.Operation)
+	require.NotNil(t, update.Recipe)
+
+	// There should be seven commands ready to send.
+	commands := update.Recipe.Commands
+	require.Len(t, commands, 7)
+
+	// Validate the commands to be sent to Kea.
+	for i := range commands {
+		command := commands[i].Command
+		marshalled := command.Marshal()
+
+		switch i {
+		case 0, 1, 2:
+			require.JSONEq(t,
+				`{
+					"command": "network4-add",
+					"service": ["dhcp4"],
+					"arguments": {
+						"shared-networks": [
+							{
+								"name": "bar",
+								"subnet4": [
+									{
+										"pools": [
+											{
+												"pool":"192.0.2.100-192.0.2.200"
+											}
+										],
+										"id": 0,
+										"subnet": "192.0.2.0/24"
+									}
+								]
+							}
+						]
+					}
+				}`,
+				marshalled)
+		case 3, 4, 6:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		// The default case is executed for the index of 5. The config-reload
+		// is only issued for Kea versions earlier than 2.6.0 that don't
+		// recount statistics until reloaded.
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-reload",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		}
+		// Verify they are associated with appropriate apps.
+		require.NotNil(t, commands[i].App)
+	}
+}
+
+// Test committing created shared network, i.e. actually sending control commands to Kea.
+func TestCommitSharedNetworkAdd(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	// Transaction state is required because typically it is created by the
+	// BeginSharedNetworkAdd function.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "shared_network_add")
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	// New shared network entry.
+	sharedNetwork := &dbmodel.SharedNetwork{
+		Name:   "bar",
+		Family: 4,
+		LocalSharedNetworks: []*dbmodel.LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+				Daemon: &dbmodel.Daemon{
+					Name:    "dhcp4",
+					Version: "2.5.0",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+			},
+		},
+		Subnets: []dbmodel.Subnet{
+			{
+				ID:     1,
+				Prefix: "192.0.2.0/24",
+				LocalSubnets: []*dbmodel.LocalSubnet{
+					{
+						DaemonID: apps[0].Daemons[0].ID,
+						Daemon: &dbmodel.Daemon{
+							Name: "dhcp4",
+							App: &dbmodel.App{
+								AccessPoints: []*dbmodel.AccessPoint{
+									{
+										Type:    dbmodel.AccessPointControl,
+										Address: "192.0.2.1",
+										Port:    1234,
+									},
+								},
+							},
+						},
+						AddressPools: []dbmodel.AddressPool{
+							{
+								LowerBound: "192.0.2.100",
+								UpperBound: "192.0.2.200",
+							},
+						},
+					},
+					{
+						DaemonID: apps[1].Daemons[0].ID,
+						Daemon: &dbmodel.Daemon{
+							Name:    "dhcp4",
+							Version: "2.5.0",
+							App: &dbmodel.App{
+								AccessPoints: []*dbmodel.AccessPoint{
+									{
+										Type:    dbmodel.AccessPointControl,
+										Address: "192.0.2.2",
+										Port:    2345,
+									},
+								},
+							},
+						},
+						AddressPools: []dbmodel.AddressPool{
+							{
+								LowerBound: "192.0.2.100",
+								UpperBound: "192.0.2.200",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	ctx, err = module.ApplySharedNetworkAdd(ctx, sharedNetwork)
+	require.NoError(t, err)
+
+	// Committing the shared network should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	require.Len(t, agents.RecordedURLs, 5)
+	require.Len(t, agents.RecordedCommands, 5)
+
+	// The respective commands should be sent to different servers.
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+	require.Equal(t, agents.RecordedURLs[3], agents.RecordedURLs[4])
+
+	// Validate the sent commands and URLs.
+	for i, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+		switch i {
+		case 0, 1:
+			require.JSONEq(t,
+				`{
+					"command": "network4-add",
+					"service": ["dhcp4"],
+					"arguments": {
+						"shared-networks": [
+							{
+								"name": "bar",
+								"subnet4": [
+									{
+										"pools": [
+											{
+												"pool":"192.0.2.100-192.0.2.200"
+											}
+										],
+										"id": 0,
+										"subnet": "192.0.2.0/24"
+									}
+								]
+							}
+						]
+					}
+				}`,
+				marshalled)
+		case 2, 3:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		// The default case is executed for the index of 4. The config-reload
+		// is only issued for Kea versions earlier than 2.6.0 that don't
+		// recount statistics until reloaded.
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-reload",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		}
+	}
+
+	// Make sure that the shared network has been added in the database.
+	addedSharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 4)
+	require.NoError(t, err)
+	require.Len(t, addedSharedNetworks, 1)
+	require.NotNil(t, addedSharedNetworks[0])
+	require.Len(t, addedSharedNetworks[0].LocalSharedNetworks, 2)
+	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[0].KeaParameters)
+	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[1].KeaParameters)
+
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
+	require.NoError(t, err)
+	require.NotNil(t, recipe.SharedNetworkID)
+	require.EqualValues(t, addedSharedNetworks[0].ID, *recipe.SharedNetworkID)
+}
+
+// Test scheduling shared network config changes in the database, retrieving and committing them.
+func TestCommitScheduledSharedNetworkAdd(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// User is required to associate the config change with a user.
+	user := &dbmodel.SystemUser{
+		Login:    "test",
+		Lastname: "test",
+		Name:     "test",
+	}
+	_, err := dbmodel.CreateUser(db, user)
+	require.NoError(t, err)
+	require.NotZero(t, user.ID)
+
+	serverConfig := `{
+		"Dhcp6": {}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	// Transaction state is required because typically it is created by the
+	// BeginSharedNetworkAdd function.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "shared_network_add")
+	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+
+	// Set user id in the context.
+	ctx = context.WithValue(ctx, config.UserContextKey, int64(user.ID))
+
+	// New shared network entry.
+	sharedNetwork := &dbmodel.SharedNetwork{
+		Name:   "bar",
+		Family: 6,
+		LocalSharedNetworks: []*dbmodel.LocalSharedNetwork{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp6",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+					},
+				},
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+				Daemon: &dbmodel.Daemon{
+					Name:    "dhcp6",
+					Version: "2.5.0",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	ctx, err = module.ApplySharedNetworkAdd(ctx, sharedNetwork)
+	require.NoError(t, err)
+
+	// Simulate scheduling the config change and retrieving it from the database.
+	// The context will hold re-created transaction state.
+	ctx = manager.scheduleAndGetChange(ctx, t)
+	require.NotNil(t, ctx)
+
+	// Committing the subnet should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	require.Len(t, agents.RecordedURLs, 5)
+	require.Len(t, agents.RecordedCommands, 5)
+
+	// The respective commands should be sent to different servers.
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+	require.Equal(t, agents.RecordedURLs[3], agents.RecordedURLs[4])
+
+	// Validate the sent commands and URLs.
+	for i, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+		switch i {
+		case 0, 1:
+			require.JSONEq(t,
+				`{
+						"command": "network6-add",
+						"service": [ "dhcp6" ],
+						"arguments": {
+							"shared-networks": [
+								{
+									"name": "bar"
+								}
+							]
+						}
+					}`,
+				marshalled)
+		case 2, 3:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp6" ]
+					}`,
+				marshalled)
+		// The default case is executed for the index of 4. The config-reload
+		// is only issued for Kea versions earlier than 2.6.0 that don't
+		// recount statistics until reloaded.
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-reload",
+						"service": [ "dhcp6" ]
+					}`,
+				marshalled)
+		}
+	}
+
+	// Make sure that the shared network has been added in the database.
+	addedSharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 6)
+	require.NoError(t, err)
+	require.Len(t, addedSharedNetworks, 1)
+	require.NotNil(t, addedSharedNetworks[0])
+	require.Len(t, addedSharedNetworks[0].LocalSharedNetworks, 2)
+	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[0].KeaParameters)
+	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[1].KeaParameters)
+
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
+	require.NoError(t, err)
+	require.NotNil(t, recipe.SharedNetworkID)
+	require.EqualValues(t, addedSharedNetworks[0].ID, *recipe.SharedNetworkID)
+}
+
 // Test the first stage of updating a shared network. It checks that the shared
 // network information is fetched from the database and stored in the context. It
 // also checks that appropriate locks are applied.

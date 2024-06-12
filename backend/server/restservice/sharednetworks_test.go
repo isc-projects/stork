@@ -669,6 +669,712 @@ func TestGetSharedNetwork6MinimalParameters(t *testing.T) {
 	require.NotNil(t, ls.KeaConfigSharedNetworkParameters)
 }
 
+// Test the calls for creating new transaction and adding a shared network.
+func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"client-classes": [
+				{
+					"name": "devices"
+				},
+				{
+					"name": "printers"
+				}
+			],
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 2)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.CreateSharedNetworkBeginParams{}
+	rsp := rapi.CreateSharedNetworkBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateSharedNetworkBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateSharedNetworkBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, daemons, shared networks and client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.Len(t, contents.Daemons, 2)
+	require.Len(t, contents.SharedNetworks4, 1)
+	require.Equal(t, "foo", contents.SharedNetworks4[0])
+	require.Empty(t, contents.SharedNetworks6)
+	require.Len(t, contents.ClientClasses, 2)
+
+	keaConfigSharedNetworkParameters := &models.KeaConfigSharedNetworkParameters{
+		SharedNetworkLevelParameters: &models.KeaConfigSubnetDerivedParameters{
+			KeaConfigCacheParameters: models.KeaConfigCacheParameters{
+				CacheMaxAge:    storkutil.Ptr[int64](1000),
+				CacheThreshold: storkutil.Ptr[float32](0.25),
+			},
+			KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
+				ClientClass:          storkutil.Ptr("foo"),
+				RequireClientClasses: []string{"bar"},
+			},
+			KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
+				DdnsGeneratedPrefix:       storkutil.Ptr("abc"),
+				DdnsOverrideClientUpdate:  storkutil.Ptr(true),
+				DdnsOverrideNoUpdate:      storkutil.Ptr(false),
+				DdnsQualifyingSuffix:      storkutil.Ptr("example.org"),
+				DdnsReplaceClientName:     storkutil.Ptr("never"),
+				DdnsSendUpdates:           storkutil.Ptr(true),
+				DdnsUpdateOnRenew:         storkutil.Ptr(true),
+				DdnsUseConflictResolution: storkutil.Ptr(true),
+			},
+			KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
+				FourOverSixInterface:   storkutil.Ptr("eth0"),
+				FourOverSixInterfaceID: storkutil.Ptr("ifaceid"),
+				FourOverSixSubnet:      storkutil.Ptr("2001:db8:1::/64"),
+			},
+			KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
+				HostnameCharReplacement: storkutil.Ptr("a"),
+				HostnameCharSet:         storkutil.Ptr("b"),
+			},
+			KeaConfigReservationParameters: models.KeaConfigReservationParameters{
+				ReservationMode:       storkutil.Ptr("in-pool"),
+				ReservationsGlobal:    storkutil.Ptr(false),
+				ReservationsInSubnet:  storkutil.Ptr(true),
+				ReservationsOutOfPool: storkutil.Ptr(false),
+			},
+			KeaConfigTimerParameters: models.KeaConfigTimerParameters{
+				CalculateTeeTimes: storkutil.Ptr(true),
+				RebindTimer:       storkutil.Ptr[int64](2000),
+				RenewTimer:        storkutil.Ptr[int64](1000),
+				T1Percent:         storkutil.Ptr[float32](0.25),
+				T2Percent:         storkutil.Ptr[float32](0.50),
+			},
+			KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
+				MaxValidLifetime: storkutil.Ptr[int64](5000),
+				MinValidLifetime: storkutil.Ptr[int64](4000),
+				ValidLifetime:    storkutil.Ptr[int64](4500),
+			},
+			KeaConfigAssortedSubnetParameters: models.KeaConfigAssortedSubnetParameters{
+				Allocator:     storkutil.Ptr("random"),
+				Authoritative: storkutil.Ptr(true),
+				BootFileName:  storkutil.Ptr("/tmp/filename"),
+				Interface:     storkutil.Ptr("eth0"),
+				MatchClientID: storkutil.Ptr(true),
+				NextServer:    storkutil.Ptr("192.0.2.1"),
+				Relay: &models.KeaConfigAssortedSubnetParametersRelay{
+					IPAddresses: []string{"10.1.1.1"},
+				},
+				ServerHostname:    storkutil.Ptr("myhost.example.org"),
+				StoreExtendedInfo: storkutil.Ptr(true),
+			},
+			DHCPOptions: models.DHCPOptions{
+				Options: []*models.DHCPOption{
+					{
+						AlwaysSend: true,
+						Code:       3,
+						Fields: []*models.DHCPOptionField{
+							{
+								FieldType: "ipv4-address",
+								Values:    []string{"192.0.2.1"},
+							},
+						},
+						Universe: 4,
+					},
+				},
+			},
+		},
+	}
+
+	// Submit transaction.
+	params2 := dhcp.CreateSharedNetworkSubmitParams{
+		ID: transactionID,
+		SharedNetwork: &models.SharedNetwork{
+			Name:     "bar",
+			Universe: int64(4),
+			Subnets:  []*models.Subnet{},
+			LocalSharedNetworks: []*models.LocalSharedNetwork{
+				{
+					DaemonID:                         dbapps[0].Daemons[0].ID,
+					KeaConfigSharedNetworkParameters: keaConfigSharedNetworkParameters,
+				},
+				{
+					DaemonID:                         dbapps[1].Daemons[0].ID,
+					KeaConfigSharedNetworkParameters: keaConfigSharedNetworkParameters,
+				},
+			},
+		},
+	}
+	rsp2 := rapi.CreateSharedNetworkSubmit(ctx, params2)
+	require.IsType(t, &dhcp.CreateSharedNetworkSubmitOK{}, rsp2)
+	require.IsType(t, &dhcp.CreateSharedNetworkSubmitOK{}, rsp2)
+	okRsp2 := rsp2.(*dhcp.CreateSharedNetworkSubmitOK)
+
+	// Appropriate commands should be sent to two Kea servers.
+	require.Len(t, fa.RecordedCommands, 4)
+
+	for i, c := range fa.RecordedCommands {
+		switch i {
+		case 0, 1:
+			require.JSONEq(t, `
+				{
+					"command": "network4-add",
+					"service": ["dhcp4"],
+					"arguments": {
+						"shared-networks": [
+							{
+								"cache-threshold": 0.25,
+								"cache-max-age": 1000,
+								"client-class": "foo",
+								"require-client-classes": ["bar"],
+								"ddns-generated-prefix": "abc",
+								"ddns-override-client-update": true,
+								"ddns-override-no-update": false,
+								"ddns-qualifying-suffix": "example.org",
+								"ddns-replace-client-name": "never",
+								"ddns-send-updates": true,
+								"ddns-update-on-renew": true,
+								"ddns-use-conflict-resolution": true,
+								"hostname-char-replacement": "a",
+								"hostname-char-set": "b",
+								"reservation-mode": "in-pool",
+								"reservations-global": false,
+								"reservations-in-subnet": true,
+								"reservations-out-of-pool": false,
+								"renew-timer": 1000,
+								"rebind-timer": 2000,
+								"t1-percent": 0.25,
+								"t2-percent": 0.5,
+								"calculate-tee-times": true,
+								"valid-lifetime": 4500,
+								"min-valid-lifetime": 4000,
+								"max-valid-lifetime": 5000,
+								"allocator": "random",
+								"interface": "eth0",
+								"store-extended-info": true,
+								"option-data": [
+									{
+										"always-send": true,
+										"code": 3,
+										"csv-format": true,
+										"data": "192.0.2.1",
+										"space": "dhcp4"
+									}
+								],
+								"relay": {
+									"ip-addresses":["10.1.1.1"]
+								},
+								"authoritative": true,
+								"boot-file-name": "/tmp/filename",
+								"match-client-id": true,
+								"name": "bar",
+								"next-server": "192.0.2.1",
+								"server-hostname": "myhost.example.org"
+							}
+						]
+					}
+				}
+			`, c.Marshal())
+		default:
+			require.JSONEq(t, `
+				{
+					"command": "config-write",
+					"service": ["dhcp4"]
+				}
+			`, c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// Make sure that the shared network has been stored in the database.
+	returnedSharedNetwork, err := dbmodel.GetSharedNetwork(db, okRsp2.Payload.SharedNetworkID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSharedNetwork)
+	require.Empty(t, returnedSharedNetwork.Subnets)
+
+	require.Len(t, returnedSharedNetwork.LocalSharedNetworks, 2)
+	for _, lsn := range returnedSharedNetwork.LocalSharedNetworks {
+		require.NotNil(t, lsn.KeaParameters)
+		require.NotNil(t, lsn.KeaParameters.CacheMaxAge)
+		require.EqualValues(t, 1000, *lsn.KeaParameters.CacheMaxAge)
+		require.NotNil(t, lsn.KeaParameters.CacheThreshold)
+		require.EqualValues(t, 0.25, *lsn.KeaParameters.CacheThreshold)
+		require.NotNil(t, lsn.KeaParameters.ClientClass)
+		require.Equal(t, "foo", *lsn.KeaParameters.ClientClass)
+		require.Len(t, lsn.KeaParameters.RequireClientClasses, 1)
+		require.EqualValues(t, "bar", lsn.KeaParameters.RequireClientClasses[0])
+		require.NotNil(t, lsn.KeaParameters.DDNSGeneratedPrefix)
+		require.Equal(t, "abc", *lsn.KeaParameters.DDNSGeneratedPrefix)
+		require.NotNil(t, lsn.KeaParameters.DDNSOverrideClientUpdate)
+		require.True(t, *lsn.KeaParameters.DDNSOverrideClientUpdate)
+		require.NotNil(t, lsn.KeaParameters.DDNSOverrideNoUpdate)
+		require.False(t, *lsn.KeaParameters.DDNSOverrideNoUpdate)
+		require.NotNil(t, lsn.KeaParameters.DDNSQualifyingSuffix)
+		require.Equal(t, "example.org", *lsn.KeaParameters.DDNSQualifyingSuffix)
+		require.NotNil(t, lsn.KeaParameters.DDNSReplaceClientName)
+		require.Equal(t, "never", *lsn.KeaParameters.DDNSReplaceClientName)
+		require.NotNil(t, lsn.KeaParameters.DDNSSendUpdates)
+		require.True(t, *lsn.KeaParameters.DDNSSendUpdates)
+		require.NotNil(t, lsn.KeaParameters.DDNSUpdateOnRenew)
+		require.True(t, *lsn.KeaParameters.DDNSUpdateOnRenew)
+		require.NotNil(t, lsn.KeaParameters.DDNSUseConflictResolution)
+		require.True(t, *lsn.KeaParameters.DDNSUseConflictResolution)
+		require.NotNil(t, lsn.KeaParameters.HostnameCharReplacement)
+		require.Equal(t, "a", *lsn.KeaParameters.HostnameCharReplacement)
+		require.NotNil(t, lsn.KeaParameters.HostnameCharSet)
+		require.Equal(t, "b", *lsn.KeaParameters.HostnameCharSet)
+		require.NotNil(t, lsn.KeaParameters.ReservationMode)
+		require.Equal(t, "in-pool", *lsn.KeaParameters.ReservationMode)
+		require.NotNil(t, lsn.KeaParameters.ReservationsGlobal)
+		require.False(t, *lsn.KeaParameters.ReservationsGlobal)
+		require.NotNil(t, lsn.KeaParameters.ReservationsInSubnet)
+		require.True(t, *lsn.KeaParameters.ReservationsInSubnet)
+		require.NotNil(t, lsn.KeaParameters.ReservationsOutOfPool)
+		require.False(t, *lsn.KeaParameters.ReservationsOutOfPool)
+		require.NotNil(t, lsn.KeaParameters.CalculateTeeTimes)
+		require.True(t, *lsn.KeaParameters.CalculateTeeTimes)
+		require.NotNil(t, lsn.KeaParameters.RebindTimer)
+		require.EqualValues(t, 2000, *lsn.KeaParameters.RebindTimer)
+		require.NotNil(t, lsn.KeaParameters.RenewTimer)
+		require.EqualValues(t, 1000, *lsn.KeaParameters.RenewTimer)
+		require.NotNil(t, lsn.KeaParameters.T1Percent)
+		require.EqualValues(t, 0.25, *lsn.KeaParameters.T1Percent)
+		require.NotNil(t, lsn.KeaParameters.T2Percent)
+		require.EqualValues(t, 0.50, *lsn.KeaParameters.T2Percent)
+		require.NotNil(t, lsn.KeaParameters.MaxValidLifetime)
+		require.EqualValues(t, 5000, *lsn.KeaParameters.MaxValidLifetime)
+		require.NotNil(t, lsn.KeaParameters.MinValidLifetime)
+		require.EqualValues(t, 4000, *lsn.KeaParameters.MinValidLifetime)
+		require.NotNil(t, lsn.KeaParameters.ValidLifetime)
+		require.EqualValues(t, 4500, *lsn.KeaParameters.ValidLifetime)
+		require.NotNil(t, lsn.KeaParameters.Allocator)
+		require.Equal(t, "random", *lsn.KeaParameters.Allocator)
+		require.NotNil(t, lsn.KeaParameters.Authoritative)
+		require.True(t, *lsn.KeaParameters.Authoritative)
+		require.NotNil(t, lsn.KeaParameters.Authoritative)
+		require.Equal(t, "/tmp/filename", *lsn.KeaParameters.BootFileName)
+		require.NotNil(t, lsn.KeaParameters.Interface)
+		require.Equal(t, "eth0", *lsn.KeaParameters.Interface)
+		require.NotNil(t, lsn.KeaParameters.MatchClientID)
+		require.True(t, *lsn.KeaParameters.MatchClientID)
+		require.NotNil(t, lsn.KeaParameters.NextServer)
+		require.Equal(t, "192.0.2.1", *lsn.KeaParameters.NextServer)
+		require.NotNil(t, lsn.KeaParameters.Relay)
+		require.Len(t, lsn.KeaParameters.Relay.IPAddresses, 1)
+		require.Equal(t, "10.1.1.1", lsn.KeaParameters.Relay.IPAddresses[0])
+		require.NotNil(t, lsn.KeaParameters.ServerHostname)
+		require.Equal(t, "myhost.example.org", *lsn.KeaParameters.ServerHostname)
+		require.NotNil(t, lsn.KeaParameters.StoreExtendedInfo)
+		require.True(t, *lsn.KeaParameters.StoreExtendedInfo)
+
+		// DHCP options
+		require.Len(t, lsn.DHCPOptionSet.Options, 1)
+		require.True(t, lsn.DHCPOptionSet.Options[0].AlwaysSend)
+		require.EqualValues(t, 3, lsn.DHCPOptionSet.Options[0].Code)
+		require.Len(t, lsn.DHCPOptionSet.Options[0].Fields, 1)
+		require.Equal(t, dhcpmodel.IPv4AddressField, lsn.DHCPOptionSet.Options[0].Fields[0].FieldType)
+		require.Len(t, lsn.DHCPOptionSet.Options[0].Fields[0].Values, 1)
+		require.Equal(t, "192.0.2.1", lsn.DHCPOptionSet.Options[0].Fields[0].Values[0])
+		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lsn.DHCPOptionSet.Options[0].Space)
+		require.NotEmpty(t, lsn.DHCPOptionSet.Hash)
+	}
+}
+
+// Test error cases for submitting new shared network.
+func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"client-classes": [
+				{
+					"name": "devices"
+				},
+				{
+					"name": "printers"
+				}
+			],
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 2)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.CreateSharedNetworkBeginParams{}
+	rsp := rapi.CreateSharedNetworkBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateSharedNetworkBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateSharedNetworkBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, daemons, shared networks and client classes.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.Len(t, contents.Daemons, 2)
+	require.Len(t, contents.SharedNetworks4, 1)
+	require.Equal(t, "foo", contents.SharedNetworks4[0])
+	require.Empty(t, contents.SharedNetworks6)
+	require.Len(t, contents.ClientClasses, 2)
+
+	// Submit transaction without the shared network information.
+	t.Run("no shared network", func(t *testing.T) {
+		params := dhcp.CreateSharedNetworkSubmitParams{
+			ID:            transactionID,
+			SharedNetwork: nil,
+		}
+		rsp := rapi.CreateSharedNetworkSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with non-matching transaction ID.
+	t.Run("wrong transaction id", func(t *testing.T) {
+		params := dhcp.CreateSharedNetworkSubmitParams{
+			ID: transactionID + 1,
+			SharedNetwork: &models.SharedNetwork{
+				ID:   0,
+				Name: "foo",
+				LocalSharedNetworks: []*models.LocalSharedNetwork{
+					{
+						DaemonID: dbapps[0].Daemons[0].ID,
+					},
+					{
+						DaemonID: dbapps[1].Daemons[0].ID,
+					},
+				},
+			},
+		}
+		rsp := rapi.CreateSharedNetworkSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with a shared network that is not associated with
+	// any daemons. It simulates a failure in "apply" step which typically
+	// is caused by some internal server problem rather than malformed request.
+	t.Run("no daemons in shared network", func(t *testing.T) {
+		params := dhcp.CreateSharedNetworkSubmitParams{
+			ID: transactionID,
+			SharedNetwork: &models.SharedNetwork{
+				ID:                  0,
+				Name:                "foo",
+				LocalSharedNetworks: []*models.LocalSharedNetwork{},
+			},
+		}
+		rsp := rapi.CreateSharedNetworkSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
+		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID and shared network but expect the
+	// agent to return an error code. This is considered a conflict with
+	// the state of the Kea servers.
+	t.Run("commit failure", func(t *testing.T) {
+		params := dhcp.CreateSharedNetworkSubmitParams{
+			ID: transactionID,
+			SharedNetwork: &models.SharedNetwork{
+				ID:   0,
+				Name: "foo",
+				LocalSharedNetworks: []*models.LocalSharedNetwork{
+					{
+						DaemonID: dbapps[0].Daemons[0].ID,
+					},
+					{
+						DaemonID: dbapps[1].Daemons[0].ID,
+					},
+				},
+			},
+		}
+		rsp := rapi.CreateSharedNetworkSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	})
+}
+
+// Test that the transaction to update a shared network can be canceled,
+// resulting in the removal of this transaction from the config manager
+// and allowing another user to apply config updates.
+func TestCreateSharedNetworkBeginCancel(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"client-classes": [
+				{
+					"name": "devices"
+				},
+				{
+					"name": "printers"
+				}
+			],
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 2)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.CreateSharedNetworkBeginParams{}
+	rsp := rapi.CreateSharedNetworkBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateSharedNetworkBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateSharedNetworkBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+
+	// Cancel the transaction.
+	params2 := dhcp.CreateSharedNetworkDeleteParams{
+		ID: transactionID,
+	}
+	rsp2 := rapi.CreateSharedNetworkDelete(ctx, params2)
+	require.IsType(t, &dhcp.CreateSharedNetworkDeleteOK{}, rsp2)
+
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+}
+
 // Test the calls for creating new transaction and updating a shared network.
 func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
