@@ -257,6 +257,49 @@ func TestBigCounterToUint64(t *testing.T) {
 	require.False(t, ok2)
 }
 
+// Test conversion to float64.
+func TestBigCounterToFloat64(t *testing.T) {
+	t.Run("zero", func(t *testing.T) {
+		// Arrange & Act
+		counter := NewBigCounter(0).ToFloat64()
+
+		// Assert
+		require.Zero(t, counter)
+	})
+
+	t.Run("small int", func(t *testing.T) {
+		// Arrange & Act
+		counter := NewBigCounter(42).ToFloat64()
+
+		// Assert
+		require.EqualValues(t, 42, uint64(counter))
+	})
+
+	t.Run("max safe integer", func(t *testing.T) {
+		// Arrange
+		value := (int64(1) << 53) - 1
+		counter := NewBigCounterFromInt64(value)
+
+		// Act & Assert
+		require.EqualValues(t, value, int64(counter.ToFloat64()))
+	})
+
+	t.Run("above max safe integer", func(t *testing.T) {
+		// Arrange
+		value := (int64(1) << 53) + 1
+		counter := NewBigCounterFromInt64(value)
+
+		// Act & Assert
+		// Warning! This test may be unstable because it depends on the
+		// implementation details of floating point numbers.
+		require.NotEqualValues(t, value, int64(counter.ToFloat64()))
+		require.EqualValues(t, value-1, int64(counter.ToFloat64()))
+	})
+
+	t.Run("big int", func(t *testing.T) {
+	})
+}
+
 // Test the big counter can be converted to big int.
 func TestBigCounterToBigInt(t *testing.T) {
 	// Arrange

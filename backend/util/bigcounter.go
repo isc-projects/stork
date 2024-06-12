@@ -133,6 +133,16 @@ func (n *BigCounter) ToInt64() int64 {
 	return int64(n.base)
 }
 
+// Returns the counting value as float64. If the value exceeds the maximum
+// safe integer value (2^53-1) then the precision is lost.
+func (n *BigCounter) ToFloat64() float64 {
+	if n.isExtended() {
+		value, _ := n.extended.Float64()
+		return value
+	}
+	return float64(n.base)
+}
+
 // Returns the counting value as uint64. If the value is in range, returns it
 // and true. If the value is above the range then returns the maximum value of
 // uint64 and false. If the value is below the range then returns 0 and false.

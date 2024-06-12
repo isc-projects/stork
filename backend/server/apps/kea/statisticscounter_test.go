@@ -107,7 +107,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 	require.Len(t, counter.sharedNetworks, 0)
 }
 
-// Test that the statistics data types other than uint64 and int64 aren't
+// Test that the except positive int64 statistics data types other than uint64 and int64 aren't
 // supported.
 func TestCounterAddSubnetUsingNonUint64OrInt64(t *testing.T) {
 	// Arrange
@@ -139,7 +139,8 @@ func TestCounterAddSubnetUsingNonUint64OrInt64(t *testing.T) {
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalDeclinedIPv4Addresses.ToInt64())
-	require.Zero(t, counter.global.totalIPv6Addresses.ToInt64())
+	// The positive int64 values are accepted.
+	require.Equal(t, int64(100), counter.global.totalIPv6Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv6Addresses.ToInt64())
 	require.Zero(t, counter.global.totalDeclinedIPv6Addresses.ToInt64())
 	require.Zero(t, counter.global.totalDelegatedPrefixes.ToInt64())
