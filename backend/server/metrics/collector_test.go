@@ -164,7 +164,7 @@ func TestCollectorDescribe(t *testing.T) {
 	source := newMockMetricsSource()
 	collector, _ := NewCollector(source)
 	promCollector := collector.(prometheus.Collector)
-	expectedDescriptionCount := 7
+	expectedDescriptionCount := 11
 
 	t.Run("initial metrics values", func(t *testing.T) {
 		source.Set(dbmodel.CalculatedMetrics{})
@@ -194,6 +194,13 @@ func TestCollectorDescribe(t *testing.T) {
 				AddrUtilization: 9,
 				PdUtilization:   10,
 				Family:          11,
+				Stats: dbmodel.SubnetStats{
+					dbmodel.SubnetStatsNameTotalNAs:    uint64(12),
+					dbmodel.SubnetStatsNameAssignedNAs: uint64(13),
+					dbmodel.SubnetStatsNameDeclinedNAs: uint64(14),
+					dbmodel.SubnetStatsNameTotalPDs:    uint64(15),
+					dbmodel.SubnetStatsNameAssignedPDs: uint64(16),
+				},
 			}},
 		})
 
@@ -247,6 +254,12 @@ func TestCollectorCollect(t *testing.T) {
 				AddrUtilization: 6000,
 				PdUtilization:   7000,
 				Family:          6,
+				Stats: dbmodel.SubnetStats{
+					dbmodel.SubnetStatsNameTotalNAs:    uint64(8),
+					dbmodel.SubnetStatsNameAssignedNAs: uint64(9),
+					dbmodel.SubnetStatsNameTotalPDs:    uint64(10),
+					dbmodel.SubnetStatsNameAssignedPDs: uint64(11),
+				},
 			}},
 		})
 
@@ -257,7 +270,7 @@ func TestCollectorCollect(t *testing.T) {
 
 		// Assert
 		close(metricsChannel)
-		require.Len(t, metricsChannel, 7)
+		require.Len(t, metricsChannel, 11)
 		i := 0
 		for metric := range metricsChannel {
 			i++
@@ -295,12 +308,24 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 8000,
 					PdUtilization:   0,
 					Family:          4,
+					Stats: dbmodel.SubnetStats{
+						dbmodel.SubnetStatsNameTotalNAs:    uint64(9),
+						dbmodel.SubnetStatsNameAssignedNAs: uint64(10),
+						dbmodel.SubnetStatsNameTotalPDs:    uint64(0),
+						dbmodel.SubnetStatsNameAssignedPDs: uint64(0),
+					},
 				},
 				{
 					Label:           "sharedB",
-					AddrUtilization: 9000,
-					PdUtilization:   10000,
+					AddrUtilization: 11000,
+					PdUtilization:   12000,
 					Family:          6,
+					Stats: dbmodel.SubnetStats{
+						dbmodel.SubnetStatsNameTotalNAs:    uint64(13),
+						dbmodel.SubnetStatsNameAssignedNAs: uint64(14),
+						dbmodel.SubnetStatsNameTotalPDs:    uint64(15),
+						dbmodel.SubnetStatsNameAssignedPDs: uint64(16),
+					},
 				},
 			},
 		})
@@ -312,7 +337,7 @@ func TestCollectorCollect(t *testing.T) {
 
 		// Assert
 		close(metricsChannel)
-		require.Len(t, metricsChannel, 10)
+		require.Len(t, metricsChannel, 16)
 		i := 0
 		for metric := range metricsChannel {
 			i++
@@ -331,12 +356,24 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 1000,
 					PdUtilization:   2000,
 					Family:          4,
+					Stats: dbmodel.SubnetStats{
+						dbmodel.SubnetStatsNameTotalNAs:    uint64(3),
+						dbmodel.SubnetStatsNameAssignedNAs: uint64(4),
+						dbmodel.SubnetStatsNameTotalPDs:    uint64(5),
+						dbmodel.SubnetStatsNameAssignedPDs: uint64(6),
+					},
 				},
 				{
 					Label:           "shared",
-					AddrUtilization: 3000,
-					PdUtilization:   4000,
+					AddrUtilization: 7000,
+					PdUtilization:   8000,
 					Family:          6,
+					Stats: dbmodel.SubnetStats{
+						dbmodel.SubnetStatsNameTotalNAs:    uint64(10),
+						dbmodel.SubnetStatsNameAssignedNAs: uint64(11),
+						dbmodel.SubnetStatsNameTotalPDs:    uint64(12),
+						dbmodel.SubnetStatsNameAssignedPDs: uint64(13),
+					},
 				},
 			},
 		})
@@ -363,22 +400,45 @@ func TestCollectorCollect(t *testing.T) {
 
 			switch i {
 			case 1, 2, 3:
+				// Server-related metrics.
 				continue
 			case 4:
+				// Address utilization IPv4.
 				require.EqualValues(t, 1, *metricDTO.Gauge.Value)
 				require.Len(t, metricDTO.Label, 2)
 				require.Contains(t, labelNames, "name")
 				require.Contains(t, labelNames, "family")
-			case 5:
-				require.EqualValues(t, 3, *metricDTO.Gauge.Value)
+			case 5, 6:
+				// Total and assigned addresses IPv4.
+				require.EqualValues(t, i-2, *metricDTO.Gauge.Value)
 				require.Len(t, metricDTO.Label, 2)
 				require.Contains(t, labelNames, "name")
 				require.Contains(t, labelNames, "family")
-			case 6:
-				require.EqualValues(t, 4, *metricDTO.Gauge.Value)
+			case 7:
+				// Address utilization IPv6.
+				require.EqualValues(t, 7, *metricDTO.Gauge.Value)
+				require.Len(t, metricDTO.Label, 2)
+				require.Contains(t, labelNames, "name")
+				require.Contains(t, labelNames, "family")
+			case 8:
+				// PD utilization IPv6.
+				require.EqualValues(t, 8, *metricDTO.Gauge.Value)
 				// PD utilization hasn't the family label.
 				require.Len(t, metricDTO.Label, 1)
 				require.Contains(t, labelNames, "name")
+				require.NotContains(t, labelNames, "family")
+			case 9, 10:
+				// Total and assigned addresses IPv6.
+				require.EqualValues(t, i+1, *metricDTO.Gauge.Value)
+				require.Len(t, metricDTO.Label, 2)
+				require.Contains(t, labelNames, "name")
+				require.Contains(t, labelNames, "family")
+			case 11, 12:
+				// Total and assigned PDs IPv6.
+				require.EqualValues(t, i+1, *metricDTO.Gauge.Value)
+				require.Len(t, metricDTO.Label, 1)
+				require.Contains(t, labelNames, "name")
+				require.NotContains(t, labelNames, "family")
 			}
 		}
 	})

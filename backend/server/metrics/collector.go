@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // Interface of the metrics source. It is responsible for returning the
@@ -52,13 +53,15 @@ type prometheusCollector struct {
 	source   MetricsSource
 	registry *prometheus.Registry
 
-	authorizedMachineTotalDesc          *prometheus.Desc
-	unauthorizedMachineTotalDesc        *prometheus.Desc
-	unreachableMachineTotalDesc         *prometheus.Desc
-	subnetAddressUtilizationDesc        *prometheus.Desc
-	subnetPdUtilizationDesc             *prometheus.Desc
-	sharedNetworkAddressUtilizationDesc *prometheus.Desc
-	sharedNetworkPdUtilizationDesc      *prometheus.Desc
+	authorizedMachineTotalDescriptor          *prometheus.Desc
+	unauthorizedMachineTotalDescriptor        *prometheus.Desc
+	unreachableMachineTotalDescriptor         *prometheus.Desc
+	subnetAddressUtilizationDescriptor        *prometheus.Desc
+	subnetPdUtilizationDescriptor             *prometheus.Desc
+	sharedNetworkAddressUtilizationDescriptor *prometheus.Desc
+	sharedNetworkPdUtilizationDescriptor      *prometheus.Desc
+	// The metrics must be iterated in the strict order.
+	sharedNetworkStatisticDescriptors *storkutil.OrderedMap[dbmodel.SubnetStatsName, *prometheus.Desc]
 }
 
 var _ prometheus.Collector = (*prometheusCollector)(nil)
@@ -75,40 +78,70 @@ func NewCollector(source MetricsSource) (Collector, error) {
 		source:   source,
 		registry: registry,
 
-		authorizedMachineTotalDesc: prometheus.NewDesc(
+		authorizedMachineTotalDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "auth", "authorized_machine_total"),
 			"Authorized machines",
 			nil, nil,
 		),
-		unauthorizedMachineTotalDesc: prometheus.NewDesc(
+		unauthorizedMachineTotalDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "auth", "unauthorized_machine_total"),
 			"Unauthorized machines",
 			nil, nil,
 		),
-		unreachableMachineTotalDesc: prometheus.NewDesc(
+		unreachableMachineTotalDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "auth", "unreachable_machine_total"),
 			"Unreachable machines",
 			nil, nil,
 		),
-		subnetAddressUtilizationDesc: prometheus.NewDesc(
+		subnetAddressUtilizationDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "subnet", "address_utilization"),
 			"Subnet address utilization",
 			[]string{"subnet"}, nil,
 		),
-		subnetPdUtilizationDesc: prometheus.NewDesc(
+		subnetPdUtilizationDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "subnet", "pd_utilization"),
 			"Subnet delegated-prefix utilization",
 			[]string{"subnet"}, nil,
 		),
-		sharedNetworkAddressUtilizationDesc: prometheus.NewDesc(
+		sharedNetworkAddressUtilizationDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "shared_network", "address_utilization"),
 			"Shared-network address utilization",
 			[]string{"name", "family"}, nil,
 		),
-		sharedNetworkPdUtilizationDesc: prometheus.NewDesc(
+		sharedNetworkPdUtilizationDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "shared_network", "pd_utilization"),
 			"Shared-network delegated-prefix utilization",
 			[]string{"name"}, nil,
+		),
+		sharedNetworkStatisticDescriptors: storkutil.NewOrderedMapFromEntries(
+			[]dbmodel.SubnetStatsName{
+				dbmodel.SubnetStatsNameTotalNAs,
+				dbmodel.SubnetStatsNameAssignedNAs,
+				dbmodel.SubnetStatsNameTotalPDs,
+				dbmodel.SubnetStatsNameAssignedPDs,
+			},
+			[]*prometheus.Desc{
+				prometheus.NewDesc(
+					prometheus.BuildFQName(namespace, "shared_network", "total_na"),
+					"Shared-network total number of assigned NAs",
+					[]string{"name", "family"}, nil,
+				),
+				prometheus.NewDesc(
+					prometheus.BuildFQName(namespace, "shared_network", "assigned_na"),
+					"Shared-network number of assigned NAs",
+					[]string{"name", "family"}, nil,
+				),
+				prometheus.NewDesc(
+					prometheus.BuildFQName(namespace, "shared_network", "total_pd"),
+					"Shared-network total number of assigned PDs",
+					[]string{"name"}, nil,
+				),
+				prometheus.NewDesc(
+					prometheus.BuildFQName(namespace, "shared_network", "assigned_pd"),
+					"Shared-network number of assigned PDs",
+					[]string{"name"}, nil,
+				),
+			},
 		),
 	}
 
@@ -137,13 +170,16 @@ func (c *prometheusCollector) unregisterAll() {
 // Describe implements the prometheus.Collector interface. Returns the
 // descriptors of all metrics.
 func (c *prometheusCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- c.authorizedMachineTotalDesc
-	ch <- c.unauthorizedMachineTotalDesc
-	ch <- c.unreachableMachineTotalDesc
-	ch <- c.subnetAddressUtilizationDesc
-	ch <- c.subnetPdUtilizationDesc
-	ch <- c.sharedNetworkAddressUtilizationDesc
-	ch <- c.sharedNetworkPdUtilizationDesc
+	ch <- c.authorizedMachineTotalDescriptor
+	ch <- c.unauthorizedMachineTotalDescriptor
+	ch <- c.unreachableMachineTotalDescriptor
+	ch <- c.subnetAddressUtilizationDescriptor
+	ch <- c.subnetPdUtilizationDescriptor
+	ch <- c.sharedNetworkAddressUtilizationDescriptor
+	ch <- c.sharedNetworkPdUtilizationDescriptor
+	for _, descriptor := range c.sharedNetworkStatisticDescriptors.GetValues() {
+		ch <- descriptor
+	}
 }
 
 // Collect implements the prometheus.Collector interface. Converts the metrics
@@ -155,33 +191,60 @@ func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	ch <- prometheus.MustNewConstMetric(c.authorizedMachineTotalDesc,
+	ch <- prometheus.MustNewConstMetric(c.authorizedMachineTotalDescriptor,
 		prometheus.GaugeValue, float64(calculatedMetrics.AuthorizedMachines))
-	ch <- prometheus.MustNewConstMetric(c.unauthorizedMachineTotalDesc,
+	ch <- prometheus.MustNewConstMetric(c.unauthorizedMachineTotalDescriptor,
 		prometheus.GaugeValue, float64(calculatedMetrics.UnauthorizedMachines))
-	ch <- prometheus.MustNewConstMetric(c.unreachableMachineTotalDesc,
+	ch <- prometheus.MustNewConstMetric(c.unreachableMachineTotalDescriptor,
 		prometheus.GaugeValue, float64(calculatedMetrics.UnreachableMachines))
 
 	for _, networkMetrics := range calculatedMetrics.SubnetMetrics {
-		ch <- prometheus.MustNewConstMetric(c.subnetAddressUtilizationDesc,
+		ch <- prometheus.MustNewConstMetric(c.subnetAddressUtilizationDescriptor,
 			prometheus.GaugeValue, float64(networkMetrics.AddrUtilization)/1000.,
 			networkMetrics.Label)
-		ch <- prometheus.MustNewConstMetric(c.subnetPdUtilizationDesc,
+		ch <- prometheus.MustNewConstMetric(c.subnetPdUtilizationDescriptor,
 			prometheus.GaugeValue,
 			float64(networkMetrics.PdUtilization)/1000.,
 			networkMetrics.Label)
 	}
 
 	for _, networkMetrics := range calculatedMetrics.SharedNetworkMetrics {
-		ch <- prometheus.MustNewConstMetric(c.sharedNetworkAddressUtilizationDesc,
+		ch <- prometheus.MustNewConstMetric(c.sharedNetworkAddressUtilizationDescriptor,
 			prometheus.GaugeValue,
 			float64(networkMetrics.AddrUtilization)/1000.,
 			networkMetrics.Label, fmt.Sprint(networkMetrics.Family))
+
 		if networkMetrics.Family == 6 {
-			ch <- prometheus.MustNewConstMetric(c.sharedNetworkPdUtilizationDesc,
+			ch <- prometheus.MustNewConstMetric(c.sharedNetworkPdUtilizationDescriptor,
 				prometheus.GaugeValue,
 				float64(networkMetrics.PdUtilization)/1000.,
 				networkMetrics.Label)
+		}
+
+		// Statistics.
+		v6OnlyStats := map[dbmodel.SubnetStatsName]struct{}{
+			dbmodel.SubnetStatsNameAssignedPDs: {},
+			dbmodel.SubnetStatsNameTotalPDs:    {},
+		}
+
+		for _, entry := range c.sharedNetworkStatisticDescriptors.GetEntries() {
+			name, descriptor := entry.Key, entry.Value
+			counter := networkMetrics.Stats.GetBigCounter(name)
+			if counter == nil {
+				continue
+			}
+
+			labels := []string{networkMetrics.Label}
+			if _, ok := v6OnlyStats[name]; !ok {
+				labels = append(labels, fmt.Sprint(networkMetrics.Family))
+			} else if networkMetrics.Family != 6 {
+				continue
+			}
+
+			ch <- prometheus.MustNewConstMetric(
+				descriptor, prometheus.GaugeValue, counter.ToFloat64(),
+				labels...,
+			)
 		}
 	}
 }
