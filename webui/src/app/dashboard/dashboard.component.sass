@@ -1,24 +1,38 @@
-.action-button
-  margin: 4px 4px 4px 0
-  width: 100%
+// Style no longer used?
+//.action-button
+//  margin: 4px 4px 4px 0
+//  width: 100%
 
-.alerts
-  width: 200px
+// Style no longer used?
+//.alerts
+//  width: 200px
 
+// Set max-width to prevent horizontal overflow.
+:host ::ng-deep .max-w-100vw
+  // full viewport width minus some space for margins and paddings
+  max-width: calc(100vw - 5rem)
+
+// Do we really need this?
+// Reduce right padding in the panel with Events table.
+// By default, panel's content has left, right, bottom padding 1.125rem.
+:host ::ng-deep .dashboard-events-panel .p-panel-content
+  padding-right: 0.5rem
+
+// Style no longer used?
 // style DHCP services table
-.dhcp-services-table
-  border-collapse: collapse
-
-.dhcp-services-table th
-  text-align: left
-  padding: 5px
-
-.dhcp-services-table td
-  padding: 5px
+//.dhcp-services-table
+//  border-collapse: collapse
+//
+//.dhcp-services-table th
+//  text-align: left
+//  padding: 5px
+//
+//.dhcp-services-table td
+//  padding: 5px
 
 h1.section-heading
   font-size: 1.4em
-  border-bottom: 3px solid #e1e1e1
+  border-bottom: 3px solid var(--surface-border)
 
 h2.section-heading
   font-size: 1.2em
@@ -32,3 +46,8 @@ h2.section-heading
 
 .utilization-row__value
   padding-left: 1em
+
+// Custom style for dashboard p-panel title.
+.p-panel-title
+  font-size: 1.8em
+  display: inline-block

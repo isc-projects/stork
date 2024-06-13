@@ -45,6 +45,11 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         user: null,
     }
 
+    /**
+     * When set to true, rowsPerPageOptions will be displayed in the paginator.
+     */
+    @Input() showRowsPerPage = true
+
     levels = [
         {
             label: 'All',

@@ -83,6 +83,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     grafanaUrl: string
 
     /**
+     * Returns true when no kea and no bind9 apps exist among authorized machines;
+     * false otherwise.
+     */
+    get noApps(): boolean {
+        return this.appsStats.keaAppsTotal === 0 && this.appsStats.bind9AppsTotal === 0
+    }
+
+    /**
      * A list of possible HA states.
      *
      * The states are ordered by severity, from the least alarming to the

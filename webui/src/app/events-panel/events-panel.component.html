@@ -88,7 +88,7 @@
     [loading]="loading"
     (onLazyLoad)="refreshEvents($event)"
     [totalRecords]="events.total"
-    [rowsPerPageOptions]="[10, 30, 100]"
+    [rowsPerPageOptions]="showRowsPerPage ? [10, 30, 100] : undefined"
     [showCurrentPageReport]="isTable"
     currentPageReportTemplate="{currentPage} of {totalPages} pages"
     dataKey="id"

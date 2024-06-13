@@ -38,9 +38,10 @@ p-header
 .p-capitalize-first::first-letter
   text-transform: capitalize
 
-.p-datatable-table
-  // Restore the style from PrimeNG 13.3 version to avoid too much emphasis on table borders.
-  border-collapse: collapse
+// Style no longer needed?
+//.p-datatable-table
+//  // Restore the style from PrimeNG 13.3 version to avoid too much emphasis on table borders.
+//  border-collapse: collapse
 
 // format right content in paginator
 .p-paginator .p-paginator-right-content
@@ -68,6 +69,26 @@ p-header
 .max-w-100rem
   max-width: 100rem
 
+.max-w-50rem
+  max-width: 50rem
+
+.max-w-40rem
+  max-width: 40rem
+
+// WIP Stork responsive layout using flexbox.
+section.stork-layout
+  display: flex
+  justify-content: space-between
+  gap: 1rem
+  flex-wrap: wrap
+
+section.stork-layout > article
+  flex: 2 1 58rem
+
+section.stork-layout > aside
+  flex: 1 1 19rem
+
+// Set 0 margin for full width top navbar position.
 body
   margin: 0
   font-family: 'Open Sans', 'Helvetica Neue', sans-serif
