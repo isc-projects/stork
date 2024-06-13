@@ -227,17 +227,6 @@ services:
     depends_on:
       - postgres
 
-  agent-kea-premium-radius:
-    extends: agent-kea-premium-host-database-base
-    volumes:
-      - $PWD/tests/system/config/kea-premium-radius/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
-      - $PWD/tests/system/config/kea-premium-radius/dictionary:/etc/kea/radius/dictionary
-      # Disable DHCPv6 due to missing dedicated configuration.
-      - /etc/supervisor/conf.d/kea-dhcp6.conf
-    depends_on:
-      - postgres
-      - radius
-
   agent-kea-ha1:
     extends: agent-kea
     hostname: agent-kea-ha1
@@ -437,19 +426,6 @@ services:
       - $PWD/tests/system/config/postgres/create_pgcrypto_extension.sql:/docker-entrypoint-initdb.d/create_pgcrypto_extension.sql
     ports:
       - "42432:5432"
-
-  # Radius server for testing premium features
-  radius:
-    build:
-      context: .
-      dockerfile: $PWD/docker/images/stork.Dockerfile
-      target: radius
-    command: -X
-    networks:
-      - storknet
-    volumes:
-      - $PWD/tests/system/config/radius/clients.conf:/etc/raddb/clients.conf
-      - $PWD/tests/system/config/radius/authorize:/etc/raddb/mods-config/files/authorize
 
 networks:
   storknet:
