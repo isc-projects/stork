@@ -271,9 +271,6 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 
 	// go through shared networks and their subnets from db and change their format to ReST one
 	for i := range dbSharedNetworks {
-		if len(dbSharedNetworks[i].Subnets) == 0 || len(dbSharedNetworks[i].Subnets[0].LocalSubnets) == 0 {
-			continue
-		}
 		sharedNetworks.Items = append(sharedNetworks.Items, r.convertSharedNetworkToRestAPI(&dbSharedNetworks[i]))
 	}
 

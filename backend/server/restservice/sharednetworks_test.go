@@ -88,20 +88,23 @@ func TestGetSharedNetworks(t *testing.T) {
 	dhcp6.Configure(`{
 		"Dhcp6": {
 			"shared-networks": [
-			  {
+				{
 					"name": "fox",
-					  "subnet6": [
+					"subnet6": [
 						{
-							  "id":     21,
-							  "subnet": "6001:db8:1::/64"
-						  },
-						  {
-							  "id":     22,
-							  "subnet": "5001:db8:1::/64"
-						  }
-					  ]
-				  }
-			  ]
+							"id":     21,
+							"subnet": "6001:db8:1::/64"
+						},
+						{
+							"id":     22,
+							"subnet": "5001:db8:1::/64"
+						}
+					]
+				},
+				{
+					"name": "monkey"
+				}
+			]
 		}
 	}`)
 
@@ -116,10 +119,10 @@ func TestGetSharedNetworks(t *testing.T) {
 	rsp = rapi.GetSharedNetworks(ctx, params)
 	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSharedNetworksOK)
-	require.Len(t, okRsp.Payload.Items, 3)
-	require.EqualValues(t, 3, okRsp.Payload.Total)
+	require.Len(t, okRsp.Payload.Items, 4)
+	require.EqualValues(t, 4, okRsp.Payload.Total)
 	for _, net := range okRsp.Payload.Items {
-		require.Contains(t, []string{"frog", "mouse", "fox"}, net.Name)
+		require.Contains(t, []string{"frog", "mouse", "fox", "monkey"}, net.Name)
 		switch net.Name {
 		case "frog":
 			require.Len(t, net.Subnets, 1)
@@ -142,6 +145,8 @@ func TestGetSharedNetworks(t *testing.T) {
 			require.EqualValues(t, 4, net.Subnets[1].ID)
 			require.Equal(t, "6001:db8:1::/64", net.Subnets[1].Subnet)
 			require.EqualValues(t, storkutil.IPv6, net.Universe)
+		case "monkey":
+			require.Empty(t, net.Subnets)
 		}
 	}
 
