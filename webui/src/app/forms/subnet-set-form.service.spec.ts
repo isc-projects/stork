@@ -18,6 +18,21 @@ describe('SubnetSetFormService', () => {
         expect(service).toBeTruthy()
     })
 
+    it('should create a default options form', () => {
+        let fg = service.createDefaultOptionsForm()
+        expect(fg).toBeTruthy()
+        expect(fg.contains('unlocked'))
+        expect(fg.get('unlocked').value).toBeFalse()
+        expect(fg.get('unlocked').disabled).toBeTrue()
+        expect(fg.contains('data'))
+        const data = fg.get('data') as UntypedFormArray
+        expect(data).toBeTruthy()
+        expect(data.length).toBe(1)
+        const data0 = data.get('0') as UntypedFormArray
+        expect(data0).toBeTruthy()
+        expect(data0.length).toBe(0)
+    })
+
     it('should convert Kea pool parameters to a form group', () => {
         const parameters: KeaConfigPoolParameters[] = [
             {
@@ -954,7 +969,7 @@ describe('SubnetSetFormService', () => {
                 },
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
         let fg = form.get('cacheThreshold') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('number')
@@ -1444,6 +1459,33 @@ describe('SubnetSetFormService', () => {
         expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBeFalse()
     })
 
+    it('it should exclude 4o6 parameters from a shared network', () => {
+        let parameters: KeaConfigSubnetDerivedParameters[] = [
+            {
+                clientClass: 'bar',
+                fourOverSixInterface: 'eth0',
+                fourOverSixInterfaceID: 'foo',
+                fourOverSixSubnet: '2001:db8:1::/64',
+            },
+        ]
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'shared-network', parameters)
+        let fg = form.get('clientClass') as SharedParameterFormGroup<any>
+        expect(fg).toBeTruthy()
+        expect(fg.data.type).toBe('string')
+        expect(fg.data.min).toBeFalsy()
+        expect(fg.data.max).toBeFalsy()
+        expect(fg.data.fractionDigits).toBeFalsy()
+        expect(fg.data.values).toBeFalsy()
+        expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
+        expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(1)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe('bar')
+
+        // These should be excluded for a shared network.
+        expect(form.contains('fourOverSixInterface')).toBeFalse()
+        expect(form.contains('fourOverSixInterfaceID')).toBeFalse()
+        expect(form.contains('fourOverSixSubnet')).toBeFalse()
+    })
+
     it('should convert Kea IPv6 subnet parameters to a form group', () => {
         let parameters: KeaConfigSubnetDerivedParameters[] = [
             {
@@ -1461,7 +1503,7 @@ describe('SubnetSetFormService', () => {
                 serverHostname: 'foo.example.org.',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv6, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv6, 'subnet', parameters)
         let fg = form.get('fourOverSixInterface') as SharedParameterFormGroup<any>
         expect(fg).toBeFalsy()
 
@@ -1544,7 +1586,7 @@ describe('SubnetSetFormService', () => {
                 ddnsGeneratedPrefix: '-invalid.prefix',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
         let fg = form.get('ddnsGeneratedPrefix') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1556,7 +1598,7 @@ describe('SubnetSetFormService', () => {
                 ddnsQualifyingSuffix: '123',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
         let fg = form.get('ddnsQualifyingSuffix') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1568,7 +1610,7 @@ describe('SubnetSetFormService', () => {
                 fourOverSixSubnet: '2001:db8:1::',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
         let fg = form.get('fourOverSixSubnet') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1580,7 +1622,7 @@ describe('SubnetSetFormService', () => {
                 nextServer: '1.1.2.',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
         let fg = form.get('nextServer') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1592,10 +1634,34 @@ describe('SubnetSetFormService', () => {
                 serverHostname: 'abc..foo',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
         let fg = form.get('serverHostname') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
+    })
+
+    it('should create a default Kea parameters form for an IPv4 subnet', () => {
+        let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv4)
+        expect(Object.keys(form.controls).length).toBe(35)
+
+        for (const key of Object.keys(form.controls)) {
+            let control = form.get(key) as SharedParameterFormGroup<any>
+            expect(control).toBeTruthy()
+            expect(control.controls?.unlocked?.value).toBeFalse()
+            expect(control.controls?.values?.value.length).toBe(1)
+        }
+    })
+
+    it('should create a default Kea parameters for for an IPv6 shared network', () => {
+        let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv6)
+        expect(Object.keys(form.controls).length).toBe(36)
+
+        for (const key of Object.keys(form.controls)) {
+            let control = form.get(key) as SharedParameterFormGroup<any>
+            expect(control).toBeTruthy()
+            expect(control.controls?.unlocked?.value).toBeFalse()
+            expect(control.controls?.values?.value.length).toBe(1)
+        }
     })
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
@@ -1637,7 +1703,7 @@ describe('SubnetSetFormService', () => {
         expect(form.get('options.unlocked')).toBeTruthy()
         expect(form.get('options.unlocked').value).toBeFalse()
         expect(form.get('options.data')).toBeTruthy()
-        expect((form.get('options.data') as UntypedFormArray)?.length).toBe(0)
+        expect((form.get('options.data') as UntypedFormArray)?.length).toBe(1)
         expect(form.get('selectedDaemons')).toBeTruthy()
         expect(form.get('selectedDaemons').value.length).toBe(0)
     })
@@ -1657,7 +1723,7 @@ describe('SubnetSetFormService', () => {
         expect(form.get('options.unlocked')).toBeTruthy()
         expect(form.get('options.unlocked').value).toBeFalse()
         expect(form.get('options.data')).toBeTruthy()
-        expect((form.get('options.data') as UntypedFormArray)?.length).toBe(0)
+        expect((form.get('options.data') as UntypedFormArray)?.length).toBe(1)
         expect(form.get('selectedDaemons')).toBeTruthy()
         expect(form.get('selectedDaemons').value.length).toBe(0)
     })
@@ -2226,6 +2292,48 @@ describe('SubnetSetFormService', () => {
             sharedNetwork1.localSharedNetworks[1].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
                 ?.options.length
         ).toBe(0)
+    })
+
+    it('should create a default IPv4 shared network form', () => {
+        const fg = service.createDefaultSharedNetworkForm(IPType.IPv4, ['foo'])
+        expect(fg).toBeTruthy()
+
+        // shared network name
+        expect(fg.get('name')).toBeTruthy()
+        expect(fg.get('name').value).toBe('')
+
+        // This field is DHCPv4-specific. By checking its existence we ensure that
+        // the function distinguishes IPv4 and IPv6 cases.
+        expect(fg.get('parameters.bootFileName')).toBeTruthy()
+
+        // options
+        expect(fg.get('options.unlocked')).toBeTruthy()
+        expect(fg.get('options.unlocked').value).toBeFalse()
+
+        // daemons
+        expect(fg.get('selectedDaemons')).toBeTruthy()
+        expect(fg.get('selectedDaemons').value).toEqual([])
+    })
+
+    it('should create a default IPv6 shared network form', () => {
+        const fg = service.createDefaultSharedNetworkForm(IPType.IPv6, ['foo'])
+        expect(fg).toBeTruthy()
+
+        // shared network name
+        expect(fg.get('name')).toBeTruthy()
+        expect(fg.get('name').value).toBe('')
+
+        // This field is DHCPv6-specific. By checking its existence we ensure that
+        // the function distinguishes IPv4 and IPv6 cases.
+        expect(fg.get('parameters.preferredLifetime')).toBeTruthy()
+
+        // options
+        expect(fg.get('options.unlocked')).toBeTruthy()
+        expect(fg.get('options.unlocked').value).toBeFalse()
+
+        // daemons
+        expect(fg.get('selectedDaemons')).toBeTruthy()
+        expect(fg.get('selectedDaemons').value).toEqual([])
     })
 
     it('should convert a form to shared network when options are locked', () => {

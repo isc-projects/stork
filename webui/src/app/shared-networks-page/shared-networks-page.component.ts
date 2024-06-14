@@ -169,6 +169,14 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                 (params) => {
                     // Get shared network id.
                     const id = params.get('id')
+                    if (!id || id === 'all') {
+                        this.switchToTab(0)
+                        return
+                    }
+                    if (id === 'new') {
+                        this.openNewSharedNetworkTab()
+                        return
+                    }
                     let numericId = parseInt(id, 10)
                     if (Number.isNaN(numericId)) {
                         numericId = 0
@@ -305,13 +313,13 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         const apps = []
         const appIds = {}
 
-        for (const sn of net.subnets) {
-            for (const lsn of sn.localSubnets) {
+        if (net.localSharedNetworks) {
+            net.localSharedNetworks.forEach((lsn) => {
                 if (!appIds.hasOwnProperty(lsn.appId)) {
                     apps.push({ id: lsn.appId, name: lsn.appName })
                     appIds[lsn.appId] = true
                 }
-            }
+            })
         }
 
         return apps
@@ -323,6 +331,27 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      */
     get isAnyIPv6SubnetVisible(): boolean {
         return !!this.networks?.some((n) => n.subnets.some((s) => s.subnet.includes(':')))
+    }
+
+    /**
+     * Opens an existing or new tab for creating a shared network.
+     */
+    openNewSharedNetworkTab() {
+        let index = this.openedTabs.findIndex((t) => t.tabType === TabType.New)
+        if (index >= 0) {
+            this.switchToTab(index)
+            return
+        }
+        this.openedTabs.push(new Tab(SharedNetworkFormState, TabType.New))
+        this.tabs = [
+            ...this.tabs,
+            {
+                label: 'New Shared Network',
+                icon: 'pi pi-pencil',
+                routerLink: `/dhcp/shared-networks/new`,
+            },
+        ]
+        this.switchToTab(this.openedTabs.length - 1)
     }
 
     /**
@@ -354,6 +383,44 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     closeTabByIndex(index: number, event?: Event) {
         if (index == 0) {
             return
+        }
+
+        if (
+            this.openedTabs[index].tabType === TabType.Edit &&
+            this.openedTabs[index].tabSubject?.id > 0 &&
+            this.openedTabs[index].state?.transactionId > 0 &&
+            !this.openedTabs[index].submitted
+        ) {
+            lastValueFrom(
+                this.dhcpApi.updateSharedNetworkDelete(
+                    this.openedTabs[index].tabSubject.id,
+                    this.openedTabs[index].state.transactionId
+                )
+            ).catch((err) => {
+                let msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Failed to delete configuration transaction',
+                    detail: 'Failed to delete configuration transaction: ' + msg,
+                    life: 10000,
+                })
+            })
+        } else if (
+            this.openedTabs[index].tabType === TabType.New &&
+            this.openedTabs[index].state?.transactionId > 0 &&
+            !this.openedTabs[index].submitted
+        ) {
+            lastValueFrom(this.dhcpApi.createSharedNetworkDelete(this.openedTabs[index].state.transactionId)).catch(
+                (err) => {
+                    let msg = getErrorMessage(err)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Failed to delete configuration transaction',
+                        detail: 'Failed to delete configuration transaction: ' + msg,
+                        life: 10000,
+                    })
+                }
+            )
         }
 
         this.openedTabs.splice(index, 1)
@@ -523,20 +590,21 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                 this.openedTabs[index].state?.transactionId &&
                 this.openedTabs[index].tabType === TabType.Edit
             ) {
-                this.dhcpApi
-                    .updateSharedNetworkDelete(sharedNetworkId, this.openedTabs[index].state.transactionId)
-                    .toPromise()
-                    .catch((err) => {
-                        let msg = getErrorMessage(err)
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Failed to delete configuration transaction',
-                            detail: 'Failed to delete configuration transaction: ' + msg,
-                            life: 10000,
-                        })
+                lastValueFrom(
+                    this.dhcpApi.updateSharedNetworkDelete(sharedNetworkId, this.openedTabs[index].state.transactionId)
+                ).catch((err) => {
+                    let msg = getErrorMessage(err)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Failed to delete configuration transaction',
+                        detail: 'Failed to delete configuration transaction: ' + msg,
+                        life: 10000,
                     })
+                })
                 this.tabs[index].icon = ''
                 this.openedTabs[index].setTabType(TabType.Display)
+            } else {
+                this.closeTabByIndex(index)
             }
         }
     }

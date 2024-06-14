@@ -95,6 +95,7 @@ describe('SharedNetworkFormState', () => {
 
     it('should initialize IPv4 form state', () => {
         let state = new SharedNetworkFormState()
+        state.sharedNetworkId = 123
         state.initStateFromServerResponse(response)
 
         // Client classes.
@@ -211,6 +212,7 @@ describe('SharedNetworkFormState', () => {
             clientClasses: ['foo', 'bar'],
         }
         let state = new SharedNetworkFormState()
+        state.sharedNetworkId = 234
         state.initStateFromServerResponse(ipv6Response)
 
         // Client classes.
@@ -264,6 +266,7 @@ describe('SharedNetworkFormState', () => {
 
     it('should update servers', () => {
         let state = new SharedNetworkFormState()
+        state.sharedNetworkId = 123
         state.initStateFromServerResponse(response)
         expect(state.servers).toEqual(['one/dhcp4', 'two/dhcp4'])
         state.updateServers([2])

@@ -1,5 +1,5 @@
 import { FormGroup } from '@angular/forms'
-import { UpdateSharedNetworkBeginResponse } from '../backend'
+import { CreateSharedNetworkBeginResponse, UpdateSharedNetworkBeginResponse } from '../backend'
 import { SelectableClientClass } from './selectable-client-class'
 import { SelectableDaemon } from './selectable-daemon'
 import { SharedNetworkForm } from './subnet-set-form.service'
@@ -23,7 +23,7 @@ export class SharedNetworkFormState {
     /**
      * An id of the modified or created shared network.
      */
-    private _sharedNetworkId: number = 0
+    public sharedNetworkId: number = 0
 
     /**
      * An error to begin the transaction returned by the server.
@@ -90,7 +90,7 @@ export class SharedNetworkFormState {
      *
      * It is required to revert the subnet edits.
      */
-    public savedSharedNetworkBeginData: UpdateSharedNetworkBeginResponse
+    public savedSharedNetworkBeginData: CreateSharedNetworkBeginResponse | UpdateSharedNetworkBeginResponse
 
     /**
      * A form group comprising all form controls, arrays and other form
@@ -104,13 +104,6 @@ export class SharedNetworkFormState {
      */
     get transactionId(): number {
         return this._transactionId
-    }
-
-    /**
-     * Returns an id of the modified or created shared network.
-     */
-    get sharedNetworkId(): number {
-        return this._sharedNetworkId
     }
 
     /**
@@ -243,7 +236,7 @@ export class SharedNetworkFormState {
      *
      * @param response A received server response.
      */
-    initStateFromServerResponse(response: UpdateSharedNetworkBeginResponse): void {
+    initStateFromServerResponse(response: CreateSharedNetworkBeginResponse | UpdateSharedNetworkBeginResponse): void {
         // Success. Clear any existing errors.
         this._initError = null
 
@@ -263,18 +256,20 @@ export class SharedNetworkFormState {
         // Initially, list all daemons.
         this._filteredDaemons = this._allDaemons
         this._allSharedNetworks4 =
-            response.sharedNetworks4?.filter((name) => name !== response.sharedNetwork?.name) || []
+            response.sharedNetworks4?.filter(
+                (name) => name !== (response as UpdateSharedNetworkBeginResponse)?.sharedNetwork?.name
+            ) || []
         this._allSharedNetworks6 =
-            response.sharedNetworks6?.filter((name) => name !== response.sharedNetwork?.name) || []
+            response.sharedNetworks6?.filter(
+                (name) => name !== (response as UpdateSharedNetworkBeginResponse)?.sharedNetwork?.name
+            ) || []
         this._clientClasses =
             response.clientClasses?.map((c) => {
                 return { name: c }
             }) || []
 
         // If we update an existing subnet the subnet information should be in the response.
-        if ('sharedNetwork' in response && response.sharedNetwork) {
-            // Remember the shared network identifier.
-            this._sharedNetworkId = response.sharedNetwork.id
+        if (this.sharedNetworkId && 'sharedNetwork' in response && response.sharedNetwork) {
             // Get the server names to be displayed next to the configuration parameters.
             this.updateServers(response.sharedNetwork.localSharedNetworks.map((lsn) => lsn.daemonId))
             // Save the shared network information in case we need to revert the form changes.
@@ -301,7 +296,7 @@ export class SharedNetworkFormState {
      * @returns true if the update results in a breaking change, false otherwise.
      */
     updateFormForSelectedDaemons(selectedDaemons: number[]): boolean {
-        let universe = this.savedSharedNetworkBeginData?.sharedNetwork?.universe
+        let universe = (this.savedSharedNetworkBeginData as UpdateSharedNetworkBeginResponse)?.sharedNetwork?.universe
         let dhcpv6 = false
         let dhcpv4 = selectedDaemons.some((ss) => {
             return this._allDaemons.find((d) => d.id === ss && d.name === 'dhcp4')
@@ -314,7 +309,7 @@ export class SharedNetworkFormState {
         }
         // If user selected or unselected DHCP servers of a certain kind it is a
         // breaking change.
-        const breakingChange = this._dhcpv4 !== dhcpv4 || this._dhcpv6 !== dhcpv6
+        const breakingChange = (this._dhcpv4 && !dhcpv4) || this._dhcpv6 !== dhcpv6
 
         // Remember new states.
         this._dhcpv4 = dhcpv4

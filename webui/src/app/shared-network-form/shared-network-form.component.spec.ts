@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedNetworkFormComponent } from './shared-network-form.component'
 import { MessagesModule } from 'primeng/messages'
@@ -34,6 +34,7 @@ import { SharedParametersFormComponent } from '../shared-parameters-form/shared-
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { KeaSubnetParametersForm } from '../forms/subnet-set-form.service'
 import { By } from '@angular/platform-browser'
+import { SharedNetworkFormState } from '../forms/shared-network-form'
 
 describe('SharedNetworkFormComponent', () => {
     let component: SharedNetworkFormComponent
@@ -312,7 +313,7 @@ describe('SharedNetworkFormComponent', () => {
                 SharedNetworkFormComponent,
                 SharedParametersFormComponent,
             ],
-            providers: [MessageService],
+            providers: [DHCPService, MessageService],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedNetworkFormComponent)
@@ -326,11 +327,139 @@ describe('SharedNetworkFormComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should open a form for updating IPv4 shared network', fakeAsync(() => {
+    it('should open a form for creating an IPv4 shared network', async () => {
+        spyOn(dhcpApi, 'createSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
+        component.ngOnInit()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.state).toBeTruthy()
+        expect(component.state.loaded).toBeTrue()
+        expect(component.state.transactionId).toBe(123)
+        expect(component.state.ipType).toBe(IPType.IPv4)
+        expect(component.state.group).toBeTruthy()
+        expect(component.state.filteredDaemons.length).toBe(3)
+
+        component.state.group.get('name').setValue('stanza')
+
+        const selectedDaemons = [1, 2]
+        component.state.group.get('selectedDaemons').setValue(selectedDaemons)
+        selectedDaemons.forEach((id) => {
+            component.onDaemonsChange({
+                itemValue: id,
+            })
+        })
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createSharedNetworkSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const sharedNetwork = {
+            name: 'stanza',
+            universe: 4,
+            subnets: [],
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            options: [],
+                        },
+                    },
+                },
+                {
+                    daemonId: 2,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            options: [],
+                        },
+                    },
+                },
+            ],
+        }
+
+        expect(dhcpApi.createSharedNetworkSubmit).toHaveBeenCalledWith(component.state.transactionId, sharedNetwork)
+        expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    })
+
+    it('should open a form for creating an IPv6 shared network', async () => {
+        spyOn(dhcpApi, 'createSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
+        component.ngOnInit()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.state).toBeTruthy()
+        expect(component.state.loaded).toBeTrue()
+        expect(component.state.transactionId).toBe(234)
+        expect(component.state.ipType).toBe(IPType.IPv4)
+        expect(component.state.group).toBeTruthy()
+        expect(component.state.filteredDaemons.length).toBe(3)
+
+        component.state.group.get('name').setValue('hola')
+
+        const selectedDaemons = [4, 5]
+        component.state.group.get('selectedDaemons').setValue(selectedDaemons)
+        selectedDaemons.forEach((id) => {
+            component.onDaemonsChange({
+                itemValue: id,
+            })
+        })
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createSharedNetworkSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+        component.onSubmit()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const sharedNetwork = {
+            name: 'hola',
+            universe: 6,
+            subnets: [],
+            localSharedNetworks: [
+                {
+                    daemonId: 4,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            options: [],
+                        },
+                    },
+                },
+                {
+                    daemonId: 5,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            options: [],
+                        },
+                    },
+                },
+            ],
+        }
+
+        expect(dhcpApi.createSharedNetworkSubmit).toHaveBeenCalledWith(component.state.transactionId, sharedNetwork)
+        expect(component.formSubmit.emit).toHaveBeenCalled()
+        expect(messageService.add).toHaveBeenCalled()
+    })
+
+    it('should open a form for updating IPv4 shared network', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
         component.sharedNetworkId = 123
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         expect(component.state).toBeTruthy()
@@ -351,7 +480,7 @@ describe('SharedNetworkFormComponent', () => {
         spyOn(component.formSubmit, 'emit')
         spyOn(messageService, 'add')
         component.onSubmit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         const sharedNetwork = {
@@ -433,13 +562,13 @@ describe('SharedNetworkFormComponent', () => {
         )
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
-    }))
+    })
 
-    it('should open a form for updating IPv6 shared network', fakeAsync(() => {
+    it('should open a form for updating IPv6 shared network', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
         component.sharedNetworkId = 234
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         expect(component.state).toBeTruthy()
@@ -456,14 +585,14 @@ describe('SharedNetworkFormComponent', () => {
         spyOn(component.formSubmit, 'emit')
         spyOn(messageService, 'add')
         component.onSubmit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         const sharedNetwork = {
             id: 234,
             name: 'bella',
             universe: 6,
-            subnets: undefined,
+            subnets: [],
             localSharedNetworks: [
                 {
                     daemonId: 4,
@@ -522,13 +651,13 @@ describe('SharedNetworkFormComponent', () => {
         )
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
-    }))
+    })
 
-    it('should initialize the form controls for an IPv4 shared network', fakeAsync(() => {
+    it('should initialize the form controls for an IPv4 shared network', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
         component.sharedNetworkId = 123
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
         // We cannot use contains() function here because it returns false for
         // disabled controls.
@@ -554,14 +683,14 @@ describe('SharedNetworkFormComponent', () => {
         expect(data.get('0.0.optionCode')?.value).toBe(5)
         expect(data.get('1.0.optionCode')?.value).toBe(5)
 
-        tick()
-    }))
+        await fixture.whenStable()
+    })
 
-    it('should initialize the form controls for an IPv6 subnet', fakeAsync(() => {
+    it('should initialize the form controls for an IPv6 subnet', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
         component.sharedNetworkId = 234
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
         // We cannot use contains() function here because it returns false for
         // disabled controls.
@@ -586,8 +715,8 @@ describe('SharedNetworkFormComponent', () => {
         expect(data.get('0.0.optionCode')?.value).toBe(23)
         expect(data.get('1.0.optionCode')?.value).toBe(23)
 
-        tick()
-    }))
+        await fixture.whenStable()
+    })
 
     it('should return correct server tag severity', () => {
         expect(component.getServerTagSeverity(0)).toBe('success')
@@ -597,18 +726,18 @@ describe('SharedNetworkFormComponent', () => {
         expect(component.getServerTagSeverity(4)).toBe('info')
     })
 
-    it('should remove the form for the unselected server', fakeAsync(() => {
+    it('should remove the form for the unselected server', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
         component.sharedNetworkId = 123
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         component.state.group.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         const options = component.state.group.get('options.data') as UntypedFormArray
@@ -623,20 +752,20 @@ describe('SharedNetworkFormComponent', () => {
 
         expect(component.state.servers.length).toBe(1)
         expect(component.state.servers[0]).toBe('second/dhcp4')
-    }))
+    })
 
-    it('should create the form for the selected server', fakeAsync(() => {
+    it('should create the form for the selected server', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork6))
         component.sharedNetworkId = 234
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         component.state.group.get('selectedDaemons').setValue([3, 4, 5])
         component.onDaemonsChange({
             itemValue: 5,
         })
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         const options = component.state.group.get('options.data') as UntypedFormArray
@@ -651,20 +780,20 @@ describe('SharedNetworkFormComponent', () => {
         expect(parameters.get('pdAllocator.values.0')?.value).toBeFalsy()
         expect(parameters.get('pdAllocator.values.1')?.value).toBe('iterative')
         expect(parameters.get('pdAllocator.values.2')?.value).toBeFalsy()
-    }))
+    })
 
-    it('should revert the changes in the form', fakeAsync(() => {
+    it('should revert the changes in the form', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValue(of(cannedResponseBeginSharedNetwork4))
         component.sharedNetworkId = 123
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         component.state.group.get('selectedDaemons').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         let options = component.state.group.get('options.data') as UntypedFormArray
@@ -685,7 +814,7 @@ describe('SharedNetworkFormComponent', () => {
         expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(2)
         expect(parameters.get('allocator.values.0')?.value).toBe('random')
         expect(parameters.get('allocator.values.1')?.value).toBe('iterative')
-    }))
+    })
 
     it('should emit cancel event', () => {
         spyOn(component.formCancel, 'emit')
@@ -693,17 +822,20 @@ describe('SharedNetworkFormComponent', () => {
         expect(component.formCancel.emit).toHaveBeenCalled()
     })
 
-    it('should present an error message when begin transaction fails', fakeAsync(() => {
+    it('should present an error message when begin transaction fails', async () => {
         spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValues(
-            throwError({ status: 404 }),
+            throwError(() => new Error('status: 404')),
             of(cannedResponseBeginSharedNetwork4)
         )
+        spyOn(messageService, 'add')
         component.sharedNetworkId = 123
+        component.state = new SharedNetworkFormState()
         component.ngOnInit()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
-        expect(component.state.initError).toEqual('status: 404')
+        expect(messageService.add).toHaveBeenCalled()
+        expect(component.state.initError.length).not.toBe(0)
 
         const messagesElement = fixture.debugElement.query(By.css('p-messages'))
         expect(messagesElement).toBeTruthy()
@@ -714,13 +846,13 @@ describe('SharedNetworkFormComponent', () => {
         expect(retryButton.nativeElement.outerText).toBe('Retry')
 
         component.onRetry()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         expect(fixture.debugElement.query(By.css('p-messages'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
 
-        tick()
-    }))
+        await fixture.whenStable()
+    })
 })

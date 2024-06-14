@@ -1,14 +1,20 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core'
-import { DHCPService, SharedNetwork, UpdateSharedNetworkBeginResponse } from '../backend'
+import {
+    CreateSharedNetworkBeginResponse,
+    DHCPService,
+    SharedNetwork,
+    UpdateSharedNetworkBeginResponse,
+} from '../backend'
 import { GenericFormService } from '../forms/generic-form.service'
 import { MessageService } from 'primeng/api'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { deepCopy, getErrorMessage, getSeverityByIndex } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
-import { FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import { UntypedFormArray, Validators } from '@angular/forms'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
-import { KeaSubnetParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
+import { SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { lastValueFrom } from 'rxjs'
+import { StorkValidators } from '../validators'
 
 @Component({
     selector: 'app-shared-network-form',
@@ -94,8 +100,11 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         // We currently only support updating a shared network In this case the
         // id must be provided.
         if (this.sharedNetworkId) {
-            // Send POST to /shared-betworks/{id}/transaction/new.
+            // Send POST to /shared-networks/{id}/transaction.
             this.updateSharedNetworkBegin()
+        } else {
+            // Send POST to /shared-networks/new/transaction.
+            this.createSharedNetworkBegin()
         }
     }
 
@@ -118,15 +127,21 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
      *
      * @param response response received from the server holding the shared network data.
      */
-    initializeState(response: UpdateSharedNetworkBeginResponse) {
+    initializeState(response: CreateSharedNetworkBeginResponse | UpdateSharedNetworkBeginResponse) {
+        this.state.sharedNetworkId = this.sharedNetworkId
         this.state.initStateFromServerResponse(response)
 
         // If we update an existing shared network the shared network information should be
         // in the response.
-        if (this.sharedNetworkId && response.sharedNetwork) {
+        if (this.sharedNetworkId && (response as UpdateSharedNetworkBeginResponse)?.sharedNetwork) {
             // Initialize the shared network form controls.
             this.state.group = this.subnetSetFormService.convertSharedNetworkToForm(
-                response.sharedNetwork,
+                (response as UpdateSharedNetworkBeginResponse)?.sharedNetwork,
+                this.state.existingSharedNetworkNames
+            )
+        } else {
+            this.state.group = this.subnetSetFormService.createDefaultSharedNetworkForm(
+                this.state.ipType,
                 this.state.existingSharedNetworkNames
             )
         }
@@ -136,6 +151,28 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
 
         // Hide the spinner and show the form.
         this.state.markLoaded()
+    }
+
+    /**
+     * Sends a request to the server to begin a new transaction for creating
+     * a shared network.
+     */
+    private createSharedNetworkBegin(): void {
+        lastValueFrom(this.dhcpApi.createSharedNetworkBegin())
+            .then((data) => {
+                this.state.savedSharedNetworkBeginData = data
+                this.initializeState(data)
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot create new transaction',
+                    detail: `Failed to create transaction for creating shared network: ` + msg,
+                    life: 10000,
+                })
+                this.state.setInitError(msg)
+            })
     }
 
     /**
@@ -207,8 +244,18 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         const selectedDaemons = this.state.group.get('selectedDaemons').value ?? []
         if (this.state.updateFormForSelectedDaemons(selectedDaemons)) {
             // The breaking change puts us at risk of having irrelevant form contents.
-            this.resetOptionsArray()
-            this.resetParametersArray()
+            this.state.group.setControl('options', this.subnetSetFormService.createDefaultOptionsForm())
+            this.state.group.setControl(
+                'parameters',
+                this.subnetSetFormService.createDefaultKeaSharedNetworkParametersForm(this.state.ipType)
+            )
+            this.state.group
+                .get('name')
+                .setValidators([
+                    Validators.required,
+                    StorkValidators.valueInList(this.state.existingSharedNetworkNames),
+                ])
+            this.state.group.get('name').updateValueAndValidity()
             return
         }
         // If the number of selected daemons has changed we must update selected servers list.
@@ -257,12 +304,16 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         try {
             // Convert the shared network data from. It currently excludes subnets.
             sharedNetwork = this.subnetSetFormService.convertFormToSharedNetwork(this.state.ipType, this.state.group)
-            // Copy the subnets from the original shared network.
-            sharedNetwork.subnets = this.state.savedSharedNetworkBeginData?.sharedNetwork?.subnets
+            sharedNetwork.subnets = []
+            if (this.sharedNetworkId) {
+                sharedNetwork.subnets =
+                    (this.state.savedSharedNetworkBeginData as UpdateSharedNetworkBeginResponse)?.sharedNetwork
+                        ?.subnets || []
+            }
             // A part of the shared network update can be to deselect some of the daemons
             // from the shared network. These daemons must also be deselected in the subnets
             // belonging to this shared network.
-            sharedNetwork.subnets?.forEach(
+            sharedNetwork.subnets.forEach(
                 (s) =>
                     (s.localSubnets = s.localSubnets.filter((ls) =>
                         // Only leave the associations that also exist for the shared network.
@@ -270,9 +321,9 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
                     ))
             )
             // Another case is that the user has added some new associations.
-            sharedNetwork.localSharedNetworks?.forEach((lsn) => {
+            sharedNetwork.localSharedNetworks.forEach((lsn) => {
                 // Ensure the associations are correct for each subnet.
-                sharedNetwork.subnets?.forEach((s) => {
+                sharedNetwork.subnets.forEach((s) => {
                     // If we cannot find the particular association in the subnet add one.
                     if (s.localSubnets.length > 0 && !s.localSubnets.find((ls) => ls.daemonId === lsn.daemonId)) {
                         // Everything can be copied except the IDs.
@@ -283,7 +334,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
                 })
             })
             // Sanitize the local subnets and shared networks.
-            sharedNetwork.subnets?.forEach((s) => {
+            sharedNetwork.subnets.forEach((s) => {
                 s.localSubnets.forEach((ls) => {
                     delete ls['appId']
                     delete ls['appName']
@@ -331,42 +382,27 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
                 })
             return
         }
-    }
 
-    /**
-     * Resets the part of the form comprising assorted DHCP parameters.
-     *
-     * It removes all existing controls and re-creates the default one.
-     */
-    private resetParametersArray() {
-        let parameters = this.state.group.get('parameters') as FormGroup<KeaSubnetParametersForm>
-        if (!parameters) {
-            return
-        }
-
-        for (let key of Object.keys(parameters.controls)) {
-            let unlocked = parameters.get(key).get('unlocked') as UntypedFormControl
-            unlocked?.setValue(false)
-            let values = parameters.get(key).get('values') as UntypedFormArray
-            if (values?.length > 0) {
-                values.controls.splice(0)
-            }
-        }
-        this.state.group.setControl(
-            'parameters',
-            this.subnetSetFormService.createDefaultKeaSubnetParametersForm(this.state.ipType)
-        )
-    }
-
-    /**
-     * Resets the part of the form comprising DHCP options.
-     *
-     * It removes all existing option sets and re-creates the default one.
-     */
-    private resetOptionsArray() {
-        this.state.group.get('options.unlocked').setValue(false)
-        this.getOptionsData().clear()
-        this.getOptionsData().push(new UntypedFormArray([]))
+        // Creating a new shared network.
+        lastValueFrom(this.dhcpApi.createSharedNetworkSubmit(this.state.transactionId, sharedNetwork))
+            .then((data) => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Shared network successfully created',
+                })
+                // Notify the parent component about successful submission.
+                this.state.sharedNetworkId = data.sharedNetworkId
+                this.formSubmit.emit(this.state)
+            })
+            .catch((err) => {
+                let msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot commit shared network',
+                    detail: 'The transaction creating the shared network failed: ' + msg,
+                    life: 10000,
+                })
+            })
     }
 
     /**

@@ -475,7 +475,15 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
-        component.state.group.get('selectedDaemons').setValue([1, 2])
+        const selectedDaemons = [1, 2]
+        component.state.group.get('selectedDaemons').setValue(selectedDaemons)
+        selectedDaemons.forEach((id) => {
+            component.onDaemonsChange({
+                itemValue: id,
+            })
+        })
+        tick()
+        fixture.detectChanges()
 
         const okResp: any = {
             status: 200,
@@ -496,7 +504,9 @@ describe('SubnetFormComponent', () => {
                     pools: [],
                     prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
-                        subnetLevelParameters: {},
+                        subnetLevelParameters: {
+                            options: [],
+                        },
                     },
                 },
                 {
@@ -504,7 +514,9 @@ describe('SubnetFormComponent', () => {
                     pools: [],
                     prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
-                        subnetLevelParameters: {},
+                        subnetLevelParameters: {
+                            options: [],
+                        },
                     },
                 },
             ],
@@ -545,7 +557,15 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
-        component.state.group.get('selectedDaemons').setValue([3, 4])
+        const selectedDaemons = [3, 4]
+        component.state.group.get('selectedDaemons').setValue(selectedDaemons)
+        selectedDaemons.forEach((id) => {
+            component.onDaemonsChange({
+                itemValue: id,
+            })
+        })
+        tick()
+        fixture.detectChanges()
 
         const okResp: any = {
             status: 200,
@@ -566,7 +586,9 @@ describe('SubnetFormComponent', () => {
                     pools: [],
                     prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
-                        subnetLevelParameters: {},
+                        subnetLevelParameters: {
+                            options: [],
+                        },
                     },
                 },
                 {
@@ -574,7 +596,9 @@ describe('SubnetFormComponent', () => {
                     pools: [],
                     prefixDelegationPools: [],
                     keaConfigSubnetParameters: {
-                        subnetLevelParameters: {},
+                        subnetLevelParameters: {
+                            options: [],
+                        },
                     },
                 },
             ],

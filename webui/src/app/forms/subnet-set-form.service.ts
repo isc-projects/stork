@@ -334,6 +334,18 @@ export class SubnetSetFormService {
     }
 
     /**
+     * Create default form for editing DHCP options.
+     *
+     * @returns A default form group for DHCP options.
+     */
+    createDefaultOptionsForm(): FormGroup<OptionsForm> {
+        return new FormGroup({
+            unlocked: new FormControl({ value: false, disabled: true }),
+            data: new UntypedFormArray([new UntypedFormArray([])]),
+        })
+    }
+
+    /**
      * Convert Kea pool parameters to a form.
      *
      * @param parameters Kea-specific pool parameters.
@@ -393,10 +405,7 @@ export class SubnetSetFormService {
                 StorkValidators.ipRangeBounds
             ),
             parameters: this.createDefaultKeaPoolParametersForm(),
-            options: new FormGroup({
-                unlocked: new FormControl({ value: false, disabled: true }),
-                data: new UntypedFormArray([new UntypedFormArray([])]),
-            }),
+            options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl([], Validators.required),
         })
         return formGroup
@@ -422,10 +431,7 @@ export class SubnetSetFormService {
                 ])
             ),
             parameters: this.createDefaultKeaPoolParametersForm(),
-            options: new FormGroup({
-                unlocked: new FormControl({ value: false, disabled: true }),
-                data: new UntypedFormArray([new UntypedFormArray([])]),
-            }),
+            options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl([], Validators.required),
         })
         return formGroup
@@ -438,11 +444,13 @@ export class SubnetSetFormService {
      * the subnet parameters. It comprises the metadata describing each parameter.
      *
      * @param ipType subnet universe (IPv4 or IPv6).
+     * @param level level in the configuration hierarchy.
      * @param parameters Kea-specific subnet parameters.
      * @returns Created form group instance.
      */
     convertKeaSubnetParametersToForm(
         ipType: IPType,
+        level: 'subnet' | 'shared-network',
         parameters: KeaConfigSubnetDerivedParameters[]
     ): FormGroup<KeaSubnetParametersForm> {
         // Common parameters.
@@ -661,26 +669,29 @@ export class SubnetSetFormService {
         // DHCPv4 parameters.
         switch (ipType) {
             case IPType.IPv4:
-                form.fourOverSixInterface = new SharedParameterFormGroup<string>(
-                    {
-                        type: 'string',
-                    },
-                    parameters.map((params) => new FormControl<string>(params.fourOverSixInterface))
-                )
-                form.fourOverSixInterfaceID = new SharedParameterFormGroup<string>(
-                    {
-                        type: 'string',
-                    },
-                    parameters.map((params) => new FormControl<string>(params.fourOverSixInterfaceID))
-                )
-                form.fourOverSixSubnet = new SharedParameterFormGroup<string>(
-                    {
-                        type: 'string',
-                    },
-                    parameters.map(
-                        (params) => new FormControl<string>(params.fourOverSixSubnet, StorkValidators.ipv6Prefix)
+                // These parameters are only valid for a subnet.
+                if (level === 'subnet') {
+                    form.fourOverSixInterface = new SharedParameterFormGroup<string>(
+                        {
+                            type: 'string',
+                        },
+                        parameters.map((params) => new FormControl<string>(params.fourOverSixInterface))
                     )
-                )
+                    form.fourOverSixInterfaceID = new SharedParameterFormGroup<string>(
+                        {
+                            type: 'string',
+                        },
+                        parameters.map((params) => new FormControl<string>(params.fourOverSixInterfaceID))
+                    )
+                    form.fourOverSixSubnet = new SharedParameterFormGroup<string>(
+                        {
+                            type: 'string',
+                        },
+                        parameters.map(
+                            (params) => new FormControl<string>(params.fourOverSixSubnet, StorkValidators.ipv6Prefix)
+                        )
+                    )
+                }
                 form.bootFileName = new SharedParameterFormGroup<string>(
                     {
                         type: 'string',
@@ -772,13 +783,24 @@ export class SubnetSetFormService {
 
     /**
      * Creates a default parameters form for an empty subnet.
+
+     * @param ipType shared network universe (IPv4 or IPv6).
+     * @returns A default form group for a shared network.
+     */
+    createDefaultKeaSharedNetworkParametersForm(ipType: IPType): UntypedFormGroup {
+        let parameters: KeaConfigSubnetDerivedParameters[] = [{}]
+        return this.convertKeaSubnetParametersToForm(ipType, 'shared-network', parameters)
+    }
+
+    /**
+     * Creates a default parameters form for an empty subnet.
      *
      * @param ipType subnet universe (IPv4 or IPv6).
      * @returns A default form group for a subnet.
      */
     createDefaultKeaSubnetParametersForm(ipType: IPType): UntypedFormGroup {
         let parameters: KeaConfigSubnetDerivedParameters[] = [{}]
-        return this.convertKeaSubnetParametersToForm(ipType, parameters)
+        return this.convertKeaSubnetParametersToForm(ipType, 'subnet', parameters)
     }
 
     /**
@@ -1006,6 +1028,7 @@ export class SubnetSetFormService {
             prefixPools: this.convertPrefixPoolsToForm(subnet),
             parameters: this.convertKeaSubnetParametersToForm(
                 ipType,
+                'subnet',
                 subnet.localSubnets?.map((ls) => ls.keaConfigSubnetParameters.subnetLevelParameters) || []
             ),
             options: new FormGroup({
@@ -1046,6 +1069,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.convertKeaSubnetParametersToForm(
                 sharedNetwork.universe,
+                'shared-network',
                 sharedNetwork.localSharedNetworks?.map(
                     (lsn) => lsn.keaConfigSharedNetworkParameters.sharedNetworkLevelParameters
                 ) || []
@@ -1065,6 +1089,23 @@ export class SubnetSetFormService {
                 sharedNetwork.localSharedNetworks?.map((lsn) => lsn.daemonId) || [],
                 Validators.required
             ),
+        })
+        return formGroup
+    }
+
+    /**
+     * Creates a default form for a shared network.
+     *
+     * @param ipType a shared network universe (IPv4 or IPv6).
+     * @param sharedNetworks existing shared networks' names.
+     * @returns A default form group for a shared network.
+     */
+    createDefaultSharedNetworkForm(ipType: IPType, sharedNetworks: string[]): FormGroup<SharedNetworkForm> {
+        let formGroup = new FormGroup<SharedNetworkForm>({
+            name: new FormControl('', [Validators.required, StorkValidators.valueInList(sharedNetworks)]),
+            parameters: this.createDefaultKeaSharedNetworkParametersForm(ipType),
+            options: this.createDefaultOptionsForm(),
+            selectedDaemons: new FormControl<number[]>([], Validators.required),
         })
         return formGroup
     }
@@ -1093,10 +1134,7 @@ export class SubnetSetFormService {
             pools: new FormArray<FormGroup<AddressPoolForm>>([], StorkValidators.ipRangeOverlaps),
             prefixPools: new FormArray<FormGroup<PrefixPoolForm>>([], StorkValidators.ipv6PrefixOverlaps),
             parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4),
-            options: new FormGroup({
-                unlocked: new FormControl(false),
-                data: new UntypedFormArray([]),
-            }),
+            options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl<number[]>([], Validators.required),
         })
         return formGroup
@@ -1225,7 +1263,6 @@ export class SubnetSetFormService {
         if (prevSelectedDaemonsNum === selectedDaemons.length) {
             return
         }
-
         const pools = formGroup.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         if (pools) {
             for (const pool of pools.controls) {

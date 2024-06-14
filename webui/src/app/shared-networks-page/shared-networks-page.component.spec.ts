@@ -2,7 +2,7 @@ import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
-import { FormsModule } from '@angular/forms'
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
@@ -37,6 +37,16 @@ import { MockParamMap } from '../utils'
 import { TabType } from '../tab'
 import { SharedNetworkFormComponent } from '../shared-network-form/shared-network-form.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ButtonModule } from 'primeng/button'
+import { MultiSelectModule } from 'primeng/multiselect'
+import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
+import { CheckboxModule } from 'primeng/checkbox'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
+import { InputNumberModule } from 'primeng/inputnumber'
+import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { ChipsModule } from 'primeng/chips'
+import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -47,15 +57,21 @@ describe('SharedNetworksPageComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 BreadcrumbModule,
+                ButtonModule,
                 ChartModule,
+                CheckboxModule,
+                ChipsModule,
                 DividerModule,
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
                 HttpClientTestingModule,
+                InputNumberModule,
+                MultiSelectModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
+                ReactiveFormsModule,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'dhcp/shared-networks',
@@ -73,7 +89,11 @@ describe('SharedNetworksPageComponent', () => {
             ],
             declarations: [
                 AddressPoolBarComponent,
+                ArrayValueSetFormComponent,
                 BreadcrumbsComponent,
+                DhcpClientClassSetFormComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
                 HumanCountComponent,
@@ -84,6 +104,7 @@ describe('SharedNetworksPageComponent', () => {
                 SharedNetworkFormComponent,
                 SharedNetworksPageComponent,
                 SharedNetworkTabComponent,
+                SharedParametersFormComponent,
                 SubnetBarComponent,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
@@ -455,7 +476,59 @@ describe('SharedNetworksPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
     }))
 
-    it('should cancel transaction when cancel button is clicked', fakeAsync(() => {
+    it('should cancel transaction for new shared network when cancel button is clicked', fakeAsync(() => {
+        component.loadNetworks({})
+        tick()
+        fixture.detectChanges()
+
+        const createSharedNetworkBeginResp: any = {
+            id: 123,
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+            sharedNetworks4: [],
+            sharedNetworks6: [],
+            clientClasses: [],
+        }
+
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpService, 'createSharedNetworkBegin').and.returnValue(of(createSharedNetworkBeginResp))
+        spyOn(dhcpService, 'createSharedNetworkDelete').and.returnValue(of(okResp))
+
+        component.openNewSharedNetworkTab()
+        fixture.detectChanges()
+        tick()
+
+        expect(component.openedTabs.length).toBe(2)
+
+        expect(dhcpService.createSharedNetworkBegin).toHaveBeenCalled()
+
+        expect(component.openedTabs.length).toBe(2)
+        expect(component.openedTabs[1].state.transactionId).toBe(123)
+
+        // Cancel editing. It should close the form and the transaction should be deleted.
+        component.onSharedNetworkFormCancel()
+        fixture.detectChanges()
+        tick()
+
+        expect(component.tabs.length).toBe(1)
+        expect(component.openedTabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+        expect(component.openedTabs[0].tabType).toBe(TabType.List)
+
+        expect(dhcpService.createSharedNetworkDelete).toHaveBeenCalled()
+    }))
+
+    it('should cancel transaction for shared network update when cancel button is clicked', fakeAsync(() => {
         component.loadNetworks({})
         tick()
         fixture.detectChanges()

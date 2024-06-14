@@ -16,7 +16,7 @@ import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { UpdateSharedNetworkBeginResponse } from '../backend'
+import { CreateSharedNetworkBeginResponse, UpdateSharedNetworkBeginResponse } from '../backend'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
@@ -34,6 +34,50 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+
+let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
+    id: 123,
+    daemons: [
+        {
+            id: 1,
+            name: 'dhcp4',
+            app: {
+                name: 'first',
+            },
+        },
+        {
+            id: 3,
+            name: 'dhcp6',
+            app: {
+                name: 'first',
+            },
+        },
+        {
+            id: 2,
+            name: 'dhcp4',
+            app: {
+                name: 'second',
+            },
+        },
+        {
+            id: 4,
+            name: 'dhcp6',
+            app: {
+                name: 'second',
+            },
+        },
+        {
+            id: 5,
+            name: 'dhcp6',
+            app: {
+                name: 'third',
+            },
+        },
+    ],
+    sharedNetworks4: ['floor1', 'floor2', 'floor3', 'stanza'],
+    sharedNetworks6: [],
+    clientClasses: ['foo', 'bar'],
+}
 
 let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
     id: 123,
@@ -294,6 +338,13 @@ export default {
     parameters: {
         mockData: [
             {
+                url: 'http://localhost/api/shared-networks/new/transaction',
+                method: 'POST',
+                status: 200,
+                delay: 100,
+                response: mockCreateSharedNetwork4BeginData,
+            },
+            {
                 url: 'http://localhost/api/shared-networks/123/transaction',
                 method: 'POST',
                 status: 200,
@@ -319,6 +370,10 @@ export default {
 } as Meta
 
 type Story = StoryObj<SharedNetworkFormComponent>
+
+export const NewSharedNetwork: Story = {
+    args: {},
+}
 
 export const UpdatedSharedNetwork4: Story = {
     args: {
