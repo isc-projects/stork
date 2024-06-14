@@ -333,16 +333,16 @@
                                 </span>
                                 <span
                                     *ngIf="!d.haEnabled || !d.haOverview || d.haOverview.length === 0"
-                                    [ngStyle]="{ color: d.haEnabled ? 'black' : 'grey' }"
+                                    [class.text-color-secondary]="!d.haEnabled"
                                     >{{ showHAState(d) }}
                                 </span>
                                 <span
-                                    class="p-0 pi pi-{{ haStateIcon(d) }}"
-                                    [ngStyle]="{ 'font-size': '0.9rem', color: haStateIconColor(haStateIcon(d)) }"
+                                    class="p-0 pi pi-{{ haStateIcon(d) }} text-sm"
+                                    [ngStyle]="{ color: haStateIconColor(haStateIcon(d)) }"
                                 ></span>
                             </td>
                             <td>
-                                <span [ngStyle]="{ color: d.haEnabled ? 'black' : 'grey' }">
+                                <span [class.text-color-secondary]="!d.haEnabled">
                                     {{ showHAFailureTime(d) }}
                                 </span>
                             </td>
@@ -352,19 +352,26 @@
                 </p-table>
             </p-panel>
         </div>
+        <!-- TODO: for now do not show empty DNS dashboard. Maybe a panel with links to bind9 machines to have anything?
+<div class="col-6" *ngIf="appsStats.bind9AppsTotal > 0">
+    <p-panel header="DNS">
+        TODO
+    </p-panel>
+</div>
+-->
     </article>
 
     <aside>
         <p-panel class="dashboard-events-panel">
             <p-header>
-                <div style="display: flex; justify-content: space-between">
+                <div class="flex justify-content-between">
                     <span class="p-panel-title">Events</span>
                     <div>
                         <p-button
                             icon="pi pi-refresh"
                             id="refresh-events-button"
                             (click)="eventsTable.refreshEvents(null)"
-                            [style]="{ 'margin-left': '10px' }"
+                            styleClass="ml-2"
                         ></p-button>
                     </div>
                 </div>
@@ -376,10 +383,3 @@
         </p-panel>
     </aside>
 </section>
-<!-- TODO: for now do not show empty DNS dashboard. Maybe a panel with links to bind9 machines to have anything?
-<div class="col-6" *ngIf="appsStats.bind9AppsTotal > 0">
-    <p-panel header="DNS">
-        TODO
-    </p-panel>
-</div>
--->

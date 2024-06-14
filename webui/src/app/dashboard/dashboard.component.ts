@@ -407,13 +407,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     haStateIconColor(haStateIcon: string) {
         switch (haStateIcon) {
             case 'check':
-                return '#00a800'
+                return 'var(--green-500)'
             case 'times':
-                return '#f11'
+                return 'var(--red-500)'
             case 'exclamation-triangle':
-                return 'orange'
+                return 'var(--orange-400)'
             default:
-                return 'grey'
+                return 'var(--gray-400)'
         }
     }
 
