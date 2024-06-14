@@ -15,7 +15,7 @@
   height: 100%
   width: 100%
   // Background color when there are no data (NAs and PDs).
-  background-color: #eee
+  background-color: var(--gray-100)
   // Rounded border.
   border-radius: 4px
   // Overlap the subnet label from the bottom.
@@ -32,7 +32,7 @@
   // it to full size.
   flex: 1
   // Grayed color.
-  background-color: #ddd
+  background-color: var(--gray-200)
   // This causes the kind labels to be aligned relatively to this wrapper.
   position: relative
   // Rounded border.
@@ -82,7 +82,7 @@
   // Offsets the text from the edge.
   padding-right: 4px
   // Use a grayed color to avoid distraction from the prefix label.
-  color: #888
+  color: var(--gray-500)
   // Use extra small font size.
   font-size: 75%
 
@@ -104,26 +104,26 @@
 // Modificator for the low utilization value.
 .utilization__bar--low
   // Green bar color.
-  background-color: #abffa8
+  background-color: var(--green-200)
 
 // Modificator for the medium utilization value.
 .utilization__bar--medium
   // Orange bar color.
-  background-color: #ffcf76
+  background-color: var(--orange-200)
 
 // Modificator for the high utilization value.
 .utilization__bar--high
   // Red bar color.
-  background-color: #faa
+  background-color: var(--red-200)
 
 // Modificator for the exceed utilization value.
 .utilization__bar--exceed
   // Blue bar color.
-  background-color: #9ab8ef
+  background-color: var(--blue-200)
 
 // Modificator for missing statistic data.
 .utilization__bar--missing
-  background-color: #ccc
+  background-color: var(--gray-300)
 
 .utilization__bar-wrapper--no-data
   // Hide the bar if no data.
