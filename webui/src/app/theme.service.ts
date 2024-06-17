@@ -10,12 +10,14 @@ export class ThemeService {
     /**
      *
      * @param theme
+     * @param isDark
      */
-    switchTheme(theme: string) {
+    switchTheme(theme: string, isDark: boolean) {
         let themeLink = this.document.getElementById('stork-theme') as HTMLLinkElement
 
+        const darkLight = isDark ? 'dark' : 'light'
         if (themeLink) {
-            themeLink.href = theme + '.css'
+            themeLink.href = `${theme}-${darkLight}.css`
         }
     }
 }

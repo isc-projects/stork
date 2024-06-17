@@ -15,15 +15,31 @@
 
         <div style="flex-grow: 1">
             <p-menubar [model]="menuItems" styleClass="stork-menubar">
-                <p-button icon="pi pi-sun" [rounded]="true" (click)="changeTheme('aura-light')" />
-                <p-button icon="pi pi-moon" [rounded]="true" [outlined]="true" (click)="changeTheme('aura-dark')" />
+                <p-dropdown
+                    [options]="[
+                        { name: 'Blue (aura)', val: 'aura-blue' },
+                        { name: 'Cyan (aura)', val: 'aura-cyan' },
+                        { name: 'Purple (lara)', val: 'lara-purple' }
+                    ]"
+                    [(ngModel)]="selectedThemeColor"
+                    optionLabel="name"
+                    optionValue="val"
+                    (onChange)="changeTheme($event.value, isDark)"
+                    placeholder="Pick theme color"
+                />
+                <p-toggleButton
+                    [(ngModel)]="isDark"
+                    (onChange)="changeTheme(selectedThemeColor ?? 'aura-blue', $event.checked)"
+                    onIcon="pi pi-moon"
+                    offIcon="pi pi-sun"
+                    ariaLabel="Dark/light mode"
+                />
 
                 <p-progressSpinner
                     *ngIf="(loadingInProgress | async)['state']"
                     [pTooltip]="(loadingInProgress | async)['text']"
                     [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
                     strokeWidth="6"
-                    fill="#005B9F"
                     animationDuration=".5s"
                 ></p-progressSpinner>
                 <app-global-search></app-global-search>

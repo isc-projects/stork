@@ -13,7 +13,7 @@
         <p-panel>
             <p-header>
                 <div style="width: 100%; display: flex; justify-content: space-between">
-                    <div style="font-size: 1.5em; font-weight: bold; color: #007ad9">
+                    <div style="font-size: 1.5em; font-weight: bold; color: var(--primary-600)">
                         <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
                         <i
                             *ngIf="!showRenameDialogClicked"
@@ -26,7 +26,6 @@
                             *ngIf="showRenameDialogClicked"
                             [style]="{ width: '25px', height: '25px' }"
                             styleClass="app-rename-spinner"
-                            fill="#FFFFFF"
                             strokeWidth="6"
                         ></p-progressSpinner>
                     </div>

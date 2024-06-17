@@ -6,25 +6,26 @@
 h3
   padding: 3px 6px 3px 6px
   margin-top: 2px
-  border-bottom: 2px solid #e1e1e1
+  border-bottom: 2px solid var(--surface-border)
 
-// in primeng 9 links didn't have underline but it was removed in subsequent versions
-// this removes it again
+// Overwrite default browser underlined anchors.
+// Apply the underline only for :hover (but not for PrimeNG menu links).
 a
   text-decoration: none
-  color: #2196f3
+  color: var(--primary-color)
 
-  &:hover
+  &:hover:not(.p-menuitem-link)
     text-decoration: underline
 
   // Utility class to disable underline on demand
   &.no-underline:hover
     text-decoration: none
 
-  &.p-button, &.p-menuitem-link, &.p-tabview-nav-link
-    // Use the PrimeNG styles for the PrimeNG internal links.
-    color: revert-layer
-    text-decoration: revert-layer
+  // no longer needed?
+  //&.p-button, &.p-menuitem-link, &.p-tabview-nav-link
+  //  // Use the PrimeNG styles for the PrimeNG internal links.
+  //  color: revert-layer
+  //  text-decoration: revert-layer
 
 // header should occupy 100% width of parent div so elements inside a header could be right aligned
 p-header
@@ -46,24 +47,26 @@ p-header
 // format right content in paginator
 .p-paginator .p-paginator-right-content
   margin-left: 20px
-  color: #848484
+  color: var(--text-color-secondary)
 
+// No longer needed
 // Utility class for highlighting every even-numbered table row.
 // The first rule is for plain tables. The second rule is for p-tables.
-.alternate-list > tr:nth-child(2n), .alternate-list tbody > tr:nth-child(2n)
-  background-color: #f4f4f4
+//.alternate-list > tr:nth-child(2n), .alternate-list tbody > tr:nth-child(2n)
+//  background-color: #f4f4f4
 
 // Allows breaking long lines of text on small
 // screens to avoid overlapping on other UI blocks.
 .word-break-all
   word-break: break-all
 
-.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus:not(:hover)
-  // Specifies the style for the highlighted item in the dropdown.
-  // It was changed between PrimeNG 15 and 17. The new style is gray and
-  // it looks too similar to the on hover style.
-  color: #1D4ED8
-  background: #EFF6FF
+// No longer needed?
+//.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus:not(:hover)
+//  // Specifies the style for the highlighted item in the dropdown.
+//  // It was changed between PrimeNG 15 and 17. The new style is gray and
+//  // it looks too similar to the on hover style.
+//  color: #1D4ED8
+//  background: #EFF6FF
 
 // Prevent the content from growing too wide on larger displays.
 .max-w-100rem

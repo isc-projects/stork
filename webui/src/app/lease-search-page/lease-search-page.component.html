@@ -32,43 +32,32 @@
                     Use the input box to specify a searched lease. You can search the lease by one of the following
                     lease properties:
                 </p>
-                <table class="alternate-list">
-                    <tr>
-                        <th></th>
-                        <th>kea-dhcp4</th>
-                        <th>kea-dhcp6</th>
-                    </tr>
-                    <tr>
-                        <th>IP address</th>
-                        <td>&#x2705;</td>
-                        <td>&#x2705;</td>
-                    </tr>
-                    <tr>
-                        <th>hostname</th>
-                        <td>&#x2705;</td>
-                        <td>&#x2705;</td>
-                    </tr>
-                    <tr>
-                        <th>MAC address</th>
-                        <td>&#x2705;</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <th>DHCPv4 client identifier</th>
-                        <td>&#x2705;</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <th>delegated prefix (excluding prefix length)</th>
-                        <td></td>
-                        <td>&#x2705;</td>
-                    </tr>
-                    <tr>
-                        <th>DHCPv6 DUID</th>
-                        <td></td>
-                        <td>&#x2705;</td>
-                    </tr>
-                </table>
+                <p-table
+                    styleClass="p-datatable-striped p-datatable-sm"
+                    [value]="[
+                        { h: 'IP address', dhcp4: true, dhcp6: true },
+                        { h: 'hostname', dhcp4: true, dhcp6: true },
+                        { h: 'MAC address', dhcp4: true, dhcp6: false },
+                        { h: 'DHCPv4 client identifier', dhcp4: true, dhcp6: false },
+                        { h: 'delegated prefix (excluding prefix length)', dhcp4: false, dhcp6: true },
+                        { h: 'DHCPv6 DUID', dhcp4: false, dhcp6: true }
+                    ]"
+                >
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th></th>
+                            <th>kea-dhcp4</th>
+                            <th>kea-dhcp6</th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-r>
+                        <tr>
+                            <th>{{ r.h }}</th>
+                            <td>{{ r.dhcp4 ? '&#x2705;' : '' }}</td>
+                            <td>{{ r.dhcp6 ? '&#x2705;' : '' }}</td>
+                        </tr>
+                    </ng-template>
+                </p-table>
                 <p>MAC address, client identifier and DUID can be specified in the following formats:</p>
                 <ul>
                     <li>01:02:03:04:05</li>
@@ -268,7 +257,6 @@
                         <p-progressSpinner
                             [style]="{ width: '15px', height: '15px' }"
                             styleClass="leases-search-spinner"
-                            fill="#FFFFFF"
                             strokeWidth="6"
                         ></p-progressSpinner>
                         Searching for leases on Kea servers...

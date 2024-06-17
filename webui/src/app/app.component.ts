@@ -28,6 +28,16 @@ export class AppComponent implements OnInit {
 
     breadcrumbItems: MenuItem[]
 
+    /**
+     * Holds information if dark theme is applied.
+     */
+    isDark: boolean
+
+    /**
+     * Holds information which theme was picked by a user.
+     */
+    selectedThemeColor: any
+
     constructor(
         private router: Router,
         private serverData: ServerDataService,
@@ -307,8 +317,9 @@ export class AppComponent implements OnInit {
     /**
      *
      * @param theme
+     * @param isDark
      */
-    changeTheme(theme: string) {
-        this.themeService.switchTheme(theme)
+    changeTheme(theme: string, isDark: boolean = false): void {
+        this.themeService.switchTheme(theme, isDark)
     }
 }
