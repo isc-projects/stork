@@ -145,3 +145,23 @@ def test_kea_integer_overflow_in_statistics(kea_service: Kea):
         assert (
             sum(s.value for s in metrics["kea_dhcp6_na_total"].samples) == expected_nas
         )
+
+
+@kea_parametrize("agent-kea-premium-subnet-commands-dhcp4-offline", suppress_registration=True)
+def test_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(kea_service: Kea):
+    """
+    The Kea CA has DHCPv4 and DHCPv6 control sockets configured. The DHCPv4
+    daemon is offline. Both daemons have the subnet commands hook enabled.
+    The Stork agent should be able to fetch statistics from the DHCPv6 daemon
+    and share the metrics labeled with the subnet prefix.
+    """
+    kea_service.wait_for_detect_kea_applications(offline_dhcp4_daemons=1)
+    metrics = kea_service.read_prometheus_metrics()
+
+    # The subnet metrics should include the prefix label.
+    total_nas_metric = metrics["kea_dhcp6_na_total"]
+    sample = total_nas_metric.samples[0]
+    labels = sample.labels
+    assert len(labels) == 3
+    assert labels["prefix"] == labels["subnet"]
+    assert labels["subnet"] != labels["subnet_id"]
