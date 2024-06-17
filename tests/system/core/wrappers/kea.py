@@ -56,10 +56,12 @@ class Kea(Agent):
         _, stdout, _ = self._compose.exec(self._service_name, ["kea-ctrl-agent", "-v"])
         return tuple(int(i) for i in stdout.strip().split("."))
 
-    def wait_for_detect_kea_applications(self, expected_apps=1, offline_dhcp4_daemons=0, offline_dhcp6_daemons=0):
+    def wait_for_detect_kea_applications(
+        self, expected_apps=1, offline_dhcp4_daemons=0, offline_dhcp6_daemons=0
+    ):
         """
         Wait for the Stork Agent to detect the Kea applications.
-        
+
         It accepts the number of expected applications and waits until the
         Stork agent detects them. For each application, it compares the number
         of configured daemons in the Kea CA (control sockets) with the number

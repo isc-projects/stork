@@ -147,8 +147,12 @@ def test_kea_integer_overflow_in_statistics(kea_service: Kea):
         )
 
 
-@kea_parametrize("agent-kea-premium-subnet-commands-dhcp4-offline", suppress_registration=True)
-def test_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(kea_service: Kea):
+@kea_parametrize(
+    "agent-kea-premium-subnet-commands-dhcp4-offline", suppress_registration=True
+)
+def test_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(
+    kea_service: Kea,
+):
     """
     The Kea CA has DHCPv4 and DHCPv6 control sockets configured. The DHCPv4
     daemon is offline. Both daemons have the subnet commands hook enabled.
