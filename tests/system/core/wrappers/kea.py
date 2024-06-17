@@ -56,8 +56,17 @@ class Kea(Agent):
         _, stdout, _ = self._compose.exec(self._service_name, ["kea-ctrl-agent", "-v"])
         return tuple(int(i) for i in stdout.strip().split("."))
 
-    def wait_for_detect_kea_applications(self, expected_apps=1):
-        """Wait for the Stork Agent to detect the Kea applications."""
+    def wait_for_detect_kea_applications(self, expected_apps=1, offline_dhcp4_daemons=0, offline_dhcp6_daemons=0):
+        """
+        Wait for the Stork Agent to detect the Kea applications.
+        
+        It accepts the number of expected applications and waits until the
+        Stork agent detects them. For each application, it compares the number
+        of configured daemons in the Kea CA (control sockets) with the number
+        of active daemons detected by Stork agent.
+        If some daemons are expected to be offline, the number of offline
+        daemons can be specified.
+        """
 
         @wait_for_success(
             wait_msg="Waiting for the Kea applications to be detected...", max_tries=5
@@ -88,10 +97,10 @@ class Kea(Agent):
                 )
             ]
 
-            if active_dhcp4_daemons != configured_dhcp4_daemons:
+            if active_dhcp4_daemons + offline_dhcp4_daemons != configured_dhcp4_daemons:
                 raise NoSuccessException()
 
-            if active_dhcp6_daemons != configured_dhcp6_daemons:
+            if active_dhcp6_daemons + offline_dhcp6_daemons != configured_dhcp6_daemons:
                 raise NoSuccessException()
 
         worker()
