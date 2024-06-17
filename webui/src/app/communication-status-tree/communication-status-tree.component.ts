@@ -173,7 +173,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
                     // Let's create two subnodes representing the control and stats channels.
                     machineNode.children.push(
                         this.createNamedChannelNode(app, daemon, 'rndc'),
-                        this.createNamedChannelNode(app, daemon, 'stats'),
+                        this.createNamedChannelNode(app, daemon, 'stats')
                     )
                     break
 
