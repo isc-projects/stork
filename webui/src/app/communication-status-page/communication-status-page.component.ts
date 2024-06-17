@@ -44,8 +44,8 @@ export class CommunicationStatusPageComponent implements OnInit {
      *        from the Stork server.
      */
     constructor(
-        public messageService: MessageService,
-        public servicesService: ServicesService
+        private messageService: MessageService,
+        private servicesService: ServicesService
     ) {}
 
     /**

@@ -4,7 +4,7 @@ import { TreeNode } from 'primeng/api'
 import { daemonNameToFriendlyName } from '../utils'
 
 /**
- * Meta data associated with a tree node presenting communication
+ * Metadata associated with a tree node presenting communication
  * issues with an agent or daemon.
  */
 interface CommunicationStatusNodeData {
@@ -172,10 +172,8 @@ export class CommunicationStatusTreeComponent implements OnInit {
                     this.updateMachineCommErrors(daemon, machineNode)
                     // Let's create two subnodes representing the control and stats channels.
                     machineNode.children.push(
-                        ...[
-                            this.createNamedChannelNode(app, daemon, 'rndc'),
-                            this.createNamedChannelNode(app, daemon, 'stats'),
-                        ]
+                        this.createNamedChannelNode(app, daemon, 'rndc'),
+                        this.createNamedChannelNode(app, daemon, 'stats'),
                     )
                     break
 
