@@ -12,14 +12,13 @@
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
-                <div style="width: 100%; display: flex; justify-content: space-between">
-                    <div style="font-size: 1.5em; font-weight: bold; color: #007ad9">
-                        <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
+                <div class="flex justify-content-between">
+                    <div class="text-2xl font-bold text-primary-600">
+                        <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
                         <i
                             *ngIf="!showRenameDialogClicked"
-                            class="pi pi-pencil"
+                            class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
                             id="rename-app-icon"
-                            style="vertical-align: text-top; margin-left: 0.25em; color: #aaa; cursor: pointer"
                             (click)="showRenameAppDialog()"
                         ></i>
                         <p-progressSpinner
@@ -61,7 +60,7 @@
                 </ng-template>
 
                 <ng-template pTemplate="content">
-                    <div style="background: #d9d9d9" class="flex flex-wrap px-2">
+                    <div class="flex flex-wrap px-2 surface-300">
                         <div class="mr-5 my-2 flex align-items-center">
                             <p-inputSwitch
                                 [ngModel]="daemon.monitored"
@@ -104,7 +103,7 @@
                         <a
                             label="Raw configuration"
                             icon="fa fa-file-alt"
-                            class="block p-button-secondary mr-2 my-2 no-underline"
+                            class="block p-button p-button-secondary mr-2 my-2 no-underline"
                             type="button"
                             routerLink="/apps/kea/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
                             pButton
@@ -243,7 +242,9 @@
                                                     </div>
                                                 </li>
                                             </ol>
-                                            <div *ngIf="daemon.hooks.length === 0" style="color: #aaa">No hooks</div>
+                                            <div *ngIf="daemon.hooks.length === 0" style="color: var(--gray-400)">
+                                                No hooks
+                                            </div>
                                         </p-fieldset>
                                     </div>
                                 </div>
@@ -277,7 +278,7 @@
                                     <div *ngIf="daemon.backends" class="col-12 lg:col-6">
                                         <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
                                             <div *ngFor="let backend of daemon.backends">
-                                                <i style="color: grey" class="fa fa-database"></i>
+                                                <i style="color: var(--gray-400)" class="fa fa-database"></i>
                                                 {{ databaseNameFromType(backend.backendType) }} ({{
                                                     backend.database
                                                 }}&#64;{{ backend.host }}) with:

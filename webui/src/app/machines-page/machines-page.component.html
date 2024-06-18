@@ -314,7 +314,7 @@ sudo ./stork-install-agent.sh</textarea
                     <div style="margin-top: 15px">
                         <i
                             class="pi pi-info-circle"
-                            style="font-size: 1.2em; vertical-align: middle; color: #007ad9"
+                            style="font-size: 1.2em; vertical-align: middle; color: var(--primary-600)"
                         ></i>
                         Information about adding new machines to Stork server is available after clicking on the
                         <b>How to Install Agent to New Machine</b> button at the top.
@@ -322,7 +322,7 @@ sudo ./stork-install-agent.sh</textarea
                     <div *ngIf="!showUnauthorized && unauthorizedMachinesCount > 0">
                         <i
                             class="pi pi-info-circle"
-                            style="font-size: 1.2em; vertical-align: middle; color: #007ad9"
+                            style="font-size: 1.2em; vertical-align: middle; color: var(--primary-600)"
                         ></i>
                         There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
                         <b style="font-size: 1.2em; color: red">{{ unauthorizedMachinesCount }}</b>
@@ -333,7 +333,7 @@ sudo ./stork-install-agent.sh</textarea
                     <div *ngIf="showUnauthorized">
                         <i
                             class="pi pi-info-circle"
-                            style="font-size: 1.2em; vertical-align: middle; color: #007ad9"
+                            style="font-size: 1.2em; vertical-align: middle; color: var(--primary-600)"
                         ></i>
                         There are no machines waiting for the authorization. You can now select the <b>Authorized</b>
                         button above to see all authorized machines.
@@ -476,13 +476,19 @@ sudo ./stork-install-agent.sh</textarea
 <div *ngIf="activeTabIdx !== 0" class="p-component">
     <div class="grid" style="width: 100%">
         <div class="col-12" style="display: flex">
-            <div style="font-size: 1.8em; font-weight: bold; margin: 10px 0 0 10px; color: #007ad9">
-                <i class="fa fa-server" style="padding-right: 10px"></i> {{ machineTab.machine.address
-                }}<span style="color: #007ad930">:{{ machineTab.machine.agentPort }}</span>
+            <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
+                <i class="fa fa-server pr-2"></i> {{ machineTab.machine.address
+                }}<span class="text-primary-200">:{{ machineTab.machine.agentPort }}</span>
                 <i
-                    class="pi pi-pencil"
+                    class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
                     id="edit-machine-icon"
-                    style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer; font-size: 1.2rem"
+                    style="
+                        vertical-align: text-top;
+                        margin-left: 15px;
+                        color: var(--gray-400);
+                        cursor: pointer;
+                        font-size: 1.2rem;
+                    "
                     (click)="editAddress(machineTab)"
                 ></i>
             </div>

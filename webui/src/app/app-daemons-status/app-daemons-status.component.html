@@ -6,13 +6,6 @@
         routerLink="/apps/{{ app.type }}/{{ app.id }}"
         [queryParams]="{ daemon: d.name }"
     >
-        <i
-            class="pi {{ daemonStatusIconName(d) }}"
-            [ngStyle]="{
-                'font-size': '0.9rem',
-                'padding-right': '0.25rem'
-            }"
-        ></i
-        >{{ d.niceName }}
+        <i class="pi {{ daemonStatusIconName(d) }} text-sm pr-1"></i>{{ d.niceName }}
     </a>
 </div>

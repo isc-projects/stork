@@ -265,7 +265,10 @@
                         No leases found matching {{ lastSearchText }}.
                     </td>
                     <td *ngIf="searchStatus === Status.NotSearched" colspan="5">
-                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        <i
+                            class="pi pi-info-circle"
+                            style="font-size: 2em; vertical-align: middle; color: var(--primary-600)"
+                        ></i>
                         Search for leases on the Kea DHCP servers by IP address, delegated prefix, MAC address, client
                         identifier, DHCPv6 DUID, or hostname. Click the help button next to the search form for details.
                     </td>

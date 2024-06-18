@@ -12,14 +12,13 @@
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
-                <div style="width: 100%; display: flex; justify-content: space-between">
-                    <div style="font-size: 1.5em; font-weight: bold; color: var(--primary-600)">
-                        <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
+                <div class="flex justify-content-between">
+                    <div class="text-2xl font-bold text-primary-600">
+                        <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
                         <i
                             *ngIf="!showRenameDialogClicked"
-                            class="pi pi-pencil"
+                            class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
                             id="rename-app-icon"
-                            style="vertical-align: text-top; margin-left: 0.25em; color: #aaa; cursor: pointer"
                             (click)="showRenameAppDialog()"
                         ></i>
                         <p-progressSpinner

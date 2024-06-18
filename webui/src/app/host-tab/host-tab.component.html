@@ -166,13 +166,16 @@
                                                             <i
                                                                 *ngSwitchDefault
                                                                 class="fa fa-lock"
-                                                                [ngStyle]="{ color: 'grey' }"
+                                                                [ngStyle]="{ color: 'var(--gray-400)' }"
                                                             ></i>
                                                         </ng-container>
                                                         {{ getLeaseUsageText(currentLeases.get(r.address)['usage']) }}
                                                     </span>
                                                     <ng-template #leaseNotFoundBlock>
-                                                        <i class="fa fa-power-off" [ngStyle]="{ color: 'grey' }"></i>
+                                                        <i
+                                                            class="fa fa-power-off"
+                                                            [ngStyle]="{ color: 'var(--gray-400)' }"
+                                                        ></i>
                                                         unused
                                                     </ng-template>
                                                 </ng-container>
