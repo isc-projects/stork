@@ -269,13 +269,14 @@ export class SharedNetworkFormState {
             }) || []
 
         // If we update an existing subnet the subnet information should be in the response.
-        if (this.sharedNetworkId && 'sharedNetwork' in response && response.sharedNetwork) {
+        const updateResponse = response as UpdateSharedNetworkBeginResponse
+        if (this.sharedNetworkId && updateResponse?.sharedNetwork) {
             // Get the server names to be displayed next to the configuration parameters.
-            this.updateServers(response.sharedNetwork.localSharedNetworks.map((lsn) => lsn.daemonId))
+            this.updateServers(updateResponse.sharedNetwork.localSharedNetworks.map((lsn) => lsn.daemonId))
             // Save the shared network information in case we need to revert the form changes.
             // Determine whether it is an IPv6 or IPv4 shared network.
-            this._dhcpv4 = response.sharedNetwork.universe === IPType.IPv4
-            this._dhcpv6 = response.sharedNetwork.universe === IPType.IPv6
+            this._dhcpv4 = updateResponse.sharedNetwork.universe === IPType.IPv4
+            this._dhcpv6 = updateResponse.sharedNetwork.universe === IPType.IPv6
         }
     }
 
