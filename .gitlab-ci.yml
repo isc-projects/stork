@@ -42,7 +42,6 @@ default:
 # stages order
 stages:
   - checks
-  - system_tests
   - build
   - hooks
   - deploy
@@ -569,8 +568,7 @@ install_apks_arm64:
 ### system testing ###
 
 system_testing:
-  stage: system_tests
-  allow_failure: false
+  stage: checks
   tags:
     - docker
     - linux
@@ -580,7 +578,10 @@ system_testing:
   services:
     - docker:dind
   rules:
-    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: always
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:4
   cache:
     key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
@@ -599,8 +600,6 @@ system_testing:
     USE_SYSTEM_NODEJS: "true"
     # It must be an alias of the docker:dind service.
     DEFAULT_MAPPED_ADDRESS: "docker"
-  # Don't block if the artifacts from the previous stages expired.
-  dependencies: []
   script:
     # - rake system_tests_ui
     - rake systemtest
