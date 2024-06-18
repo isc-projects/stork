@@ -143,6 +143,8 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 			ctx, err = module.commitSharedNetworkAdd(ctx)
 		case "shared_network_update":
 			ctx, err = module.commitSharedNetworkUpdate(ctx)
+		case "shared_network_delete":
+			ctx, err = module.commitSharedNetworkDelete(ctx)
 		case "subnet_add":
 			ctx, err = module.commitSubnetAdd(ctx)
 		case "subnet_update":
@@ -834,6 +836,88 @@ func (module *ConfigModule) commitSharedNetworkUpdate(ctx context.Context) (cont
 		})
 		if err != nil {
 			return ctx, err
+		}
+	}
+	return ctx, nil
+}
+
+// Begins deleting a shared network. Currently it is no-op but may evolve
+// in the future.
+func (module *ConfigModule) BeginSharedNetworkDelete(ctx context.Context) (context.Context, error) {
+	return ctx, nil
+}
+
+// Creates requests to delete a shared network. It prepares necessary commands to be sent
+// to Kea upon commit.
+func (module *ConfigModule) ApplySharedNetworkDelete(ctx context.Context, sharedNetwork *dbmodel.SharedNetwork) (context.Context, error) {
+	if len(sharedNetwork.LocalSharedNetworks) == 0 {
+		return ctx, errors.Errorf("deleted shared network %d is not associated with any daemon", sharedNetwork.ID)
+	}
+	var commands []ConfigCommand
+	for _, lsn := range sharedNetwork.LocalSharedNetworks {
+		if lsn.Daemon == nil {
+			return ctx, errors.Errorf("deleted shared network %d is associated with nil daemon", sharedNetwork.ID)
+		}
+		if lsn.Daemon.App == nil {
+			return ctx, errors.Errorf("deleted shared network %d is associated with nil app", sharedNetwork.ID)
+		}
+		// Convert the shared network information to Kea shared network.
+		deletedSharedNetwork := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, sharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
+
+		// Create command arguments.
+		arguments := deletedSharedNetwork
+		// Associate the command with an app receiving this command.
+		appCommand := ConfigCommand{}
+		switch sharedNetwork.Family {
+		case 4:
+			appCommand.Command = keactrl.NewCommand("network4-del", []string{lsn.Daemon.Name}, arguments)
+		default:
+			appCommand.Command = keactrl.NewCommand("network6-del", []string{lsn.Daemon.Name}, arguments)
+		}
+		appCommand.App = lsn.Daemon.App
+		commands = append(commands, appCommand)
+	}
+	// Persist the configuration changes.
+	for _, ls := range sharedNetwork.LocalSharedNetworks {
+		commands = append(commands, ConfigCommand{
+			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			App:     ls.Daemon.App,
+		})
+	}
+	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
+	// Create transaction state.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "shared_network_delete", daemonIDs...)
+	recipe := ConfigRecipe{
+		Commands: commands,
+		SharedNetworkConfigRecipeParams: SharedNetworkConfigRecipeParams{
+			SharedNetworkID: &sharedNetwork.ID,
+		},
+	}
+	if err := state.SetRecipeForUpdate(0, &recipe); err != nil {
+		return ctx, err
+	}
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+	return ctx, nil
+}
+
+// Delete shared network from the Kea servers.
+func (module *ConfigModule) commitSharedNetworkDelete(ctx context.Context) (context.Context, error) {
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, errors.New("context lacks state")
+	}
+	var err error
+	ctx, err = module.commitChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.SharedNetworkID == nil {
+			return ctx, errors.New("server logic error: the shared network ID cannot be nil when committing shared network deletion")
+		}
+		err = dbmodel.DeleteSharedNetworkWithSubnets(module.manager.GetDB(), *update.Recipe.SharedNetworkID)
+		if err != nil {
+			return ctx, errors.WithMessagef(err, "shared network has been successfully deleted in Kea but deleting in the Stork database failed")
 		}
 	}
 	return ctx, nil

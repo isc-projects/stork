@@ -898,7 +898,7 @@ func (r *RestAPI) DeleteSubnet(ctx context.Context, params dhcp.DeleteSubnetPara
 		// Error while communicating with the database.
 		msg := fmt.Sprintf("Problem fetching subnet with ID %d from db", params.ID)
 		log.WithError(err).Error(msg)
-		rsp := dhcp.NewDeleteHostDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		rsp := dhcp.NewDeleteSubnetDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
