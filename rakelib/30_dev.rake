@@ -313,7 +313,7 @@ namespace :unittest do
             end
             
             kind = ENV["KIND"] || "cpu"
-            if !["cpu", "memory", "mutex", "block"].include? kind
+            if !["cpu", "mem", "mutex", "block"].include? kind
                 fail "Invalid profile kind: #{kind}, must be one of: cpu, mem, mutex, block"
             end
 
