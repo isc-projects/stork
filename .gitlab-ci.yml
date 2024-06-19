@@ -567,7 +567,7 @@ install_apks_arm64:
 
 ### system testing ###
 
-system_testing:
+system_test:
   stage: checks
   tags:
     - docker
@@ -580,6 +580,7 @@ system_testing:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
+      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:4
