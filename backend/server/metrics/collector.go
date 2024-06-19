@@ -60,7 +60,19 @@ type prometheusCollector struct {
 	subnetPdUtilizationDescriptor             *prometheus.Desc
 	sharedNetworkAddressUtilizationDescriptor *prometheus.Desc
 	sharedNetworkPdUtilizationDescriptor      *prometheus.Desc
+	// The statistics are stored as a map in the dbmodel.SharedNetwork
+	// structure. So, it is possible to handle all of them in the same way and
+	// convert them to the Prometheus metrics using for-loop. The collector
+	// must store them in an iterable structure, such as a map, to achieve
+	// this.
+	//
 	// The metrics must be iterated in the strict order.
+	// The default map's iteration order in Golang is indeterministic. It isn't
+	// specified if the order is preserved for subsequent iterations. The
+	// collector iterates the metrics twice: in the Desc and the Collect
+	// methods. The iteration order must be the same. Otherwise, the samples
+	// will be assigned to the wrong metrics. Therefore, the OrderedMap is used
+	// here.
 	sharedNetworkStatisticDescriptors *storkutil.OrderedMap[dbmodel.SubnetStatsName, *prometheus.Desc]
 }
 
