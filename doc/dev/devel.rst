@@ -1397,3 +1397,151 @@ Some linters can fix simpler formatting errors. There's a group of tasks for thi
 Some, but not all, take optional ``FIX`` variable. If set to ``true``, the linter will fix specific code.
 You may check the details using ``rake -D``. For example, to fix some black (python linter) issues, one
 can use ``rake lint:shell FIX=true``.
+
+Conditional build
+=================
+
+The Stork build system supports conditional building of the Golang applications
+through the use of build tags. The build tags are used to include or exclude
+specific parts of the code from the build. The build tags are specified in the
+source code files using the ``// +build`` directive.
+
+To build the executable with the specific build tags, specify the file target
+in Rakefile following the pattern
+``/backend/cmd/[APP_NAME]/[APP_NAME]+[TAG_1]+[TAG_2]``, for example:
+``/backend/cmd/stork-server/stork-server+profiler`` - in this case, the
+Stork server will be built with the ``profiler`` tag.
+
+
+.. warning::
+
+    It is strongly recommended to use the build tags only for the development
+    purposes. The production builds should not include any additional tags.
+    The conditional-enabled code is impossible to cover by the unit or system
+    tests because these tests are not aware of the build tags (it is not
+    implemented).
+
+This solution can be used to enable profiling, custom debugging, extensive
+logging, or any other development features that should not be included in the
+production builds.
+
+Performance Profiling and Monitoring
+====================================
+
+Stork build system provides several utilities to profile the performance of the
+Stork applications that should be suitable in various scenarios.
+
+Profiling the Execution
+-----------------------
+
+The Go programming language provides a built-in profiling tool ``pprof`` that
+can be used to profile the performance of the Stork applications. The profiling
+tool can generate the CPU, memory, and blocking profiles.
+
+To profile the Stork application, first run it from the Rakefile task. The
+build system will compile the application with conditionally enabled profiling.
+The commands to run the applications are: ``rake run:server`` and
+``rake run:agent``.
+
+.. note::
+
+    The profiling is enabled only when Stork is running by one of the above
+    commands. The production binaries don't include any additional tags and
+    they cannot be profiled.
+
+After that, the profiler can be attacked to the running application using the
+following commands: ``rake profile:server`` and ``rake profile:agent``.
+By default, they will collect CPU samples for 30 seconds. Then the Web UI will
+be opened with the profiling results.
+
+.. note::
+
+    Especially useful is the "Flame Graph" view available in the "View" menu.
+
+The profiling commands can be customized using the following environment
+variables:
+
+- ``PROFILE`` - the type of the profile to collect. The available values are:
+  
+  - ``cpu`` (CPU usage)
+  - ``allocs`` (number of allocations and memory usage)
+  - ``block`` (number of blocks)
+  - ``goroutine`` (number of goroutines)
+  - ``heap`` (size of the heap)
+  - ``mutex`` (number of mutexes)
+  - ``threadcreate`` (number of threads created),
+  - ``trace`` (execution trace)
+
+- ``DURATION`` - the duration of the profile collection in seconds.
+
+There are also two exclusive options to analyze deltas between two profiles:
+``COMPARE`` and ``SUBSTRACT``. Both accept the path to the profile file
+generated earlier. The profile file can be downloaded from the Web UI.
+
+.. warning::
+
+    I did not find options to compare or subtract profiles very useful. The
+    report generated looks very similar to the one generated without providing
+    the previous profile file. Additionally, the numeric labels don't look very
+    reliable. Maybe they need some additional tweaks. I recommend using them
+    with caution. 
+
+Profiling Unit Tests
+--------------------
+
+There is specialized Rake task to profile the unit tests using ``pprof``. It
+can be run using the following command: ``rake unittest:backend:profile``.
+
+It requires the ``TEST`` environment variable to specify the test to profile.
+It can be an exact name or a regular expression.
+
+Caller needs also to specify the ``SCOPE`` environment variable. It must be set
+to the subdirectory where the test is located. E.g., for the
+``TestGetMachineByAddress`` test located in the
+``backend/server/database/model/machine_test.go`` file, the ``SCOPE`` should be
+set to ``server/database/model``.
+
+The ``KIND`` environment variable can be set to the profile type. The available
+values are:
+
+  - ``cpu`` (CPU usage)
+  - ``mem`` (memory usage)
+  - ``mutex`` (number of mutexes)
+  - ``block`` (number of blocks).
+
+.. note::
+
+    For small or fast unit tests, the CPU profiling may display blank results
+    due to insufficient data. The memory profiling should work better.
+
+Profiling Unit Tests from Visual Studio Code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Visual Studio Code and the official Go extension provide a built-in support
+for profiling the Go unit tests. You need to install the ``Go`` extension from
+the marketplace.
+
+Then, on the left side of the editor, click the ``Testing`` icon (it looks like
+a beaker). It will open the testing view. Select the test you want to profile
+and click on it with the right mouse button. Choose the ``Go Test: Profile``
+option from the context menu. Then, wait for the test to finish and the profile
+to be generated. The profile will be displayed inside the editor.
+
+Monitoring System Tests
+-----------------------
+
+There is no way to attach the profiler to the running system tests because they
+use the production binaries.
+
+Anyway, the Stork system test framework provides a way to monitor performance
+of running supervisor-managed services. This feature can be enabled by mounting
+as volumes the ``tests/system/tools/supervisor_monitor.py`` script in the
+``/usr/lib/supervisor_monitor.py`` location in the Docker container and the
+``tests/system/config/supervisor/supervisor_monitor.conf`` Supervisor config
+file in the ``/etc/supervisor/conf.d/supervisor_monitor.conf`` location.
+
+The monitor is already setup for the Kea, BIND 9, and Stork server
+docker-compose services. It collects the CPU and memory usage over time of all
+Supervisor-managed processes. The collected data are fetched on container exit
+and used to generate the performance charts that are available in the system
+test results directory. The raw data are available too in the same location.
