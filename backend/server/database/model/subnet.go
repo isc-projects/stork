@@ -47,7 +47,7 @@ const (
 )
 
 // Custom statistic type to redefine JSON marshalling.
-type SubnetStats map[string]interface{}
+type SubnetStats map[SubnetStatsName]any
 
 // Returns the value of the statistic with the specified name as a big counter.
 func (s SubnetStats) GetBigCounter(name string) *storkutil.BigCounter {
