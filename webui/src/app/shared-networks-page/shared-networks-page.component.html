@@ -28,7 +28,7 @@
     <div style="margin: 0 0 10px 5px" class="flex justify-content-between">
         <div class="flex align-items-center">
             <div>
-                <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
+                <i class="fa fa-search mr-1"></i>
                 Filter networks:
                 <input
                     type="text"
@@ -141,13 +141,11 @@
                         {{ net.addrUtilization ?? '0' }} %
                         <i
                             *ngIf="net.addrUtilization > 80 && net.addrUtilization <= 90"
-                            class="pi pi-exclamation-triangle"
-                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
+                            class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
                         ></i>
                         <i
                             *ngIf="net.addrUtilization > 90"
-                            class="pi pi-exclamation-circle"
-                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
+                            class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
                         ></i>
                     </td>
                     <ng-container *ngIf="isAnyIPv6SubnetVisible">
@@ -161,13 +159,11 @@
                             {{ net.pdUtilization ?? '0' }} %
                             <i
                                 *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
-                                class="pi pi-exclamation-triangle"
-                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
+                                class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
                             ></i>
                             <i
                                 *ngIf="net.pdUtilization > 90"
-                                class="pi pi-exclamation-circle"
-                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
+                                class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
                             ></i>
                         </td>
                     </ng-container>

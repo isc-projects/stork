@@ -88,21 +88,18 @@
                                             {{ daemon.queryHitRatio ? getQueryUtilization(daemon) + '%' : '?' }}
                                             <i
                                                 *ngIf="getQueryUtilization(daemon) < 60"
-                                                class="pi pi-exclamation-triangle"
-                                                style="font-size: 1.5em; vertical-align: text-top; color: red"
+                                                class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-red-500"
                                             ></i>
                                             <i
                                                 *ngIf="
                                                     getQueryUtilization(daemon) >= 60 &&
                                                     getQueryUtilization(daemon) < 80
                                                 "
-                                                class="pi pi-exclamation-circle"
-                                                style="font-size: 1.5em; vertical-align: text-top; color: orange"
+                                                class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-orange-400"
                                             ></i>
                                             <i
                                                 *ngIf="getQueryUtilization(daemon) >= 80"
-                                                class="pi pi-check-circle"
-                                                style="font-size: 1.5em; vertical-align: text-top; color: green"
+                                                class="pi pi-check-circle text-2xl vertical-align-text-top text-green-500"
                                             ></i>
                                         </span>
                                     </td>

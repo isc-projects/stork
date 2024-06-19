@@ -163,19 +163,12 @@
                                                                 *ngSwitchCase="Usage.Expired"
                                                                 class="fa fa-signal text-red-500"
                                                             ></i>
-                                                            <i
-                                                                *ngSwitchDefault
-                                                                class="fa fa-lock"
-                                                                [ngStyle]="{ color: 'var(--gray-400)' }"
-                                                            ></i>
+                                                            <i *ngSwitchDefault class="fa fa-lock text-gray-400"></i>
                                                         </ng-container>
                                                         {{ getLeaseUsageText(currentLeases.get(r.address)['usage']) }}
                                                     </span>
                                                     <ng-template #leaseNotFoundBlock>
-                                                        <i
-                                                            class="fa fa-power-off"
-                                                            [ngStyle]="{ color: 'var(--gray-400)' }"
-                                                        ></i>
+                                                        <i class="fa fa-power-off text-gray-400"></i>
                                                         unused
                                                     </ng-template>
                                                 </ng-container>

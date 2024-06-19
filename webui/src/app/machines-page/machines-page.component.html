@@ -67,7 +67,7 @@
         <br />
         For more details check
         <a target="blank" routerLink="/assets/arm/install.html#installing-from-packages"
-            >the Stork Agent Installation instructions<i class="pi pi-external-link" style="font-size: 1em"></i></a
+            >the Stork Agent Installation instructions <i class="pi pi-external-link"></i></a
         >.
     </p>
     <div style="display: flex; align-items: flex-start; margin-bottom: 10px">
@@ -175,7 +175,7 @@ sudo ./stork-install-agent.sh</textarea
     <div style="display: flex; justify-content: space-between; margin: 10px">
         <div>
             <div class="flex align-items-center">
-                <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
+                <i class="fa fa-search mr-1"></i>
                 Filter machines:
                 <input
                     type="text"
@@ -299,7 +299,7 @@ sudo ./stork-install-agent.sh</textarea
         <ng-template pTemplate="emptymessage" let-columns>
             <tr>
                 <td [attr.colspan]="showUnauthorized ? 5 : 12" style="padding: 20px 20px 20px 20px; font-size: 1.1em">
-                    <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #fff"></i>
+                    <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
                     No {{ showUnauthorized ? 'unauthorized' : 'authorized' }} machines found.
                     <span *ngIf="machinesTable.hasFilter()">
                         Try to clear filtering.
@@ -312,29 +312,20 @@ sudo ./stork-install-agent.sh</textarea
                         ></button>
                     </span>
                     <div style="margin-top: 15px">
-                        <i
-                            class="pi pi-info-circle"
-                            style="font-size: 1.2em; vertical-align: middle; color: var(--primary-600)"
-                        ></i>
+                        <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                         Information about adding new machines to Stork server is available after clicking on the
                         <b>How to Install Agent to New Machine</b> button at the top.
                     </div>
                     <div *ngIf="!showUnauthorized && unauthorizedMachinesCount > 0">
-                        <i
-                            class="pi pi-info-circle"
-                            style="font-size: 1.2em; vertical-align: middle; color: var(--primary-600)"
-                        ></i>
+                        <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                         There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
-                        <b style="font-size: 1.2em; color: red">{{ unauthorizedMachinesCount }}</b>
+                        <b class="text-xl text-red-500">{{ unauthorizedMachinesCount }}</b>
                         unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
                         {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by selecting <b>Unauthorized</b> button
                         above.
                     </div>
                     <div *ngIf="showUnauthorized">
-                        <i
-                            class="pi pi-info-circle"
-                            style="font-size: 1.2em; vertical-align: middle; color: var(--primary-600)"
-                        ></i>
+                        <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                         There are no machines waiting for the authorization. You can now select the <b>Authorized</b>
                         button above to see all authorized machines.
                     </div>
@@ -482,13 +473,6 @@ sudo ./stork-install-agent.sh</textarea
                 <i
                     class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
                     id="edit-machine-icon"
-                    style="
-                        vertical-align: text-top;
-                        margin-left: 15px;
-                        color: var(--gray-400);
-                        cursor: pointer;
-                        font-size: 1.2rem;
-                    "
                     (click)="editAddress(machineTab)"
                 ></i>
             </div>

@@ -278,7 +278,7 @@
                                     <div *ngIf="daemon.backends" class="col-12 lg:col-6">
                                         <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
                                             <div *ngFor="let backend of daemon.backends">
-                                                <i style="color: var(--gray-400)" class="fa fa-database"></i>
+                                                <i class="fa fa-database text-gray-400"></i>
                                                 {{ databaseNameFromType(backend.backendType) }} ({{
                                                     backend.database
                                                 }}&#64;{{ backend.host }}) with:

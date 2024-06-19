@@ -36,7 +36,7 @@
     <div style="margin: 0 0 10px 5px; display: flex; justify-content: space-between">
         <div style="display: flex; align-items: center">
             <div>
-                <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
+                <i class="fa fa-search mr-1"></i>
                 Filter subnets:
                 <input
                     type="text"
@@ -130,7 +130,7 @@
                     <th rowspan="2" style="width: 6rem">Shared Network</th>
                     <th colspan="2">Application</th>
                     <th rowspan="2" style="width: 3rem" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
-                        <i class="pi pi-chart-line" style="font-size: 1.6em"></i>
+                        <i class="pi pi-chart-line text-2xl"></i>
                     </th>
                 </tr>
                 <tr>
@@ -161,13 +161,11 @@
                         {{ sn.addrUtilization ? sn.addrUtilization : '0' }} %
                         <i
                             *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
-                            class="pi pi-exclamation-triangle"
-                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
+                            class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
                         ></i>
                         <i
                             *ngIf="sn.addrUtilization > 90"
-                            class="pi pi-exclamation-circle"
-                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
+                            class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
                         ></i>
                     </td>
                     <ng-container *ngIf="isAnyIPv6SubnetVisible">
@@ -181,13 +179,11 @@
                             {{ sn.pdUtilization ? sn.pdUtilization : '0' }} %
                             <i
                                 *ngIf="sn.pdUtilization > 80 && sn.pdUtilization <= 90"
-                                class="pi pi-exclamation-triangle"
-                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
+                                class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
                             ></i>
                             <i
                                 *ngIf="sn.pdUtilization > 90"
-                                class="pi pi-exclamation-circle"
-                                style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
+                                class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
                             ></i>
                         </td>
                         <td *ngIf="sn.subnet.includes('.')">-</td>
@@ -229,7 +225,7 @@
                             target="blank"
                             *ngIf="sn.localSubnets?.[0]"
                         >
-                            <i class="pi pi-chart-line" style="font-size: 1.6em"></i>
+                            <i class="pi pi-chart-line text-2xl"></i>
                         </a>
                     </td>
                 </tr>

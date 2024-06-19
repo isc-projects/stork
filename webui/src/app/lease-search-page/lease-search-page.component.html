@@ -15,7 +15,7 @@
 <div class="grid">
     <div class="col-12" style="margin: 0 0 10px 5px; padding-top: 30px">
         <span>
-            <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
+            <i class="fa fa-search mr-1"></i>
             Search leases:
             <input
                 type="text"
@@ -265,10 +265,7 @@
                         No leases found matching {{ lastSearchText }}.
                     </td>
                     <td *ngIf="searchStatus === Status.NotSearched" colspan="5">
-                        <i
-                            class="pi pi-info-circle"
-                            style="font-size: 2em; vertical-align: middle; color: var(--primary-600)"
-                        ></i>
+                        <i class="pi pi-info-circle text-2xl vertical-align-middle text-primary-600"></i>
                         Search for leases on the Kea DHCP servers by IP address, delegated prefix, MAC address, client
                         identifier, DHCPv6 DUID, or hostname. Click the help button next to the search form for details.
                     </td>
