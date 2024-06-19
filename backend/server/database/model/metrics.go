@@ -55,7 +55,8 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		Table("shared_network").
 		ColumnExpr("\"name\" AS \"label\"").
 		ColumnExpr("\"inet_family\" AS \"family\"").
-		Column("addr_utilization", "pd_utilization", "stats").
+		Column("addr_utilization", "pd_utilization").
+		ColumnExpr("\"stats\" AS \"shared_network_stats\"").
 		Select(&metrics.SharedNetworkMetrics)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot calculate shared network metrics")
