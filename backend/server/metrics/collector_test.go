@@ -194,7 +194,7 @@ func TestCollectorDescribe(t *testing.T) {
 				AddrUtilization: 9,
 				PdUtilization:   10,
 				Family:          11,
-				Stats: dbmodel.SubnetStats{
+				SharedNetworkStats: dbmodel.SubnetStats{
 					dbmodel.SubnetStatsNameTotalNAs:    uint64(12),
 					dbmodel.SubnetStatsNameAssignedNAs: uint64(13),
 					dbmodel.SubnetStatsNameDeclinedNAs: uint64(14),
@@ -254,7 +254,7 @@ func TestCollectorCollect(t *testing.T) {
 				AddrUtilization: 6000,
 				PdUtilization:   7000,
 				Family:          6,
-				Stats: dbmodel.SubnetStats{
+				SharedNetworkStats: dbmodel.SubnetStats{
 					dbmodel.SubnetStatsNameTotalNAs:    uint64(8),
 					dbmodel.SubnetStatsNameAssignedNAs: uint64(9),
 					dbmodel.SubnetStatsNameTotalPDs:    uint64(10),
@@ -308,7 +308,7 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 8000,
 					PdUtilization:   0,
 					Family:          4,
-					Stats: dbmodel.SubnetStats{
+					SharedNetworkStats: dbmodel.SubnetStats{
 						dbmodel.SubnetStatsNameTotalNAs:    uint64(9),
 						dbmodel.SubnetStatsNameAssignedNAs: uint64(10),
 						dbmodel.SubnetStatsNameTotalPDs:    uint64(0),
@@ -320,7 +320,7 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 11000,
 					PdUtilization:   12000,
 					Family:          6,
-					Stats: dbmodel.SubnetStats{
+					SharedNetworkStats: dbmodel.SubnetStats{
 						dbmodel.SubnetStatsNameTotalNAs:    uint64(13),
 						dbmodel.SubnetStatsNameAssignedNAs: uint64(14),
 						dbmodel.SubnetStatsNameTotalPDs:    uint64(15),
@@ -356,7 +356,7 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 1000,
 					PdUtilization:   2000,
 					Family:          4,
-					Stats: dbmodel.SubnetStats{
+					SharedNetworkStats: dbmodel.SubnetStats{
 						dbmodel.SubnetStatsNameTotalNAs:    uint64(3),
 						dbmodel.SubnetStatsNameAssignedNAs: uint64(4),
 						dbmodel.SubnetStatsNameTotalPDs:    uint64(5),
@@ -368,7 +368,7 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 7000,
 					PdUtilization:   8000,
 					Family:          6,
-					Stats: dbmodel.SubnetStats{
+					SharedNetworkStats: dbmodel.SubnetStats{
 						dbmodel.SubnetStatsNameTotalNAs:    uint64(10),
 						dbmodel.SubnetStatsNameAssignedNAs: uint64(11),
 						dbmodel.SubnetStatsNameTotalPDs:    uint64(12),

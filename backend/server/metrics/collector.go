@@ -229,7 +229,7 @@ func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
 
 		for _, entry := range c.sharedNetworkStatisticDescriptors.GetEntries() {
 			name, descriptor := entry.Key, entry.Value
-			counter := networkMetrics.Stats.GetBigCounter(name)
+			counter := networkMetrics.SharedNetworkStats.GetBigCounter(name)
 			if counter == nil {
 				continue
 			}
