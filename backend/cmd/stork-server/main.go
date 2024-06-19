@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
@@ -14,12 +15,27 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Main stork-server function.
+// Main stork-server function. It starts the main loop and is the higher-level
+// error handler.
 func main() {
 	// Start profiler.
 	profilerShutdown := profiler.Start(6060)
-	defer profilerShutdown()
 
+	returnCode, err := mainLoop()
+
+	// We cannot defer the shutdown because the deferred functions are not
+	// executed when we exit with os.Exit() or log.Fatal.
+	profilerShutdown()
+
+	if err != nil {
+		log.WithError(err).Fatal("Unexpected error")
+	}
+	os.Exit(returnCode)
+}
+
+// Main execution loop. It starts the application and handles the system
+// signals.
+func mainLoop() (int, error) {
 	// Both variables are used in cases when the server reloads as a result
 	// of receiving the SIGHUP signal. The password is saved to avoid prompting
 	// the user for the password again. The reload flag indicates whether we
@@ -35,24 +51,24 @@ func main() {
 		// Initialize global Stork Server state.
 		storkServer, command, err := server.NewStorkServer()
 		if err != nil {
-			log.Fatalf("Unexpected error: %+v", err)
+			return 1, err
 		}
 
 		switch command {
 		case server.HelpCommand:
 			// The help command is handled internally by flags framework.
-			return
+			return 0, nil
 		case server.VersionCommand:
 			fmt.Printf("%s\n", stork.Version)
-			return
+			return 0, nil
 		case server.NoneCommand:
 			// Nothing to do.
-			return
+			return 0, nil
 		case server.RunCommand:
 			// Handled below.
 			break
 		default:
-			log.Fatalf("Not implemented command: %s", command)
+			return 1, errors.Errorf("Not implemented command: %s", command)
 		}
 
 		// If we reload the server after receiving the SIGHUP signal we may already
@@ -65,7 +81,7 @@ func main() {
 		// Actually run the server according to the command line switches.
 		err = storkServer.Bootstrap(reload)
 		if err != nil {
-			log.Fatalf("Cannot start the Stork Server: %+v", err)
+			return 1, errors.WithMessage(err, "Cannot start the Stork Server")
 		}
 
 		// Only indicate that the server is starting when we don't reload it.
@@ -104,14 +120,14 @@ func main() {
 			// If we have received Ctrl-C signal we should exit with appropriate
 			// error code.
 			if sig != syscall.SIGHUP {
-				os.Exit(130)
+				return 130, nil
 			}
 			// For the SIGHUP, we don't exit and reload the server.
 			// Save the current database password to avoid prompting.
 			savedPassword = storkServer.DBSettings.Password
 		default:
 			// We're terminating for some other reason than Ctrl-C.
-			os.Exit(0)
+			return 0, nil
 		}
 	}
 }
