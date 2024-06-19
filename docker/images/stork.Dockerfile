@@ -397,31 +397,31 @@ RUN rake build:server_pkg && rake utils:remove_last_package_suffix
 FROM agent-builder AS agent_package_builder
 RUN rake build:agent_pkg && rake utils:remove_last_package_suffix
 
-# FROM debian-base AS external-packages
-# RUN apt-get update \
-#         && apt-get install \
-#                 --no-install-recommends \
-#                 -y \
-#                 curl=7.88.* \
-#         && apt-get clean \
-#         && rm -rf /var/lib/apt/lists/* \
-#         # The post-install hooks of the packages call the systemctl command
-#         # and fail if it doesn't exist. The empty script is a simple
-#         # workaround for this missing command.
-#         && touch /usr/bin/systemctl \
-#         && chmod a+x /usr/bin/systemctl
-# ARG STORK_CS_VERSION
-# RUN wget --no-verbose -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
-#         && apt-get update \
-#         && apt-get install \
-#                 --no-install-recommends \
-#                 -y \
-#                 isc-stork-agent=${STORK_CS_VERSION} \
-#                 isc-stork-server=${STORK_CS_VERSION} \
-#         && apt-get clean \
-#         && rm -rf /var/lib/apt/lists/*
-# COPY --from=server_package_builder /app/dist/pkgs/isc-stork-server.deb /app/dist/pkgs/isc-stork-server.deb
-# COPY --from=agent_package_builder /app/dist/pkgs/isc-stork-agent.deb /app/dist/pkgs/isc-stork-agent.deb
-# ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
-# HEALTHCHECK CMD [ "supervisorctl", "status " ]
-# EXPOSE 8080
+FROM debian-base AS external-packages
+RUN apt-get update \
+        && apt-get install \
+                --no-install-recommends \
+                -y \
+                curl=7.88.* \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        # The post-install hooks of the packages call the systemctl command
+        # and fail if it doesn't exist. The empty script is a simple
+        # workaround for this missing command.
+        && touch /usr/bin/systemctl \
+        && chmod a+x /usr/bin/systemctl
+ARG STORK_CS_VERSION
+RUN wget --no-verbose -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
+        && apt-get update \
+        && apt-get install \
+                --no-install-recommends \
+                -y \
+                isc-stork-agent=${STORK_CS_VERSION} \
+                isc-stork-server=${STORK_CS_VERSION} \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+COPY --from=server_package_builder /app/dist/pkgs/isc-stork-server.deb /app/dist/pkgs/isc-stork-server.deb
+COPY --from=agent_package_builder /app/dist/pkgs/isc-stork-agent.deb /app/dist/pkgs/isc-stork-agent.deb
+ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+HEALTHCHECK CMD [ "supervisorctl", "status " ]
+EXPOSE 8080
