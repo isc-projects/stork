@@ -90,7 +90,7 @@ func (s SubnetStats) MarshalJSON() ([]byte, error) {
 		return json.Marshal(nil)
 	}
 
-	toMarshal := make(map[string]interface{}, len(s))
+	toMarshal := make(map[string]any, len(s))
 
 	for k, v := range s {
 		switch value := v.(type) {
