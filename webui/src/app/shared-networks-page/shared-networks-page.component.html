@@ -25,8 +25,8 @@
 </p-tabMenu>
 
 <div *ngIf="activeTabIndex === 0; else openedTabBlock" class="mt-2">
-    <div style="margin: 0 0 10px 5px; display: flex; justify-content: space-between">
-        <div style="display: flex; align-items: center">
+    <div style="margin: 0 0 10px 5px" class="flex justify-content-between">
+        <div class="flex align-items-center">
             <div>
                 <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
                 Filter networks:
@@ -79,8 +79,7 @@
             <a
                 label="New Shared Network"
                 icon="pi pi-plus"
-                class="p-button-primary no-underline"
-                style="display: block"
+                class="p-button-primary no-underline block"
                 type="button"
                 routerLink="/dhcp/shared-networks/new"
                 pButton
