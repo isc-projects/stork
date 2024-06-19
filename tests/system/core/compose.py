@@ -511,10 +511,12 @@ class DockerCompose:
         copy_cmd = self.docker_compose_command() + [
             "cp",
             f"{service_name}:{source}",
-            destination
+            destination,
         ]
 
-        status, _, stderr = self._call_command(cmd=copy_cmd, check=False, capture_output=True)
+        status, _, stderr = self._call_command(
+            cmd=copy_cmd, check=False, capture_output=True
+        )
         if status == 1:
             not_found_expected_msg = f"Could not find the file {source} in container"
             if not_found_expected_msg in stderr:

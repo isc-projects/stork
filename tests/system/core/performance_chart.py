@@ -1,10 +1,11 @@
-'''
+"""
 Summarizes the performance reports collected from the containers and presents
 the data on charts.
 
 The performance report format is described in the `PerformanceMetricsCollector`.
 Single test run may produce multiple reports.
-'''
+"""
+
 from typing import List, Set, Dict
 from collections import namedtuple
 
@@ -13,29 +14,30 @@ import plotly.subplots
 
 
 ReportEntry = namedtuple(
-    'ReportEntry',
-    ['timestamp', 'service_name', 'counter_name', 'counter_value']
+    "ReportEntry", ["timestamp", "service_name", "counter_name", "counter_value"]
 )
 ReportEntries = List[ReportEntry]
 
 
 def read_performance_report(path: str) -> ReportEntries:
-    '''Reads the entries from the provided path.'''
+    """Reads the entries from the provided path."""
     entries = []
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-            timestamp, service_name, counter_name, counter_value = line.split('\t')
-            entry = ReportEntry(float(timestamp), service_name, counter_name, float(counter_value))
+            timestamp, service_name, counter_name, counter_value = line.split("\t")
+            entry = ReportEntry(
+                float(timestamp), service_name, counter_name, float(counter_value)
+            )
             entries.append(entry)
     return entries
 
 
 def list_counter_names(entries: ReportEntries) -> Set[str]:
-    '''Returns a list of all counter names.'''
+    """Returns a list of all counter names."""
     counter_names = set()
     for entry in entries:
         counter_names.add(entry.counter_name)
@@ -43,7 +45,7 @@ def list_counter_names(entries: ReportEntries) -> Set[str]:
 
 
 def list_service_names(entries: ReportEntries) -> Set[str]:
-    '''Returns a list of all service names.'''
+    """Returns a list of all service names."""
     service_names = set()
     for entry in entries:
         service_names.add(entry.service_name)
@@ -51,7 +53,7 @@ def list_service_names(entries: ReportEntries) -> Set[str]:
 
 
 def get_min_timestamp(entries: ReportEntries) -> float:
-    '''Returns the minimum timestamp from the provided entries.'''
+    """Returns the minimum timestamp from the provided entries."""
     min_timestamp = None
     for entry in entries:
         if min_timestamp is None or entry.timestamp < min_timestamp:
@@ -60,7 +62,7 @@ def get_min_timestamp(entries: ReportEntries) -> float:
 
 
 def group_by_service(entries: ReportEntries) -> Dict[str, ReportEntries]:
-    '''Groups the performance report entries by the service name.'''
+    """Groups the performance report entries by the service name."""
     groups = {}
     for entry in entries:
         service_name = entry.service_name
@@ -71,7 +73,7 @@ def group_by_service(entries: ReportEntries) -> Dict[str, ReportEntries]:
 
 
 def group_by_counter(entries: ReportEntries) -> Dict[str, ReportEntries]:
-    '''Groups the performance report entries by the counter name.'''
+    """Groups the performance report entries by the counter name."""
     groups = {}
     for entry in entries:
         counter_name = entry.counter_name
@@ -82,10 +84,10 @@ def group_by_counter(entries: ReportEntries) -> Dict[str, ReportEntries]:
 
 
 def plot_reports(report_paths: List[str], output_path: str = None):
-    '''
+    """
     Function reads the provided performance reports and plots the data on
     charts. There are charts grouped by metric name (a series per service).
-    '''
+    """
     # Read entries from all reports.
     entries = [e for path in report_paths for e in read_performance_report(path)]
 
@@ -102,10 +104,12 @@ def plot_reports(report_paths: List[str], output_path: str = None):
         subplot_titles=list(counter_groups.keys()),
         shared_xaxes=True,
         vertical_spacing=0.04,
-        x_title='Time (s)',
-        column_titles=["Performance metrics<br>" +
-                       "<br>".join(str(p) for p in report_paths) +
-                       "<br>&nbsp;"]
+        x_title="Time (s)",
+        column_titles=[
+            "Performance metrics<br>"
+            + "<br>".join(str(p) for p in report_paths)
+            + "<br>&nbsp;"
+        ],
     )
 
     # Choose color palette.
@@ -125,7 +129,7 @@ def plot_reports(report_paths: List[str], output_path: str = None):
                 name=service_name,
                 row=cix,
                 col=1,
-                legendgroup='group1',
+                legendgroup="group1",
                 showlegend=cix == 1,
                 line_color=colors[six % len(colors)],
             )
@@ -137,15 +141,28 @@ def plot_reports(report_paths: List[str], output_path: str = None):
         fig.write_html(output_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(
-        description='Summarizes the performance reports collected from the '
-                    'containers and presents the data on charts.')
-    parser.add_argument('reports', metavar='REPORT', type=str, nargs='+',
-                        help='a path to a performance report')
-    parser.add_argument('-o', '--output', metavar='OUTPUT', type=str,
-                        help='a path to the output file', default=None)
+        description="Summarizes the performance reports collected from the "
+        "containers and presents the data on charts."
+    )
+    parser.add_argument(
+        "reports",
+        metavar="REPORT",
+        type=str,
+        nargs="+",
+        help="a path to a performance report",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        metavar="OUTPUT",
+        type=str,
+        help="a path to the output file",
+        default=None,
+    )
     args = parser.parse_args()
 
     plot_reports(args.reports, args.output)

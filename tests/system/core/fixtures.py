@@ -493,14 +493,18 @@ def finish(request):
         for service_name in service_names:
             try:
                 report_path = test_dir.resolve() / f"performance-report-{service_name}"
-                compose.copy_to_host(service_name, "/var/log/supervisor/performance-report", report_path)
+                compose.copy_to_host(
+                    service_name, "/var/log/supervisor/performance-report", report_path
+                )
                 report_paths.append(report_path)
             except FileNotFoundError:
                 # The container doesn't generate the performance report.
                 pass
 
         if len(report_paths) != 0:
-            performance_chart.plot_reports(report_paths, test_dir / "performance-charts.html")
+            performance_chart.plot_reports(
+                report_paths, test_dir / "performance-charts.html"
+            )
 
     def collect_logs_and_down_all():
         tests_dir = Path("test-results")
