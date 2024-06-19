@@ -277,6 +277,7 @@ func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, e
 	err = dbi.Model(network).
 		Relation("LocalSharedNetworks.Daemon.KeaDaemon").
 		Relation("LocalSharedNetworks.Daemon.App.AccessPoints").
+		Relation("LocalSharedNetworks.Daemon.App.Machine").
 		Relation("Subnets.LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).

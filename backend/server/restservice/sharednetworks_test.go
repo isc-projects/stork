@@ -2263,3 +2263,225 @@ func TestUpdateSharedNetworkBeginCancel(t *testing.T) {
 	rsp = rapi.UpdateSharedNetworkBegin(ctx2, params)
 	require.IsType(t, &dhcp.UpdateSharedNetworkBeginOK{}, rsp)
 }
+
+// Test successfully deleting a shared network.
+func TestDeleteSharedNetwork(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 2)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 4)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Attempt to delete the shared network.
+	params := dhcp.DeleteSharedNetworkParams{
+		ID: sharedNetworks[0].ID,
+	}
+	rsp := rapi.DeleteSharedNetwork(ctx, params)
+	require.IsType(t, &dhcp.DeleteSharedNetworkOK{}, rsp)
+
+	// The network4-del and config-write commands should be sent to two Kea servers.
+	require.Len(t, fa.RecordedCommands, 4)
+
+	for i, c := range fa.RecordedCommands {
+		switch {
+		case i < 2:
+			require.JSONEq(t, `{
+				"command": "network4-del",
+				"service": ["dhcp4"],
+				"arguments": {
+					"name": "foo",
+					"subnets-action": "delete"
+				}
+		}`, c.Marshal())
+		default:
+			require.JSONEq(t, `{
+				"command": "config-write",
+				"service": ["dhcp4"]
+			}`, c.Marshal())
+		}
+	}
+	returnedSharedNetwork, err := dbmodel.GetSharedNetwork(db, sharedNetworks[0].ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedSharedNetwork)
+}
+
+// Test error cases for deleting a shared network.
+func TestDeleteSharedNetworkError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Setup fake agents that return an error in response to network4-del
+	// command.
+	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		mockStatusError("network4-del", cmdResponses)
+	}, nil)
+	require.NotNil(t, fa)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"shared-networks": [
+				{
+					"name": "foo",
+					"subnet4": [
+						{
+							"id": 1,
+							"subnet": "192.0.2.0/24"
+						}
+					]
+				}
+			],
+			"hooks-libraries": [
+				{
+					"library": "libdhcp_subnet_cmds"
+				}
+			]
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	dbapps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, dbapps, 1)
+
+	sharedNetworks, err := dbmodel.GetAllSharedNetworks(db, 4)
+	require.NoError(t, err)
+	require.Len(t, sharedNetworks, 1)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Submit transaction with non-matching subnet ID.
+	t.Run("wrong shared network id", func(t *testing.T) {
+		params := dhcp.DeleteSharedNetworkParams{
+			ID: 19809865,
+		}
+		rsp := rapi.DeleteSharedNetwork(ctx, params)
+		require.IsType(t, &dhcp.DeleteSharedNetworkDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.DeleteSharedNetworkDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID but expect the agent to return an
+	// error code. This is considered a conflict with the state of the
+	// Kea servers.
+	t.Run("commit failure", func(t *testing.T) {
+		params := dhcp.DeleteSharedNetworkParams{
+			ID: sharedNetworks[0].ID,
+		}
+		rsp := rapi.DeleteSharedNetwork(ctx, params)
+		require.IsType(t, &dhcp.DeleteSharedNetworkDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.DeleteSharedNetworkDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	})
+}

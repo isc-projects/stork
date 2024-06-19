@@ -597,6 +597,25 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+    delete:
+      summary: Delete shared network by ID.
+      description: Delete a shared network from the DHCP servers.
+      operationId: deleteSharedNetwork
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Shared network ID.
+      responses:
+        200:
+          description: Shared network successfully deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
 
   /shared-networks/new/transaction:
     post:

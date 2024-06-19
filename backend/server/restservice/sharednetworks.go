@@ -645,3 +645,64 @@ func (r *RestAPI) UpdateSharedNetworkDelete(ctx context.Context, params dhcp.Upd
 	rsp := dhcp.NewUpdateSharedNetworkDeleteOK()
 	return rsp
 }
+
+// Implements the DELETE call for a shared network (shared-networks/{id}). It sends suitable
+// commands to the Kea servers owning the shared network. Deleting shared network is not
+// transactional. It could be implemented as a transaction with first REST API call ensuring
+// that the shared network still exists in Stork database and locking configuration changes
+// for the daemons owning the shared network. However, it seems to be too much overhead with
+// little gain. If the shared network doesn't exist this call will return an error anyway.
+func (r *RestAPI) DeleteSharedNetwork(ctx context.Context, params dhcp.DeleteSharedNetworkParams) middleware.Responder {
+	dbSharedNetwork, err := dbmodel.GetSharedNetwork(r.DB, params.ID)
+	if err != nil {
+		// Error while communicating with the database.
+		msg := fmt.Sprintf("Problem fetching shared network with ID %d from db", params.ID)
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewDeleteSharedNetworkDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbSharedNetwork == nil {
+		// Shared network not found.
+		msg := fmt.Sprintf("Cannot find a shared network with ID %d", params.ID)
+		rsp := dhcp.NewDeleteSharedNetworkDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Create configuration context.
+	_, user := r.SessionManager.Logged(ctx)
+	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	if err != nil {
+		msg := "Problem with creating transaction context for deleting the shared network"
+		log.WithError(err).Error(err)
+		rsp := dhcp.NewDeleteSharedNetworkDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Create Kea commands to delete the shared network.
+	cctx, err = r.ConfigManager.GetKeaModule().ApplySharedNetworkDelete(cctx, dbSharedNetwork)
+	if err != nil {
+		msg := "Problem with preparing commands for deleting the shared network"
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewDeleteSharedNetworkDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Send the commands to Kea servers.
+	_, err = r.ConfigManager.Commit(cctx)
+	if err != nil {
+		msg := fmt.Sprintf("Problem with deleting a shared network: %s", err)
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewDeleteSharedNetworkDefault(http.StatusConflict).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Send OK to the client.
+	rsp := dhcp.NewDeleteSharedNetworkOK()
+	return rsp
+}
