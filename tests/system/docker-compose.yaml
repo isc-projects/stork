@@ -327,6 +327,8 @@ services:
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - $PWD/docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+      - $PWD/tests/system/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
+      - $PWD/tests/system/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
 
   agent-bind9-rndc:
     extends: agent-bind9
