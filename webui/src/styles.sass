@@ -8,13 +8,17 @@ h3
   margin-top: 2px
   border-bottom: 2px solid var(--surface-border)
 
-// Overwrite default browser underlined anchors. Do not style button anchors.
-// Apply the underline only for :hover (but not for PrimeNG menu links).
-a:not(.p-button)
+// Overwrite default browser underlined anchors.
+// Do not style PrimeNG internal anchors for components like:
+// - buttons
+// - tab view navigation
+// - menu navigation.
+// Apply the underline only for :hover.
+a:not(.p-button):not(.p-tabview-nav-link):not(.p-menuitem-link)
   text-decoration: none
   color: var(--primary-color)
 
-  &:hover:not(.p-menuitem-link)
+  &:hover
     text-decoration: underline
 
   // Utility class to disable underline on demand
