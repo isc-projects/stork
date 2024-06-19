@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { SharedNetworkTabComponent } from './shared-network-tab.component'
 import { FieldsetModule } from 'primeng/fieldset'
@@ -13,7 +13,6 @@ import { CheckboxModule } from 'primeng/checkbox'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { RouterTestingModule } from '@angular/router/testing'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
 import { TooltipModule } from 'primeng/tooltip'
@@ -29,10 +28,20 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { IPType } from '../iptype'
 import { By } from '@angular/platform-browser'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { RouterModule } from '@angular/router'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { ConfirmationService, MessageService } from 'primeng/api'
+import { of, throwError } from 'rxjs'
+import { DHCPService } from '../backend'
+import { HttpErrorResponse } from '@angular/common/http'
 
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
     let fixture: ComponentFixture<SharedNetworkTabComponent>
+    let dhcpApi: DHCPService
+    let msgService: MessageService
+    let confirmService: ConfirmationService
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -56,21 +65,27 @@ describe('SharedNetworkTabComponent', () => {
                 ButtonModule,
                 ChartModule,
                 CheckboxModule,
+                ConfirmDialogModule,
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
+                HttpClientTestingModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
-                RouterTestingModule,
+                RouterModule.forRoot([{ path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent }]),
                 TableModule,
                 TagModule,
                 TooltipModule,
                 TreeModule,
             ],
+            providers: [ConfirmationService, MessageService],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedNetworkTabComponent)
         component = fixture.componentInstance
+        dhcpApi = fixture.debugElement.injector.get(DHCPService)
+        confirmService = fixture.debugElement.injector.get(ConfirmationService)
+        msgService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
     })
 
@@ -515,4 +530,75 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets[5].nativeElement.innerText).toContain('DHCP Options')
         expect(fieldsets[5].nativeElement.innerText).toContain('No options configured.')
     })
+
+    it('should display shared network delete button', () => {
+        component.sharedNetwork = {
+            name: 'foo',
+            universe: IPType.IPv6,
+            addrUtilization: 30,
+            pdUtilization: 60,
+            pools: [
+                {
+                    pool: '2001:db8:1::2-2001:db8:1::786',
+                },
+            ],
+            localSharedNetworks: [
+                {
+                    appId: 1,
+                    appName: 'foo@192.0.2.1',
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {},
+                    },
+                },
+            ],
+        }
+        fixture.detectChanges()
+        const deleteBtn = fixture.debugElement.query(By.css('[label=Delete]'))
+        expect(deleteBtn).toBeTruthy()
+
+        // Simulate clicking on the button and make sure that the confirm dialog
+        // has been displayed.
+        spyOn(confirmService, 'confirm')
+        deleteBtn.nativeElement.click()
+        expect(confirmService.confirm).toHaveBeenCalled()
+    })
+
+    it('should emit an event indicating successful shared network deletion', fakeAsync(() => {
+        const successResp: any = {}
+        spyOn(dhcpApi, 'deleteSharedNetwork').and.returnValue(of(successResp))
+        spyOn(msgService, 'add')
+        spyOn(component.sharedNetworkDelete, 'emit')
+
+        // Delete the subnet.
+        component.sharedNetwork = {
+            id: 1,
+        }
+        component.deleteSharedNetwork()
+        tick()
+        // Success message should be displayed.
+        expect(msgService.add).toHaveBeenCalled()
+        // An event should be called.
+        expect(component.sharedNetworkDelete.emit).toHaveBeenCalledWith(component.sharedNetwork)
+        // This flag should be cleared.
+        expect(component.sharedNetworkDeleting).toBeFalse()
+    }))
+
+    it('should not emit an event when shared network deletion fails', fakeAsync(() => {
+        spyOn(dhcpApi, 'deleteSharedNetwork').and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })))
+        spyOn(msgService, 'add')
+        spyOn(component.sharedNetworkDelete, 'emit')
+
+        // Delete the host and receive an error.
+        component.sharedNetwork = {
+            id: 1,
+        }
+        component.deleteSharedNetwork()
+        tick()
+        // Error message should be displayed.
+        expect(msgService.add).toHaveBeenCalled()
+        // The event shouldn't be emitted on error.
+        expect(component.sharedNetworkDelete.emit).not.toHaveBeenCalledWith(component.sharedNetwork)
+        // This flag should be cleared.
+        expect(component.sharedNetworkDeleting).toBeFalse()
+    }))
 })

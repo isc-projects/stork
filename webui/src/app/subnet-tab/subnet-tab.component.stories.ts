@@ -10,11 +10,10 @@ import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { FieldsetModule } from 'primeng/fieldset'
 import { DividerModule } from 'primeng/divider'
 import { TableModule } from 'primeng/table'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
 import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
@@ -32,13 +31,23 @@ import { importProvidersFrom } from '@angular/core'
 import { HttpClientModule } from '@angular/common/http'
 import { ToastModule } from 'primeng/toast'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { RouterModule, provideRouter } from '@angular/router'
 
 export default {
     title: 'App/SubnetTab',
     component: SubnetTabComponent,
     decorators: [
         applicationConfig({
-            providers: [importProvidersFrom(HttpClientModule)],
+            providers: [
+                ConfirmationService,
+                importProvidersFrom(HttpClientModule),
+                MessageService,
+                provideNoopAnimations(),
+                provideRouter([
+                    { path: 'dhcp/subnets/:id', component: SubnetTabComponent },
+                    { path: 'iframe.html', component: SubnetTabComponent },
+                ]),
+            ],
         }),
         moduleMetadata({
             imports: [
@@ -49,9 +58,8 @@ export default {
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
-                NoopAnimationsModule,
                 OverlayPanelModule,
-                RouterTestingModule,
+                RouterModule,
                 TableModule,
                 TagModule,
                 ToastModule,
@@ -72,7 +80,6 @@ export default {
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],
-            providers: [ConfirmationService, MessageService],
         }),
         toastDecorator,
     ],

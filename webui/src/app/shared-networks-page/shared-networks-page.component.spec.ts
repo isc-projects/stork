@@ -7,7 +7,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, RouterModule } from '@angular/router'
 import { DHCPService, SharedNetwork, SharedNetworks } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
@@ -16,13 +16,12 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { RouterTestingModule } from '@angular/router/testing'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { HttpEvent } from '@angular/common/http'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { SharedNetworkTabComponent } from '../shared-network-tab/shared-network-tab.component'
 import { FieldsetModule } from 'primeng/fieldset'
@@ -47,6 +46,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { ChipsModule } from 'primeng/chips'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -61,6 +61,7 @@ describe('SharedNetworksPageComponent', () => {
                 ChartModule,
                 CheckboxModule,
                 ChipsModule,
+                ConfirmDialogModule,
                 DividerModule,
                 DropdownModule,
                 FieldsetModule,
@@ -72,7 +73,7 @@ describe('SharedNetworksPageComponent', () => {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterTestingModule.withRoutes([
+                RouterModule.forRoot([
                     {
                         path: 'dhcp/shared-networks',
                         pathMatch: 'full',
@@ -110,6 +111,7 @@ describe('SharedNetworksPageComponent', () => {
                 UtilizationStatsChartsComponent,
             ],
             providers: [
+                ConfirmationService,
                 DHCPService,
                 MessageService,
                 {
@@ -120,7 +122,6 @@ describe('SharedNetworksPageComponent', () => {
                         paramMap: of(new MockParamMap()),
                     },
                 },
-                RouterTestingModule,
             ],
         })
 
@@ -631,5 +632,27 @@ describe('SharedNetworksPageComponent', () => {
         expect(component.openedTabs[1].tabType).toBe(TabType.Display)
 
         expect(dhcpService.updateSharedNetworkDelete).toHaveBeenCalled()
+    }))
+
+    it('should close subnet tab when subnet is deleted', fakeAsync(() => {
+        component.loadNetworks({})
+        tick()
+        fixture.detectChanges()
+
+        // Open subnet tab.
+        component.openTabBySharedNetworkId(1)
+        fixture.detectChanges()
+        tick()
+        expect(component.openedTabs.length).toBe(2)
+
+        // Simulate the notification that the shared network has been deleted.
+        component.onSharedNetworkDelete({
+            id: 1,
+        })
+        fixture.detectChanges()
+        tick()
+
+        // The main shared network tab should only be left.
+        expect(component.openedTabs.length).toBe(1)
     }))
 })

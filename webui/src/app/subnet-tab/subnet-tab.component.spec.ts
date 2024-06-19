@@ -14,7 +14,6 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { By } from '@angular/platform-browser'
@@ -33,6 +32,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { DHCPService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
+import { RouterModule } from '@angular/router'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -55,7 +55,7 @@ describe('SubnetTabComponent', () => {
                 HttpClientTestingModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
-                RouterTestingModule,
+                RouterModule.forRoot([{ path: 'dhcp/subnets/:id', component: SubnetTabComponent }]),
                 TableModule,
                 TagModule,
                 ToastModule,
@@ -574,7 +574,7 @@ describe('SubnetTabComponent', () => {
         expect(component.subnetDeleting).toBeFalse()
     }))
 
-    it('should not emit an event when host deletion fails', fakeAsync(() => {
+    it('should not emit an event when subnet deletion fails', fakeAsync(() => {
         spyOn(dhcpApi, 'deleteSubnet').and.returnValue(throwError({ status: 404 }))
         spyOn(msgService, 'add')
         spyOn(component.subnetDelete, 'emit')

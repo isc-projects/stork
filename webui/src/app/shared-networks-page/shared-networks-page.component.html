@@ -205,6 +205,7 @@
             *ngSwitchCase="SharedNetworkTabType.Display"
             [sharedNetwork]="openedTabs[activeTabIndex].tabSubject"
             (sharedNetworkEditBegin)="onSharedNetworkEditBegin(openedTabs[activeTabIndex].tabSubject)"
+            (sharedNetworkDelete)="onSharedNetworkDelete(openedTabs[activeTabIndex].tabSubject)"
         ></app-shared-network-tab>
         <app-shared-network-form
             *ngSwitchCase="SharedNetworkTabType.New"

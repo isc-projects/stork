@@ -10,11 +10,10 @@ import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { FieldsetModule } from 'primeng/fieldset'
 import { DividerModule } from 'primeng/divider'
 import { TableModule } from 'primeng/table'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 import { UtilizationStatsChartsComponent } from '../utilization-stats-charts/utilization-stats-charts.component'
 import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
@@ -27,27 +26,46 @@ import { FormsModule } from '@angular/forms'
 import { IPType } from '../iptype'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
+import { importProvidersFrom } from '@angular/core'
+import { HttpClientModule } from '@angular/common/http'
+import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { toastDecorator } from '../utils-stories'
+import { MessageModule } from 'primeng/message'
+import { ToastModule } from 'primeng/toast'
+import { RouterModule, provideRouter } from '@angular/router'
 
 export default {
     title: 'App/SharedNetworkTab',
     component: SharedNetworkTabComponent,
     decorators: [
         applicationConfig({
-            providers: [],
+            providers: [
+                ConfirmationService,
+                importProvidersFrom(HttpClientModule),
+                MessageService,
+                provideNoopAnimations(),
+                provideRouter([
+                    { path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent },
+                    { path: 'iframe.html', component: SharedNetworkTabComponent },
+                ]),
+            ],
         }),
         moduleMetadata({
             imports: [
                 ButtonModule,
                 ChartModule,
                 CheckboxModule,
+                ConfirmDialogModule,
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
-                NoopAnimationsModule,
+                MessageModule,
                 OverlayPanelModule,
-                RouterTestingModule,
+                RouterModule,
                 TableModule,
                 TagModule,
+                ToastModule,
                 TooltipModule,
                 TreeModule,
             ],
@@ -67,6 +85,7 @@ export default {
                 UtilizationStatsChartsComponent,
             ],
         }),
+        toastDecorator,
     ],
 } as Meta
 
@@ -75,6 +94,7 @@ type Story = StoryObj<SharedNetworkTabComponent>
 export const SharedNetwork4: Story = {
     args: {
         sharedNetwork: {
+            id: 1,
             name: 'foo',
             addrUtilization: 30,
             pools: [
@@ -334,6 +354,7 @@ export const SharedNetwork4: Story = {
 export const SharedNetwork6: Story = {
     args: {
         sharedNetwork: {
+            id: 2,
             name: 'foo',
             universe: IPType.IPv6,
             addrUtilization: 30,

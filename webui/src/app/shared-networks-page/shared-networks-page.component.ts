@@ -235,7 +235,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
                 )
         )
             .then((data) => {
-                this.networks = data.items
+                this.networks = data.items || []
                 this.totalNetworks = data.total ?? 0
             })
             .catch((error) => {
@@ -622,6 +622,21 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         if (tab) {
             // Found the matching form. Update it.
             tab.state = event
+        }
+    }
+
+    /**
+     * Event handler triggered when a shared network was deleted using a delete
+     * button on one of the tabs.
+     *
+     * @param sharedNetwork pointer to the deleted shared network.
+     */
+    onSharedNetworkDelete(sharedNetwork: SharedNetwork): void {
+        // Try to find a suitable tab by shared network id.
+        const index = this.openedTabs.findIndex((t) => t.tabSubject && t.tabSubject.id === sharedNetwork.id)
+        if (index >= 0) {
+            // Close the tab.
+            this.closeTabByIndex(index)
         }
     }
 }
