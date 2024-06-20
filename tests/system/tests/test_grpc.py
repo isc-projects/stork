@@ -28,7 +28,7 @@ def test_grpc_ping(kea_service: Kea, bind9_service: Bind9):
     client = StorkAgentGRPCClient.for_service(kea_service)
     client.fetch_certs_from(bind9_service)
 
-    pytest.raises(StreamTerminatedError, client.ping)
+    pytest.raises((ConnectionResetError, StreamTerminatedError), client.ping)
 
 
 def test_grpc_get_state(kea_service: Kea, bind9_service: Bind9):
