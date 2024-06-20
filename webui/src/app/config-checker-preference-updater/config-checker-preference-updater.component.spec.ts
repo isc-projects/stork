@@ -16,6 +16,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { FormsModule } from '@angular/forms'
+import { TagModule } from 'primeng/tag'
 
 describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     let component: ConfigCheckerPreferenceUpdaterComponent
@@ -36,6 +37,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 ButtonModule,
                 FormsModule,
                 TriStateCheckboxModule,
+                TagModule,
             ],
             declarations: [
                 HelpTipComponent,

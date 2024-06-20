@@ -16,6 +16,7 @@ import { ButtonModule } from 'primeng/button'
 import { importProvidersFrom } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { TagModule } from 'primeng/tag'
 
 const mockData: ConfigCheckers = {
     items: [
@@ -55,6 +56,7 @@ export default {
                 ButtonModule,
                 FormsModule,
                 TriStateCheckboxModule,
+                TagModule,
             ],
             declarations: [
                 HelpTipComponent,

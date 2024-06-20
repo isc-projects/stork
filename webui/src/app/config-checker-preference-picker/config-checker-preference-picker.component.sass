@@ -8,13 +8,19 @@
         // It causes it to not move when the second column's content grows.
         display: flex
 
-.picker__state-cell--enabled
-    // Displays the success color when the checker is enabled.
-    background-color: var(--green-100)
+    ::ng-deep .p-tag-value::first-letter
+        // Capitalize first letter of the state Tag.
+        text-transform: capitalize
 
-.picker__state-cell--disabled
-    // Displays the danger color when the checker is disabled.
-    background-color: var(--red-100)
+// Styles not needed because state enabled/disabled is displayed in p-tag now.
+// P-tag has nice adaptive styling for light and dark mode.
+//.picker__state-cell--enabled
+//    // Displays the success color when the checker is enabled.
+//    background-color: var(--green-100)
+//
+//.picker__state-cell--disabled
+//    // Displays the danger color when the checker is disabled.
+//    background-color: var(--red-100)
 
 .picker__state-cell--inherit-enabled
     .picker__state-inherit-status

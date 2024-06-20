@@ -55,7 +55,10 @@
                             : 'picker__state-cell--inherit-disabled'
                 "
             >
-                <ng-container [ngTemplateOutlet]="stateSelector" [ngTemplateOutletContext]="{ checker: checker }">
+                <ng-container
+                    [ngTemplateOutlet]="stateSelector"
+                    [ngTemplateOutletContext]="{ checker: checker, state: getActualState(checker) }"
+                >
                 </ng-container>
             </td>
             <td>{{ checker.name }}</td>
@@ -104,12 +107,10 @@
 </p-table>
 
 <!-- State selector - tri-state checkbox -->
-<ng-template #stateSelector let-checker="checker">
+<ng-template #stateSelector let-checker="checker" let-state="state">
     <div class="form-check">
         <p-triStateCheckbox
-            [ngModel]="
-                getActualState(checker) === 'enabled' ? true : getActualState(checker) === 'disabled' ? false : null
-            "
+            [ngModel]="state === 'enabled' ? true : state === 'disabled' ? false : null"
             (onChange)="onCheckerStateChanged(checker)"
             name="select-{{ checker.name }}"
             inputId="select-{{ checker.name }}"
@@ -117,10 +118,14 @@
         >
         </p-triStateCheckbox>
         <label class="form-check-label p-capitalize-first" for="select-{{ checker.name }}">
-            <span *ngIf="getActualState(checker) !== 'inherit'">
-                {{ getActualState(checker) }}
+            <span *ngIf="state !== 'inherit'">
+                <p-tag
+                    *ngIf="state === 'enabled' || state === 'disabled'"
+                    [value]="state"
+                    [severity]="state === 'enabled' ? 'success' : state === 'disabled' ? 'danger' : 'warning'"
+                />
             </span>
-            <span class="picker__state-inherit-status" *ngIf="getActualState(checker) === 'inherit'">
+            <span class="picker__state-inherit-status" *ngIf="state === 'inherit'">
                 globally {{ checker.globallyEnabled ? 'enabled' : 'disabled' }}
             </span>
         </label>
