@@ -14,6 +14,8 @@ export class ThemeService {
      */
     switchTheme(theme: string, isDark: boolean) {
         let themeLink = this.document.getElementById('stork-theme') as HTMLLinkElement
+        this.document.body.classList.remove('dark', 'light')
+        this.document.body.classList.add(isDark? 'dark': 'light')
 
         const darkLight = isDark ? 'dark' : 'light'
         if (themeLink) {
