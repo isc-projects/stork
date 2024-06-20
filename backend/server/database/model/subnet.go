@@ -50,7 +50,7 @@ const (
 type SubnetStats map[SubnetStatsName]any
 
 // Returns the value of the statistic with the specified name as a big counter.
-func (s SubnetStats) GetBigCounter(name string) *storkutil.BigCounter {
+func (s SubnetStats) GetBigCounter(name SubnetStatsName) *storkutil.BigCounter {
 	value, ok := s[name]
 	if !ok {
 		return nil
@@ -69,7 +69,7 @@ func (s SubnetStats) GetBigCounter(name string) *storkutil.BigCounter {
 }
 
 // Sets the value of the statistic with the specified name as a big counter.
-func (s SubnetStats) SetBigCounter(name string, counter *storkutil.BigCounter) {
+func (s SubnetStats) SetBigCounter(name SubnetStatsName, counter *storkutil.BigCounter) {
 	s[name] = counter.ConvertToNativeType()
 }
 
