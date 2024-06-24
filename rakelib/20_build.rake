@@ -178,83 +178,98 @@ CLEAN.append "webui/.angular"
 ### Backend ###
 ###############
 
-# This rule is used to create the Stork agent file tasks. It allows to specify
+# This helper is used to create the Stork agent file tasks. It allows to specify
 # build tags for the conditional compilation. The tags are specified in the
 # filename after the plus sign. For example, the filename "stork-agent+profiler"
 # will be compiled with the "profiler" build tag.
-rule(/^backend\/cmd\/stork-agent\/stork-agent[^.]*$/ => GO_AGENT_CODEBASE + [GO]) do |t|
-    filename = File.basename t.name
-    tags_match = filename.match(/\+(\w+)/)
-    tags = []
-    if !tags_match.nil?
-        tags = tags_match.captures
-        puts "Stork Agent build tags: #{tags}"
+#
+# This helper logic was initially implemented as a Rake rule. However, we have
+# rejected this approach because internal details of the Rake rule. When the
+# rule constructs the task, it checks if the file prerequisites exist and fails
+# if they do not. It is done imeditatelly when the given target is accessed by
+# `Rake::Task[name]`, not when the task is executed or needed.
+# It is problematic when the rule-based task is ehanced by `add_guard` helper.
+# This helper works on the task object, so the rule is executed at the same
+# time as Rake lists the tasks. It causes all Stork agent file prerequisites
+# must always exist, even if the task not related to agent is executed.
+# It is problematic in Docker builds where certain images exclude the agent
+# files (e.g., UI builder image).
+def stork_agent_conditional(*tags)
+    filename = "stork-agent"
+    tags.each do |tag|
+        filename += "+#{tag}"
+    end
+    task_name = File.join("backend/cmd/stork-agent", filename)
+
+    file task_name => [GO] + GO_AGENT_CODEBASE do |t|
+        Dir.chdir("backend/cmd/stork-agent") do
+            with_custom_go_os_and_arch do
+                sh GO, "build",
+                    "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'",
+                    "-tags", tags.join(","),
+                    "-o", filename
+            end
+        end
+        sh "touch", "-c", t.name
+        puts "Stork Agent build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
     end
 
-    Dir.chdir("backend/cmd/stork-agent") do
-        with_custom_go_os_and_arch do
-            sh GO, "build",
-                "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'",
-                "-tags", tags.join(","),
-                "-o", filename
-        end
-    end
-    sh "touch", "-c", t.name
-    puts "Stork Agent build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
+    add_go_os_arch_guard(task_name)
+    allow_suppress_prerequisites(task_name)
+    CLEAN.append task_name
+
+    task_name
 end
 
 # The standard Stork agent file task. It is compiled without any custom build
 # tags. It is dedicated to release builds.
-AGENT_BINARY_FILE = "backend/cmd/stork-agent/stork-agent"
-add_go_os_arch_guard(AGENT_BINARY_FILE)
-allow_suppress_prerequisites(AGENT_BINARY_FILE)
-CLEAN.append AGENT_BINARY_FILE
+AGENT_BINARY_FILE = stork_agent_conditional()
 
 # The Stork agent file task compiled with the profiler that allows to profile
 # the agent on demand.
-AGENT_BINARY_FILE_WITH_PROFILER = "backend/cmd/stork-agent/stork-agent+profiler"
-add_go_os_arch_guard(AGENT_BINARY_FILE_WITH_PROFILER)
-allow_suppress_prerequisites(AGENT_BINARY_FILE_WITH_PROFILER)
-CLEAN.append AGENT_BINARY_FILE_WITH_PROFILER
+AGENT_BINARY_FILE_WITH_PROFILER = stork_agent_conditional("profiler")
 
 # This rule is used to create the Stork server file tasks. It allows to specify
 # build tags for the conditional compilation. The tags are specified in the
 # filename after the plus sign. For example, the filename "stork-server+profiler"
 # will be compiled with the "profiler" build tag.
-rule(/^backend\/cmd\/stork-server\/stork-server[^.]*$/ => GO_SERVER_CODEBASE + [GO]) do |t|
-    filename = File.basename t.name
-    tags_match = filename.match(/\+(\w+)/)
-    tags = []
-    if !tags_match.nil?
-        tags = tags_match.captures
-        puts "Stork Server build tags: #{tags}"
+#
+# See `stork_agent_conditional` description for the explanation why this helper
+# was not implemented as a rule.
+def stork_server_conditional(*tags)
+    filename = "stork-server"
+    tags.each do |tag|
+        filename += "+#{tag}"
+    end
+    task_name = File.join("backend/cmd/stork-server", filename)
+
+    file task_name => [GO] + GO_SERVER_CODEBASE do |t|
+        Dir.chdir("backend/cmd/stork-server") do
+            with_custom_go_os_and_arch do
+                sh GO, "build",
+                    "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'",
+                    "-tags", tags.join(","),
+                    "-o", filename
+            end
+        end
+        sh "touch", "-c", t.name
+        puts "Stork Server build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
     end
 
-    Dir.chdir("backend/cmd/stork-server") do
-        with_custom_go_os_and_arch do
-            sh GO, "build",
-                "-ldflags=-X 'isc.org/stork.BuildDate=#{CURRENT_DATE}'",
-                "-tags", tags.join(","),
-                "-o", filename
-        end
-    end
-    sh "touch", "-c", t.name
-    puts "Stork Server build date: #{CURRENT_DATE} (timestamp: #{TIMESTAMP})"
+    add_go_os_arch_guard(task_name)
+    allow_suppress_prerequisites(task_name)
+    CLEAN.append task_name
+
+    task_name
 end
 
 # The standard Stork server file task. It is compiled without any custom build
 # tags. It is dedicated to release builds.
-SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
-add_go_os_arch_guard(SERVER_BINARY_FILE)
-allow_suppress_prerequisites(SERVER_BINARY_FILE)
-CLEAN.append SERVER_BINARY_FILE
+SERVER_BINARY_FILE = stork_server_conditional()
 
 # The Stork server file task compiled with the profiler that allows to profile
 # the agent on demand.
-SERVER_BINARY_FILE_WITH_PROFILER = "backend/cmd/stork-server/stork-server+profiler"
-add_go_os_arch_guard(SERVER_BINARY_FILE_WITH_PROFILER)
-allow_suppress_prerequisites(SERVER_BINARY_FILE_WITH_PROFILER)
-CLEAN.append SERVER_BINARY_FILE_WITH_PROFILER
+SERVER_BINARY_FILE_WITH_PROFILER = stork_server_conditional("profiler")
 
 TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
 file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
