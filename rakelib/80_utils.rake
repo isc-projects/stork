@@ -169,7 +169,7 @@ namespace :utils do
                 end
 
                 # Check if the line is a beginning of a new stage.
-                if line_content =~ /^FROM\s+(.*)$/i
+                if line_content =~ /^FROM\s+(?:--platform=.*?\s+)?(.*)$/i
                     base_image = $1
                     # Check if it is a stage.
                     if base_image =~ /(.*)\s+AS\s+(.*)/i
