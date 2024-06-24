@@ -156,15 +156,7 @@
                 </div>
                 <div *ngSwitchCase="FieldType.Bool" [formGroupName]="i">
                     <div id="{{ fieldControl.data.getInputId(0) }}" class="p-inputtext option-field p-0">
-                        <p-toggleButton
-                            pRipple
-                            onLabel="True"
-                            offLabel="False"
-                            styleClass="p-button p-button-text p-button-secondary p-inputtext"
-                            [style]="{ color: 'var(--text-color)' }"
-                            formControlName="control"
-                        >
-                        </p-toggleButton>
+                        <p-toggleButton onLabel="True" offLabel="False" formControlName="control"> </p-toggleButton>
                     </div>
                 </div>
                 <div *ngSwitchCase="FieldType.Uint8" [formGroupName]="i">

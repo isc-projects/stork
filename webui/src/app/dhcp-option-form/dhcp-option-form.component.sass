@@ -22,13 +22,20 @@
         cursor: help
         background: var(--gray-300)
 
-:host ::ng-deep .p-togglebutton.p-button.p-highlight
-    background: #dadada
-    border-color: #dadada
-    color: var(--text-color)
+:host ::ng-deep .p-togglebutton.p-button
+    // Overwrite default PrimeNG toggle button style.
+    background: var(--surface-0)
+    border-color: var(--surface-0)
 
-:host ::ng-deep .p-togglebutton.p-button.p-highlight
-    &:hover
-        background: var(--surface-d)
-        border-color: var(--surface-d)
-        color: var(--text-color)
+    &.p-highlight
+        background: var(--surface-200)
+        border-color: var(--surface-200)
+
+        &:hover
+            background: var(--surface-300)
+            border-color: var(--surface-300)
+
+        & .p-button-label
+            background: inherit
+            border-color: inherit
+            box-shadow: none
