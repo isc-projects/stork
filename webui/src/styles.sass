@@ -35,9 +35,23 @@ a:not(.p-button):not(.p-tabview-nav-link):not(.p-menuitem-link)
 p-header
   width: 100%
 
-// reduce height of panels caption
-.p-fieldset .p-fieldset-legend
-  padding: 0.6rem 1rem 0.5rem 1rem
+.p-fieldset .p-fieldset-legend span
+  // Padding (0.5rem 0.75rem) was added in PrimeNG aura theme to all span elements inside of Fieldset legend.
+  // This breaks many custom Fieldset legends in Stork, because span elements are used there quite often.
+  // Overwrite PrimeNG styling to be more specific.
+  padding: 0
+
+  &.p-fieldset-legend-text, &.stork-fieldset-legend-text
+    // Restore default PrimeNG padding only to span elements with specific classes.
+    padding: 0.5rem 0.75rem
+
+  &.p-fieldset-legend-text:has(+.stork-fieldset-legend-text)
+    // When stork-fieldset-legend-text class is used, do not apply padding to preceding span.p-fieldset-legend-text.
+    padding: 0
+
+  &.p-tag
+    // Sometimes p-tag is used inside Fieldset legend and it also a span, so restore default p-tag padding.
+    padding: 0.25rem 0.4rem
 
 // capitalize first letter of the first word in the container
 .p-capitalize-first::first-letter

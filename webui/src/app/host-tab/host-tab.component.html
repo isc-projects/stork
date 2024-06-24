@@ -336,7 +336,7 @@
 
 <!-- Section header template -->
 <ng-template #sectionHeaderContent let-title="title" let-localHosts="localHosts" let-all="all">
-    <span>
+    <span class="stork-fieldset-legend-text">
         {{ title }}&nbsp;/&nbsp;
         <ng-container *ngIf="!all">
             <a class="mr-1" routerLink="/apps/kea/{{ localHosts[0].appId }}">{{ localHosts[0].appName }}</a>

@@ -102,7 +102,7 @@
         <div *ngFor="let localSharedNetwork of sharedNetwork.localSharedNetworks; let i = index" class="mb-4">
             <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()">
                 <ng-template pTemplate="header">
-                    <span
+                    <span class="stork-fieldset-legend-text"
                         >DHCP Options&nbsp;/&nbsp;
                         <a
                             *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"

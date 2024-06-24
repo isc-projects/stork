@@ -285,7 +285,7 @@
     </p-fieldset>
 
     <ng-template #splittableFieldsetHeaderTemplate let-configuredName="configuredName" let-i="index">
-        <span class="p-fieldset-legend-text"
+        <span class="stork-fieldset-legend-text"
             >{{ configuredName }}
             <span
                 *ngIf="formGroup.get('splitFormMode').value && selectedDaemons.value?.length >= i + 1"
