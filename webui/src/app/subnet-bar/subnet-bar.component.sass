@@ -6,6 +6,10 @@
   // A little spacing around.
   padding: 0.2em
 
+  ::ng-deep body.dark & a
+    // In the dark mode, make the anchors lighter to be better visible on the utilization bars.
+    color: var(--primary-400) !important
+
 .utilization__bars
   // Enable flex to order the bars.
   display: flex
@@ -15,7 +19,7 @@
   height: 100%
   width: 100%
   // Background color when there are no data (NAs and PDs).
-  background-color: var(--gray-100)
+  background-color: var(--surface-100)
   // Rounded border.
   border-radius: 4px
   // Overlap the subnet label from the bottom.
@@ -32,7 +36,7 @@
   // it to full size.
   flex: 1
   // Grayed color.
-  background-color: var(--gray-200)
+  background-color: var(--surface-200)
   // This causes the kind labels to be aligned relatively to this wrapper.
   position: relative
   // Rounded border.
@@ -82,7 +86,7 @@
   // Offsets the text from the edge.
   padding-right: 4px
   // Use a grayed color to avoid distraction from the prefix label.
-  color: var(--gray-500)
+  color: var(--surface-500)
   // Use extra small font size.
   font-size: 75%
 
@@ -106,24 +110,40 @@
   // Green bar color.
   background-color: var(--green-200)
 
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--green-800)
+
 // Modificator for the medium utilization value.
 .utilization__bar--medium
   // Orange bar color.
   background-color: var(--orange-200)
+
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--orange-800)
 
 // Modificator for the high utilization value.
 .utilization__bar--high
   // Red bar color.
   background-color: var(--red-200)
 
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--red-800)
+
 // Modificator for the exceed utilization value.
 .utilization__bar--exceed
   // Blue bar color.
   background-color: var(--blue-200)
 
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--blue-800)
+
 // Modificator for missing statistic data.
 .utilization__bar--missing
-  background-color: var(--gray-300)
+  background-color: var(--surface-300)
 
 .utilization__bar-wrapper--no-data
   // Hide the bar if no data.
