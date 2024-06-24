@@ -33,6 +33,19 @@ ensure
     FileUtils.rm_rf(path) if File.exists?(path)
 end
 
+# Open a file using the default application.
+def open_file(path)
+    if OS == "macos"
+        program = "open"
+    elsif OS == "linux" || OS == "FreeBSD"
+        program = "xdg-open"
+    else
+        fail "operating system (#{OS}) not supported"
+    end
+
+    system program, path
+end
+
 #############
 ### Tasks ###
 #############
@@ -439,17 +452,8 @@ namespace :run do
 
     desc 'Open the documentation in the browser'
     task :doc => [DOC_USER_ROOT, DOC_DEV_ROOT] do
-        program = nil
-        if OS == "macos"
-            program = "open"
-        elsif OS == "linux" || OS == "FreeBSD"
-            program = "xdg-open"
-        else
-            fail "operating system (#{OS}) not supported"
-        end
-
-        system program, "#{DOC_USER_ROOT}/index.html"
-        system program, "#{DOC_DEV_ROOT}/index.html"
+        open_file "#{DOC_USER_ROOT}/index.html"
+        open_file "#{DOC_DEV_ROOT}/index.html"
     end
 end
 

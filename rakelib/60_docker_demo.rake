@@ -265,6 +265,48 @@ namespace :demo do
 
         sh *DOCKER_COMPOSE, *opts, "build", *build_opts, *services, *additional_services
     end
+
+    desc "Collects the performance data from the demo containers and generates
+        the report"
+    task :performance => [DOCKER_COMPOSE, PYTHON, PYTEST] do
+        # Fetch running services.
+        opts, _, _, _ = get_docker_opts(nil, false, false, [])
+        services = []
+        services_text, _, _ = Open3.capture3 *DOCKER_COMPOSE, *opts, "ps", "--services"
+
+        # Do in a temporary directory.
+        require 'tmpdir'
+        Dir.mktmpdir do |dir|
+            # For each service, copy the performance data.
+            services_text.split("\n").each do |service|
+                # Copy the performance data from the containers.
+                data_path = "/var/log/supervisor/performance-report"
+                # The performance data are not available in all containers.
+                stdout, stderr, status = Open3.capture3 *DOCKER_COMPOSE, *opts,
+                    "cp",
+                    "#{service}:#{data_path}",
+                    "#{dir}/#{service}.data"
+
+                if status != 0
+                    puts "No performance data for #{service}"
+                    next
+                end
+            end
+
+            # Generate the report.
+            report_path = File.join dir, "performance_report.html"
+            sh *PYTHON, "tests/system/core/performance_chart.py",
+                "--output", report_path,
+                *FileList[File.join(dir, "*.data")]
+
+            # Open the report.
+            open_file report_path
+
+            require 'io/console'
+            print "press any key"                                                                                                    
+            STDIN.getch  
+        end
+    end
 end
 
 ############################################
