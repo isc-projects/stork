@@ -410,7 +410,7 @@ RUN apt-get update \
         # workaround for this missing command.
         && touch /usr/bin/systemctl \
         && chmod a+x /usr/bin/systemctl
-ARG STORK_CS_VERSION
+ARG STORK_CS_VERSION=*
 RUN wget --no-verbose -O- https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
