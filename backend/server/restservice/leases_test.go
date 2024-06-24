@@ -34,7 +34,7 @@ func mockLease4Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommand("lease4-get", []string{"dhcp4"}, nil)
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -58,7 +58,7 @@ func mockLease6Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommand("lease6-get", []string{"dhcp6"}, nil)
+	command := keactrl.NewCommandBase(keactrl.Lease6Get, "dhcp6")
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -107,7 +107,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommand("lease6-get-by-duid", []string{"dhcp6"}, nil)
+	command := keactrl.NewCommandBase(keactrl.Lease6GetByDUID, "dhcp6")
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -119,7 +119,7 @@ func mockLease4GetError(callNo int, responses []interface{}) {
             "text": "Lease erred"
         }
     ]`)
-	command := keactrl.NewCommand("lease4-get", []string{"dhcp4"}, nil)
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -142,7 +142,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommand("lease4-get-by-hw-address", []string{"dhcp4"}, nil)
+	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, "dhcp4")
 	_ = keactrl.UnmarshalResponseList(command, json4, responses[0])
 
 	json6 := []byte(`[
@@ -167,7 +167,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
         }
     ]`)
 
-	command = keactrl.NewCommand("lease6-get-by-duid", []string{"dhcp6"}, nil)
+	command = keactrl.NewCommandBase(keactrl.Lease6GetByDUID, "dhcp6")
 	_ = keactrl.UnmarshalResponseList(command, json6, responses[1])
 }
 
@@ -571,8 +571,8 @@ func TestFindDeclinedLeases(t *testing.T) {
 
 	// Ensure that appropriate commands were sent to Kea.
 	require.Len(t, agents.RecordedCommands, 2)
-	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].GetCommand())
-	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[1].GetCommand())
+	require.Equal(t, keactrl.Lease4GetByHWAddress, agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, keactrl.Lease6GetByDUID, agents.RecordedCommands[1].GetCommand())
 
 	// Whitespace should be allowed between state: and declined.
 	text = "state:   declined"
@@ -580,8 +580,8 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
 
 	require.Len(t, agents.RecordedCommands, 4)
-	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[2].GetCommand())
-	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[3].GetCommand())
+	require.Equal(t, keactrl.Lease4GetByHWAddress, agents.RecordedCommands[2].GetCommand())
+	require.Equal(t, keactrl.Lease6GetByDUID, agents.RecordedCommands[3].GetCommand())
 
 	// Ensure that the invalid search text is treated as a hostname rather
 	// than a search string to find declined leases.
@@ -590,8 +590,8 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
 
 	require.Len(t, agents.RecordedCommands, 6)
-	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[4].GetCommand())
-	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[5].GetCommand())
+	require.Equal(t, keactrl.Lease4GetByHostname, agents.RecordedCommands[4].GetCommand())
+	require.Equal(t, keactrl.Lease6GetByHostname, agents.RecordedCommands[5].GetCommand())
 
 	// Whitespace after state is not allowed.
 	text = "state :declined"
@@ -599,8 +599,8 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
 
 	require.Len(t, agents.RecordedCommands, 8)
-	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[6].GetCommand())
-	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[7].GetCommand())
+	require.Equal(t, keactrl.Lease4GetByHostname, agents.RecordedCommands[6].GetCommand())
+	require.Equal(t, keactrl.Lease6GetByHostname, agents.RecordedCommands[7].GetCommand())
 }
 
 // Test searching leases and conflicting leases by host ID.

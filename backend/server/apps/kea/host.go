@@ -368,21 +368,20 @@ func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation,
 			}
 		}
 	}
-	// The subnet-id and limit are mandatory.
-	arguments := map[string]interface{}{
-		"subnet-id": subnetID,
-		"limit":     iterator.limit,
-	}
+	// Prepare the command.
+	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, daemons...).
+		WithArgument("subnet-id", subnetID).
+		WithArgument("limit", iterator.limit)
+
 	// The from and source-index values are not present in a first call to
 	// fetch the hosts for a given subnet.
 	if iterator.from > 0 {
-		arguments["from"] = iterator.from
+		command = command.WithArgument("from", iterator.from)
 	}
 	if iterator.sourceIndex > 0 {
-		arguments["source-index"] = iterator.sourceIndex
+		command = command.WithArgument("source-index", iterator.sourceIndex)
 	}
-	// Prepare the command.
-	command := keactrl.NewCommand("reservation-get-page", daemons, arguments)
+
 	commands := []keactrl.SerializableCommand{command}
 	response := make([]ReservationGetPageResponse, 1)
 	ctx := context.Background()

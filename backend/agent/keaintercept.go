@@ -31,9 +31,9 @@ type keaInterceptorTarget struct {
 type keaInterceptor struct {
 	mutex *sync.Mutex
 	// Holds a list of async callbacks to be invoked for a given command.
-	asyncTargets map[string]*keaInterceptorTarget
+	asyncTargets map[keactrl.CommandName]*keaInterceptorTarget
 	// Holds a list of sync callbacks to be invoked for a given command.
-	syncTargets map[string]*keaInterceptorTarget
+	syncTargets map[keactrl.CommandName]*keaInterceptorTarget
 }
 
 // Creates new Kea interceptor instance.
@@ -41,14 +41,14 @@ func newKeaInterceptor() *keaInterceptor {
 	interceptor := &keaInterceptor{
 		mutex: new(sync.Mutex),
 	}
-	interceptor.asyncTargets = make(map[string]*keaInterceptorTarget)
-	interceptor.syncTargets = make(map[string]*keaInterceptorTarget)
+	interceptor.asyncTargets = make(map[keactrl.CommandName]*keaInterceptorTarget)
+	interceptor.syncTargets = make(map[keactrl.CommandName]*keaInterceptorTarget)
 	return interceptor
 }
 
 // Registers an asynchronous callback function and associates it with a given command.
 // It is possible to register multiple callbacks for the same command.
-func (i *keaInterceptor) registerAsync(callback func(*StorkAgent, *keactrl.Response) error, commandName string) {
+func (i *keaInterceptor) registerAsync(callback func(*StorkAgent, *keactrl.Response) error, commandName keactrl.CommandName) {
 	var (
 		target *keaInterceptorTarget
 		ok     bool
@@ -76,7 +76,7 @@ func (i *keaInterceptor) registerAsync(callback func(*StorkAgent, *keactrl.Respo
 
 // Registers a synchronous callback function and associates it with a given command.
 // It is possible to register multiple callbacks for the same command.
-func (i *keaInterceptor) registerSync(callback func(*StorkAgent, *keactrl.Response) error, commandName string) {
+func (i *keaInterceptor) registerSync(callback func(*StorkAgent, *keactrl.Response) error, commandName keactrl.CommandName) {
 	var (
 		target *keaInterceptorTarget
 		ok     bool
@@ -129,7 +129,7 @@ func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaReq
 
 // Common part of asynchronous and synchronous handlers. Returns the serialized
 // response after modifications performed by callbacks or error.
-func (i *keaInterceptor) handle(targets map[string]*keaInterceptorTarget, agent *StorkAgent, request *agentapi.KeaRequest, response []byte) ([]byte, error) {
+func (i *keaInterceptor) handle(targets map[keactrl.CommandName]*keaInterceptorTarget, agent *StorkAgent, request *agentapi.KeaRequest, response []byte) ([]byte, error) {
 	// Parse the request to get the command name and service.
 	command, err := keactrl.NewCommandFromJSON(request.Request)
 	if err != nil {

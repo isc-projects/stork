@@ -74,8 +74,8 @@ func copyOrCreateActiveKeaDaemon(dbApp *dbmodel.App, daemonName string) *dbmodel
 func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) ([]string, []string, error) {
 	// prepare the command to get config and version from CA
 	cmds := []keactrl.SerializableCommand{
-		keactrl.NewCommand("version-get", nil, nil),
-		keactrl.NewCommand("config-get", nil, nil),
+		keactrl.NewCommandBase(keactrl.VersionGet),
+		keactrl.NewCommandBase(keactrl.ConfigGet),
 	}
 
 	// get version and config from CA
@@ -179,9 +179,9 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 
 	// issue 3 commands to Kea daemons at once to get their state
 	cmds := []keactrl.SerializableCommand{
-		keactrl.NewCommand("version-get", allDaemons, nil),
-		keactrl.NewCommand("status-get", dhcpDaemons, nil),
-		keactrl.NewCommand("config-get", allDaemons, nil),
+		keactrl.NewCommandBase(keactrl.VersionGet, allDaemons...),
+		keactrl.NewCommandBase(keactrl.StatusGet, dhcpDaemons...),
+		keactrl.NewCommandBase(keactrl.ConfigGet, allDaemons...),
 	}
 
 	versionGetResp := []VersionGetResponse{}

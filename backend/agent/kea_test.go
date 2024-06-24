@@ -24,7 +24,7 @@ func TestSendCommand(t *testing.T) {
 		Reply(200).
 		JSON([]map[string]int{{"result": 0}})
 
-	command := keactrl.NewCommand("list-commands", nil, nil)
+	command := keactrl.NewCommandBase(keactrl.ListCommands)
 
 	ka := &KeaApp{
 		BaseApp: BaseApp{
@@ -54,7 +54,7 @@ func TestSendCommandInvalidResponse(t *testing.T) {
 		Reply(200).
 		JSON([]map[string]int{{"result": 0, "arguments": 1}})
 
-	command := keactrl.NewCommand("list-commands", nil, nil)
+	command := keactrl.NewCommandBase(keactrl.ListCommands)
 
 	ka := &KeaApp{
 		BaseApp: BaseApp{
@@ -70,7 +70,7 @@ func TestSendCommandInvalidResponse(t *testing.T) {
 
 // Test the case when Kea server is unreachable.
 func TestSendCommandNoKea(t *testing.T) {
-	command := keactrl.NewCommand("list-commands", nil, nil)
+	command := keactrl.NewCommandBase(keactrl.ListCommands)
 	httpClient := NewHTTPClient()
 	ka := &KeaApp{
 		BaseApp: BaseApp{

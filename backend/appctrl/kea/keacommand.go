@@ -11,6 +11,9 @@ import (
 	keaconfig "isc.org/stork/appcfg/kea"
 )
 
+// Kea command name type.
+type CommandName string
+
 // See "src/lib/cc/command_interpreter.h" in the Kea repository for details.
 const (
 	// Status code indicating a successful operation.
@@ -32,7 +35,7 @@ const (
 
 // Interface to a Kea command that can be marshalled and sent.
 type SerializableCommand interface {
-	GetCommand() string
+	GetCommand() CommandName
 	GetDaemonsList() []string
 	Marshal() string
 }
@@ -40,7 +43,7 @@ type SerializableCommand interface {
 // Represents a command sent to Kea including command name, daemons list
 // (service list in Kea terms) and arguments.
 type Command struct {
-	Command   string      `json:"command"`
+	Command   CommandName `json:"command"`
 	Daemons   []string    `json:"service,omitempty"`
 	Arguments interface{} `json:"arguments,omitempty"`
 }
@@ -153,9 +156,23 @@ func (v *hasherValue) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Given the command pointer it returns an existin arguments map or creates
+// new arguments map, if it doesn't exist yet. It panics when the existing
+// arguments are not a map.
+func createOrGetArguments(command *Command) reflect.Value {
+	if command.Arguments == nil {
+		command.Arguments = make(map[string]any)
+	}
+	argsType := reflect.TypeOf(command.Arguments)
+	if argsType.Kind() != reflect.Map {
+		panic("arguments are not a map")
+	}
+	return reflect.ValueOf(command.Arguments)
+}
+
 // Creates new Kea command from specified command name, daemons list and arguments.
 // The arguments are required to be a map or struct.
-func NewCommand(command string, daemons []string, arguments interface{}) *Command {
+func NewCommand(command CommandName, daemons []string, arguments any) *Command {
 	if len(command) == 0 {
 		return nil
 	}
@@ -192,6 +209,40 @@ func NewCommandFromJSON(jsonCommand string) (*Command, error) {
 	return &cmd, nil
 }
 
+// Constructs new command with no arguments.
+func NewCommandBase(command CommandName, daemons ...string) *Command {
+	return NewCommand(command, daemons, nil)
+}
+
+// Appends argument to the command. If the arguments are nil, the
+// map of arguments is instantiated by this function. If the arguments
+// are not a map, this function panics. Otherwise, the specified argument
+// is set in the arguments map under the specified name.
+func (c Command) WithArgument(name string, value any) *Command {
+	command := c
+	mapValue := createOrGetArguments(&command)
+	mapValue.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(value))
+	return &command
+}
+
+// Appends an array of arguments to the command. If the arguments are nil,
+// the map of arguments is instantiated by this function. If the arguments
+// are not a map, this function panics. Otherwise, an array of values is
+// set in the arguments map under the specified name.
+func (c Command) WithArrayArgument(name string, value ...any) *Command {
+	command := c
+	mapValue := createOrGetArguments(&command)
+	mapValue.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(value))
+	return &command
+}
+
+// Sets arguments for a command and returns a command copy.
+func (c Command) WithArguments(arguments any) *Command {
+	command := c
+	command.Arguments = arguments
+	return &command
+}
+
 // Returns JSON representation of the Kea command, which can be sent to
 // the Kea servers over GRPC.
 func (c Command) Marshal() string {
@@ -200,7 +251,7 @@ func (c Command) Marshal() string {
 }
 
 // Returns command name.
-func (c Command) GetCommand() string {
+func (c Command) GetCommand() CommandName {
 	return c.Command
 }
 

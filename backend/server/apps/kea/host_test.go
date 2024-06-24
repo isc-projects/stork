@@ -311,7 +311,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
         }
     ]`, len(hosts), string(hostsAsJSON), fromValue, sourceIndex))
 
-	command := keactrl.NewCommand("reservation-get-page", []string{fmt.Sprintf("dhcp%d", family)}, nil)
+	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, fmt.Sprintf("dhcp%d", family))
 
 	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
@@ -383,7 +383,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
         ]`
 	}
 
-	command := keactrl.NewCommand("reservation-get-page", []string{"dhcp4"}, nil)
+	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, "dhcp4")
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -483,7 +483,7 @@ func mockReservationGetPagePartialChange(callNo int, cmdResponses []interface{})
         ]`
 	}
 
-	command := keactrl.NewCommand("reservation-get-page", []string{"dhcp4"}, nil)
+	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, "dhcp4")
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -527,7 +527,7 @@ func testReservationGetPageReceived(t *testing.T, iterator *hostIterator) {
 	require.GreaterOrEqual(t, len(agents.RecordedCommands), 1)
 	recordedCommand := agents.GetLastCommand()
 	// Check that the correct command name was sent.
-	require.Equal(t, "reservation-get-page", recordedCommand.GetCommand())
+	require.Equal(t, keactrl.ReservationGetPage, recordedCommand.GetCommand())
 	// This command must always include some arguments.
 	require.NotNil(t, recordedCommand.Arguments)
 	recordedArguments := recordedCommand.Arguments
@@ -1832,7 +1832,7 @@ func TestUpdateHost(t *testing.T) {
 			]`
 		}
 
-		command := keactrl.NewCommand("reservation-get-page", []string{"dhcp6"}, nil)
+		command := keactrl.NewCommandBase(keactrl.ReservationGetPage, "dhcp6")
 
 		err = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 		require.NoError(t, err)

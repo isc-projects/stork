@@ -391,7 +391,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
                 "text": "error is error"
             }
         ]`)
-		command := keactrl.NewCommand("reservation-add", []string{"dhcp4"}, nil)
+		command := keactrl.NewCommandBase(keactrl.ReservationAdd, "dhcp4")
 		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 	})
 
@@ -1043,7 +1043,7 @@ func TestCommitHostUpdateResponseWithErrorStatus(t *testing.T) {
                 "text": "error is error"
             }
         ]`)
-		command := keactrl.NewCommand("reservation-del", []string{"dhcp4"}, nil)
+		command := keactrl.NewCommandBase(keactrl.ReservationDel, "dhcp4")
 		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 	})
 
@@ -2724,7 +2724,7 @@ func TestCommitSharedNetworkUpdateResponseWithErrorStatus(t *testing.T) {
 				"text": "error is error"
 			}
 		]`)
-		command := keactrl.NewCommand("network4-del", []string{"dhcp4"}, nil)
+		command := keactrl.NewCommandBase(keactrl.Network4Del, "dhcp4")
 		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 	})
 
@@ -4325,7 +4325,7 @@ func TestCommitSubnetUpdateResponseWithErrorStatus(t *testing.T) {
                 "text": "error is error"
             }
         ]`)
-		command := keactrl.NewCommand("subnet4-update", []string{"dhcp4"}, nil)
+		command := keactrl.NewCommandBase(keactrl.Subnet4Update, "dhcp4")
 		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 	})
 

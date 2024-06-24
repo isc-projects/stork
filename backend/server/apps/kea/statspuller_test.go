@@ -27,7 +27,7 @@ func createKeaMock(jsonFactory func(callNo int) (jsons []string)) func(callNo in
 		jsons := jsonFactory(callNo)
 		// DHCPv4
 		daemons := []string{"dhcp4"}
-		command := keactrl.NewCommand("stat-lease4-get", daemons, nil)
+		command := keactrl.NewCommandBase(keactrl.StatLease4Get, daemons...)
 		keactrl.UnmarshalResponseList(command, []byte(jsons[0]), cmdResponses[0])
 
 		// DHCPv4 RSP response
@@ -41,7 +41,7 @@ func createKeaMock(jsonFactory func(callNo int) (jsons []string)) func(callNo in
 
 		// DHCPv6
 		daemons = []string{"dhcp6"}
-		command = keactrl.NewCommand("stat-lease6-get", daemons, nil)
+		command = keactrl.NewCommandBase(keactrl.StatLease6Get, daemons...)
 		keactrl.UnmarshalResponseList(command, []byte(jsons[2]), cmdResponses[2])
 
 		// DHCPv6 RSP response
@@ -1172,7 +1172,7 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	}
 
 	// Act
-	err := puller.processAppResponses(app, []*keactrl.Command{{Command: "stat-lease6-get"}}, daemons, []any{&response})
+	err := puller.processAppResponses(app, []*keactrl.Command{keactrl.NewCommandBase(keactrl.StatLease6Get)}, daemons, []any{&response})
 
 	// Assert
 	require.NoError(t, err)

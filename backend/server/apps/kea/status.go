@@ -356,7 +356,7 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	daemons := dbApp.GetActiveDHCPDaemonNames()
 
 	// It takes no arguments, thus the last parameter is nil.
-	cmd := keactrl.NewCommand("status-get", daemons, nil)
+	cmd := keactrl.NewCommandBase(keactrl.StatusGet, daemons...)
 
 	// todo: hardcoding 2s timeout is a temporary solution. We need better
 	// control over the timeouts.

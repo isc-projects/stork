@@ -302,10 +302,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				// Add daemon, cmd, and response for DHCP4 lease stats
 				cmdDaemons = append(cmdDaemons, d)
 				dhcp4Daemons := []string{dhcp4}
-				cmds = append(cmds, &keactrl.Command{
-					Command: "stat-lease4-get",
-					Daemons: dhcp4Daemons,
-				})
+				cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatLease4Get, dhcp4Daemons...))
 
 				responses = append(responses, &[]StatLeaseGetResponse{})
 
@@ -319,10 +316,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				// Add daemon, cmd and response for DHCP6 lease stats
 				cmdDaemons = append(cmdDaemons, d)
 				dhcp6Daemons := []string{dhcp6}
-				cmds = append(cmds, &keactrl.Command{
-					Command: "stat-lease6-get",
-					Daemons: dhcp6Daemons,
-				})
+				cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatLease6Get, dhcp6Daemons...))
 
 				responses = append(responses, &[]StatLeaseGetResponse{})
 
@@ -382,34 +376,38 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 		switch cmdDaemons[idx].Name {
 		case dhcp4:
 			switch cmds[idx].Command {
-			case "stat-lease4-get":
+			case keactrl.StatLease4Get:
 				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 4)
 				if err != nil {
 					log.Errorf("Error handling stat-lease4-get response: %+v", err)
 					lastErr = err
 				}
-			case "statistic-get":
+			case keactrl.StatisticGet:
 				err = statsPuller.RpsWorker.Response4Handler(cmdDaemons[idx], responses[idx])
 				if err != nil {
 					log.Errorf("Error handling statistic-get (v4) response: %+v", err)
 					lastErr = err
 				}
+			default:
+				// Impossible case.
 			}
 
 		case dhcp6:
 			switch cmds[idx].Command {
-			case "stat-lease6-get":
+			case keactrl.StatLease6Get:
 				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 6)
 				if err != nil {
 					log.Errorf("Error handling stat-lease6-get response: %+v", err)
 					lastErr = err
 				}
-			case "statistic-get":
+			case keactrl.StatisticGet:
 				err = statsPuller.RpsWorker.Response6Handler(cmdDaemons[idx], responses[idx])
 				if err != nil {
 					log.Errorf("Error handling statistic-get (v6) response: %+v", err)
 					lastErr = err
 				}
+			default:
+				// Impossible case.
 			}
 		}
 	}

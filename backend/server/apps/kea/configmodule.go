@@ -189,12 +189,9 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 		if err != nil {
 			return ctx, err
 		}
-		// Create command arguments.
-		arguments := make(map[string]interface{})
-		arguments["reservation"] = reservation
 		// Associate the command with an app receiving this command.
 		appCommand := ConfigCommand{
-			Command: keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, arguments),
+			Command: keactrl.NewCommandReservationAdd(reservation, lh.Daemon.Name),
 			App:     lh.Daemon.App,
 		}
 		commands = append(commands, appCommand)
@@ -313,9 +310,10 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 			return ctx, err
 		}
 		// Associate the command with an app receiving this command.
-		appCommand := ConfigCommand{}
-		appCommand.Command = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, deleteArguments)
-		appCommand.App = lh.Daemon.App
+		appCommand := ConfigCommand{
+			Command: keactrl.NewCommandReservationDel(deleteArguments, lh.Daemon.Name),
+			App:     lh.Daemon.App,
+		}
 		commands = append(commands, appCommand)
 	}
 	// Re-create the host reservations.
@@ -336,11 +334,10 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 			return ctx, err
 		}
 		// Create command arguments.
-		addArguments := make(map[string]any)
-		addArguments["reservation"] = reservation
-		appCommand := ConfigCommand{}
-		appCommand.Command = keactrl.NewCommand("reservation-add", []string{lh.Daemon.Name}, addArguments)
-		appCommand.App = lh.Daemon.App
+		appCommand := ConfigCommand{
+			Command: keactrl.NewCommandReservationAdd(reservation, lh.Daemon.Name),
+			App:     lh.Daemon.App,
+		}
 		commands = append(commands, appCommand)
 	}
 
@@ -412,12 +409,11 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 		if err != nil {
 			return ctx, err
 		}
-		// Create command arguments.
-		arguments := reservation
 		// Associate the command with an app receiving this command.
-		appCommand := ConfigCommand{}
-		appCommand.Command = keactrl.NewCommand("reservation-del", []string{lh.Daemon.Name}, arguments)
-		appCommand.App = lh.Daemon.App
+		appCommand := ConfigCommand{
+			Command: keactrl.NewCommandReservationDel(reservation, lh.Daemon.Name),
+			App:     lh.Daemon.App,
+		}
 		commands = append(commands, appCommand)
 	}
 	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
@@ -558,7 +554,6 @@ func (module *ConfigModule) ApplySharedNetworkAdd(ctx context.Context, sharedNet
 		}
 		// Convert the shared network information to Kea shared network.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		arguments := make(map[string]any)
 		appCommand := ConfigCommand{
 			App: lsn.Daemon.App,
 		}
@@ -568,10 +563,7 @@ func (module *ConfigModule) ApplySharedNetworkAdd(ctx context.Context, sharedNet
 			if err != nil {
 				return ctx, err
 			}
-			arguments["shared-networks"] = []*keaconfig.SharedNetwork4{
-				sharedNetwork4,
-			}
-			appCommand.Command = keactrl.NewCommand("network4-add", []string{lsn.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandNetwork4Add(sharedNetwork4, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
 		default:
@@ -579,10 +571,7 @@ func (module *ConfigModule) ApplySharedNetworkAdd(ctx context.Context, sharedNet
 			if err != nil {
 				return ctx, err
 			}
-			arguments["shared-networks"] = []*keaconfig.SharedNetwork6{
-				sharedNetwork6,
-			}
-			appCommand.Command = keactrl.NewCommand("network6-add", []string{lsn.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandNetwork6Add(sharedNetwork6, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 		}
 	}
@@ -590,7 +579,7 @@ func (module *ConfigModule) ApplySharedNetworkAdd(ctx context.Context, sharedNet
 	// changes won't persist across the servers' restarts otherwise.
 	for _, lsn := range sharedNetwork.LocalSharedNetworks {
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommand("config-write", []string{lsn.Daemon.Name}, nil),
+			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, lsn.Daemon.Name),
 			App:     lsn.Daemon.App,
 		})
 		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
@@ -600,7 +589,7 @@ func (module *ConfigModule) ApplySharedNetworkAdd(ctx context.Context, sharedNet
 		version := storkutil.ParseSemanticVersionOrLatest(lsn.Daemon.Version)
 		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommand("config-reload", []string{lsn.Daemon.Name}, nil),
+				Command: keactrl.NewCommandBase(keactrl.ConfigReload, lsn.Daemon.Name),
 				App:     lsn.Daemon.App,
 			})
 		}
@@ -722,12 +711,11 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 		}
 		// Convert the updated shared network information to Kea shared network.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		arguments := make(map[string]any)
 		appCommand := ConfigCommand{}
 		switch sharedNetwork.Family {
 		case 4:
 			deletedSharedNetwork4 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
-			appCommand.Command = keactrl.NewCommand("network4-del", []string{lsn.Daemon.Name}, deletedSharedNetwork4)
+			appCommand.Command = keactrl.NewCommandNetwork4Del(deletedSharedNetwork4, lsn.Daemon.Name)
 			appCommand.App = lsn.Daemon.App
 			commands = append(commands, appCommand)
 
@@ -735,15 +723,12 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			if err != nil {
 				return ctx, err
 			}
-			arguments["shared-networks"] = []*keaconfig.SharedNetwork4{
-				sharedNetwork4,
-			}
-			appCommand.Command = keactrl.NewCommand("network4-add", []string{lsn.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandNetwork4Add(sharedNetwork4, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 
 		default:
 			deletedSharedNetwork6 := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(lsn.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
-			appCommand.Command = keactrl.NewCommand("network6-del", []string{lsn.Daemon.Name}, deletedSharedNetwork6)
+			appCommand.Command = keactrl.NewCommandNetwork6Del(deletedSharedNetwork6, lsn.Daemon.Name)
 			appCommand.App = lsn.Daemon.App
 			commands = append(commands, appCommand)
 
@@ -751,10 +736,7 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 			if err != nil {
 				return ctx, err
 			}
-			arguments["shared-networks"] = []*keaconfig.SharedNetwork6{
-				sharedNetwork6,
-			}
-			appCommand.Command = keactrl.NewCommand("network6-add", []string{lsn.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandNetwork6Add(sharedNetwork6, lsn.Daemon.Name)
 			commands = append(commands, appCommand)
 		}
 	}
@@ -773,11 +755,11 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 		if deletedLocalSharedNetwork != nil {
 			appCommand := ConfigCommand{}
 			deletedKeaSharedNetwork := keaconfig.CreateSubnetCmdsDeletedSharedNetwork(deletedLocalSharedNetwork.DaemonID, existingSharedNetwork, keaconfig.SharedNetworkSubnetsActionDelete)
-			commandName := "network4-del"
 			if sharedNetwork.Family == 6 {
-				commandName = "network6-del"
+				appCommand.Command = keactrl.NewCommandNetwork6Del(deletedKeaSharedNetwork, deletedLocalSharedNetwork.Daemon.Name)
+			} else {
+				appCommand.Command = keactrl.NewCommandNetwork4Del(deletedKeaSharedNetwork, deletedLocalSharedNetwork.Daemon.Name)
 			}
-			appCommand.Command = keactrl.NewCommand(commandName, []string{deletedLocalSharedNetwork.Daemon.Name}, deletedKeaSharedNetwork)
 			appCommand.App = deletedLocalSharedNetwork.Daemon.App
 			commands = append(commands, appCommand)
 			deletedLocalSharedNetworks = append(deletedLocalSharedNetworks, deletedLocalSharedNetwork)
@@ -787,7 +769,7 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 	// changes won't persist across the servers' restarts otherwise.
 	for _, lsn := range append(sharedNetwork.LocalSharedNetworks, deletedLocalSharedNetworks...) {
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommand("config-write", []string{lsn.Daemon.Name}, nil),
+			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, lsn.Daemon.Name),
 			App:     lsn.Daemon.App,
 		})
 		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
@@ -797,7 +779,7 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 		version := storkutil.ParseSemanticVersionOrLatest(lsn.Daemon.Version)
 		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommand("config-reload", []string{lsn.Daemon.Name}, nil),
+				Command: keactrl.NewCommandBase(keactrl.ConfigReload, lsn.Daemon.Name),
 				App:     lsn.Daemon.App,
 			})
 		}
@@ -870,9 +852,9 @@ func (module *ConfigModule) ApplySharedNetworkDelete(ctx context.Context, shared
 		appCommand := ConfigCommand{}
 		switch sharedNetwork.Family {
 		case 4:
-			appCommand.Command = keactrl.NewCommand("network4-del", []string{lsn.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandNetwork4Del(arguments, lsn.Daemon.Name)
 		default:
-			appCommand.Command = keactrl.NewCommand("network6-del", []string{lsn.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandNetwork6Del(arguments, lsn.Daemon.Name)
 		}
 		appCommand.App = lsn.Daemon.App
 		commands = append(commands, appCommand)
@@ -880,7 +862,7 @@ func (module *ConfigModule) ApplySharedNetworkDelete(ctx context.Context, shared
 	// Persist the configuration changes.
 	for _, ls := range sharedNetwork.LocalSharedNetworks {
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, ls.Daemon.Name),
 			App:     ls.Daemon.App,
 		})
 	}
@@ -963,7 +945,6 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 		}
 		// Convert the updated subnet information to Kea subnet.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		updateArguments := make(map[string]any)
 		appCommand := ConfigCommand{}
 		switch subnet.GetFamily() {
 		case 4:
@@ -972,20 +953,14 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 			if err != nil {
 				return ctx, err
 			}
-			updateArguments["subnet4"] = []*keaconfig.Subnet4{
-				subnet4,
-			}
-			appCommand.Command = keactrl.NewCommand("subnet4-add", []string{ls.Daemon.Name}, updateArguments)
+			appCommand.Command = keactrl.NewCommandSubnet4Add(subnet4, ls.Daemon.Name)
 			appCommand.App = ls.Daemon.App
 			commands = append(commands, appCommand)
 
 			// If the subnet is associated with a shared network, add this association
 			// in Kea.
 			if sharedNetworkNameAfterUpdate != "" {
-				arguments := make(map[string]any)
-				arguments["id"] = ls.LocalSubnetID
-				arguments["name"] = sharedNetworkNameAfterUpdate
-				appCommand.Command = keactrl.NewCommand("network4-subnet-add", []string{ls.Daemon.Name}, arguments)
+				appCommand.Command = keactrl.NewCommandNetwork4SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
 				commands = append(commands, appCommand)
 			}
 		default:
@@ -994,20 +969,14 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 			if err != nil {
 				return ctx, err
 			}
-			updateArguments["subnet6"] = []*keaconfig.Subnet6{
-				subnet6,
-			}
-			appCommand.Command = keactrl.NewCommand("subnet6-add", []string{ls.Daemon.Name}, updateArguments)
+			appCommand.Command = keactrl.NewCommandSubnet6Add(subnet6, ls.Daemon.Name)
 			appCommand.App = ls.Daemon.App
 			commands = append(commands, appCommand)
 
 			// If the subnet is associated with a new shared network, add this association
 			// in Kea.
 			if sharedNetworkNameAfterUpdate != "" {
-				arguments := make(map[string]any)
-				arguments["id"] = ls.LocalSubnetID
-				arguments["name"] = sharedNetworkNameAfterUpdate
-				appCommand.Command = keactrl.NewCommand("network6-subnet-add", []string{ls.Daemon.Name}, arguments)
+				appCommand.Command = keactrl.NewCommandNetwork6SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
 				commands = append(commands, appCommand)
 			}
 		}
@@ -1016,7 +985,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	// changes won't persist across the servers' restarts otherwise.
 	for _, ls := range subnet.LocalSubnets {
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, ls.Daemon.Name),
 			App:     ls.Daemon.App,
 		})
 		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
@@ -1026,7 +995,7 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 		version := storkutil.ParseSemanticVersionOrLatest(ls.Daemon.Version)
 		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommand("config-reload", []string{ls.Daemon.Name}, nil),
+				Command: keactrl.NewCommandBase(keactrl.ConfigReload, ls.Daemon.Name),
 				App:     ls.Daemon.App,
 			})
 		}
@@ -1170,7 +1139,6 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		}
 		// Convert the updated subnet information to Kea subnet.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
-		updateArguments := make(map[string]any)
 		appCommand := ConfigCommand{}
 		switch subnet.GetFamily() {
 		case 4:
@@ -1180,13 +1148,10 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			if err != nil {
 				return ctx, err
 			}
-			updateArguments["subnet4"] = []*keaconfig.Subnet4{
-				subnet4,
-			}
 			if existingAssociation {
-				appCommand.Command = keactrl.NewCommand("subnet4-update", []string{ls.Daemon.Name}, updateArguments)
+				appCommand.Command = keactrl.NewCommandSubnet4Update(subnet4, ls.Daemon.Name)
 			} else {
-				appCommand.Command = keactrl.NewCommand("subnet4-add", []string{ls.Daemon.Name}, updateArguments)
+				appCommand.Command = keactrl.NewCommandSubnet4Add(subnet4, ls.Daemon.Name)
 			}
 			appCommand.App = ls.Daemon.App
 			commands = append(commands, appCommand)
@@ -1200,20 +1165,14 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			// If the subnet association with a shared network existed, we need to remove
 			// this association first.
 			if sharedNetworkNameBeforeUpdate != "" {
-				arguments := make(map[string]any)
-				arguments["id"] = ls.LocalSubnetID
-				arguments["name"] = sharedNetworkNameBeforeUpdate
-				appCommand.Command = keactrl.NewCommand("network4-subnet-del", []string{ls.Daemon.Name}, arguments)
+				appCommand.Command = keactrl.NewCommandNetwork4SubnetDel(sharedNetworkNameBeforeUpdate, ls.LocalSubnetID, ls.Daemon.Name)
 				commands = append(commands, appCommand)
 			}
 
 			// If the subnet is associated with a new shared network, add this association
 			// in Kea.
 			if sharedNetworkNameAfterUpdate != "" {
-				arguments := make(map[string]any)
-				arguments["id"] = ls.LocalSubnetID
-				arguments["name"] = sharedNetworkNameAfterUpdate
-				appCommand.Command = keactrl.NewCommand("network4-subnet-add", []string{ls.Daemon.Name}, arguments)
+				appCommand.Command = keactrl.NewCommandNetwork4SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
 				commands = append(commands, appCommand)
 			}
 		default:
@@ -1223,13 +1182,10 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			if err != nil {
 				return ctx, err
 			}
-			updateArguments["subnet6"] = []*keaconfig.Subnet6{
-				subnet6,
-			}
 			if existingAssociation {
-				appCommand.Command = keactrl.NewCommand("subnet6-update", []string{ls.Daemon.Name}, updateArguments)
+				appCommand.Command = keactrl.NewCommandSubnet6Update(subnet6, ls.Daemon.Name)
 			} else {
-				appCommand.Command = keactrl.NewCommand("subnet6-add", []string{ls.Daemon.Name}, updateArguments)
+				appCommand.Command = keactrl.NewCommandSubnet6Add(subnet6, ls.Daemon.Name)
 			}
 			appCommand.App = ls.Daemon.App
 			commands = append(commands, appCommand)
@@ -1241,20 +1197,14 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			// If the subnet association with a shared network existed, we need to remove
 			// this association first.
 			if sharedNetworkNameBeforeUpdate != "" {
-				arguments := make(map[string]any)
-				arguments["id"] = ls.LocalSubnetID
-				arguments["name"] = sharedNetworkNameBeforeUpdate
-				appCommand.Command = keactrl.NewCommand("network6-subnet-del", []string{ls.Daemon.Name}, arguments)
+				appCommand.Command = keactrl.NewCommandNetwork6SubnetDel(sharedNetworkNameBeforeUpdate, ls.LocalSubnetID, ls.Daemon.Name)
 				commands = append(commands, appCommand)
 			}
 
 			// If the subnet is associated with a new shared network, add this association
 			// in Kea.
 			if sharedNetworkNameAfterUpdate != "" {
-				arguments := make(map[string]any)
-				arguments["id"] = ls.LocalSubnetID
-				arguments["name"] = sharedNetworkNameAfterUpdate
-				appCommand.Command = keactrl.NewCommand("network6-subnet-add", []string{ls.Daemon.Name}, arguments)
+				appCommand.Command = keactrl.NewCommandNetwork6SubnetAdd(sharedNetworkNameAfterUpdate, ls.LocalSubnetID, ls.Daemon.Name)
 				commands = append(commands, appCommand)
 			}
 		}
@@ -1273,13 +1223,11 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		}
 		if removedLocalSubnet != nil {
 			appCommand := ConfigCommand{}
-			deleteArguments := make(map[string]any)
-			deleteArguments["id"] = removedLocalSubnet.LocalSubnetID
 			switch subnet.GetFamily() {
 			case 4:
-				appCommand.Command = keactrl.NewCommand("subnet4-del", []string{removedLocalSubnet.Daemon.Name}, deleteArguments)
+				appCommand.Command = keactrl.NewCommandSubnet4Del(&keaconfig.SubnetCmdsDeletedSubnet{ID: removedLocalSubnet.LocalSubnetID}, removedLocalSubnet.Daemon.Name)
 			default:
-				appCommand.Command = keactrl.NewCommand("subnet6-del", []string{removedLocalSubnet.Daemon.Name}, deleteArguments)
+				appCommand.Command = keactrl.NewCommandSubnet6Del(&keaconfig.SubnetCmdsDeletedSubnet{ID: removedLocalSubnet.LocalSubnetID}, removedLocalSubnet.Daemon.Name)
 			}
 			appCommand.App = removedLocalSubnet.Daemon.App
 			commands = append(commands, appCommand)
@@ -1291,7 +1239,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	// changes won't persist across the servers' restarts otherwise.
 	for _, ls := range append(subnet.LocalSubnets, removedLocalSubnets...) {
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, ls.Daemon.Name),
 			App:     ls.Daemon.App,
 		})
 		// Kea versions up to 2.6.0 do not update statistics after modifying pools with the
@@ -1301,7 +1249,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		version := storkutil.ParseSemanticVersionOrLatest(ls.Daemon.Version)
 		if version.LessThan(storkutil.NewSemanticVersion(2, 6, 0)) {
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommand("config-reload", []string{ls.Daemon.Name}, nil),
+				Command: keactrl.NewCommandBase(keactrl.ConfigReload, ls.Daemon.Name),
 				App:     ls.Daemon.App,
 			})
 		}
@@ -1355,15 +1303,13 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 		if err != nil {
 			return ctx, err
 		}
-		// Create command arguments.
-		arguments := deletedSubnet
 		// Associate the command with an app receiving this command.
 		appCommand := ConfigCommand{}
 		switch subnet.GetFamily() {
 		case 4:
-			appCommand.Command = keactrl.NewCommand("subnet4-del", []string{ls.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandSubnet4Del(deletedSubnet, ls.Daemon.Name)
 		default:
-			appCommand.Command = keactrl.NewCommand("subnet6-del", []string{ls.Daemon.Name}, arguments)
+			appCommand.Command = keactrl.NewCommandSubnet6Del(deletedSubnet, ls.Daemon.Name)
 		}
 		appCommand.App = ls.Daemon.App
 		commands = append(commands, appCommand)
@@ -1371,7 +1317,7 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 	// Persist the configuration changes.
 	for _, ls := range subnet.LocalSubnets {
 		commands = append(commands, ConfigCommand{
-			Command: keactrl.NewCommand("config-write", []string{ls.Daemon.Name}, nil),
+			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, ls.Daemon.Name),
 			App:     ls.Daemon.App,
 		})
 	}

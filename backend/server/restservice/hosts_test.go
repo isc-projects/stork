@@ -19,8 +19,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-func mockStatusError(commandName string, cmdResponses []interface{}) {
-	command := keactrl.NewCommand(commandName, []string{"dhcp4"}, nil)
+func mockStatusError(commandName keactrl.CommandName, cmdResponses []interface{}) {
+	command := keactrl.NewCommandBase(commandName, "dhcp4")
 	json := `[
         {
             "result": 1,

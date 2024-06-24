@@ -213,8 +213,8 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 	GetAppState(ctx, fa, &dbApp, fec)
 
 	require.Contains(t, fa.RecordedURLs, "https://192.0.2.0:1234/")
-	require.Equal(t, "version-get", fa.RecordedCommands[0].GetCommand())
-	require.Equal(t, "config-get", fa.RecordedCommands[1].GetCommand())
+	require.Equal(t, keactrl.VersionGet, fa.RecordedCommands[0].GetCommand())
+	require.Equal(t, keactrl.ConfigGet, fa.RecordedCommands[1].GetCommand())
 }
 
 func TestGetAppStateWith2Daemons(t *testing.T) {
@@ -245,8 +245,8 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 	GetAppState(ctx, fa, &dbApp, fec)
 
 	require.Contains(t, fa.RecordedURLs, "http://192.0.2.0:1234/")
-	require.Equal(t, "version-get", fa.RecordedCommands[0].GetCommand())
-	require.Equal(t, "config-get", fa.RecordedCommands[1].GetCommand())
+	require.Equal(t, keactrl.VersionGet, fa.RecordedCommands[0].GetCommand())
+	require.Equal(t, keactrl.ConfigGet, fa.RecordedCommands[1].GetCommand())
 }
 
 // Check GetAppState when app already exists.
@@ -317,8 +317,8 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	require.Empty(t, state.SameConfigDaemons)
 
 	require.Contains(t, fa.RecordedURLs, "https://192.0.2.0:1234/")
-	require.Equal(t, "version-get", fa.RecordedCommands[0].GetCommand())
-	require.Equal(t, "config-get", fa.RecordedCommands[1].GetCommand())
+	require.Equal(t, keactrl.VersionGet, fa.RecordedCommands[0].GetCommand())
+	require.Equal(t, keactrl.ConfigGet, fa.RecordedCommands[1].GetCommand())
 
 	require.Len(t, dbApp.Daemons, 2)
 
