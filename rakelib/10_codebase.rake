@@ -320,7 +320,7 @@ CLOBBER.append node_module_dir
 
 
 std_option_defs6_ts_file = "webui/src/app/std-dhcpv6-option-defs.ts"
-file std_option_defs6_ts_file => [NPX, CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
+file std_option_defs6_ts_file => [NPX, node_module_dir, CODE_GEN_BINARY_FILE, std_dhcpv6_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
         "--input", std_dhcpv6_option_definitions_json,
         "--output", std_option_defs6_ts_file,
@@ -331,7 +331,7 @@ file std_option_defs6_ts_file => [NPX, CODE_GEN_BINARY_FILE, std_dhcpv6_option_d
 end
 
 std_option_defs4_ts_file = "webui/src/app/std-dhcpv4-option-defs.ts"
-file std_option_defs4_ts_file => [NPX, CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
+file std_option_defs4_ts_file => [NPX, node_module_dir, CODE_GEN_BINARY_FILE, std_dhcpv4_option_definitions_json] do
     sh CODE_GEN_BINARY_FILE, "std-option-defs",
         "--input", std_dhcpv4_option_definitions_json,
         "--output", std_option_defs4_ts_file,
