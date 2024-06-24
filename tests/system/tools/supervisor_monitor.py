@@ -110,22 +110,28 @@ class PerformanceMetricsCollector:
         - counters: the dictionary where the keys are the counter names and
             the values are the counter values.
         """
-        cmd = ["ps", "ax", "-o", "pid= ppid= pcpu= pmem= rss="]
+        cmd = ["ps", "ax", "-o", "pid= ppid= pcpu= pmem= rss= vsz="]
         cmd_output = subprocess.check_output(cmd).decode("utf-8")
 
         data = {}
 
         for line in cmd_output.splitlines():
-            pid, ppid, cpu, mem, rss = line.split()
+            pid, ppid, cpu, mem, rss, vsz = line.split()
             pid = int(pid)
             ppid = int(ppid)
             cpu = float(cpu)
             mem = float(mem)
             rss = int(rss) * 1024.0  # RSS is in KB. Convert to bytes.
+            vsz = int(vsz) * 1024.0  # VSZ is in KB. Convert to bytes.
 
             data[pid] = {
                 "ppid": ppid,
-                "counters": {"cpu [%]": cpu, "mem [%]": mem, "rss [B]": rss},
+                "counters": {
+                    "cpu [%]": cpu,
+                    "mem [%]": mem,
+                    "rss [B]": rss,
+                    "vsz [B]": vsz,
+                },
             }
         return data
 
