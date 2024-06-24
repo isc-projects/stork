@@ -113,3 +113,12 @@ section.stork-layout > aside
 body
   margin: 0
   font-family: 'Open Sans', 'Helvetica Neue', sans-serif
+
+body.dark
+  & .stork-form-multiselect.p-multiselect.p-multiselect-chip .p-multiselect-token
+    // Make chips background darker in dark mode.
+    background: var(--primary-400)
+
+  & .stork-form-chips.p-chips .p-chips-multiple-container .p-chips-token
+    // Make chips background darker in dark mode.
+    background: var(--primary-400)
