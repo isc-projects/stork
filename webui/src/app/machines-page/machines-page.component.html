@@ -71,21 +71,7 @@
         >.
     </p>
     <div style="display: flex; align-items: flex-start; margin-bottom: 10px">
-        <textarea
-            class="monospace"
-            style="
-                padding: 10px;
-                background-color: #f7f7f7;
-                border: 1px solid #dfdfdf;
-                width: 40em;
-                margin-right: 10px;
-                overflow: hidden;
-                resize: none;
-            "
-            readonly=""
-            rows="3"
-            #agentInstallationText
-        >
+        <textarea class="monospace agent-install-cmds" readonly="" rows="3" #agentInstallationText>
 wget {{ getBaseUrl() }}/stork-install-agent.sh
 chmod a+x stork-install-agent.sh
 sudo ./stork-install-agent.sh</textarea
@@ -103,14 +89,7 @@ sudo ./stork-install-agent.sh</textarea
     </p>
     <p style="margin: 10px 10px 10px 0; width: 40em">
         <b>Server token</b> value is
-        <input
-            [value]="serverToken"
-            class="monospace"
-            size="32"
-            readonly=""
-            style="background-color: #f7f7f7; padding: 4px 6px; border: 1px solid #dfdfdf; margin: 4px 4px 4px 4px"
-            #serverTokenInput
-        />
+        <input [value]="serverToken" class="monospace server-token" size="32" readonly="" #serverTokenInput />
 
         <button
             type="button"

@@ -74,14 +74,13 @@
         *ngIf="!loaded"
         [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
         strokeWidth="6"
-        fill="#000000"
         animationDuration=".5s"
     ></p-progressSpinner>
 
     <p-footer>
         <div style="display: flex; justify-content: flex-end">
             <p-button
-                class="log-control-button"
+                class="log-control-button mt-3"
                 icon="pi pi-refresh"
                 pTooltip="Refresh logs without changing the length of the presented data."
                 id="refresh-logs-2-button"

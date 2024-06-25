@@ -18,7 +18,7 @@
             [(ngModel)]="appName"
             (keyup)="handleKeyUp($event)"
         />
-        <p id="app-name-input-error" style="color: #a00000" *ngIf="invalid">{{ errorText }}</p>
+        <p id="app-name-input-error" class="text-red-700" *ngIf="invalid">{{ errorText }}</p>
     </div>
     <p-footer>
         <button type="button" pButton icon="pi pi-times" label="Cancel" (click)="cancel()"></button>

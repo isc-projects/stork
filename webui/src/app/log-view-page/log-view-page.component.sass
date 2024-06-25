@@ -1,10 +1,11 @@
-:host ::ng-deep .log-tail-panel.p-panel .p-panel-content
-  background-color: #000000
-  color: #ffffff
-  font-family: "courier"
+:host ::ng-deep .log-tail-panel.p-panel
+  & .p-panel-content
+    background-color: var(--gray-800)
+    color: var(--gray-0)
+    font-family: "courier"
 
-:host ::ng-deep .log-tail-panel.p-panel .p-panel-footer
-  background-color: #eeeeee
+  & .p-panel-footer, & .p-panel-header
+    background-color: var(--surface-ground)
 
 @keyframes p-progress-spinner-color
   0%
