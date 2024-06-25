@@ -1545,3 +1545,33 @@ docker-compose services. It collects the CPU and memory usage over time of all
 Supervisor-managed processes. The collected data are fetched on container exit
 and used to generate the performance charts that are available in the system
 test results directory. The raw data are available too in the same location.
+
+Collected metrics are:
+
+- ``cpu [%]`` - the percentage of CPU usage
+- ``mem [%]`` - the percentage of memory usage according to the all available memory
+- ``rss [B]`` - the resident set size (the non-swapped physical memory that a task has used) in bytes
+- ``vsz [B]`` - the virtual memory size in bytes
+
+The HTML report displays the charts using the SI-prefixes (e.g., k, M, G) but
+it divides the values by 1000, not 1024. The percentage values are also 
+displayed with the SI-prefixes - so 200m means 200 mili-percent = 0.2%.
+
+Monitoring Demo
+---------------
+
+The same monitoring script has been set up for the demo services. They collect
+the metrics for the Kea, BIND 9, and Stork agent and server services.
+
+The collected metrics can be view on demand using the following command:
+
+.. code-block:: console
+
+    $ rake demo:performance
+
+It fetches the log files from the demo services and generates the performance
+charts. The report is opened in the default web browser.
+
+The collected metrics are limited up to 20 MB per container to prevent the
+excessive disk usage. The log files are rotated when the 10 MB limit is reached.
+It is enough to collect the metrics for several hours.
