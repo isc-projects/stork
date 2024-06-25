@@ -267,7 +267,8 @@ namespace :demo do
     end
 
     desc "Collects the performance data from the demo containers and generates
-        the report"
+        the report
+        TMP_DIRECTORY - temporary directory to store the performance data - optional, default: system temporary directory"
     task :performance => [DOCKER_COMPOSE, PYTHON, PYTEST] do
         # Fetch running services.
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
@@ -275,8 +276,13 @@ namespace :demo do
         services_text, _, _ = Open3.capture3 *DOCKER_COMPOSE, *opts, "ps", "--services"
 
         # Do in a temporary directory.
+        #
+        # The temporary directory is customizable as a workaround for the
+        # Internet browsers installed from Ubuntu snap packages. The snap
+        # packages are running in a sandbox and they cannot access the /tmp
+        # directory. It blocks the opening of the generated performance report.
         require 'tmpdir'
-        Dir.mktmpdir do |dir|
+        Dir.mktmpdir(nil, ENV["TMP_DIRECTORY"]) do |dir|
             # For each service, copy the performance data.
             services_text.split("\n").each do |service|
                 # Copy the performance data from the containers.
@@ -302,8 +308,9 @@ namespace :demo do
             # Open the report.
             open_file report_path
 
+            # Wait for key press to clean up the performance data.
             require 'io/console'
-            print "press any key"                                                                                                    
+            puts ">>> Press any key to clean up the performance data <<<"
             STDIN.getch  
         end
     end

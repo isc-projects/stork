@@ -134,7 +134,9 @@ def plot_reports(report_paths: List[str], output_path: str = None):
     )
 
     # Choose color palette.
-    colors = plotly.colors.qualitative.Dark24
+    colors = plotly.colors.qualitative.Dark24 + plotly.colors.qualitative.Alphabet
+    color_map = {}
+    color_idx = 0
 
     # Generate a chart for each counter.
     for cix, (_, counter_entries) in enumerate(counter_groups.items(), 1):
@@ -152,7 +154,11 @@ def plot_reports(report_paths: List[str], output_path: str = None):
                 else:
                     name = f"{service_name} ({container_name})"
 
-                color = colors[(six * ccix) % len(colors)]
+                color = color_map.get(six, {}).get(ccix)
+                if color is None:
+                    color = colors[color_idx]
+                    color_map.setdefault(six, {})[ccix] = color
+                    color_idx = (color_idx + 1) % len(colors)
 
                 # Sort the entries by timestamp.
                 entries.sort(key=lambda e: e.timestamp)
@@ -165,9 +171,13 @@ def plot_reports(report_paths: List[str], output_path: str = None):
                     col=1,
                     legendgroup=f"{container_name}-{service_name}",
                     showlegend=cix == 1,
-                    line_color=color,
+                    line_color=color
                 )
-        fig.update_layout(hoverlabel={"namelength": 50})
+
+    # Display the full series name in the hover box.
+    fig.update_layout(hoverlabel={"namelength": 50})
+    # Use SI units for the y-axis.
+    fig.update_yaxes(tickformat="s")
 
     # Show the figure.
     if output_path is None:
