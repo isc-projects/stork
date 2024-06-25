@@ -166,8 +166,8 @@ func (v *hasherValue) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Given the command pointer it returns an existin arguments map or creates
-// new arguments map, if it doesn't exist yet. It panics when the existing
+// Given the command pointer it returns existing arguments map or creates
+// a new arguments map, if it doesn't exist yet. It panics when the existing
 // arguments are not a map.
 func createOrGetArguments(command *Command) reflect.Value {
 	if command.Arguments == nil {
@@ -199,9 +199,7 @@ func NewCommand(command CommandName, daemons []DaemonName, arguments any) *Comma
 			return nil
 		}
 	}
-	sort.Slice(daemons, func(i, j int) bool {
-		return daemons[i] < daemons[j]
-	})
+	sort.Strings(daemons)
 	cmd := &Command{
 		Command:   command,
 		Daemons:   daemons,

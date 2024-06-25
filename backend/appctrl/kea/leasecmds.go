@@ -1,5 +1,6 @@
 package keactrl
 
+// Lease type specified in the commands.
 type LeaseType string
 
 const (

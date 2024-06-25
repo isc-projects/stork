@@ -19,7 +19,8 @@ func NewCommandReservationDel(reservation *keaconfig.HostCmdsDeletedReservation,
 	return NewCommandBase(ReservationDel, daemonNames...).WithArguments(reservation)
 }
 
-// Creates reservation-get-page command.
+// Creates reservation-get-page command. The arguments from and source-index
+// are only included in the command when they are greater than 0.
 func NewCommandReservationGetPage(localSubnetID, sourceIndex, from, limit int64, daemons ...DaemonName) *Command {
 	command := NewCommandBase(ReservationGetPage, daemons...).
 		WithArgument("subnet-id", localSubnetID).
