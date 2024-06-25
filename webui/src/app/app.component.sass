@@ -46,22 +46,16 @@
   100%
     stroke: #fff
 
-// fix position and look of stork version tooltip
-:host  ::ng-deep .stork-version-tooltip
-  left: 44px !important
-
-// make it wider
+// set nice look of stork version tooltip
 :host ::ng-deep .p-tooltip.stork-version-tooltip
+  // fix position and look of stork version tooltip
+  left: 44px !important
+  // make it wider
   max-width: 600px
 
-// hide arrow
-:host ::ng-deep .stork-version-tooltip .p-tooltip-arrow
-  display: none
-
-// set nice look of stork version tooltip
-:host ::ng-deep body .p-tooltip.stork-version-tooltip .p-tooltip-text
-  background-color: #c6c6c6
-  color: #000
+  .p-tooltip-arrow
+    // hide arrow
+    display: none
 
 // logo styling
 .logo
@@ -69,17 +63,16 @@
   &:hover
     text-decoration: none
 
-.logo img
-  padding: 2px 0 0 6px
-
-.logo span
-  font-family: 'Mansalva'
-  // Don't use any particular variant to keep consistency with the logo on
-  // the project webpage.
-  font-variant: none
-  font-size: 2.3rem
-  color: white
-  vertical-align: super
+  img
+    padding: 2px 0 0 6px
+  span
+    font-family: 'Mansalva'
+    // Don't use any particular variant to keep consistency with the logo on
+    // the project webpage.
+    font-variant: none
+    font-size: 2.3rem
+    color: var(--gray-0)
+    vertical-align: super
 
 .top-navbar
   background-color: var(--primary-700)

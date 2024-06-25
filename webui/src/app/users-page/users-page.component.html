@@ -97,7 +97,7 @@
             <tr>
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.login | placeholder }}</a>
-                    <sup *ngIf="auth.currentUserValue.id === u.id"><span id="youtag">It's you</span></sup>
+                    <sup *ngIf="auth.currentUserValue.id === u.id"><p-tag severity="success" value="It's you" /></sup>
                 </td>
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.email | placeholder }}</a>
