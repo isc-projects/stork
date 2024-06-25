@@ -56,6 +56,14 @@ class PerformanceMetricsCollector:
         # List the supervisor services.
         infos = self.rpc.supervisor.getAllProcessInfo()
 
+        # Rotate the performance metrics file when it is too large to prevent
+        # the file from growing indefinitely for long-running services
+        # (e.g. demo)
+        if os.path.exists(self.output_path):
+            size = os.path.getsize(self.output_path)
+            if size > 1024 * 1024 * 10:  # 10 MB
+                os.rename(self.output_path, f"{self.output_path}.old")
+
         # Append the performance metrics.
         with open(self.output_path, "a", encoding="utf-8") as f:
             for info in infos:

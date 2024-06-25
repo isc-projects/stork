@@ -291,19 +291,25 @@ namespace :demo do
                 stdout, stderr, status = Open3.capture3 *DOCKER_COMPOSE, *opts,
                     "cp",
                     "#{service}:#{data_path}",
-                    "#{dir}/#{service}.data"
+                    "#{dir}/#{service}.data0"
 
                 if status != 0
                     puts "No performance data for #{service}"
                     next
                 end
+
+                # Fetch the rotation data if available.
+                Open3.capture3 *DOCKER_COMPOSE, *opts,
+                    "cp",
+                    "#{service}:#{data_path}.old",
+                    "#{dir}/#{service}.data1"
             end
 
             # Generate the report.
             report_path = File.join dir, "performance_report.html"
             sh *PYTHON, "tests/system/core/performance_chart.py",
                 "--output", report_path,
-                *FileList[File.join(dir, "*.data")]
+                *FileList[File.join(dir, "*.data?")]
 
             # Open the report.
             open_file report_path

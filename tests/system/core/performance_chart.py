@@ -171,7 +171,7 @@ def plot_reports(report_paths: List[str], output_path: str = None):
                     col=1,
                     legendgroup=f"{container_name}-{service_name}",
                     showlegend=cix == 1,
-                    line_color=color
+                    line_color=color,
                 )
 
     # Display the full series name in the hover box.
