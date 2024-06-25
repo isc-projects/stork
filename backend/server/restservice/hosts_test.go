@@ -20,7 +20,7 @@ import (
 )
 
 func mockStatusError(commandName keactrl.CommandName, cmdResponses []interface{}) {
-	command := keactrl.NewCommandBase(commandName, "dhcp4")
+	command := keactrl.NewCommandBase(commandName, keactrl.DHCPv4)
 	json := `[
         {
             "result": 1,

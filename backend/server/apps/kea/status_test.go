@@ -96,7 +96,7 @@ func getHATestConfig(rootName, thisServerName, mode string, peerNames ...string)
 // Generates a response to the status-get command including two status
 // structures, one for DHCPv4 and one for DHCPv6.
 func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
-	command := keactrl.NewCommandBase(keactrl.StatusGet, "dhcp4", "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.StatusGet, keactrl.DHCPv4, keactrl.DHCPv6)
 	var json string
 	switch callNo {
 	case 0:
@@ -185,7 +185,7 @@ func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
 // structures, one for DHCPv4 and one for DHCPv6. Format supported by
 // Kea 1.7.8 onwards.
 func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
-	command := keactrl.NewCommandBase(keactrl.StatusGet, "dhcp4", "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.StatusGet, keactrl.DHCPv4, keactrl.DHCPv6)
 	var json string
 	switch callNo {
 	case 0:
@@ -300,7 +300,7 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
 // Generates a response to the status-get command for a server that has two
 // HA relationships.
 func mockGetStatusWithHAHub(callNo int, cmdResponses []any) {
-	command := keactrl.NewCommandBase(keactrl.StatusGet, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.StatusGet, keactrl.DHCPv4)
 	var json string
 	switch callNo {
 	case 0:
@@ -410,7 +410,7 @@ func mockGetStatusWithHAHub(callNo int, cmdResponses []any) {
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing.
 func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
-	command := keactrl.NewCommandBase(keactrl.StatusGet, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.StatusGet, keactrl.DHCPv4)
 	json := `[
         {
             "result": 0,
@@ -443,7 +443,7 @@ func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing. Format supported by Kea 1.7.8 onwards.
 func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
-	command := keactrl.NewCommandBase(keactrl.StatusGet, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.StatusGet, keactrl.DHCPv4)
 	json := `[
         {
             "result": 0,
@@ -486,7 +486,7 @@ func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
 // Generates test response to status-get command lacking a status of the
 // HA pair.
 func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
-	command := keactrl.NewCommandBase(keactrl.StatusGet, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.StatusGet, keactrl.DHCPv4)
 	json := `[
         {
             "result": 0,
@@ -504,7 +504,7 @@ func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
 // Generates test response to status-get command indicating an error and
 // lacking arguments.
 func mockGetStatusError(callNo int, cmdResponses []interface{}) {
-	command := keactrl.NewCommandBase(keactrl.StatusGet, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.StatusGet, keactrl.DHCPv4)
 	json := `[
         {
             "result": 1,

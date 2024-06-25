@@ -48,7 +48,7 @@ func TestKeaInterceptorAsyncHandle(t *testing.T) {
 
 	// Simulate sending config-get command to the DHCPv4 and DHCPv6
 	// server.
-	command := keactrl.NewCommandBase(keactrl.ConfigGet, "dhcp4", "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.ConfigGet, keactrl.DHCPv4, keactrl.DHCPv6)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -79,7 +79,7 @@ func TestKeaInterceptorAsyncHandle(t *testing.T) {
 
 	// Make sure that we can invoke different callback when using different
 	// command.
-	command = keactrl.NewCommandBase(keactrl.Subnet4Get, "dhcp4")
+	command = keactrl.NewCommandBase(keactrl.Subnet4Get, keactrl.DHCPv4)
 	request = &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -184,7 +184,7 @@ func TestKeaInterceptorSyncHandleExecute(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -225,7 +225,7 @@ func TestKeaInterceptorMultipleSyncHandlesExecute(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -259,7 +259,7 @@ func TestKeaInterceptorSyncHandleRewriteResponse(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -302,7 +302,7 @@ func TestKeaInterceptorSyncHandleReturnError(t *testing.T) {
 		return nil
 	}, "foobar")
 
-	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.CommandName("foobar"), keactrl.DHCPv4)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}

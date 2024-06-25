@@ -8,7 +8,7 @@ import (
 
 // Tests lease4-get command.
 func TestNewCommandLease4Get(t *testing.T) {
-	command := NewCommandLease4Get("192.0.2.1", "dhcp4")
+	command := NewCommandLease4Get("192.0.2.1", DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "lease4-get",
@@ -22,7 +22,7 @@ func TestNewCommandLease4Get(t *testing.T) {
 
 // Tests lease6-get command.
 func TestNewCommandLease6Get(t *testing.T) {
-	command := NewCommandLease6Get(LeaseTypeNA, "2001:db8:1::1", "dhcp6")
+	command := NewCommandLease6Get(LeaseTypeNA, "2001:db8:1::1", DHCPv6)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "lease6-get",

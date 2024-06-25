@@ -20,13 +20,13 @@ const (
 )
 
 // Creates lease4-get command.
-func NewCommandLease4Get(ipAddress string, daemons ...string) *Command {
+func NewCommandLease4Get(ipAddress string, daemons ...DaemonName) *Command {
 	return NewCommandBase(Lease4Get, daemons...).WithArgument("ip-address", ipAddress)
 }
 
 // Creates lease6-get command.
-func NewCommandLease6Get(leaseType LeaseType, ipAddress string, daemons ...string) *Command {
-	return NewCommandBase(Lease6Get, "dhcp6").
+func NewCommandLease6Get(leaseType LeaseType, ipAddress string, daemons ...DaemonName) *Command {
+	return NewCommandBase(Lease6Get, daemons...).
 		WithArgument("type", leaseType).
 		WithArgument("ip-address", ipAddress)
 }

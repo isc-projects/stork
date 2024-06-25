@@ -13,7 +13,7 @@ func TestNewCommandNetwork4Add(t *testing.T) {
 	command := NewCommandNetwork4Add(&keaconfig.SharedNetwork4{
 		Name:          "foo",
 		Authoritative: storkutil.Ptr(true),
-	}, "dhcp4")
+	}, DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network4-add",
@@ -34,7 +34,7 @@ func TestNewCommandNetwork6Add(t *testing.T) {
 	command := NewCommandNetwork6Add(&keaconfig.SharedNetwork6{
 		Name:        "foo",
 		PDAllocator: storkutil.Ptr("flq"),
-	}, "dhcp6")
+	}, DHCPv6)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network6-add",
@@ -55,7 +55,7 @@ func TestNewCommandNetwork4Del(t *testing.T) {
 	command := NewCommandNetwork4Del(&keaconfig.SubnetCmdsDeletedSharedNetwork{
 		Name:          "foo",
 		SubnetsAction: keaconfig.SharedNetworkSubnetsActionDelete,
-	}, "dhcp4")
+	}, DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network4-del",
@@ -72,7 +72,7 @@ func TestNewCommandNetwork6Del(t *testing.T) {
 	command := NewCommandNetwork6Del(&keaconfig.SubnetCmdsDeletedSharedNetwork{
 		Name:          "foo",
 		SubnetsAction: keaconfig.SharedNetworkSubnetsActionKeep,
-	}, "dhcp6")
+	}, DHCPv6)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network6-del",
@@ -86,7 +86,7 @@ func TestNewCommandNetwork6Del(t *testing.T) {
 
 // Tests network4-subnet-add command.
 func TestNewCommandNetwork4SubnetAdd(t *testing.T) {
-	command := NewCommandNetwork4SubnetAdd("foo", 123, "dhcp4")
+	command := NewCommandNetwork4SubnetAdd("foo", 123, DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network4-subnet-add",
@@ -100,7 +100,7 @@ func TestNewCommandNetwork4SubnetAdd(t *testing.T) {
 
 // Tests network6-subnet-add command.
 func TestNewCommandNetwork6SubnetAdd(t *testing.T) {
-	command := NewCommandNetwork6SubnetAdd("foo", 123, "dhcp6")
+	command := NewCommandNetwork6SubnetAdd("foo", 123, DHCPv6)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network6-subnet-add",
@@ -114,7 +114,7 @@ func TestNewCommandNetwork6SubnetAdd(t *testing.T) {
 
 // Tests network4-subnet-del command.
 func TestNewCommandNetwork4SubnetDel(t *testing.T) {
-	command := NewCommandNetwork4SubnetDel("foo", 123, "dhcp4")
+	command := NewCommandNetwork4SubnetDel("foo", 123, DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network4-subnet-del",
@@ -128,7 +128,7 @@ func TestNewCommandNetwork4SubnetDel(t *testing.T) {
 
 // Tests network6-subnet-del command.
 func TestNewCommandNetwork6SubnetDel(t *testing.T) {
-	command := NewCommandNetwork6SubnetDel("foo", 123, "dhcp6")
+	command := NewCommandNetwork6SubnetDel("foo", 123, DHCPv6)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "network6-subnet-del",
@@ -147,7 +147,7 @@ func TestNewCommandSubnet4Add(t *testing.T) {
 			ID:     2,
 			Subnet: "192.0.2.0/24",
 		},
-	}, "dhcp4")
+	}, DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "subnet4-add",
@@ -170,7 +170,7 @@ func TestNewCommandSubnet6Add(t *testing.T) {
 			ID:     2,
 			Subnet: "2001:db8:1::/64",
 		},
-	}, "dhcp6")
+	}, DHCPv6)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "subnet6-add",
@@ -190,7 +190,7 @@ func TestNewCommandSubnet6Add(t *testing.T) {
 func TestNewCommandSubnet4Del(t *testing.T) {
 	command := NewCommandSubnet4Del(&keaconfig.SubnetCmdsDeletedSubnet{
 		ID: 2,
-	}, "dhcp4")
+	}, DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "subnet4-del",
@@ -223,7 +223,7 @@ func TestNewCommandSubnet4Update(t *testing.T) {
 			ID:     2,
 			Subnet: "192.0.2.0/24",
 		},
-	}, "dhcp4")
+	}, DHCPv4)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "subnet4-update",
@@ -246,7 +246,7 @@ func TestNewCommandSubnet6Update(t *testing.T) {
 			ID:     2,
 			Subnet: "2001:db8:1::/64",
 		},
-	}, "dhcp6")
+	}, DHCPv6)
 	require.NotNil(t, command)
 	require.JSONEq(t, `{
 		"command": "subnet6-update",

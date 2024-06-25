@@ -26,7 +26,7 @@ func createKeaMock(jsonFactory func(callNo int) (jsons []string)) func(callNo in
 	return func(callNo int, cmdResponses []interface{}) {
 		jsons := jsonFactory(callNo)
 		// DHCPv4
-		daemons := []string{"dhcp4"}
+		daemons := []keactrl.DaemonName{keactrl.DHCPv4}
 		command := keactrl.NewCommandBase(keactrl.StatLease4Get, daemons...)
 		keactrl.UnmarshalResponseList(command, []byte(jsons[0]), cmdResponses[0])
 
@@ -40,7 +40,7 @@ func createKeaMock(jsonFactory func(callNo int) (jsons []string)) func(callNo in
 		}
 
 		// DHCPv6
-		daemons = []string{"dhcp6"}
+		daemons = []keactrl.DaemonName{keactrl.DHCPv6}
 		command = keactrl.NewCommandBase(keactrl.StatLease6Get, daemons...)
 		keactrl.UnmarshalResponseList(command, []byte(jsons[2]), cmdResponses[2])
 

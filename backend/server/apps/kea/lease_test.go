@@ -35,7 +35,7 @@ func mockLease4Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -61,7 +61,7 @@ func mockLease4GetInvalidJSON(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -79,7 +79,7 @@ func mockLease4GetFirstCallError(callNo int, responses []interface{}) {
                 "arguments": { }
             }
         ]`)
-		command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
+		command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
 		_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 		return
 	}
@@ -102,7 +102,7 @@ func mockLease4GetFirstCallError(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -131,7 +131,7 @@ func mockLease6GetByIPAddress(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -160,7 +160,7 @@ func mockLease6GetByPrefix(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease6Get, "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.Lease6Get, keactrl.DHCPv6)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -189,7 +189,7 @@ func mockLease6GetInvalidJSON(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease6Get, "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.Lease6Get, keactrl.DHCPv6)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -218,7 +218,7 @@ func mockLeases4Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, keactrl.DHCPv4)
 
 	for i := range responses {
 		_ = keactrl.UnmarshalResponseList(command, json, responses[i])
@@ -252,7 +252,7 @@ func mockLeases4GetSecondError(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 
 	// Response to lease4-get-by-client-id.
@@ -263,7 +263,7 @@ func mockLeases4GetSecondError(callNo int, responses []interface{}) {
             "arguments": { }
         }
     ]`)
-	command = keactrl.NewCommandBase(keactrl.Lease4GetByClientID, "dhcp4")
+	command = keactrl.NewCommandBase(keactrl.Lease4GetByClientID, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
@@ -275,7 +275,7 @@ func mockLeases4GetEmpty(callNo int, responses []interface{}) {
             "text": "No lease found."
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4)
 	for i := range responses {
 		_ = keactrl.UnmarshalResponseList(command, json, responses[i])
 	}
@@ -289,7 +289,7 @@ func mockLeases6GetEmpty(callNo int, responses []interface{}) {
             "text": "No lease found."
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease6Get, "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.Lease6Get, keactrl.DHCPv6)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -336,7 +336,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease6GetByDUID, "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.Lease6GetByDUID, keactrl.DHCPv6)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -371,7 +371,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 
 	json = []byte(`[
@@ -408,7 +408,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command = keactrl.NewCommandBase(keactrl.Lease6GetByDUID, "dhcp6")
+	command = keactrl.NewCommandBase(keactrl.Lease6GetByDUID, keactrl.DHCPv6)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
@@ -419,7 +419,7 @@ func mockLeasesGetDeclinedErrors(callNo int, responses []interface{}) {
             "text": "Leases search erred"
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.Lease4GetByHWAddress, keactrl.DHCPv4)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 
 	json = []byte(`[
@@ -444,7 +444,7 @@ func mockLeasesGetDeclinedErrors(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	command = keactrl.NewCommandBase(keactrl.Lease6GetByDUID, "dhcp6")
+	command = keactrl.NewCommandBase(keactrl.Lease6GetByDUID, keactrl.DHCPv6)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
@@ -457,7 +457,7 @@ func mockLease6GetError(callNo int, responses []interface{}) {
             "text": "Getting an lease erred."
         }
     ]`)
-	command := keactrl.NewCommandBase(keactrl.Lease6Get, "dhcp6")
+	command := keactrl.NewCommandBase(keactrl.Lease6Get, keactrl.DHCPv6)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 

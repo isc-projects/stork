@@ -66,7 +66,7 @@ func validateGetLeasesResponse(commandName keactrl.CommandName, result int, argu
 // If the lease is found, the pointer to it is returned. If the lease does not
 // exist, a nil pointer and nil error are returned.
 func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, ipAddress string) (lease *dbmodel.Lease, err error) {
-	command := keactrl.NewCommandBase(keactrl.Lease4Get, "dhcp4").WithArgument("ip-address", ipAddress)
+	command := keactrl.NewCommandBase(keactrl.Lease4Get, keactrl.DHCPv4).WithArgument("ip-address", ipAddress)
 	response := make([]Lease4GetResponse, 1)
 	ctx := context.Background()
 	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &response)

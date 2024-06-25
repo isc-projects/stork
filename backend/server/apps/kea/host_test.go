@@ -383,7 +383,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
         ]`
 	}
 
-	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, keactrl.DHCPv4)
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -483,7 +483,7 @@ func mockReservationGetPagePartialChange(callNo int, cmdResponses []interface{})
         ]`
 	}
 
-	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, "dhcp4")
+	command := keactrl.NewCommandBase(keactrl.ReservationGetPage, keactrl.DHCPv4)
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -1832,7 +1832,7 @@ func TestUpdateHost(t *testing.T) {
 			]`
 		}
 
-		command := keactrl.NewCommandBase(keactrl.ReservationGetPage, "dhcp6")
+		command := keactrl.NewCommandBase(keactrl.ReservationGetPage, keactrl.DHCPv6)
 
 		err = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 		require.NoError(t, err)
