@@ -24,12 +24,12 @@
                     [(ngModel)]="selectedThemeColor"
                     optionLabel="name"
                     optionValue="val"
-                    (onChange)="changeTheme($event.value, isDark)"
+                    (onChange)="changeTheme(isDark, $event.value)"
                     placeholder="Pick theme color"
                 />
                 <p-toggleButton
                     [(ngModel)]="isDark"
-                    (onChange)="changeTheme(selectedThemeColor ?? 'aura-blue', $event.checked)"
+                    (onChange)="changeTheme($event.checked, this.selectedThemeColor)"
                     onIcon="pi pi-moon"
                     offIcon="pi pi-sun"
                     ariaLabel="Dark/light mode"

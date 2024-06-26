@@ -308,6 +308,14 @@ export class AppComponent implements OnInit {
                 })
             }
         })
+
+        // Subscribe to themeService isDark$ BehaviorSubject observable,
+        // to get notified of dark/light mode change.
+        this.themeService.isDark$.subscribe((isDark) => {
+            this.isDark = isDark
+        })
+        // Sets initial dark/light mode theme basing on user's preference and OS/browser settings.
+        this.setInitialTheme()
     }
 
     signOut() {
@@ -315,11 +323,21 @@ export class AppComponent implements OnInit {
     }
 
     /**
-     *
-     * @param theme
-     * @param isDark
+     * Communicates with themeService to change stork UI dark/light mode and the color theme.
+     * User's preference is stored in browser's local storage.
+     * @param isDark when true provided, dark mode is enabled; otherwise light mode is enabled
+     * @param theme optional color theme; when skipped, default theme and color scheme is used
      */
-    changeTheme(theme: string, isDark: boolean = false): void {
-        this.themeService.switchTheme(theme, isDark)
+    changeTheme(isDark: boolean = false, theme?: string): void {
+        this.themeService.switchTheme(isDark, theme)
+        this.themeService.storeTheme()
+    }
+
+    /**
+     * Communicates with themeService to set the initial dark/light mode theme
+     * basing on user's preference and OS/browser settings.
+     */
+    setInitialTheme(): void {
+        this.themeService.setInitialTheme()
     }
 }

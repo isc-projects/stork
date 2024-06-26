@@ -128,7 +128,7 @@ export class SubnetBarComponent {
             // In some cases the utilization may be incorrect - less than
             // zero or greater than 100%. We need to truncate the value
             // to avoid a subnet bar overlapping other elements.
-            width: clamp(this.addrUtilization, 0, 100) + '%',
+            width: clamp(Math.ceil(this.addrUtilization), 0, 100) + '%',
         }
     }
 
@@ -140,7 +140,7 @@ export class SubnetBarComponent {
             // In some cases the utilization may be incorrect - less than
             // zero or greater than 100%. We need to truncate the value
             // to avoid a subnet bar overlapping other elements.
-            width: clamp(this.pdUtilization, 0, 100) + '%',
+            width: clamp(Math.ceil(this.pdUtilization), 0, 100) + '%',
         }
     }
 
