@@ -1347,8 +1347,9 @@ virtual memory usage is displayed in the ``VSZ`` column. There is also the
 
 The usual virtual memory usage of the Stork agent on machine with 16GB RAM,
 Go 1.22.4, and Ubuntu 22.04 is about 2.5-3GB.
-The real memory usage is relatively low, about 10-40MB for the standard size
-Kea deployment and 40-80MB for the large ones.
+The real memory usage is relatively low, about 10-40MB for Kea deployments with
+dozen of subnets and host reservations and 40-80MB for the deployments with
+thousands of subnets and host reservations.
 
 References:
 
