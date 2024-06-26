@@ -178,10 +178,8 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 		default:
 			continue
 		}
-		arguments := map[string]interface{}{
-			propertyName: sentPropertyValue,
-		}
-		command := keactrl.NewCommand(commandName, daemons, arguments)
+		command := keactrl.NewCommandBase(commandName, daemons...).
+			WithArgument(propertyName, sentPropertyValue)
 		commands = append(commands, command)
 	}
 

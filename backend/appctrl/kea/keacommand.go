@@ -182,7 +182,7 @@ func createOrGetArguments(command *Command) reflect.Value {
 
 // Creates new Kea command from specified command name, daemons list and arguments.
 // The arguments are required to be a map or struct.
-func NewCommand(command CommandName, daemons []DaemonName, arguments any) *Command {
+func newCommand(command CommandName, daemons []DaemonName, arguments any) *Command {
 	if len(command) == 0 {
 		return nil
 	}
@@ -221,7 +221,7 @@ func NewCommandFromJSON(jsonCommand string) (*Command, error) {
 
 // Constructs new command with no arguments.
 func NewCommandBase(command CommandName, daemons ...DaemonName) *Command {
-	return NewCommand(command, daemons, nil)
+	return newCommand(command, daemons, nil)
 }
 
 // Appends argument to the command. If the arguments are nil, the
