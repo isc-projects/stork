@@ -140,6 +140,42 @@ func TestNewCommandNetwork6SubnetDel(t *testing.T) {
 	}`, command.Marshal())
 }
 
+// Tests network4-subnet-del command.
+func TestNewCommandNetworkSubnetDelFamily4(t *testing.T) {
+	command := NewCommandNetworkSubnetDel(4, "foo", 123, DHCPv4)
+	require.NotNil(t, command)
+	require.JSONEq(t, `{
+		"command": "network4-subnet-del",
+		"service": ["dhcp4"],
+		"arguments": {
+			"id": 123,
+			"name": "foo"
+		}
+	}`, command.Marshal())
+}
+
+// Tests network6-subnet-del command.
+func TestNewCommandNetworkSubnetDelFamily6(t *testing.T) {
+	command := NewCommandNetworkSubnetDel(6, "foo", 123, DHCPv6)
+	require.NotNil(t, command)
+	require.JSONEq(t, `{
+		"command": "network6-subnet-del",
+		"service": ["dhcp6"],
+		"arguments": {
+			"id": 123,
+			"name": "foo"
+		}
+	}`, command.Marshal())
+}
+
+// Test that the function creating network4-subnet-del or network6-subnet-del
+// panics when the family is invalid.
+func TestNewCommandNetworkSubnetDelInvalidFamily(t *testing.T) {
+	require.Panics(t, func() {
+		_ = NewCommandNetworkSubnetDel(0, "foo", 123, DHCPv4)
+	})
+}
+
 // Tests subnet4-add command.
 func TestNewCommandSubnet4Add(t *testing.T) {
 	command := NewCommandSubnet4Add(&keaconfig.Subnet4{
@@ -214,6 +250,46 @@ func TestNewCommandSubnet6Del(t *testing.T) {
 			"id": 4
 		}
 	}`, command.Marshal())
+}
+
+// Tests subnet4-del command.
+func TestNewCommandSubnetDelFamily4(t *testing.T) {
+	command := NewCommandSubnetDel(4, &keaconfig.SubnetCmdsDeletedSubnet{
+		ID: 2,
+	}, DHCPv4)
+	require.NotNil(t, command)
+	require.JSONEq(t, `{
+		"command": "subnet4-del",
+		"service": ["dhcp4"],
+		"arguments": {
+			"id": 2
+		}
+	}`, command.Marshal())
+}
+
+// Tests subnet6-del command.
+func TestNewCommandSubnetDelFamily6(t *testing.T) {
+	command := NewCommandSubnetDel(6, &keaconfig.SubnetCmdsDeletedSubnet{
+		ID: 4,
+	}, "dhcp6")
+	require.NotNil(t, command)
+	require.JSONEq(t, `{
+		"command": "subnet6-del",
+		"service": ["dhcp6"],
+		"arguments": {
+			"id": 4
+		}
+	}`, command.Marshal())
+}
+
+// Test that the function returning subnet4-del or subnet6-del command
+// panics when the family is invalid.
+func TestNewCommandSubnetDelInvalidFamily(t *testing.T) {
+	require.Panics(t, func() {
+		_ = NewCommandSubnetDel(123, &keaconfig.SubnetCmdsDeletedSubnet{
+			ID: 2,
+		}, DHCPv4)
+	})
 }
 
 // Tests subnet4-update command.

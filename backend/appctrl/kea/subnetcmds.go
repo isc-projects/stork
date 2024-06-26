@@ -1,6 +1,10 @@
 package keactrl
 
-import keaconfig "isc.org/stork/appcfg/kea"
+import (
+	"fmt"
+
+	keaconfig "isc.org/stork/appcfg/kea"
+)
 
 const (
 	ListSubnets       CommandName = "list-subnets"
@@ -58,14 +62,27 @@ func NewCommandNetwork6SubnetAdd(sharedNetworkName string, localSubnetID int64, 
 
 // Creates network4-subnet-del command.
 func NewCommandNetwork4SubnetDel(sharedNetworkName string, localSubnetID int64, daemonNames ...DaemonName) *Command {
-	return NewCommandBase(Network4SubnetDel, daemonNames...).
-		WithArgument("id", localSubnetID).
-		WithArgument("name", sharedNetworkName)
+	return NewCommandNetworkSubnetDel(4, sharedNetworkName, localSubnetID, daemonNames...)
 }
 
 // Creates network6-subnet-del command.
 func NewCommandNetwork6SubnetDel(sharedNetworkName string, localSubnetID int64, daemonNames ...DaemonName) *Command {
-	return NewCommandBase(Network6SubnetDel, daemonNames...).
+	return NewCommandNetworkSubnetDel(6, sharedNetworkName, localSubnetID, daemonNames...)
+}
+
+// Creates network4-subnet-del or network6-subnet-del depending on the family.
+// It panics if the family is neither 4 nor 6.
+func NewCommandNetworkSubnetDel(family int, sharedNetworkName string, localSubnetID int64, daemonNames ...DaemonName) *Command {
+	var commandName CommandName
+	switch family {
+	case 4:
+		commandName = Network4SubnetDel
+	case 6:
+		commandName = Network6SubnetDel
+	default:
+		panic(fmt.Sprintf("invalid family %d", family))
+	}
+	return NewCommandBase(commandName, daemonNames...).
 		WithArgument("id", localSubnetID).
 		WithArgument("name", sharedNetworkName)
 }
@@ -82,13 +99,26 @@ func NewCommandSubnet6Add(subnet *keaconfig.Subnet6, daemonNames ...DaemonName) 
 
 // Creates subnet4-del command.
 func NewCommandSubnet4Del(subnet *keaconfig.SubnetCmdsDeletedSubnet, daemonNames ...DaemonName) *Command {
-	return NewCommandBase(Subnet4Del, daemonNames...).
-		WithArgument("id", subnet.ID)
+	return NewCommandSubnetDel(4, subnet, daemonNames...)
 }
 
 // Creates subnet6-del command.
 func NewCommandSubnet6Del(subnet *keaconfig.SubnetCmdsDeletedSubnet, daemonNames ...DaemonName) *Command {
-	return NewCommandBase(Subnet6Del, daemonNames...).
+	return NewCommandSubnetDel(6, subnet, daemonNames...)
+}
+
+// Creates subnet4-del or subnet6-del depending on the family.
+func NewCommandSubnetDel(family int, subnet *keaconfig.SubnetCmdsDeletedSubnet, daemonNames ...DaemonName) *Command {
+	var commandName CommandName
+	switch family {
+	case 4:
+		commandName = Subnet4Del
+	case 6:
+		commandName = Subnet6Del
+	default:
+		panic(fmt.Sprintf("invalid family %d", family))
+	}
+	return NewCommandBase(commandName, daemonNames...).
 		WithArgument("id", subnet.ID)
 }
 

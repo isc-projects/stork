@@ -4196,15 +4196,10 @@ func TestDeleteSubnet(t *testing.T) {
 
 	serverConfig := `{
 		"Dhcp4": {
-			"shared-networks": [
+			"subnet4": [
 				{
-					"name": "foo",
-					"subnet4": [
-						{
-							"id": 1,
-							"subnet": "192.0.2.0/24"
-						}
-					]
+					"id": 1,
+					"subnet": "192.0.2.0/24"
 				}
 			],
 			"hooks-libraries": [

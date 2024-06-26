@@ -4484,24 +4484,39 @@ func TestApplySubnet4Delete(t *testing.T) {
 	require.Equal(t, "subnet_delete", update.Operation)
 	require.NotNil(t, update.Recipe)
 
-	// There should be four commands ready to send.
+	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 4)
+	require.Len(t, commands, 6)
+	require.Equal(t, commands[0].App, commands[1].App)
+	require.Equal(t, commands[0].App, commands[4].App)
+	require.Equal(t, commands[2].App, commands[3].App)
+	require.Equal(t, commands[2].App, commands[5].App)
+	require.NotEqual(t, commands[0].App, commands[2].App)
+	require.NotEqual(t, commands[2].App, commands[4].App)
 
 	// Validate the commands.
 	for i := range commands {
 		command := commands[i].Command
 		marshalled := command.Marshal()
-		switch {
-		case i < 2:
+		switch i {
+		case 0, 2:
+			require.JSONEq(t, `{
+				"command": "network4-subnet-del",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"id": 1,
+					"name": "foo"
+				}
+			}`, marshalled)
+		case 1, 3:
 			require.JSONEq(t,
 				fmt.Sprintf(`{
-             "command": "subnet4-del",
-             "service": [ "dhcp4" ],
-             "arguments": {
-                 "id": %d
-             }
-         }`, subnets[0].ID),
+				"command": "subnet4-del",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"id": %d
+				}
+			}`, subnets[0].ID),
 				marshalled)
 		default:
 			require.JSONEq(t,
@@ -4510,8 +4525,6 @@ func TestApplySubnet4Delete(t *testing.T) {
 					 "service": [ "dhcp4" ]
 				 }`, marshalled)
 		}
-		app = commands[i].App
-		require.Equal(t, app, subnets[0].LocalSubnets[i%2].Daemon.App)
 	}
 }
 
@@ -4603,16 +4616,31 @@ func TestApplySubnet6Delete(t *testing.T) {
 	require.Equal(t, "subnet_delete", update.Operation)
 	require.NotNil(t, update.Recipe)
 
-	// There should be two commands ready to send.
+	// There should be six commands ready to send.
 	commands := update.Recipe.Commands
-	require.Len(t, commands, 4)
+	require.Len(t, commands, 6)
+	require.Equal(t, commands[0].App, commands[1].App)
+	require.Equal(t, commands[0].App, commands[4].App)
+	require.Equal(t, commands[2].App, commands[3].App)
+	require.Equal(t, commands[2].App, commands[5].App)
+	require.NotEqual(t, commands[0].App, commands[2].App)
+	require.NotEqual(t, commands[2].App, commands[4].App)
 
 	// Validate the commands.
 	for i := range commands {
 		command := commands[i].Command
 		marshalled := command.Marshal()
-		switch {
-		case i < 2:
+		switch i {
+		case 0, 2:
+			require.JSONEq(t, `{
+				"command": "network6-subnet-del",
+				"service": [ "dhcp6" ],
+				"arguments": {
+					"id": 1,
+					"name": "foo"
+				}
+			}`, marshalled)
+		case 1, 3:
 			require.JSONEq(t,
 				fmt.Sprintf(`{
 				 "command": "subnet6-del",
@@ -4629,8 +4657,6 @@ func TestApplySubnet6Delete(t *testing.T) {
 						 "service": [ "dhcp6" ]
 					 }`, marshalled)
 		}
-		app = commands[i].App
-		require.Equal(t, app, subnets[0].LocalSubnets[i%2].Daemon.App)
 	}
 }
 
@@ -4715,16 +4741,28 @@ func TestCommitSubnetDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the commands were sent to different servers.
-	require.Len(t, agents.RecordedURLs, 4)
-	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
-	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+	require.Len(t, agents.RecordedURLs, 6)
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
+	require.NotEqual(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[5])
+	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[4])
 
 	// Validate the sent commands.
-	require.Len(t, agents.RecordedCommands, 4)
+	require.Len(t, agents.RecordedCommands, 6)
+
 	for i, command := range agents.RecordedCommands {
 		marshalled := command.Marshal()
-		switch {
-		case i < 2:
+		switch i {
+		case 0, 2:
+			require.JSONEq(t, `{
+			"command": "network4-subnet-del",
+			"service": [ "dhcp4" ],
+			"arguments": {
+				"id": 1,
+				"name": "foo"
+			}
+		}`, marshalled)
+		case 1, 3:
 			require.JSONEq(t,
 				fmt.Sprintf(`{
              "command": "subnet4-del",

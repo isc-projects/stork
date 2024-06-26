@@ -1222,15 +1222,19 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 			}
 		}
 		if removedLocalSubnet != nil {
-			appCommand := ConfigCommand{}
-			switch subnet.GetFamily() {
-			case 4:
-				appCommand.Command = keactrl.NewCommandSubnet4Del(&keaconfig.SubnetCmdsDeletedSubnet{ID: removedLocalSubnet.LocalSubnetID}, removedLocalSubnet.Daemon.Name)
-			default:
-				appCommand.Command = keactrl.NewCommandSubnet6Del(&keaconfig.SubnetCmdsDeletedSubnet{ID: removedLocalSubnet.LocalSubnetID}, removedLocalSubnet.Daemon.Name)
+			if sharedNetworkNameBeforeUpdate != "" {
+				// If the deleted subnet belongs to a shared network we first need to remove
+				// this subnet from a shared network. This is a limitation of Kea 2.6.0.
+				commands = append(commands, ConfigCommand{
+					Command: keactrl.NewCommandNetworkSubnetDel(subnet.GetFamily(), sharedNetworkNameBeforeUpdate, removedLocalSubnet.LocalSubnetID, removedLocalSubnet.Daemon.Name),
+					App:     removedLocalSubnet.Daemon.App,
+				})
 			}
-			appCommand.App = removedLocalSubnet.Daemon.App
-			commands = append(commands, appCommand)
+			// Delete the subnet.
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandSubnetDel(subnet.GetFamily(), &keaconfig.SubnetCmdsDeletedSubnet{ID: removedLocalSubnet.LocalSubnetID}, removedLocalSubnet.Daemon.Name),
+				App:     removedLocalSubnet.Daemon.App,
+			})
 			removedLocalSubnets = append(removedLocalSubnets, removedLocalSubnet)
 		}
 	}
@@ -1303,16 +1307,19 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 		if err != nil {
 			return ctx, err
 		}
-		// Associate the command with an app receiving this command.
-		appCommand := ConfigCommand{}
-		switch subnet.GetFamily() {
-		case 4:
-			appCommand.Command = keactrl.NewCommandSubnet4Del(deletedSubnet, ls.Daemon.Name)
-		default:
-			appCommand.Command = keactrl.NewCommandSubnet6Del(deletedSubnet, ls.Daemon.Name)
+		// If the deleted subnet belongs to a shared network we first need to remove
+		// this subnet from a shared network. This is a limitation of Kea 2.6.0.
+		if subnet.SharedNetwork != nil && subnet.SharedNetwork.Name != "" {
+			commands = append(commands, ConfigCommand{
+				Command: keactrl.NewCommandNetworkSubnetDel(subnet.GetFamily(), subnet.SharedNetwork.Name, ls.LocalSubnetID, ls.Daemon.Name),
+				App:     ls.Daemon.App,
+			})
 		}
-		appCommand.App = ls.Daemon.App
-		commands = append(commands, appCommand)
+		// Delete the subnet.
+		commands = append(commands, ConfigCommand{
+			Command: keactrl.NewCommandSubnetDel(subnet.GetFamily(), deletedSubnet, ls.Daemon.Name),
+			App:     ls.Daemon.App,
+		})
 	}
 	// Persist the configuration changes.
 	for _, ls := range subnet.LocalSubnets {
