@@ -1331,31 +1331,6 @@ packages distributed by their maintainers. See
 `the documentation <https://gitlab.isc.org/isc-projects/stork/-/wikis/Install>`_
 for details.
 
-High Virtual Memory Usage
--------------------------
-
-Stork processes allocate large amount of virtual memory. It is a common situation in
-applications written in Golang. The Go runtime uses the virtual memory to manage the memory
-efficiently. The virtual memory is not the same as the physical memory. The
-size of the reserved virtual memory depends on the internal implementation 
-details of the Go memory allocator. The high value of virtual memory usage
-is not alarming as long as the real memory usage is low.
-
-You can examine the virtual memory usage using the ``ps aux`` command. The
-virtual memory usage is displayed in the ``VSZ`` column. There is also the
-``RSS`` column that shows the physical memory usage.
-
-The usual virtual memory usage of the Stork agent on machine with 16GB RAM,
-Go 1.22.4, and Ubuntu 22.04 is about 2.5-3GB.
-The real memory usage is relatively low, about 10-40MB for Kea deployments with
-dozen of subnets and host reservations and 40-80MB for the deployments with
-thousands of subnets and host reservations.
-
-References:
-
-- `Official Golang FAQ - Why does my Go process use so much virtual memory? <https://go.dev/doc/faq#Why_does_my_Go_process_use_so_much_virtual_memory>`_
-- `Go memory management <https://povilasv.me/go-memory-management/>`_
-
 Generated Code for DHCP Option Definitions
 ==========================================
 
