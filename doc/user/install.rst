@@ -139,10 +139,10 @@ Then, prepare the database:
     CREATE DATABASE
     postgres=# GRANT ALL PRIVILEGES ON DATABASE stork TO stork;
     GRANT
-    postgres=# GRANT ALL PRIVILEGES ON SCHEMA public TO stork;
-    GRANT
     postgres=# \c stork
     You are now connected to database "stork" as user "postgres".
+    postgres=# GRANT ALL PRIVILEGES ON SCHEMA public TO stork;
+    GRANT
     stork=# create extension pgcrypto;
     CREATE EXTENSION
 
