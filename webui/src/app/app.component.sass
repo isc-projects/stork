@@ -1,44 +1,69 @@
-// Improve look of topbar menu.
-:host ::ng-deep .stork-menubar
-  &.p-menubar
-    // Set the blue color of the topbar.
-    background-color: inherit
-    // Remove the border.
-    border-width: 0
-    // Remove unecessary spacing.
-    padding: 0
+// Improve look of top bar menu.
+.top-navbar
+  // Darker primary color for the navbar.
+  background-color: var(--primary-700)
+  // For responsive navbar, set min-height when it becomes narrow on smaller viewports.
+  min-height: 58px
 
-    & .p-menuitem.p-highlight.p-focus > .p-menuitem-content
-      background: var(--highlight-bg)
+:host ::ng-deep .stork-menubar.p-menubar
+  // Inherit background color after .top-navbar which is a layer below the menu.
+  background-color: inherit
+  // Remove the border.
+  border-width: 0
+  // Remove unnecessary spacing.
+  padding: 0
 
   // Apply the below changes only if the hamburger menu is not used.
-  &:not(.p-menubar-mobile-active)
-    .p-menuitem
-      .p-menuitem-text,.p-submenu-icon
-        // Use contrasting primary color for text.
-        color: var(--primary-color-text) !important
-      &:hover
-        .p-menuitem-text,.p-submenu-icon
-          // On hover the background is primary, so use contrasting normal color for text.
-          color: var(--text-color) !important
-      &.p-menuitem-active
-        .p-menuitem-text,.p-submenu-icon
-          // If the menu is open, the background is primary, so use contrasting normal color for text.
-          color: var(--text-color) !important
+  &:not(.p-menubar-mobile-active) .p-menubar-root-list
+    // Don't wrap menu items when shrinking the viewport.
+    flex-wrap: nowrap
+
+    & > .p-menuitem
+      // Custom style for not highlighted menu items.
+      &:not(.p-highlight)
+        & > .p-menuitem-content .p-menuitem-link .p-menuitem-text
+          // Make text more visible on primary background of the navbar.
+          color: var(--primary-color-text)
+
+        &:not(.p-disabled).p-focus > .p-menuitem-content
+          // In the newest PrimeNG version, the menu item is grayed out after clicking
+          // it. This is a workaround to restore the original color.
+          color: inherit
+          background: inherit
+
+      // Custom style for highlighted menu items.
+      &.p-highlight
+        & > .p-menuitem-content .p-menuitem-link .p-menuitem-text
+          // Highlighted menu has light background color, so use contrasting font color.
+          color: var(--text-color)
+        & > .p-menuitem-content
+          // Makes highlighted menu item more visible in light mode.
+          background-color: var(--highlight-bg)
 
   .p-menubar-button
     // Use white color for the hamburger icon for better contrast on the blue
     // background.
     color: var(--primary-color-text) !important
+
     &:hover
       // On hover the background is white, so use black text.
       color: var(--text-color) !important
 
-:host ::ng-deep .p-menubar .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus > .p-menuitem-content
-  // In the newest PrimeNG version, the menu item is grayed out after clicking
-  // it. This is a workaround to restore the original color.
-  color: inherit
-  background: inherit
+  .p-splitbutton span.p-button-label
+    // Don't wrap button label when viewport shrinks.
+    white-space: nowrap
+
+@media screen and (max-width: 1199px)
+  // Responsive Logout split button.
+  :host ::ng-deep .stork-menubar.p-menubar .p-splitbutton
+    span.p-button-label
+      // Button label is very wide, so make it disappear on smaller viewports.
+      // Logout icon remains visible.
+      display: none
+    .p-splitbutton-defaultbutton
+      // Minimize horizontal padding on smaller viewports.
+      padding-left: 0.5rem
+      padding-right: 0.5rem
 
 @keyframes p-progress-spinner-color
   0%
@@ -59,12 +84,9 @@
 
 // logo styling
 .logo
-  margin-right: 30px
   &:hover
     text-decoration: none
 
-  img
-    padding: 2px 0 0 6px
   span
     font-family: 'Mansalva'
     // Don't use any particular variant to keep consistency with the logo on
@@ -73,9 +95,3 @@
     font-size: 2.3rem
     color: var(--gray-0)
     vertical-align: super
-
-.top-navbar
-  background-color: var(--primary-700)
-
-.p-menubar .p-menuitem.p-highlight.p-focus > .p-menuitem-content
-  background: var(--highlight-bg)

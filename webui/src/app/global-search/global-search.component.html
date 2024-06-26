@@ -1,4 +1,11 @@
-<input type="text" pInputText placeholder="Search" [(ngModel)]="searchText" (keyup)="searchRecords($event)" />
+<input
+    type="text"
+    pInputText
+    placeholder="Search"
+    [(ngModel)]="searchText"
+    (keyup)="searchRecords($event)"
+    class="w-8rem xl:w-auto"
+/>
 
 <p-overlayPanel #searchResultsBox [showCloseIcon]="true">
     <div style="display: flex">
