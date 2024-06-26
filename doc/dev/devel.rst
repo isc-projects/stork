@@ -1334,8 +1334,8 @@ for details.
 High Virtual Memory Usage
 -------------------------
 
-Stork allocates a large amount of virtual memory. It is a common situation in
-Go applications. The Go runtime uses the virtual memory to manage the memory
+Stork processes allocate large amount of virtual memory. It is a common situation in
+applications written in Golang. The Go runtime uses the virtual memory to manage the memory
 efficiently. The virtual memory is not the same as the physical memory. The
 size of the reserved virtual memory depends on the internal implementation 
 details of the Go memory allocator. The high value of virtual memory usage
