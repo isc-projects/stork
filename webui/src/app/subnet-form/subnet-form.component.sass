@@ -7,19 +7,18 @@
 
 // Overwrite default PrimeNG Aura style for accordion.
 :host ::ng-deep .p-accordion
-    .p-accordion-header
-        &:not(.p-disabled) .p-accordion-header-link
+    .p-accordion-header:not(.p-disabled)
+        & .p-accordion-header-link
             // Make the accordion headers always visible with light background color.
             border-color: var(--surface-border)
             background: var(--surface-100)
-        &:not(.p-disabled):hover .p-accordion-header-link
+        &:hover .p-accordion-header-link
             // Add hover effect.
             background: var(--surface-200)
 
     .p-accordion-tab-active
         .p-toggleable-content
             overflow: visible
-            overflow-x: auto
 
     p-accordiontab .p-accordion-tab
         // Cancel the single line which is the only thing separating accordion tabs in Aura theme.

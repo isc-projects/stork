@@ -124,7 +124,7 @@
                     <td>
                         {{ leaseTypeAsText(lease.leaseType) }}
                     </td>
-                    <td style="{{ lease.state > 0 ? 'color: red' : 'color: green' }}">
+                    <td [class.text-red-500]="lease.state > 0" [class.text-green-500]="lease.state <= 0">
                         {{ leaseStateAsText(lease.state) }}
                     </td>
                     <td>
