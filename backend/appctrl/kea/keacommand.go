@@ -43,10 +43,15 @@ const (
 	ResponseConflict = 4
 )
 
+// Interface returning a list of daemons in the command.
+type DaemonsLister interface {
+	GetDaemonsList() []DaemonName
+}
+
 // Interface to a Kea command that can be marshalled and sent.
 type SerializableCommand interface {
+	DaemonsLister
 	GetCommand() CommandName
-	GetDaemonsList() []DaemonName
 	Marshal() string
 }
 
@@ -282,7 +287,7 @@ func MarshalResponseList(parsed interface{}) ([]byte, error) {
 
 // Parses response received from the Kea Control Agent. The "parsed" argument
 // should be a slice of Response, HashedResponse or similar structures.
-func UnmarshalResponseList(request SerializableCommand, response []byte, parsed interface{}) error {
+func UnmarshalResponseList(request DaemonsLister, response []byte, parsed interface{}) error {
 	err := json.Unmarshal(response, parsed)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to parse responses from Kea: %s", response)
