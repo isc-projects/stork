@@ -485,6 +485,14 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
+        // Set shared network. It should result in disabling the daemons selection.
+        component.state.group.get('sharedNetwork').setValue(3)
+        component.onSharedNetworkChange({
+            value: 3,
+        })
+        fixture.detectChanges()
+        expect(component.state.group.get('selectedDaemons')?.disabled).toBeTrue()
+
         const okResp: any = {
             status: 200,
         }
@@ -497,7 +505,8 @@ describe('SubnetFormComponent', () => {
 
         const subnet = {
             subnet: '192.0.2.0/24',
-            sharedNetworkId: null,
+            sharedNetworkId: 3,
+            sharedNetwork: 'floor3',
             localSubnets: [
                 {
                     daemonId: 1,
@@ -565,7 +574,16 @@ describe('SubnetFormComponent', () => {
             })
         })
         tick()
+
+        // Ensure there is no shared network selected.
+        component.onSharedNetworkChange({
+            value: null,
+        })
         fixture.detectChanges()
+
+        // Since shared network is not selected, the daemons selection should
+        // be enabled.
+        expect(component.state.group.get('selectedDaemons')?.disabled).toBeFalse()
 
         const okResp: any = {
             status: 200,

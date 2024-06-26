@@ -173,8 +173,10 @@ export class SubnetFormState {
             this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp4')
             this.selectableSharedNetworks =
                 this.allSharedNetworks4
-                    ?.filter((sn) =>
-                        sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId))
+                    ?.filter(
+                        (sn) =>
+                            sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId)) &&
+                            sn.localSharedNetworks.length === selectedDaemons?.length
                     )
                     .map((sn) => {
                         return { name: sn.name, id: sn.id }
@@ -183,8 +185,10 @@ export class SubnetFormState {
             this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp6')
             this.selectableSharedNetworks =
                 this.allSharedNetworks6
-                    ?.filter((sn) =>
-                        sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId))
+                    ?.filter(
+                        (sn) =>
+                            sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId)) &&
+                            sn.localSharedNetworks.length === selectedDaemons?.length
                     )
                     .map((sn) => {
                         return { name: sn.name, id: sn.id }

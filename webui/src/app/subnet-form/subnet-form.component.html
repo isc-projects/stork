@@ -37,6 +37,7 @@
                     [showClear]="true"
                     placeholder="not selected"
                     styleClass="w-full"
+                    (onChange)="onSharedNetworkChange($event)"
                 >
                 </p-dropdown>
                 <label for="shared-network-select">Shared Network</label>

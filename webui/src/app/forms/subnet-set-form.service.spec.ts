@@ -1811,6 +1811,7 @@ describe('SubnetSetFormService', () => {
 
         const selectedDaemons = formGroup.get('selectedDaemons') as FormControl<number[]>
         expect(selectedDaemons?.value).toEqual([1])
+        expect(selectedDaemons?.disabled).toBeTrue()
     })
 
     it('should convert IPv6 subnet data to a form', () => {
@@ -1991,6 +1992,7 @@ describe('SubnetSetFormService', () => {
 
         const selectedDaemons = formGroup.get('selectedDaemons') as FormControl<number[]>
         expect(selectedDaemons?.value).toEqual([1, 2])
+        expect(selectedDaemons?.disabled).toBeFalse()
     })
 
     it('should convert a subnet with no local subnets to a form', () => {

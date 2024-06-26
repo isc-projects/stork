@@ -373,6 +373,19 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * A callback invoked when shared network has been selected or deselected.
+     *
+     * @param event an event carrying the selected shared network ID.
+     */
+    onSharedNetworkChange(event): void {
+        if (event.value) {
+            this.state.group.get('selectedDaemons')?.disable()
+        } else {
+            this.state.group.get('selectedDaemons')?.enable()
+        }
+    }
+
+    /**
      * A callback invoked when selected DHCP servers have changed.
      *
      * Adjusts the form state based on the selected daemons.

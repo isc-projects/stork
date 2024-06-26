@@ -1043,7 +1043,10 @@ export class SubnetSetFormService {
                 ),
             }),
             selectedDaemons: new FormControl<number[]>(
-                subnet.localSubnets?.map((ls) => ls.daemonId) || [],
+                {
+                    value: subnet.localSubnets?.map((ls) => ls.daemonId) || [],
+                    disabled: !!subnet.sharedNetworkId,
+                },
                 Validators.required
             ),
         })
