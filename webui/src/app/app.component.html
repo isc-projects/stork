@@ -15,21 +15,9 @@
 
         <div style="flex-grow: 1">
             <p-menubar [model]="menuItems" styleClass="stork-menubar">
-                <p-dropdown
-                    [options]="[
-                        { name: 'Blue (aura)', val: 'aura-blue' },
-                        { name: 'Cyan (aura)', val: 'aura-cyan' },
-                        { name: 'Purple (lara)', val: 'lara-purple' }
-                    ]"
-                    [(ngModel)]="selectedThemeColor"
-                    optionLabel="name"
-                    optionValue="val"
-                    (onChange)="changeTheme(isDark, $event.value)"
-                    placeholder="Pick theme color"
-                />
                 <p-toggleButton
                     [(ngModel)]="isDark"
-                    (onChange)="changeTheme($event.checked, this.selectedThemeColor)"
+                    (onChange)="changeTheme($event.checked)"
                     onIcon="pi pi-moon"
                     offIcon="pi pi-sun"
                     ariaLabel="Dark/light mode"

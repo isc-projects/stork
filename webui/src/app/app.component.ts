@@ -33,11 +33,6 @@ export class AppComponent implements OnInit {
      */
     isDark: boolean
 
-    /**
-     * Holds information which theme was picked by a user.
-     */
-    selectedThemeColor: any
-
     constructor(
         private router: Router,
         private serverData: ServerDataService,

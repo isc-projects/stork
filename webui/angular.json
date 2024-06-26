@@ -27,14 +27,6 @@
                             "node_modules/primeicons/primeicons.css",
                             { "input": "src/aura-dark-blue.scss", "bundleName": "aura-blue-dark", "inject": false },
                             { "input": "src/aura-light-blue.scss", "bundleName": "aura-blue-light", "inject": false },
-                            { "input": "src/aura-dark-cyan.scss", "bundleName": "aura-cyan-dark", "inject": false },
-                            { "input": "src/aura-light-cyan.scss", "bundleName": "aura-cyan-light", "inject": false },
-                            { "input": "src/lara-dark-purple.scss", "bundleName": "lara-purple-dark", "inject": false },
-                            {
-                                "input": "src/lara-light-purple.scss",
-                                "bundleName": "lara-purple-light",
-                                "inject": false
-                            },
                             "node_modules/primeng/resources/primeng.min.css",
                             "node_modules/primeflex/primeflex.css",
                             "node_modules/@fortawesome/fontawesome-free/css/all.css",
