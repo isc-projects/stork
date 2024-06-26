@@ -169,15 +169,18 @@ func (v *hasherValue) UnmarshalJSON(b []byte) error {
 // Given the command pointer it returns existing arguments map or creates
 // a new arguments map, if it doesn't exist yet. It panics when the existing
 // arguments are not a map.
-func createOrGetArguments(command *Command) reflect.Value {
+func createOrGetArguments(command *Command) (mapArgs map[string]any) {
 	if command.Arguments == nil {
-		command.Arguments = make(map[string]any)
+		mapArgs = make(map[string]any)
+		command.Arguments = mapArgs
+		return
 	}
-	argsType := reflect.TypeOf(command.Arguments)
-	if argsType.Kind() != reflect.Map {
-		panic("arguments are not a map")
+	var ok bool
+	mapArgs, ok = command.Arguments.(map[string]any)
+	if !ok {
+		panic("command arguments are not a map")
 	}
-	return reflect.ValueOf(command.Arguments)
+	return
 }
 
 // Creates new Kea command from specified command name, daemons list and arguments.
@@ -231,7 +234,7 @@ func NewCommandBase(command CommandName, daemons ...DaemonName) *Command {
 func (c Command) WithArgument(name string, value any) *Command {
 	command := c
 	mapValue := createOrGetArguments(&command)
-	mapValue.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(value))
+	mapValue[name] = value
 	return &command
 }
 
@@ -242,7 +245,7 @@ func (c Command) WithArgument(name string, value any) *Command {
 func (c Command) WithArrayArgument(name string, value ...any) *Command {
 	command := c
 	mapValue := createOrGetArguments(&command)
-	mapValue.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(value))
+	mapValue[name] = value
 	return &command
 }
 
