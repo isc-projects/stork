@@ -92,8 +92,7 @@
                                     pool.invalid &&
                                     (pool.dirty || pool.touched || pool.get('range')?.hasError('ipRangeOverlaps'))
                                 "
-                                class="ml-2 pi pi-exclamation-triangle"
-                                [ngStyle]="{ color: 'var(--red-500)', 'text-decoration': 'none' }"
+                                class="ml-2 pi pi-exclamation-triangle text-red-500 text-decoration-none"
                             ></span>
                         </div>
                     </ng-template>
@@ -140,8 +139,7 @@
                                     pool.invalid &&
                                     (pool.dirty || pool.touched || pool.get('prefixes')?.hasError('ipv6PrefixOverlaps'))
                                 "
-                                class="ml-2 pi pi-exclamation-triangle"
-                                [ngStyle]="{ color: 'var(--red-500)', 'text-decoration': 'none' }"
+                                class="ml-2 pi pi-exclamation-triangle text-red-500 text-decoration-none"
                             ></span>
                         </div>
                     </ng-template>

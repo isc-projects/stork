@@ -72,7 +72,7 @@
                         <ng-template pTemplate="body" let-i>
                             <tr>
                                 <td class="border-none w-8rem">{{ i.idType }}</td>
-                                <td class="monospace border-none" [ngStyle]="{ color: 'var(--gray-500)' }">
+                                <td class="monospace border-none text-color-secondary">
                                     <app-identifier
                                         [hexValue]="i.idHexValue"
                                         [defaultHexFormat]="i.idType === 'hw-address'"
