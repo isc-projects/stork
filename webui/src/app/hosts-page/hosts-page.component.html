@@ -18,7 +18,7 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [style]="{ 'margin-top': '10px' }">
+<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2">
     <ng-template pTemplate="item" let-item let-i="index">
         <a
             role="menuitem"
@@ -43,7 +43,7 @@
     </ng-template>
 </p-tabMenu>
 
-<div style="margin: 10px">
+<div>
     <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
         <app-host-tab
             *ngSwitchCase="HostTabType.Display"

@@ -5,7 +5,7 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
+<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2">
     <ng-template pTemplate="item" let-item let-i="index">
         <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
             <div style="display: flex; justify-content: space-between">
