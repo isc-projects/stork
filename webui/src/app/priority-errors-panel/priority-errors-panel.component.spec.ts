@@ -49,7 +49,7 @@ describe('PriorityErrorsPanelComponent', () => {
         })
         // Create an observable the component subscribes to to receive the events.
         let observable = receivedEventsSubject.asObservable()
-        spyOn(sse, 'receiveConnectivityEvents').and.returnValue(observable)
+        spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
         // Simulate returning an app with the connectivity issues.
         let apps: any = {
             items: [
@@ -67,7 +67,7 @@ describe('PriorityErrorsPanelComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
         tick()
-        expect(sse.receiveConnectivityEvents).toHaveBeenCalled()
+        expect(sse.receivePriorityEvents).toHaveBeenCalled()
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
         expect(component.setBackoffTimeout).toHaveBeenCalled()
         expect(component.messages.length).toBe(1)
@@ -86,7 +86,7 @@ describe('PriorityErrorsPanelComponent', () => {
         tick()
 
         // It should cause the component to fetch the apps again.
-        expect(sse.receiveConnectivityEvents).toHaveBeenCalledTimes(1)
+        expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(2)
         expect(component.messages.length).toBe(1)
         expect(component.backoff).toBeTrue()
@@ -102,7 +102,7 @@ describe('PriorityErrorsPanelComponent', () => {
 
         // It should not trigger any new subscriptions nor requests to the
         // server because we have the backoff enabled.
-        expect(sse.receiveConnectivityEvents).toHaveBeenCalledTimes(1)
+        expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(2)
         expect(component.messages.length).toBe(1)
         expect(component.backoff).toBeTrue()
@@ -121,7 +121,7 @@ describe('PriorityErrorsPanelComponent', () => {
         })
         fixture.detectChanges()
         tick()
-        expect(sse.receiveConnectivityEvents).toHaveBeenCalledTimes(1)
+        expect(sse.receivePriorityEvents).toHaveBeenCalledTimes(1)
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(3)
         expect(component.messages.length).toBe(1)
         expect(component.backoff).toBeTrue()
@@ -129,7 +129,7 @@ describe('PriorityErrorsPanelComponent', () => {
     }))
 
     it('should not display any warnings when the number of apps is 0', fakeAsync(() => {
-        spyOn(sse, 'receiveConnectivityEvents').and.returnValue(
+        spyOn(sse, 'receivePriorityEvents').and.returnValue(
             of({
                 stream: 'all',
                 originalEvent: null,
@@ -145,7 +145,7 @@ describe('PriorityErrorsPanelComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
         tick()
-        expect(sse.receiveConnectivityEvents).toHaveBeenCalled()
+        expect(sse.receivePriorityEvents).toHaveBeenCalled()
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
         expect(component.messages.length).toBe(0)
     }))
@@ -156,7 +156,7 @@ describe('PriorityErrorsPanelComponent', () => {
             total: 0,
         }
         spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
-        spyOn(sse, 'receiveConnectivityEvents').and.returnValue(
+        spyOn(sse, 'receivePriorityEvents').and.returnValue(
             of({
                 stream: 'all',
                 originalEvent: null,
@@ -165,7 +165,7 @@ describe('PriorityErrorsPanelComponent', () => {
         spyOn(component, 'setBackoffTimeout')
         component.ngOnInit()
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
-        expect(sse.receiveConnectivityEvents).not.toHaveBeenCalled()
+        expect(sse.receivePriorityEvents).not.toHaveBeenCalled()
         tick()
         spyOn(component.subscription, 'unsubscribe')
         component.ngOnDestroy()
@@ -173,7 +173,7 @@ describe('PriorityErrorsPanelComponent', () => {
     }))
 
     it('should display an error message', fakeAsync(() => {
-        spyOn(sse, 'receiveConnectivityEvents').and.returnValue(
+        spyOn(sse, 'receivePriorityEvents').and.returnValue(
             of({
                 stream: 'all',
                 originalEvent: null,
@@ -186,7 +186,7 @@ describe('PriorityErrorsPanelComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
         tick()
-        expect(sse.receiveConnectivityEvents).toHaveBeenCalled()
+        expect(sse.receivePriorityEvents).toHaveBeenCalled()
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
         expect(component.messages.length).toBe(0)

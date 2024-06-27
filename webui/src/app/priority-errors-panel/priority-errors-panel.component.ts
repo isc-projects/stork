@@ -137,7 +137,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
      */
     private subscribe(): void {
         this.subscription = this.sse
-            .receiveConnectivityEvents()
+            .receivePriorityEvents()
             .pipe(filter((event) => event.stream === 'all' || event.stream === 'connectivity'))
             .subscribe(() => {
                 // To avoid many subsequent calls getting the current communication state,

@@ -34,7 +34,7 @@ export interface SSEEvent {
  *
  * The SSE can subscriptions can be requested in different components but it
  * is not practical to open individual connections at the same time. The browsers
- * have a limit on the number of concurrent connections, so it makes sene to
+ * have a limit on the number of concurrent connections, so it makes sense to
  * aggregate all events in a single connection to avoid exceeding this limit.
  *
  * This service aggregates the SSE subscriptions in a single connection and
@@ -95,45 +95,51 @@ export class ServerSentEventsService {
 
     /**
      * Returns an observable for subscribing to a stream of the connectivity
-     * events in the server.
+     * and registration events in the server.
      *
      * The connectivity events report issues with the connectivity between
-     * the server and the monitored machines. The components reporting such
-     * issues should call this function to subscribe to these events.
+     * the server and the monitored machines. The registration events inform
+     * about the attempts to register new machines. The components displaying
+     * such events should call this function to subscribe to them.
      *
      * If the SSE connection has been already established and it includes the
      * subscription to such events this function does not re-open the connection.
-     * Note that other functions may subscribe to the connectivity events
-     * besides other streams.
+     * Note that other functions may subscribe to the connectivity and registration
+     * events besides other streams.
      *
      * @returns an observable providing the events from the SSE stream.
      */
-    public receiveConnectivityEvents(): Observable<SSEEvent> {
-        if (!this.subscriptions.has('connectivity')) {
+    public receivePriorityEvents(): Observable<SSEEvent> {
+        if (!this.subscriptions.has('connectivity') || !this.subscriptions.has('registration')) {
             let subscription: SSEFilter = {
                 level: 0,
             }
             this.subscriptions.set('connectivity', subscription)
+            this.subscriptions.set('registration', subscription)
             this.reopenSSEConnection()
         }
         return this.events$
     }
 
     /**
-     * Returns an observable for subscribing to a connectivity and message (default)
+     * Returns an observable for subscribing to the priority and message (default)
      * streams of events in the server.
      *
      * The message events are typically displayed in the events panel component. However
-     * this function also subscribes to the connectivity events which are monitored on
-     * each Stork page. Subscribing to both streams at once makes sense assuming that the
-     * subscription to the connectivity events is almost always required.
+     * this function also subscribes to the connectivity and registration events which
+     * are monitored on each Stork page. Subscribing to both streams at once makes sense
+     * assuming that the subscription to the priority events is almost always required.
      *
      * @param filter a filter for the message events (e.g., by machine ID).
      * @returns an observable providing the events from the SSE stream.
      */
-    public receiveConnectivityAndMessageEvents(filter: SSEFilter): Observable<SSEEvent> {
+    public receivePriorityAndMessageEvents(filter: SSEFilter): Observable<SSEEvent> {
         // See if we need to reconnect.
-        if (this.subscriptions.has('connectivity') && this.subscriptions.has('message')) {
+        if (
+            this.subscriptions.has('connectivity') &&
+            this.subscriptions.has('registration') &&
+            this.subscriptions.has('message')
+        ) {
             let existingSubscription = this.subscriptions.get('message')
             if (JSON.stringify(existingSubscription) === JSON.stringify(filter)) {
                 // We already have matching subscription. Let's just return.
@@ -143,6 +149,7 @@ export class ServerSentEventsService {
         // Need to re-establish SSE connection because our filtering parameters
         // have changed or we haven't subscribed to some streams yet.
         this.subscriptions.set('connectivity', {})
+        this.subscriptions.set('registration', {})
         this.subscriptions.set('message', filter)
         this.reopenSSEConnection()
         return this.events$

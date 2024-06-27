@@ -129,7 +129,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.refreshEvents(loadEvent)
         this.eventSubscription.unsubscribe()
         this.eventSubscription = this.sse
-            .receiveConnectivityAndMessageEvents(this.filter)
+            .receivePriorityAndMessageEvents(this.filter)
             .pipe(filter((event) => event.stream === 'message'))
             .subscribe((event) => {
                 this.eventHandler(event.originalEvent)

@@ -81,7 +81,7 @@ describe('EventsPanelComponent', () => {
         component.filter.daemonType = 'dhcp4'
         component.filter.user = 3
 
-        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+        spyOn(sseService, 'receivePriorityAndMessageEvents').and.returnValue(
             of({
                 stream: 'foo',
                 originalEvent: {},
@@ -91,13 +91,13 @@ describe('EventsPanelComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledOnceWith(component.filter)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledOnceWith(component.filter)
     })
 
     it('should renew subscription upon filter changes', () => {
         component.filter.level = 1
 
-        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+        spyOn(sseService, 'receivePriorityAndMessageEvents').and.returnValue(
             of({
                 stream: 'foo',
                 originalEvent: {},
@@ -107,18 +107,18 @@ describe('EventsPanelComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledTimes(1)
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledTimes(1)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         component.filter.level = 2
         component.ngOnChanges()
 
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledTimes(2)
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledTimes(2)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
     })
 
     it('should re-establish SSE connection on events', () => {
-        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+        spyOn(sseService, 'receivePriorityAndMessageEvents').and.returnValue(
             of({
                 stream: 'foo',
                 originalEvent: {},
@@ -137,26 +137,26 @@ describe('EventsPanelComponent', () => {
         event.value.id = 1
         component.onMachineSelect(event)
         expect(component.filter.machine).toBe(1)
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.value = 'kea'
         component.onAppTypeSelect(event)
         expect(component.filter.appType).toBe('kea')
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.value = 'dhcp4'
         component.onDaemonTypeSelect(event)
         expect(component.filter.daemonType).toBe('dhcp4')
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
 
         event.value.id = 5
         component.onUserSelect(event)
         expect(component.filter.user).toBe(5)
-        expect(sseService.receiveConnectivityAndMessageEvents).toHaveBeenCalledWith(component.filter)
+        expect(sseService.receivePriorityAndMessageEvents).toHaveBeenCalledWith(component.filter)
     })
 
     it('should unsubscribe from events on destroy', () => {
-        spyOn(sseService, 'receiveConnectivityAndMessageEvents').and.returnValue(
+        spyOn(sseService, 'receivePriorityAndMessageEvents').and.returnValue(
             of({
                 stream: 'foo',
                 originalEvent: {},
