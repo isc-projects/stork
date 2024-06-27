@@ -26,12 +26,6 @@ a:not(.p-button):not(.p-tabview-nav-link):not(.p-menuitem-link):not(.p-accordion
   &.no-underline:hover
     text-decoration: none
 
-  // no longer needed?
-  //&.p-button, &.p-menuitem-link, &.p-tabview-nav-link
-  //  // Use the PrimeNG styles for the PrimeNG internal links.
-  //  color: revert-layer
-  //  text-decoration: revert-layer
-
 // header should occupy 100% width of parent div so elements inside a header could be right aligned
 p-header
   width: 100%
@@ -58,34 +52,15 @@ p-header
 .p-capitalize-first::first-letter
   text-transform: capitalize
 
-// Style no longer needed?
-//.p-datatable-table
-//  // Restore the style from PrimeNG 13.3 version to avoid too much emphasis on table borders.
-//  border-collapse: collapse
-
 // format right content in paginator
 .p-paginator .p-paginator-right-content
   margin-left: 20px
   color: var(--text-color-secondary)
 
-// No longer needed
-// Utility class for highlighting every even-numbered table row.
-// The first rule is for plain tables. The second rule is for p-tables.
-//.alternate-list > tr:nth-child(2n), .alternate-list tbody > tr:nth-child(2n)
-//  background-color: #f4f4f4
-
 // Allows breaking long lines of text on small
 // screens to avoid overlapping on other UI blocks.
 .word-break-all
   word-break: break-all
-
-// No longer needed?
-//.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus:not(:hover)
-//  // Specifies the style for the highlighted item in the dropdown.
-//  // It was changed between PrimeNG 15 and 17. The new style is gray and
-//  // it looks too similar to the on hover style.
-//  color: #1D4ED8
-//  background: #EFF6FF
 
 // Prevent the content from growing too wide on larger displays.
 .max-w-100rem
@@ -94,32 +69,37 @@ p-header
 .max-w-50rem
   max-width: 50rem
 
-.max-w-40rem
-  max-width: 40rem
-
-// WIP Stork responsive layout using flexbox.
+// Stork responsive layout using flexbox.
 section.stork-layout
   display: flex
   justify-content: space-between
   gap: 1rem
   flex-wrap: wrap
 
-section.stork-layout > article
-  flex: 2 1 58rem
+  & > article
+    // article is supposed to take 66% width of the viewport.
+    // It is main content on the page.
+    // It shrinks and grows.
+    flex: 2 1 58rem
 
-section.stork-layout > aside
-  flex: 1 1 19rem
+  & > aside
+    // aside is supposed to take 33% width of the viewport.
+    // It is additional content on the right hand side.
+    // It shrinks and grows. When there is not enough space, it goes below the article content and both
+    // article and aside take 100% width of the viewport.
+    flex: 1 1 19rem
 
 // Set 0 margin for full width top navbar position.
 body
   margin: 0
   font-family: 'Open Sans', 'Helvetica Neue', sans-serif
 
-body.dark
-  & .stork-form-multiselect.p-multiselect.p-multiselect-chip .p-multiselect-token
-    // Make chips background darker in dark mode.
-    background: var(--primary-400)
-
-  & .stork-form-chips.p-chips .p-chips-multiple-container .p-chips-token
+// Custom styling for PrimeNG p-multiselect and p-chips components in dark mode.
+// By default, PrimeNG applies darker background color to those components.
+// There are some components in stork, where this background is customized and set to lighter var(--primary-100) color.
+// This is fine for light mode, however it must be tweaked for dark mode.
+// To apply dark mode tweak, those components must have .adaptive-chips-background class applied.
+body.dark .adaptive-chips-background
+  &.p-multiselect.p-multiselect-chip .p-multiselect-token, &.p-chips .p-chips-multiple-container .p-chips-token
     // Make chips background darker in dark mode.
     background: var(--primary-400)

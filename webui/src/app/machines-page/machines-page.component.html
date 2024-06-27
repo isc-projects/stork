@@ -467,7 +467,7 @@ sudo ./stork-install-agent.sh</textarea
 
         <div class="col-4">
             <h3>System Information</h3>
-            <table [ngStyle]="{ color: machineTab.machine.error ? 'var(--text-color-secondary)' : '' }">
+            <table [class.text-color-secondary]="machineTab.machine.error">
                 <tr>
                     <td>Address</td>
                     <td>{{ machineTab.machine.address }}:{{ machineTab.machine.agentPort }}</td>
