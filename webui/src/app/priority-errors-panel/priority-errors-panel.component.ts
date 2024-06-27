@@ -79,6 +79,47 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Inserts new message under the specified key.
+     *
+     * If the message with this key (stream name) already exists, it is
+     * replaced.
+     *
+     * @param key message key.
+     * @param message message to be displayed.
+     */
+    private insertMessage(key: string, message: Message): void {
+        const index = this.messages.findIndex((message) => message.key === key)
+        if (index >= 0) {
+            // The message under this key already exists. Replace it.
+            this.messages[index] = message
+        } else {
+            // The message for this key does not exist. Insert it at the
+            // top of all messages.
+            this.messages.unshift(message)
+        }
+        // Shallow copy the array. Assigning new value to the messages is
+        // important to trigger view change detection. If the array is
+        // empty the call to slice(0) returns an empty array.
+        this.messages = this.messages.slice(0)
+    }
+
+    /**
+     * Deletes message by key.
+     *
+     * If the message doesn't exist it does nothing.
+     *
+     * @param key message key.
+     */
+    private deleteMessage(key: string): void {
+        const index = this.messages.findIndex((message) => message.key === key)
+        if (index >= 0) {
+            this.messages.splice(index, 1)
+        }
+        // Shallow copy the array to trigger view change detection.
+        this.messages = this.messages.slice(0)
+    }
+
+    /**
      * Get the list of apps reporting communication issues from the server.
      *
      * If there is at least one such app a warning message is displayed.
@@ -94,21 +135,17 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
         lastValueFrom(this.servicesApi.getAppsWithCommunicationIssues())
             .then((data) => {
                 if (data.total > 0) {
-                    this.messages = [
-                        {
-                            severity: 'warn',
-                            summary: 'Communication issues',
-                            detail:
-                                `Stork server reports communication problems for ${formatNoun(
-                                    data.total,
-                                    'app',
-                                    's'
-                                )} ` +
-                                `on the monitored machines. You can check the details <a href="/communication">here</a>.`,
-                        },
-                    ]
+                    const message: Message = {
+                        key: 'connectivity',
+                        severity: 'warn',
+                        summary: 'Communication issues',
+                        detail:
+                            `Stork server reports communication problems for ${formatNoun(data.total, 'app', 's')} ` +
+                            `on the monitored machines. You can check the details <a href="/communication">here</a>.`,
+                    }
+                    this.insertMessage('connectivity', message)
                 } else {
-                    this.messages = []
+                    this.deleteMessage('connectivity')
                 }
             })
             .catch((err) => {
@@ -138,19 +175,36 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     private subscribe(): void {
         this.subscription = this.sse
             .receivePriorityEvents()
-            .pipe(filter((event) => event.stream === 'all' || event.stream === 'connectivity'))
-            .subscribe(() => {
-                // To avoid many subsequent calls getting the current communication state,
-                // we introduce a backoff mechanism. After getting the detailed communication
-                // state we set a timeout when we only get notified about the events but not
-                // actually query the server for communication issues.
-                if (this.backoff) {
-                    this.eventCount++
-                } else {
-                    // When we receive such an event something has potentially changed in the
-                    // status of the connectivity between the server and the machines. Let's
-                    // get the details.
-                    this.getAppsWithCommunicationIssues()
+            .pipe(
+                filter(
+                    (event) =>
+                        event.stream === 'all' || event.stream === 'connectivity' || event.stream === 'registration'
+                )
+            )
+            .subscribe((event) => {
+                if (event.stream === 'all' || event.stream === 'connectivity') {
+                    // To avoid many subsequent calls getting the current communication state,
+                    // we introduce a backoff mechanism. After getting the detailed communication
+                    // state we set a timeout when we only get notified about the events but not
+                    // actually query the server for communication issues.
+                    if (this.backoff) {
+                        this.eventCount++
+                    } else {
+                        // When we receive such an event something has potentially changed in the
+                        // status of the connectivity between the server and the machines. Let's
+                        // get the details.
+                        this.getAppsWithCommunicationIssues()
+                    }
+                } else if (event.stream === 'registration') {
+                    const message: Message = {
+                        key: 'registration',
+                        severity: 'warn',
+                        summary: 'New registration request',
+                        detail:
+                            `There are new machines requesting registration and awaiting approval. ` +
+                            `Visit the list of unauthorized machines <a href="/machines/all">here</a>.`,
+                    }
+                    this.insertMessage('registration', message)
                 }
             })
     }

@@ -8,6 +8,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessagesModule } from 'primeng/messages'
 import { BehaviorSubject, of, throwError } from 'rxjs'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { HttpErrorResponse } from '@angular/common/http'
 
 describe('PriorityErrorsPanelComponent', () => {
     let component: PriorityErrorsPanelComponent
@@ -128,6 +129,55 @@ describe('PriorityErrorsPanelComponent', () => {
         expect(component.eventCount).toBe(0)
     }))
 
+    it('should receive both connectivity and registration events', fakeAsync(() => {
+        // Create a source of events.
+        let receivedEventsSubject = new BehaviorSubject({
+            stream: 'all',
+            originalEvent: null,
+        })
+        // Create an observable the component subscribes to to receive the events.
+        let observable = receivedEventsSubject.asObservable()
+        spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
+        // Simulate returning an app with the connectivity issues.
+        let apps: any = {
+            items: [
+                {
+                    id: 1,
+                },
+            ],
+            total: 1,
+        }
+        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(component, 'setBackoffTimeout')
+
+        // When the component is initialized it should subscibe to the events and
+        // receive the report about the apps with connectivity issues.
+        component.ngOnInit()
+        fixture.detectChanges()
+        tick()
+        expect(sse.receivePriorityEvents).toHaveBeenCalled()
+        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
+        expect(component.setBackoffTimeout).toHaveBeenCalled()
+        expect(component.messages.length).toBe(1)
+        // To prevent the storm of requests to the server for each received event
+        // we use a backoff mechanism to delay any next request after receiving
+        // the status.
+        expect(component.backoff).toBeTrue()
+        expect(component.eventCount).toBe(0)
+
+        // Simulate receiving next event.
+        receivedEventsSubject.next({
+            stream: 'registration',
+            originalEvent: null,
+        })
+        fixture.detectChanges()
+        tick()
+
+        expect(component.messages.length).toBe(2)
+        expect(component.messages[0].key).toBe('registration')
+        expect(component.messages[1].key).toBe('connectivity')
+    }))
+
     it('should not display any warnings when the number of apps is 0', fakeAsync(() => {
         spyOn(sse, 'receivePriorityEvents').and.returnValue(
             of({
@@ -148,6 +198,47 @@ describe('PriorityErrorsPanelComponent', () => {
         expect(sse.receivePriorityEvents).toHaveBeenCalled()
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
         expect(component.messages.length).toBe(0)
+    }))
+
+    it('should display registration events when there are no connectivity events', fakeAsync(() => {
+        // Create a source of events.
+        let receivedEventsSubject = new BehaviorSubject({
+            stream: 'all',
+            originalEvent: null,
+        })
+        // Create an observable the component subscribes to to receive the events.
+        let observable = receivedEventsSubject.asObservable()
+        spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
+        // Simulate returning an app with the connectivity issues.
+        let apps: any = {
+            items: [],
+            total: 0,
+        }
+        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(of(apps))
+        spyOn(component, 'setBackoffTimeout')
+
+        // When the component is initialized it should subscibe to the events and
+        // receive the report about the apps with connectivity issues.
+        component.ngOnInit()
+        fixture.detectChanges()
+        tick()
+        expect(sse.receivePriorityEvents).toHaveBeenCalled()
+        expect(api.getAppsWithCommunicationIssues).toHaveBeenCalled()
+        expect(component.setBackoffTimeout).toHaveBeenCalled()
+        expect(component.messages.length).toBe(0)
+        expect(component.backoff).toBeTrue()
+        expect(component.eventCount).toBe(0)
+
+        // Simulate receiving registration event.
+        receivedEventsSubject.next({
+            stream: 'registration',
+            originalEvent: null,
+        })
+        fixture.detectChanges()
+        tick()
+
+        expect(component.messages.length).toBe(1)
+        expect(component.messages[0].key).toBe('registration')
     }))
 
     it('should unsubscribe when the component is detroyed', fakeAsync(() => {
@@ -180,7 +271,9 @@ describe('PriorityErrorsPanelComponent', () => {
             })
         )
         // Simulate an error while fetching the apps.
-        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(throwError({ status: 404 }))
+        spyOn(api, 'getAppsWithCommunicationIssues').and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: 404 }))
+        )
         spyOn(component, 'setBackoffTimeout')
         spyOn(messageService, 'add')
         component.ngOnInit()
