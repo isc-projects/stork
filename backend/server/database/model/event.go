@@ -39,6 +39,7 @@ type SSEStream string
 const (
 	SSERegularMessage = SSEStream("message")
 	SSEConnectivity   = SSEStream("connectivity")
+	SSERegistration   = SSEStream("registration")
 )
 
 // Relations between the event and other entities.

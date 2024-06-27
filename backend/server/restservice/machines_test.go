@@ -475,6 +475,12 @@ func TestCreateMachine(t *testing.T) {
 	// check if GetMachineAndAppsState was called
 	require.True(t, fa.GetStateCalled)
 
+	// Make sure that the event informing about the new machine registration
+	// has been emitted.
+	require.Len(t, fec.Events, 1)
+	require.Contains(t, fec.Events[0].Text, "added")
+	require.Contains(t, fec.Events[0].SSEStreams, dbmodel.SSERegistration)
+
 	// re-register (the same) machine (it should be break)
 	params = services.CreateMachineParams{
 		Machine: &models.NewMachineReq{
@@ -502,6 +508,9 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, certFingerprint1, m1.CertFingerprint)
 	require.True(t, m1.LastVisitedAt.IsZero())
 
+	// There should be no new events generated.
+	require.Len(t, fec.Events, 1)
+
 	// Re-register (the same) machine but with different CA cert fingerprint.
 	// Server should generate new agent cert. The authorization status should
 	// be preserved.
@@ -524,6 +533,11 @@ func TestCreateMachine(t *testing.T) {
 	require.EqualValues(t, caCertPEM1, okRsp2.Payload.ServerCACert)
 	require.Equal(t, expectedServerCertFingerprintHex, okRsp2.Payload.ServerCertFingerprint)
 	require.NotEqual(t, okRsp.Payload.AgentCert, okRsp2.Payload.AgentCert)
+
+	// The new event should not be sent in the registration stream.
+	require.Len(t, fec.Events, 2)
+	require.Contains(t, fec.Events[1].Text, "re-registered")
+	require.NotContains(t, fec.Events[1].SSEStreams, dbmodel.SSERegistration)
 
 	machines, err = dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)

@@ -478,7 +478,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 			})
 			return rsp
 		}
-		r.EventCenter.AddInfoEvent("added {machine}", dbMachine)
+		r.EventCenter.AddInfoEvent("added {machine}", dbmodel.SSERegistration, dbMachine)
 	} else {
 		dbMachine.AgentToken = *params.Machine.AgentToken
 		dbMachine.CertFingerprint = agentCertFingerprint
