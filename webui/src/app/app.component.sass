@@ -49,11 +49,17 @@
       // On hover the background is white, so use black text.
       color: var(--text-color) !important
 
-  .p-splitbutton span.p-button-label
-    // Don't wrap button label when viewport shrinks.
-    white-space: nowrap
+  .p-splitbutton
+    span.p-button-label
+      // Don't wrap button label when viewport shrinks.
+      white-space: nowrap
 
-@media screen and (max-width: 1199px)
+    .p-splitbutton-defaultbutton
+      // For long username this button may become very wide and cause overflow.
+      // Limit max width.
+      max-width: 10rem
+
+@media screen and (max-width: 1270px)
   // Responsive Logout split button.
   :host ::ng-deep .stork-menubar.p-menubar .p-splitbutton
     span.p-button-label
