@@ -21,6 +21,7 @@ import { AuthService } from '../auth.service'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { MockParamMap } from '../utils'
+import { TagModule } from 'primeng/tag'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -43,6 +44,7 @@ describe('UsersPageComponent', () => {
                 ReactiveFormsModule,
                 ConfirmDialogModule,
                 SharedModule,
+                TagModule,
                 RouterTestingModule.withRoutes([{ path: 'users/1', component: UsersPageComponent }]),
             ],
             declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
