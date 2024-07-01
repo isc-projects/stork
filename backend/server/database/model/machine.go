@@ -271,6 +271,12 @@ func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 	return machines, nil
 }
 
+// Returns the number of unauthorized machines.
+func GetUnauthorizedMachinesCount(db *pg.DB) (int, error) {
+	count, err := db.Model((*Machine)(nil)).Where("authorized = ?", false).Count()
+	return count, pkgerrors.Wrapf(err, "problem counting unauthorized machines")
+}
+
 // Delete a machine from database.
 func DeleteMachine(db *pg.DB, machine *Machine) error {
 	result, err := db.Model(machine).WherePK().Delete()

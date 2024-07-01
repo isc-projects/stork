@@ -816,6 +816,64 @@ func TestGetMachinesDirectory(t *testing.T) {
 	require.Equal(t, machine2.Address, *machines.Items[1].Address)
 }
 
+// Test getting the number of the unauthorized machines.
+func TestGetUnauthorizedMachinesCount(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	for i := 0; i < 10; i++ {
+		machine := &dbmodel.Machine{
+			Address:   fmt.Sprintf("machine%d", i),
+			AgentPort: 8080,
+		}
+		// Only some machines are unauthorized.
+		if i > 8 {
+			machine.Authorized = true
+		}
+		err := dbmodel.AddMachine(db, machine)
+		require.NoError(t, err)
+	}
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := services.GetUnauthorizedMachinesCountParams{}
+	rsp := rapi.GetUnauthorizedMachinesCount(ctx, params)
+
+	require.IsType(t, &services.GetUnauthorizedMachinesCountOK{}, rsp)
+	okRsp := rsp.(*services.GetUnauthorizedMachinesCountOK)
+	require.EqualValues(t, 9, okRsp.Payload)
+}
+
+// Test an error case when getting the number of the unauthorized machines.
+func TestGetUnauthorizedMachinesCountError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	// Close the database before we make a query. It should result
+	// in an error.
+	teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := services.GetUnauthorizedMachinesCountParams{}
+	rsp := rapi.GetUnauthorizedMachinesCount(ctx, params)
+
+	require.IsType(t, &services.GetUnauthorizedMachinesCountDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetUnauthorizedMachinesCountDefault)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	require.Equal(t, "Cannot get a number of the unauthorized machines from the database", *defaultRsp.Payload.Message)
+}
+
 func TestGetMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

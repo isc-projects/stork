@@ -715,6 +715,28 @@ func TestGetMachinesByPageFilteredByAuthorized(t *testing.T) {
 	require.Len(t, ms, 2)
 }
 
+// Test getting the number of unauthorized machines.
+func TestGetUnauthorizedMachinesCount(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	for i := 0; i < 10; i++ {
+		m := &Machine{
+			Address:   fmt.Sprintf("machine%d", i),
+			AgentPort: 8080,
+		}
+		if i > 7 {
+			m.Authorized = true
+		}
+		err := AddMachine(db, m)
+		require.NoError(t, err)
+	}
+
+	count, err := GetUnauthorizedMachinesCount(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 8, count)
+}
+
 // Check if deleting only machine works.
 func TestDeleteMachineOnly(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

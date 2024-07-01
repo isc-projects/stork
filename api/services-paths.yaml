@@ -86,6 +86,23 @@
           schema:
             $ref: '#/definitions/ApiError'
 
+  /machines/unauthorized/count:
+    get:
+      description: Returns a number of the unauthorized machines.
+      operationId: getUnauthorizedMachinesCount
+      tags:
+        - Services
+      responses:
+        200:
+          description: Holds a number of the unauthorized machines.
+          schema:
+            type: integer
+            description: A number of the unauthorized machines.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /machines/{id}:
     get:
       summary: Get machine by ID.

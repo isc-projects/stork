@@ -202,6 +202,21 @@ func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetM
 	return rsp
 }
 
+// Return the number of the unauthorized machines.
+func (r *RestAPI) GetUnauthorizedMachinesCount(ctx context.Context, params services.GetUnauthorizedMachinesCountParams) middleware.Responder {
+	count, err := dbmodel.GetUnauthorizedMachinesCount(r.DB)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot get a number of the unauthorized machines from the database"
+		rsp := services.NewGetUnauthorizedMachinesCountDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := services.NewGetUnauthorizedMachinesCountOK().WithPayload(int64(count))
+	return rsp
+}
+
 // Check server token provided by user in agent registration
 // procedure. If it is empty and it is allowed to be empty then it is
 // accepted (true is returned). Otherwise provided token is compared
