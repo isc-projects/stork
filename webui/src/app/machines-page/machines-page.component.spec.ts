@@ -251,13 +251,21 @@ describe('MachinesPageComponent', () => {
         }
         const getAuthorizedMachinesResp: any = { items: [{ hostname: 'zzz' }, { hostname: 'xxx' }], total: 2 }
         const gmSpy = spyOn(servicesApi, 'getMachines')
+
+        // Prepare response for getMachines API being called by refreshUnauthorizedMachinesCount().
+        // refreshUnauthorizedMachinesCount() asks for details of only one unauthorized machine.
+        // The total unauthorized machines count is essential information here, not the detailed items themselves.
         gmSpy.withArgs(0, 1, null, null, false).and.returnValue(
             of({
                 items: [{ hostname: 'aaa', id: 1, address: 'addr1' }],
                 total: 3,
             } as any)
         )
+        // Prepare response for getMachines API being called by loadMachines(), which lazily loads data for
+        // unauthorized machines table. Text and app filters are undefined.
         gmSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
+        // Prepare response for getMachines API being called by loadMachines(), which lazily loads data for
+        // authorized machines table. Text and app filters are undefined.
         gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
 
         // show unauthorized machines
@@ -277,6 +285,8 @@ describe('MachinesPageComponent', () => {
 
         // get references to rows' checkboxes
         const checkboxes = fixture.nativeElement.querySelectorAll('.p-checkbox')
+        expect(checkboxes).toBeTruthy()
+        expect(checkboxes.length).toBeGreaterThanOrEqual(3)
         // checkboxes[0] is "select all" checkbox, skipped on purpose in this test
         const firstCheckbox = checkboxes[1]
         const secondCheckbox = checkboxes[2]
@@ -287,7 +297,12 @@ describe('MachinesPageComponent', () => {
         fixture.detectChanges()
 
         // get reference to "Authorize selected" button
-        const bulkAuthorizeBtn = fixture.nativeElement.querySelectorAll('#authorize-selected-button')?.[0]
+        const bulkAuthorizeBtnNodeList = fixture.nativeElement.querySelectorAll('#authorize-selected-button')
+        expect(bulkAuthorizeBtnNodeList).toBeTruthy()
+        expect(bulkAuthorizeBtnNodeList.length).toEqual(1)
+
+        const bulkAuthorizeBtn = bulkAuthorizeBtnNodeList[0]
+        expect(bulkAuthorizeBtn).toBeTruthy()
 
         // prepare 502 error response for the first machine of the bulk of machines to be authorized
         const umSpy = spyOn(servicesApi, 'updateMachine')
@@ -298,7 +313,7 @@ describe('MachinesPageComponent', () => {
             .and.returnValue(of({ hostname: 'bbb', id: 2, address: 'addr2', authorized: true } as any))
 
         // click "Authorize selected" button
-        bulkAuthorizeBtn?.dispatchEvent(new Event('click'))
+        bulkAuthorizeBtn.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
         // we expect that unauthorized machines list was not changed due to 502 error
@@ -362,7 +377,9 @@ describe('MachinesPageComponent', () => {
         const gmSpy = spyOn(servicesApi, 'getMachines')
 
         // this is only called once after authorizing selected machines
-        // and after switching back to authorized machines view; in refreshUnauthorizedMachinesCount()
+        // and after switching back to authorized machines view; in refreshUnauthorizedMachinesCount().
+        // refreshUnauthorizedMachinesCount() asks for details of only one unauthorized machine.
+        // The total unauthorized machines count is essential information here, not the detailed items themselves.
         gmSpy.withArgs(0, 1, null, null, false).and.returnValue(
             of({
                 items: [{ hostname: 'bbb', id: 2, address: 'addr2' }],
@@ -370,12 +387,14 @@ describe('MachinesPageComponent', () => {
             } as any)
         )
 
-        // called two times in loadMachines(event)
+        // called two times in loadMachines(event), which lazily loads data for
+        // unauthorized machines table. Text and app filters are undefined.
         gmSpy
             .withArgs(0, 10, undefined, undefined, false)
             .and.returnValues(of(getUnauthorizedMachinesRespBefore), of(getUnauthorizedMachinesRespAfter))
 
-        // called one time in loadMachines(event)
+        // called one time in loadMachines(event), which lazily loads data for
+        // authorized machines table. Text and app filters are undefined.
         gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesRespAfter))
 
         // show unauthorized machines
@@ -395,6 +414,8 @@ describe('MachinesPageComponent', () => {
 
         // get references to rows' checkboxes
         const checkboxes = fixture.nativeElement.querySelectorAll('.p-checkbox')
+        expect(checkboxes).toBeTruthy()
+        expect(checkboxes.length).toBeGreaterThanOrEqual(1)
         const selectAllCheckbox = checkboxes[0]
 
         // select all unauthorized machines
@@ -402,7 +423,12 @@ describe('MachinesPageComponent', () => {
         fixture.detectChanges()
 
         // get reference to "Authorize selected" button
-        const bulkAuthorizeBtn = fixture.nativeElement.querySelectorAll('#authorize-selected-button')?.[0]
+        const bulkAuthorizeBtnNodeList = fixture.nativeElement.querySelectorAll('#authorize-selected-button')
+        expect(bulkAuthorizeBtnNodeList).toBeTruthy()
+        expect(bulkAuthorizeBtnNodeList.length).toEqual(1)
+
+        const bulkAuthorizeBtn = bulkAuthorizeBtnNodeList[0]
+        expect(bulkAuthorizeBtn).toBeTruthy()
 
         // prepare 502 error response for the second machine of the bulk of machines to be authorized
         // first machine authorization shall succeed, third shall be skipped because it was after the 502 error
@@ -417,7 +443,7 @@ describe('MachinesPageComponent', () => {
             .and.returnValue(of({ hostname: 'ccc', id: 3, address: 'addr3', authorized: true } as any))
 
         // click "Authorize selected" button
-        bulkAuthorizeBtn?.dispatchEvent(new Event('click'))
+        bulkAuthorizeBtn.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
         // we expect that first machine of the bulk was authorized but second and third were not due to 502 error
