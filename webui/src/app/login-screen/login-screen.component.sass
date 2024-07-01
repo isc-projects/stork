@@ -1,3 +1,6 @@
+// Breakpoint for responsive view.
+$layout-breakpoint: 640px
+
 .login-screen__wrapper
     // Use the full page width and height.
     position: absolute
@@ -31,6 +34,10 @@
     align-items: center
     // Use full width.
     width: 100%
+    // Responsive view for smaller screens.
+    @media screen and (max-width: $layout-breakpoint)
+        // Leave little space on the left and right for smaller screens.
+        width: 95%
 
 .login-screen__logo
     // Use fancy font.
@@ -42,6 +49,17 @@
     font-size: 10rem
     // Set the top spacing.
     margin-top: 5vh
+    // Enable flex.
+    display: flex
+    // Center align items.
+    align-items: center
+    // Responsive view for smaller screens.
+    @media screen and (max-width: $layout-breakpoint)
+        // Smaller font size for smaller screens.
+        font-size: 7rem
+        // Change flex container direction to column.
+        flex-direction: column
+
     a
         // Override default color for links.
         color: var(--gray-0) !important
@@ -49,6 +67,10 @@
         vertical-align: middle
         // Short spacing between icon and text.
         margin-left: 2rem
+        // Responsive view for smaller screens.
+        @media screen and (max-width: $layout-breakpoint)
+            // Margin is not needed because of column layout for smaller screens.
+            margin-left: 0
     img
         // Center logo icon vertically.
         vertical-align: middle
@@ -138,3 +160,13 @@
     margin: auto 0 5px 0
     // A little spacing on top.
     padding-top: 8px
+    // Responsive view for smaller screens.
+    @media screen and (max-width: $layout-breakpoint)
+        // Apply regular margin for smaller screens.
+        margin: 0.5rem
+
+@media screen and (max-width: $layout-breakpoint)
+    ::ng-deep .p-toast.stork-toast
+        // Make toasts visible on smaller screens.
+        // Prevent width overflow.
+        max-width: calc(100vw - 2rem)
