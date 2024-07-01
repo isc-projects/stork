@@ -232,7 +232,7 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).not.toContain('aaa')
     }))
 
-    it('should not list machine as authorized when there was 502 during authorization - bulk authorize - first machine fails', fakeAsync(() => {
+    it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - first machine fails', fakeAsync(() => {
         expect(component.showUnauthorized).toBeFalse()
 
         // get references to select buttons
@@ -330,7 +330,7 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).not.toContain('bbb')
     }))
 
-    it('should not list machine as authorized when there was 502 during authorization - bulk authorize - second machine fails', fakeAsync(() => {
+    it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - second machine fails', fakeAsync(() => {
         expect(component.showUnauthorized).toBeFalse()
 
         // get references to select buttons
