@@ -16,6 +16,7 @@ import { FormsModule } from '@angular/forms'
 import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-errors-panel.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from './server-sent-events.service'
 import { MessagesModule } from 'primeng/messages'
+import { ToggleButtonModule } from 'primeng/togglebutton'
 
 describe('AppComponent', () => {
     beforeEach(waitForAsync(() => {
@@ -32,6 +33,7 @@ describe('AppComponent', () => {
                 NoopAnimationsModule,
                 FormsModule,
                 MessagesModule,
+                ToggleButtonModule,
             ],
             declarations: [AppComponent, GlobalSearchComponent, PriorityErrorsPanelComponent],
             providers: [
