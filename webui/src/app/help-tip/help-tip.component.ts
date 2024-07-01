@@ -23,11 +23,6 @@ export class HelpTipComponent {
     @Input() target: any
 
     /**
-     * Target element to attach the panel of the help-tip.
-     */
-    @Input() appendTo: any
-
-    /**
      * Title for the help box.
      */
     @Input() title: string
