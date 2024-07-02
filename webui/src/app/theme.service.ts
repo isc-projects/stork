@@ -49,7 +49,7 @@ export class ThemeService {
         this.document.body.classList.remove('dark', 'light')
         this.document.body.classList.add(darkLight)
 
-        // Update dynamically stork theme.
+        // Update dynamically Stork theme.
         if (themeLink) {
             themeLink.href = `${theme}-${darkLight}.css`
         }
