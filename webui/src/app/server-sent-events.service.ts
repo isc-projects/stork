@@ -3,6 +3,16 @@ import { Observable, Subject } from 'rxjs'
 import { Event } from './backend'
 
 /**
+ * Known event streams returned by the server.
+ */
+export enum EventStream {
+    All = 'all',
+    Connectivity = 'connectivity',
+    Registration = 'registration',
+    Message = 'message',
+}
+
+/**
  * A filter for the server sent events.
  */
 export interface SSEFilter {
@@ -81,7 +91,7 @@ export class ServerSentEventsService {
      *
      * The key holds a stream name. The value holds an applied filter.
      */
-    private subscriptions: Map<string, SSEFilter> = new Map()
+    private subscriptions: Map<EventStream, SSEFilter> = new Map()
 
     /**
      * Constructor.
@@ -110,12 +120,12 @@ export class ServerSentEventsService {
      * @returns an observable providing the events from the SSE stream.
      */
     public receivePriorityEvents(): Observable<SSEEvent> {
-        if (!this.subscriptions.has('connectivity') || !this.subscriptions.has('registration')) {
+        if (!this.subscriptions.has(EventStream.Connectivity) || !this.subscriptions.has(EventStream.Registration)) {
             let subscription: SSEFilter = {
                 level: 0,
             }
-            this.subscriptions.set('connectivity', subscription)
-            this.subscriptions.set('registration', subscription)
+            this.subscriptions.set(EventStream.Connectivity, subscription)
+            this.subscriptions.set(EventStream.Registration, subscription)
             this.reopenSSEConnection()
         }
         return this.events$
@@ -136,11 +146,11 @@ export class ServerSentEventsService {
     public receivePriorityAndMessageEvents(filter: SSEFilter): Observable<SSEEvent> {
         // See if we need to reconnect.
         if (
-            this.subscriptions.has('connectivity') &&
-            this.subscriptions.has('registration') &&
-            this.subscriptions.has('message')
+            this.subscriptions.has(EventStream.Connectivity) &&
+            this.subscriptions.has(EventStream.Registration) &&
+            this.subscriptions.has(EventStream.Message)
         ) {
-            let existingSubscription = this.subscriptions.get('message')
+            let existingSubscription = this.subscriptions.get(EventStream.Message)
             if (JSON.stringify(existingSubscription) === JSON.stringify(filter)) {
                 // We already have matching subscription. Let's just return.
                 return this.events$
@@ -148,9 +158,9 @@ export class ServerSentEventsService {
         }
         // Need to re-establish SSE connection because our filtering parameters
         // have changed or we haven't subscribed to some streams yet.
-        this.subscriptions.set('connectivity', {})
-        this.subscriptions.set('registration', {})
-        this.subscriptions.set('message', filter)
+        this.subscriptions.set(EventStream.Connectivity, {})
+        this.subscriptions.set(EventStream.Registration, {})
+        this.subscriptions.set(EventStream.Message, filter)
         this.reopenSSEConnection()
         return this.events$
     }
@@ -166,7 +176,7 @@ export class ServerSentEventsService {
         const searchParams = new URLSearchParams()
         // The message subscription can have a bunch of filters, so it needs
         // special handling.
-        const messageSubscription = this.subscriptions.get('message')
+        const messageSubscription = this.subscriptions.get(EventStream.Message)
         if (messageSubscription) {
             if (messageSubscription.machine) {
                 searchParams.append('machine', String(messageSubscription.machine))
