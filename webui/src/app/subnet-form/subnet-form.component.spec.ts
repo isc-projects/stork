@@ -485,6 +485,9 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
+        // The daemons selection should be enabled, so there should be no helptip.
+        expect(fixture.debugElement.query(By.css('[title="disabled servers selection"]'))).toBeFalsy()
+
         // Set shared network. It should result in disabling the daemons selection.
         component.state.group.get('sharedNetwork').setValue(3)
         component.onSharedNetworkChange({
@@ -492,6 +495,9 @@ describe('SubnetFormComponent', () => {
         })
         fixture.detectChanges()
         expect(component.state.group.get('selectedDaemons')?.disabled).toBeTrue()
+
+        // It should also display the helptip.
+        expect(fixture.debugElement.query(By.css('[title="disabled servers selection"]'))).toBeTruthy()
 
         const okResp: any = {
             status: 200,
