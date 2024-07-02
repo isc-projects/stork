@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
-import { Observable } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 
 import { MenuItem } from 'primeng/api'
 
@@ -17,7 +17,7 @@ import { ThemeService } from './theme.service'
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.sass'],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
     storkVersion = 'unknown'
     storkBuildDate = 'unknown'
     currentUser: User = null
@@ -32,6 +32,11 @@ export class AppComponent implements OnInit {
      * Holds information if dark theme is applied.
      */
     isDark: boolean
+
+    /**
+     * Keeps all the RxJS subscriptions.
+     */
+    subscriptions: Subscription = new Subscription()
 
     constructor(
         private router: Router,
@@ -239,78 +244,91 @@ export class AppComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.generalApi.getVersion().subscribe((data) => {
-            this.storkVersion = data.version
-            this.storkBuildDate = data.date
-        })
+        this.subscriptions.add(
+            this.generalApi.getVersion().subscribe((data) => {
+                this.storkVersion = data.version
+                this.storkBuildDate = data.date
+            })
+        )
 
-        this.auth.currentUser.subscribe((x) => {
-            this.currentUser = x
-            const menuItem = this.getMenuItem('Users')
-            if (this.auth.superAdmin()) {
-                // super admin can see Configuration/Users menu
-                menuItem['visible'] = true
-            } else {
-                menuItem['visible'] = false
-            }
-            // force refresh of top menu in UI
-            this.menuItems = [...this.menuItems]
+        this.subscriptions.add(
+            this.auth.currentUser.subscribe((x) => {
+                this.currentUser = x
+                const menuItem = this.getMenuItem('Users')
+                if (this.auth.superAdmin()) {
+                    // super admin can see Configuration/Users menu
+                    menuItem['visible'] = true
+                } else {
+                    menuItem['visible'] = false
+                }
+                // force refresh of top menu in UI
+                this.menuItems = [...this.menuItems]
 
-            // Only get the stats and settings when the user is logged in.
-            if (this.auth.currentUserValue) {
-                this.serverData.getAppsStats().subscribe((data) => {
-                    // if there are Kea apps then show Kea related menu items
-                    // otherwise hide them
-                    const dhcpMenuItem = this.getMenuItem('DHCP')
-                    const keaAppsMenuItem = this.getMenuItem('Kea Apps')
-                    if (data.keaAppsTotal && data.keaAppsTotal > 0) {
-                        dhcpMenuItem.visible = true
-                        keaAppsMenuItem['visible'] = true
-                    } else {
-                        dhcpMenuItem.visible = false
-                        keaAppsMenuItem['visible'] = false
-                    }
-                    // if there are BIND 9 apps then show BIND 9 related menu items
-                    // otherwise hide them
-                    const bind9AppsMenuItem = this.getMenuItem('BIND 9 Apps')
-                    if (data.bind9AppsTotal && data.bind9AppsTotal > 0) {
-                        bind9AppsMenuItem['visible'] = true
-                    } else {
-                        bind9AppsMenuItem['visible'] = false
-                    }
+                // Only get the stats and settings when the user is logged in.
+                if (this.auth.currentUserValue) {
+                    this.serverData.getAppsStats().subscribe((data) => {
+                        // if there are Kea apps then show Kea related menu items
+                        // otherwise hide them
+                        const dhcpMenuItem = this.getMenuItem('DHCP')
+                        const keaAppsMenuItem = this.getMenuItem('Kea Apps')
+                        if (data.keaAppsTotal && data.keaAppsTotal > 0) {
+                            dhcpMenuItem.visible = true
+                            keaAppsMenuItem['visible'] = true
+                        } else {
+                            dhcpMenuItem.visible = false
+                            keaAppsMenuItem['visible'] = false
+                        }
+                        // if there are BIND 9 apps then show BIND 9 related menu items
+                        // otherwise hide them
+                        const bind9AppsMenuItem = this.getMenuItem('BIND 9 Apps')
+                        if (data.bind9AppsTotal && data.bind9AppsTotal > 0) {
+                            bind9AppsMenuItem['visible'] = true
+                        } else {
+                            bind9AppsMenuItem['visible'] = false
+                        }
 
-                    // force refresh of top menu in UI
-                    this.menuItems = [...this.menuItems]
-                })
+                        // force refresh of top menu in UI
+                        this.menuItems = [...this.menuItems]
+                    })
 
-                // If Grafana url is not empty, we need to make
-                // Services.Grafana menu choice visible and set it's url.
-                // Otherwise we need to make sure it's not visible.
-                this.settingSvc.getSettings().subscribe((data) => {
-                    const grafanaUrl = data['grafana_url']
+                    // If Grafana url is not empty, we need to make
+                    // Services.Grafana menu choice visible and set it's url.
+                    // Otherwise we need to make sure it's not visible.
+                    this.settingSvc.getSettings().subscribe((data) => {
+                        const grafanaUrl = data['grafana_url']
 
-                    const grafanaMenuItem = this.getMenuItem('Grafana')
+                        const grafanaMenuItem = this.getMenuItem('Grafana')
 
-                    if (grafanaUrl && grafanaUrl !== '') {
-                        grafanaMenuItem['visible'] = true
-                        grafanaMenuItem['url'] = grafanaUrl
-                    } else {
-                        grafanaMenuItem['visible'] = false
-                    }
+                        if (grafanaUrl && grafanaUrl !== '') {
+                            grafanaMenuItem['visible'] = true
+                            grafanaMenuItem['url'] = grafanaUrl
+                        } else {
+                            grafanaMenuItem['visible'] = false
+                        }
 
-                    // force refresh of top menu in UI
-                    this.menuItems = [...this.menuItems]
-                })
-            }
-        })
+                        // force refresh of top menu in UI
+                        this.menuItems = [...this.menuItems]
+                    })
+                }
+            })
+        )
 
         // Subscribe to themeService isDark$ BehaviorSubject observable,
         // to get notified of dark/light mode change.
-        this.themeService.isDark$.subscribe((isDark) => {
-            this.isDark = isDark
-        })
+        this.subscriptions.add(
+            this.themeService.isDark$.subscribe((isDark) => {
+                this.isDark = isDark
+            })
+        )
         // Sets initial dark/light mode theme basing on user's preference and OS/browser settings.
         this.setInitialTheme()
+    }
+
+    /**
+     * Does a cleanup when the component is destroyed.
+     */
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
     }
 
     signOut() {

@@ -55,21 +55,15 @@
                 <div class="col-6"></div>
                 <div class="col-6">
                     <p-fieldset legend="Intervals">
-                        <div *ngFor="let setting of intervalSettings" class="w-full">
-                            <div class="flex align-items-end">
-                                <div class="w-full">
-                                    <label class="block mt-2">
-                                        {{ setting.title }} (in seconds):
-                                        <input
-                                            type="number"
-                                            [formControlName]="setting.formControlName"
-                                            class="w-full"
-                                        />
-                                    </label>
-                                </div>
-                                <div>
-                                    <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
-                                </div>
+                        <div *ngFor="let setting of intervalSettings" class="my-2 flex flex-column">
+                            <label [for]="setting.formControlName"> {{ setting.title }} (in seconds): </label>
+                            <div class="flex align-items-center">
+                                <input
+                                    type="number"
+                                    [formControlName]="setting.formControlName"
+                                    [id]="setting.formControlName"
+                                    class="w-full"
+                                /><app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
                             </div>
                             <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">
                                 It is required.
@@ -84,22 +78,15 @@
 
                 <div class="col-6">
                     <p-fieldset legend="Grafana & Prometheus">
-                        <div *ngFor="let setting of urlSettings" class="w-full">
-                            <div class="flex align-items-end">
-                                <div class="w-full">
-                                    <label class="block mt-2">
-                                        {{ setting.title }}
-                                        <input
-                                            type="url"
-                                            [formControlName]="setting.formControlName"
-                                            class="w-full"
-                                            id="grafanaUrl"
-                                        />
-                                    </label>
-                                </div>
-                                <div>
-                                    <app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
-                                </div>
+                        <div *ngFor="let setting of urlSettings" class="my-2 flex flex-column">
+                            <label [for]="setting.formControlName">{{ setting.title }}:</label>
+                            <div class="flex align-items-center">
+                                <input
+                                    type="url"
+                                    [formControlName]="setting.formControlName"
+                                    [id]="setting.formControlName"
+                                    class="w-full"
+                                /><app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
                             </div>
                         </div>
                     </p-fieldset>
