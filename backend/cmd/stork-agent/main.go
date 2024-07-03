@@ -220,7 +220,7 @@ func runRegister(settings *registerSettings) {
 
 // Read environment file settings. It's parsed before the main settings.
 type environmentFileSettings struct {
-	EnvFile    string `long:"env-file" description:"Environment file location; applicable only if the use-env-file is provided" default:"/etc/stork/server.env"`
+	EnvFile    string `long:"env-file" description:"Environment file location; applicable only if the use-env-file is provided" default:"/etc/stork/agent.env"`
 	UseEnvFile bool   `long:"use-env-file" description:"Read the environment variables from the environment file"`
 }
 
