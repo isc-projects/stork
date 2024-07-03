@@ -1308,7 +1308,8 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 			return ctx, err
 		}
 		// If the deleted subnet belongs to a shared network we first need to remove
-		// this subnet from a shared network. This is a limitation of Kea 2.6.0.
+		// this subnet from a shared network. This is a Kea limitation described in
+		// https://gitlab.isc.org/isc-projects/kea/-/issues/3455.
 		if subnet.SharedNetwork != nil && subnet.SharedNetwork.Name != "" {
 			commands = append(commands, ConfigCommand{
 				Command: keactrl.NewCommandNetworkSubnetDel(subnet.GetFamily(), subnet.SharedNetwork.Name, ls.LocalSubnetID, ls.Daemon.Name),
