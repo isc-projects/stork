@@ -192,6 +192,10 @@ func runRegister(settings *registerSettings) {
 	agentPort := ""
 	var err error
 	if settings.AgentHost != "" {
+		// We support providing the agent host address together with the port
+		// number for backward compatibility but it is no longer recommended
+		// because the registration command should accept the arguments in the
+		// same format as the main command.
 		agentAddr, agentPort, err = net.SplitHostPort(settings.AgentHost)
 		if err != nil && settings.AgentPort != 0 {
 			// Maybe the port is missing in the agent host address.
@@ -258,7 +262,7 @@ type registerSettings struct {
 	SkipTLSCertVerification bool   `long:"skip-tls-cert-verification" description:"Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS" env:"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"`
 	ServerURL               string `short:"u" long:"server-url" description:"URL of Stork Server" env:"STORK_AGENT_SERVER_URL"`
 	ServerToken             string `short:"t" long:"server-token" description:"Access token from Stork Server" env:"STORK_AGENT_SERVER_TOKEN"`
-	AgentHost               string `short:"a" long:"agent-host" description:"IP address or DNS name with optional port of current agent host, e.g.: localhost or 10.11.12.13:8080" env:"STORK_AGENT_HOST"`
+	AgentHost               string `short:"a" long:"agent-host" description:"IP address or DNS name, e.g.: localhost or 10.11.12.13" env:"STORK_AGENT_HOST"`
 	AgentPort               int    `short:"p" long:"agent-port" description:"Value of current agent port, e.g.: 8888" default:"8080" env:"STORK_AGENT_PORT"`
 }
 
