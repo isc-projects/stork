@@ -18,7 +18,7 @@ Synopsis
 
 :program:`stork-agent` [**--listen-stork-only**] [**--listen-prometheus-only**] [**-v**] [**--host=**] [**--port=**] [**--skip-tls-cert-verification=**] [**--prometheus-kea-exporter-address=**] [**--prometheus-kea-exporter-port=**] [**--prometheus-kea-exporter-interval=**] [**-h**]
 
-:program:`stork-agent` register [**--server-url=**] [**--server-token**] [**--agent-host=**]
+:program:`stork-agent` register [**--server-url=**] [**--server-token**] [**--agent-host=**] [**--agent-port=**]
 
 Description
 ~~~~~~~~~~~
@@ -114,7 +114,13 @@ following arguments:
    Specifies the access token used by the Stork server to allow registration of the Stork agents. ``[$STORK_AGENT_SERVER_TOKEN]``
 
 ``-a|--agent-host=``
-   Specifies an IP address or DNS name the host where the agent is running. The specified value must include a port number, e.g.: 10.11.12.13:8080. ``[$STORK_AGENT_HOST]``
+   Specifies an IP address or DNS name the host where the agent is running. The value may include a port number, e.g.: 10.11.12.13:8080. ``[$STORK_AGENT_HOST]``
+
+``-p|--agent-port=``
+   Specifies the port on which the agent listens for incoming connections. The port in the host takes precedence over this argument. The default is 8080. ``[$STORK_AGENT_PORT]``
+
+``-h|--help``
+   Returns register command's parameters.
 
 ``-h|--help``
    Returns register command's parameters.

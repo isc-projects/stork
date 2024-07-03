@@ -151,7 +151,7 @@ func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
 	defer sandbox.Close()
 
 	envPath, _ := sandbox.Write("file.env", `
-		STORK_AGENT_HOST=127.4.5.6
+		STORK_AGENT_HOST=[
 	`)
 
 	os.Args = []string{
@@ -174,8 +174,8 @@ func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
 	// Act
 	stdout, _, _ := testutil.CaptureOutput(main)
 
-	require.Contains(t, string(stdout), "127.4.5.6")
-	require.NotContains(t, string(stdout), "cannot set 'STORK_AGENT_HOST=127.4.5.6' environment variable")
+	require.Contains(t, string(stdout), "[")
+	require.NotContains(t, string(stdout), "cannot set 'STORK_AGENT_HOST=[' environment variable")
 }
 
 // Test that the SIGHUP error text is correct.
