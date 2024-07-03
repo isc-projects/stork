@@ -12,271 +12,265 @@
     </div>
 </app-breadcrumbs>
 
-<div class="grid">
-    <div class="col-12" style="margin: 0 0 10px 5px; padding-top: 30px">
-        <span>
-            <i class="fa fa-search mr-1"></i>
-            Search leases:
+<div class="flex flex-wrap gap-2 align-items-center">
+    <span class="hidden sm:inline-block">Search leases:</span>
+    <div>
+        <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
             <input
-                type="text"
                 id="leases-search-input"
-                pInputText
-                [(ngModel)]="searchText"
-                placeholder="IP address, MAC, client-id, DUID or hostname"
-                size="36"
                 (keyup)="handleKeyUp($event)"
+                [(ngModel)]="searchText"
+                type="text"
+                pInputText
+                title="Search leases by IP address, MAC, client-id, DUID or hostname"
+                placeholder="IP address, MAC, client-id, DUID or hostname"
+                class="w-18rem sm:w-25rem"
                 #searchInput
             />
-            <app-help-tip title="leases search" id="leases-search-help-button" width="40vw" [target]="searchInput">
-                <p>
-                    Use the input box to specify a searched lease. You can search the lease by one of the following
-                    lease properties:
-                </p>
-                <p-table
-                    styleClass="p-datatable-striped p-datatable-sm"
-                    [value]="[
-                        { h: 'IP address', dhcp4: true, dhcp6: true },
-                        { h: 'hostname', dhcp4: true, dhcp6: true },
-                        { h: 'MAC address', dhcp4: true, dhcp6: false },
-                        { h: 'DHCPv4 client identifier', dhcp4: true, dhcp6: false },
-                        { h: 'delegated prefix (excluding prefix length)', dhcp4: false, dhcp6: true },
-                        { h: 'DHCPv6 DUID', dhcp4: false, dhcp6: true }
-                    ]"
-                >
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <th></th>
-                            <th>kea-dhcp4</th>
-                            <th>kea-dhcp6</th>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-r>
-                        <tr>
-                            <th>{{ r.h }}</th>
-                            <td>{{ r.dhcp4 ? '&#x2705;' : '' }}</td>
-                            <td>{{ r.dhcp6 ? '&#x2705;' : '' }}</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-                <p>MAC address, client identifier and DUID can be specified in the following formats:</p>
-                <ul>
-                    <li>01:02:03:04:05</li>
-                    <li>01 02 03 04 05</li>
-                    <li>0102030405</li>
-                </ul>
-                <p>
-                    The specified text must match exactly one of the lease properties. Searching for leases using
-                    partial value, e.g. <i class="monospace">192.0.</i>, is currently not supported.
-                </p>
-                <p>To find all declined leases, type <i class="monospace">state:declined</i> in the search box.</p>
-                <p>
-                    The search engine will look for the specified lease on all monitored Kea servers having the
-                    lease_cmds hooks library loaded. It may return multiple leases for the same IP address or delegated
-                    prefix when Kea servers are configured to share the lease information via High Availability hooks
-                    library or shared lease database.
-                </p>
-            </app-help-tip>
-            <span id="leases-search-input-error" class="text-red-700" *ngIf="invalidSearchText">{{
-                invalidSearchTextError
-            }}</span>
         </span>
+        <app-help-tip title="leases search" id="leases-search-help-button" width="40vw" [target]="searchInput">
+            <p>
+                Use the input box to specify a searched lease. You can search the lease by one of the following lease
+                properties:
+            </p>
+            <p-table
+                styleClass="p-datatable-striped p-datatable-sm"
+                [value]="[
+                    { h: 'IP address', dhcp4: true, dhcp6: true },
+                    { h: 'hostname', dhcp4: true, dhcp6: true },
+                    { h: 'MAC address', dhcp4: true, dhcp6: false },
+                    { h: 'DHCPv4 client identifier', dhcp4: true, dhcp6: false },
+                    { h: 'delegated prefix (excluding prefix length)', dhcp4: false, dhcp6: true },
+                    { h: 'DHCPv6 DUID', dhcp4: false, dhcp6: true }
+                ]"
+            >
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th></th>
+                        <th>kea-dhcp4</th>
+                        <th>kea-dhcp6</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-r>
+                    <tr>
+                        <th>{{ r.h }}</th>
+                        <td>{{ r.dhcp4 ? '&#x2705;' : '' }}</td>
+                        <td>{{ r.dhcp6 ? '&#x2705;' : '' }}</td>
+                    </tr>
+                </ng-template>
+            </p-table>
+            <p>MAC address, client identifier and DUID can be specified in the following formats:</p>
+            <ul>
+                <li>01:02:03:04:05</li>
+                <li>01 02 03 04 05</li>
+                <li>0102030405</li>
+            </ul>
+            <p>
+                The specified text must match exactly one of the lease properties. Searching for leases using partial
+                value, e.g. <i class="monospace">192.0.</i>, is currently not supported.
+            </p>
+            <p>To find all declined leases, type <i class="monospace">state:declined</i> in the search box.</p>
+            <p>
+                The search engine will look for the specified lease on all monitored Kea servers having the lease_cmds
+                hooks library loaded. It may return multiple leases for the same IP address or delegated prefix when Kea
+                servers are configured to share the lease information via High Availability hooks library or shared
+                lease database.
+            </p>
+        </app-help-tip>
     </div>
-
-    <div *ngIf="erredApps && erredApps.length > 0" class="col-4" style="margin: 0 0 10px 5px">
-        <p-messages id="erred-apps-message" [closable]="false" severity="warn">
-            <ng-template pTemplate>
-                <div>
-                    Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
-                    error in response to the control commands. The results presented in the table below may not comprise
-                    all leases matching the query because some matching leases may reside on the servers, which returned
-                    an error. Issues were found for the following Kea servers:
-                    <ul style="list-style-type: disc">
-                        <li *ngFor="let erredApp of erredApps">
-                            <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>
-                        </li>
-                    </ul>
-                </div>
-            </ng-template>
-        </p-messages>
-    </div>
-
-    <div class="col-12" style="margin: 0 0 10px 5px">
-        <p-table id="leases-table" [value]="leases" dataKey="id">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th style="width: 3rem"></th>
-                    <th>Lease</th>
-                    <th>Type</th>
-                    <th>State</th>
-                    <th>App Name</th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-lease let-expanded="expanded">
-                <tr>
-                    <td>
-                        <a [pRowToggler]="lease">
-                            <i [ngClass]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
-                        </a>
-                    </td>
-                    <td>
-                        {{ lease.ipAddress + (lease.prefixLength ? '/' + lease.prefixLength : '') }}
-                    </td>
-                    <td>
-                        {{ leaseTypeAsText(lease.leaseType) }}
-                    </td>
-                    <td [class.text-red-500]="lease.state > 0" [class.text-green-500]="lease.state <= 0">
-                        {{ leaseStateAsText(lease.state) }}
-                    </td>
-                    <td>
-                        <a routerLink="/apps/kea/{{ lease.appId }}" style="display: block">
-                            {{ lease.appName }}
-                        </a>
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="rowexpansion" let-lease>
-                <tr>
-                    <td colspan="5">
-                        <div class="grid">
-                            <div *ngIf="lease.hwAddress || lease.clientId || lease.duid" class="col-3">
-                                <p-fieldset legend="Client">
-                                    <table>
-                                        <tr *ngIf="lease.hwAddress">
-                                            <td style="width: 10rem">MAC address:</td>
-                                            <td>
-                                                <app-identifier
-                                                    [hexValue]="lease.hwAddress"
-                                                    [defaultHexFormat]="true"
-                                                    styleClass="font-italic"
-                                                ></app-identifier>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="lease.clientId">
-                                            <td style="width: 10rem">Client Identifier:</td>
-                                            <td>
-                                                <app-identifier
-                                                    [hexValue]="lease.clientId"
-                                                    styleClass="font-italic"
-                                                ></app-identifier>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="lease.duid">
-                                            <td style="width: 10rem">DUID:</td>
-                                            <td>
-                                                <app-identifier
-                                                    [hexValue]="lease.duid"
-                                                    styleClass="font-italic"
-                                                ></app-identifier>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </p-fieldset>
-                            </div>
-                            <div class="col-3">
-                                <p-fieldset legend="Details">
-                                    <table>
-                                        <tr>
-                                            <td style="width: 10rem">Subnet Identifier:</td>
-                                            <td>
-                                                <i>{{ lease.subnetId }}</i>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="lease.iaid">
-                                            <td style="width: 10rem">IAID:</td>
-                                            <td>
-                                                <i>{{ lease.iaid }}</i>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="lease.preferredLifetime">
-                                            <td style="width: 10rem">Preferred Lifetime:</td>
-                                            <td>
-                                                <i>{{ lease.preferredLifetime }} seconds</i>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="width: 10rem">Valid Lifetime:</td>
-                                            <td>
-                                                <i>{{ lease.validLifetime }} seconds</i>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="width: 10rem">Allocated at:</td>
-                                            <td>
-                                                <i>{{ lease.cltt | localtime }}</i>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="width: 10rem">Expires at:</td>
-                                            <td>
-                                                <i>{{ lease.cltt + lease.validLifetime | localtime }}</i>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </p-fieldset>
-                            </div>
-                            <div *ngIf="lease.userContext" class="col">
-                                <p-fieldset legend="User Context">
-                                    <!-- Wrapper to shrink the width of the viewer to its content. -->
-                                    <div class="w-max">
-                                        <!-- JSON viewer -->
-                                        <app-json-tree-root [value]="lease.userContext"></app-json-tree-root>
-                                    </div>
-                                </p-fieldset>
-                            </div>
-                            <div *ngIf="lease.hostname" class="col-3">
-                                <p-fieldset legend="DDNS">
-                                    <table>
-                                        <tr *ngIf="lease.hostname">
-                                            <td style="width: 10rem">Hostname:</td>
-                                            <td>
-                                                <i>{{ lease.hostname }}</i>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="lease.hasOwnProperty('fqdnFwd')">
-                                            <td style="width: 10rem">Forward DDNS:</td>
-                                            <td>
-                                                <i>{{ lease.fqdnFwd ? 'yes' : 'no' }}</i>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="lease.hasOwnProperty('fqdnRev')">
-                                            <td style="width: 10rem">Reverse DDNS:</td>
-                                            <td>
-                                                <i>{{ lease.fqdnRev ? 'yes' : 'no' }}</i>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </p-fieldset>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="emptymessage">
-                <tr>
-                    <td *ngIf="searchStatus === Status.Searching" colspan="5">
-                        <p-progressSpinner
-                            [style]="{ width: '15px', height: '15px' }"
-                            styleClass="leases-search-spinner"
-                            strokeWidth="6"
-                        ></p-progressSpinner>
-                        Searching for leases on Kea servers...
-                    </td>
-                    <td *ngIf="searchStatus === Status.Searched" colspan="5">
-                        No leases found matching {{ lastSearchText }}.
-                    </td>
-                    <td *ngIf="searchStatus === Status.NotSearched" colspan="5">
-                        <i class="pi pi-info-circle text-2xl vertical-align-middle text-primary-600"></i>
-                        Search for leases on the Kea DHCP servers by IP address, delegated prefix, MAC address, client
-                        identifier, DHCPv6 DUID, or hostname. Click the help button next to the search form for details.
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="summary">
-                <span id="leases-search-summary-span" *ngIf="leases && leases.length > 0">
-                    Found {{ leases.length }} lease{{ leases.length > 1 ? 's' : '' }} matching
-                    {{ lastSearchText.trim() }}.
-                </span>
-            </ng-template>
-        </p-table>
-    </div>
+    <span id="leases-search-input-error" class="text-red-700" *ngIf="invalidSearchText">{{
+        invalidSearchTextError
+    }}</span>
 </div>
+<div *ngIf="erredApps && erredApps.length > 0" class="max-w-40rem mt-2">
+    <p-messages id="erred-apps-message" [closable]="false" severity="warn">
+        <ng-template pTemplate>
+            <div>
+                Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
+                error in response to the control commands. The results presented in the table below may not comprise all
+                leases matching the query because some matching leases may reside on the servers, which returned an
+                error. Issues were found for the following Kea servers:
+                <ul style="list-style-type: disc">
+                    <li *ngFor="let erredApp of erredApps">
+                        <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                    </li>
+                </ul>
+            </div>
+        </ng-template>
+    </p-messages>
+</div>
+<p-table id="leases-table" [value]="leases" dataKey="id" styleClass="mt-3 max-w-100vw">
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 3rem"></th>
+            <th>Lease</th>
+            <th>Type</th>
+            <th>State</th>
+            <th>App Name</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-lease let-expanded="expanded">
+        <tr>
+            <td>
+                <a [pRowToggler]="lease">
+                    <i [ngClass]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+                </a>
+            </td>
+            <td>
+                {{ lease.ipAddress + (lease.prefixLength ? '/' + lease.prefixLength : '') }}
+            </td>
+            <td>
+                {{ leaseTypeAsText(lease.leaseType) }}
+            </td>
+            <td [class.text-red-500]="lease.state > 0" [class.text-green-500]="lease.state <= 0">
+                {{ leaseStateAsText(lease.state) }}
+            </td>
+            <td>
+                <a routerLink="/apps/kea/{{ lease.appId }}" style="display: block">
+                    {{ lease.appName }}
+                </a>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="rowexpansion" let-lease>
+        <tr>
+            <td colspan="5">
+                <div class="flex flex-wrap gap-3">
+                    <div *ngIf="lease.hwAddress || lease.clientId || lease.duid" class="flex-auto">
+                        <p-fieldset legend="Client">
+                            <table>
+                                <tr *ngIf="lease.hwAddress">
+                                    <td style="width: 10rem">MAC address:</td>
+                                    <td>
+                                        <app-identifier
+                                            [hexValue]="lease.hwAddress"
+                                            [defaultHexFormat]="true"
+                                            styleClass="font-italic"
+                                        ></app-identifier>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="lease.clientId">
+                                    <td style="width: 10rem">Client Identifier:</td>
+                                    <td>
+                                        <app-identifier
+                                            [hexValue]="lease.clientId"
+                                            styleClass="font-italic"
+                                        ></app-identifier>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="lease.duid">
+                                    <td style="width: 10rem">DUID:</td>
+                                    <td>
+                                        <app-identifier
+                                            [hexValue]="lease.duid"
+                                            styleClass="font-italic"
+                                        ></app-identifier>
+                                    </td>
+                                </tr>
+                            </table>
+                        </p-fieldset>
+                    </div>
+                    <div class="flex-auto">
+                        <p-fieldset legend="Details">
+                            <table>
+                                <tr>
+                                    <td style="width: 10rem">Subnet Identifier:</td>
+                                    <td>
+                                        <i>{{ lease.subnetId }}</i>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="lease.iaid">
+                                    <td style="width: 10rem">IAID:</td>
+                                    <td>
+                                        <i>{{ lease.iaid }}</i>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="lease.preferredLifetime">
+                                    <td style="width: 10rem">Preferred Lifetime:</td>
+                                    <td>
+                                        <i>{{ lease.preferredLifetime }} seconds</i>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 10rem">Valid Lifetime:</td>
+                                    <td>
+                                        <i>{{ lease.validLifetime }} seconds</i>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 10rem">Allocated at:</td>
+                                    <td>
+                                        <i>{{ lease.cltt | localtime }}</i>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 10rem">Expires at:</td>
+                                    <td>
+                                        <i>{{ lease.cltt + lease.validLifetime | localtime }}</i>
+                                    </td>
+                                </tr>
+                            </table>
+                        </p-fieldset>
+                    </div>
+                    <div *ngIf="lease.userContext" class="flex-auto">
+                        <p-fieldset legend="User Context">
+                            <!-- Wrapper to shrink the width of the viewer to its content. -->
+                            <div class="w-max">
+                                <!-- JSON viewer -->
+                                <app-json-tree-root [value]="lease.userContext"></app-json-tree-root>
+                            </div>
+                        </p-fieldset>
+                    </div>
+                    <div *ngIf="lease.hostname" class="flex-auto">
+                        <p-fieldset legend="DDNS">
+                            <table>
+                                <tr *ngIf="lease.hostname">
+                                    <td style="width: 10rem">Hostname:</td>
+                                    <td>
+                                        <i>{{ lease.hostname }}</i>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="lease.hasOwnProperty('fqdnFwd')">
+                                    <td style="width: 10rem">Forward DDNS:</td>
+                                    <td>
+                                        <i>{{ lease.fqdnFwd ? 'yes' : 'no' }}</i>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="lease.hasOwnProperty('fqdnRev')">
+                                    <td style="width: 10rem">Reverse DDNS:</td>
+                                    <td>
+                                        <i>{{ lease.fqdnRev ? 'yes' : 'no' }}</i>
+                                    </td>
+                                </tr>
+                            </table>
+                        </p-fieldset>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td *ngIf="searchStatus === Status.Searching" colspan="5">
+                <p-progressSpinner
+                    [style]="{ width: '15px', height: '15px' }"
+                    styleClass="leases-search-spinner"
+                    strokeWidth="6"
+                ></p-progressSpinner>
+                Searching for leases on Kea servers...
+            </td>
+            <td *ngIf="searchStatus === Status.Searched" colspan="5">No leases found matching {{ lastSearchText }}.</td>
+            <td *ngIf="searchStatus === Status.NotSearched" colspan="5">
+                <i class="pi pi-info-circle text-2xl vertical-align-middle text-primary-600"></i>
+                Search for leases on the Kea DHCP servers by IP address, delegated prefix, MAC address, client
+                identifier, DHCPv6 DUID, or hostname. Click the help button next to the search form for details.
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="summary">
+        <span id="leases-search-summary-span" *ngIf="leases && leases.length > 0">
+            Found {{ leases.length }} lease{{ leases.length > 1 ? 's' : '' }} matching {{ lastSearchText.trim() }}.
+        </span>
+    </ng-template>
+</p-table>
