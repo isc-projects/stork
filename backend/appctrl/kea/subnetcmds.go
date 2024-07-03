@@ -1,8 +1,6 @@
 package keactrl
 
 import (
-	"fmt"
-
 	keaconfig "isc.org/stork/appcfg/kea"
 )
 
@@ -71,16 +69,13 @@ func NewCommandNetwork6SubnetDel(sharedNetworkName string, localSubnetID int64, 
 }
 
 // Creates network4-subnet-del or network6-subnet-del depending on the family.
-// It panics if the family is neither 4 nor 6.
 func NewCommandNetworkSubnetDel(family int, sharedNetworkName string, localSubnetID int64, daemonNames ...DaemonName) *Command {
 	var commandName CommandName
 	switch family {
 	case 4:
 		commandName = Network4SubnetDel
-	case 6:
-		commandName = Network6SubnetDel
 	default:
-		panic(fmt.Sprintf("invalid family %d", family))
+		commandName = Network6SubnetDel
 	}
 	return NewCommandBase(commandName, daemonNames...).
 		WithArgument("id", localSubnetID).
@@ -113,10 +108,8 @@ func NewCommandSubnetDel(family int, subnet *keaconfig.SubnetCmdsDeletedSubnet, 
 	switch family {
 	case 4:
 		commandName = Subnet4Del
-	case 6:
-		commandName = Subnet6Del
 	default:
-		panic(fmt.Sprintf("invalid family %d", family))
+		commandName = Subnet6Del
 	}
 	return NewCommandBase(commandName, daemonNames...).
 		WithArgument("id", subnet.ID)
