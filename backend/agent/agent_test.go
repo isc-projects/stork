@@ -741,7 +741,19 @@ func TestNewGRPCServerWithTLS(t *testing.T) {
 // Test that the error is returned if the GRPC TLS certificate files are
 // missing.
 func TestNewGRPCServerWithTLSMissingCerts(t *testing.T) {
-	// Arrange & Act
+	// Arrange
+	cleanup := RememberPaths()
+	defer cleanup()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
+	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
+	RootCAFile = path.Join(sb.BasePath, "rootCA-not-exists.pem")
+	AgentTokenFile = path.Join(sb.BasePath, "agentToken-not-exists")
+	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
+
+	// Act
 	server, err := newGRPCServerWithTLS()
 
 	// Assert
