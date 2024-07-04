@@ -7,8 +7,8 @@
     class="w-8rem xl:w-auto"
 />
 
-<p-overlayPanel #searchResultsBox [showCloseIcon]="true">
-    <div style="display: flex">
+<p-overlayPanel #searchResultsBox [showCloseIcon]="true" styleClass="global-search">
+    <div class="flex align-items-center gap-2 flex-wrap">
         <div *ngIf="searchResults.subnets.items.length > 0" style="margin-right: 20px; min-width: 9em">
             <h4>Subnets</h4>
             <div *ngFor="let sn of searchResults.subnets.items">[{{ sn.id }}] {{ sn.subnet }}</div>
@@ -32,7 +32,7 @@
                 </span>
             </div>
             <div style="margin-top: 10px">
-                <a routerLink="/dhcp/hosts" [queryParams]="{ text: searchText }">more</a>
+                <a routerLink="/dhcp/hosts" [queryParams]="{ text: searchText, gs: true }">more</a>
             </div>
         </div>
         <div *ngIf="searchResults.machines.items.length > 0" style="margin-right: 20px; min-width: 9em">
