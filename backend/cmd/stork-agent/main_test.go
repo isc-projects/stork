@@ -154,7 +154,8 @@ func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
 	defer sandbox.Close()
 
 	envPath, _ := sandbox.Write("file.env", `
-		STORK_AGENT_HOST=[
+		STORK_AGENT_SERVER_URL=http://localhost:8080
+		STORK_AGENT_HOST=localhost::8080
 	`)
 
 	os.Args = []string{
@@ -177,7 +178,7 @@ func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
 	// Act
 	stdout, _, _ := testutil.CaptureOutput(main)
 
-	require.Contains(t, string(stdout), "[")
+	require.Contains(t, string(stdout), "localhost::8080")
 	require.NotContains(t, string(stdout), "cannot set 'STORK_AGENT_HOST=[' environment variable")
 }
 
