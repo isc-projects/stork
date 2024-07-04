@@ -197,7 +197,7 @@ func prompt(message string, secret bool) (string, error) {
 	if secret {
 		value, err = storkutil.GetSecretInTerminal(inputMessage)
 	} else {
-		fmt.Printf(inputMessage)
+		fmt.Print(inputMessage)
 		_, err = fmt.Scanln(&value)
 		if err != nil && strings.Contains(err.Error(), "unexpected newline") {
 			// The empty input is not an error.
@@ -512,11 +512,6 @@ func runApp(reload bool) error {
 	}
 
 	if registerSettings != nil {
-		// Prompt for missing arguments.
-		if registerSettings.ServerURL == "" {
-
-		}
-
 		runRegister(registerSettings)
 		return nil
 	}
