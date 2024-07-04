@@ -7,3 +7,8 @@
 // Disable border which by default is visible.
 :host ::ng-deep .p-breadcrumb
   border: 0
+
+// Set max-width to prevent horizontal overflow.
+.max-w-100vw
+  // full viewport width minus some space for margins and paddings
+  max-width: calc(100vw - 5rem)
