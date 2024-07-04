@@ -11,73 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Showmax/go-fqdn"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/term"
 	storkutil "isc.org/stork/util"
 )
-
-// Prompt user for server token. If user hits enter key then empty
-// string is returned.
-func promptUserForServerToken() (string, error) {
-	fmt.Printf(">>>> Server access token (optional): ")
-	serverToken, err := term.ReadPassword(0)
-	fmt.Print("\n")
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(serverToken)), nil
-}
-
-// Get agent's address and port from user if not provided via command line options.
-func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, error) {
-	if agentAddr == "" {
-		agentAddrTip, err := fqdn.FqdnHostname()
-		msg := ">>>> IP address or FQDN of the host with Stork Agent (for the Stork Server connection)"
-		if err != nil {
-			agentAddrTip = ""
-			msg += ": "
-		} else {
-			msg += fmt.Sprintf(" [%s]: ", agentAddrTip)
-		}
-		fmt.Print(msg)
-		_, err = fmt.Scanln(&agentAddr)
-		if err != nil {
-			err = errors.Wrap(err, "cannot read agent address from stdin")
-			log.WithError(err).Error("Problem getting agent address")
-			return "", 0, err
-		}
-
-		agentAddr = strings.TrimSpace(agentAddr)
-		if agentAddr == "" {
-			agentAddr = agentAddrTip
-		}
-	}
-
-	if agentPort == "" {
-		fmt.Printf(">>>> Port number that Stork Agent will listen on [8080]: ")
-		_, err := fmt.Scanln(&agentPort)
-		if err != nil {
-			err = errors.Wrap(err, "cannot read agent port from stdin")
-			log.WithError(err).Error("Problem getting agent port")
-			return "", 0, err
-		}
-
-		agentPort = strings.TrimSpace(agentPort)
-		if agentPort == "" {
-			agentPort = "8080"
-		}
-	}
-
-	agentPortInt, err := strconv.Atoi(agentPort)
-	if err != nil {
-		err = errors.Wrap(err, "cannot convert agent port to integer")
-		log.WithError(err).Errorf("%s is not a valid agent port number", agentPort)
-		return "", 0, err
-	}
-	return agentAddr, agentPortInt, nil
-}
 
 // Generate or regenerate agent key and CSR (Certificate Signing
 // Request). They are generated when they do not exist. They are
@@ -363,40 +300,26 @@ func pingAgentViaServer(client *HTTPClient, baseSrvURL *url.URL, machineID int64
 // in files are used. RegenCerts is used when registration is run
 // manually. If retry is true then registration is retried if
 // connection to server cannot be established. This case is used when
-// registration is automatic during agent service startup. Server
-// token can be provided in manual registration via command line
-// switch. This way the agent will be immediately authorized in the
-// server. If server token is empty (in automatic registration or
-// when it is not provided in manual registration) then agent is added
-// to server but requires manual authorization in web UI.
-func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bool, retry bool, httpClient *HTTPClient) bool {
+// registration is automatic during agent service startup.
+// If the server token is provided, the agent will be immediately authorized
+// in the server. If server token is empty (in automatic registration or
+// when it is not provided in manual registration) then agent is added to
+// server but requires manual authorization in web UI.
+func Register(serverURL, serverToken, agentHost string, agentPort int, regenCerts bool, retry bool, httpClient *HTTPClient) bool {
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
-	if err != nil || baseSrvURL.String() == "" {
+	if err != nil {
 		log.WithError(err).Errorf("Cannot parse server URL: %s", serverURL)
 		return false
-	}
-
-	// Get server token from user (if not provided in cmd line) to authenticate in the server.
-	// Do not ask if regenCerts is true (ie. Register is called from agent).
-	serverToken2 := serverToken
-	if serverToken == "" && regenCerts {
-		serverToken2, err = promptUserForServerToken()
-		if err != nil {
-			log.WithError(err).Error("Problem getting server token")
-			return false
-		}
-	}
-
-	agentAddr, agentPortInt, err := getAgentAddrAndPortFromUser(agentAddr, agentPort)
-	if err != nil {
+	} else if baseSrvURL.String() == "" {
+		log.Error("Server URL is empty")
 		return false
 	}
 
 	certStore := NewCertStoreDefault()
 
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
-	csrPEM, err := generateCSR(certStore, agentAddr, regenCerts)
+	csrPEM, err := generateCSR(certStore, agentHost, regenCerts)
 	if err != nil {
 		log.WithError(err).Error("Problem generating certs")
 		return false
@@ -420,7 +343,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	log.Printf("AGENT TOKEN: %s", agentToken)
 	log.Println("=============================================================================")
 
-	if serverToken2 == "" {
+	if serverToken == "" {
 		log.Println("Authorize the machine in the Stork web UI")
 	} else {
 		log.Println("Machine will be automatically registered using the server token")
@@ -430,7 +353,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	}
 
 	// register new machine i.e. current agent
-	reqPayload, err := prepareRegistrationRequestPayload(csrPEM, serverToken2, agentToken, agentAddr, agentPortInt, caCertFingerprint)
+	reqPayload, err := prepareRegistrationRequestPayload(csrPEM, serverToken, agentToken, agentHost, agentPort, caCertFingerprint)
 	if err != nil {
 		log.Errorln(err.Error())
 		return false
@@ -456,10 +379,10 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		}
 	}
 
-	if serverToken2 != "" {
+	if serverToken != "" {
 		// invoke getting machine state via server
 		for i := 1; i < 4; i++ {
-			err = pingAgentViaServer(httpClient, baseSrvURL, machineID, serverToken2, agentToken)
+			err = pingAgentViaServer(httpClient, baseSrvURL, machineID, serverToken, agentToken)
 			if err == nil {
 				break
 			}

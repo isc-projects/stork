@@ -119,6 +119,12 @@ following arguments:
 ``-p|--agent-port=``
    Specifies the port on which the agent listens for incoming connections. The default is 8080. ``[$STORK_AGENT_PORT]``
 
+``-n|--non-interactive``
+   Disables the interactive mode. The default is false. ``[$STORK_AGENT_NON_INTERACTIVE]``
+
+``-v|--version``
+   Returns the software version.
+
 ``-h|--help``
    Returns register command's parameters.
 

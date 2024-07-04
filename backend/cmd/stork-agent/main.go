@@ -7,9 +7,11 @@ import (
 	"os/signal"
 	"os/user"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/Showmax/go-fqdn"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -82,9 +84,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 	// Try registering the agent in the server using the agent token.
 	if settings.ServerURL != "" {
-		portStr := strconv.FormatInt(int64(settings.Port), 10)
-
-		if !agent.Register(settings.ServerURL, "", settings.Host, portStr, false, true, httpClient) {
+		if !agent.Register(settings.ServerURL, "", settings.Host, settings.Port, false, true, httpClient) {
 			log.Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
@@ -186,29 +186,116 @@ func runAgent(settings *generalSettings, reload bool) error {
 	}
 }
 
-// Helper function that checks command line options and runs registration.
-func runRegister(settings *registerSettings) {
-	agentAddr := ""
-	agentPort := ""
+// Helper function that prompts the user for a value.
+// It returns an error if the stdin is closed.
+func prompt(message string, secret bool) (string, error) {
+	var value string
 	var err error
-	if settings.AgentHost != "" {
-		// We support providing the agent host address together with the port
-		// number for backward compatibility but it is no longer recommended
-		// because the registration command should accept the arguments in the
-		// same format as the main command.
-		agentAddr, agentPort, err = net.SplitHostPort(settings.AgentHost)
-		if err != nil && settings.AgentPort != 0 {
-			// Maybe the port is missing in the agent host address.
-			agentAddr = net.JoinHostPort(settings.AgentHost, strconv.Itoa(settings.AgentPort))
-			agentAddr, agentPort, err = net.SplitHostPort(agentAddr)
-		}
 
-		if err != nil {
-			log.Fatalf("Problem parsing agent host: %s\n", err)
+	inputMessage := fmt.Sprintf(">>> %s: ", message)
+
+	if secret {
+		value, err = storkutil.GetSecretInTerminal(inputMessage)
+	} else {
+		fmt.Printf(inputMessage)
+		_, err = fmt.Scanln(&value)
+		if err != nil && strings.Contains(err.Error(), "unexpected newline") {
+			// The empty input is not an error.
+			err = nil
+			value = ""
+		} else {
+			err = errors.WithStack(err)
 		}
 	}
 
-	// check current user - it should be root or stork-agent
+	if err != nil {
+		return "", err
+	}
+
+	value = strings.TrimSpace(value)
+	return value, nil
+}
+
+// Completes the missing arguments in the registration settings.
+func promptForMissingArguments(settings *registerSettings) error {
+	// Server URL.
+	var err error
+	if settings.ServerURL == "" {
+		settings.ServerURL, err = prompt("Enter the URL of the Stork Server", false)
+		if err != nil {
+			return errors.WithMessage(err, "problem with reading the Stork Server URL")
+		}
+	}
+
+	// Server token.
+	if settings.ServerToken == "" {
+		settings.ServerToken, err = prompt("Enter the access token from the Stork Server", true)
+		if err != nil {
+			return errors.WithMessage(err, "problem with reading the access token")
+		}
+	}
+
+	// Server host.
+	if settings.AgentHost == "" {
+		tip, _ := fqdn.FqdnHostname()
+		settings.AgentHost, err = prompt(
+			fmt.Sprintf(
+				"IP address or FQDN of the host with Stork Agent (for the Stork Server connection) [%s]",
+				tip,
+			),
+			false,
+		)
+		if err != nil {
+			return errors.WithMessage(err, "problem with reading the agent host")
+		}
+		if settings.AgentHost == "" {
+			settings.AgentHost = tip
+		}
+
+		tip = strconv.Itoa(settings.AgentPort)
+		port, err := prompt(
+			fmt.Sprintf(
+				"Port number that Stork Agent will listen on [%s]",
+				tip,
+			),
+			false,
+		)
+		if err != nil {
+			return errors.WithMessage(err, "problem with reading the agent port")
+		}
+		if port == "" {
+			port = tip
+		}
+
+		if port != "" {
+			settings.AgentPort, err = strconv.Atoi(port)
+			if err != nil {
+				return errors.WithMessage(err, "problem with parsing the agent port")
+			}
+		}
+	}
+
+	return nil
+}
+
+// Helper function that checks command line options and runs registration.
+// Accepts a function to check the current user.
+func runRegister(settings *registerSettings) {
+	// Complete the missing arguments.
+	var err error
+	if !settings.NonInteractive && storkutil.IsRunningInTerminal() {
+		err = promptForMissingArguments(settings)
+		if err != nil {
+			log.Fatalf("Problem with reading the missing arguments: %v", err)
+		}
+	}
+
+	host, port, err := settings.GetHostAndPort()
+	if err != nil {
+		log.Fatalf("Problem with parsing the agent host and port: %s", err)
+	}
+
+	// Check current user - it should be root or stork-agent.
 	user, err := user.Current()
 	if err != nil {
 		log.Fatalf("Cannot get info about current user: %s", err)
@@ -217,11 +304,11 @@ func runRegister(settings *registerSettings) {
 		log.Fatalf("Agent registration should be run by the user `root` or `stork-agent`")
 	}
 
-	// run Register
+	// Run registration.
 	httpClient := agent.NewHTTPClient()
 	httpClient.SetSkipTLSVerification(settings.SkipTLSCertVerification)
 
-	if agent.Register(settings.ServerURL, settings.ServerToken, agentAddr, agentPort, true, false, httpClient) {
+	if agent.Register(settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient) {
 		log.Println("Registration completed successfully")
 	} else {
 		log.Fatalf("Registration failed")
@@ -259,11 +346,47 @@ type registerSettings struct {
 	environmentFileSettings
 	// It is true if the register command was specified. Otherwise, it is false.
 	commandSpecified        bool
+	NonInteractive          bool   `short:"n" long:"non-interactive" description:"Do not prompt for missing arguments" env:"STORK_AGENT_NON_INTERACTIVE"`
 	SkipTLSCertVerification bool   `long:"skip-tls-cert-verification" description:"Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS" env:"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"`
 	ServerURL               string `short:"u" long:"server-url" description:"URL of Stork Server" env:"STORK_AGENT_SERVER_URL"`
 	ServerToken             string `short:"t" long:"server-token" description:"Access token from Stork Server" env:"STORK_AGENT_SERVER_TOKEN"`
 	AgentHost               string `short:"a" long:"agent-host" description:"IP address or DNS name, e.g.: localhost or 10.11.12.13" env:"STORK_AGENT_HOST"`
 	AgentPort               int    `short:"p" long:"agent-port" description:"Value of current agent port, e.g.: 8888" default:"8080" env:"STORK_AGENT_PORT"`
+}
+
+// Extracts the host and port from the register settings. If the port is
+// provided together with the host, it is split. The port from the host takes
+// precedence over the port from the settings.
+func (s *registerSettings) GetHostAndPort() (string, int, error) {
+	if s.AgentHost == "" {
+		return s.AgentHost, s.AgentPort, nil
+	}
+
+	// We support providing the agent host address together with the port
+	// number for backward compatibility but it is no longer recommended
+	// because the registration command should accept the arguments in the
+	// same format as the main command.
+	host, portRaw, err := net.SplitHostPort(s.AgentHost)
+	var addrErr *net.AddrError
+	if s.AgentPort != 0 && errors.As(err, &addrErr) && addrErr.Err == "missing port in address" {
+		// Handle the case when the port is not provided in the host.
+		host = s.AgentHost
+		portRaw = strconv.Itoa(s.AgentPort)
+		err = nil
+	}
+
+	if err != nil {
+		err = errors.Wrapf(err, "problem parsing agent host and port: '%s'", s.AgentHost)
+		return "", 0, err
+	}
+
+	port, err := strconv.Atoi(portRaw)
+	if err != nil {
+		err = errors.Wrapf(err, "problem parsing agent port: '%s'", portRaw)
+		return "", 0, err
+	}
+
+	return host, port, err
 }
 
 var _ flags.Commander = (*registerSettings)(nil)
@@ -389,6 +512,11 @@ func runApp(reload bool) error {
 	}
 
 	if registerSettings != nil {
+		// Prompt for missing arguments.
+		if registerSettings.ServerURL == "" {
+
+		}
+
 		runRegister(registerSettings)
 		return nil
 	}

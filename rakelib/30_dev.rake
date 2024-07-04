@@ -182,19 +182,13 @@ namespace :unittest do
                         # tests but rather by system tests.
                         'runAgent',
 
-                        # this function requires interaction with user so it is hard to test
-                        'getAgentAddrAndPortFromUser',
-
                         # this requires interacting with terminal
-                        'GetSecretInTerminal', 'IsRunningInTerminal',
+                        'GetSecretInTerminal', 'IsRunningInTerminal', 'prompt',
+                        'promptForMissingArguments',
 
                         # This file contains the wrapper for the "gopsutil" package to allow mocking
                         # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
                         'isc.org/stork/agent/process.go',
-
-                        # We plan to cover the below functions in the later MR.
-                        "createVerifyPeer", "CalculateFingerprintFromPEM",
-                        "IsInternalCert", "IsSelfSigned", "verifyPeer",
 
                         # The main server function is currently untestable.
                         'isc.org/stork/cmd/stork-server/main.go',

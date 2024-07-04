@@ -121,11 +121,14 @@ func TestRegisterCommandLineSwitches(t *testing.T) {
 func TestRegistrationParams(t *testing.T) {
 	// Arrange
 	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = make([]string, 4)
-	os.Args[1] = "register"
-	os.Args[2] = "--agent-host"
-	os.Args[3] = "127.4.5.6"
-
+	os.Args = []string{
+		"agent-program",
+		"register",
+		"--server-url",
+		"http://localhost",
+		"--agent-host",
+		"127.4.5.678::8080",
+	}
 	// The Stork Agent exists using a log.Fatal for these parameters.
 	// We replace the standard error handler with a dumb one to prevent
 	// interrupting the unit tests.
@@ -139,7 +142,7 @@ func TestRegistrationParams(t *testing.T) {
 	// Act
 	stdout, _, _ := testutil.CaptureOutput(main)
 
-	require.Contains(t, string(stdout), "127.4.5.6")
+	require.Contains(t, string(stdout), "127.4.5.678")
 }
 
 // Check if stork-agent uses --agent-host parameter from the environment file.
