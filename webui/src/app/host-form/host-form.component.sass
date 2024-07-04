@@ -10,3 +10,30 @@
     margin-right: 4px
     margin-top: 2px
     margin-bottom: 2px
+
+:host ::ng-deep .cust-form
+    .p-fieldset
+        // Distance between form fieldsets.
+        margin-top: 1.5rem
+
+        // Custom style for form fieldset.
+        &.cust-col
+            div.p-fieldset-content
+                // Use flexbox layout, columns stack.
+                display: flex
+                flex-direction: column
+                // Apply large gap for floating labels.
+                gap: 2rem
+
+                small
+                    // Little margin between form input and feedback text.
+                    margin-top: 0.5rem
+
+                & > div:first-child
+                    // Add top margin for first div inside of fieldset.
+                    margin-top: 1.5rem
+
+                .p-component.p-inputwrapper, input.p-inputtext
+                    // Form input should take full width but not more than 35rem.
+                    width: 100%
+                    max-width: 35rem

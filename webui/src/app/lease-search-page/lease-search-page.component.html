@@ -138,7 +138,7 @@
             <td colspan="5">
                 <div class="flex flex-wrap gap-3">
                     <div *ngIf="lease.hwAddress || lease.clientId || lease.duid" class="flex-auto">
-                        <p-fieldset legend="Client">
+                        <p-fieldset legend="Client" styleClass="max-w-100vw">
                             <table>
                                 <tr *ngIf="lease.hwAddress">
                                     <td style="width: 10rem">MAC address:</td>
@@ -172,7 +172,7 @@
                         </p-fieldset>
                     </div>
                     <div class="flex-auto">
-                        <p-fieldset legend="Details">
+                        <p-fieldset legend="Details" styleClass="max-w-100vw">
                             <table>
                                 <tr>
                                     <td style="width: 10rem">Subnet Identifier:</td>
@@ -214,7 +214,7 @@
                         </p-fieldset>
                     </div>
                     <div *ngIf="lease.userContext" class="flex-auto">
-                        <p-fieldset legend="User Context">
+                        <p-fieldset legend="User Context" styleClass="max-w-100vw">
                             <!-- Wrapper to shrink the width of the viewer to its content. -->
                             <div class="w-max">
                                 <!-- JSON viewer -->
@@ -223,7 +223,7 @@
                         </p-fieldset>
                     </div>
                     <div *ngIf="lease.hostname" class="flex-auto">
-                        <p-fieldset legend="DDNS">
+                        <p-fieldset legend="DDNS" styleClass="max-w-100vw">
                             <table>
                                 <tr *ngIf="lease.hostname">
                                     <td style="width: 10rem">Hostname:</td>
