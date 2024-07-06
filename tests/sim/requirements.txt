@@ -6,14 +6,14 @@
 #
 blinker==1.8.2
     # via flask
-certifi==2024.2.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via flask
 flask==3.0.3
-    # via -r tests/sim/../../rakelib/init_deps/flask.in
+    # via -r ../../rakelib/init_deps/flask.in
 idna==3.7
     # via requests
 itsdangerous==2.2.0
@@ -25,7 +25,7 @@ markupsafe==2.1.5
     #   jinja2
     #   werkzeug
 requests==2.32.3
-    # via -r tests/sim/../../rakelib/init_deps/flask.in
+    # via -r ../../rakelib/init_deps/flask.in
 urllib3==2.2.1
     # via requests
 werkzeug==3.0.3
