@@ -172,7 +172,7 @@ def test_up_uses_service_names():
     assert build_cmd[-1] == "bar"
 
 
-def test_start_calls_only_up_by_default():
+def test_bootstrap_calls_only_up_by_default():
     # Arrange
     compose = DockerCompose("project-dir")
     pull_mock = MagicMock()
@@ -182,14 +182,14 @@ def test_start_calls_only_up_by_default():
     compose.build = build_mock
     compose.up = up_mock
     # Act
-    compose.start()
+    compose.bootstrap()
     # Assert
     pull_mock.assert_not_called()
     build_mock.assert_not_called()
     up_mock.assert_called_once()
 
 
-def test_start_calls_build():
+def test_bootstrap_calls_build():
     # Arrange
     compose = DockerCompose("project-dir", build=True)
     pull_mock = MagicMock()
@@ -199,14 +199,14 @@ def test_start_calls_build():
     compose.build = build_mock
     compose.up = up_mock
     # Act
-    compose.start()
+    compose.bootstrap()
     # Assert
     pull_mock.assert_not_called()
     build_mock.assert_called_once()
     up_mock.assert_called_once()
 
 
-def test_start_calls_pull():
+def test_bootstrap_calls_pull():
     # Arrange
     compose = DockerCompose("project-dir", pull=True)
     pull_mock = MagicMock()
@@ -216,14 +216,14 @@ def test_start_calls_pull():
     compose.build = build_mock
     compose.up = up_mock
     # Act
-    compose.start()
+    compose.bootstrap()
     # Assert
     pull_mock.assert_called_once()
     build_mock.assert_not_called()
     up_mock.assert_called_once()
 
 
-def test_start_uses_service_names():
+def test_bootstrap_uses_service_names():
     # Arrange
     compose = DockerCompose("project-dir", pull=True, build=True)
     pull_mock = MagicMock()
@@ -234,7 +234,7 @@ def test_start_uses_service_names():
     compose.up = up_mock
     services = ("foo", "bar")
     # Act
-    compose.start(*services)
+    compose.bootstrap(*services)
     # Assert
     pull_mock.assert_called_once_with(*services)
     build_mock.assert_called_once_with(*services)

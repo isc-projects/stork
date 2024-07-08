@@ -281,10 +281,11 @@ class DockerCompose:
         up_cmd = self.docker_compose_command() + ["up", "-d", *service_names]
         self._call_command(cmd=up_cmd, capture_output=False)
 
-    def start(self, *service_names):
+    def bootstrap(self, *service_names):
         """
-        Starts the docker compose environment.
-        It can pull and build the containers if requested.
+        All-in-one method to perform the first-time setup of the services.
+        It can pull and build the containers if requested. Then it starts the
+        services.
         """
         if self._pull:
             self.pull(*service_names)
@@ -300,6 +301,41 @@ class DockerCompose:
         """
         down_cmd = self.docker_compose_command() + ["down", "-v"]
         self._call_command(cmd=down_cmd)
+
+    def start(self, *service_names):
+        """
+        Start the docker compose services.
+        """
+        start_cmd = self.docker_compose_command() + ["start", *service_names]
+        self._call_command(cmd=start_cmd)
+
+    def stop(self, *service_names):
+        """
+        Stop the docker compose services.
+        """
+        stop_cmd = self.docker_compose_command() + ["stop", *service_names]
+        self._call_command(cmd=stop_cmd)
+
+    def restart(self, *service_names):
+        """
+        Restart the docker compose services.
+        """
+        restart_cmd = self.docker_compose_command() + ["restart", *service_names]
+        self._call_command(cmd=restart_cmd)
+
+    def pause(self, *service_names):
+        """
+        Pauses the docker compose services.
+        """
+        pause_cmd = self.docker_compose_command() + ["pause", *service_names]
+        self._call_command(cmd=pause_cmd)
+
+    def unpause(self, *service_names):
+        """
+        Unpauses the docker compose services.
+        """
+        unpause_cmd = self.docker_compose_command() + ["unpause", *service_names]
+        self._call_command(cmd=unpause_cmd)
 
     def run(self, service_name: str, *args: str, check=True):
         """

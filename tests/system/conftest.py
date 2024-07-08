@@ -18,6 +18,7 @@ from core.fixtures import (  # noqa: F401
     bind9_service,
     perfdhcp_service,
     package_service,
+    postgres_service,
     finish,
 )
 from core.compose_factory import create_docker_compose

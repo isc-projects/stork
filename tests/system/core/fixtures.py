@@ -179,7 +179,7 @@ def server_service(request):
     service_name = param["service_name"]
 
     compose = create_docker_compose()
-    compose.start(service_name)
+    compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)
 
     # Yield is used because we need to close the API connection even if any
@@ -307,7 +307,7 @@ def _prepare_kea_wrapper(
 
     # Setup wrapper
     compose = create_docker_compose(extra_env_vars=env_vars)
-    compose.start(service_name)
+    compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Kea(compose, service_name, server_service_instance)
 
@@ -360,7 +360,7 @@ def bind9_service(request):
     # Setup wrapper
     service_name = param["service_name"]
     compose = create_docker_compose(extra_env_vars=env_vars)
-    compose.start(service_name)
+    compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Bind9(compose, service_name, server_service_instance)
 
@@ -403,10 +403,34 @@ def package_service(request):
 
     compose = create_docker_compose(env_vars)
     service_name = "packages"
-    compose.start(service_name)
+    compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.ExternalPackages(compose, service_name)
     wrapper.wait_for_registration()
+    return wrapper
+
+
+@pytest.fixture
+def postgres_service(request):
+    """
+    A fixture that sets up the PostgreSQL service and guarantees that it is
+    operational.
+
+    Parameters
+    ----------
+    request : unknown
+        Pytest request object
+
+    Returns
+    -------
+    core.wrappers.Postgres
+        PostgreSQL wrapper for the docker-compose service
+    """
+    service_name = "postgres"
+    compose = create_docker_compose()
+    compose.bootstrap(service_name)
+    compose.wait_for_operational(service_name)
+    wrapper = wrappers.Postgres(compose, service_name)
     return wrapper
 
 
