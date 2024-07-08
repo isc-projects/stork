@@ -332,7 +332,6 @@
                         <label for="boot-file-name-input-{{ i }}">Boot File Name</label>
                     </span>
                 </div>
-                <!--                </div>-->
             </p-fieldset>
         </ng-container>
     </ng-container>
@@ -397,28 +396,26 @@
     </div>
 </form>
 <ng-template #showInitError>
-    <p-fieldset legend="Errors" styleClass="">
-        <div class="grid host-form-abs-width">
-            <div class="col-12">
-                <p-messages severity="error">
-                    <ng-template pTemplate>
-                        <div class="flex flex-column">
-                            <div class="flex align-items-center m-4">
-                                In order to apply configuration changes, the server should begin a transaction between
-                                the user and the server. The server should also return current data required in the form
-                                where the host information is specified. Unfortunately, starting the new transaction
-                                failed with the following error:
-                            </div>
-                            <div class="flex align-items-center m-4 font-italic">
-                                {{ form.initError }}
-                            </div>
-                            <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+    <p-fieldset legend="Errors" styleClass="mt-4">
+        <div class="max-w-40rem">
+            <p-messages severity="error">
+                <ng-template pTemplate>
+                    <div class="flex flex-column">
+                        <div class="flex align-items-center m-4">
+                            In order to apply configuration changes, the server should begin a transaction between the
+                            user and the server. The server should also return current data required in the form where
+                            the host information is specified. Unfortunately, starting the new transaction failed with
+                            the following error:
                         </div>
-                    </ng-template>
-                </p-messages>
-                <div class="mt-3">
-                    <p-button label="Retry" (onClick)="onRetry()"></p-button>
-                </div>
+                        <div class="flex align-items-center m-4 font-italic">
+                            {{ form.initError }}
+                        </div>
+                        <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+                    </div>
+                </ng-template>
+            </p-messages>
+            <div class="mt-3">
+                <p-button label="Retry" (onClick)="onRetry()"></p-button>
             </div>
         </div>
     </p-fieldset>
