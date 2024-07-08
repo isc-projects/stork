@@ -18,7 +18,7 @@ Synopsis
 
 :program:`stork-agent` [**--listen-stork-only**] [**--listen-prometheus-only**] [**-v**] [**--host=**] [**--port=**] [**--skip-tls-cert-verification=**] [**--prometheus-kea-exporter-address=**] [**--prometheus-kea-exporter-port=**] [**--prometheus-kea-exporter-interval=**] [**-h**]
 
-:program:`stork-agent` register [**--server-url=**] [**--server-token**] [**--agent-host=**] [**--agent-port=**]
+:program:`stork-agent` register [**--server-url=**] [**--server-token**] [**--agent-host=**] [**--agent-port=**] [**--non-interactive**]
 
 Description
 ~~~~~~~~~~~
