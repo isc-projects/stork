@@ -179,7 +179,9 @@ func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
 	stdout, _, _ := testutil.CaptureOutput(main)
 
 	require.Contains(t, string(stdout), "localhost::8080")
-	require.NotContains(t, string(stdout), "cannot set 'STORK_AGENT_HOST=[' environment variable")
+	// There is no message about an incorrect environment variable.
+	require.NotContains(t, string(stdout), "cannot set")
+	require.NotContains(t, string(stdout), "STORK_AGENT_HOST")
 }
 
 // Test that the SIGHUP error text is correct.
