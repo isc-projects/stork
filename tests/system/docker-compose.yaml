@@ -245,8 +245,8 @@ services:
     extends: agent-kea
     hostname: agent-kea-ha1
     volumes:
-      - $PWD/tests/system/config/kea-ha1/hook-ha-dhcp4.json:/etc/kea/hook-ha-dhcp4.json
-      - $PWD/tests/system/config/kea-ha1/hook-ha-dhcp6.json:/etc/kea/hook-ha-dhcp6.json
+      - $PWD/tests/system/config/kea-ha1/hook-ha.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea-ha1/hook-ha.json:/etc/kea/hook-ha-dhcp6.json
 
   agent-kea-ha1-only-top-mt:
     extends: agent-kea-ha1
@@ -257,6 +257,8 @@ services:
     extends: agent-kea-ha1-only-top-mt
     volumes:
       - $PWD/tests/system/config/kea-multi-threading/ha-multi-threading.json:/etc/kea/ha-multi-threading.json
+      - $PWD/tests/system/config/kea-multi-threading/ha1/hook-ha-dhcp4.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea-multi-threading/ha1/hook-ha-dhcp6.json:/etc/kea/hook-ha-dhcp6.json
 
   agent-kea-ha2:
     extends: agent-kea
@@ -286,8 +288,8 @@ services:
         ipv6_address: 3001:db8:1:42::101
         priority: 400
     volumes:
-      - $PWD/tests/system/config/kea-ha2/hook-ha-dhcp4.json:/etc/kea/hook-ha-dhcp4.json
-      - $PWD/tests/system/config/kea-ha2/hook-ha-dhcp6.json:/etc/kea/hook-ha-dhcp6.json
+      - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha-dhcp6.json
 
   agent-kea-ha2-only-top-mt:
     extends: agent-kea-ha2
@@ -298,6 +300,8 @@ services:
     extends: agent-kea-ha2-only-top-mt
     volumes:
       - $PWD/tests/system/config/kea-multi-threading/ha-multi-threading.json:/etc/kea/ha-multi-threading.json
+      - $PWD/tests/system/config/kea-multi-threading/ha2/hook-ha-dhcp4.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea-multi-threading/ha2/hook-ha-dhcp6.json:/etc/kea/hook-ha-dhcp6.json
 
   agent-bind9:
     restart: always

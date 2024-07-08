@@ -92,6 +92,7 @@ def test_get_ha_pair_mt_config_review_reports(server_service: Server, ha_pair_se
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     states = server_service.wait_for_next_machine_states()
+    server_service.wait_for_ha_ready()
 
     assert len(states) == 2
 
