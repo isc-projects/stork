@@ -882,7 +882,7 @@ deploy_demo:
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org rm -rf deploy/*
     - scp -o StrictHostKeyChecking=no -r $PWD/* jenkins@stork.lab.isc.org:~/deploy
     # Build & Start Docker containers
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN deploy/stork-demo.sh --no-prompt
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CS_REPO_ACCESS_TOKEN deploy/stork-demo.sh --no-prompt
 
 ### upload packages to cloudsmith.io ###
 
