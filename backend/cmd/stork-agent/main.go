@@ -385,7 +385,7 @@ func (s *registerSettings) GetHostAndPort() (string, int, error) {
 		return "", 0, err
 	}
 
-	return host, port, err
+	return host, port, nil
 }
 
 var _ flags.Commander = (*registerSettings)(nil)
