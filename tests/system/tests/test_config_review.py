@@ -113,4 +113,9 @@ def test_get_ha_pair_mt_config_review_reports(server_service: Server, ha_pair_se
             }
 
             assert "ha_mt_presence" not in issue_reports
-            assert "ha_dedicated_ports" in issue_reports
+            # The HA configurations have the dedicated ports set for
+            # compatibility with Kea 2.7.0 and above. The prior versions
+            # accepted overlapping ports in Kea CA and DHCP daemons and
+            # fallback to communication over the Kea CA. Kea 2.7.0 and above
+            # reject to start if the ports overlap.
+            assert "ha_dedicated_ports" not in issue_reports
