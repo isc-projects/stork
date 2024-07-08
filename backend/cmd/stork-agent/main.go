@@ -221,7 +221,7 @@ func promptForMissingArguments(settings *registerSettings) error {
 	// Server URL.
 	var err error
 	if settings.ServerURL == "" {
-		settings.ServerURL, err = prompt("Enter the URL of the Stork Server", false)
+		settings.ServerURL, err = prompt("Enter the URL of the Stork server", false)
 		if err != nil {
 			return errors.WithMessage(err, "problem with reading the Stork Server URL")
 		}
@@ -229,7 +229,7 @@ func promptForMissingArguments(settings *registerSettings) error {
 
 	// Server token.
 	if settings.ServerToken == "" {
-		settings.ServerToken, err = prompt("Enter the access token from the Stork Server", true)
+		settings.ServerToken, err = prompt("Enter the Stork server access token (optional)", true)
 		if err != nil {
 			return errors.WithMessage(err, "problem with reading the access token")
 		}
@@ -240,7 +240,7 @@ func promptForMissingArguments(settings *registerSettings) error {
 		tip, _ := fqdn.FqdnHostname()
 		settings.AgentHost, err = prompt(
 			fmt.Sprintf(
-				"IP address or FQDN of the host with Stork Agent (for the Stork Server connection) [%s]",
+				"Enter IP address or FQDN of the host with Stork agent (for the Stork server connection) [%s]",
 				tip,
 			),
 			false,
@@ -255,7 +255,7 @@ func promptForMissingArguments(settings *registerSettings) error {
 		tip = strconv.Itoa(settings.AgentPort)
 		port, err := prompt(
 			fmt.Sprintf(
-				"Port number that Stork Agent will listen on [%s]",
+				"Enter port number that Stork Agent will listen on [%s]",
 				tip,
 			),
 			false,
