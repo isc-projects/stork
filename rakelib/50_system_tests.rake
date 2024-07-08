@@ -233,9 +233,15 @@ namespace :systemtest do
                 puts "Use the Kea legacy packages"
             end
 
+            # Use single development repository for Kea 2.7.0 and newer.
+            ENV["KEA_REPO"] = "isc/kea-#{kea_version_major}-#{kea_version_minor}"
+            is_development_version = Integer(kea_version_minor) % 2 == 1
+            if is_development_version &&
+                ((Integer(kea_version_major) >= 3) || (Integer(kea_version_major) == 2 && Integer(kea_version_minor) >= 7)) then
+                ENV["KEA_REPO"] = "isc/kea-dev"
+            end
+
             ENV["KEA_VERSION"] = kea_version
-            ENV["KEA_VERSION_MAJOR"] = kea_version_major
-            ENV["KEA_VERSION_MINOR"] = kea_version_minor
             ENV["KEA_LEGACY_PKGS"] = kea_legacy_pkgs
         end
     end

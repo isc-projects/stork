@@ -1,0 +1,30 @@
+{
+    "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_ha.so",
+    "parameters": {
+        "high-availability": [
+            {
+                <?include "/etc/kea/ha-multi-threading.json"?>
+                "this-server-name": "server1",
+                "mode": "hot-standby",
+                "heartbeat-delay": 10000,
+                "max-response-delay": 20000,
+                "max-ack-delay": 5000,
+                "max-unacked-clients": 3,
+                "peers": [
+                    {
+                        "name": "server1",
+                        "url": "http://172.42.42.100:8041",
+                        "role": "primary",
+                        "auto-failover": true
+                    },
+                    {
+                        "name": "server2",
+                        "url": "http://172.42.42.101:8042",
+                        "role": "standby",
+                        "auto-failover": true
+                    }
+                ]
+            }
+        ]
+    }
+},

@@ -4,7 +4,7 @@
         "high-availability": [
             {
                 <?include "/etc/kea/ha-multi-threading.json"?>
-                "this-server-name": "server1",
+                "this-server-name": "server2",
                 "mode": "hot-standby",
                 "heartbeat-delay": 10000,
                 "max-response-delay": 20000,
@@ -13,13 +13,13 @@
                 "peers": [
                     {
                         "name": "server1",
-                        "url": "http://172.42.42.100:8000",
+                        "url": "http://172.42.42.100:8041",
                         "role": "primary",
                         "auto-failover": true
                     },
                     {
                         "name": "server2",
-                        "url": "http://172.42.42.101:8000",
+                        "url": "http://172.42.42.101:8042",
                         "role": "standby",
                         "auto-failover": true
                     }

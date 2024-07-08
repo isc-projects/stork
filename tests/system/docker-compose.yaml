@@ -91,8 +91,8 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: kea
       args:
-        KEA_REPO: public/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-5}
-        KEA_VERSION: ${KEA_VERSION:-2.5.5-isc20240129145054}
+        KEA_REPO: public/${KEA_REPO:-isc/kea-dev}
+        KEA_VERSION: ${KEA_VERSION:-2.7.0-isc20240624090938}
         KEA_LEGACY_PKGS: ${KEA_LEGACY_PKGS:-false}
 
   agent-kea:
@@ -138,7 +138,8 @@ services:
       - $PWD/tests/system/config/kea-multi-threading/ha-multi-threading-disabled.json:/etc/kea/ha-multi-threading.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-hostcmds.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-subnetcmds.json
-      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha.json
+      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp6.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-host-database.json
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
       - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
@@ -203,7 +204,7 @@ services:
     extends: agent-kea
     build:
       args:
-        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-${KEA_VERSION_MAJOR:-2}-${KEA_VERSION_MINOR:-5}-prv
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/${KEA_REPO:-isc/kea-dev}-prv
         KEA_PREMIUM: "premium"
     profiles:
       - premium
@@ -244,7 +245,8 @@ services:
     extends: agent-kea
     hostname: agent-kea-ha1
     volumes:
-      - $PWD/tests/system/config/kea-ha1/hook-ha.json:/etc/kea/hook-ha.json
+      - $PWD/tests/system/config/kea-ha1/hook-ha-dhcp4.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea-ha1/hook-ha-dhcp6.json:/etc/kea/hook-ha-dhcp6.json
 
   agent-kea-ha1-only-top-mt:
     extends: agent-kea-ha1
@@ -284,7 +286,8 @@ services:
         ipv6_address: 3001:db8:1:42::101
         priority: 400
     volumes:
-      - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha.json
+      - $PWD/tests/system/config/kea-ha2/hook-ha-dhcp4.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea-ha2/hook-ha-dhcp6.json:/etc/kea/hook-ha-dhcp6.json
 
   agent-kea-ha2-only-top-mt:
     extends: agent-kea-ha2
