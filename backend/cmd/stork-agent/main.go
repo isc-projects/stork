@@ -279,7 +279,6 @@ func promptForMissingArguments(settings *registerSettings) error {
 }
 
 // Helper function that checks command line options and runs registration.
-// Accepts a function to check the current user.
 func runRegister(settings *registerSettings) {
 	// Complete the missing arguments.
 	var err error
