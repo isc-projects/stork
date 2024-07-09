@@ -1,123 +1,120 @@
-<div [formGroup]="formGroup" class="flex flex-column">
-    <div class="flex flex-column">
-        <div class="flex">
-            <div *ngIf="topLevel; else showSuboptionInput" class="flex align-items-center">
-                <span class="p-float-label">
-                    <p-dropdown
-                        inputId="{{ codeInputId }}"
-                        [autoDisplayFirst]="false"
-                        [editable]="true"
-                        [filter]="true"
-                        filterBy="label"
-                        [options]="
-                            v6 ? optionsService.getStandardDhcpv6Options() : optionsService.getStandardDhcpv4Options()
-                        "
-                        styleClass="code-input-width"
-                        formControlName="optionCode"
-                        pTooltip="Use the dropdown to select an option from the list of standard options. If the option is not in the list, simply type its code (a number) in the box. When using the dropdown, it is possible to filter by option name or code."
-                        (onChange)="onOptionCodeChange($event)"
-                    >
-                    </p-dropdown>
-                    <label for="{{ codeInputId }}">Select or Type Option Code</label>
-                </span>
-            </div>
-            <ng-template #showSuboptionInput>
-                <div class="flex align-items-center">
-                    <span class="p-float-label">
-                        <p-inputNumber
-                            ngDefaultControl
-                            inputId="{{ codeInputId }}"
-                            min="1"
-                            max="{{ v6 ? 65535 : 255 }}"
-                            inputStyleClass="code-input-width"
-                            formControlName="optionCode"
-                            pTooltip="Enter a suboption code (a number)."
-                            (onInput)="onOptionCodeChange($event)"
-                        >
-                        </p-inputNumber>
-                        <label for="{{ codeInputId }}">Type Suboption Code</label>
-                    </span>
-                </div>
-            </ng-template>
-            <div class="flex align-items-center">
-                <app-help-tip *ngIf="optionDef" [title]="optionDef.name">
-                    <ng-container *ngIf="optionDef.array">
-                        <div *ngIf="optionDef.optionType === 'record'">
-                            This option carries the records of the following fields:
-                            <ul>
-                                <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
-                            </ul>
-                            These records can be repeated, forming an array of records. By default, the option has only
-                            one record, but additional records can be defined as necessary by adding suitable option
-                            fields.
-                        </div>
-                        <div *ngIf="optionDef.optionType !== 'record'">
-                            This option can comprise an array of the
-                            <span class="font-semibold">{{ optionDef.optionType }}</span>
-                            option fields. By default, it has only one option field, but more fields of the same type
-                            can be added as necessary.
-                        </div>
-                    </ng-container>
-                    <ng-container *ngIf="!optionDef.array">
-                        <div *ngIf="optionDef.optionType === 'empty'">
-                            This option carries no option fields (is empty).
-                        </div>
-                        <div *ngIf="optionDef.optionType === 'record'">
-                            This option carries a single record of the following fields:
-                            <ul>
-                                <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
-                            </ul>
-                        </div>
-                        <div *ngIf="optionDef.optionType !== 'record' && optionDef.optionType !== 'empty'">
-                            This option comprises a single <span class="font-semibold">{{ optionDef.optionType }}</span>
-                            option field.
-                        </div>
-                    </ng-container>
-                    <div *ngIf="optionDef.encapsulate.length > 0" class="mt-3">
-                        It encapsulates the suboptions with the following codes:
-                        {{ getStandardDhcpOptionDefCodes().join(', ') || '(none)' }}.
-                    </div>
-                    <div *ngIf="!optionDef.encapsulate" class="mt-3">It carries no suboptions.</div>
-                </app-help-tip>
-            </div>
-        </div>
-        <div class="flex mt-1 align-items-center">
-            <div
-                *ngIf="topLevel"
-                class="ml-1 field-checkbox p-button-secondary p-button-sm p-button-text p-button mb-0"
+<div [formGroup]="formGroup" class="flex flex-column gap-1">
+    <!--    <div class="flex flex-column">-->
+    <div class="flex align-items-center gap-2">
+        <!--            <div *ngIf="topLevel; else showSuboptionInput" class="flex align-items-center">-->
+        <span class="p-float-label full-width" *ngIf="topLevel; else showSuboptionInput">
+            <p-dropdown
+                inputId="{{ codeInputId }}"
+                [autoDisplayFirst]="false"
+                [editable]="true"
+                [filter]="true"
+                filterBy="label"
+                [options]="v6 ? optionsService.getStandardDhcpv6Options() : optionsService.getStandardDhcpv4Options()"
+                styleClass=""
+                formControlName="optionCode"
+                pTooltip="Use the dropdown to select an option from the list of standard options. If the option is not in the list, simply type its code (a number) in the box. When using the dropdown, it is possible to filter by option name or code."
+                (onChange)="onOptionCodeChange($event)"
             >
-                <p-checkbox
-                    ngDefaultControl
-                    formControlName="alwaysSend"
-                    [binary]="true"
-                    inputId="{{ alwaysSendCheckboxId }}"
-                    pTooltip="When checked, the option will always be returned to a DHCP client, regardless whether it is requested or not."
-                ></p-checkbox>
-                <label for="{{ alwaysSendCheckboxId }}">Always Send</label>
+            </p-dropdown>
+            <label for="{{ codeInputId }}">Select or Type Option Code</label>
+        </span>
+        <!--            </div>-->
+        <ng-template #showSuboptionInput>
+            <!--                <div class="flex align-items-center">-->
+            <!--                    <span class="p-float-label">-->
+            <p-inputNumber
+                ngDefaultControl
+                inputId="{{ codeInputId }}"
+                min="1"
+                max="{{ v6 ? 65535 : 255 }}"
+                inputStyleClass=""
+                formControlName="optionCode"
+                pTooltip="Enter a suboption code (a number)."
+                (onInput)="onOptionCodeChange($event)"
+            >
+            </p-inputNumber>
+            <label for="{{ codeInputId }}">Type Suboption Code</label>
+            <!--                    </span>-->
+            <!--                </div>-->
+        </ng-template>
+        <!--            <div class="flex align-items-center">-->
+        <app-help-tip *ngIf="optionDef" [title]="optionDef.name">
+            <ng-container *ngIf="optionDef.array">
+                <div *ngIf="optionDef.optionType === 'record'">
+                    This option carries the records of the following fields:
+                    <ul>
+                        <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
+                    </ul>
+                    These records can be repeated, forming an array of records. By default, the option has only one
+                    record, but additional records can be defined as necessary by adding suitable option fields.
+                </div>
+                <div *ngIf="optionDef.optionType !== 'record'">
+                    This option can comprise an array of the
+                    <span class="font-semibold">{{ optionDef.optionType }}</span>
+                    option fields. By default, it has only one option field, but more fields of the same type can be
+                    added as necessary.
+                </div>
+            </ng-container>
+            <ng-container *ngIf="!optionDef.array">
+                <div *ngIf="optionDef.optionType === 'empty'">This option carries no option fields (is empty).</div>
+                <div *ngIf="optionDef.optionType === 'record'">
+                    This option carries a single record of the following fields:
+                    <ul>
+                        <li *ngFor="let record of optionDef.recordTypes">{{ record }}</li>
+                    </ul>
+                </div>
+                <div *ngIf="optionDef.optionType !== 'record' && optionDef.optionType !== 'empty'">
+                    This option comprises a single <span class="font-semibold">{{ optionDef.optionType }}</span>
+                    option field.
+                </div>
+            </ng-container>
+            <div *ngIf="optionDef.encapsulate.length > 0" class="mt-3">
+                It encapsulates the suboptions with the following codes:
+                {{ getStandardDhcpOptionDefCodes().join(', ') || '(none)' }}.
             </div>
-            <div>
-                <p-splitButton
-                    label="{{ 'Add ' + lastFieldType }}"
-                    [model]="fieldTypes"
-                    pTooltip="Adds a new option field - a binary field or last added field type by default. Use the dropdown to select other type, if desired."
-                    styleClass="p-button-secondary p-button-sm p-button-text"
-                    (onClick)="lastFieldCommand()"
-                >
-                </p-splitButton>
-            </div>
-            <div class="ml-1">
-                <button
-                    pButton
-                    type="button"
-                    icon="pi pi-times"
-                    [label]="topLevel ? 'Delete Option' : 'Delete Suboption'"
-                    class="full-width p-button-sm p-button-danger p-button-text"
-                    (click)="deleteOption()"
-                ></button>
-            </div>
-        </div>
+            <div *ngIf="!optionDef.encapsulate" class="mt-3">It carries no suboptions.</div>
+        </app-help-tip>
+        <!--            </div>-->
     </div>
-    <div *ngIf="optionFields.length !== 0; else emptyOption" formArrayName="optionFields">
+    <div class="flex align-items-center flex-wrap gap-2 ml-1">
+        <div *ngIf="topLevel" class="field-checkbox mb-0">
+            <!--                p-button-secondary p-button-sm p-button-text p-button mb-0 -->
+            <p-checkbox
+                ngDefaultControl
+                formControlName="alwaysSend"
+                [binary]="true"
+                inputId="{{ alwaysSendCheckboxId }}"
+                pTooltip="When checked, the option will always be returned to a DHCP client, regardless whether it is requested or not."
+            ></p-checkbox>
+            <label for="{{ alwaysSendCheckboxId }}">Always Send</label>
+        </div>
+        <!--            <div>-->
+        <p-splitButton
+            label="{{ 'Add ' + lastFieldType }}"
+            [model]="fieldTypes"
+            pTooltip="Adds a new option field - a binary field or last added field type by default. Use the dropdown to select other type, if desired."
+            styleClass="p-button-secondary p-button-sm p-button-text"
+            (onClick)="lastFieldCommand()"
+        >
+        </p-splitButton>
+        <!--            </div>-->
+        <!--            <div class="ml-1">-->
+        <button
+            pButton
+            type="button"
+            icon="pi pi-times"
+            [label]="topLevel ? 'Delete Option' : 'Delete Suboption'"
+            class="p-button-sm p-button-danger p-button-text"
+            (click)="deleteOption()"
+        ></button>
+        <!--            </div>-->
+    </div>
+    <!--    </div>-->
+    <div
+        *ngIf="optionFields.length !== 0; else emptyOption"
+        formArrayName="optionFields"
+        class="flex flex-column gap-5 mt-4"
+    >
         <ng-container
             *ngFor="
                 let fieldControl of optionFields.controls as DhcpOptionFieldFormGroup;
@@ -125,26 +122,22 @@
                 let first = first
             "
         >
-            <div
-                [ngSwitch]="fieldControl.data.fieldType"
-                [ngClass]="{ flex: true, 'align-items-top': true, 'ml-3': true, 'mt-4': first, 'mt-5': !first }"
-            >
-                <div *ngSwitchCase="FieldType.Binary" [formGroupName]="i">
-                    <span class="p-float-label">
+            <div [ngSwitch]="fieldControl.data.fieldType" class="flex gap-2 sm:pl-3" [formGroupName]="i">
+                <ng-container *ngSwitchCase="FieldType.Binary">
+                    <span class="p-float-label full-width">
                         <textarea
                             id="{{ fieldControl.data.getInputId(0) }}"
-                            rows="5"
-                            cols="30"
                             pInputTextarea
-                            autoResize="true"
-                            class="option-field"
+                            class="option-field h-full"
                             formControlName="control"
                         ></textarea>
+                        <!--                        autoResize="true"   rows="5"
+                            cols="10" -->
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.String" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.String">
+                    <span class="p-float-label full-width">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -153,14 +146,14 @@
                         />
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Bool" [formGroupName]="i">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Bool">
                     <div id="{{ fieldControl.data.getInputId(0) }}" class="p-inputtext option-field p-0">
                         <p-toggleButton onLabel="True" offLabel="False" formControlName="control"> </p-toggleButton>
                     </div>
-                </div>
-                <div *ngSwitchCase="FieldType.Uint8" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Uint8">
+                    <span class="p-float-label full-width">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -173,9 +166,9 @@
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Uint16" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Uint16">
+                    <span class="p-float-label full-width">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -188,9 +181,9 @@
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Uint32" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Uint32">
+                    <span class="p-float-label full-width">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -203,9 +196,9 @@
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Int8" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Int8">
+                    <span class="p-float-label full-width">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -218,9 +211,9 @@
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Int16" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Int16">
+                    <span class="p-float-label full-width">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -233,9 +226,9 @@
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Int32" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Int32">
+                    <span class="p-float-label full-width">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -248,9 +241,9 @@
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.IPv4Address" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.IPv4Address">
+                    <span class="p-float-label full-width">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -259,9 +252,9 @@
                         />
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.IPv6Address" [formGroupName]="i">
-                    <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.IPv6Address">
+                    <span class="p-float-label full-width">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -270,28 +263,33 @@
                         />
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.IPv6Prefix" class="flex" [formGroupName]="i">
-                    <span class="p-float-label">
-                        <input
-                            id="{{ fieldControl.data.getInputId(0) }}"
-                            pInputText
-                            class="option-field"
-                            formControlName="prefix"
-                        />
-                        <p-inputNumber
-                            inputId="{{ fieldControl.data.getInputId(1) }}"
-                            ngDefaultControl
-                            min="1"
-                            max="128"
-                            inputStyleClass="ml-1 option-field prefix-length-width"
-                            formControlName="prefixLength"
-                        >
-                        </p-inputNumber>
-                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Psid" class="flex" [formGroupName]="i">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.IPv6Prefix">
+                    <div class="flex gap-1 mixed-content">
+                        <span class="p-float-label full-width">
+                            <input
+                                id="{{ fieldControl.data.getInputId(0) }}"
+                                pInputText
+                                class="option-field"
+                                formControlName="prefix"
+                            />
+                            <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
+                        </span>
+                        <span class="p-float-label full-width">
+                            <p-inputNumber
+                                inputId="{{ fieldControl.data.getInputId(1) }}"
+                                ngDefaultControl
+                                min="1"
+                                max="128"
+                                inputStyleClass="option-field"
+                                formControlName="prefixLength"
+                            >
+                            </p-inputNumber>
+                            <label for="{{ fieldControl.data.getInputId(1) }}">Len</label>
+                        </span>
+                    </div>
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Psid">
                     <span class="p-float-label">
                         <p-inputNumber
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -313,10 +311,11 @@
                         >
                         </p-inputNumber>
                     </span>
-                </div>
-                <div *ngSwitchCase="FieldType.Fqdn" [formGroupName]="i">
-                    <div class="p-inputgroup">
-                        <span class="p-float-label">
+                </ng-container>
+                <ng-container *ngSwitchCase="FieldType.Fqdn">
+                    <!--                    <div class="p-inputgroup">-->
+                    <div class="flex flex-column sm:flex-row gap-2 mixed-content">
+                        <span class="p-float-label full-width">
                             <input
                                 id="{{ fieldControl.data.getInputId(0) }}"
                                 pInputText
@@ -324,45 +323,47 @@
                                 formControlName="control"
                             />
                             <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                            <p-toggleButton
-                                onLabel="Use Full FQDN"
-                                offLabel="Use Partial FQDN"
-                                styleClass="ml-1"
-                                (onChange)="togglePartialFqdn($event, i)"
-                            >
-                            </p-toggleButton>
                         </span>
+
+                        <p-toggleButton
+                            onLabel="Use Full FQDN"
+                            offLabel="Use Partial FQDN"
+                            styleClass="option-field"
+                            (onChange)="togglePartialFqdn($event, i)"
+                        >
+                        </p-toggleButton>
                     </div>
-                </div>
-                <div>
-                    <div>
-                        <button
-                            pButton
-                            type="button"
-                            icon="pi pi-times"
-                            class="full-width p-button-text p-button p-button-danger"
-                            (click)="deleteField(i)"
-                        ></button>
-                    </div>
-                    <div *ngIf="fieldControl.data.fieldType === FieldType.Binary">
-                        <app-help-tip title="binary Option Field">
-                            <p>
-                                Option value can be specified as a string of the hexadecimal digits. The following
-                                formats are accepted:
-                            </p>
-                            <ul>
-                                <li>Capital letters, e.g., 1F:1E:AB:CE</li>
-                                <li>Non-capital leters, e.g., 8f:6a:bc:78</li>
-                                <li>Space as a separator, e.g., 87 68 af b8</li>
-                                <li>Colon as a separator (see above)</li>
-                                <li>No separator, e.g., 05F74FA6</li>
-                            </ul>
-                            <p>
-                                The specified value must have even number of hexadecimal digits. Please prepend a
-                                leading zero when necessary.
-                            </p>
-                        </app-help-tip>
-                    </div>
+                    <!--                    </div>-->
+                </ng-container>
+                <div class="flex flex-column align-items-start">
+                    <!--                    <div>-->
+                    <button
+                        pButton
+                        type="button"
+                        icon="pi pi-times"
+                        class="p-button-text p-button p-button-danger"
+                        (click)="deleteField(i)"
+                    ></button>
+                    <!--                    </div>-->
+                    <!--                    <div >-->
+                    <app-help-tip *ngIf="fieldControl.data.fieldType === FieldType.Binary" title="binary Option Field">
+                        <p>
+                            Option value can be specified as a string of the hexadecimal digits. The following formats
+                            are accepted:
+                        </p>
+                        <ul>
+                            <li>Capital letters, e.g., 1F:1E:AB:CE</li>
+                            <li>Non-capital leters, e.g., 8f:6a:bc:78</li>
+                            <li>Space as a separator, e.g., 87 68 af b8</li>
+                            <li>Colon as a separator (see above)</li>
+                            <li>No separator, e.g., 05F74FA6</li>
+                        </ul>
+                        <p>
+                            The specified value must have even number of hexadecimal digits. Please prepend a leading
+                            zero when necessary.
+                        </p>
+                    </app-help-tip>
+                    <!--                    </div>-->
                 </div>
             </div>
         </ng-container>

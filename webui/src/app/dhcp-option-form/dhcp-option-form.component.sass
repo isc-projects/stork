@@ -1,45 +1,67 @@
-.host-form-abs-width
-    width: 700px
+//.host-form-abs-width
+//    width: 700px
 
-:host ::ng-deep .full-width
-    width: 100%
+:host ::ng-deep
+    .full-width
+        width: 100%
+        &.p-float-label
+            // When full width is applied to .p-float-label span, limit the max width.
+            max-width: 35rem
+            .p-component.p-inputwrapper, textarea, .p-inputtext, .p-element.p-inputwrapper, .p-component.p-inputnumber
+                // Apply the same style for p-dropdown inside of .p-float-label span.
+                width: 100%
+                max-width: 35rem
 
-:host ::ng-deep .code-input-width
-    width: 500px
+    .mixed-content:has( > .p-float-label.full-width)
+        // When .mixed-content div has .p-float-label.full-width span child, limit the max width.
+        width: 100%
+        max-width: 35rem
 
-:host ::ng-deep .option-field
-    border-style: dashed
-    border-width: 1px
+        .p-float-label.full-width:nth-child(1)
+            flex: 1 1 35rem
+        .p-float-label.full-width:nth-child(2)
+            flex: 1 0 4rem
 
-:host ::ng-deep .prefix-length-width
-    width: 4rem
+    //.code-input-width
+    //    width: 500px
 
-:host ::ng-deep .psid-length-width
-    width: 3rem
+    .option-field
+        border-style: dashed
+        border-width: 1px
 
-:host ::ng-deep .empty-option-tag
-    &:hover
-        cursor: help
-        background: var(--gray-300)
+    .prefix-length-width
+        width: 4rem
 
-:host ::ng-deep .p-togglebutton.p-button
-    // Overwrite default PrimeNG toggle button style.
-    // PrimeNG Aura theme style of toggle button doesn't match with
-    // dashed border of .option-field class.
-    // This should be revised in the future,
-    // whether custom style is still necessary.
-    background: var(--surface-0)
-    border-color: var(--surface-0)
+    .psid-length-width
+        width: 3rem
 
-    &.p-highlight
-        background: var(--surface-200)
-        border-color: var(--surface-200)
-
+    .empty-option-tag
         &:hover
+            cursor: help
             background: var(--surface-300)
-            border-color: var(--surface-300)
 
-        & .p-button-label
-            background: inherit
-            border-color: inherit
-            box-shadow: none
+    .p-togglebutton.p-button
+        // Overwrite default PrimeNG toggle button style.
+        // PrimeNG Aura theme style of toggle button doesn't match with
+        // dashed border of .option-field class.
+        // This should be revised in the future,
+        // whether custom style is still necessary.
+        background: var(--surface-0)
+        border-color: var(--surface-0)
+
+        &.p-highlight
+            background: var(--surface-200)
+            border-color: var(--surface-200)
+
+            &:hover
+                background: var(--surface-300)
+                border-color: var(--surface-300)
+
+            & .p-button-label
+                background: inherit
+                border-color: inherit
+                box-shadow: none
+
+        .p-button-label
+            // Don't wrap button label when viewport shrinks.
+            white-space: nowrap

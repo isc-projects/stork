@@ -1,5 +1,5 @@
-.host-form-abs-width
-    width: 700px
+//.host-form-abs-width
+//    width: 700px
 
 :host ::ng-deep .full-width
     width: 100%
@@ -33,7 +33,7 @@
                     // Add top margin for first div inside of fieldset.
                     margin-top: 1.5rem
 
-                .p-component.p-inputwrapper, input.p-inputtext, .p-chips-input-token input
-                    // Form input should take full width but not more than 35rem.
-                    width: 100%
-                    max-width: 35rem
+                .full-width
+                    &.p-component.p-inputwrapper, &.p-inputtext, &.p-chips .p-chips-input-token input
+                        // Form input should take full width but not more than 35rem.
+                        max-width: 35rem

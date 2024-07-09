@@ -26,7 +26,7 @@
                     formControlName="selectedDaemons"
                     display="chip"
                     [showToggleAll]="false"
-                    styleClass="adaptive-chips-background"
+                    styleClass="adaptive-chips-background full-width"
                     (onChange)="onDaemonsChange()"
                 >
                 </p-multiSelect>
@@ -51,7 +51,7 @@
                     [options]="form.filteredSubnets"
                     formControlName="selectedSubnet"
                     [showClear]="true"
-                    styleClass=""
+                    styleClass="full-width"
                     (onChange)="onSelectedSubnetChange()"
                 >
                 </p-dropdown>
@@ -74,20 +74,25 @@
                 <p-dropdown
                     [options]="hostIdTypes"
                     formControlName="idType"
-                    styleClass=""
+                    styleClass="full-width"
                     (onChange)="onSelectedIdentifierChange()"
                 >
                 </p-dropdown>
             </div>
             <div class="col-6 sm:col-3">
-                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass=""> </p-dropdown>
+                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass="full-width"> </p-dropdown>
             </div>
 
             <div
                 *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText"
                 class="col-12 sm:col-6"
             >
-                <input pInputText formControlName="idInputHex" class="" placeholder="e.g. 01:02:03:04:05:06" />
+                <input
+                    pInputText
+                    formControlName="idInputHex"
+                    class="full-width"
+                    placeholder="e.g. 01:02:03:04:05:06"
+                />
                 <small
                     *ngIf="
                         formGroup.get('hostIdGroup.idInputHex').invalid &&
@@ -106,7 +111,12 @@
             </div>
             <ng-template #hostIdFormatText>
                 <div class="col-12 sm:col-6">
-                    <input pInputText formControlName="idInputText" class="" placeholder="text identifier format" />
+                    <input
+                        pInputText
+                        formControlName="idInputText"
+                        class="full-width"
+                        placeholder="text identifier format"
+                    />
                     <small
                         *ngIf="
                             formGroup.get('hostIdGroup.idInputText').invalid &&
@@ -130,7 +140,7 @@
     <p-fieldset legend="Host Reservations" styleClass="cust-col">
         <div class="">
             <span class="p-float-label">
-                <input id="hostname-input" pInputText class="" formControlName="hostname" />
+                <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
                 <label for="hostname-input">Hostname</label>
             </span>
             <small
@@ -147,7 +157,8 @@
                 <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i">
                     <ng-container [formGroup]="ipGroup" class="flex align-items-start">
                         <div class="col-12 sm:col-3">
-                            <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass=""> </p-dropdown>
+                            <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="full-width">
+                            </p-dropdown>
                         </div>
                         <ng-container [ngSwitch]="ipGroup.value.ipType">
                             <ng-container *ngSwitchCase="'ipv4'">
@@ -156,7 +167,7 @@
                                         *ngSwitchCase="'ipv4'"
                                         pInputText
                                         formControlName="inputIPv4"
-                                        class=""
+                                        class="full-width"
                                         [placeholder]="ipv4Placeholder"
                                     />
                                     <small
@@ -181,7 +192,7 @@
                                         *ngSwitchCase="'ia_na'"
                                         pInputText
                                         formControlName="inputNA"
-                                        class=""
+                                        class="full-width"
                                         [placeholder]="ipv6Placeholder"
                                     />
                                     <small
@@ -208,14 +219,19 @@
                             </ng-container>
                             <ng-container *ngSwitchCase="'ia_pd'">
                                 <div class="col-6">
-                                    <input pInputText formControlName="inputPD" class="" placeholder="e.g. 3000:1::" />
+                                    <input
+                                        pInputText
+                                        formControlName="inputPD"
+                                        class="full-width"
+                                        placeholder="e.g. 3000:1::"
+                                    />
                                 </div>
                                 <div class="col-4 sm:col-2">
                                     <p-inputNumber
                                         ngDefaultControl
                                         min="1"
                                         max="128"
-                                        inputStyleClass=""
+                                        inputStyleClass="full-width"
                                         formControlName="inputPDLength"
                                     >
                                     </p-inputNumber>
@@ -293,7 +309,12 @@
                 </ng-template>
                 <div class="">
                     <span class="p-float-label">
-                        <input id="next-server-input-{{ i }}" pInputText class="" formControlName="nextServer" />
+                        <input
+                            id="next-server-input-{{ i }}"
+                            pInputText
+                            class="full-width"
+                            formControlName="nextServer"
+                        />
                         <label for="next-server-input-{{ i }}">Next Server</label>
                     </span>
                     <small
@@ -311,7 +332,7 @@
                         <input
                             id="server-hostname-input-{{ i }}"
                             pInputText
-                            class=""
+                            class="full-width"
                             formControlName="serverHostname"
                         />
                         <label for="server-hostname-input-{{ i }}">Server Hostname</label>
@@ -328,7 +349,12 @@
                 </div>
                 <div class="">
                     <span class="p-float-label">
-                        <input id="boot-file-name-input-{{ i }}" pInputText class="" formControlName="bootFileName" />
+                        <input
+                            id="boot-file-name-input-{{ i }}"
+                            pInputText
+                            class="full-width"
+                            formControlName="bootFileName"
+                        />
                         <label for="boot-file-name-input-{{ i }}">Boot File Name</label>
                     </span>
                 </div>
@@ -356,7 +382,7 @@
     </ng-container>
 
     <ng-container formArrayName="options">
-        <ng-container *ngFor="let optionsSet of optionsArray.controls; let i = index" styleClass="mt-4">
+        <ng-container *ngFor="let optionsSet of optionsArray.controls; let i = index">
             <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="cust-col">
                 <ng-template pTemplate="header">
                     <ng-container
