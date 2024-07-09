@@ -41,7 +41,7 @@ services:
     build:
       target: server
     volumes:
-      - $PWD/docker/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf
+      - $PWD/tests/system/config/supervisor/stork-server-non-debug.conf:/etc/supervisor/conf.d/stork-server.conf
     depends_on:
       - postgres
 
