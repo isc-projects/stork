@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from core.wrappers.base import ComposeServiceWrapper
+from core.wrappers.compose import ComposeServiceWrapper
 
 
 class Postgres(ComposeServiceWrapper):

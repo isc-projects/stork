@@ -1,4 +1,7 @@
+from typing import Callable
+
 from core.compose import DockerCompose
+from core.wrappers.supervisor import SupervisorServiceWrapper
 
 
 class ComposeServiceWrapper:
@@ -21,18 +24,6 @@ class ComposeServiceWrapper:
         """
         self._compose = compose
         self._service_name = service_name
-
-    def _restart_supervisor_service(self, name: str):
-        """Restart a specific supervisor service and wait to recover
-        operational status."""
-        cmd = ["supervisorctl", "restart", name]
-        self._compose.exec(self._service_name, cmd)
-        self._compose.wait_for_operational(self._service_name)
-
-    def _reload_supervisor_service(self, name: str):
-        cmd = ["supervisorctl", "signal", "HUP", name]
-        self._compose.exec(self._service_name, cmd)
-        self._compose.wait_for_operational(self._service_name)
 
     def _read_file(self, path: str):
         """Read a content of a given file from the container."""
@@ -62,7 +53,14 @@ class ComposeServiceWrapper:
         return self._compose.get_service_ip_address(
             self._service_name, subnet_name, family=family
         )
-
-    def _get_pid(self, process_name: str):
-        """Returns a PID of the specfified process."""
-        return self._compose.get_pid(self._service_name, process_name)
+    
+    def _get_supervisor_service(self, name: str) -> SupervisorServiceWrapper:
+        """
+        Returns a wrapper for a specific supervisor service. Accepts the
+        name of the supervisor service as an argument.
+        It is applicable only for containers managed by the supervisor.
+        """
+        return SupervisorServiceWrapper(
+            lambda cmd: self._compose.exec(self._service_name, cmd, check=False),
+            name,
+        )

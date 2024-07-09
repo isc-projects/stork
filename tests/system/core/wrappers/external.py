@@ -24,17 +24,12 @@ class ExternalPackages(Agent, Server):
         """
 
         super().__init__(compose, service_name, self)
+        self._agent_supervisor_service = self._get_supervisor_service("stork-agent")
 
     def _install_package(self, path):
         """Installs a given Debian package."""
         cmd = ["dpkg", "-i", path]
         self._compose.exec(self._service_name, cmd, capture_output=False)
-
-    def restart_stork_server(self):
-        """
-        Restarts the Stork Server and waits to recover an operational status.
-        """
-        self._restart_supervisor_service("stork-server")
 
     def update_agent_to_latest_version(self):
         """Installs the latest Stork Agent revision from the package."""

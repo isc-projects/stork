@@ -641,30 +641,6 @@ class DockerCompose:
         if not state.is_operational():
             raise ContainerNotRunningException(str(state))
 
-    def get_pid(self, service_name, process_name):
-        """
-        Returns PID of the selected process belonging to the service.
-
-        Parameters
-        ----------
-        service_name: str
-            Name of the service
-        process_name: str
-            Name of the process which PID should be returned
-
-        Returns
-        -------
-        int
-            found PID or None
-        """
-        cmd = ["supervisorctl", "pid", process_name]
-        _, stdout, _ = self.exec(service_name, cmd)
-
-        try:
-            return int(stdout)
-        except Exception:
-            return None
-
     def is_enabled(self, service_name):
         """Checks if the given service is enabled. The service is enabled if
         it has no profiles or has at least one profile provided by the --profile

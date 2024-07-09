@@ -6,7 +6,7 @@ from typing import Callable, List, Optional, TypeVar
 import openapi_client
 from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
-from core.wrappers.base import ComposeServiceWrapper
+from core.wrappers.compose import ComposeServiceWrapper
 from openapi_client.api.dhcp_api import DHCPApi, DhcpOverview, Hosts, Leases, Subnets
 from openapi_client.api.events_api import Events, EventsApi
 from openapi_client.api.general_api import GeneralApi, Version
@@ -55,6 +55,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         url = f"http://{mapped[0]}:{mapped[1]}/api"
         configuration = openapi_client.Configuration(host=url)
         self._api_client = openapi_client.ApiClient(configuration)
+        self._server_supervisor_service = self._get_supervisor_service("stork-server")
 
     def close(self):
         """Free the resources used by the wrapper."""
@@ -97,11 +98,21 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
 
     def get_stork_server_pid(self):
         """Returns PID of the stork-server process."""
-        return self._get_pid("stork-server")
+        return self._server_supervisor_service.get_pid()
 
     def reload_stork_server(self):
         """Sends SIGHUP to the stork-server."""
-        self._reload_supervisor_service("stork-server")
+        self._server_supervisor_service.reload()
+
+    def restart_stork_server(self):
+        """
+        Restarts the Stork server and waits to recover an operational status.
+        """
+        self._server_supervisor_service.restart()
+
+    def interrupt_stork_server(self):
+        """Sends SIGINT to the stork-server."""
+        self._server_supervisor_service.interrupt()
 
     # Authentication
 

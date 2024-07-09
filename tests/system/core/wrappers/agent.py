@@ -2,7 +2,7 @@ import os.path
 import urllib3
 
 from core.compose import DockerCompose
-from core.wrappers.base import ComposeServiceWrapper
+from core.wrappers.compose import ComposeServiceWrapper
 from core.wrappers.server import Server
 from core.utils import memoize, wait_for_success, NoSuccessException
 from core.prometheus_parser import text_fd_to_metric_families
@@ -39,6 +39,7 @@ class Agent(ComposeServiceWrapper):
         """
         super().__init__(compose, service_name)
         self._server_service = server_service
+        self._agent_supervisor_service = self._get_supervisor_service("stork-agent")
 
     @memoize
     def _get_metrics_endpoint(self, internal_port: int):
@@ -101,11 +102,11 @@ class Agent(ComposeServiceWrapper):
         """
         Restarts the Stork Agent and waits to recover an operational status.
         """
-        self._restart_supervisor_service("stork-agent")
+        self._agent_supervisor_service.restart()
 
     def reload_stork_agent(self):
         """Sends SIGHUP to the stork-agent."""
-        self._reload_supervisor_service("stork-agent")
+        self._agent_supervisor_service.reload()
 
     def is_registered(self):
         """True if an agent was successful registered. Otherwise False."""
@@ -123,4 +124,4 @@ class Agent(ComposeServiceWrapper):
 
     def get_stork_agent_pid(self):
         """Returns PID of the stork-agent process."""
-        return self._get_pid("stork-agent")
+        return self._agent_supervisor_service.get_pid()
