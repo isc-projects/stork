@@ -1,5 +1,3 @@
-from typing import Callable
-
 from core.compose import DockerCompose
 from core.wrappers.supervisor import SupervisorServiceWrapper
 
