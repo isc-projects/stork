@@ -75,7 +75,7 @@ def pytest_runtest_makereport(item, call):  # pylint: disable=unused-argument
     setattr(item, "rep_" + rep.when, rep)
 
 
-def pytestsessionstart(session):  # pylint: disable=unused-argument
+def pytest_sessionstart(session):  # pylint: disable=unused-argument
     """
     Stop all the running containers. The containers are stopped by default
     on the testing end if no interruption happened
