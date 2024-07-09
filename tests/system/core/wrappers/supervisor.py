@@ -6,7 +6,9 @@ from core.utils import NoSuccessException, wait_for_success
 class SupervisorServiceWrapper:
     """A wrapper for the supervisor service."""
 
-    def __init__(self, exec_: Callable[[Sequence[str]], Tuple[str, str, int]], service_name: str):
+    def __init__(
+        self, exec_: Callable[[Sequence[str]], Tuple[str, str, int]], service_name: str
+    ):
         """
         A constructor of the class.
 
@@ -32,7 +34,7 @@ class SupervisorServiceWrapper:
         cmd = ["supervisorctl", "status", self._service_name]
         code, _, _ = self._exec(cmd)
         return code
-    
+
     def get_pid(self):
         """Returns a PID of a specific supervisor service."""
         cmd = ["supervisorctl", "pid", self._service_name]
@@ -42,7 +44,7 @@ class SupervisorServiceWrapper:
     def is_operational(self):
         """Checks if a specific supervisor service is operational."""
         return self._get_status_code() == 0
-    
+
     def restart(self):
         """Restart a specific supervisor service and wait to recover
         operational status."""
@@ -72,7 +74,7 @@ class SupervisorServiceWrapper:
         """Block the execution until the service is operational."""
         if not self.is_operational():
             raise NoSuccessException()
-        
+
     @wait_for_success(wait_msg="Waiting to be supervisor service non-operational...")
     def _wait_for_non_operational(self):
         """Block the execution until the service is non-operational."""

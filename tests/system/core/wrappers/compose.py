@@ -53,7 +53,7 @@ class ComposeServiceWrapper:
         return self._compose.get_service_ip_address(
             self._service_name, subnet_name, family=family
         )
-    
+
     def _get_supervisor_service(self, name: str) -> SupervisorServiceWrapper:
         """
         Returns a wrapper for a specific supervisor service. Accepts the
