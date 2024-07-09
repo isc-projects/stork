@@ -18,7 +18,7 @@ import (
 type pullerMetadata interface {
 	GetName() string
 	GetIntervalSettingName() string
-	GetInterval() int64
+	GetInterval() time.Duration
 	GetLastInvokedAt() time.Time
 	GetLastFinishedAt() time.Time
 }
@@ -44,7 +44,7 @@ func (r *RestAPI) GetPullers(ctx context.Context, params settings.GetPullersPara
 		metadata := &models.Puller{
 			Name:           puller.GetName(),
 			ID:             puller.GetIntervalSettingName(),
-			Interval:       puller.GetInterval(),
+			Interval:       int64(puller.GetInterval().Truncate(time.Second).Seconds()),
 			LastInvokedAt:  strfmt.DateTime(puller.GetLastInvokedAt()),
 			LastFinishedAt: strfmt.DateTime(puller.GetLastFinishedAt()),
 		}
@@ -83,7 +83,7 @@ func (r *RestAPI) GetPuller(ctx context.Context, params settings.GetPullerParams
 		metadata := &models.Puller{
 			Name:           puller.GetName(),
 			ID:             puller.GetIntervalSettingName(),
-			Interval:       puller.GetInterval(),
+			Interval:       int64(puller.GetInterval().Truncate(time.Second).Seconds()),
 			LastInvokedAt:  strfmt.DateTime(puller.GetLastInvokedAt()),
 			LastFinishedAt: strfmt.DateTime(puller.GetLastFinishedAt()),
 		}

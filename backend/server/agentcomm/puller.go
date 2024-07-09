@@ -43,10 +43,12 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 			lastFinishedAt.Store(time.Now())
 			return err
 		},
-		func() (int64, error) {
+		func() (time.Duration, error) {
 			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
-			return interval, errors.WithMessagef(err, "Problem getting interval setting %s from db",
-				intervalSettingName)
+			return time.Duration(interval) * time.Second,
+				errors.WithMessagef(err,
+					"Problem getting interval setting %s from db",
+					intervalSettingName)
 		},
 	)
 	if err != nil {

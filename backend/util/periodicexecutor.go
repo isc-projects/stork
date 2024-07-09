@@ -13,24 +13,24 @@ import (
 type PeriodicExecutor struct {
 	name            string
 	executorFunc    func() error
-	interval        int64
+	interval        time.Duration
 	ticker          *time.Ticker
 	active          bool
 	pauseCount      uint16
 	done            chan bool
-	wg              *sync.WaitGroup
-	mutex           *sync.Mutex
-	getIntervalFunc func() (int64, error)
+	wg              sync.WaitGroup
+	mutex           sync.RWMutex
+	getIntervalFunc func() (time.Duration, error)
 }
 
 // Interval is used while the puller is inactive to check if it was re-enabled.
-const InactiveInterval int64 = 60
+const InactiveInterval time.Duration = 1 * time.Minute
 
 // Creates an instance of a new periodic executor. The periodic executor offers a mechanism
 // to periodically trigger an action. This action is supplied as a function instance.
 // This function is executed within a goroutine periodically according to the timer
 // interval calculated by `getIntervalFunc`. It accepts previous interval and returns next value.
-func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc func() (int64, error)) (*PeriodicExecutor, error) {
+func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc func() (time.Duration, error)) (*PeriodicExecutor, error) {
 	log.Printf("Starting %s", name)
 
 	interval, err := getIntervalFunc()
@@ -51,12 +51,10 @@ func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc
 	periodicExecutor := &PeriodicExecutor{
 		name:            name,
 		executorFunc:    executorFunc,
-		ticker:          time.NewTicker(time.Duration(interval) * time.Second),
+		ticker:          time.NewTicker(interval),
 		active:          active,
 		pauseCount:      0,
 		done:            make(chan bool),
-		wg:              &sync.WaitGroup{},
-		mutex:           &sync.Mutex{},
 		interval:        interval,
 		getIntervalFunc: getIntervalFunc,
 	}
@@ -95,61 +93,46 @@ func (executor *PeriodicExecutor) Pause() {
 
 // Checks if the executor is currently paused.
 func (executor *PeriodicExecutor) Paused() bool {
-	executor.mutex.Lock()
-	defer executor.mutex.Unlock()
+	executor.mutex.RLock()
+	defer executor.mutex.RUnlock()
 	return executor.pauseCount > 0
-}
-
-// Unpause implementation which optionally locks the executor's mutex.
-// This function is internally called by Unpause() and Reset(). Note
-// that Reset() locks the mutex on its own so the lock argument is
-// set to false in this case.
-func (executor *PeriodicExecutor) unpause(lock bool, intervals ...int64) {
-	if len(intervals) > 1 {
-		// This should not happen.
-		panic("Resume accepts one or zero interval values")
-	}
-	if lock {
-		executor.mutex.Lock()
-		defer executor.mutex.Unlock()
-	}
-	if executor.pauseCount > 0 {
-		executor.pauseCount--
-	}
-	// Unpause() called for all earlier calls to Pause(), so we can resume
-	// the executor action.
-	if executor.pauseCount == 0 {
-		if len(intervals) > 0 {
-			// Override the interval.
-			executor.interval = intervals[0]
-		}
-		// Reschedule the timer.
-		executor.ticker.Reset(time.Duration(executor.interval) * time.Second)
-	}
 }
 
 // Unpauses the executor. The optional interval parameter may contain
 // one interval value which overrides the current interval. If the interval
 // is not specified, the current interval is used.
-func (executor *PeriodicExecutor) Unpause(interval ...int64) {
-	executor.unpause(true, interval...)
-}
-
-// Return the current interval in seconds.
-func (executor *PeriodicExecutor) GetInterval() int64 {
+func (executor *PeriodicExecutor) Unpause() {
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
+
+	if executor.pauseCount > 0 {
+		executor.pauseCount--
+	}
+
+	// Unpause() called for all earlier calls to Pause(), so we can resume
+	// the executor action.
+	if executor.pauseCount == 0 {
+		// Reschedule the timer.
+		executor.ticker.Reset(executor.interval)
+	}
+}
+
+// Return the current interval.
+func (executor *PeriodicExecutor) GetInterval() time.Duration {
+	executor.mutex.RLock()
+	defer executor.mutex.RUnlock()
 	return executor.interval
 }
 
 // Reschedule the executor timer to a new interval. It forcibly stops
 // the executor and reschedules to the new interval.
-func (executor *PeriodicExecutor) Reset(interval int64) {
+func (executor *PeriodicExecutor) reset(interval time.Duration) {
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
-	executor.ticker.Stop()
+
 	executor.pauseCount = 0
-	executor.unpause(false, interval)
+	executor.interval = interval
+	executor.ticker.Reset(interval)
 }
 
 // This function controls the timing of the function execution and captures the
@@ -167,7 +150,7 @@ func (executor *PeriodicExecutor) executorLoop() {
 				err := executor.executorFunc()
 				executor.Unpause()
 				if err != nil {
-					log.Errorf("Errors were encountered while pulling data from apps: %+v", err)
+					log.WithError(err).Errorf("Errors were encountered while pulling data from apps")
 				}
 			}
 		// wait for done signal from shutdown function
@@ -177,26 +160,26 @@ func (executor *PeriodicExecutor) executorLoop() {
 			return
 		}
 
+		executor.mutex.RLock()
+		prevInterval := executor.interval
+		executor.mutex.RUnlock()
+
 		// Check if the interval has changed. If so, recreate the ticker.
-		interval, err := executor.getIntervalFunc()
+		nextInterval, err := executor.getIntervalFunc()
 		if err != nil {
-			log.Errorf("Problem getting interval: %+v", err)
-			return
+			log.WithError(err).Error("Problem getting interval, keep the current value")
+			nextInterval = prevInterval
 		}
 
-		executor.mutex.Lock()
-		executorInterval := executor.interval
-		executor.mutex.Unlock()
-
-		if interval <= 0 && executor.active {
+		if nextInterval <= 0 && executor.active {
 			// if executor should be disabled but it is active then
-			if executorInterval != InactiveInterval {
-				executor.Reset(InactiveInterval)
+			if prevInterval != InactiveInterval {
+				executor.reset(InactiveInterval)
 			}
 			executor.active = false
-		} else if interval > 0 && interval != executorInterval {
+		} else if nextInterval > 0 && nextInterval != prevInterval {
 			// if executor interval is changed and is not 0 (disabled)
-			executor.Reset(interval)
+			executor.reset(nextInterval)
 			executor.active = true
 		}
 	}

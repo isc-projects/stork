@@ -38,7 +38,7 @@ func (executor *testExecutor) mockPull() error {
 // Test test verifies that the executor is paused while handler function is
 // being invoked.
 func TestPausedWhileHandling(t *testing.T) {
-	getIntervalFunc := func() (int64, error) { return 1, nil }
+	getIntervalFunc := func() (time.Duration, error) { return 1 * time.Second, nil }
 
 	// Create an instance of the test executor which implements our mock function to
 	// be invoked by the executor under test.
@@ -79,9 +79,9 @@ func TestPausedWhileHandling(t *testing.T) {
 }
 
 // This test verifies that the executor can be paused and resumed.
-func TestPauseAndUnapuseOrReset(t *testing.T) {
+func TestPauseAndUnpauseOrReset(t *testing.T) {
 	testCases := []string{"Unpause", "Reset"}
-	getIntervalFunc := func() (int64, error) { return 1, nil }
+	getIntervalFunc := func() (time.Duration, error) { return 1 * time.Second, nil }
 
 	// The test is almost the same for both cases. The only difference is
 	// that we call Resume or Reset to start the executor again.
@@ -124,9 +124,9 @@ func TestPauseAndUnapuseOrReset(t *testing.T) {
 
 			// Depending on the test case, use Unpause or Reset to start the executor again.
 			if tc == "Unpause" {
-				executor.Unpause(1)
+				executor.Unpause()
 			} else {
-				executor.Reset(1)
+				executor.reset(1)
 			}
 
 			// This should result in handler function being called.
@@ -144,8 +144,8 @@ func TestPauseAndUnapuseOrReset(t *testing.T) {
 func TestGetInterval(t *testing.T) {
 	// Arrange
 	intervalValue := int64(1)
-	getIntervalFunc := func() (int64, error) {
-		return atomic.LoadInt64(&intervalValue), nil
+	getIntervalFunc := func() (time.Duration, error) {
+		return time.Duration(atomic.LoadInt64(&intervalValue)) * time.Second, nil
 	}
 	executor, _ := NewPeriodicExecutor("", func() error { return nil }, getIntervalFunc)
 	defer executor.Shutdown()
@@ -155,7 +155,7 @@ func TestGetInterval(t *testing.T) {
 
 	// Assert
 	require.Eventually(t, func() bool {
-		return executor.GetInterval() == 10
+		return executor.GetInterval() == 10*time.Second
 	}, 5*time.Second, time.Second,
 		"test executor did not update the interval")
 }
@@ -163,7 +163,11 @@ func TestGetInterval(t *testing.T) {
 // Test that the executor name is returned properly.
 func TestGetName(t *testing.T) {
 	// Arrange
-	executor, _ := NewPeriodicExecutor("foobar", func() error { return nil }, func() (int64, error) { return 1, nil })
+	executor, _ := NewPeriodicExecutor(
+		"foobar",
+		func() error { return nil },
+		func() (time.Duration, error) { return 1 * time.Second, nil },
+	)
 
 	// Act
 	name := executor.GetName()
