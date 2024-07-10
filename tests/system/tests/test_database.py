@@ -5,7 +5,6 @@ from core.wrappers import Postgres, Server
 from core.fixtures import server_parametrize
 
 
-@server_parametrize("server-non-debug")
 def test_recovery_after_database_connection_failed(
     server_service: Server, postgres_service: Postgres
 ):
