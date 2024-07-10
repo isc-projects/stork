@@ -700,7 +700,7 @@ func TestRepeatRegister(t *testing.T) {
 	// Regenerate certs
 	regenKey = true
 	serverToken = "serverToken"
-	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient())
+	res = Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, NewHTTPClient())
 	require.True(t, res)
 
 	privKeyPEM3, err := os.ReadFile(KeyPEMFile)
@@ -726,7 +726,7 @@ func TestRepeatRegister(t *testing.T) {
 	invalidHeaderValues := []string{"", "/machines/", "/machines", "/machines/abc", "/machines/1a", "/machines/2a2"}
 	for _, value := range invalidHeaderValues {
 		locationHeaderValue = value
-		res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient())
+		res = Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, NewHTTPClient())
 		require.False(t, res)
 	}
 }
