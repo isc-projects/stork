@@ -165,7 +165,7 @@ func TestRegistrationParamsFromEnvironmentFile(t *testing.T) {
 		"register",
 	}
 
-	// The Stork Agent exists using a log.Fatal for these parameters.
+	// The Stork Agent exits using a log.Fatal for these parameters.
 	// We replace the standard error handler with a dumb one to prevent
 	// interrupting the unit tests.
 	defer func() {
