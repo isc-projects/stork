@@ -659,10 +659,9 @@ func TestRepeatRegister(t *testing.T) {
 	defer ts.Close()
 
 	serverURL := ts.URL
-	agentPortStr := agentPort
 
 	// register with server token
-	res := Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient())
+	res := Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, NewHTTPClient())
 	require.True(t, res)
 
 	privKeyPEM1, err := os.ReadFile(KeyPEMFile)
@@ -678,7 +677,7 @@ func TestRepeatRegister(t *testing.T) {
 
 	// re-register with the same agent token
 	serverToken = ""
-	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenKey, retry, NewHTTPClient())
+	res = Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, NewHTTPClient())
 	require.True(t, res)
 
 	privKeyPEM2, err := os.ReadFile(KeyPEMFile)
