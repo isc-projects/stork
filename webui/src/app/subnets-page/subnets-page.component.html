@@ -12,7 +12,7 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2">
+<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
         <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
             <div class="flex justify-content-space-between">
@@ -20,12 +20,7 @@
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
                 </div>
-                <div
-                    *ngIf="i !== 0"
-                    class="pi pi-times"
-                    style="margin: -2px 0 0 8px"
-                    (click)="closeTabByIndex(i, $event)"
-                ></div>
+                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTabByIndex(i, $event)"></div>
             </div>
         </a>
     </ng-template>

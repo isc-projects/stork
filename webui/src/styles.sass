@@ -72,6 +72,12 @@ p-header
 .max-w-40rem
   max-width: 40rem
 
+// Custom style for part of PrimeNG p-tabMenu component.
+// Sets custom margin for the button which closes active tab.
+.close-tab-btn
+  // moves the button slightly up, and adds little left margin
+  margin: -0.125rem 0 0 0.5rem
+
 // Stork responsive layout using flexbox.
 section.stork-layout
   display: flex
@@ -98,7 +104,7 @@ section.stork-layout
     // Prevent width overflow.
     max-width: calc(100vw - 2rem)
 
-@media screen and (max-width: 360px)
+@media screen and (max-width: 359px)
   .p-panel .p-panel-content
     // Decrease panel content horizontal padding to save the space on smaller viewports.
     padding-right: 0.5rem

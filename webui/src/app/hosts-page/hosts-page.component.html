@@ -27,17 +27,12 @@
             [queryParams]="i === 0 ? hostsTableComponent?.validFilter : null"
             class="p-ripple p-element p-menuitem-link"
         >
-            <div style="display: flex; justify-content: space-between">
+            <div class="flex justify-content-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
                 </div>
-                <div
-                    *ngIf="i !== 0"
-                    class="pi pi-times"
-                    style="margin: -2px 0 0 8px"
-                    (click)="closeHostTab($event, i)"
-                ></div>
+                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeHostTab($event, i)"></div>
             </div>
         </a>
     </ng-template>

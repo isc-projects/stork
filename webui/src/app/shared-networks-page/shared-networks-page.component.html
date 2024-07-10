@@ -12,12 +12,7 @@
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
                 </div>
-                <div
-                    *ngIf="i !== 0"
-                    class="pi pi-times"
-                    style="margin: -2px 0 0 8px"
-                    (click)="closeTabByIndex(i, $event)"
-                ></div>
+                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTabByIndex(i, $event)"></div>
             </div>
             <div style="margin: 0 0 10px 5px; display: flex; justify-content: space-between"></div>
         </a>
