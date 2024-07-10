@@ -17,13 +17,9 @@
 
     // When floating label is used in the component, use different styling.
     .p-float-label
-        // Flex item: doesn't grow, shrinks, flex-basis set to 35rem.
-        flex: 0 1 35rem
+        // Flex item: doesn't grow, shrinks, flex-basis set to --max-form-width variable value.
+        flex: 0 1 var(--max-form-width)
 
         .p-chips
             // P-chips component uses full width of the parent flex item.
             width: 100%
-
-            //.p-chips-multiple-container
-            //    // Set initial auto width for p-chips container.
-            //    width: auto

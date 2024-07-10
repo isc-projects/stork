@@ -1,39 +1,29 @@
-//.host-form-abs-width
-//    width: 700px
-
 :host ::ng-deep
-    .full-width
+    .p-float-label, .mixed-content
+        // Give full width but prevent from becoming too wide.
         width: 100%
-        &.p-float-label
-            // When full width is applied to .p-float-label span, limit the max width.
-            max-width: 35rem
-            .p-component.p-inputwrapper, textarea, .p-inputtext, .p-element.p-inputwrapper, .p-component.p-inputnumber
-                // Apply the same style for p-dropdown inside of .p-float-label span.
-                width: 100%
-                max-width: 35rem
+        max-width: var(--max-form-width)
 
-    .mixed-content:has( > .p-float-label.full-width)
-        // When .mixed-content div has .p-float-label.full-width span child, limit the max width.
-        width: 100%
-        max-width: 35rem
+    .p-float-label
+        .p-component.p-inputwrapper, textarea, .p-inputtext, .p-element.p-inputwrapper, .p-component.p-inputnumber
+            // Apply the same style for form inputs inside of .p-float-label span.
+            width: 100%
+            max-width: var(--max-form-width)
 
-        .p-float-label.full-width:nth-child(1)
-            flex: 1 1 35rem
-        .p-float-label.full-width:nth-child(2)
+    .mixed-content
+        // .mixed-content is a flex container which contains more than one form input.
+        display: flex
+
+        // Flex items for PD and PSID forms. Prefix is wider and shrinkable.
+        // Prefix len doesn't shrink and takes less space.
+        .prefix
+            flex: 1 1 16rem
+        .prefix-len
             flex: 1 0 4rem
-
-    //.code-input-width
-    //    width: 500px
 
     .option-field
         border-style: dashed
         border-width: 1px
-
-    .prefix-length-width
-        width: 4rem
-
-    .psid-length-width
-        width: 3rem
 
     .empty-option-tag
         &:hover

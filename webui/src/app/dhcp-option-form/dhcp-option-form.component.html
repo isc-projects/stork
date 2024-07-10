@@ -1,8 +1,6 @@
 <div [formGroup]="formGroup" class="flex flex-column gap-1">
-    <!--    <div class="flex flex-column">-->
     <div class="flex align-items-center gap-2">
-        <!--            <div *ngIf="topLevel; else showSuboptionInput" class="flex align-items-center">-->
-        <span class="p-float-label full-width" *ngIf="topLevel; else showSuboptionInput">
+        <span class="p-float-label" *ngIf="topLevel; else showSuboptionInput">
             <p-dropdown
                 inputId="{{ codeInputId }}"
                 [autoDisplayFirst]="false"
@@ -18,10 +16,7 @@
             </p-dropdown>
             <label for="{{ codeInputId }}">Select or Type Option Code</label>
         </span>
-        <!--            </div>-->
         <ng-template #showSuboptionInput>
-            <!--                <div class="flex align-items-center">-->
-            <!--                    <span class="p-float-label">-->
             <p-inputNumber
                 ngDefaultControl
                 inputId="{{ codeInputId }}"
@@ -34,10 +29,7 @@
             >
             </p-inputNumber>
             <label for="{{ codeInputId }}">Type Suboption Code</label>
-            <!--                    </span>-->
-            <!--                </div>-->
         </ng-template>
-        <!--            <div class="flex align-items-center">-->
         <app-help-tip *ngIf="optionDef" [title]="optionDef.name">
             <ng-container *ngIf="optionDef.array">
                 <div *ngIf="optionDef.optionType === 'record'">
@@ -74,11 +66,9 @@
             </div>
             <div *ngIf="!optionDef.encapsulate" class="mt-3">It carries no suboptions.</div>
         </app-help-tip>
-        <!--            </div>-->
     </div>
     <div class="flex align-items-center flex-wrap gap-2 ml-1">
         <div *ngIf="topLevel" class="field-checkbox mb-0">
-            <!--                p-button-secondary p-button-sm p-button-text p-button mb-0 -->
             <p-checkbox
                 ngDefaultControl
                 formControlName="alwaysSend"
@@ -88,7 +78,6 @@
             ></p-checkbox>
             <label for="{{ alwaysSendCheckboxId }}">Always Send</label>
         </div>
-        <!--            <div>-->
         <p-splitButton
             label="{{ 'Add ' + lastFieldType }}"
             [model]="fieldTypes"
@@ -97,8 +86,6 @@
             (onClick)="lastFieldCommand()"
         >
         </p-splitButton>
-        <!--            </div>-->
-        <!--            <div class="ml-1">-->
         <button
             pButton
             type="button"
@@ -107,9 +94,7 @@
             class="p-button-sm p-button-danger p-button-text"
             (click)="deleteOption()"
         ></button>
-        <!--            </div>-->
     </div>
-    <!--    </div>-->
     <div
         *ngIf="optionFields.length !== 0; else emptyOption"
         formArrayName="optionFields"
@@ -124,20 +109,18 @@
         >
             <div [ngSwitch]="fieldControl.data.fieldType" class="flex gap-2 sm:pl-3" [formGroupName]="i">
                 <ng-container *ngSwitchCase="FieldType.Binary">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <textarea
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputTextarea
                             class="option-field h-full"
                             formControlName="control"
                         ></textarea>
-                        <!--                        autoResize="true"   rows="5"
-                            cols="10" -->
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.String">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -153,7 +136,7 @@
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Uint8">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -168,7 +151,7 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Uint16">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -183,7 +166,7 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Uint32">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -198,7 +181,7 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Int8">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -213,7 +196,7 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Int16">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -228,7 +211,7 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Int32">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -243,7 +226,7 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.IPv4Address">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -254,7 +237,7 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.IPv6Address">
-                    <span class="p-float-label full-width">
+                    <span class="p-float-label">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -265,8 +248,8 @@
                     </span>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.IPv6Prefix">
-                    <div class="flex gap-1 mixed-content">
-                        <span class="p-float-label full-width">
+                    <div class="mixed-content gap-1">
+                        <span class="p-float-label prefix">
                             <input
                                 id="{{ fieldControl.data.getInputId(0) }}"
                                 pInputText
@@ -275,7 +258,7 @@
                             />
                             <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                         </span>
-                        <span class="p-float-label full-width">
+                        <span class="p-float-label prefix-len">
                             <p-inputNumber
                                 inputId="{{ fieldControl.data.getInputId(1) }}"
                                 ngDefaultControl
@@ -285,37 +268,41 @@
                                 formControlName="prefixLength"
                             >
                             </p-inputNumber>
-                            <label for="{{ fieldControl.data.getInputId(1) }}">Len</label>
+                            <label for="{{ fieldControl.data.getInputId(1) }}">len</label>
                         </span>
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Psid">
-                    <span class="p-float-label">
-                        <p-inputNumber
-                            inputId="{{ fieldControl.data.getInputId(0) }}"
-                            ngDefaultControl
-                            min="0"
-                            max="65535"
-                            inputStyleClass="option-field"
-                            formControlName="psid"
-                        >
-                        </p-inputNumber>
-                        <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                        <p-inputNumber
-                            inputId="{{ fieldControl.data.getInputId(1) }}"
-                            ngDefaultControl
-                            min="0"
-                            max="16"
-                            inputStyleClass="ml-1 option-field psid-length-width"
-                            formControlName="psidLength"
-                        >
-                        </p-inputNumber>
-                    </span>
+                    <div class="mixed-content gap-1">
+                        <span class="p-float-label prefix">
+                            <p-inputNumber
+                                inputId="{{ fieldControl.data.getInputId(0) }}"
+                                ngDefaultControl
+                                min="0"
+                                max="65535"
+                                inputStyleClass="option-field"
+                                formControlName="psid"
+                            >
+                            </p-inputNumber>
+                            <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
+                        </span>
+                        <span class="p-float-label prefix-len">
+                            <p-inputNumber
+                                inputId="{{ fieldControl.data.getInputId(1) }}"
+                                ngDefaultControl
+                                min="0"
+                                max="16"
+                                inputStyleClass="option-field"
+                                formControlName="psidLength"
+                            >
+                            </p-inputNumber>
+                            <label for="{{ fieldControl.data.getInputId(1) }}">len</label>
+                        </span>
+                    </div>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Fqdn">
-                    <!--                    <div class="p-inputgroup">-->
-                    <div class="flex flex-column sm:flex-row gap-2 mixed-content">
-                        <span class="p-float-label full-width">
+                    <div class="mixed-content flex-column sm:flex-row gap-2">
+                        <span class="p-float-label">
                             <input
                                 id="{{ fieldControl.data.getInputId(0) }}"
                                 pInputText
@@ -324,7 +311,6 @@
                             />
                             <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
                         </span>
-
                         <p-toggleButton
                             onLabel="Use Full FQDN"
                             offLabel="Use Partial FQDN"
@@ -333,10 +319,8 @@
                         >
                         </p-toggleButton>
                     </div>
-                    <!--                    </div>-->
                 </ng-container>
                 <div class="flex flex-column align-items-start">
-                    <!--                    <div>-->
                     <button
                         pButton
                         type="button"
@@ -344,8 +328,6 @@
                         class="p-button-text p-button p-button-danger"
                         (click)="deleteField(i)"
                     ></button>
-                    <!--                    </div>-->
-                    <!--                    <div >-->
                     <app-help-tip *ngIf="fieldControl.data.fieldType === FieldType.Binary" title="binary Option Field">
                         <p>
                             Option value can be specified as a string of the hexadecimal digits. The following formats
@@ -363,7 +345,6 @@
                             zero when necessary.
                         </p>
                     </app-help-tip>
-                    <!--                    </div>-->
                 </div>
             </div>
         </ng-container>
