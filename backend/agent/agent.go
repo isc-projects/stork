@@ -32,9 +32,12 @@ import (
 
 // Global Stork Agent state.
 type StorkAgent struct {
-	Host       string
-	Port       int
-	AppMonitor AppMonitor
+	Host string
+	Port int
+	// Explicitly provided BIND 9 configuration path by user. It will be used
+	// to detect the BIND 9 app. It may be empty.
+	ExplicitBind9ConfigPath string
+	AppMonitor              AppMonitor
 	// General-purpose HTTP client. It doesn't use any app-specific features.
 	GeneralHTTPClient *HTTPClient
 	// To communicate with Kea Control Agent.
@@ -52,18 +55,19 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager) *StorkAgent {
+func NewStorkAgent(host string, port int, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
-		Host:              host,
-		Port:              port,
-		AppMonitor:        appMonitor,
-		GeneralHTTPClient: httpClient,
-		KeaHTTPClient:     keaHTTPClient,
-		logTailer:         logTailer,
-		keaInterceptor:    newKeaInterceptor(),
-		hookManager:       hookManager,
+		Host:                    host,
+		Port:                    port,
+		ExplicitBind9ConfigPath: explicitBind9ConfigPath,
+		AppMonitor:              appMonitor,
+		GeneralHTTPClient:       httpClient,
+		KeaHTTPClient:           keaHTTPClient,
+		logTailer:               logTailer,
+		keaInterceptor:          newKeaInterceptor(),
+		hookManager:             hookManager,
 	}
 
 	registerKeaInterceptFns(sa)

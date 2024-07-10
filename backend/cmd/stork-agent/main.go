@@ -118,7 +118,15 @@ func runAgent(settings *generalSettings, reload bool) error {
 	}
 
 	// Prepare agent gRPC handler
-	storkAgent := agent.NewStorkAgent(settings.Host, settings.Port, appMonitor, httpClient, keaHTTPClient, hookManager)
+	storkAgent := agent.NewStorkAgent(
+		settings.Host,
+		settings.Port,
+		appMonitor,
+		httpClient,
+		keaHTTPClient,
+		hookManager,
+		settings.Bind9Path,
+	)
 
 	// Let's start the app monitor.
 	appMonitor.Start(storkAgent)
@@ -337,7 +345,7 @@ type generalSettings struct {
 	SkipTLSCertVerification             bool   `long:"skip-tls-cert-verification" description:"Skip TLS certificate verification when the Stork Agent makes HTTP calls over TLS" env:"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"`
 	ServerURL                           string `long:"server-url" description:"The URL of the Stork Server, used in agent-token-based registration (optional alternative to server-token-based registration)" env:"STORK_AGENT_SERVER_URL"`
 	HookDirectory                       string `long:"hook-directory" description:"The path to the hook directory" default:"/var/lib/stork-agent/hooks" env:"STORK_AGENT_HOOK_DIRECTORY"`
-	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon." env:"STORK_BIND9_CONFIG"`
+	Bind9Path                           string `long:"bind9-path" description:"Specify the path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon." env:"STORK_AGENT_BIND9_CONFIG"`
 }
 
 // Register command settings.

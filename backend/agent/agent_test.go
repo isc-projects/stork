@@ -102,7 +102,7 @@ func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	generalHTTPClient := NewHTTPClient()
 	keaHTTPClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, fam, generalHTTPClient, keaHTTPClient, NewHookManager())
+	sa := NewStorkAgent("foo", 42, fam, generalHTTPClient, keaHTTPClient, NewHookManager(), "")
 	require.NotNil(t, sa.AppMonitor)
 	require.Equal(t, generalHTTPClient, sa.GeneralHTTPClient)
 	require.Equal(t, keaHTTPClient, sa.KeaHTTPClient)

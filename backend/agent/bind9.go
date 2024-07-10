@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -438,17 +437,18 @@ func parseNamedDefaultPath(output []byte) string {
 // Detects the running Bind 9 application.
 // It accepts the components of the Bind 9 process name (the "match" argument),
 // the current working directory of the process (the "cwd" argument; it may be
-// empty), and a command executor instance. It uses multiple steps to attempt
+// empty), a command executor instance, and an optional, explicit path to the
+// configuration that can be check. It uses multiple steps to attempt
 // detection:
 //
 // Step 1: Try to parse -c parameter of the running process.
-// Step 2: Checks if STORK_BIND9_CONFIG is defined. If it is, uses that.
+// Step 2: Checks if the explicit config path is defined and exists. If it is, uses that.
 // Step 3: Try to parse output of the named -V command.
 // Step 4: Try to find named.conf in the default locations.
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
 // error occurs.
-func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor) App {
+func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor, explicitConfigPath string) App {
 	if len(match) < 3 {
 		log.Warnf("Problem with parsing BIND 9 cmdline: %s", match[0])
 		return nil
@@ -489,22 +489,22 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		}
 	}
 
-	// STEP 2: Check if STORK_BIND9_CONFIG variable is specified it is, we'll use
-	// whatever value is provided. User knows best *cough*.
+	// STEP 2: Check if the config path is explicitly specified in settings. If
+	// it is, we'll use whatever value is provided. User knows best *cough*.
 	// We assume it is an absolute path and it includes the chroot directory if
 	// any.
 	if bind9ConfPath == "" {
-		if f, ok := os.LookupEnv("STORK_BIND9_CONFIG"); ok {
-			log.Debugf("Looking for BIND 9 config in %s as specified in STORK_BIND9_CONFIG variable.", f)
+		if explicitConfigPath != "" {
+			log.Debugf("Looking for BIND 9 config in %s as explicitly specified in settings.", explicitConfigPath)
 			switch {
-			case !strings.HasPrefix(f, rootPrefix):
-				log.Errorf("STORK_BIND9_CONFIG must be inside the chroot directory: %s, got: %s", rootPrefix, f)
-			case executor.IsFileExist(f):
+			case !strings.HasPrefix(explicitConfigPath, rootPrefix):
+				log.Errorf("The explicitly specified config path must be inside the chroot directory: %s, got: %s", rootPrefix, explicitConfigPath)
+			case executor.IsFileExist(explicitConfigPath):
 				// Trim the root prefix.
-				bind9ConfPath = f[len(rootPrefix):]
-				bind9ConfSource = "STORK_BIND9_CONFIG variable"
+				bind9ConfPath = explicitConfigPath[len(rootPrefix):]
+				bind9ConfSource = "The explicit path from settings"
 			default:
-				log.Errorf("File specified in STORK_BIND9_CONFIG (%s) not found or unreadable.", f)
+				log.Errorf("File explicitly specified in settings (%s) not found or unreadable.", explicitConfigPath)
 			}
 		}
 	}

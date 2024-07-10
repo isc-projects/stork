@@ -2,14 +2,12 @@ package agent
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
 
@@ -309,7 +307,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 		addCheckConfOutput(config1Path, config1)
 
 	// Now run the detection as usual.
-	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor)
+	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor, "")
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -338,7 +336,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 		"",
 		"/dir",
 		fmt.Sprintf("-t %s -c %s", chrootPath, config1Path),
-	}, "", executor)
+	}, "", executor, "")
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -349,11 +347,9 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
-// Checks detection STEP 2: if BIND9 detection takes STORK_BIND9_CONFIG env var into account.
-func TestDetectBind9Step2EnvVar(t *testing.T) {
-	restore := testutil.CreateEnvironmentRestorePoint()
-	defer restore()
-
+// Checks detection STEP 2: if BIND9 detection takes the explicit config path
+// into account.
+func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	// Create alternate config file...
 	confPath := "/dir/testing.conf"
 	config := `key "foo" {
@@ -364,15 +360,17 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
    };`
 
-	// ... and point STORK_BIND9_CONFIG to it.
-	os.Setenv("STORK_BIND9_CONFIG", confPath)
-
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(confPath, config)
 
 	namedDir := "/dir/usr/sbin"
-	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
+	app := detectBind9App(
+		[]string{"", namedDir, "-some -params"},
+		"",
+		executor,
+		confPath,
+	)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -384,11 +382,8 @@ func TestDetectBind9Step2EnvVar(t *testing.T) {
 }
 
 // Checks detection with chroot STEP 2: if BIND9 detection takes
-// STORK_BIND9_CONFIG env var into account.
-func TestDetectBind9ChrootStep2EnvVar(t *testing.T) {
-	restore := testutil.CreateEnvironmentRestorePoint()
-	defer restore()
-
+// the explicit config path into account.
+func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	// Create alternate config file...
 	confPath := "/dir/testing.conf"
 	chrootPath := "/chroot"
@@ -401,9 +396,6 @@ func TestDetectBind9ChrootStep2EnvVar(t *testing.T) {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
 	};`
 
-	// ... and point STORK_BIND9_CONFIG to it.
-	os.Setenv("STORK_BIND9_CONFIG", fullConfPath)
-
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config)
@@ -413,7 +405,7 @@ func TestDetectBind9ChrootStep2EnvVar(t *testing.T) {
 		"",
 		namedDir,
 		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor)
+	}, "", executor, fullConfPath)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -424,12 +416,9 @@ func TestDetectBind9ChrootStep2EnvVar(t *testing.T) {
 	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
-// Checks detection with chroot STEP 2: the STORK_BIND9_CONFIG env var must be
+// Checks detection with chroot STEP 2: the the explicit config path must be
 // prefixed with the chroot directory.
-func TestDetectBind9ChrootStep2EnvVarNotPrefixed(t *testing.T) {
-	restore := testutil.CreateEnvironmentRestorePoint()
-	defer restore()
-
+func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	// Create alternate config file...
 	confPath := "/dir/testing.conf"
 	chrootPath := "/chroot"
@@ -442,9 +431,6 @@ func TestDetectBind9ChrootStep2EnvVarNotPrefixed(t *testing.T) {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
 	};`
 
-	// ... and point STORK_BIND9_CONFIG to it.
-	os.Setenv("STORK_BIND9_CONFIG", confPath)
-
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config)
@@ -454,7 +440,7 @@ func TestDetectBind9ChrootStep2EnvVarNotPrefixed(t *testing.T) {
 		"",
 		namedDir,
 		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor)
+	}, "", executor, confPath)
 	require.Nil(t, app)
 }
 
@@ -477,7 +463,7 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 
 	// Now run the detection as usual.
 	namedDir := "/dir/usr/sbin"
-	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor)
+	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor, "")
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -513,7 +499,7 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 		"",
 		namedDir,
 		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor)
+	}, "", executor, "")
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -544,7 +530,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 
 		t.Run(expectedPath, func(t *testing.T) {
 			// Act
-			app := detectBind9App([]string{"", "/dir", "-some -params"}, "", executor)
+			app := detectBind9App([]string{"", "/dir", "-some -params"}, "", executor, "")
 
 			// Assert
 			require.NotNil(t, app)
@@ -581,7 +567,7 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			// Act
 			app := detectBind9App(
 				[]string{"", "/dir", "-t /chroot -some -params"},
-				"", executor,
+				"", executor, "",
 			)
 
 			// Assert
@@ -613,13 +599,10 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 // Checks detection order. Several steps are configured. It checks if the
 // steps order is as expected. There are 3 configs on disk:
 // - step1.conf (which is passed in named -c step1.conf)
-// - step2.conf (which is passed in STORK_BIND9_CONFIG)
+// - step2.conf (which is passed in settings)
 // - step3.conf (which is returned by named -V).
 func TestDetectBind9DetectOrder(t *testing.T) {
-	restore := testutil.CreateEnvironmentRestorePoint()
-	defer restore()
-
-	// create alternate config files for each step...
+	// Create alternate config files for each step...
 	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
 	config1Path := "/dir/step1.conf"
@@ -637,11 +620,8 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 		addCheckConfOutput(config3Path, config3).
 		setConfigPathInNamedOutput(config3Path)
 
-	// ... and point STORK_BIND9_CONFIG to it
-	os.Setenv("STORK_BIND9_CONFIG", config2Path)
-
 	// Now run the detection as usual
-	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor)
+	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor, config2Path)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)

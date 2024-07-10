@@ -43,6 +43,9 @@ Equivalent environment variables are listed in square brackets, where applicable
 ``--hook-directory``
    The path to the hook directory. ``[$STORK_AGENT_HOOK_DIRECTORY]``
 
+``--bind9-path``
+   The path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon. ``[$STORK_AGENT_BIND9_PATH]``
+
 ``--env-file``
    Environment file location; applicable only if the use-env-file is provided. The default is ``/etc/stork/agent.env``.
 
@@ -56,6 +59,9 @@ Equivalent environment variables are listed in square brackets, where applicable
    Returns the list of available parameters.
 
 Stork server flags:
+
+``--server-url=``
+   Specifies a URL of the Stork Server receiving the registration request. Optional - can be skipped to suppress automatic registration. ``[$STORK_AGENT_SERVER_URL]``
 
 ``--host=``
    Specifies the IP address or hostname to listen on for incoming Stork server connections. ``[$STORK_AGENT_HOST]``

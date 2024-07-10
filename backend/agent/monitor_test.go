@@ -21,7 +21,7 @@ func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	hm := NewHookManager()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -199,7 +199,7 @@ func TestDetectApps(t *testing.T) {
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -234,7 +234,7 @@ func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -271,7 +271,7 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -300,7 +300,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	})
 
 	hm := NewHookManager()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm)
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
@@ -328,7 +328,7 @@ func newTestCommandExecutorDefault() *testCommandExecutor {
 func TestDetectBind9AppAbsPath(t *testing.T) {
 	// check BIND 9 app detection
 	executor := newTestCommandExecutorDefault()
-	app := detectBind9App([]string{"", "/dir", "-c /etc/named.conf"}, "", executor)
+	app := detectBind9App([]string{"", "/dir", "-c /etc/named.conf"}, "", executor, "")
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 2)
@@ -347,7 +347,7 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 // Check BIND 9 app detection when its conf file is relative to CWD of its process.
 func TestDetectBind9AppRelativePath(t *testing.T) {
 	executor := newTestCommandExecutorDefault()
-	app := detectBind9App([]string{"", "/dir", "-c named.conf"}, "/etc", executor)
+	app := detectBind9App([]string{"", "/dir", "-c named.conf"}, "/etc", executor, "")
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }

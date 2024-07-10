@@ -32,11 +32,11 @@ This section describes the solutions for some common issues with the Stork agent
               step is only performed if the previous one failed. The steps are:
 
               1. Try to parse -c parameter of the running process;
-              2. Use STORK_BIND9_CONFIG environment variable;
+              2. Use STORK_AGENT_BIND9_CONFIG environment variable;
               3. Try to parse output of the named -V command;
               4. Try to find named.conf in the default locations.
 
-              You may define ``STORK_BIND9_CONFIG`` environment variable to specify
+              You may define ``STORK_AGENT_BIND9_CONFIG`` environment variable to specify
               exact location of the BIND 9 configuration file.
 
               For BIND 9, make sure that the rndc channel is enabled. By

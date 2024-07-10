@@ -248,7 +248,12 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			// detect bind9
 			m := bind9Pattern.FindStringSubmatch(cmdline)
 			if m != nil {
-				bind9App := detectBind9App(m, cwd, sm.commander)
+				bind9App := detectBind9App(
+					m,
+					cwd,
+					sm.commander,
+					storkAgent.ExplicitBind9ConfigPath,
+				)
 				if bind9App != nil {
 					bind9App.GetBaseApp().Pid = p.GetPid()
 					apps = append(apps, bind9App)

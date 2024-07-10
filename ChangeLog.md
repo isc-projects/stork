@@ -861,7 +861,7 @@ Stork 1.10.0 released on 2023-04-05.
 
     BIND 9 detection code has been expanded and is now more robust. It now can
     also attempt to look at more default locations for config files, use
-    named -V to discover built-in locations and also use STORK_BIND9_CONFIG
+    named -V to discover built-in locations and also use STORK_AGENT_BIND9_CONFIG
     to explicitly tell where to look for a BIND9 config file. The detection
     process is also now more verbose. Enabling DEBUG logging level may
     help.
