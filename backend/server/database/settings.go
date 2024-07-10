@@ -3,7 +3,6 @@ package dbops
 import (
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
@@ -63,103 +62,13 @@ type DatabaseSettings struct {
 	TraceSQL    LoggingQueryPreset
 }
 
-// Returns generic connection parameters as a list of space separated name/value pairs.
-// All string values are enclosed in quotes. The quotes and double quotes within the
-// string values are escaped. Empty or zero values are not included in the returned
-// connection string.
-// The parameter names must correspond to the respective libpq parameters.
-// See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS.
-func (s *DatabaseSettings) ConvertToConnectionString() string {
-	escapeQuotes := func(paramValue string) string {
-		// Escape quotes and double quotes.
-		paramValue = strings.ReplaceAll(paramValue, "'", `\'`)
-		paramValue = strings.ReplaceAll(paramValue, `"`, `\"`)
-		// Enclose all strings in quotes in case they contain spaces.
-		paramValue = fmt.Sprintf("'%s'", paramValue)
-		return paramValue
-	}
-
-	params := [][]string{}
-
-	if len(s.DBName) != 0 {
-		params = append(params, []string{
-			"dbname", escapeQuotes(s.DBName),
-		})
-	}
-
-	if len(s.User) != 0 {
-		params = append(params, []string{
-			"user", escapeQuotes(s.User),
-		})
-	}
-
-	if len(s.Password) != 0 {
-		params = append(params, []string{
-			"password", escapeQuotes(s.Password),
-		})
-	}
-
-	if len(s.Host) != 0 {
-		params = append(params, []string{
-			"host", escapeQuotes(s.Host),
-		})
-	} else {
-		// We decided to use connection through unix socket by default,
-		// but the default host in database/sql is a 'localhost' string,
-		// so we need to provide it explicitly.
-		params = append(params, []string{
-			"host", escapeQuotes("/var/run/postgresql"),
-		})
-	}
-
-	if s.Port != 0 {
-		params = append(params, []string{
-			"port", fmt.Sprint(s.Port),
-		})
-	}
-
-	if len(s.SSLMode) != 0 {
-		params = append(params, []string{
-			"sslmode", escapeQuotes(s.SSLMode),
-		})
-	} else {
-		params = append(params, []string{
-			"sslmode", escapeQuotes("disable"),
-		})
-	}
-
-	if len(s.SSLCert) != 0 {
-		params = append(params, []string{
-			"sslcert", escapeQuotes(s.SSLCert),
-		})
-	}
-
-	if len(s.SSLKey) != 0 {
-		params = append(params, []string{
-			"sslkey", escapeQuotes(s.SSLKey),
-		})
-	}
-
-	if len(s.SSLRootCert) != 0 {
-		params = append(params, []string{
-			"sslrootcert", escapeQuotes(s.SSLRootCert),
-		})
-	}
-
-	paramsStr := make([]string, len(params))
-	idx := 0
-	for _, param := range params {
-		key, value := param[0], param[1]
-		paramsStr[idx] = fmt.Sprintf("%s=%s", key, value)
-		idx++
-	}
-
-	return strings.Join(paramsStr, " ")
-}
-
 // Converts generic connection parameters to go-pg specific parameters.
 func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
-	pgopts := &PgOptions{Database: s.DBName, User: s.User, Password: s.Password}
+	pgopts := &PgOptions{
+		Database: s.DBName,
+		User:     s.User,
+		Password: s.Password,
+	}
 	socketPath := path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
 
 	switch {

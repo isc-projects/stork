@@ -2,19 +2,17 @@ package dbsession
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
+	"github.com/go-pg/pg/v10"
 	"github.com/sirupsen/logrus"
 
 	// Imports and registers the "postgres" driver used by database/sql.
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
-	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -26,20 +24,14 @@ type SessionMgr struct {
 
 // Creates new session manager instance. The new connection is created using the
 // lib/pq driver via scs.SessionManager.
-func NewSessionMgr(settings *dbops.DatabaseSettings) (*SessionMgr, error) {
-	connParams := settings.ConvertToConnectionString()
-	db, err := sql.Open("postgres", connParams)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error connecting to the database for session management using credentials %s", connParams)
-	}
-
+func NewSessionMgr(db pg.DBI) (*SessionMgr, error) {
 	s := scs.New()
 	s.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 		// Use logrus instead of the standard logger.
 		logrus.WithError(err).Error("an error occurred in the session manager")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	s.Store = postgresstore.New(db)
+	s.Store = NewStore(db)
 
 	mgr := &SessionMgr{scsSessionMgr: s}
 

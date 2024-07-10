@@ -209,7 +209,7 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 	}
 
 	// Instantiate the session manager.
-	sm, err := dbsession.NewSessionMgr(api.DBSettings)
+	sm, err := dbsession.NewSessionMgr(api.DB)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "unable to establish connection to the session database")
 	}

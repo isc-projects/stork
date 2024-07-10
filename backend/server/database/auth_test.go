@@ -2,7 +2,6 @@ package dbops_test
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"os/user"
@@ -172,18 +171,6 @@ func checkDatabaseConnections(settings *dbops.DatabaseSettings) error {
 	err = db.Ping(context.Background())
 	if err != nil {
 		return errors.Wrap(err, "cannot ping database using go-pg")
-	}
-
-	// database/sql (session manager)
-	dbDriver, err := sql.Open("postgres", settings.ConvertToConnectionString())
-	if err != nil {
-		return errors.Wrap(err, "cannot open database connection using database/sql")
-	}
-	defer dbDriver.Close()
-
-	err = dbDriver.Ping()
-	if err != nil {
-		return errors.Wrap(err, "cannot ping database using database/sql")
 	}
 
 	return nil

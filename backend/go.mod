@@ -4,7 +4,6 @@ go 1.22
 
 require (
 	github.com/Showmax/go-fqdn v1.0.0
-	github.com/alexedwards/scs/postgresstore v0.0.0-20240316134038-7e11d57e8885
 	github.com/alexedwards/scs/v2 v2.8.0
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2

@@ -26,10 +26,10 @@ func getCookie(response *http.Response, name string) (bool, string) {
 // Tests that new session is created via the middleware.
 func TestMiddlewareNewSession(t *testing.T) {
 	// Reset database schema.
-	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	mgr, err := NewSessionMgr(dbSettings)
+	mgr, err := NewSessionMgr(db)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
@@ -96,10 +96,10 @@ func TestMiddlewareNewSession(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	// Reset database schema.
-	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	mgr, err := NewSessionMgr(dbSettings)
+	mgr, err := NewSessionMgr(db)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -110,11 +110,11 @@ func TestLoad(t *testing.T) {
 
 func TestLogOutUser(t *testing.T) {
 	// Reset database schema.
-	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Create session manager.
-	mgr, err := NewSessionMgr(dbSettings)
+	mgr, err := NewSessionMgr(db)
 	require.NoError(t, err)
 
 	ctx := context.Background()
