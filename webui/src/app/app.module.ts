@@ -136,6 +136,7 @@ import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-
 import { ParameterViewComponent } from './parameter-view/parameter-view.component'
 import { UncamelPipe } from './pipes/uncamel.pipe'
 import { UnhyphenPipe } from './pipes/unhyphen.pipe'
+import { SubnetsTableComponent } from './subnets-table/subnets-table.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -224,6 +225,7 @@ export function cfgFactory() {
         ParameterViewComponent,
         UncamelPipe,
         UnhyphenPipe,
+        SubnetsTableComponent,
     ],
     imports: [
         BrowserModule,
