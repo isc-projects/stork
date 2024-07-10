@@ -1,5 +1,5 @@
 <div [formGroup]="formGroup" class="flex flex-column gap-1">
-    <div class="flex align-items-center gap-2">
+    <div class="flex gap-2" [class.flex-column]="!topLevel" [class.align-items-center]="topLevel">
         <span class="p-float-label" *ngIf="topLevel; else showSuboptionInput">
             <p-dropdown
                 inputId="{{ codeInputId }}"
@@ -17,18 +17,24 @@
             <label for="{{ codeInputId }}">Select or Type Option Code</label>
         </span>
         <ng-template #showSuboptionInput>
-            <p-inputNumber
-                ngDefaultControl
-                inputId="{{ codeInputId }}"
-                min="1"
-                max="{{ v6 ? 65535 : 255 }}"
-                inputStyleClass=""
-                formControlName="optionCode"
-                pTooltip="Enter a suboption code (a number)."
-                (onInput)="onOptionCodeChange($event)"
+            <!-- For smaller viewports, option nesting level can't be visualized with left padding (not enough horizontal space), so display light divider and text information about nest level. -->
+            <p-divider class="sm:hidden" type="dashed" />
+            <div class="sm:hidden mb-4 font-semibold">Suboption level {{ nestLevel }}</div>
+            <span class="p-float-label">
+                <p-inputNumber
+                    ngDefaultControl
+                    inputId="{{ codeInputId }}"
+                    min="1"
+                    max="{{ v6 ? 65535 : 255 }}"
+                    inputStyleClass=""
+                    formControlName="optionCode"
+                    pTooltip="Enter a suboption code (a number)."
+                    (onInput)="onOptionCodeChange($event)"
+                    [useGrouping]="false"
+                >
+                </p-inputNumber>
+                <label for="{{ codeInputId }}">Type Suboption Code</label></span
             >
-            </p-inputNumber>
-            <label for="{{ codeInputId }}">Type Suboption Code</label>
         </ng-template>
         <app-help-tip *ngIf="optionDef" [title]="optionDef.name">
             <ng-container *ngIf="optionDef.array">
@@ -266,6 +272,7 @@
                                 max="128"
                                 inputStyleClass="option-field"
                                 formControlName="prefixLength"
+                                [useGrouping]="false"
                             >
                             </p-inputNumber>
                             <label for="{{ fieldControl.data.getInputId(1) }}">len</label>
@@ -282,6 +289,7 @@
                                 max="65535"
                                 inputStyleClass="option-field"
                                 formControlName="psid"
+                                [useGrouping]="false"
                             >
                             </p-inputNumber>
                             <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
@@ -294,6 +302,7 @@
                                 max="16"
                                 inputStyleClass="option-field"
                                 formControlName="psidLength"
+                                [useGrouping]="false"
                             >
                             </p-inputNumber>
                             <label for="{{ fieldControl.data.getInputId(1) }}">len</label>
@@ -359,7 +368,7 @@
             ></p-tag>
         </div>
     </ng-template>
-    <div class="ml-3 mt-6">
+    <div class="sm:pl-3 mt-6">
         <ng-container *ngIf="suboptions.length > 0">
             <app-dhcp-option-set-form
                 v6="false"
