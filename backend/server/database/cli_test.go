@@ -4,6 +4,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
@@ -106,6 +107,8 @@ func TestReadDatabaseCLIFlagsFromEnvironment(t *testing.T) {
 	os.Setenv("STORK_DATABASE_PORT", "42")
 	os.Setenv("STORK_DATABASE_SSLMODE", "sslmode")
 	os.Setenv("STORK_DATABASE_SSLKEY", "sslkey")
+	os.Setenv("STORK_DATABASE_READ_TIMEOUT", "24m")
+	os.Setenv("STORK_DATABASE_WRITE_TIMEOUT", "42s")
 
 	obj := &DatabaseCLIFlags{}
 
@@ -120,6 +123,8 @@ func TestReadDatabaseCLIFlagsFromEnvironment(t *testing.T) {
 	require.EqualValues(t, 42, obj.Port)
 	require.EqualValues(t, "sslmode", obj.SSLMode)
 	require.EqualValues(t, "sslkey", obj.SSLKey)
+	require.EqualValues(t, 24*time.Minute, obj.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, obj.WriteTimeout)
 }
 
 // Test that the maintenance flags are read from the environment variables properly.
@@ -138,6 +143,8 @@ func TestReadMaintenanceDatabaseCLIFlagsFromEnvironment(t *testing.T) {
 	os.Setenv("STORK_DATABASE_PORT", "42")
 	os.Setenv("STORK_DATABASE_SSLMODE", "sslmode")
 	os.Setenv("STORK_DATABASE_SSLKEY", "sslkey")
+	os.Setenv("STORK_DATABASE_READ_TIMEOUT", "24m")
+	os.Setenv("STORK_DATABASE_WRITE_TIMEOUT", "42s")
 
 	obj := &DatabaseCLIFlagsWithMaintenance{}
 
@@ -152,6 +159,8 @@ func TestReadMaintenanceDatabaseCLIFlagsFromEnvironment(t *testing.T) {
 	require.EqualValues(t, 42, obj.Port)
 	require.EqualValues(t, "sslmode", obj.SSLMode)
 	require.EqualValues(t, "sslkey", obj.SSLKey)
+	require.EqualValues(t, 24*time.Minute, obj.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, obj.WriteTimeout)
 
 	require.EqualValues(t, "maintenance-dbname", obj.MaintenanceDBName)
 	require.EqualValues(t, "maintenance-user", obj.MaintenanceUser)
@@ -215,16 +224,18 @@ func TestReadFromCLI(t *testing.T) {
 func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 	// Arrange
 	cliFlags := &DatabaseCLIFlags{
-		DBName:      "dbname",
-		User:        "user",
-		Password:    "password",
-		Host:        "host",
-		Port:        42,
-		SSLMode:     "sslmode",
-		SSLCert:     "sslcert",
-		SSLKey:      "sslkey",
-		SSLRootCert: "sslrootcert",
-		TraceSQL:    "run",
+		DBName:       "dbname",
+		User:         "user",
+		Password:     "password",
+		Host:         "host",
+		Port:         42,
+		SSLMode:      "sslmode",
+		SSLCert:      "sslcert",
+		SSLKey:       "sslkey",
+		SSLRootCert:  "sslrootcert",
+		TraceSQL:     "run",
+		ReadTimeout:  24 * time.Minute,
+		WriteTimeout: 42 * time.Second,
 	}
 
 	// Act
@@ -242,6 +253,8 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+	require.EqualValues(t, 24*time.Minute, settings.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, settings.WriteTimeout)
 }
 
 // Test that the database CLI flags with URL are converted to the database
@@ -249,12 +262,14 @@ func TestConvertDatabaseCLIFlagsToSettings(t *testing.T) {
 func TestConvertDatabaseCLIFlagsWithURLToSettings(t *testing.T) {
 	// Arrange
 	cliFlags := &DatabaseCLIFlags{
-		URL:         "postgres://user:password@host:42/dbname",
-		SSLMode:     "sslmode",
-		SSLCert:     "sslcert",
-		SSLKey:      "sslkey",
-		SSLRootCert: "sslrootcert",
-		TraceSQL:    "run",
+		URL:          "postgres://user:password@host:42/dbname",
+		SSLMode:      "sslmode",
+		SSLCert:      "sslcert",
+		SSLKey:       "sslkey",
+		SSLRootCert:  "sslrootcert",
+		TraceSQL:     "run",
+		ReadTimeout:  24 * time.Minute,
+		WriteTimeout: 42 * time.Second,
 	}
 
 	// Act
@@ -272,6 +287,8 @@ func TestConvertDatabaseCLIFlagsWithURLToSettings(t *testing.T) {
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+	require.EqualValues(t, 24*time.Minute, settings.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, settings.WriteTimeout)
 }
 
 // Test that the database CLI flags cannot be converted to settings if they
@@ -344,6 +361,8 @@ func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
 		"db-sslcert":       "sslcert",
 		"db-sslrootcert":   "sslrootcert",
 		"db-trace-queries": "run",
+		"db-read-timeout":  "24m",
+		"db-write-timeout": "42s",
 	})
 
 	// Act
@@ -360,6 +379,8 @@ func TestReadDatabaseCLIFlagsFromCLILookup(t *testing.T) {
 	require.EqualValues(t, "sslkey", cliFlags.SSLKey)
 	require.EqualValues(t, "sslrootcert", cliFlags.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, cliFlags.TraceSQL)
+	require.EqualValues(t, 24*time.Minute, cliFlags.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, cliFlags.WriteTimeout)
 }
 
 // Test that the CLI flags that contains the maintenance credentials are
@@ -368,16 +389,18 @@ func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToSettings(t *testing.
 	// Arrange
 	cliFlags := &DatabaseCLIFlagsWithMaintenance{
 		DatabaseCLIFlags: DatabaseCLIFlags{
-			DBName:      "dbname",
-			User:        "user",
-			Password:    "password",
-			Host:        "host",
-			Port:        42,
-			SSLMode:     "sslmode",
-			SSLCert:     "sslcert",
-			SSLKey:      "sslkey",
-			SSLRootCert: "sslrootcert",
-			TraceSQL:    "run",
+			DBName:       "dbname",
+			User:         "user",
+			Password:     "password",
+			Host:         "host",
+			Port:         42,
+			SSLMode:      "sslmode",
+			SSLCert:      "sslcert",
+			SSLKey:       "sslkey",
+			SSLRootCert:  "sslrootcert",
+			TraceSQL:     "run",
+			ReadTimeout:  24 * time.Minute,
+			WriteTimeout: 42 * time.Second,
 		},
 		MaintenanceDBName:   "maintenance-dbname",
 		MaintenanceUser:     "maintenance-user",
@@ -399,6 +422,8 @@ func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToSettings(t *testing.
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+	require.EqualValues(t, 24*time.Minute, settings.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, settings.WriteTimeout)
 }
 
 // Test that the CLI flags that contains the maintenance credentials are
@@ -407,16 +432,18 @@ func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToMaintenanceSettings(
 	// Arrange
 	cliFlags := &DatabaseCLIFlagsWithMaintenance{
 		DatabaseCLIFlags: DatabaseCLIFlags{
-			DBName:      "dbname",
-			User:        "user",
-			Password:    "password",
-			Host:        "host",
-			Port:        42,
-			SSLMode:     "sslmode",
-			SSLCert:     "sslcert",
-			SSLKey:      "sslkey",
-			SSLRootCert: "sslrootcert",
-			TraceSQL:    "run",
+			DBName:       "dbname",
+			User:         "user",
+			Password:     "password",
+			Host:         "host",
+			Port:         42,
+			SSLMode:      "sslmode",
+			SSLCert:      "sslcert",
+			SSLKey:       "sslkey",
+			SSLRootCert:  "sslrootcert",
+			TraceSQL:     "run",
+			ReadTimeout:  24 * time.Minute,
+			WriteTimeout: 42 * time.Second,
 		},
 		MaintenanceDBName:   "maintenance-dbname",
 		MaintenanceUser:     "maintenance-user",
@@ -438,6 +465,8 @@ func TestConvertDatabaseCLIFlagsWithMaintenanceCredentialsToMaintenanceSettings(
 	require.EqualValues(t, "sslkey", settings.SSLKey)
 	require.EqualValues(t, "sslrootcert", settings.SSLRootCert)
 	require.EqualValues(t, LoggingQueryPresetRuntime, settings.TraceSQL)
+	require.EqualValues(t, 24*time.Minute, settings.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, settings.WriteTimeout)
 }
 
 // Test that the CLI flags can be read from an external parameters source using
@@ -457,6 +486,8 @@ func TestReadDatabaseCLIFlagsWithMaintenanceCredentialsFromCLILookup(t *testing.
 		"db-trace-queries":    "run",
 		"db-maintenance-name": "maintenance-dbname",
 		"db-maintenance-user": "maintenance-user",
+		"db-read-timeout":     "24m",
+		"db-write-timeout":    "42s",
 	})
 
 	// Act
@@ -476,6 +507,8 @@ func TestReadDatabaseCLIFlagsWithMaintenanceCredentialsFromCLILookup(t *testing.
 	require.EqualValues(t, "maintenance-dbname", cliFlags.MaintenanceDBName)
 	require.EqualValues(t, "maintenance-user", cliFlags.MaintenanceUser)
 	require.Empty(t, cliFlags.MaintenancePassword)
+	require.EqualValues(t, 24*time.Minute, cliFlags.ReadTimeout)
+	require.EqualValues(t, 42*time.Second, cliFlags.WriteTimeout)
 }
 
 // Test that the field iteration is performed properly.
@@ -488,7 +521,8 @@ func TestIterateOverFields(t *testing.T) {
 	type mock struct {
 		Parent nestedMock
 		Foo    string
-		Bar    string
+		Bar    int
+		Baz    time.Duration
 	}
 
 	obj := &mock{
@@ -496,18 +530,28 @@ func TestIterateOverFields(t *testing.T) {
 			Nested: "Nested",
 		},
 		Foo: "Foo",
-		Bar: "Bar",
+		Bar: 42,
+		Baz: 42 * time.Second,
 	}
 	numFields := 0
 
 	// Act
 	iterateOverFields(obj, func(field reflect.StructField, value reflect.Value) {
 		// Assert
-		require.EqualValues(t, field.Name, value.String())
+		switch field.Name {
+		case "Nested":
+			require.EqualValues(t, "Nested", value.String())
+		case "Foo":
+			require.EqualValues(t, "Foo", value.String())
+		case "Bar":
+			require.EqualValues(t, 42, value.Int())
+		case "Baz":
+			require.EqualValues(t, 42*time.Second, value.Interface())
+		}
 		numFields++
 	})
 
-	require.EqualValues(t, 3, numFields)
+	require.EqualValues(t, 4, numFields)
 }
 
 // Test that the field iteration is performed properly even if the object is nil.
@@ -611,7 +655,7 @@ func TestConvertDatabaseCLIFlagsToDefinitions(t *testing.T) {
 	definitions := pointer.ConvertToCLIFlagDefinitions()
 
 	// Assert
-	require.Len(t, definitions, 11)
+	require.Len(t, definitions, 13)
 
 	definitionMap := make(map[string]*CLIFlagDefinition, len(definitions))
 	for _, definition := range definitions {
@@ -633,7 +677,7 @@ func TestConvertMaintenanceDatabaseCLIFlagsToDefinitions(t *testing.T) {
 	definitions := pointer.ConvertToCLIFlagDefinitions()
 
 	// Assert
-	require.Len(t, definitions, 11+3)
+	require.Len(t, definitions, 13+3)
 
 	definitionMap := make(map[string]*CLIFlagDefinition, len(definitions))
 	for _, definition := range definitions {

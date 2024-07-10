@@ -3,6 +3,7 @@ package dbops
 import (
 	"fmt"
 	"path"
+	"time"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
@@ -50,24 +51,29 @@ func init() {
 
 // Represents database connection settings.
 type DatabaseSettings struct {
-	DBName      string
-	User        string
-	Password    string
-	Host        string
-	Port        int
-	SSLMode     string
-	SSLCert     string
-	SSLKey      string
-	SSLRootCert string
-	TraceSQL    LoggingQueryPreset
+	DBName       string
+	User         string
+	Password     string
+	Host         string
+	Port         int
+	SSLMode      string
+	SSLCert      string
+	SSLKey       string
+	SSLRootCert  string
+	TraceSQL     LoggingQueryPreset
+	WriteTimeout time.Duration
+	ReadTimeout  time.Duration
 }
 
 // Converts generic connection parameters to go-pg specific parameters.
 func (s *DatabaseSettings) convertToPgOptions() (*PgOptions, error) {
 	pgopts := &PgOptions{
-		Database: s.DBName,
-		User:     s.User,
-		Password: s.Password,
+		Database:        s.DBName,
+		User:            s.User,
+		Password:        s.Password,
+		ApplicationName: "stork-server",
+		ReadTimeout:     s.ReadTimeout,
+		WriteTimeout:    s.WriteTimeout,
 	}
 	socketPath := path.Join(s.Host, fmt.Sprintf(".s.PGSQL.%d", s.Port))
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -31,10 +32,12 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 	// Default configuration
 	flags := &dbops.DatabaseCLIFlagsWithMaintenance{
 		DatabaseCLIFlags: dbops.DatabaseCLIFlags{
-			DBName: "storktest",
-			User:   "storktest",
-			Host:   "", // Use default.
-			Port:   5432,
+			DBName:       "storktest",
+			User:         "storktest",
+			Host:         "", // Use default.
+			Port:         5432,
+			WriteTimeout: 30 * time.Second,
+			ReadTimeout:  30 * time.Second,
 		},
 		MaintenanceDBName: "postgres",
 		MaintenanceUser:   "postgres",

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
@@ -119,6 +120,25 @@ func TestConvertToPgOptionsSocket(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "unix", options.Network)
+}
+
+// Test that the read and write timeouts are passed to the go-pg options.
+func TestConvertToPgOptionsWithTimeouts(t *testing.T) {
+	// Arrange
+	settings := DatabaseSettings{
+		DBName:       "stork",
+		User:         "admin",
+		Password:     "StOrK123",
+		ReadTimeout:  5 * time.Minute,
+		WriteTimeout: 10 * time.Hour,
+	}
+
+	// Act
+	options, _ := settings.convertToPgOptions()
+
+	// Assert
+	require.EqualValues(t, 5*time.Minute, options.ReadTimeout)
+	require.EqualValues(t, 10*time.Hour, options.WriteTimeout)
 }
 
 // Test that the string is converted into the logging query preset properly.

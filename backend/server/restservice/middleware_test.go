@@ -54,9 +54,9 @@ func TestFileServerMiddleware(t *testing.T) {
 
 // Check if InnerMiddleware works.
 func TestInnerMiddleware(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	rapi, err := NewRestAPI(db)
+	rapi, err := NewRestAPI(db, settings)
 	require.NoError(t, err)
 	sm, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
