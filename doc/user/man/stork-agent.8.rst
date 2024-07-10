@@ -122,15 +122,6 @@ following arguments:
 ``-n|--non-interactive``
    Disables the interactive mode. The default is false. ``[$STORK_AGENT_NON_INTERACTIVE]``
 
-``-v|--version``
-   Returns the software version.
-
-``-h|--help``
-   Returns register command's parameters.
-
-``-h|--help``
-   Returns register command's parameters.
-
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
