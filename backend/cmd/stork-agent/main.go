@@ -235,7 +235,7 @@ func promptForMissingArguments(settings *registerSettings) error {
 		}
 	}
 
-	// Server host.
+	// Agent host.
 	if settings.AgentHost == "" {
 		tip, _ := fqdn.FqdnHostname()
 		settings.AgentHost, err = prompt(

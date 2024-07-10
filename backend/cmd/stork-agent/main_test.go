@@ -129,7 +129,7 @@ func TestRegistrationParams(t *testing.T) {
 		"--agent-host",
 		"127.4.5.678::8080",
 	}
-	// The Stork Agent exists using a log.Fatal for these parameters.
+	// The Stork Agent exits using a log.Fatal for these parameters.
 	// We replace the standard error handler with a dumb one to prevent
 	// interrupting the unit tests.
 	defer func() {

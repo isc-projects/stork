@@ -52,7 +52,7 @@ Equivalent environment variables are listed in square brackets, where applicable
 ``-v|--version``
    Returns the software version.
 
-``-h`` or ``--help``
+``-h|--help``
    Returns the list of available parameters.
 
 Stork server flags:
