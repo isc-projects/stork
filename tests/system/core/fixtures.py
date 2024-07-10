@@ -411,7 +411,7 @@ def package_service(request):
 
 
 @pytest.fixture
-def postgres_service(_request):
+def postgres_service():
     """
     A fixture that sets up the PostgreSQL service and guarantees that it is
     operational.
