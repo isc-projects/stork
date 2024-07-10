@@ -92,6 +92,18 @@ section.stork-layout
     // article and aside take 100% width of the viewport.
     flex: 1 1 19rem
 
+@media screen and (max-width: 640px)
+  .p-toast.stork-toast
+    // Make toasts visible on smaller screens.
+    // Prevent width overflow.
+    max-width: calc(100vw - 2rem)
+
+@media screen and (max-width: 360px)
+  .p-panel .p-panel-content
+    // Decrease panel content horizontal padding to save the space on smaller viewports.
+    padding-right: 0.5rem
+    padding-left: 0.5rem
+
 // Set 0 margin for full width top navbar position.
 body
   margin: 0

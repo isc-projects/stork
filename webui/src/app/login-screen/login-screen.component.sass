@@ -164,9 +164,3 @@ $layout-breakpoint: 640px
     @media screen and (max-width: $layout-breakpoint)
         // Apply regular margin for smaller screens.
         margin: 0.5rem
-
-@media screen and (max-width: $layout-breakpoint)
-    ::ng-deep .p-toast.stork-toast
-        // Make toasts visible on smaller screens.
-        // Prevent width overflow.
-        max-width: calc(100vw - 2rem)
