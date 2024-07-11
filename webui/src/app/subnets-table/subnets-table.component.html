@@ -161,23 +161,23 @@
     </ng-template>
     <ng-template pTemplate="header">
         <tr>
-            <th rowspan="2" style="width: 11rem">Subnet</th>
-            <th colspan="3" style="width: 16rem">Addresses</th>
-            <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
+            <th rowspan="2">Subnet</th>
+            <th colspan="3">Addresses</th>
+            <th colspan="3" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
             <th rowspan="2">Pools</th>
-            <th rowspan="2" style="width: 6rem">Shared Network</th>
+            <th rowspan="2">Shared Network</th>
             <th colspan="2">Application</th>
-            <th rowspan="2" style="width: 3rem" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
+            <th rowspan="2" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
                 <i class="pi pi-chart-line text-2xl"></i>
             </th>
         </tr>
         <tr>
             <th>Total</th>
-            <th style="padding: 0.571rem 0.5rem">Assigned</th>
+            <th class="px-2">Assigned</th>
             <th>Used %</th>
             <ng-container *ngIf="isAnyIPv6SubnetVisible">
                 <th>Total</th>
-                <th style="padding: 0.571rem 0.5rem">Assigned</th>
+                <th class="px-2">Assigned</th>
                 <th>Used %</th>
             </ng-container>
             <th>Name</th>
