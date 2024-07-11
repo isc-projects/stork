@@ -20,6 +20,7 @@ import (
 // structure with Stork-specific implementation of sessions.
 type SessionMgr struct {
 	scsSessionMgr *scs.SessionManager
+	teardown      func()
 }
 
 // Creates new session manager instance. The new connection is created using the
@@ -31,11 +32,18 @@ func NewSessionMgr(db pg.DBI) (*SessionMgr, error) {
 		logrus.WithError(err).Error("an error occurred in the session manager")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	s.Store = NewStore(db)
+	store := NewStore(db)
+	s.Store = store
+	teardown := func() { store.StopCleanup() }
 
-	mgr := &SessionMgr{scsSessionMgr: s}
+	mgr := &SessionMgr{scsSessionMgr: s, teardown: teardown}
 
 	return mgr, nil
+}
+
+// Stops the cleanup goroutine of the session store.
+func (s *SessionMgr) Close() {
+	s.teardown()
 }
 
 // This function should be invoked upon successful authentication of the user which

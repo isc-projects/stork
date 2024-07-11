@@ -60,6 +60,7 @@ func TestInnerMiddleware(t *testing.T) {
 	require.NoError(t, err)
 	sm, err := dbsession.NewSessionMgr(db)
 	require.NoError(t, err)
+	defer sm.Close()
 	rapi.SessionManager = sm
 
 	handler := rapi.InnerMiddleware(nil)

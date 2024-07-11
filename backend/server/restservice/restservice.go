@@ -582,4 +582,10 @@ func (r *RestAPI) Shutdown() {
 		}
 	}
 	log.Printf("Stopped RESTful API Service")
+
+	log.Print("Stopping the session manager")
+	if r.SessionManager != nil {
+		r.SessionManager.Close()
+	}
+	log.Print("Stopped the session manager")
 }

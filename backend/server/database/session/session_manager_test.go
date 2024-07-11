@@ -31,6 +31,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 
 	mgr, err := NewSessionMgr(db)
 	require.NoError(t, err)
+	defer mgr.Close()
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
@@ -101,6 +102,7 @@ func TestLoad(t *testing.T) {
 
 	mgr, err := NewSessionMgr(db)
 	require.NoError(t, err)
+	defer mgr.Close()
 
 	ctx := context.Background()
 
@@ -116,6 +118,7 @@ func TestLogOutUser(t *testing.T) {
 	// Create session manager.
 	mgr, err := NewSessionMgr(db)
 	require.NoError(t, err)
+	defer mgr.Close()
 
 	ctx := context.Background()
 
@@ -188,7 +191,7 @@ func TestLogOutUser(t *testing.T) {
 
 	// The LogoutUser will remove the session from the database, but it won't
 	// update the data in the context used by the function call.
-	// Usually the function is called using the context of the administator which
+	// Usually the function is called using the context of the administrator which
 	// is deleting a user and the updated context is the context of the user
 	// being deleted. To get the right context, the context needs to be retrieved
 	// from the handler once again.
