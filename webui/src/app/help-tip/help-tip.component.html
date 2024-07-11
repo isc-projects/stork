@@ -1,4 +1,7 @@
-<div class="p-button p-button-text p-button-icon-only inline-block vertical-align-middle">
+<div
+    class="p-button p-button-text p-button-icon-only inline-block vertical-align-middle"
+    title="Help for {{ subject }}"
+>
     <i
         class="pi pi-question-circle help-icon"
         [ngClass]="variant === 'big' ? 'big-help-icon' : ''"
@@ -7,8 +10,8 @@
 </div>
 <p-overlayPanel [showCloseIcon]="true" styleClass="help-tip-inserted">
     <ng-template pTemplate="content">
-        <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + title }}">
-            <h3>Help for {{ title }}</h3>
+        <div class="help-tip" [ngStyle]="{ width: width }" id="{{ 'help-for-' + subject }}">
+            <h3>Help for {{ subject }}</h3>
             <ng-content></ng-content>
         </div>
     </ng-template>

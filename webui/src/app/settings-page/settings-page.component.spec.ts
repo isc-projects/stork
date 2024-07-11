@@ -90,7 +90,7 @@ describe('SettingsPageComponent', () => {
         expect(helptipElement).not.toBeNull()
         const helptipComponent = helptipElement.componentInstance as HelpTipComponent
         expect(helptipComponent).not.toBeNull()
-        expect(helptipComponent.title).toBe('this page')
+        expect(helptipComponent.subject).toBe('this page')
     })
 
     it('should init the form', fakeAsync(() => {

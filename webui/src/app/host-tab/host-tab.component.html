@@ -11,7 +11,7 @@
         </div>
         <div id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0">[{{ host.id }}] Global host</div>
         <div>
-            <app-help-tip title="Host Reservation View">
+            <app-help-tip subject="Host Reservation View">
                 Multiple DHCP servers can share a host reservation. Host identifiers, IP addresses, and delegated
                 prefixes for a host must match in each DHCP server's configuration. If they are different, they are
                 treated as different hosts. Otherwise, they are combined, and the DHCP servers sharing the host are

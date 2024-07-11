@@ -385,6 +385,6 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         const helpElement = fixture.debugElement.query(By.directive(HelpTipComponent))
         expect(helpElement).not.toBeNull()
         const helpComponent = helpElement.componentInstance as HelpTipComponent
-        expect(helpComponent.title).toContain('Checkers list')
+        expect(helpComponent.subject).toContain('Checkers list')
     })
 })

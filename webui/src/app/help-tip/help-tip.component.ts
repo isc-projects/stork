@@ -23,9 +23,9 @@ export class HelpTipComponent {
     @Input() target: any
 
     /**
-     * Title for the help box.
+     * Subject for which the help box is generated.
      */
-    @Input() title: string
+    @Input({ required: true }) subject: string
 
     /**
      * Width of the help box.

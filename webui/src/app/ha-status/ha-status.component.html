@@ -21,7 +21,7 @@
                             </div>
                             <div>
                                 <ng-container [ngSwitch]="rowData.title">
-                                    <app-help-tip *ngSwitchCase="'Status time'" [title]="rowData.title | lowercase">
+                                    <app-help-tip *ngSwitchCase="'Status time'" [subject]="rowData.title | lowercase">
                                         <p>
                                             This is the time when the server reported its state for the last time. it is
                                             not necessarily the time when the state information was refreshed in the UI.
@@ -31,7 +31,7 @@
                                             over the control channel.
                                         </p>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Status age'" [title]="rowData.title | lowercase">
+                                    <app-help-tip *ngSwitchCase="'Status age'" [subject]="rowData.title | lowercase">
                                         <p>
                                             This is the duration between the "Status Time" and now, i.e. it indicates
                                             how long ago the server reported its state. A long duration indicates that
@@ -39,7 +39,10 @@
                                             between 10 and 30 seconds.
                                         </p>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Control status'" [title]="rowData.title | lowercase">
+                                    <app-help-tip
+                                        *ngSwitchCase="'Control status'"
+                                        [subject]="rowData.title | lowercase"
+                                    >
                                         <p>
                                             An <span class="font-bold">online</span> control status indicates that the
                                             server responds to the commands over the control channel.
@@ -55,7 +58,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Heartbeat status'"
-                                        [title]="rowData.title | lowercase"
+                                        [subject]="rowData.title | lowercase"
                                         width="40vw"
                                     >
                                         <p>
@@ -86,7 +89,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'State'"
-                                        [title]="rowData.title | lowercase"
+                                        [subject]="rowData.title | lowercase"
                                         width="40vw"
                                     >
                                         <p>The following are the possible server states:</p>
@@ -140,7 +143,7 @@
                                             </li>
                                         </ul>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Scopes'" [title]="rowData.title | lowercase">
+                                    <app-help-tip *ngSwitchCase="'Scopes'" [subject]="rowData.title | lowercase">
                                         <p>
                                             This is a list of HA scopes currently being served by this server. If the
                                             server is responding to the DHCP queries as a
@@ -163,7 +166,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Last in partner-down'"
-                                        [title]="rowData.title | lowercase"
+                                        [subject]="rowData.title | lowercase"
                                     >
                                         <p>
                                             This is the last time when the server went to the
@@ -172,7 +175,10 @@
                                             or shutdown.
                                         </p>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Unacked clients'" [title]="rowData.title | lowercase">
+                                    <app-help-tip
+                                        *ngSwitchCase="'Unacked clients'"
+                                        [subject]="rowData.title | lowercase"
+                                    >
                                         <p>
                                             This is the number of clients considered unacked by the partner. This value
                                             is only set when the partner has lost heartbeat communication with this
@@ -184,7 +190,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Connecting clients'"
-                                        [title]="rowData.title | lowercase"
+                                        [subject]="rowData.title | lowercase"
                                     >
                                         <p>
                                             This is the total number of clients trying to get new leases from the server
@@ -197,7 +203,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Analyzed packets'"
-                                        [title]="rowData.title | lowercase"
+                                        [subject]="rowData.title | lowercase"
                                     >
                                         <p>
                                             This is a total number of packets directed to the server with which the
@@ -210,7 +216,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Failover progress'"
-                                        [title]="rowData.title | lowercase"
+                                        [subject]="rowData.title | lowercase"
                                     >
                                         <p>
                                             It shows a progress bar for a failover procedure. When it hits 100% the
@@ -220,7 +226,7 @@
                                             relative to the maximum number of unacked clients.
                                         </p>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Summary'" [title]="rowData.title | lowercase">
+                                    <app-help-tip *ngSwitchCase="'Summary'" [subject]="rowData.title | lowercase">
                                         <p>It is a summary text describing the status of the HA setup.</p>
                                     </app-help-tip>
                                 </ng-container>

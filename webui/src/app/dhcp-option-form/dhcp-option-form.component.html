@@ -36,7 +36,7 @@
                 <label for="{{ codeInputId }}">Type Suboption Code</label></span
             >
         </ng-template>
-        <app-help-tip *ngIf="optionDef" [title]="optionDef.name">
+        <app-help-tip *ngIf="optionDef" [subject]="optionDef.name">
             <ng-container *ngIf="optionDef.array">
                 <div *ngIf="optionDef.optionType === 'record'">
                     This option carries the records of the following fields:
@@ -337,7 +337,10 @@
                         class="p-button-text p-button p-button-danger"
                         (click)="deleteField(i)"
                     ></button>
-                    <app-help-tip *ngIf="fieldControl.data.fieldType === FieldType.Binary" title="binary Option Field">
+                    <app-help-tip
+                        *ngIf="fieldControl.data.fieldType === FieldType.Binary"
+                        subject="binary Option Field"
+                    >
                         <p>
                             Option value can be specified as a string of the hexadecimal digits. The following formats
                             are accepted:

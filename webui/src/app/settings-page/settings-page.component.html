@@ -43,7 +43,7 @@
                                 inputId="machine-registration-checkbox"
                             />
                             <label class="ml-2" for="machine-registration-checkbox">Enable machine registration</label>
-                            <app-help-tip title="Enable Machine Registration">
+                            <app-help-tip subject="Enable Machine Registration">
                                 New machines begin registration in the Stork server using a dedicated REST API endpoint.
                                 The same endpoint is used for re-registering already connected machines when they are
                                 restarted. Since new machines are registered rarely it is practical to disable this
@@ -65,7 +65,7 @@
                                     [formControlName]="setting.formControlName"
                                     [id]="setting.formControlName"
                                     class="w-full"
-                                /><app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
+                                /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                             </div>
                             <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">
                                 It is required.
@@ -88,7 +88,7 @@
                                     [formControlName]="setting.formControlName"
                                     [id]="setting.formControlName"
                                     class="w-full"
-                                /><app-help-tip [title]="setting.title">{{ setting.help }}</app-help-tip>
+                                /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                             </div>
                         </div>
                     </p-fieldset>
