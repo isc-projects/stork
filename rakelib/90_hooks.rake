@@ -16,6 +16,7 @@ CLEAN.append *FileList[File.join(DEFAULT_HOOK_DIRECTORY, "*.so")]
 
 pkg_directory = "dist/hook-pkgs"
 directory pkg_directory
+hook_nfpm_config_file = "etc/dist/hook.yaml"
 
 CLEAN.append pkg_directory
 
@@ -166,7 +167,7 @@ namespace :hook do
     desc "Build all hooks and create packages. Remap hooks to use the current codebase.
         DEBUG - build hooks in debug mode, the envvar is passed through to the hook Rakefile - default: false
         HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
-    task :build_pkg => [GO, NFPM, pkg_directory] do
+    task :build_pkg => [NFPM, hook_nfpm_config_file, pkg_directory] do
         # Suppress (re)building the hook binaries if the SUPPRESS_PREREQUISITES
         # environment variable is set to true.
         if ENV["SUPPRESS_PREREQUISITES"] != "true"
@@ -175,6 +176,7 @@ namespace :hook do
 
         hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
         pkg_type = get_pkg_type()
+        arch = get_target_go_arch()
 
         FileList[File.join(hook_directory, "*.so")].each do |hook_path|
             hook_filename = File.basename(hook_path)
@@ -186,21 +188,17 @@ namespace :hook do
             kind = components[1]
             hook_name = components[2].chomp(".so")
 
-            Dir.chdir(pkg_directory) do
-                sh FPM,
-                    "-s", "dir",
-                    "-C", hook_directory,
-                    "-n", "isc-stork-#{kind}-hook-#{hook_name}",
-                    "-t", pkg_type,
-                    "-a", get_target_go_arch(),
-                    "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
-                    "--license", "MPL 2.0",
-                    "--url", "https://gitlab.isc.org/isc-projects/stork/",
-                    "--vendor", "Internet Systems Consortium, Inc.",
-                    # Enables the compatibility with the FIPS mode for RPM packages.
-                    "--rpm-digest", "sha256",
-                    "#{hook_filename}=/usr/lib/stork-#{kind}/hooks/#{hook_filename}"
-            end
+            ENV["STORK_NFPM_ARCH"] = arch
+            ENV["STORK_NFPM_VERSION"] = "#{STORK_VERSION}.#{TIMESTAMP}"
+            ENV["STORK_NFPM_HOOK_KIND"] = kind
+            ENV["STORK_NFPM_HOOK_NAME"] = hook_name
+            ENV["STORK_NFPM_HOOK_PATH"] = hook_path
+            ENV["STORK_NFPM_HOOK_FILENAME"] = hook_filename
+
+            sh NFPM, "package",
+                "--config", hook_nfpm_config_file,
+                "--packager", pkg_type,
+                "--target", pkg_directory
         end
     end
 

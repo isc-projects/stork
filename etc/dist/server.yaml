@@ -1,0 +1,51 @@
+# nfpm configuration file for build Stork server package
+#
+# check https://nfpm.goreleaser.com/configuration for detailed usage
+#
+arch: "${STORK_NFPM_ARCH}"
+version: "${STORK_NFPM_VERSION}"
+
+name: "isc-stork-server"
+platform: "linux"
+section: "admin"
+priority: "required"
+replaces: []
+provides: []
+depends: []
+recommends: []
+suggests:
+- isc-stork-server-hook-ldap
+conflicts: []
+maintainer: "Stork team <stork-users@lists.isc.org>"
+description: ISC Stork Server
+vendor: "Internet Systems Consortium, Inc."
+homepage: "https://stork.isc.org"
+license: "MPL 2.0"
+
+contents:
+- src: dist/server/lib
+  dst: /lib
+  type: tree
+- src: dist/server/usr
+  dst: /usr
+  type: tree
+- src: dist/server/etc/stork/server.env
+  dst: /etc/stork/server.env
+  type: config
+
+overrides:
+  deb:
+    scripts:
+      postinstall: etc/hooks/deb/isc-stork-server.postinst
+      preremove:   etc/hooks/deb/isc-stork-server.prerm
+      postremove:  etc/hooks/deb/isc-stork-server.postrm
+  rpm:
+    scripts:
+      postinstall: etc/hooks/rpm/isc-stork-server.postinst
+      preremove:   etc/hooks/rpm/isc-stork-server.prerm
+      postremove:  etc/hooks/rpm/isc-stork-server.postrm
+  apk:
+    scripts:
+      postinstall: etc/hooks/apk/isc-stork-server.postinst
+      preremove:   etc/hooks/apk/isc-stork-server.prerm
+      postremove:  etc/hooks/apk/isc-stork-server.postrm

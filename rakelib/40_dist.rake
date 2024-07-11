@@ -29,7 +29,6 @@ def get_pkg_type()
         ["rpm", ["rpm", "-q", "-a"]],
         ["deb", ["dpkg", "-l"]],
         ["apk", ["apk", "--version"]],
-        ["freebsd", ["freebsd-version"]],
     ]
 
     supported_types = []
@@ -131,50 +130,22 @@ file agent_dist_dir => [agent_dist_bin_file, agent_dist_man_file, agent_dist_sys
 
 agent_hooks = FileList["etc/hooks/**/isc-stork-agent.post*", "etc/hooks/**/isc-stork-agent.pre*"]
 
+agent_nfpm_config_file = "etc/dist/agent.yaml"
+
 AGENT_PACKAGE_STUB_FILE = File.join(pkgs_dir, "agent-built.pkg")
-file AGENT_PACKAGE_STUB_FILE => [NFPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + agent_hooks do
+file AGENT_PACKAGE_STUB_FILE => [NFPM, agent_nfpm_config_file, agent_dist_dir, pkgs_dir] + agent_hooks do
     ENV["PKG_NAME"] = "agent"
     Rake::Task["clean:pkgs"].invoke()
 
-    pkg_type = get_pkg_type()
+    ENV["STORK_NFPM_VERSION"] = "#{STORK_VERSION}.#{TIMESTAMP}"
+    ENV["STORK_NFPM_ARCH"] = get_target_go_arch()
 
-    agent_dist_dir_abs = File.expand_path(agent_dist_dir)
+    sh NFPM, "package",
+        "--config", agent_nfpm_config_file,
+        "--packager", get_pkg_type(),
+        "--target", pkgs_dir
 
-    Dir.chdir(pkgs_dir) do
-        stdout, stderr, status = Open3.capture3 FPM,
-            "-C", agent_dist_dir_abs,
-            "-n", "isc-stork-agent",
-            "-s", "dir",
-            "-t", pkg_type,
-            "-a", get_target_go_arch(),
-            "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
-            "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postinst",
-            "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.postrm",
-            "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-agent.prerm",
-            # Warning! Don't use the --before-update, --after-update, or --deb-systemd-* flags.
-            # They cause to wrap the original scripts with the additional logic.
-            # It is problematic when the packages generated with these flags
-            # are updated. The old package scripts execute their prerm and
-            # postrm scripts, so the update scripts of the new package must
-            # repeat the postinstall logic and then execute the upgrade logic.
-            # To avoid such problems, adding the non-obvious wrapper, and to
-            # improve the readability of the scripts, we decided to implement
-            # the code that differentiates the installation from the update
-            # directly in the scripts.
-            "--config-files", "etc/stork/agent.env",
-            "--config-files", "etc/stork/agent-credentials.json.template",
-            "--description", "ISC Stork Agent",
-            "--license", "MPL 2.0",
-            "--url", "https://gitlab.isc.org/isc-projects/stork/",
-            "--vendor", "Internet Systems Consortium, Inc.",
-            # Enables the compatibility with the FIPS mode for RPM packages.
-            "--rpm-digest", "sha256"
-        if status != 0
-            puts status, stdout, stderr
-            fail
-        end
-    end
-    sh "touch", AGENT_PACKAGE_STUB_FILE
+    sh "touch", SERVER_PACKAGE_STUB_FILE
 end
 
 ##############
@@ -261,44 +232,21 @@ file server_dist_dir => server_dist_dir_tool_part + server_dist_dir_man_part + s
 
 server_hooks = FileList["etc/hooks/**/isc-stork-server.post*", "etc/hooks/**/isc-stork-server.pre*"]
 
+server_nfpm_config_file = "etc/dist/server.yaml"
+
 SERVER_PACKAGE_STUB_FILE = File.join(pkgs_dir, "server-built.pkg")
-file SERVER_PACKAGE_STUB_FILE => [NFPM, MAKE, GCC, server_dist_dir, pkgs_dir] + server_hooks do
+file SERVER_PACKAGE_STUB_FILE => [NFPM, server_nfpm_config_file, server_dist_dir, pkgs_dir] + server_hooks do
     ENV["PKG_NAME"] = "server"
     Rake::Task["clean:pkgs"].invoke()
 
-    pkg_type = get_pkg_type()
+    ENV["STORK_NFPM_VERSION"] = "#{STORK_VERSION}.#{TIMESTAMP}"
+    ENV["STORK_NFPM_ARCH"] = get_target_go_arch()
 
-    server_dist_dir_abs = File.expand_path(server_dist_dir)
+    sh NFPM, "package",
+        "--config", server_nfpm_config_file,
+        "--packager", get_pkg_type(),
+        "--target", pkgs_dir
 
-    Dir.chdir(pkgs_dir) do
-        sh FPM,
-            "-C", server_dist_dir_abs,
-            "-n", "isc-stork-server",
-            "-s", "dir",
-            "-t", pkg_type,
-            "-a", get_target_go_arch(),
-            "-v", "#{STORK_VERSION}.#{TIMESTAMP}",
-            "--after-install", "../../etc/hooks/#{pkg_type}/isc-stork-server.postinst",
-            "--after-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.postrm",
-            "--before-remove", "../../etc/hooks/#{pkg_type}/isc-stork-server.prerm",
-            # Warning! Don't use the --before-update, --after-update, or --deb-systemd-* flags.
-            # They cause to wrap the original scripts with the additional logic.
-            # It is problematic when the packages generated with these flags
-            # are updated. The old package scripts execute their prerm and
-            # postrm scripts, so the update scripts of the new package must
-            # repeat the postinstall logic and then execute the upgrade logic.
-            # To avoid such problems, adding the non-obvious wrapper, and to
-            # improve the readability of the scripts, we decided to implement
-            # the code that differentiates the installation from the update
-            # directly in the scripts.
-            "--config-files", "etc/stork/server.env",
-            "--description", "ISC Stork Server",
-            "--license", "MPL 2.0",
-            "--url", "https://gitlab.isc.org/isc-projects/stork/",
-            "--vendor", "Internet Systems Consortium, Inc.",
-            # Enables the compatibility with the FIPS mode for RPM packages.
-            "--rpm-digest", "sha256"
-    end
     sh "touch", SERVER_PACKAGE_STUB_FILE
 end
 

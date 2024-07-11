@@ -17,7 +17,6 @@
 
 backend/go.sum                          -diff merge=ours
 doc/src/requirements.txt                -diff merge=ours
-rakelib/init_deps/fpm/Gemfile.lock      -diff merge=ours
 rakelib/init_deps/danger/Gemfile.lock   -diff merge=ours
 rakelib/init_deps/pytest.txt            -diff merge=ours
 rakelib/init_deps/sphinx.txt            -diff merge=ours

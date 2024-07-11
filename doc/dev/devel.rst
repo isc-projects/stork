@@ -1103,8 +1103,7 @@ are present, e.g., deb and rpm tools on a Debian-based system, a specific
 packaging format can be enforced using the PKG_TYPE variable. The available
 package types will be prompted on a console.
 
-Internally, these packages are built by `FPM <https://fpm.readthedocs.io/>`_. It is installed automatically, but it requires
-the ``ruby-dev``, ``gnutar``, and ``make`` to build.
+Internally, these packages are built by `NFPM <https://nfpm.goreleaser.com/>`_.
 
 Storybook
 =========
