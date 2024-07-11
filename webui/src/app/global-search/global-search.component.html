@@ -13,7 +13,7 @@
             <h4>Subnets</h4>
             <div *ngFor="let sn of searchResults.subnets.items">[{{ sn.id }}] {{ sn.subnet }}</div>
             <div style="margin-top: 10px">
-                <a routerLink="/dhcp/subnets" [queryParams]="{ text: searchText }">more</a>
+                <a routerLink="/dhcp/subnets" [queryParams]="{ text: searchText, gs: true }">more</a>
             </div>
         </div>
         <div *ngIf="searchResults.sharedNetworks.items.length > 0" style="margin-right: 20px; min-width: 9em">

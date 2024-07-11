@@ -1,36 +1,28 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { Router, ActivatedRoute, ParamMap } from '@angular/router'
-
-import { Table } from 'primeng/table'
+import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Router, ActivatedRoute, EventType } from '@angular/router'
 
 import { DHCPService } from '../backend/api/api'
-import { getGrafanaUrl, extractKeyValsAndPrepareQueryParams, getGrafanaSubnetTooltip, getErrorMessage } from '../utils'
-import {
-    getTotalAddresses,
-    getAssignedAddresses,
-    parseSubnetsStatisticValues,
-    SubnetWithUniquePools,
-    extractUniqueSubnetPools,
-    parseSubnetStatisticValues,
-} from '../subnets'
+import { getErrorMessage } from '../utils'
+import { parseSubnetsStatisticValues, extractUniqueSubnetPools, parseSubnetStatisticValues } from '../subnets'
 import { SettingService } from '../setting.service'
-import { Subscription, lastValueFrom } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Subscription, lastValueFrom, EMPTY } from 'rxjs'
+import { catchError, filter, map } from 'rxjs/operators'
 import { Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 import { SubnetFormState } from '../forms/subnet-form'
 import { Tab, TabType } from '../tab'
+import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
 
-/**
- * Specifies the filter parameters for fetching subnets that may be specified
- * in the URL query parameters.
- */
-interface QueryParamsFilter {
-    text: string
-    dhcpVersion: '4' | '6'
-    appId: string
-    subnetId: string
-}
+// /**
+//  * Specifies the filter parameters for fetching subnets that may be specified
+//  * in the URL query parameters.
+//  */
+// interface QueryParamsFilter {
+//     text: string
+//     dhcpVersion: '4' | '6'
+//     appId: string
+//     subnetId: string
+// }
 
 /**
  * Component for presenting DHCP subnets.
@@ -40,7 +32,7 @@ interface QueryParamsFilter {
     templateUrl: './subnets-page.component.html',
     styleUrls: ['./subnets-page.component.sass'],
 })
-export class SubnetsPageComponent implements OnInit, OnDestroy {
+export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Enumeration for different subnet tab types displayed by the component.
      */
@@ -49,20 +41,25 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Subnets' }]
 
-    @ViewChild('subnetsTable') subnetsTable: Table
+    // @ViewChild('subnetsTable') subnetsTable: Table
 
-    // subnets
-    subnets: SubnetWithUniquePools[] = []
-    totalSubnets = 0
+    /**
+     * Table with subnets component.
+     */
+    @ViewChild('subnetsTableComponent') table: SubnetsTableComponent
 
-    // filters
-    filterText = ''
-    queryParams: QueryParamsFilter = {
-        text: null,
-        dhcpVersion: null,
-        appId: null,
-        subnetId: null,
-    }
+    // // subnets
+    // subnets: SubnetWithUniquePools[] = []
+    // totalSubnets = 0
+    //
+    // // filters
+    // filterText = ''
+    // queryParams: QueryParamsFilter = {
+    //     text: null,
+    //     dhcpVersion: null,
+    //     appId: null,
+    //     subnetId: null,
+    // }
 
     // Tab menu
 
@@ -130,226 +127,283 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             )
         )
 
-        // handle initial query params
-        const ssParams = this.route.snapshot.queryParamMap
-        this.updateFilterText(ssParams)
+        // // handle initial query params
+        // const ssParams = this.route.snapshot.queryParamMap
+        // this.updateFilterText(ssParams)
 
-        // subscribe to subsequent changes to query params
-        this.subscriptions.add(
-            this.route.queryParamMap.subscribe(
-                (params) => {
-                    this.updateOurQueryParams(params)
-                    let event = { first: 0, rows: 10 }
-                    if (this.subnetsTable) {
-                        event = this.subnetsTable.createLazyLoadMetadata()
-                    }
-                    this.loadSubnets(event)
-                },
-                (error) => {
+        // // subscribe to subsequent changes to query params
+        // this.subscriptions.add(
+        //     this.route.queryParamMap.subscribe(
+        //         (params) => {
+        //             this.updateOurQueryParams(params)
+        //             let event = { first: 0, rows: 10 }
+        //             if (this.subnetsTable) {
+        //                 event = this.subnetsTable.createLazyLoadMetadata()
+        //             }
+        //             this.loadSubnets(event)
+        //         },
+        //         (error) => {
+        //             this.messageService.add({
+        //                 severity: 'error',
+        //                 summary: 'Cannot process URL query parameters',
+        //                 detail: getErrorMessage(error),
+        //             })
+        //         }
+        //     )
+        // )
+
+        // // Subscribe to the subnet id changes, e.g. from /dhcp/subnets/all to
+        // // /dhcp/subnets/1. These changes are triggered by switching between the
+        // // tabs.
+        // this.subscriptions.add(
+        //     this.route.paramMap.subscribe(
+        //         (params) => {
+        //             // Get subnet id.
+        //             const id = params.get('id')
+        //             if (!id || id === 'all') {
+        //                 this.switchToTab(0)
+        //                 return
+        //             }
+        //             if (id === 'new') {
+        //                 this.openNewSubnetTab()
+        //                 return
+        //             }
+        //             let numericId = parseInt(id, 10)
+        //             if (Number.isNaN(numericId)) {
+        //                 numericId = 0
+        //             }
+        //             this.openTabBySubnetId(numericId)
+        //         },
+        //         (error) => {
+        //             this.messageService.add({
+        //                 severity: 'error',
+        //                 summary: 'Cannot process URL segment parameters',
+        //                 detail: getErrorMessage(error),
+        //             })
+        //         }
+        //     )
+        // )
+    }
+
+    /**
+     * Component lifecycle hook called after Angular completed the initialization of the
+     * component's view.
+     *
+     * We subscribe to router events to act upon URL and/or queryParams changes.
+     * This is done at this step, because we have to be sure that all child components,
+     * especially PrimeNG table in SubnetsTableComponent, are initialized.
+     */
+    ngAfterViewInit(): void {
+        this.router.events
+            .pipe(
+                filter((event, idx) => idx === 0 || event.type === EventType.NavigationEnd),
+                catchError((err) => {
+                    const msg = getErrorMessage(err)
                     this.messageService.add({
                         severity: 'error',
-                        summary: 'Cannot process URL query parameters',
-                        detail: getErrorMessage(error),
+                        summary: 'Cannot process the URL query',
+                        detail: msg,
+                        life: 10000,
                     })
-                }
-            )
-        )
-
-        // Subscribe to the subnet id changes, e.g. from /dhcp/subnets/all to
-        // /dhcp/subnets/1. These changes are triggered by switching between the
-        // tabs.
-        this.subscriptions.add(
-            this.route.paramMap.subscribe(
-                (params) => {
-                    // Get subnet id.
-                    const id = params.get('id')
-                    if (!id || id === 'all') {
-                        this.switchToTab(0)
-                        return
-                    }
-                    if (id === 'new') {
-                        this.openNewSubnetTab()
-                        return
-                    }
-                    let numericId = parseInt(id, 10)
-                    if (Number.isNaN(numericId)) {
-                        numericId = 0
-                    }
-                    this.openTabBySubnetId(numericId)
-                },
-                (error) => {
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Cannot process URL segment parameters',
-                        detail: getErrorMessage(error),
-                    })
-                }
-            )
-        )
-    }
-
-    /**
-     * Update different component's query parameters from the URL
-     * query parameters.
-     *
-     * @param params query parameters.
-     */
-    private updateOurQueryParams(params: ParamMap) {
-        if (['4', '6'].includes(params.get('dhcpVersion'))) {
-            this.queryParams.dhcpVersion = params.get('dhcpVersion') as '4' | '6'
-        }
-        this.queryParams.text = params.get('text')
-        this.queryParams.appId = params.get('appId')
-        this.queryParams.subnetId = params.get('subnetId')
-    }
-
-    /**
-     * Set the filter text value using the URL query parameters.
-     *
-     * @param params query parameters.
-     */
-    private updateFilterText(params: ParamMap) {
-        let text = ''
-        if (params.has('appId')) {
-            text += ' appId:' + params.get('appId')
-        }
-        if (params.has('subnetId')) {
-            text += ' subnetId:' + params.get('subnetId')
-        }
-        if (params.has('text')) {
-            text += ' ' + params.get('text')
-        }
-        this.filterText = text.trim()
-    }
-
-    /**
-     * Loads subnets from the database into the component.
-     *
-     * @param event Event object containing index of the first row, maximum number
-     *              of rows to be returned, dhcp version and text for subnets filtering.
-     */
-    loadSubnets(event) {
-        const params = this.queryParams
-        this.loading = true
-
-        lastValueFrom(
-            this.dhcpApi
-                .getSubnets(
-                    event.first,
-                    event.rows,
-                    Number(params.appId) || null,
-                    Number(params.subnetId) || null,
-                    Number(params.dhcpVersion) || null,
-                    params.text
-                )
-                // Custom parsing for statistics
-                .pipe(
-                    map((subnets) => {
-                        if (subnets.items) {
-                            parseSubnetsStatisticValues(subnets.items)
-                        }
-                        return subnets
-                    })
-                )
-        )
-            .then((data) => {
-                this.subnets = data.items ? extractUniqueSubnetPools(data.items) : null
-                this.totalSubnets = data.total ?? 0
-            })
-            .catch((error) => {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Cannot load subnets',
-                    detail: getErrorMessage(error),
+                    return EMPTY
                 })
-            })
-            .finally(() => {
-                this.loading = false
-            })
-    }
-
-    /**
-     * Filters list of subnets by DHCP versions. Filtering is realized server-side.
-     */
-    filterByDhcpVersion() {
-        this.router.navigate(['/dhcp/subnets'], {
-            queryParams: { dhcpVersion: this.queryParams.dhcpVersion },
-            queryParamsHandling: 'merge',
-        })
-    }
-
-    /**
-     * Filters list of subnets by text. The text may contain key=val
-     * pairs allowing filtering by various keys. Filtering is realized
-     * server-side.
-     */
-    keyupFilterText(event) {
-        if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(
-                this.filterText,
-                ['appId', 'subnetId'],
-                null
             )
-            this.router.navigate(['/dhcp/subnets'], {
-                queryParams,
-                queryParamsHandling: 'merge',
+            .subscribe(() => {
+                const paramMap = this.route.snapshot.paramMap
+                const queryParamMap = this.route.snapshot.queryParamMap
+
+                // Apply to the changes of the subnet id, e.g. from /dhcp/subnets/all to
+                // /dhcp/subnets/1. Those changes are triggered by switching between the
+                // tabs.
+
+                // Get subnet id.
+                const id = paramMap.get('id')
+                if (!id || id === 'all') {
+                    // Update the filter only if the target is subnet list.
+                    this.table?.updateFilterFromQueryParameters(queryParamMap)
+                    this.switchToTab(0)
+                    return
+                }
+                if (id === 'new') {
+                    this.openNewSubnetTab()
+                    return
+                }
+                const numericId = parseInt(id, 10)
+                if (!Number.isNaN(numericId)) {
+                    // The path has a numeric id indicating that we should
+                    // open a tab with selected subnet information or switch
+                    // to this tab if it has been already opened.
+                    this.openTabBySubnetId(numericId)
+                } else {
+                    // In case of failed Id parsing, open list tab.
+                    this.switchToTab(0)
+                    this.table?.loadDataWithoutFilter()
+                }
             })
-        }
     }
 
-    /**
-     * Prepare count for presenting in tooltip by adding ',' separator to big numbers, eg. 1,243,342.
-     */
-    tooltipCount(count) {
-        if (count === '?') {
-            return 'No data collected yet'
-        }
-        return count.toLocaleString('en-US')
-    }
+    // /**
+    //  * Update different component's query parameters from the URL
+    //  * query parameters.
+    //  *
+    //  * @param params query parameters.
+    //  */
+    // private updateOurQueryParams(params: ParamMap) {
+    //     if (['4', '6'].includes(params.get('dhcpVersion'))) {
+    //         this.queryParams.dhcpVersion = params.get('dhcpVersion') as '4' | '6'
+    //     }
+    //     this.queryParams.text = params.get('text')
+    //     this.queryParams.appId = params.get('appId')
+    //     this.queryParams.subnetId = params.get('subnetId')
+    // }
 
-    /**
-     * Builds a tooltip explaining what the link is for.
-     * @param subnet an identifier of the subnet
-     * @param machine an identifier of the machine the subnet is configured on
-     */
-    getGrafanaTooltip(subnet: number, machine: string) {
-        return getGrafanaSubnetTooltip(subnet, machine)
-    }
+    // /**
+    //  * Set the filter text value using the URL query parameters.
+    //  *
+    //  * @param params query parameters.
+    //  */
+    // private updateFilterText(params: ParamMap) {
+    //     let text = ''
+    //     if (params.has('appId')) {
+    //         text += ' appId:' + params.get('appId')
+    //     }
+    //     if (params.has('subnetId')) {
+    //         text += ' subnetId:' + params.get('subnetId')
+    //     }
+    //     if (params.has('text')) {
+    //         text += ' ' + params.get('text')
+    //     }
+    //     this.filterText = text.trim()
+    // }
 
-    /**
-     * Get total number of addresses in a subnet.
-     */
-    getTotalAddresses(subnet: Subnet) {
-        return getTotalAddresses(subnet)
-    }
+    // /**
+    //  * Loads subnets from the database into the component.
+    //  *
+    //  * @param event Event object containing index of the first row, maximum number
+    //  *              of rows to be returned, dhcp version and text for subnets filtering.
+    //  */
+    // loadSubnets(event) {
+    //     const params = this.queryParams
+    //     this.loading = true
+    //
+    //     lastValueFrom(
+    //         this.dhcpApi
+    //             .getSubnets(
+    //                 event.first,
+    //                 event.rows,
+    //                 Number(params.appId) || null,
+    //                 Number(params.subnetId) || null,
+    //                 Number(params.dhcpVersion) || null,
+    //                 params.text
+    //             )
+    //             // Custom parsing for statistics
+    //             .pipe(
+    //                 map((subnets) => {
+    //                     if (subnets.items) {
+    //                         parseSubnetsStatisticValues(subnets.items)
+    //                     }
+    //                     return subnets
+    //                 })
+    //             )
+    //     )
+    //         .then((data) => {
+    //             this.subnets = data.items ? extractUniqueSubnetPools(data.items) : null
+    //             this.totalSubnets = data.total ?? 0
+    //         })
+    //         .catch((error) => {
+    //             this.messageService.add({
+    //                 severity: 'error',
+    //                 summary: 'Cannot load subnets',
+    //                 detail: getErrorMessage(error),
+    //             })
+    //         })
+    //         .finally(() => {
+    //             this.loading = false
+    //         })
+    // }
+    //
+    // /**
+    //  * Filters list of subnets by DHCP versions. Filtering is realized server-side.
+    //  */
+    // filterByDhcpVersion() {
+    //     this.router.navigate(['/dhcp/subnets'], {
+    //         queryParams: { dhcpVersion: this.queryParams.dhcpVersion },
+    //         queryParamsHandling: 'merge',
+    //     })
+    // }
 
-    /**
-     * Get assigned number of addresses in a subnet.
-     */
-    getAssignedAddresses(subnet: Subnet) {
-        return getAssignedAddresses(subnet)
-    }
+    // /**
+    //  * Filters list of subnets by text. The text may contain key=val
+    //  * pairs allowing filtering by various keys. Filtering is realized
+    //  * server-side.
+    //  */
+    // keyupFilterText(event) {
+    //     if (this.filterText.length >= 2 || event.key === 'Enter') {
+    //         const queryParams = extractKeyValsAndPrepareQueryParams<QueryParamsFilter>(
+    //             this.filterText,
+    //             ['appId', 'subnetId'],
+    //             null
+    //         )
+    //         this.router.navigate(['/dhcp/subnets'], {
+    //             queryParams,
+    //             queryParamsHandling: 'merge',
+    //         })
+    //     }
+    // }
+    //
+    // /**
+    //  * Prepare count for presenting in tooltip by adding ',' separator to big numbers, eg. 1,243,342.
+    //  */
+    // tooltipCount(count) {
+    //     if (count === '?') {
+    //         return 'No data collected yet'
+    //     }
+    //     return count.toLocaleString('en-US')
+    // }
 
-    /**
-     * Get total number of delegated prefixes in a subnet.
-     */
-    getTotalDelegatedPrefixes(subnet: Subnet) {
-        return subnet.stats?.['total-pds']
-    }
+    // /**
+    //  * Builds a tooltip explaining what the link is for.
+    //  * @param subnet an identifier of the subnet
+    //  * @param machine an identifier of the machine the subnet is configured on
+    //  */
+    // getGrafanaTooltip(subnet: number, machine: string) {
+    //     return getGrafanaSubnetTooltip(subnet, machine)
+    // }
+    //
+    // /**
+    //  * Get total number of addresses in a subnet.
+    //  */
+    // getTotalAddresses(subnet: Subnet) {
+    //     return getTotalAddresses(subnet)
+    // }
+    //
+    // /**
+    //  * Get assigned number of addresses in a subnet.
+    //  */
+    // getAssignedAddresses(subnet: Subnet) {
+    //     return getAssignedAddresses(subnet)
+    // }
+    //
+    // /**
+    //  * Get total number of delegated prefixes in a subnet.
+    //  */
+    // getTotalDelegatedPrefixes(subnet: Subnet) {
+    //     return subnet.stats?.['total-pds']
+    // }
+    //
+    // /**
+    //  * Get assigned number of delegated prefixes in a subnet.
+    //  */
+    // getAssignedDelegatedPrefixes(subnet: Subnet) {
+    //     return subnet.stats?.['assigned-pds']
+    // }
 
-    /**
-     * Get assigned number of delegated prefixes in a subnet.
-     */
-    getAssignedDelegatedPrefixes(subnet: Subnet) {
-        return subnet.stats?.['assigned-pds']
-    }
-
-    /**
-     * Build URL to Grafana dashboard
-     */
-    getGrafanaUrl(name, subnet, instance) {
-        return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
-    }
+    // /**
+    //  * Build URL to Grafana dashboard
+    //  */
+    // getGrafanaUrl(name, subnet, instance) {
+    //     return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
+    // }
 
     /**
      * Opens an existing or new subnet tab for creating a subnet.
@@ -536,32 +590,32 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         this.activeTabIndex = index
     }
 
-    /**
-     * Returns true if the subnet list presents at least one IPv6 subnet.
-     */
-    get isAnyIPv6SubnetVisible(): boolean {
-        return !!this.subnets?.some((s) => s.subnet.includes(':'))
-    }
+    // /**
+    //  * Returns true if the subnet list presents at least one IPv6 subnet.
+    //  */
+    // get isAnyIPv6SubnetVisible(): boolean {
+    //     return !!this.subnets?.some((s) => s.subnet.includes(':'))
+    // }
 
-    /**
-     * Checks if the local subnets in a given subnet have different local
-     * subnet IDs.
-     *
-     * All local subnet IDs should be the same for a given subnet. Otherwise,
-     * it indicates a misconfiguration issue.
-     *
-     * @param subnet Subnet with local subnets
-     * @returns True if the referenced local subnets have different IDs.
-     */
-    hasAssignedMultipleKeaSubnetIds(subnet: Subnet): boolean {
-        const localSubnets = subnet.localSubnets
-        if (!localSubnets || localSubnets.length <= 1) {
-            return false
-        }
-
-        const firstId = localSubnets[0].id
-        return localSubnets.slice(1).some((ls) => ls.id !== firstId)
-    }
+    // /**
+    //  * Checks if the local subnets in a given subnet have different local
+    //  * subnet IDs.
+    //  *
+    //  * All local subnet IDs should be the same for a given subnet. Otherwise,
+    //  * it indicates a misconfiguration issue.
+    //  *
+    //  * @param subnet Subnet with local subnets
+    //  * @returns True if the referenced local subnets have different IDs.
+    //  */
+    // hasAssignedMultipleKeaSubnetIds(subnet: Subnet): boolean {
+    //     const localSubnets = subnet.localSubnets
+    //     if (!localSubnets || localSubnets.length <= 1) {
+    //         return false
+    //     }
+    //
+    //     const firstId = localSubnets[0].id
+    //     return localSubnets.slice(1).some((ls) => ls.id !== firstId)
+    // }
 
     /**
      * Event handler triggered when a user starts editing a subnet.
@@ -607,9 +661,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
                 .toPromise()
                 .then((subnet) => {
                     this.openedTabs[index].tabSubject = subnet
-                    const existingIndex = this.subnets.findIndex((s) => s.id === subnet.id)
+                    const existingIndex = this.table?.dataCollection.findIndex((s) => s.id === subnet.id)
                     if (existingIndex >= 0) {
-                        this.subnets[existingIndex] = subnet
+                        this.table.dataCollection[existingIndex] = subnet
                     }
                 })
                 .catch((error) => {

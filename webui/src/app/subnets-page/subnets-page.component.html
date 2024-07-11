@@ -14,7 +14,13 @@
 
 <p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
+        <a
+            role="menuitem"
+            pRipple
+            [routerLink]="item.routerLink"
+            [queryParams]="i === 0 ? subnetsTableComponent?.validFilter : null"
+            class="p-ripple p-element p-menuitem-link"
+        >
             <div class="flex justify-content-space-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
@@ -26,221 +32,9 @@
     </ng-template>
 </p-tabMenu>
 
-<!-- Subnet list tab -->
-<div *ngIf="activeTabIndex === 0; else openedTabBlock">
-    <div style="margin: 0 0 10px 5px; display: flex; justify-content: space-between">
-        <div style="display: flex; align-items: center">
-            <div>
-                <i class="fa fa-search mr-1"></i>
-                Filter subnets:
-                <input
-                    type="text"
-                    id="filter-subnets-text-field"
-                    pInputText
-                    [(ngModel)]="filterText"
-                    placeholder="subnet or any other field"
-                    (keyup)="keyupFilterText($event)"
-                    #searchInput
-                />
-                <app-help-tip title="filtering" id="filtering-help-button" [target]="searchInput">
-                    <p>
-                        Subnets in the table below can be filtered by entering a text in the search box; the table shows
-                        all subnets matching the filter text. Currently supported fields for such filtering are:
-                    </p>
-                    <ul>
-                        <li>Subnet Prefix</li>
-                        <li>Lower and Upper Bound of Pools</li>
-                        <li>Shared Network Name</li>
-                    </ul>
-                    <p>
-                        The table can present subnets that meet certain criteria, e.g. <b>192.0</b> will show all
-                        subnets that contain 192.0 octets. It can also filter by shared network name and/or pools.
-                    </p>
-                    <p>
-                        In addition, subnets can be filtered by an explicitly selected field using the expression:
-                        <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported fields for
-                        explicit filtering are:
-                    </p>
-                    <ul>
-                        <li class="monospace">appId</li>
-                        <li>
-                            <span class="monospace">subnetId</span> - the subnet ID assigned in the Kea DHCP daemon
-                            configuration
-                        </li>
-                    </ul>
-                </app-help-tip>
-            </div>
-            <div style="margin: 0 10px 0 40px; padding-top: 5px">Protocol:</div>
-            <div>
-                <p-dropdown
-                    [options]="[
-                        { label: 'any', value: null, id: 'any-menu' },
-                        { label: 'DHCPv4', value: '4', id: 'dhcpv4-menu' },
-                        { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' }
-                    ]"
-                    id="protocol-dropdown-menu"
-                    [(ngModel)]="queryParams.dhcpVersion"
-                    [style]="{ width: '10em' }"
-                    (onChange)="filterByDhcpVersion()"
-                ></p-dropdown>
-            </div>
-        </div>
-        <div>
-            <a
-                label="New Subnet"
-                icon="pi pi-plus"
-                class="p-button-primary no-underline"
-                style="display: block"
-                type="button"
-                routerLink="/dhcp/subnets/new"
-                pButton
-            ></a>
-        </div>
-    </div>
-
-    <!-- Subnet list -->
-    <div>
-        <p-table
-            #subnetsTable
-            [value]="subnets"
-            [paginator]="true"
-            [rows]="10"
-            [lazy]="true"
-            [loading]="loading"
-            (onLazyLoad)="loadSubnets($event)"
-            [totalRecords]="totalSubnets"
-            [rowsPerPageOptions]="[10, 30, 100]"
-            [showCurrentPageReport]="true"
-            currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            stateStorage="session"
-            stateKey="subnets-table-session"
-            styleClass="p-datatable-striped"
-        >
-            <ng-template pTemplate="header">
-                <tr>
-                    <th rowspan="2" style="width: 11rem">Subnet</th>
-                    <th colspan="3" style="width: 16rem">Addresses</th>
-                    <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
-                    <th rowspan="2">Pools</th>
-                    <th rowspan="2" style="width: 6rem">Shared Network</th>
-                    <th colspan="2">Application</th>
-                    <th rowspan="2" style="width: 3rem" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
-                        <i class="pi pi-chart-line text-2xl"></i>
-                    </th>
-                </tr>
-                <tr>
-                    <th>Total</th>
-                    <th style="padding: 0.571rem 0.5rem">Assigned</th>
-                    <th>Used %</th>
-                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                        <th>Total</th>
-                        <th style="padding: 0.571rem 0.5rem">Assigned</th>
-                        <th>Used %</th>
-                    </ng-container>
-                    <th>Name</th>
-                    <th>Kea Subnet ID</th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-sn>
-                <tr>
-                    <td>
-                        <app-subnet-bar [subnet]="sn"></app-subnet-bar>
-                    </td>
-                    <td>
-                        <app-human-count [value]="getTotalAddresses(sn)"></app-human-count>
-                    </td>
-                    <td>
-                        <app-human-count [value]="getAssignedAddresses(sn)"></app-human-count>
-                    </td>
-                    <td>
-                        {{ sn.addrUtilization ? sn.addrUtilization : '0' }} %
-                        <i
-                            *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
-                            class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                        ></i>
-                        <i
-                            *ngIf="sn.addrUtilization > 90"
-                            class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                        ></i>
-                    </td>
-                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                        <td>
-                            <app-human-count [value]="getTotalDelegatedPrefixes(sn)"></app-human-count>
-                        </td>
-                        <td>
-                            <app-human-count [value]="getAssignedDelegatedPrefixes(sn)"></app-human-count>
-                        </td>
-                        <td *ngIf="sn.subnet.includes(':')">
-                            {{ sn.pdUtilization ? sn.pdUtilization : '0' }} %
-                            <i
-                                *ngIf="sn.pdUtilization > 80 && sn.pdUtilization <= 90"
-                                class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                            ></i>
-                            <i
-                                *ngIf="sn.pdUtilization > 90"
-                                class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                            ></i>
-                        </td>
-                        <td *ngIf="sn.subnet.includes('.')">-</td>
-                    </ng-container>
-                    <td>
-                        <app-address-pool-bar *ngFor="let p of sn.pools" [pool]="p"></app-address-pool-bar>
-                        <app-delegated-prefix-bar
-                            [prefix]="p"
-                            *ngFor="let p of sn.prefixDelegationPools"
-                        ></app-delegated-prefix-bar>
-                    </td>
-                    <td>
-                        {{ sn.sharedNetwork }}
-                    </td>
-                    <td>
-                        <div *ngFor="let lsn of sn.localSubnets">
-                            <a routerLink="/apps/kea/{{ lsn.appId }}" class="block">{{ lsn.appName }}</a>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="grid" *ngIf="hasAssignedMultipleKeaSubnetIds(sn); else elseSingleKeaSubnetId">
-                            <div class="col-fixed flex flex-column">
-                                <span *ngFor="let lsn of sn.localSubnets">
-                                    {{ lsn.id }}
-                                </span>
-                            </div>
-                            <div class="col-fixed flex align-items-center">
-                                <p-message severity="error" text="Inconsistent IDs"></p-message>
-                            </div>
-                        </div>
-                        <ng-template #elseSingleKeaSubnetId>
-                            <span>{{ sn.localSubnets?.[0].id }}</span>
-                        </ng-template>
-                    </td>
-                    <td *ngIf="grafanaUrl">
-                        <a
-                            [href]="getGrafanaUrl('dhcp4', sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
-                            [title]="getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
-                            target="blank"
-                            *ngIf="sn.localSubnets?.[0]"
-                        >
-                            <i class="pi pi-chart-line text-2xl"></i>
-                        </a>
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="emptymessage">
-                <tr>
-                    <td colspan="9">No subnets found.</td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="paginatorright" let-state>
-                Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
-                {{ state.totalRecords === 1 ? 'subnet' : 'subnets' }}
-            </ng-template>
-        </p-table>
-    </div>
-</div>
-
-<!-- Subnet tab template -->
-<ng-template #openedTabBlock>
-    <div [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component">
+<div>
+    <!-- Subnet tab template -->
+    <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component">
         <app-subnet-tab
             *ngSwitchCase="SubnetTabType.Display"
             [subnet]="openedTabs[activeTabIndex].tabSubject"
@@ -263,4 +57,12 @@
             (formCancel)="onSubnetFormCancel(openedTabs[activeTabIndex].tabSubject.id)"
         ></app-subnet-form>
     </div>
-</ng-template>
+
+    <!-- Subnet list tab -->
+    <app-subnets-table
+        #subnetsTableComponent
+        [hidden]="activeTabIndex !== 0"
+        [grafanaUrl]="grafanaUrl"
+        [dataLoading]="loading"
+    ></app-subnets-table>
+</div>

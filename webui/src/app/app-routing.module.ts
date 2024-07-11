@@ -188,7 +188,7 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
      *
      * @private
      */
-    private specificComponents: any[] = [HostsPageComponent]
+    private specificComponents: any[] = [HostsPageComponent, SubnetsPageComponent]
 
     /**
      * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.

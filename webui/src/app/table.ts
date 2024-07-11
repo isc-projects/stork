@@ -199,6 +199,14 @@ export abstract class PrefilteredTable<
     abstract queryParamBooleanKeys: (keyof FilterInterface)[]
 
     /**
+     * Array of FilterValidators that will be used for validation of filters, which values are limited
+     * only to known values, e.g. dhcpVersion=4|6.
+     * A single FilterValidator contains filter key name and an array of allowed values for the filter.
+     * E.g., {filterKey: 'dhcpVersion', allowedValues: [4, 6]}
+     */
+    abstract filterValidators: { filterKey: string; allowedValues: string[] | number[] }[]
+
+    /**
      * Constructor of PrefilteredTable class. It requires ActivatedRoute and Location service to be passed by derived
      * class.
      * @param _route ActivatedRoute used to get params from provided URL.
@@ -529,7 +537,7 @@ export abstract class PrefilteredTable<
 
         for (let key of this.filterNumericKeys) {
             if (filter.hasOwnProperty(key) && filter[key] == null) {
-                errors.push(`Please specify ${String(key)} as a number (e.g., ${String(key)}=2).`)
+                errors.push(`Please specify ${String(key)} as a number (e.g., ${String(key)}=4).`)
             }
         }
 
@@ -538,6 +546,15 @@ export abstract class PrefilteredTable<
                 errors.push(
                     `Please specify ${String(key)} as a boolean (e.g., ${String(key)}=true or ${String(key)}=false).`
                 )
+            }
+        }
+
+        for (let validator of this.filterValidators) {
+            if (
+                filter.hasOwnProperty(validator.filterKey) &&
+                !(validator.allowedValues as any[]).includes(filter[validator.filterKey])
+            ) {
+                errors.push(`Filter ${validator.filterKey} allows only values: ${validator.allowedValues.join(', ')}.`)
             }
         }
 

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { PrefilteredTable } from '../table'
 import { DHCPService, Subnet } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
@@ -6,8 +6,14 @@ import { ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { Location } from '@angular/common'
 import { lastValueFrom } from 'rxjs'
-import { getErrorMessage } from '../utils'
-import { extractUniqueSubnetPools, parseSubnetsStatisticValues, SubnetWithUniquePools } from '../subnets'
+import { getErrorMessage, getGrafanaSubnetTooltip, getGrafanaUrl } from '../utils'
+import {
+    getTotalAddresses,
+    getAssignedAddresses,
+    parseSubnetsStatisticValues,
+    SubnetWithUniquePools,
+    extractUniqueSubnetPools,
+} from '../subnets'
 import { map } from 'rxjs/operators'
 
 /**
@@ -18,7 +24,7 @@ export interface SubnetsFilter {
     text?: string
     appId?: number
     subnetId?: number
-    dhcpVersion?: number
+    dhcpVersion?: 4 | 6
 }
 
 @Component({
@@ -26,13 +32,16 @@ export interface SubnetsFilter {
     templateUrl: './subnets-table.component.html',
     styleUrl: './subnets-table.component.sass',
 })
-export class SubnetsTableComponent extends PrefilteredTable<SubnetsFilter, Subnet> implements OnInit, OnDestroy {
+export class SubnetsTableComponent
+    extends PrefilteredTable<SubnetsFilter, SubnetWithUniquePools>
+    implements OnInit, OnDestroy
+{
     /**
      * Array of all numeric keys that are supported when filtering subnets via URL queryParams.
      * Note that it doesn't have to contain subnets prefilterKey, which is 'appId'.
      * prefilterKey by default is considered as a primary queryParam filter key.
      */
-    queryParamNumericKeys: (keyof SubnetsFilter)[] = []
+    queryParamNumericKeys: (keyof SubnetsFilter)[] = ['dhcpVersion']
 
     /**
      * Array of all boolean keys that are supported when filtering subnets via URL queryParams.
@@ -61,11 +70,25 @@ export class SubnetsTableComponent extends PrefilteredTable<SubnetsFilter, Subne
     prefilterKey: keyof SubnetsFilter = 'appId'
 
     /**
+     * Array of FilterValidators that will be used for validation of filters, which values are limited
+     * only to known values, e.g. dhcpVersion=4|6.
+     */
+    filterValidators = [{ filterKey: 'dhcpVersion', allowedValues: [4, 6] }]
+
+    /**
      * PrimeNG table instance.
      */
     @ViewChild('subnetsTable') table: Table
 
-    subnets: SubnetWithUniquePools[] = []
+    /**
+     * URL to grafana.
+     */
+    @Input() grafanaUrl: string
+
+    /**
+     * Indicates if the data is being fetched from the server.
+     */
+    @Input() dataLoading: boolean = false
 
     constructor(
         private route: ActivatedRoute,
@@ -110,7 +133,7 @@ export class SubnetsTableComponent extends PrefilteredTable<SubnetsFilter, Subne
                 )
         )
             .then((data) => {
-                this.subnets = data.items ? extractUniqueSubnetPools(data.items) : []
+                this.dataCollection = data.items ? extractUniqueSubnetPools(data.items) : []
                 this.totalRecords = data.total ?? 0
             })
             .catch((error) => {
@@ -137,5 +160,76 @@ export class SubnetsTableComponent extends PrefilteredTable<SubnetsFilter, Subne
      */
     ngOnInit(): void {
         super.onInit()
+    }
+
+    /**
+     * Returns true if the subnet list presents at least one IPv6 subnet.
+     */
+    get isAnyIPv6SubnetVisible(): boolean {
+        return !!this.dataCollection?.some((s) => s.subnet.includes(':'))
+    }
+
+    /**
+     * Checks if the local subnets in a given subnet have different local
+     * subnet IDs.
+     *
+     * All local subnet IDs should be the same for a given subnet. Otherwise,
+     * it indicates a misconfiguration issue.
+     *
+     * @param subnet Subnet with local subnets
+     * @returns True if the referenced local subnets have different IDs.
+     */
+    hasAssignedMultipleKeaSubnetIds(subnet: Subnet): boolean {
+        const localSubnets = subnet.localSubnets
+        if (!localSubnets || localSubnets.length <= 1) {
+            return false
+        }
+
+        const firstId = localSubnets[0].id
+        return localSubnets.slice(1).some((ls) => ls.id !== firstId)
+    }
+
+    /**
+     * Get total number of addresses in a subnet.
+     */
+    getTotalAddresses(subnet: Subnet) {
+        return getTotalAddresses(subnet)
+    }
+
+    /**
+     * Get assigned number of addresses in a subnet.
+     */
+    getAssignedAddresses(subnet: Subnet) {
+        return getAssignedAddresses(subnet)
+    }
+
+    /**
+     * Get total number of delegated prefixes in a subnet.
+     */
+    getTotalDelegatedPrefixes(subnet: Subnet) {
+        return subnet.stats?.['total-pds']
+    }
+
+    /**
+     * Get assigned number of delegated prefixes in a subnet.
+     */
+    getAssignedDelegatedPrefixes(subnet: Subnet) {
+        return subnet.stats?.['assigned-pds']
+    }
+
+    /**
+     * Build URL to Grafana dashboard
+     */
+    getGrafanaUrl(name, subnet, instance) {
+        return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
+    }
+
+    /**
+     * Builds a tooltip explaining what the link is for.
+     * @param subnet an identifier of the subnet
+     * @param machine an identifier of the machine the subnet is configured on
+     */
+    getGrafanaTooltip(subnet: number, machine: string) {
+        return getGrafanaSubnetTooltip(subnet, machine)
     }
 }

@@ -70,6 +70,12 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
     prefilterKey: keyof HostsFilter = 'appId'
 
     /**
+     * Array of FilterValidators that will be used for validation of filters, which values are limited
+     * only to known values.
+     */
+    filterValidators = []
+
+    /**
      * PrimeNG table instance.
      */
     @ViewChild('hostsTable') table: Table
