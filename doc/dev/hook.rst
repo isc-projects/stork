@@ -18,8 +18,8 @@ How to use the hooks?
 
 The hooks are distributed as binary files with the ``.so`` extension. These
 files must be placed in the hook directory. The default location is
-``/var/lib/stork-agent/hooks`` for Stork agent and
-``/var/lib/stork-server/hooks`` for Stork server. You can change it using
+``/usr/lib/stork-agent/hooks`` for Stork agent and
+``/usr/lib/stork-server/hooks`` for Stork server. You can change it using
 the ``--hook-directory`` CLI option or setting the
 ``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_SERVER_HOOK_DIRECTORY`` environment
 variable.
@@ -298,7 +298,7 @@ the ``hook-inspect`` command of the Stork tool.
 
 .. code-block:: shell
 
-    $ stork-tool hook-inspect -p /var/lib/stork-server/hooks
+    $ stork-tool hook-inspect -p /usr/lib/stork-server/hooks
 
 The ``-p`` or ``--path`` flag indicates the path to the hook directory or
 single hook file.
@@ -379,6 +379,6 @@ Steps to implement hook
 
     .. code-block:: console
 
-        $ cp foo-hook.so /var/lib/stork-server/hooks
+        $ cp foo-hook.so /usr/lib/stork-server/hooks
 
 10. Run the Stork. Enjoy!

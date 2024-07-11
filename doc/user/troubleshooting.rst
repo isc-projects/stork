@@ -230,7 +230,7 @@ This section describes the solutions for some common issues with the Stork agent
 
 :Issue:       Stork agent starts but the hooks aren't loaded. The logs comprise
               the following message:
-              ``Cannot find plugin paths in: /var/lib/stork-agent/hooks: cannot list hook directory: /var/lib/stork-agent/hooks: open /var/lib/stork-agent/hooks: no such file or directory``
+              ``Cannot find plugin paths in: /usr/lib/stork-agent/hooks: cannot list hook directory: /usr/lib/stork-agent/hooks: open /usr/lib/stork-agent/hooks: no such file or directory``
 :Solution:    Create the hook directory or change the path in the configuration.
 :Explanation: Hook directory doesn't exist.
 
@@ -343,7 +343,7 @@ This section describes the solutions for some common issues with the Stork serve
 
 :Issue:       Stork server starts but the hooks aren't loaded. The logs comprise
               the following message:
-              ``Cannot find plugin paths in: /var/lib/stork-server/hooks: cannot list hook directory: /var/lib/stork-server/hooks: open /var/lib/stork-server/hooks: no such file or directory``
+              ``Cannot find plugin paths in: /usr/lib/stork-server/hooks: cannot list hook directory: /usr/lib/stork-server/hooks: open /usr/lib/stork-server/hooks: no such file or directory``
 :Solution:    Create the hook directory or change the path in the configuration.
 :Explanation: Hook directory doesn't exist.
 

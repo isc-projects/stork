@@ -40,7 +40,7 @@ type EnvironmentFileSettings struct {
 // settings but before the main settings.
 // It allows us to merge the hook flags with the core flags into a single output.
 type HookDirectorySettings struct {
-	HookDirectory string `long:"hook-directory" description:"The path to the hook directory" env:"STORK_SERVER_HOOK_DIRECTORY" default:"/var/lib/stork-server/hooks"`
+	HookDirectory string `long:"hook-directory" description:"The path to the hook directory" env:"STORK_SERVER_HOOK_DIRECTORY" default:"/usr/lib/stork-server/hooks"`
 }
 
 // General server settings.
