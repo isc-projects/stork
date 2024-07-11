@@ -1,5 +1,5 @@
 from core.compose import DockerCompose
-from core.wrappers.supervisor import SupervisorServiceWrapper
+from core.supervisor import SupervisorService
 
 
 class ComposeServiceWrapper:
@@ -52,13 +52,13 @@ class ComposeServiceWrapper:
             self._service_name, subnet_name, family=family
         )
 
-    def _get_supervisor_service(self, name: str) -> SupervisorServiceWrapper:
+    def _get_supervisor_service(self, name: str) -> SupervisorService:
         """
         Returns a wrapper for a specific supervisor service. Accepts the
         name of the supervisor service as an argument.
         It is applicable only for containers managed by the supervisor.
         """
-        return SupervisorServiceWrapper(
+        return SupervisorService(
             lambda cmd: self._compose.exec(self._service_name, cmd, check=False),
             name,
         )

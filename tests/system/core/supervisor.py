@@ -3,7 +3,7 @@ from typing import Callable, Tuple, Sequence
 from core.utils import NoSuccessException, wait_for_success
 
 
-class SupervisorServiceWrapper:
+class SupervisorService:
     """A wrapper for the supervisor service."""
 
     def __init__(
