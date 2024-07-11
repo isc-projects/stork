@@ -101,6 +101,12 @@ Arguments
    Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, ``all`` - both migrations and runtime, or ``none`` - disable the query logging.
    ``[$STORK_DATABASE_TRACE]``
 
+``--db-read-timeout``
+   Timeout for socket reads. If reached, commands will fail instead of blocking, zero disables the timeout. The default is 0. ``[$STORK_DATABASE_READ_TIMEOUT]``
+
+``--db-write-timeout``
+   Timeout for socket writes. If reached, commands will fail instead of blocking, zero disables the timeout. The default is 0. ``[$STORK_DATABASE_WRITE_TIMEOUT]``
+
 ``--rest-cleanup-timeout``
    Specifies the period to wait, in seconds, before killing idle connections. The default is 10.
 
