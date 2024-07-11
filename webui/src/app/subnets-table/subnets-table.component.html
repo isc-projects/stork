@@ -124,17 +124,6 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
-                    <!--                    <p-dropdown
-                    [options]="[
-                        { label: 'any', value: null, id: 'any-menu' },
-                        { label: 'DHCPv4', value: '4', id: 'dhcpv4-menu' },
-                        { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' }
-                    ]"
-                    id="protocol-dropdown-menu"
-                    [(ngModel)]="queryParams.dhcpVersion"
-                    [style]="{ width: '10em' }"
-                    (onChange)="filterByDhcpVersion()"
-                ></p-dropdown>-->
                     <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                         <span class="p-float-label">
                             <p-dropdown
@@ -149,39 +138,10 @@
                                 [ngModel]="value"
                                 styleClass="w-10rem"
                             ></p-dropdown>
-                            <!--                            <p-inputNumber-->
-                            <!--                                    inputId="subnet-id"-->
-                            <!--                                    mode="decimal"-->
-                            <!--                                    [useGrouping]="false"-->
-                            <!--                                    (onInput)="filter($event.value)"-->
-                            <!--                                    [ngModel]="value"-->
-                            <!--                            ></p-inputNumber>-->
                             <label for="dhcp-version">Dhcp version</label>
                         </span>
                     </ng-template>
                 </p-columnFilter>
-                <!--                <p-columnFilter field="keaSubnetId" matchMode="equals" [showMenu]="false">-->
-                <!--                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">-->
-                <!--                        <span class="p-float-label">-->
-                <!--                            <p-inputNumber-->
-                <!--                                inputId="kea-subnet-id"-->
-                <!--                                mode="decimal"-->
-                <!--                                [useGrouping]="false"-->
-                <!--                                (onInput)="filter($event.value)"-->
-                <!--                                [ngModel]="value"-->
-                <!--                            ></p-inputNumber>-->
-                <!--                            <label for="kea-subnet-id">Kea Subnet Id</label>-->
-                <!--                        </span>-->
-                <!--                    </ng-template>-->
-                <!--                </p-columnFilter>-->
-                <!--                <div class="flex align-items-center gap-1">-->
-                <!--                    Global-->
-                <!--                    <p-columnFilter type="boolean" field="isGlobal" matchMode="equals"></p-columnFilter>-->
-                <!--                </div>-->
-                <!--                <div class="flex align-items-center gap-1">-->
-                <!--                    Conflict-->
-                <!--                    <p-columnFilter type="boolean" field="conflict" matchMode="equals"></p-columnFilter>-->
-                <!--                </div>-->
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                         <span class="p-input-icon-left">
