@@ -23,8 +23,8 @@ services:
       STORK_DATABASE_NAME: stork
       STORK_SERVER_ENABLE_METRICS: 1
       STORK_SERVER_INITIAL_PULLER_INTERVAL: 1
-      STORK_DATABASE_READ_TIMEOUT: 1s
-      STORK_DATABASE_WRITE_TIMEOUT: 1s
+      STORK_DATABASE_READ_TIMEOUT: 2s
+      STORK_DATABASE_WRITE_TIMEOUT: 2s
     volumes:
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - $PWD/tests/system/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf
