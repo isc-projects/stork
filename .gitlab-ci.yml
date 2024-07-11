@@ -529,7 +529,7 @@ install_apks_amd64:
   variables:
     ARCH: x86_64
   script:
-    - "apk add --no-cache isc-stork-*${ARCH}.apk"
+    - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
     - "stork-agent --version"
     - "stork-server --version"
     - "stork-tool --version"
