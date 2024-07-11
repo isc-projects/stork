@@ -132,7 +132,7 @@ file agent_dist_dir => [agent_dist_bin_file, agent_dist_man_file, agent_dist_sys
 agent_hooks = FileList["etc/hooks/**/isc-stork-agent.post*", "etc/hooks/**/isc-stork-agent.pre*"]
 
 AGENT_PACKAGE_STUB_FILE = File.join(pkgs_dir, "agent-built.pkg")
-file AGENT_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + agent_hooks do
+file AGENT_PACKAGE_STUB_FILE => [NFPM, MAKE, GCC, agent_dist_dir, pkgs_dir] + agent_hooks do
     ENV["PKG_NAME"] = "agent"
     Rake::Task["clean:pkgs"].invoke()
 
@@ -262,7 +262,7 @@ file server_dist_dir => server_dist_dir_tool_part + server_dist_dir_man_part + s
 server_hooks = FileList["etc/hooks/**/isc-stork-server.post*", "etc/hooks/**/isc-stork-server.pre*"]
 
 SERVER_PACKAGE_STUB_FILE = File.join(pkgs_dir, "server-built.pkg")
-file SERVER_PACKAGE_STUB_FILE => [FPM, MAKE, GCC, server_dist_dir, pkgs_dir] + server_hooks do
+file SERVER_PACKAGE_STUB_FILE => [NFPM, MAKE, GCC, server_dist_dir, pkgs_dir] + server_hooks do
     ENV["PKG_NAME"] = "server"
     Rake::Task["clean:pkgs"].invoke()
 

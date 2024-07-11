@@ -166,7 +166,7 @@ namespace :hook do
     desc "Build all hooks and create packages. Remap hooks to use the current codebase.
         DEBUG - build hooks in debug mode, the envvar is passed through to the hook Rakefile - default: false
         HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
-    task :build_pkg => [GO, FPM, pkg_directory] do
+    task :build_pkg => [GO, NFPM, pkg_directory] do
         # Suppress (re)building the hook binaries if the SUPPRESS_PREREQUISITES
         # environment variable is set to true.
         if ENV["SUPPRESS_PREREQUISITES"] != "true"

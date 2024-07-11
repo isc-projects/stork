@@ -547,6 +547,7 @@ mockgen_ver='v0.4.0'
 golangcilint_ver='1.59.0'
 dlv_ver='v1.22.1'
 gdlv_ver='v1.12.0'
+nfpm_ver='v2.38.0'
 openapi_generator_ver='7.6.0'
 node_ver='20.14.0'
 npm_ver='10.8.2'
@@ -779,17 +780,6 @@ end
 add_version_guard(BUNDLE, bundler_ver)
 add_hash_guard(BUNDLE, RUBY)
 
-fpm_gemfile = File.expand_path("init_deps/fpm/Gemfile", __dir__)
-FPM = File.join(ruby_tools_bin_bundle_dir, "fpm")
-file FPM => [BUNDLE, ruby_tools_dir, ruby_tools_bin_bundle_dir] do
-    sh BUNDLE, "install",
-        "--gemfile", fpm_gemfile,
-        "--path", ruby_tools_dir,
-        "--binstubs", ruby_tools_bin_bundle_dir
-    sh FPM, "--version"
-end
-add_hash_guard(FPM, fpm_gemfile)
-
 danger_gemfile = File.expand_path("init_deps/danger/Gemfile", __dir__)
 DANGER = File.join(ruby_tools_bin_bundle_dir, "danger")
 file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, BUNDLE] do
@@ -1021,6 +1011,13 @@ file GDLV => [GO] do
     end
 end
 add_version_guard(GDLV, gdlv_ver)
+
+NFPM = File.join(gobin, "nfpm")
+file NFPM => [GO] do
+    sh GO, "install", "github.com/goreleaser/nfpm/v2/cmd/nfpm@#{nfpm_ver}"
+    sh NFPM, "--version"
+end
+add_version_guard(NFPM, nfpm_ver)
 
 GOVULNCHECK = File.join(gobin, "govulncheck")
 file GOVULNCHECK => [GO] do
