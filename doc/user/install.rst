@@ -7,10 +7,10 @@ Installation
 Stork can be installed from pre-built packages or from sources; the following sections describe both methods. Unless there is a
 good reason to compile from sources, installing from native deb or RPM packages is easier and faster.
 
-.. _supported_systems:
+.. _compatible_systems:
 
-Supported Systems
-=================
+Compatible Systems
+==================
 
 ``stork-server`` and ``stork-agent`` are written in the Go language; the server uses a PostgreSQL database. In
 principle, the software can be run on any POSIX system that has a Go compiler and PostgreSQL. It is likely the software
@@ -22,8 +22,8 @@ We put the main effort into ensuring compatibility with live Ubuntu and RHEL lon
 The table below describes the checks performed on the particular operating
 systems.
 
-.. csv-table:: Tested operating systems
-   :file: tested-systems.csv
+.. csv-table:: Compatibility of the operating systems
+   :file: compatible-systems.csv
    :header-rows: 1
 
 Legend:
