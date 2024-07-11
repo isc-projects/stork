@@ -49,6 +49,7 @@ import { MessagesModule } from 'primeng/messages'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { HostsTableComponent } from '../hosts-table/hosts-table.component'
+import { PanelModule } from 'primeng/panel'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -97,6 +98,7 @@ describe('HostsPageComponent', () => {
                 TagModule,
                 MessagesModule,
                 InputNumberModule,
+                PanelModule,
             ],
             declarations: [
                 EntityLinkComponent,
@@ -1140,7 +1142,7 @@ describe('HostsPageComponent', () => {
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
-        expect(errMsg.nativeElement.innerText).toBe('Please specify appId as a number (e.g., appId=2).')
+        expect(errMsg.nativeElement.innerText).toBe('Please specify appId as a number (e.g., appId=4).')
     }))
 
     it('hosts list should be filtered by subnetId', fakeAsync(() => {
@@ -1174,7 +1176,7 @@ describe('HostsPageComponent', () => {
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
-        expect(errMsg.nativeElement.innerText).toBe('Please specify subnetId as a number (e.g., subnetId=2).')
+        expect(errMsg.nativeElement.innerText).toBe('Please specify subnetId as a number (e.g., subnetId=4).')
     }))
 
     it('hosts list should be filtered by conflicts', fakeAsync(() => {
@@ -1238,7 +1240,7 @@ describe('HostsPageComponent', () => {
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
-        expect(errMsg.nativeElement.innerText).toBe('Please specify keaSubnetId as a number (e.g., keaSubnetId=2).')
+        expect(errMsg.nativeElement.innerText).toBe('Please specify keaSubnetId as a number (e.g., keaSubnetId=4).')
     }))
 
     it('should display multiple error message for each invalid value', fakeAsync(() => {

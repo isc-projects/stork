@@ -12,6 +12,9 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { PanelModule } from 'primeng/panel'
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { TagModule } from 'primeng/tag'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -38,6 +41,9 @@ describe('HostsTableComponent', () => {
                 OverlayPanelModule,
                 InputNumberModule,
                 FormsModule,
+                PanelModule,
+                BrowserAnimationsModule,
+                TagModule,
             ],
             declarations: [HostsTableComponent, HelpTipComponent, PluralizePipe],
         }).compileComponents()

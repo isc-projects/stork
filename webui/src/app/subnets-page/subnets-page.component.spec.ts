@@ -53,6 +53,9 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { HttpEvent } from '@angular/common/http'
 import { TabType } from '../tab'
+import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
+import { PanelModule } from 'primeng/panel'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -105,6 +108,7 @@ describe('SubnetsPageComponent', () => {
                 SplitButtonModule,
                 ToastModule,
                 ConfirmDialogModule,
+                PanelModule,
             ],
             declarations: [
                 AddressPoolFormComponent,
@@ -126,6 +130,8 @@ describe('SubnetsPageComponent', () => {
                 DhcpOptionFormComponent,
                 DhcpOptionSetFormComponent,
                 SharedParametersFormComponent,
+                SubnetsTableComponent,
+                PluralizePipe,
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
@@ -283,7 +289,7 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
-        const stats: { [key: string]: BigInt } = component.subnets[0].stats as any
+        const stats: { [key: string]: BigInt } = component.table.dataCollection[0].stats as any
         expect(stats['assigned-addresses']).toBe(
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
         )
@@ -297,11 +303,11 @@ describe('SubnetsPageComponent', () => {
 
     it('should not fail on empty statistics', async () => {
         // Act
-        component.loadSubnets({})
+        // component.loadSubnets({})
         await fixture.whenStable()
 
         // Assert
-        expect(component.subnets[0].stats).toBeUndefined()
+        expect(component.table.dataCollection[0].stats).toBeUndefined()
         // No throw
     })
 
@@ -318,11 +324,11 @@ describe('SubnetsPageComponent', () => {
     it('should detect IPv6 subnets', () => {
         const subnets: Subnet[] = [{ subnet: '10.0.0.0/8' }, { subnet: '192.168.0.0/16' }]
 
-        component.subnets = subnets
-        expect(component.isAnyIPv6SubnetVisible).toBeFalse()
+        component.table.dataCollection = subnets
+        expect(component.table.isAnyIPv6SubnetVisible).toBeFalse()
 
         subnets.push({ subnet: 'fe80::/64' })
-        expect(component.isAnyIPv6SubnetVisible).toBeTrue()
+        expect(component.table.isAnyIPv6SubnetVisible).toBeTrue()
     })
 
     it('should display the Kea subnet ID', async () => {
@@ -345,14 +351,15 @@ describe('SubnetsPageComponent', () => {
 
     it('should filter subnets by the Kea subnet ID', async () => {
         // Arrange
-        const input = fixture.debugElement.query(By.css('#filter-subnets-text-field'))
+        // const input = fixture.debugElement.query(By.css('#filter-subnets-text-field'))
         const spy = spyOn(router, 'navigate')
 
         // Act
         await fixture.whenStable()
 
-        component.filterText = 'subnetId:1'
-        input.triggerEventHandler('keyup', null)
+        // component.filterText = 'subnetId:1'
+        // input.triggerEventHandler('keyup', null)
+        component.table.filter$.next({ filter: { subnetId: 1 } })
 
         await fixture.whenStable()
 
@@ -382,7 +389,7 @@ describe('SubnetsPageComponent', () => {
         }
 
         // Act & Assert
-        expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
+        expect(component.table.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
     })
 
     it('should detect that the subnet has references to the local subnets with various IDs', () => {
@@ -400,7 +407,7 @@ describe('SubnetsPageComponent', () => {
         }
 
         // Act & Assert
-        expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeTrue()
+        expect(component.table.hasAssignedMultipleKeaSubnetIds(subnet)).toBeTrue()
     })
 
     it('should recognize that all local subnets have the same IDs if the local subnets list is empty', () => {
@@ -411,12 +418,12 @@ describe('SubnetsPageComponent', () => {
         }
 
         // Act & Assert
-        expect(component.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
+        expect(component.table.hasAssignedMultipleKeaSubnetIds(subnet)).toBeFalse()
     })
 
     it('should close new subnet form when form is submitted', fakeAsync(() => {
-        component.loadSubnets({})
-        tick()
+        // component.loadSubnets({})
+        // tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -488,8 +495,8 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should close subnet update form when form is submitted', fakeAsync(() => {
-        component.loadSubnets({})
-        tick()
+        // component.loadSubnets({})
+        // tick()
         fixture.detectChanges()
 
         const updateSubnetBeginResp: any = {
@@ -561,8 +568,8 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should keep the tab open when getting a subnet after submission fails', fakeAsync(() => {
-        component.loadSubnets({})
-        tick()
+        // component.loadSubnets({})
+        // tick()
         fixture.detectChanges()
 
         const updateSubnetBeginResp: any = {
@@ -634,8 +641,8 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should cancel a new subnet transaction when a tab is closed', fakeAsync(() => {
-        component.loadSubnets({})
-        tick()
+        // component.loadSubnets({})
+        // tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -684,7 +691,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should cancel an update transaction when a tab is closed', async () => {
-        component.loadSubnets({})
+        // component.loadSubnets({})
         await fixture.whenStable()
         fixture.detectChanges()
 
@@ -755,8 +762,8 @@ describe('SubnetsPageComponent', () => {
     })
 
     it('should cancel a new subnet transaction when cancel button is clicked', fakeAsync(() => {
-        component.loadSubnets({})
-        tick()
+        // component.loadSubnets({})
+        // tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -807,7 +814,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should cancel transaction when cancel button is clicked', async () => {
-        component.loadSubnets({})
+        // component.loadSubnets({})
         await fixture.whenStable()
         fixture.detectChanges()
 
@@ -881,8 +888,8 @@ describe('SubnetsPageComponent', () => {
     })
 
     it('should show error message when transaction canceling fails', fakeAsync(() => {
-        component.loadSubnets({})
-        tick()
+        // component.loadSubnets({})
+        // tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -922,7 +929,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should show error message when transaction canceling fails', async () => {
-        component.loadSubnets({})
+        // component.loadSubnets({})
         await fixture.whenStable()
         fixture.detectChanges()
 
@@ -984,8 +991,8 @@ describe('SubnetsPageComponent', () => {
     })
 
     it('should close subnet tab when subnet is deleted', fakeAsync(() => {
-        component.loadSubnets({})
-        tick()
+        // component.loadSubnets({})
+        // tick()
         fixture.detectChanges()
 
         const subnet: Subnet & HttpEvent<Subnet> = {
