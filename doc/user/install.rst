@@ -1271,25 +1271,17 @@ The first step is the installation of packages from the repository:
    pkg install gcc
    pkg install gtar
 
-The utility to build the packages requires the GNU tar in PATH. The BSD tar
-isn't compatible. We need to rename the existing executable.
+Stork build system can install all remaining dependencies automatically.
+
+Unfortunately, there is no possibility to build the binary packages for OpenBSD.
+But it is possible to build the contents of the packages (executables, UI, man, and docs).
 
 .. code-block:: console
 
-   mv /usr/bin/tar /usr/bin/bsdtar
-   ln -s /usr/local/bin/gtar /usr/bin/tar
+   rake build:server_dist
+   rake build:agent_dist
 
-Stork build system can install all remaining dependencies automatically.
-
-The binary packages can be built using:
-
-.. code:: console
-
-   rake build:server_pkg
-   rake build:agent_pkg
-
-The output binaries will be located in the ``dist/pkgs/`` directory and can be
-installed using the ``pkg install`` command.
+The output files will be located in the ``dist/`` directory.
 
 Installing on OpenBSD
 ---------------------
