@@ -1154,7 +1154,7 @@ Installing From Sources
 Compilation Prerequisites
 -------------------------
 
-Usually, it is more convenient to install Stork using native packages. See :ref:`supported_systems` and :ref:`install-pkgs` for
+Usually, it is more convenient to install Stork using native packages. See :ref:`compatible_systems` and :ref:`install-pkgs` for
 details regarding supported systems. However, the sources can also be built separately.
 
 The dependencies that need to be installed to build the Stork sources are:
