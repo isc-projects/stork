@@ -654,7 +654,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             raise NoSuccessException("reviews aren't ready yet")
         return reports
 
-    @wait_for_success(wait_msg="waiting for HA peers to be ready...")
+    @wait_for_success(wait_msg="Waiting for HA peers to be ready...")
     def wait_for_ha_ready(self):
         """
         Waits for accomplishing synchronizing the HA pair.
