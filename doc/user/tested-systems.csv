@@ -1,0 +1,24 @@
+System family,System version,Architecture,Unit tests,System tests,Build binaries,Build packages,Installation (without systemD),Installation & run (with systemD)
+Debian,12.1-slim,x64,X,X,X,X,X,
+Debian,12.1-slim,arm64,,,X,X,X,
+Debian,10,x64,,,,,,X
+Debian,11,x64,,,,,,X
+Debian,11,arm64,,,,,,X
+Ubuntu,20.04,x64,,,,,,X
+Ubuntu,22.04,x64,D,D,D,D,,X / D
+Ubuntu,22.04,arm64,,,,,,X
+Ubuntu,24.04,x64,,,,,,X
+Ubuntu,24.04,arm64,,,,,,X
+RHEL,UBI 8.8,x64,,,X,X,X,
+RHEL,UBI 8.8,arm64,,,X,X,X,
+RHEL,8,x64,,,,,,X
+RHEL,9,x64,,,,,,X
+RHEL,9,arm64,,,,,,X
+Fedora,36,x64,,,,,,X
+Fedora,38,x64,,,,,,X
+Fedora,40,x64,,,,,,X
+Alpine,3.18,x64,,,X,X,X,
+Alpine,3.18,arm64,,,X,X,X,
+MacOS,11.3,arm64,D,D,D,D,,D
+FreeBSD,?,x64,U,,U,U,U,
+OpenBSD,?,x64,U,,U,,U,

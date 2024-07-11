@@ -12,20 +12,32 @@ good reason to compile from sources, installing from native deb or RPM packages 
 Supported Systems
 =================
 
-Stork is tested on the following systems:
+``stork-server`` and ``stork-agent`` are written in the Go language; the server uses a PostgreSQL database. In
+principle, the software can be run on any POSIX system that has a Go compiler and PostgreSQL. It is likely the software
+can also be built on other modern systems, but ISC's testing capabilities are modest. We encourage users to try running
+Stork on other OSes not on this list and report their findings to ISC.
 
-- Ubuntu 18.04 and 20.04
-- Fedora 31 and 32
-- CentOS 8
-- MacOS 11.3*
+We put the main effort into ensuring compatibility with live Ubuntu and RHEL long-time-support (LTS) versions.
 
-\* MacOS is not and will not be officially supported. However, many developers on ISC's team use Macs, so the intention is to keep Stork
-buildable on this platform.
+The table below describes the checks performed on the particular operating
+systems.
 
-``stork-server`` and ``stork-agent`` are written in the Go language; the server uses a PostgreSQL database. In principle, the software can be run
-on any POSIX system that has a Go compiler and PostgreSQL. It is likely the software can also be built on other modern systems, but
-ISC's testing capabilities are modest. We encourage users to try running Stork on other OSes not on this list
-and report their findings to ISC.
+.. csv-table:: Tested operating systems
+   :file: tested-systems.csv
+   :header-rows: 1
+
+Legend:
+
+- ``X`` - the check is regularly performed on our CI system
+- ``D`` - the operating system is used to develop Stork, so some checks are performed as a side effect
+- ``U`` - the check is not covered by our CI system, but some users reported successful passes
+
+\* MacOS is not and will not be officially supported. However, many developers on ISC's team use Macs, so the intention
+is to keep Stork buildable on this platform.
+
+\*\* The BSD-like systems are not officially supported, but some users reported successful installations on these
+systems. 
+
 
 Installation Prerequisites
 ==========================
