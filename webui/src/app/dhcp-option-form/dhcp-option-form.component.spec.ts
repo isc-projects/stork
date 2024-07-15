@@ -129,7 +129,7 @@ describe('DhcpOptionFormComponent', () => {
         expect(fixture.debugElement.query(By.css('p-tag'))).toBeFalsy()
 
         // It should contain a help-tip for the binary option field.
-        expect(fixture.debugElement.query(By.css('[title="binary Option Field"]'))).toBeTruthy()
+        expect(fixture.debugElement.query(By.css('[title="Help for binary Option Field"]'))).toBeTruthy()
 
         // Find the last button. It should delete the option field.
         const allBtns = fixture.debugElement.queryAll(By.css('button'))
@@ -190,7 +190,8 @@ describe('DhcpOptionFormComponent', () => {
         expect(textFieldEls.length).toBe(1)
 
         const inputFieldEls = containerEl.queryAll(By.css('input + label'))
-        expect(inputFieldEls.length).toBe(4)
+        // string, ipv4-addr, ipv6-addr, ipv6-prefix, fqdn
+        expect(inputFieldEls.length).toBe(5)
 
         const boolFieldEls = containerEl.queryAll(By.css('p-toggleButton'))
         expect(boolFieldEls.length).toBe(2)
