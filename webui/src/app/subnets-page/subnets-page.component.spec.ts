@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
@@ -7,7 +7,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
+import { ActivatedRoute, Router, convertToParamMap, NavigationEnd, ActivatedRouteSnapshot } from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { BehaviorSubject, of, throwError } from 'rxjs'
@@ -56,15 +56,18 @@ import { TabType } from '../tab'
 import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
 import { PanelModule } from 'primeng/panel'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
     let dhcpService: DHCPService
     let messageService: MessageService
+    let route: ActivatedRoute
     let router: Router
-    let paramMap: any
-    let paramMapSubject: BehaviorSubject<any>
+    // let paramMap: any
+    // let paramMapSubject: BehaviorSubject<any>
+    let routerEventSubject: BehaviorSubject<NavigationEnd>
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -132,6 +135,7 @@ describe('SubnetsPageComponent', () => {
                 SharedParametersFormComponent,
                 SubnetsTableComponent,
                 PluralizePipe,
+                PlaceholderPipe,
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
@@ -262,7 +266,8 @@ describe('SubnetsPageComponent', () => {
                 total: 10496,
             },
         ]
-        spyOn(dhcpService, 'getSubnets').and.returnValues(
+        const dhcpServiceSpy = spyOn(dhcpService, 'getSubnets')
+        dhcpServiceSpy.and.returnValues(
             // The subnets are fetched twice before the unit test starts.
             // Some tests call the getSubnets more than once.
             of(fakeResponses[0]),
@@ -270,15 +275,49 @@ describe('SubnetsPageComponent', () => {
             of(fakeResponses[1]),
             of(fakeResponses[1])
         )
+        // Prepare response when subnets are filtered by text.
+        dhcpServiceSpy.withArgs(0, 10, null, null, null, '1.0.0.0/16').and.returnValue(of(fakeResponses[1]))
 
         fixture = TestBed.createComponent(SubnetsPageComponent)
         component = fixture.componentInstance
-        const route = fixture.debugElement.injector.get(ActivatedRoute)
-        paramMap = convertToParamMap({})
-        paramMapSubject = new BehaviorSubject(paramMap)
-        spyOnProperty(route, 'paramMap').and.returnValue(paramMapSubject)
+        route = fixture.debugElement.injector.get(ActivatedRoute)
+        router = fixture.debugElement.injector.get(Router)
+        // paramMap = convertToParamMap({})
+        // paramMapSubject = new BehaviorSubject(paramMap)
+
+        route.snapshot = {
+            paramMap: convertToParamMap({}),
+            queryParamMap: convertToParamMap({}),
+        } as ActivatedRouteSnapshot
+
+        routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'dhcp/subnets', 'dhcp/subnets/all'))
+        spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
+
+        // spyOnProperty(route, 'paramMap').and.returnValue(paramMapSubject)
+        fixture.detectChanges()
+
+        // PrimeNG table is stateful in the component, so clear stored filter between tests.
+        component.table.table.clearFilterValues()
+
         fixture.detectChanges()
     })
+
+    /**
+     * Triggers the component handler called when the route changes.
+     * @param params The parameters to pass to the route.
+     */
+    function navigate(params: { id?: number | string }) {
+        route.snapshot = {
+            paramMap: convertToParamMap(params),
+            queryParamMap: convertToParamMap({}),
+        } as ActivatedRouteSnapshot
+
+        const eid = routerEventSubject.getValue().id + 1
+        routerEventSubject.next(new NavigationEnd(eid, `dhcp/subnets/${params.id}`, `dhcp/subnets/${params.id}`))
+
+        flush()
+        fixture.detectChanges()
+    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
@@ -302,6 +341,8 @@ describe('SubnetsPageComponent', () => {
     })
 
     it('should not fail on empty statistics', async () => {
+        // Filter by text to get subnet without stats.
+        component.table.filter$.next({ filter: { text: '1.0.0.0/16' } })
         // Act
         // component.loadSubnets({})
         await fixture.whenStable()
@@ -351,27 +392,15 @@ describe('SubnetsPageComponent', () => {
 
     it('should filter subnets by the Kea subnet ID', async () => {
         // Arrange
-        // const input = fixture.debugElement.query(By.css('#filter-subnets-text-field'))
-        const spy = spyOn(router, 'navigate')
-
         // Act
         await fixture.whenStable()
 
-        // component.filterText = 'subnetId:1'
-        // input.triggerEventHandler('keyup', null)
-        component.table.filter$.next({ filter: { subnetId: 1 } })
+        component.table.filter$.next({ filter: { subnetId: 345 } })
 
         await fixture.whenStable()
 
         // Assert
-        expect(spy).toHaveBeenCalledOnceWith(
-            ['/dhcp/subnets'],
-            jasmine.objectContaining({
-                queryParams: {
-                    subnetId: 1,
-                },
-            })
-        )
+        expect(dhcpService.getSubnets).toHaveBeenCalledWith(0, 10, null, 345, null, null)
     })
 
     it('should detect that the subnet has only references to the local subnets with identical IDs', () => {
@@ -467,7 +496,7 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
         spyOn(dhcpService, 'getSubnet').and.returnValue(of(getSubnetResp))
 
-        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        navigate({ id: 'new' })
         fixture.detectChanges()
         tick()
 
@@ -539,7 +568,7 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
         spyOn(dhcpService, 'getSubnet').and.returnValue(of(updateSubnetBeginResp.subnet))
 
-        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        navigate({ id: 5 })
         fixture.detectChanges()
         tick()
 
@@ -612,7 +641,7 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
         spyOn(dhcpService, 'getSubnet').and.returnValues(of({ id: 5 }) as any, throwError({ status: 404 }))
 
-        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        navigate({ id: 5 })
         fixture.detectChanges()
         tick()
 
@@ -665,7 +694,7 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'createSubnetBegin').and.returnValue(of(createSubnetBeginResp))
         spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
 
-        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        navigate({ id: 'new' })
         fixture.detectChanges()
         tick()
 
@@ -690,9 +719,9 @@ describe('SubnetsPageComponent', () => {
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
     }))
 
-    it('should cancel an update transaction when a tab is closed', async () => {
+    it('should cancel an update transaction when a tab is closed', fakeAsync(() => {
         // component.loadSubnets({})
-        await fixture.whenStable()
+        // await fixture.whenStable()
         fixture.detectChanges()
 
         const updateSubnetBeginResp: any = {
@@ -735,15 +764,15 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
         spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
 
-        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        navigate({ id: 5 })
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
@@ -753,13 +782,13 @@ describe('SubnetsPageComponent', () => {
 
         component.closeTabByIndex(1)
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
-    })
+    }))
 
     it('should cancel a new subnet transaction when cancel button is clicked', fakeAsync(() => {
         // component.loadSubnets({})
@@ -786,7 +815,7 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'createSubnetBegin').and.returnValue(of(createSubnetBeginResp))
         spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
 
-        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        navigate({ id: 'new' })
         fixture.detectChanges()
         tick()
 
@@ -813,10 +842,10 @@ describe('SubnetsPageComponent', () => {
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
     }))
 
-    it('should cancel transaction when cancel button is clicked', async () => {
+    it('should cancel transaction when cancel button is clicked', fakeAsync(() => {
         // component.loadSubnets({})
-        await fixture.whenStable()
-        fixture.detectChanges()
+        // await fixture.whenStable()
+        // fixture.detectChanges()
 
         const updateSubnetBeginResp: any = {
             id: 123,
@@ -858,15 +887,16 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
         spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
 
-        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        navigate({ id: 5 })
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
+        tick()
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
@@ -877,7 +907,7 @@ describe('SubnetsPageComponent', () => {
         // Cancel editing. It should close the form and the transaction should be deleted.
         component.onSubnetFormCancel(5)
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(component.tabs.length).toBe(2)
         expect(component.openedTabs.length).toBe(2)
@@ -885,7 +915,7 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[1].tabType).toBe(TabType.Display)
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
-    })
+    }))
 
     it('should show error message when transaction canceling fails', fakeAsync(() => {
         // component.loadSubnets({})
@@ -909,7 +939,7 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'createSubnetDelete').and.returnValue(throwError({ status: 404 }))
         spyOn(messageService, 'add')
 
-        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        navigate({ id: 'new' })
         fixture.detectChanges()
         tick()
 
@@ -928,9 +958,9 @@ describe('SubnetsPageComponent', () => {
         expect(messageService.add).toHaveBeenCalled()
     }))
 
-    it('should show error message when transaction canceling fails', async () => {
+    it('should show error message when transaction canceling fails', fakeAsync(() => {
         // component.loadSubnets({})
-        await fixture.whenStable()
+        // await fixture.whenStable()
         fixture.detectChanges()
 
         const updateSubnetBeginResp: any = {
@@ -970,25 +1000,25 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
         spyOn(messageService, 'add')
 
-        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        navigate({ id: 5 })
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
         component.onSubnetFormCancel(5)
         fixture.detectChanges()
-        await fixture.whenStable()
+        // await fixture.whenStable()
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
-    })
+    }))
 
     it('should close subnet tab when subnet is deleted', fakeAsync(() => {
         // component.loadSubnets({})
@@ -1019,7 +1049,7 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'getSubnet').and.returnValue(of(subnet))
 
         // Open subnet tab.
-        paramMapSubject.next(convertToParamMap({ id: 5 }))
+        navigate({ id: 5 })
         fixture.detectChanges()
         tick()
         expect(component.openedTabs.length).toBe(2)

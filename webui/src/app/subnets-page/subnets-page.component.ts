@@ -388,7 +388,7 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 .toPromise()
                 .then((subnet) => {
                     this.openedTabs[index].tabSubject = subnet
-                    const existingIndex = this.table?.dataCollection.findIndex((s) => s.id === subnet.id)
+                    const existingIndex = this.table?.dataCollection?.findIndex((s) => s.id === subnet.id)
                     if (existingIndex >= 0) {
                         this.table.dataCollection[existingIndex] = subnet
                     }
