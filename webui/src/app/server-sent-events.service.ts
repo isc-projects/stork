@@ -79,7 +79,7 @@ export class ServerSentEventsService {
      * This service pushes the events received over SSE to this observable
      * and the components receive the events over it.
      */
-    private events$: Observable<SSEEvent>
+    private readonly events$: Observable<SSEEvent>
 
     /**
      * A subject used to push the new events to the observable.
