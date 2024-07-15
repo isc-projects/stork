@@ -826,7 +826,6 @@ upload_to_repo:
   stage: deploy
   rules:
     - when: manual
-  allow_failure: true
   tags:
     - linux
     - aws
@@ -861,7 +860,6 @@ deploy_demo:
       when: manual
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
-  allow_failure: true
   tags:
     - linux
     - aws
@@ -897,7 +895,6 @@ upload_packages:
   stage: deploy
   rules:
     - when: manual
-  allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
   tags:
     - docker
