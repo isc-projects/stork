@@ -50,7 +50,7 @@ describe('PriorityErrorsPanelComponent', () => {
     it('should receive events and get connectivity status from the server', fakeAsync(() => {
         // Create a source of events.
         let receivedEventsSubject = new Subject<SSEEvent>()
-        // Create an observable the component subscribes to to receive the events.
+        // Create an observable that the component subscribes to in order to receive the events.
         let observable = receivedEventsSubject.asObservable()
         spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
 
@@ -146,7 +146,7 @@ describe('PriorityErrorsPanelComponent', () => {
     it('should receive events and get unauthorized machines count from the server', fakeAsync(() => {
         // Create a source of events.
         let receivedEventsSubject = new Subject<SSEEvent>()
-        // Create an observable the component subscribes to to receive the events.
+        // Create an observable that the component subscribes to in order to receive the events.
         let observable = receivedEventsSubject.asObservable()
         spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
 
@@ -274,7 +274,7 @@ describe('PriorityErrorsPanelComponent', () => {
         // Create a source of events.
         let receivedEventsSubject = new Subject<SSEEvent>()
 
-        // Create an observable the component subscribes to to receive the events.
+        // Create an observable that the component subscribes to in order to receive the events.
         let observable = receivedEventsSubject.asObservable()
         spyOn(sse, 'receivePriorityEvents').and.returnValue(observable)
 
@@ -307,7 +307,7 @@ describe('PriorityErrorsPanelComponent', () => {
         expect(component.getEventCount(EventStream.Registration)).toBe(0)
     }))
 
-    it('should unsubscribe when the component is detroyed', fakeAsync(() => {
+    it('should unsubscribe when the component is destroyed', fakeAsync(() => {
         const apps: any = {
             items: [],
             total: 0,

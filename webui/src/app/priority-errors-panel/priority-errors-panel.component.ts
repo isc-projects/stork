@@ -219,7 +219,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
 
     /**
      * Subscribes to the events indicating the connectivity issues, new machine
-     * registration attempts, and the control events occuring on SSE reconnection.
+     * registration attempts, and the control events occurring on SSE reconnection.
      */
     private subscribe(): void {
         this.subscription = this.sse
@@ -277,7 +277,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
     /**
      * Resets the backoff event count for a stream.
      *
-     * @param eventStream event streat.
+     * @param eventStream event stream.
      */
     resetEventCount(eventStream: EventStream): void {
         this.eventCount.set(eventStream, 0)

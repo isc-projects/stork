@@ -239,7 +239,7 @@ export class ServerSentEventsService {
         )
 
         // We need to install different listeners for different streams,
-        // so they can be dispatch to their respective components.
+        // so they can be dispatched to their respective components.
         this.subscriptions.forEach((_, stream) => {
             eventSource.addEventListener(
                 stream,
