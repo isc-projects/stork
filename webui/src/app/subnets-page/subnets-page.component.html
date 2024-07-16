@@ -34,7 +34,12 @@
 
 <div>
     <!-- Subnet tab template -->
-    <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component">
+    <div
+        *ngIf="activeTabIndex !== 0"
+        [ngSwitch]="openedTabs[activeTabIndex].tabType"
+        class="p-component"
+        [class.max-w-50rem]="openedTabs[activeTabIndex].tabType !== SubnetTabType.Display"
+    >
         <app-subnet-tab
             *ngSwitchCase="SubnetTabType.Display"
             [subnet]="openedTabs[activeTabIndex].tabSubject"
