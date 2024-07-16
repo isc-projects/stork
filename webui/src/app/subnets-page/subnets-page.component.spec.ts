@@ -51,12 +51,13 @@ import { SharedParametersFormComponent } from '../shared-parameters-form/shared-
 import { AccordionModule } from 'primeng/accordion'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { HttpEvent } from '@angular/common/http'
+import { HttpErrorResponse, HttpEvent } from '@angular/common/http'
 import { TabType } from '../tab'
 import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
 import { PanelModule } from 'primeng/panel'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -65,8 +66,6 @@ describe('SubnetsPageComponent', () => {
     let messageService: MessageService
     let route: ActivatedRoute
     let router: Router
-    // let paramMap: any
-    // let paramMapSubject: BehaviorSubject<any>
     let routerEventSubject: BehaviorSubject<NavigationEnd>
 
     beforeEach(waitForAsync(() => {
@@ -136,14 +135,22 @@ describe('SubnetsPageComponent', () => {
                 SubnetsTableComponent,
                 PluralizePipe,
                 PlaceholderPipe,
+                ArrayValueSetFormComponent,
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
         messageService = TestBed.inject(MessageService)
-        router = TestBed.inject(Router)
-    }))
+        fixture = TestBed.createComponent(SubnetsPageComponent)
+        component = fixture.componentInstance
+        route = fixture.debugElement.injector.get(ActivatedRoute)
+        route.snapshot = {
+            paramMap: convertToParamMap({}),
+            queryParamMap: convertToParamMap({}),
+        } as ActivatedRouteSnapshot
+        router = fixture.debugElement.injector.get(Router)
+        routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'dhcp/subnets', 'dhcp/subnets/all'))
+        spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
 
-    beforeEach(() => {
         const fakeResponses: any = [
             {
                 items: [
@@ -266,41 +273,59 @@ describe('SubnetsPageComponent', () => {
                 total: 10496,
             },
         ]
-        const dhcpServiceSpy = spyOn(dhcpService, 'getSubnets')
-        dhcpServiceSpy.and.returnValues(
-            // The subnets are fetched twice before the unit test starts.
-            // Some tests call the getSubnets more than once.
-            of(fakeResponses[0]),
-            of(fakeResponses[0]),
-            of(fakeResponses[1]),
-            of(fakeResponses[1])
-        )
+
+        const getSubnetsSpy = spyOn(dhcpService, 'getSubnets')
+        // Prepare response when no filtering is applied.
+        getSubnetsSpy.withArgs(0, 10, null, null, null, null).and.returnValue(of(fakeResponses[0]))
         // Prepare response when subnets are filtered by text.
-        dhcpServiceSpy.withArgs(0, 10, null, null, null, '1.0.0.0/16').and.returnValue(of(fakeResponses[1]))
+        getSubnetsSpy.withArgs(0, 10, null, null, null, '1.0.0.0/16').and.returnValue(of(fakeResponses[1]))
+        // Prepare response when subnets are filtered by subnet Id.
+        getSubnetsSpy.withArgs(0, 10, null, 5, null, null).and.returnValue(of(fakeResponses[1]))
 
-        fixture = TestBed.createComponent(SubnetsPageComponent)
-        component = fixture.componentInstance
-        route = fixture.debugElement.injector.get(ActivatedRoute)
-        router = fixture.debugElement.injector.get(Router)
-        // paramMap = convertToParamMap({})
-        // paramMapSubject = new BehaviorSubject(paramMap)
+        const updateSubnetBeginResp: any = {
+            id: 123,
+            subnet: {
+                id: 5,
+                subnet: '192.0.2.0/24',
+                localSubnets: [
+                    {
+                        id: 123,
+                        daemonId: 1,
+                        appName: 'server 1',
+                        pools: [],
+                        keaConfigSubnetParameters: {
+                            subnetLevelParameters: {
+                                allocator: 'random',
+                                options: [],
+                                optionsHash: '',
+                            },
+                        },
+                    },
+                ],
+            },
+            daemons: [
+                {
+                    id: 1,
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
+                    },
+                },
+            ],
+        }
 
-        route.snapshot = {
-            paramMap: convertToParamMap({}),
-            queryParamMap: convertToParamMap({}),
-        } as ActivatedRouteSnapshot
+        const updateSubnetBeginSpy = spyOn(dhcpService, 'updateSubnetBegin')
+        // Prepare response when updateSubnetBegin is called for subnet id 5.
+        updateSubnetBeginSpy.withArgs(5).and.returnValue(of(updateSubnetBeginResp))
 
-        routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'dhcp/subnets', 'dhcp/subnets/all'))
-        spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
-
-        // spyOnProperty(route, 'paramMap').and.returnValue(paramMapSubject)
         fixture.detectChanges()
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
         component.table.table.clearFilterValues()
+        component.table.filter$.next({ filter: {} })
 
         fixture.detectChanges()
-    })
+    }))
 
     /**
      * Triggers the component handler called when the route changes.
@@ -328,6 +353,8 @@ describe('SubnetsPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
+        expect(component.table.dataCollection).toBeTruthy()
+        expect(component.table.dataCollection.length).toBeGreaterThan(0)
         const stats: { [key: string]: BigInt } = component.table.dataCollection[0].stats as any
         expect(stats['assigned-addresses']).toBe(
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
@@ -344,7 +371,7 @@ describe('SubnetsPageComponent', () => {
         // Filter by text to get subnet without stats.
         component.table.filter$.next({ filter: { text: '1.0.0.0/16' } })
         // Act
-        // component.loadSubnets({})
+        fixture.detectChanges()
         await fixture.whenStable()
 
         // Assert
@@ -391,16 +418,19 @@ describe('SubnetsPageComponent', () => {
     })
 
     it('should filter subnets by the Kea subnet ID', async () => {
-        // Arrange
         // Act
         await fixture.whenStable()
 
-        component.table.filter$.next({ filter: { subnetId: 345 } })
+        component.table.filter$.next({ filter: { subnetId: 5 } })
 
+        fixture.detectChanges()
         await fixture.whenStable()
 
         // Assert
-        expect(dhcpService.getSubnets).toHaveBeenCalledWith(0, 10, null, 345, null, null)
+        expect(dhcpService.getSubnets).toHaveBeenCalledWith(0, 10, null, 5, null, null)
+        // One subnet record is expected after filtering.
+        expect(component.table.dataCollection).toBeTruthy()
+        expect(component.table.dataCollection.length).toBe(1)
     })
 
     it('should detect that the subnet has only references to the local subnets with identical IDs', () => {
@@ -451,8 +481,7 @@ describe('SubnetsPageComponent', () => {
     })
 
     it('should close new subnet form when form is submitted', fakeAsync(() => {
-        // component.loadSubnets({})
-        // tick()
+        tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -497,13 +526,11 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'getSubnet').and.returnValue(of(getSubnetResp))
 
         navigate({ id: 'new' })
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(2)
-
-        fixture.detectChanges()
-        tick()
 
         expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
 
@@ -512,7 +539,9 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[1].state.transactionId).toBe(123)
 
         component.onSubnetFormSubmit(component.openedTabs[1].state)
+
         tick()
+        fixture.detectChanges()
 
         expect(dhcpService.getSubnet).toHaveBeenCalled()
         expect(component.tabs.length).toBe(2)
@@ -524,37 +553,24 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should close subnet update form when form is submitted', fakeAsync(() => {
-        // component.loadSubnets({})
-        // tick()
+        tick()
         fixture.detectChanges()
 
-        const updateSubnetBeginResp: any = {
-            id: 123,
-            subnet: {
-                id: 5,
-                subnet: '192.0.2.0/24',
-                localSubnets: [
-                    {
-                        id: 123,
-                        daemonId: 1,
-                        appName: 'server 1',
-                        pools: [],
-                        keaConfigSubnetParameters: {
-                            subnetLevelParameters: {
-                                allocator: 'random',
-                                options: [],
-                                optionsHash: '',
-                            },
-                        },
-                    },
-                ],
-            },
-            daemons: [
+        const subnet: any = {
+            id: 5,
+            subnet: '192.0.2.0/24',
+            localSubnets: [
                 {
-                    id: 1,
-                    name: 'dhcp4',
-                    app: {
-                        name: 'first',
+                    id: 123,
+                    daemonId: 1,
+                    appName: 'server 1',
+                    pools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            allocator: 'random',
+                            options: [],
+                            optionsHash: '',
+                        },
                     },
                 },
             ],
@@ -564,19 +580,22 @@ describe('SubnetsPageComponent', () => {
             status: 200,
         }
 
-        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
-        spyOn(dhcpService, 'getSubnet').and.returnValue(of(updateSubnetBeginResp.subnet))
+        spyOn(dhcpService, 'getSubnet').and.returnValue(of(subnet))
 
         navigate({ id: 5 })
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
+
+        tick()
         fixture.detectChanges()
         tick()
+        fixture.detectChanges()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
@@ -585,7 +604,9 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[1].state.transactionId).toBe(123)
 
         component.onSubnetFormSubmit(component.openedTabs[1].state)
+
         tick()
+        fixture.detectChanges()
 
         expect(dhcpService.getSubnet).toHaveBeenCalled()
         expect(component.tabs.length).toBe(2)
@@ -597,59 +618,29 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should keep the tab open when getting a subnet after submission fails', fakeAsync(() => {
-        // component.loadSubnets({})
-        // tick()
-        fixture.detectChanges()
-
-        const updateSubnetBeginResp: any = {
-            id: 123,
-            subnet: {
-                id: 5,
-                subnet: '192.0.2.0/24',
-                localSubnets: [
-                    {
-                        id: 123,
-                        daemonId: 1,
-                        appName: 'server 1',
-                        pools: [],
-                        keaConfigSubnetParameters: {
-                            subnetLevelParameters: {
-                                allocator: 'random',
-                                options: [],
-                                optionsHash: '',
-                            },
-                        },
-                    },
-                ],
-            },
-            daemons: [
-                {
-                    id: 1,
-                    name: 'dhcp4',
-                    app: {
-                        name: 'first',
-                    },
-                },
-            ],
-        }
-
         const okResp: any = {
             status: 200,
         }
 
-        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
-        spyOn(dhcpService, 'getSubnet').and.returnValues(of({ id: 5 }) as any, throwError({ status: 404 }))
+        spyOn(dhcpService, 'getSubnet').and.returnValues(
+            of({ id: 5 }) as any,
+            throwError(() => new HttpErrorResponse({ status: 404 }))
+        )
 
         navigate({ id: 5 })
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
+
+        tick()
         fixture.detectChanges()
         tick()
+        fixture.detectChanges()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
@@ -658,7 +649,9 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[1].state.transactionId).toBe(123)
 
         component.onSubnetFormSubmit(component.openedTabs[1].state)
+
         tick()
+        fixture.detectChanges()
 
         expect(dhcpService.getSubnet).toHaveBeenCalled()
         expect(component.tabs.length).toBe(2)
@@ -670,8 +663,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should cancel a new subnet transaction when a tab is closed', fakeAsync(() => {
-        // component.loadSubnets({})
-        // tick()
+        tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -695,13 +687,11 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
 
         navigate({ id: 'new' })
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(2)
-
-        fixture.detectChanges()
-        tick()
 
         expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
 
@@ -710,8 +700,9 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[1].state.transactionId).toBe(123)
 
         component.closeTabByIndex(1)
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
@@ -720,59 +711,29 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should cancel an update transaction when a tab is closed', fakeAsync(() => {
-        // component.loadSubnets({})
-        // await fixture.whenStable()
+        tick()
         fixture.detectChanges()
-
-        const updateSubnetBeginResp: any = {
-            id: 123,
-            subnet: {
-                id: 5,
-                subnet: '192.0.2.0/24',
-                localSubnets: [
-                    {
-                        id: 123,
-                        daemonId: 1,
-                        appName: 'server 1',
-                        pools: [],
-                        keaConfigSubnetParameters: {
-                            subnetLevelParameters: {
-                                allocator: 'random',
-                                options: [],
-                                optionsHash: '',
-                            },
-                        },
-                    },
-                ],
-            },
-            daemons: [
-                {
-                    id: 1,
-                    name: 'dhcp4',
-                    app: {
-                        name: 'first',
-                    },
-                },
-            ],
-        }
 
         const okResp: any = {
             status: 200,
         }
 
-        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
         spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
 
         navigate({ id: 5 })
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
+        tick()
+        fixture.detectChanges()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
@@ -781,8 +742,9 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[1].state.transactionId).toBe(123)
 
         component.closeTabByIndex(1)
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
 
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
@@ -791,8 +753,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should cancel a new subnet transaction when cancel button is clicked', fakeAsync(() => {
-        // component.loadSubnets({})
-        // tick()
+        tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -816,13 +777,11 @@ describe('SubnetsPageComponent', () => {
         spyOn(dhcpService, 'createSubnetDelete').and.returnValue(of(okResp))
 
         navigate({ id: 'new' })
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(2)
-
-        fixture.detectChanges()
-        tick()
 
         expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
 
@@ -831,8 +790,9 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[1].state.transactionId).toBe(123)
 
         component.onSubnetFormCancel()
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.tabs.length).toBe(1)
         expect(component.openedTabs.length).toBe(1)
@@ -843,60 +803,29 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should cancel transaction when cancel button is clicked', fakeAsync(() => {
-        // component.loadSubnets({})
-        // await fixture.whenStable()
-        // fixture.detectChanges()
-
-        const updateSubnetBeginResp: any = {
-            id: 123,
-            subnet: {
-                id: 5,
-                subnet: '192.0.2.0/24',
-                localSubnets: [
-                    {
-                        id: 123,
-                        daemonId: 1,
-                        appName: 'server 1',
-                        pools: [],
-                        keaConfigSubnetParameters: {
-                            subnetLevelParameters: {
-                                allocator: 'random',
-                                options: [],
-                                optionsHash: '',
-                            },
-                        },
-                    },
-                ],
-            },
-            daemons: [
-                {
-                    id: 1,
-                    name: 'dhcp4',
-                    app: {
-                        name: 'first',
-                    },
-                },
-            ],
-        }
+        tick()
+        fixture.detectChanges()
 
         const okResp: any = {
             status: 200,
         }
 
-        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
         spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(of(okResp))
         spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
 
         navigate({ id: 5 })
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
+
         tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
+        tick()
+        fixture.detectChanges()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
@@ -906,8 +835,9 @@ describe('SubnetsPageComponent', () => {
 
         // Cancel editing. It should close the form and the transaction should be deleted.
         component.onSubnetFormCancel(5)
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
 
         expect(component.tabs.length).toBe(2)
         expect(component.openedTabs.length).toBe(2)
@@ -918,8 +848,7 @@ describe('SubnetsPageComponent', () => {
     }))
 
     it('should show error message when transaction canceling fails', fakeAsync(() => {
-        // component.loadSubnets({})
-        // tick()
+        tick()
         fixture.detectChanges()
 
         const createSubnetBeginResp: any = {
@@ -936,93 +865,66 @@ describe('SubnetsPageComponent', () => {
         }
 
         spyOn(dhcpService, 'createSubnetBegin').and.returnValue(of(createSubnetBeginResp))
-        spyOn(dhcpService, 'createSubnetDelete').and.returnValue(throwError({ status: 404 }))
+        spyOn(dhcpService, 'createSubnetDelete').and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: 404 }))
+        )
         spyOn(messageService, 'add')
 
         navigate({ id: 'new' })
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(component.openedTabs.length).toBe(2)
-
-        fixture.detectChanges()
-        tick()
 
         expect(dhcpService.createSubnetBegin).toHaveBeenCalled()
 
         component.onSubnetFormCancel()
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
 
-    it('should show error message when transaction canceling fails', fakeAsync(() => {
-        // component.loadSubnets({})
-        // await fixture.whenStable()
+    it('should show error message when transaction canceling fails second', fakeAsync(() => {
+        tick()
         fixture.detectChanges()
 
-        const updateSubnetBeginResp: any = {
-            id: 123,
-            subnet: {
-                id: 5,
-                subnet: '192.0.2.0/24',
-                localSubnets: [
-                    {
-                        id: 123,
-                        daemonId: 1,
-                        appName: 'server 1',
-                        pools: [],
-                        keaConfigSubnetParameters: {
-                            subnetLevelParameters: {
-                                allocator: 'random',
-                                options: [],
-                                optionsHash: '',
-                            },
-                        },
-                    },
-                ],
-            },
-            daemons: [
-                {
-                    id: 1,
-                    name: 'dhcp4',
-                    app: {
-                        name: 'first',
-                    },
-                },
-            ],
-        }
-
-        spyOn(dhcpService, 'updateSubnetBegin').and.returnValue(of(updateSubnetBeginResp))
-        spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(throwError({ status: 404 }))
+        spyOn(dhcpService, 'updateSubnetDelete').and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: 404 }))
+        )
         spyOn(dhcpService, 'getSubnet').and.returnValue(of({ id: 5 }) as any)
         spyOn(messageService, 'add')
 
         navigate({ id: 5 })
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
 
         expect(component.openedTabs.length).toBe(2)
 
         component.onSubnetEditBegin({ id: 5 })
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
+        tick()
+        fixture.detectChanges()
 
         expect(dhcpService.updateSubnetBegin).toHaveBeenCalled()
 
         component.onSubnetFormCancel(5)
+
+        tick()
         fixture.detectChanges()
-        // await fixture.whenStable()
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
     }))
 
     it('should close subnet tab when subnet is deleted', fakeAsync(() => {
-        // component.loadSubnets({})
-        // tick()
+        tick()
         fixture.detectChanges()
 
         const subnet: Subnet & HttpEvent<Subnet> = {
@@ -1050,14 +952,17 @@ describe('SubnetsPageComponent', () => {
 
         // Open subnet tab.
         navigate({ id: 5 })
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
+
         expect(component.openedTabs.length).toBe(2)
 
         // Simulate the notification that the subnet has been deleted.
         component.onSubnetDelete(subnet)
-        fixture.detectChanges()
+
         tick()
+        fixture.detectChanges()
 
         // The main subnet tab should only be left.
         expect(component.openedTabs.length).toBe(1)
