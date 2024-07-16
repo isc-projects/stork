@@ -23,15 +23,16 @@
     </ng-template>
 </p-table>
 <ng-template [formGroup]="formGroup" #parameterRow let-parameterName="parameterName" let-controls="controls">
-    <tr class="text-blue-500" [formGroupName]="parameterName">
-        <td>
+<!--    class="text-primary-500" -->
+    <tr  [formGroupName]="parameterName">
+        <td class="font-semibold text-color-secondary">
             {{ uncamelCase(parameterName) }}
         </td>
         <td formArrayName="values">
             <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
                 <div
                     *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)"
-                    class="flex align-items-center pb-2"
+                    class="flex align-items-center pb-2 flex-wrap gap-2"
                 >
                     <ng-container [ngSwitch]="controls.data?.type">
                         <ng-container *ngSwitchCase="'string'">
@@ -41,6 +42,7 @@
                                 [options]="controls.data.values"
                                 [showClear]="true"
                                 [formControlName]="index"
+                                styleClass="w-full"
                                 placeholder="(not specified)"
                             >
                             </p-dropdown>
@@ -51,7 +53,7 @@
                                 >
                                 </app-array-value-set-form>
                                 <ng-template #noArrayCase>
-                                    <input pInputText [formControlName]="index" class="full-width" />
+                                    <input pInputText [formControlName]="index" class="" />
                                 </ng-template>
                             </ng-template>
                         </ng-container>
@@ -65,10 +67,12 @@
                                 [max]="controls.data.max"
                                 [minFractionDigits]="0"
                                 [maxFractionDigits]="controls.data.fractionDigits"
-                                inputStyleClass="w-full"
+
+                                styleClass="w-full"
                                 locale="en-US"
                                 [formControlName]="index"
                             >
+<!--                                inputStyleClass="w-full" -->
                             </p-inputNumber>
                         </ng-container>
                         <ng-container *ngSwitchCase="'client-classes'">
@@ -92,7 +96,7 @@
                         pButton
                         [disabled]="control.value === null"
                         label="Clear"
-                        class="p-button-text p-button-sm ml-2"
+                        class="p-button-text p-button-sm"
                         type="button"
                         (click)="control.setValue(null)"
                     ></button>

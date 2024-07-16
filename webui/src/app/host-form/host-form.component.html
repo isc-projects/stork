@@ -26,7 +26,7 @@
                     formControlName="selectedDaemons"
                     display="chip"
                     [showToggleAll]="false"
-                    styleClass="adaptive-chips-background full-width"
+                    styleClass="adaptive-chips-background w-full"
                     (onChange)="onDaemonsChange()"
                 >
                 </p-multiSelect>
@@ -51,7 +51,7 @@
                     [options]="form.filteredSubnets"
                     formControlName="selectedSubnet"
                     [showClear]="true"
-                    styleClass="full-width"
+                    styleClass="w-full"
                     (onChange)="onSelectedSubnetChange()"
                 >
                 </p-dropdown>
@@ -74,13 +74,13 @@
                 <p-dropdown
                     [options]="hostIdTypes"
                     formControlName="idType"
-                    styleClass="full-width"
+                    styleClass="w-full"
                     (onChange)="onSelectedIdentifierChange()"
                 >
                 </p-dropdown>
             </div>
             <div class="col-6 sm:col-3">
-                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass="full-width"> </p-dropdown>
+                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass="w-full"> </p-dropdown>
             </div>
 
             <div
@@ -90,7 +90,7 @@
                 <input
                     pInputText
                     formControlName="idInputHex"
-                    class="full-width"
+                    class="w-full"
                     placeholder="e.g. 01:02:03:04:05:06"
                 />
                 <small
@@ -114,7 +114,7 @@
                     <input
                         pInputText
                         formControlName="idInputText"
-                        class="full-width"
+                        class="w-full"
                         placeholder="text identifier format"
                     />
                     <small
@@ -140,7 +140,7 @@
     <p-fieldset legend="Host Reservations" styleClass="host-form-section">
         <div>
             <span class="p-float-label">
-                <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
+                <input id="hostname-input" pInputText class="w-full" formControlName="hostname" />
                 <label for="hostname-input">Hostname</label>
             </span>
             <small
@@ -157,7 +157,7 @@
                 <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i">
                     <ng-container [formGroup]="ipGroup" class="flex align-items-start">
                         <div class="col-12 sm:col-3">
-                            <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="full-width">
+                            <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="w-full">
                             </p-dropdown>
                         </div>
                         <ng-container [ngSwitch]="ipGroup.value.ipType">
@@ -167,7 +167,7 @@
                                         *ngSwitchCase="'ipv4'"
                                         pInputText
                                         formControlName="inputIPv4"
-                                        class="full-width"
+                                        class="w-full"
                                         [placeholder]="ipv4Placeholder"
                                     />
                                     <small
@@ -192,7 +192,7 @@
                                         *ngSwitchCase="'ia_na'"
                                         pInputText
                                         formControlName="inputNA"
-                                        class="full-width"
+                                        class="w-full"
                                         [placeholder]="ipv6Placeholder"
                                     />
                                     <small
@@ -222,7 +222,7 @@
                                     <input
                                         pInputText
                                         formControlName="inputPD"
-                                        class="full-width"
+                                        class="w-full"
                                         placeholder="e.g. 3000:1::"
                                     />
                                 </div>
@@ -231,7 +231,7 @@
                                         ngDefaultControl
                                         min="1"
                                         max="128"
-                                        inputStyleClass="full-width"
+                                        inputStyleClass="w-full"
                                         formControlName="inputPDLength"
                                     >
                                     </p-inputNumber>
@@ -312,7 +312,7 @@
                         <input
                             id="next-server-input-{{ i }}"
                             pInputText
-                            class="full-width"
+                            class="w-full"
                             formControlName="nextServer"
                         />
                         <label for="next-server-input-{{ i }}">Next Server</label>
@@ -332,7 +332,7 @@
                         <input
                             id="server-hostname-input-{{ i }}"
                             pInputText
-                            class="full-width"
+                            class="w-full"
                             formControlName="serverHostname"
                         />
                         <label for="server-hostname-input-{{ i }}">Server Hostname</label>
@@ -352,7 +352,7 @@
                         <input
                             id="boot-file-name-input-{{ i }}"
                             pInputText
-                            class="full-width"
+                            class="w-full"
                             formControlName="bootFileName"
                         />
                         <label for="boot-file-name-input-{{ i }}">Boot File Name</label>

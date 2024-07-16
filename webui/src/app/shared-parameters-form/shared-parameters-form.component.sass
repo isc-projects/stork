@@ -1,24 +1,38 @@
-:host ::ng-deep .shared-parameters-table .p-datatable-tbody tr
-    &:last-child
-        td
-            border-bottom: none
-    td
-        border-top: none
-        border-left: none
-        border-right: none
-        border-bottom: 1px solid var(--surface-200)
-        vertical-align: top
-        padding-top: 1rem
-        padding-bottom: 1rem
+:host ::ng-deep
+    .shared-parameters-table
+        .p-datatable-tbody tr
+            &:last-child
+                td
+                    border-bottom: none
+            td
+                border-top: none
+                border-left: none
+                border-right: none
+                border-bottom: 1px solid var(--surface-200)
+                vertical-align: top
+                padding-top: 1rem
+                padding-bottom: 1rem
 
-:host ::ng-deep .shared-parameters-table .p-datatable-thead tr th
-    border-top: none
-    border-left: none
-    border-right: none
-    border-bottom: 1px solid var(--surface-200)
+                .w-full > input
+                    width: 100%
+                    max-width: var(--max-form-width)
+                .flex > :first-child
+                    //background-color: red
+                    //flex: 0 1 4rem
+                    flex: 1 0 2rem
+                    //display: inline-flex
+                .flex > input:first-child
+                    //background-color: red
+                    max-width: var(--max-form-width)
 
-    &:first-child
-        width: 20%
+        .p-datatable-thead tr th
+            border-top: none
+            border-left: none
+            border-right: none
+            border-bottom: 1px solid var(--surface-200)
 
-    &:last-child
-        width: 10%
+            &:first-child
+                width: 20%
+
+            &:last-child
+                width: 10%
