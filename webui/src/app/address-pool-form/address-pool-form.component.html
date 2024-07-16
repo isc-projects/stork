@@ -1,13 +1,13 @@
 <div [formGroup]="formGroup">
     <p-fieldset legend="Address Range" styleClass="mt-4">
-        <div class="flex mt-4 mb-2" formGroupName="range">
-            <div class="flex align-items-center p-float-label">
-                <input [id]="uuids.poolStart" pInputText formControlName="start" />
+        <div class="flex mt-4 mb-2 align-items-center flex-wrap gap-2 row-gap-5" formGroupName="range">
+            <div class="p-float-label flex-auto">
+                <input [id]="uuids.poolStart" pInputText formControlName="start" class="w-full" />
                 <label [for]="uuids.poolStart">First Address</label>
             </div>
-            <div class="flex align-items-center">&nbsp; : &nbsp;</div>
-            <div class="flex align-items-center p-float-label">
-                <input [id]="uuids.poolEnd" pInputText formControlName="end" />
+            <div>:</div>
+            <div class="p-float-label flex-auto">
+                <input [id]="uuids.poolEnd" pInputText formControlName="end" class="w-full" />
                 <label [for]="uuids.poolEnd">Last Address</label>
             </div>
         </div>

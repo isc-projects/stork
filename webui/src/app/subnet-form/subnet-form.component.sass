@@ -1,27 +1,41 @@
-:host ::ng-deep .p-multiselect.p-multiselect-chip .p-multiselect-token
-    background: var(--primary-100)
-    color: var(--text-color)
-    margin-right: 4px
-    margin-top: 2px
-    margin-bottom: 2px
+:host ::ng-deep
+    .p-multiselect.p-multiselect-chip .p-multiselect-token
+        background: var(--primary-100)
+        color: var(--text-color)
+        margin-right: 4px
+        margin-top: 2px
+        margin-bottom: 2px
 
-// Overwrite default PrimeNG Aura style for accordion.
-:host ::ng-deep .p-accordion
-    .p-accordion-header:not(.p-disabled)
-        & .p-accordion-header-link
-            // Make the accordion headers always visible with light background color.
-            border-color: var(--surface-border)
-            background: var(--surface-100)
-        &:hover .p-accordion-header-link
-            // Add hover effect.
-            background: var(--surface-200)
+    // Overwrite default PrimeNG Aura style for accordion.
+    .p-accordion
+        .p-accordion-header:not(.p-disabled)
+            & .p-accordion-header-link
+                // Make the accordion headers always visible with light background color.
+                border-color: var(--surface-border)
+                background: var(--surface-100)
+            &:hover .p-accordion-header-link
+                // Add hover effect.
+                background: var(--surface-200)
 
-    .p-accordion-tab-active
-        .p-toggleable-content
-            overflow: visible
+        .p-accordion-tab-active
+            .p-toggleable-content
+                overflow: visible
 
-    .p-accordion-tab
-        // Cancel the single line which is the only thing separating accordion tabs in Aura theme.
-        border-bottom: none
-        // And separate the tabs with little margin, as it was in older PrimeNG themes.
-        margin-bottom: 0.25rem
+        .p-accordion-tab
+            // Cancel the single line which is the only thing separating accordion tabs in Aura theme.
+            border-bottom: none
+            // And separate the tabs with little margin, as it was in older PrimeNG themes.
+            margin-bottom: 0.25rem
+
+        .p-accordion-content
+            @media screen and (max-width: 359px)
+                // Decrease padding in accordion for smaller viewports to save horizontal space.
+                padding-right: 0
+                padding-left: 0
+
+    // Limit width of form inputs.
+    input.w-full
+        max-width: var(--max-form-width)
+    .w-full
+        &.p-dropdown, &.p-multiselect
+            max-width: var(--max-form-width)
