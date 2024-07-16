@@ -1,5 +1,5 @@
 <form *ngIf="!form.initError; else showInitError" [formGroup]="formGroup" class="max-w-50rem cust-form">
-    <p-fieldset legend="Form Settings" styleClass="">
+    <p-fieldset legend="Form Settings">
         <div class="flex flex-column">
             <div class="flex align-items-center">
                 <p-inputSwitch
@@ -16,7 +16,7 @@
         </div>
     </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="cust-col">
-        <div class="">
+        <div>
             <span class="p-float-label">
                 <p-multiSelect
                     inputId="servers-select"
@@ -41,7 +41,7 @@
                 >At least one server must be selected.
             </small>
         </div>
-        <div *ngIf="!formGroup.get('globalReservation').value" class="">
+        <div *ngIf="!formGroup.get('globalReservation').value">
             <span class="p-float-label">
                 <p-dropdown
                     inputId="subnets-dropdown"
@@ -138,7 +138,7 @@
     </p-fieldset>
 
     <p-fieldset legend="Host Reservations" styleClass="cust-col">
-        <div class="">
+        <div>
             <span class="p-float-label">
                 <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
                 <label for="hostname-input">Hostname</label>
@@ -307,7 +307,7 @@
                         "
                     ></ng-container>
                 </ng-template>
-                <div class="">
+                <div>
                     <span class="p-float-label">
                         <input
                             id="next-server-input-{{ i }}"
@@ -327,7 +327,7 @@
                         >Please specify a valid IPv4 address.
                     </small>
                 </div>
-                <div class="">
+                <div>
                     <span class="p-float-label">
                         <input
                             id="server-hostname-input-{{ i }}"
@@ -347,7 +347,7 @@
                         >Please specify a valid hostname (e.g., alice-laptop or bob.example.org.).
                     </small>
                 </div>
-                <div class="">
+                <div>
                     <span class="p-float-label">
                         <input
                             id="boot-file-name-input-{{ i }}"
@@ -372,7 +372,7 @@
                     "
                 ></ng-container>
             </ng-template>
-            <div class="">
+            <div>
                 <app-dhcp-client-class-set-form
                     [clientClasses]="form.clientClasses"
                     [classFormControl]="clientClassesSet"
@@ -392,7 +392,7 @@
                         "
                     ></ng-container>
                 </ng-template>
-                <div class="" [formGroupName]="i">
+                <div [formGroupName]="i">
                     <app-dhcp-option-set-form
                         [v6]="form.dhcpv6"
                         [formArray]="optionsSet"
