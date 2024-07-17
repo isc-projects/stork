@@ -108,7 +108,7 @@ const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
-        path: 'dhcp/global-config/daemons/:daemonId',
+        path: 'apps/kea/:appId/daemons/:daemonId/global-config',
         component: KeaGlobalConfigurationPageComponent,
         canActivate: [AuthGuard],
     },

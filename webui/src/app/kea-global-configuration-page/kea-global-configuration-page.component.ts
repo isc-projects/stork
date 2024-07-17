@@ -15,7 +15,14 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     /**
      * Breadcrumbs for this view.
      */
-    breadcrumbs = [{ label: 'DHCP' }, { label: 'Global Parameters' }, { label: 'Daemons' }, { label: 'Daemon' }]
+    breadcrumbs = [
+        { label: 'Services' },
+        { label: 'Kea Apps', routerLink: '/apps/kea/all' },
+        { label: 'App' },
+        { label: 'Daemons' },
+        { label: 'Daemon' },
+        { label: 'Global Configuration' },
+    ]
 
     /**
      * Daemon ID for which the configuration is fetched.
