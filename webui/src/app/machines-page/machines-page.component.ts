@@ -104,7 +104,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
+        this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/authorized' }]
 
         this.machines = []
         this.appTypes = [
@@ -174,7 +174,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         this.subscriptions.add(
             this.route.paramMap.subscribe((params: ParamMap) => {
                 const machineIdStr = params.get('id')
-                if (machineIdStr === 'all') {
+                if (machineIdStr === 'authorized' || machineIdStr === 'unauthorized') {
+                    this.showUnauthorized = machineIdStr === 'unauthorized'
                     this.switchToTab(0)
                 } else {
                     const machineId = parseInt(machineIdStr, 10)
@@ -217,7 +218,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                                     detail: 'Failed to get machine with ID ' + machineId + ': ' + msg,
                                     life: 10000,
                                 })
-                                this.router.navigate(['/machines/all'])
+                                this.navigateToMachinesList()
                             }
                         )
                     }
@@ -256,6 +257,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * unauthorized machines that may require authorization.
      */
     refreshUnauthorizedMachinesCount() {
+        this.navigateToMachinesList()
         if (this.showUnauthorized) {
             return
         }
@@ -351,7 +353,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
             if (idx - 1 > 0) {
                 this.router.navigate(['/machines/' + this.machineTab.machine.id])
             } else {
-                this.router.navigate(['/machines/all'])
+                this.navigateToMachinesList()
             }
         } else if (this.activeTabIdx > idx) {
             this.activeTabIdx = this.activeTabIdx - 1
@@ -731,5 +733,21 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      */
     clearFilters(table: Table) {
         table.filter(null, 'text', 'contains')
+    }
+
+    /**
+     * Navigates to the URL displaying authorized or unauthorized machines.
+     *
+     * Depending on whether a user requested listing authorized or unauthorized
+     * machines the router link is different. This function updates the router
+     * link accordingly. It also updates the link of the first tab, so it matches
+     * the current router link.
+     */
+    navigateToMachinesList() {
+        const currentLink = this.showUnauthorized ? '/machines/unauthorized' : '/machines/authorized'
+        if (this.tabs.length > 0) {
+            this.tabs[0].routerLink = currentLink
+        }
+        this.router.navigate([currentLink])
     }
 }

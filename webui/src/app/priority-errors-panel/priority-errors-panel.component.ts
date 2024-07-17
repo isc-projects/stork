@@ -195,7 +195,7 @@ export class PriorityErrorsPanelComponent implements OnInit, OnDestroy {
                         summary: 'Unregistered machines',
                         detail:
                             `Found ${formatNoun(count, 'machine', 's')} requesting registration and awaiting approval. ` +
-                            `Visit the list of <a href="/machines/all">unauthorized machines</a> to review the requests.`,
+                            `Visit the list of <a href="/machines/unauthorized">unauthorized machines</a> to review the requests.`,
                     }
                     this.insertMessage(EventStream.Registration, message)
                 } else {

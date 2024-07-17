@@ -26,6 +26,7 @@ import { RouterModule } from '@angular/router'
 import { HttpErrorResponse } from '@angular/common/http'
 import anything = jasmine.anything
 import { MessagesModule } from 'primeng/messages'
+import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -33,13 +34,24 @@ describe('MachinesPageComponent', () => {
     let servicesApi: ServicesService
     let msgService: MessageService
     let settingsService: SettingsService
+    let router: Router
+    let route: ActivatedRoute
 
     beforeEach(fakeAsync(() => {
         TestBed.configureTestingModule({
             providers: [MessageService, ServicesService, UsersService],
             imports: [
                 HttpClientTestingModule,
-                RouterModule.forRoot([{ path: 'machines/all', component: MachinesPageComponent }]),
+                RouterModule.forRoot([
+                    {
+                        path: 'machines/unauthorized',
+                        component: MachinesPageComponent,
+                    },
+                    {
+                        path: 'machines/authorized',
+                        component: MachinesPageComponent,
+                    },
+                ]),
                 FormsModule,
                 SelectButtonModule,
                 TableModule,
@@ -67,6 +79,9 @@ describe('MachinesPageComponent', () => {
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         msgService = fixture.debugElement.injector.get(MessageService)
         settingsService = fixture.debugElement.injector.get(SettingsService)
+        router = fixture.debugElement.injector.get(Router)
+        route = fixture.debugElement.injector.get(ActivatedRoute)
+
         fixture.detectChanges()
         tick()
     }))
@@ -185,6 +200,7 @@ describe('MachinesPageComponent', () => {
 
     it('should list machines', fakeAsync(() => {
         expect(component.showUnauthorized).toBeFalse()
+        expect(component.tabs?.[0].routerLink).toBe('/machines/authorized')
 
         // get references to select buttons
         const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
@@ -210,6 +226,7 @@ describe('MachinesPageComponent', () => {
         expect(component.totalMachines).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
+        expect(component.tabs?.[0].routerLink).toBe('/machines/unauthorized')
 
         // check if hostnames are displayed
         const nativeEl = fixture.nativeElement
@@ -225,11 +242,26 @@ describe('MachinesPageComponent', () => {
         expect(component.totalMachines).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
+        expect(component.tabs?.[0].routerLink).toBe('/machines/authorized')
 
         // check if hostnames are displayed
         expect(nativeEl.textContent).toContain('zzz')
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).not.toContain('aaa')
+    }))
+
+    it('should list unauthorized machines requested via URL', fakeAsync(() => {
+        router.navigate(['/machines/unauthorized'])
+        const paramMap = convertToParamMap({
+            id: 'unauthorized',
+        })
+        spyOnProperty(route, 'paramMap').and.returnValue(of(paramMap))
+
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.showUnauthorized).toBeTrue()
     }))
 
     it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - first machine fails', fakeAsync(() => {
