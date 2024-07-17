@@ -6,6 +6,9 @@ import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ActivatedRoute } from '@angular/router'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 
+/**
+ * A component that displays global configuration parameter for Kea.
+ */
 @Component({
     selector: 'app-kea-global-configuration-page',
     templateUrl: './kea-global-configuration-page.component.html',
@@ -92,6 +95,8 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
 
     /**
      * Component lifecycle hook invoked during the component initialization.
+     *
+     * It fetches Kea configuration from the server.
      */
     ngOnInit(): void {
         this.subscriptions.add(

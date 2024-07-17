@@ -184,8 +184,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                     }
                 }
                 // Check if we already have the parameter processed for a different data set.
-                let parameterName = unhyphen(key)
-                parameterName = uncamelCase(parameterName)
+                const parameterName = uncamelCase(unhyphen(key))
                 let cascadedParameter = this.rows.find((v) => v.name === parameterName)
                 if (!cascadedParameter) {
                     // It is the first time we see this parameter. Let's add it.
