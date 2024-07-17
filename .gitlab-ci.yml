@@ -604,7 +604,7 @@ system_test:
     - rake systemtest
   artifacts:
     paths:
-      - tests/system/test-results/**/*.log
+      - tests/system/test-results/
     expire_in: 1 week
     when: always
 

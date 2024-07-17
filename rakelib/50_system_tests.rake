@@ -147,6 +147,9 @@ desc 'Run system tests
 task :systemtest => [PYTEST, DOCKER_COMPOSE, OPEN_API_GENERATOR_PYTHON_DIR, *GRPC_PYTHON_API_FILES, *volume_files, "systemtest:setup_version_envvars"] do
     opts = []
 
+    # Used in GitLab CI.
+    opts.append('--junit-xml=test-results/junit.xml')
+
     if !ENV["TEST"].nil?
         opts.append "-k", ENV["TEST"]
     end
