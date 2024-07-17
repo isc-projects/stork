@@ -36,3 +36,75 @@
 
             &:last-child
                 width: 10%
+
+    .w-full.p-component > input
+        width: 100%
+
+.d-root-container
+    // repeat
+    display: flex
+    flex-direction: column
+    gap: 1.5rem
+.d-row-param
+    // repeat
+    display: flex
+    flex-direction: column
+    gap: 1.5rem
+
+    padding-bottom: 1.5rem
+    border-bottom: 1px solid var(--surface-border)
+    @media screen and (min-width: 576px)
+        flex-direction: row
+
+.d-param-badge
+    //repeat
+    display: flex
+    gap: 0.5rem
+
+    @media screen and (min-width: 576px)
+        display: block
+        width: 20%
+    div:first-child
+        flex: 1 1 auto
+.d-param-form
+    //repeat
+    display: flex
+    gap: 0.5rem
+
+    flex: 1 1 auto
+.d-column-of-controls
+    display: flex
+    gap: 1rem
+    flex-direction: column
+    flex: 1 1 auto
+.d-row-control
+    //repeat
+    display: flex
+    gap: 0.5rem
+
+    align-items: end
+    @media screen and (min-width: 576px)
+        align-items: start
+    //width: 100%
+.d-form-and-server-tag
+    //repeat
+    display: flex
+    gap: 0.5rem
+
+    flex: 1 1 auto
+    flex-direction: column-reverse
+
+    @media screen and (min-width: 576px)
+        flex-direction: row
+        .d-form-and-feedback
+            flex: 0 1 var(--max-form-width)
+    .d-form-and-feedback
+        flex: 1 1 auto
+
+.d-server-tag
+    display: flex
+    align-items: center
+.d-form > .p-inputwrapper
+    width: 100%
+
+

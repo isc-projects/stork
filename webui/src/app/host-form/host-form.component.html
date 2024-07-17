@@ -87,12 +87,7 @@
                 *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText"
                 class="col-12 sm:col-6"
             >
-                <input
-                    pInputText
-                    formControlName="idInputHex"
-                    class="w-full"
-                    placeholder="e.g. 01:02:03:04:05:06"
-                />
+                <input pInputText formControlName="idInputHex" class="w-full" placeholder="e.g. 01:02:03:04:05:06" />
                 <small
                     *ngIf="
                         formGroup.get('hostIdGroup.idInputHex').invalid &&
@@ -157,8 +152,7 @@
                 <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i">
                     <ng-container [formGroup]="ipGroup" class="flex align-items-start">
                         <div class="col-12 sm:col-3">
-                            <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="w-full">
-                            </p-dropdown>
+                            <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="w-full"> </p-dropdown>
                         </div>
                         <ng-container [ngSwitch]="ipGroup.value.ipType">
                             <ng-container *ngSwitchCase="'ipv4'">
@@ -309,12 +303,7 @@
                 </ng-template>
                 <div>
                     <span class="p-float-label">
-                        <input
-                            id="next-server-input-{{ i }}"
-                            pInputText
-                            class="w-full"
-                            formControlName="nextServer"
-                        />
+                        <input id="next-server-input-{{ i }}" pInputText class="w-full" formControlName="nextServer" />
                         <label for="next-server-input-{{ i }}">Next Server</label>
                     </span>
                     <small
