@@ -6,6 +6,7 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
+import { KeaDaemonConfig } from '../backend'
 
 /**
  * A component providing a dedicated page displaying Kea daemon configuration.
@@ -103,7 +104,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
         this.subscriptions.add(
             this.changeDaemonId
                 .pipe(switchMap((daemonId) => this.serverData.getDaemonConfiguration(daemonId)))
-                .subscribe((res) => {
+                .subscribe((res: KeaDaemonConfig) => {
                     if (res instanceof HttpErrorResponse) {
                         this.msgService.add({
                             severity: 'error',
@@ -115,7 +116,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
                         this._configuration = null
                     } else {
                         this._failedFetch = false
-                        this._configuration = res
+                        this._configuration = res.config || null
                     }
                 })
         )

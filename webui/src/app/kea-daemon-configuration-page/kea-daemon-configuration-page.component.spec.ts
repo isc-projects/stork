@@ -84,9 +84,20 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         }
         spyOn(dataService.servicesApi, 'getApp').and.returnValue(of(fakeResponse))
         spyOn(dataService.servicesApi, 'getDaemonConfig').and.returnValues(
-            of({} as any),
-            of({ foo: 42 } as any),
-            of({ secret: 'SECRET', password: 'PASSWORD' } as any),
+            of({
+                config: {},
+            } as any),
+            of({
+                config: {
+                    foo: 42,
+                },
+            } as any),
+            of({
+                config: {
+                    secret: 'SECRET',
+                    password: 'PASSWORD',
+                },
+            } as any),
             throwError(new HttpErrorResponse({ status: 400 }))
         )
 

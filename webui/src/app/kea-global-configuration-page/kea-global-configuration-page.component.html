@@ -3,8 +3,14 @@
         <p>This page displays configured global DHCP parameters.</p>
     </div>
 </app-breadcrumbs>
+<div class="mt-2 mb-4">
+    <a *ngIf="appId" routerLink="/apps/kea/{{ appId }}" [queryParams]="{ daemon: daemonName }">
+        <span class="fa fa-arrow-left"></span>
+        <span style="margin-left: 5px">Back to {{ appName }}</span>
+    </a>
+</div>
 <div *ngIf="loaded; else showSpinner">
-    <p-fieldset legend="DHCP Parameters">
+    <p-fieldset legend="Global DHCP Parameters">
         <app-cascaded-parameters-board
             [levels]="['Global']"
             [data]="dhcpParameters"

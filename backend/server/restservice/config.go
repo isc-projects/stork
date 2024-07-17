@@ -55,7 +55,13 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 		dbDaemon.KeaDaemon.Config.HideSensitiveData()
 	}
 
-	rsp := services.NewGetDaemonConfigOK().WithPayload(dbDaemon.KeaDaemon.Config)
+	rsp := services.NewGetDaemonConfigOK().WithPayload(&models.KeaDaemonConfig{
+		AppID:      dbDaemon.App.GetID(),
+		AppName:    dbDaemon.App.GetName(),
+		AppType:    dbDaemon.GetAppType().String(),
+		DaemonName: dbDaemon.GetName(),
+		Config:     dbDaemon.KeaDaemon.Config,
+	})
 	return rsp
 }
 

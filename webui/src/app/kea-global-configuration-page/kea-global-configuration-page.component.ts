@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { ServicesService } from '../backend'
+import { KeaDaemonConfig, ServicesService } from '../backend'
 import { Subscription, lastValueFrom } from 'rxjs'
 import { MessageService } from 'primeng/api'
-import { getErrorMessage } from '../utils'
+import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ActivatedRoute } from '@angular/router'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 
@@ -12,16 +12,50 @@ import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-p
     styleUrl: './kea-global-configuration-page.component.sass',
 })
 export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
-    daemonId: number
-
+    /**
+     * Breadcrumbs for this view.
+     */
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Global Parameters' }, { label: 'Daemons' }, { label: 'Daemon' }]
 
+    /**
+     * Daemon ID for which the configuration is fetched.
+     */
+    daemonId: number
+
+    /**
+     * Daemon name fetched from the server.
+     */
+    daemonName: string
+
+    /**
+     * App ID to which the daemon belongs.
+     */
+    appId: number
+
+    /**
+     * App name for which the daemon belongs.
+     */
+    appName: string
+
+    /**
+     * Holds fetched configuration.
+     */
     dhcpParameters: Array<NamedCascadedParameters<Object>> = []
 
+    /**
+     * Subscriptions released when the component is destroyed.
+     */
     subscriptions = new Subscription()
 
+    /**
+     * A flag indicating when the data have been loaded from the server.
+     */
     loaded: boolean = false
 
+    /**
+     * A list of parameters not presented in this view but fetched from
+     * the server in the configuration.
+     */
     excludedParameters: Array<string> = [
         'clientClasses',
         'configControl',
@@ -61,10 +95,13 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
 
                 this.loaded = false
                 lastValueFrom(this.servicesService.getDaemonConfig(this.daemonId))
-                    .then((data) => {
+                    .then((data: KeaDaemonConfig) => {
+                        this.daemonName = data.daemonName
+                        this.appId = data.appId
+                        this.appName = data.appName
                         this.dhcpParameters.push({
-                            name: 'Server 1',
-                            parameters: [data.Dhcp4],
+                            name: `${data.appName} / ${daemonNameToFriendlyName(data.daemonName)}`,
+                            parameters: [data.config.Dhcp4 || data.config.Dhcp6],
                         })
                     })
                     .catch((err) => {

@@ -85,7 +85,11 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
 	okRsp := rsp.(*services.GetDaemonConfigOK)
 	require.NotEmpty(t, okRsp.Payload)
-	require.Equal(t, configDhcp4, okRsp.Payload)
+	require.Equal(t, configDhcp4, okRsp.Payload.Config)
+	require.NotZero(t, okRsp.Payload.AppID)
+	require.Equal(t, "test-app", okRsp.Payload.AppName)
+	require.Equal(t, "dhcp4", okRsp.Payload.DaemonName)
+	require.Equal(t, "kea", okRsp.Payload.AppType)
 
 	params = services.GetDaemonConfigParams{
 		ID: app.Daemons[1].ID,
@@ -96,7 +100,11 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
 	okRsp = rsp.(*services.GetDaemonConfigOK)
 	require.NotEmpty(t, okRsp.Payload)
-	require.Equal(t, configDhcp6, okRsp.Payload)
+	require.Equal(t, configDhcp6, okRsp.Payload.Config)
+	require.NotZero(t, okRsp.Payload.AppID)
+	require.Equal(t, "test-app", okRsp.Payload.AppName)
+	require.Equal(t, "dhcp6", okRsp.Payload.DaemonName)
+	require.Equal(t, "kea", okRsp.Payload.AppType)
 }
 
 // Test that GetDaemonConfig returns the secrets for super admin.
@@ -178,7 +186,7 @@ func TestGetDaemonConfigWithSecretsForSuperAdmin(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
 	okRsp := rsp.(*services.GetDaemonConfigOK)
 	require.NotEmpty(t, okRsp.Payload)
-	require.Equal(t, configDhcp4, okRsp.Payload)
+	require.Equal(t, configDhcp4, okRsp.Payload.Config)
 }
 
 // Test that GetDaemonConfig hides the secrets for standard users.
@@ -294,7 +302,7 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotEmpty(t, expected)
-	require.Equal(t, expected, okRsp.Payload)
+	require.Equal(t, expected, okRsp.Payload.Config)
 }
 
 // Test that GetDaemonConfig returns HTTP Not Found status for Kea daemon

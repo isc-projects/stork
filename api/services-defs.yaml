@@ -285,7 +285,18 @@
 
   KeaDaemonConfig:
     type: object
-    additionalProperties: true
+    properties:
+      daemonName:
+        type: string
+      appId:
+        type: integer
+      appName:
+        type: string
+      appType:
+        type: string
+      config:
+        type: object
+        additionalProperties: true
 
   AppKea:
     type: object
