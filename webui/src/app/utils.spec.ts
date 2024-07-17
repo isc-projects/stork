@@ -13,6 +13,7 @@ import {
     formatNoun,
     deepCopy,
     daemonNameToFriendlyName,
+    unhyphen,
 } from './utils'
 
 describe('utils', () => {
@@ -306,6 +307,15 @@ describe('utils', () => {
         expect(uncamelCase('anotherParameter')).toBe('Another Parameter')
         expect(uncamelCase('_withUnderscore')).toBe('With Underscore')
         expect(uncamelCase('  ')).toBe('  ')
+    })
+
+    it('should convert a name with hyphens to camel case', () => {
+        expect(unhyphen('ddns-parameter-name')).toBe('ddnsParameterName')
+        expect(unhyphen('pd-value')).toBe('pdValue')
+        expect(unhyphen('ip-prefix')).toBe('ipPrefix')
+        expect(unhyphen('double--hyphen')).toBe('doubleHyphen')
+        expect(unhyphen('camelCaseAlready')).toBe('camelCaseAlready')
+        expect(unhyphen('  ')).toBe('  ')
     })
 
     it('should return severity by index', () => {

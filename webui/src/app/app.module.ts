@@ -132,6 +132,10 @@ import { RouteReuseStrategy } from '@angular/router'
 import { SharedNetworkFormComponent } from './shared-network-form/shared-network-form.component'
 import { CommunicationStatusTreeComponent } from './communication-status-tree/communication-status-tree.component'
 import { CommunicationStatusPageComponent } from './communication-status-page/communication-status-page.component'
+import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page/kea-global-configuration-page.component'
+import { ParameterViewComponent } from './parameter-view/parameter-view.component'
+import { UncamelPipe } from './pipes/uncamel.pipe'
+import { UnhyphenPipe } from './pipes/unhyphen.pipe'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -216,6 +220,10 @@ export function cfgFactory() {
         SharedNetworkFormComponent,
         CommunicationStatusTreeComponent,
         CommunicationStatusPageComponent,
+        KeaGlobalConfigurationPageComponent,
+        ParameterViewComponent,
+        UncamelPipe,
+        UnhyphenPipe,
     ],
     imports: [
         BrowserModule,

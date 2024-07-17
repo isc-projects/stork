@@ -21,6 +21,7 @@ import { LeaseSearchPageComponent } from './lease-search-page/lease-search-page.
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page/kea-daemon-configuration-page.component'
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page/config-checker-preference-page.component'
 import { CommunicationStatusPageComponent } from './communication-status-page/communication-status-page.component'
+import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page/kea-global-configuration-page.component'
 
 const routes: Routes = [
     {
@@ -104,6 +105,11 @@ const routes: Routes = [
     {
         path: 'dhcp/shared-networks/:id',
         component: SharedNetworksPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'dhcp/global-config/daemons/:daemonId',
+        component: KeaGlobalConfigurationPageComponent,
         canActivate: [AuthGuard],
     },
     {

@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { uncamelCase } from '../utils'
+import { uncamelCase, unhyphen } from '../utils'
 
 /**
  * Allowed types of the parameters displayed in the table.
@@ -102,6 +102,14 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
     @Input() excludedParameters: string[]
 
     /**
+     * Specifies whether the complex parameters should be formatted.
+     *
+     * If this flag is set to false, the complex parameters are serialized into
+     * strings. Otherwise, they are pretty printed.
+     */
+    @Input() formatComplexTypes: boolean = false
+
+    /**
      * Parsed data representing displayed rows.
      *
      * An array of rows, each row representing data for a single parameter and multiple
@@ -129,7 +137,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                 for (let key of Object.keys(keySet)) {
                     // Only add it as a new key when it doesn't exist yet and when it
                     // is not excluded.
-                    if (!keys.includes(key) && !this.excludedParameters?.includes(key)) {
+                    if (!keys.includes(key) && !this.excludedParameters?.includes(unhyphen(key))) {
                         keys.push(key)
                     }
                 }
@@ -153,15 +161,18 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                     if (Object.keys(dataSet.parameters[i]).includes(key)) {
                         // If it has, get its value.
                         let value = dataSet.parameters[i][key]
-                        let formatted: CascadedParameterType = value
-                        // Depending on whether it is a primitive or a complex type the
-                        // value is formatted differently.
                         if (value == null) {
                             continue
-                        } else if (Array.isArray(value)) {
-                            formatted = this.formatArray(value)
-                        } else if (typeof value === 'object') {
-                            formatted = this.formatObject(value)
+                        }
+                        let formatted: CascadedParameterType = value
+                        // If the values are not to be formatted we just serialize them
+                        // into strings.
+                        if (!this.formatComplexTypes) {
+                            if (Array.isArray(value)) {
+                                formatted = this.serializeArray(value)
+                            } else if (typeof value === 'object') {
+                                formatted = this.serializeObject(value)
+                            }
                         }
                         values.push(formatted)
                         if (effective == null && value != null) {
@@ -173,7 +184,8 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
                     }
                 }
                 // Check if we already have the parameter processed for a different data set.
-                let parameterName = uncamelCase(key)
+                let parameterName = unhyphen(key)
+                parameterName = uncamelCase(parameterName)
                 let cascadedParameter = this.rows.find((v) => v.name === parameterName)
                 if (!cascadedParameter) {
                     // It is the first time we see this parameter. Let's add it.
@@ -197,34 +209,41 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
     }
 
     /**
-     * Formats an array parameter for display.
+     * Indicates if there are multiple configuration levels to be shown cascaded.
+     */
+    get showCascaded(): boolean {
+        return this.levels?.length > 1
+    }
+
+    /**
+     * Serializes an array parameter for display.
      *
-     * A formatted array is surrounded by square brackets. The elements are separated
+     * A serialized array is surrounded by square brackets. The elements are separated
      * with a comma and a space character.
      *
      * @param value an array value to be formatted.
      * @returns formatted value (string) if an array; otherwise, original value.
      */
-    private formatArray(value: CascadedParameterType): CascadedParameterType {
+    private serializeArray(value: CascadedParameterType): CascadedParameterType {
         return Array.isArray(value) ? '[ ' + value.join(', ') + ' ]' : value
     }
 
     /**
-     * Formats an object for display.
+     * Serializes an object for display.
      *
      * The object keys are converted from the camel case to long names.
      *
      * @param value an object to be formatted
      * @returns fomatted value as a string.
      */
-    private formatObject(value: CascadedParameterType): CascadedParameterType {
+    private serializeObject(value: CascadedParameterType): CascadedParameterType {
         return JSON.stringify(
             value,
             (key, val) => {
                 if (typeof val === 'object' && !Array.isArray(val)) {
                     for (let k of Object.keys(val)) {
                         // Replace the original key with a long name.
-                        let newKey = uncamelCase(k)
+                        let newKey = uncamelCase(unhyphen(k))
                         val[newKey] = val[k]
                         delete val[k]
                     }

@@ -1,6 +1,7 @@
 <p-table *ngIf="rows.length > 0; else noRowsBlock" [value]="rows" dataKey="name" styleClass="cascaded-parameters-table">
     <ng-template pTemplate="header">
         <tr>
+            <th *ngIf="showCascaded" class="w-3rem"></th>
             <th></th>
             <th *ngFor="let dataSet of data">
                 {{ dataSet.name }}
@@ -9,37 +10,34 @@
     </ng-template>
     <ng-template pTemplate="body" let-row let-expanded="expanded">
         <tr class="text-blue-500">
+            <td *ngIf="showCascaded">
+                <button
+                    type="button"
+                    pButton
+                    pRipple
+                    [pRowToggler]="row"
+                    class="p-button-text p-button-rounded p-button-plain mr-2"
+                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                ></button>
+            </td>
             <td>
-                <div class="flex align-items-center">
-                    <button
-                        type="button"
-                        pButton
-                        pRipple
-                        [pRowToggler]="row"
-                        class="p-button-text p-button-rounded p-button-plain mr-2"
-                        [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                    ></button>
-                    <span>{{ row.name }}</span>
-                </div>
+                <span>{{ row.name }}</span>
             </td>
             <td *ngFor="let parameter of row.parameters">
-                <span>
-                    {{ parameter.effective | placeholder }}
-                </span>
+                <app-parameter-view [parameter]="parameter.effective"></app-parameter-view>
             </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="rowexpansion" let-row>
         <tr *ngFor="let level of levels; let i = index">
+            <td></td>
             <td>
                 <span class="ml-6">
                     {{ level }}
                 </span>
             </td>
             <td *ngFor="let parameter of row.parameters; let j = index">
-                <span>
-                    {{ row.parameters[j].values[i] | placeholder }}
-                </span>
+                <app-parameter-view [parameter]="row.parameters[j].values[i]"></app-parameter-view>
                 <span
                     *ngIf="level === row.parameters[j].level"
                     class="fa-solid fa-check cascaded-parameter-effective-icon"

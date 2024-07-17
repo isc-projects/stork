@@ -534,6 +534,30 @@ export function uncamelCase(key: string): string {
 }
 
 /**
+ * Converts a parameter name from JSON notation to long names.
+ *
+ * It removes hyphens and replaces them with spaces. All words following
+ * the hyphens are converted to begin with a capital letter.
+ *
+ * @param key a name to be converted from JSON notation.
+ * @returns converted name.
+ */
+export function unhyphen(key: string): string {
+    let text = key.trim().replace(/-/g, ' ')
+    if (text.length === 0) {
+        return key
+    }
+    let position = 0
+    while (position >= 0) {
+        position = text.indexOf(' ', position)
+        if (position >= 0 && position < text.length - 1) {
+            text = text.slice(0, position) + text.charAt(position + 1).toUpperCase() + text.slice(position + 2)
+        }
+    }
+    return text
+}
+
+/**
  * Returns severity as text for an index.
  *
  * It is useful in cases when there are several managed servers indexed

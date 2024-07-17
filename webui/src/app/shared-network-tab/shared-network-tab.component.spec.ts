@@ -35,6 +35,9 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
 import { DHCPService } from '../backend'
 import { HttpErrorResponse } from '@angular/common/http'
+import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
+import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
+import { UncamelPipe } from '../pipes/uncamel.pipe'
 
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
@@ -55,7 +58,10 @@ describe('SharedNetworkTabComponent', () => {
                 HumanCountComponent,
                 HumanCountPipe,
                 LocalNumberPipe,
+                ParameterViewComponent,
                 PlaceholderPipe,
+                UncamelPipe,
+                UnhyphenPipe,
                 SharedNetworkTabComponent,
                 SubnetBarComponent,
                 UtilizationStatsChartComponent,

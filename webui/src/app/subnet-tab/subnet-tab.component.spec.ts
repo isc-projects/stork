@@ -33,6 +33,9 @@ import { DHCPService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 import { RouterModule } from '@angular/router'
+import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
+import { UncamelPipe } from '../pipes/uncamel.pipe'
+import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -72,8 +75,11 @@ describe('SubnetTabComponent', () => {
                 HumanCountComponent,
                 HumanCountPipe,
                 LocalNumberPipe,
+                ParameterViewComponent,
                 PlaceholderPipe,
                 SubnetTabComponent,
+                UncamelPipe,
+                UnhyphenPipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],

@@ -6,6 +6,10 @@ import { ButtonModule } from 'primeng/button'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { KeaConfigSubnetDerivedParameters } from '../backend'
+import { TreeTableModule } from 'primeng/treetable'
+import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
+import { UncamelPipe } from '../pipes/uncamel.pipe'
+import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 
 export default {
     title: 'App/CascadedParametersBoard',
@@ -15,8 +19,14 @@ export default {
             providers: [],
         }),
         moduleMetadata({
-            imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule],
-            declarations: [CascadedParametersBoardComponent, PlaceholderPipe],
+            imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule, TreeTableModule],
+            declarations: [
+                CascadedParametersBoardComponent,
+                ParameterViewComponent,
+                PlaceholderPipe,
+                UncamelPipe,
+                UnhyphenPipe,
+            ],
             providers: [],
         }),
     ],

@@ -1,0 +1,21 @@
+<!-- Object type containing named values. -->
+<div *ngIf="isParameterObject">
+    <ul class="list-none pl-0">
+        <li *ngFor="let subp of parameterAsRecord | keyvalue">
+            {{ subp.key | unhyphen | uncamel }}:
+            <span class="text-color-secondary monospace">{{ subp.value | placeholder }}</span>
+        </li>
+    </ul>
+</div>
+
+<!-- Array containing a collection of values. -->
+<span *ngIf="isParameterArray">
+    <ul class="list-none pl-0">
+        <li *ngFor="let subp of parameterAsArray">
+            <span class="text-color-secondary monospace">{{ subp | placeholder }}</span>
+        </li>
+    </ul>
+</span>
+
+<!-- Basic type, such as string, number etc. -->
+<span *ngIf="isParameterBasicType" class="text-color-secondary monospace">{{ parameterAsAny | placeholder }}</span>

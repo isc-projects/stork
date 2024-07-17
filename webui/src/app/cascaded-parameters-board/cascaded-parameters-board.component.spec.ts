@@ -8,6 +8,9 @@ import { TableModule } from 'primeng/table'
 import { By } from '@angular/platform-browser'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TooltipModule } from 'primeng/tooltip'
+import { UncamelPipe } from '../pipes/uncamel.pipe'
+import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
+import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 
 describe('CascadedParametersBoardComponent', () => {
     let component: CascadedParametersBoardComponent<KeaConfigSubnetDerivedParameters>
@@ -15,7 +18,13 @@ describe('CascadedParametersBoardComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [CascadedParametersBoardComponent, PlaceholderPipe],
+            declarations: [
+                CascadedParametersBoardComponent,
+                ParameterViewComponent,
+                PlaceholderPipe,
+                UncamelPipe,
+                UnhyphenPipe,
+            ],
             imports: [ButtonModule, NoopAnimationsModule, TableModule, TooltipModule],
         }).compileComponents()
 
@@ -231,9 +240,9 @@ describe('CascadedParametersBoardComponent', () => {
         expect(rows.length).toBe(2)
 
         let columns = rows[1].queryAll(By.css('td'))
-        expect(columns.length).toBe(2)
-        expect(columns[0].nativeElement.innerText).toBe('Valid Lifetime')
-        expect(columns[1].nativeElement.innerText).toBe('1000')
+        expect(columns.length).toBe(3)
+        expect(columns[1].nativeElement.innerText).toBe('Valid Lifetime')
+        expect(columns[2].nativeElement.innerText).toBe('1000')
 
         const button = columns[0].query(By.css('button'))
         expect(button).toBeTruthy()
@@ -245,13 +254,40 @@ describe('CascadedParametersBoardComponent', () => {
         expect(rows.length).toBe(4)
 
         columns = rows[2].queryAll(By.css('td'))
-        expect(columns.length).toBe(2)
-        expect(columns[0].nativeElement.innerText).toBe('Subnet')
-        expect(columns[1].nativeElement.innerText).toBe('1000')
+        expect(columns.length).toBe(3)
+        expect(columns[1].nativeElement.innerText).toBe('Subnet')
+        expect(columns[2].nativeElement.innerText).toBe('1000')
 
         columns = rows[3].queryAll(By.css('td'))
-        expect(columns[0].nativeElement.innerText).toBe('Global')
-        expect(columns[1].nativeElement.innerText).toBe('900')
+        expect(columns[1].nativeElement.innerText).toBe('Global')
+        expect(columns[2].nativeElement.innerText).toBe('900')
+    })
+
+    it('should not expand the parameters when only one level is specified', () => {
+        component.levels = ['Global']
+        component.data = [
+            {
+                name: 'Server1',
+                parameters: [
+                    {
+                        validLifetime: 1000,
+                    },
+                    {
+                        validLifetime: 900,
+                    },
+                ],
+            },
+        ]
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        let rows = fixture.debugElement.queryAll(By.css('tr'))
+        expect(rows.length).toBe(2)
+
+        let columns = rows[1].queryAll(By.css('td'))
+        expect(columns.length).toBe(2)
+        expect(columns[0].nativeElement.innerText).toBe('Valid Lifetime')
+        expect(columns[1].nativeElement.innerText).toBe('1000')
     })
 
     it('should display the data set names', () => {
@@ -278,10 +314,10 @@ describe('CascadedParametersBoardComponent', () => {
         fixture.detectChanges()
 
         const headers = fixture.debugElement.queryAll(By.css('th'))
-        expect(headers.length).toBe(3)
+        expect(headers.length).toBe(4)
 
-        expect(headers[1].nativeElement.innerText).toBe('Server1')
-        expect(headers[2].nativeElement.innerText).toBe('Server2')
+        expect(headers[2].nativeElement.innerText).toBe('Server1')
+        expect(headers[3].nativeElement.innerText).toBe('Server2')
     })
 
     it('should display the text about no parameters', () => {
