@@ -1,5 +1,5 @@
-<div class="flex align-items-center gap-1">
-    <span [class]="{ 'p-float-label': floatingPlaceholder }">
+<div class="flex align-items-end gap-1">
+    <span [class]="{ 'p-float-label': floatingPlaceholder }" class="flex-auto">
         <p-chips
             ngDefaultControl
             inputId="{{ inputId }}"
@@ -96,7 +96,7 @@
         pRipple
         pButton
         label="List"
-        class="p-button-text p-button-sm"
+        class="p-button-text p-button-sm sm-no-padding"
         type="button"
         (click)="showClassSelectionPanel($event)"
     ></button>
