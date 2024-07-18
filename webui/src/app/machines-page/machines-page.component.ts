@@ -257,7 +257,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
      * unauthorized machines that may require authorization.
      */
     refreshUnauthorizedMachinesCount() {
-        this.navigateToMachinesList()
         if (this.showUnauthorized) {
             return
         }
@@ -318,6 +317,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
     /** Callback called on clicking the refresh button. */
     refreshMachinesList(machinesTable: Table) {
+        machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
+    }
+
+    /**
+     * Callback called when toggling between authorized and unauthorized
+     * machines.
+     */
+    onSelectMachinesListChange(machinesTable: Table) {
+        this.navigateToMachinesList()
         machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
     }
 
