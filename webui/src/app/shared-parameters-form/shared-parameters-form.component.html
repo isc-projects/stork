@@ -32,7 +32,11 @@
                         {{ uncamelCase(parameterName) }}
                     </div>
                     <div class="sm:hidden inline-flex gap-1 align-items-center text-color-secondary">
-                        <i class="pi" [class.pi-lock]="!controls.get('unlocked').value" [class.pi-lock-open]="controls.get('unlocked').value"></i>
+                        <i
+                            class="pi"
+                            [class.pi-lock]="!controls.get('unlocked').value"
+                            [class.pi-lock-open]="controls.get('unlocked').value"
+                        ></i>
                         <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                     </div>
                 </div>
@@ -49,14 +53,14 @@
                                     <!--  flex flex-column-reverse sm:flex-row gap-2 flex-auto    -->
                                     <div class="d-form-and-server-tag">
                                         <span
-                                                *ngIf="controls.get('unlocked').value && servers.length > index"
-                                                class="d-server-tag"
+                                            *ngIf="controls.get('unlocked').value && servers.length > index"
+                                            class="d-server-tag"
                                         >
                                             <p-tag [severity]="getServerTagSeverity(index)">
                                                 {{ servers[index] }}
                                             </p-tag>
                                         </span>
-<!--                                        <div class="d-form-and-feedback">-->
+                                        <!--                                        <div class="d-form-and-feedback">-->
                                         <div [ngSwitch]="controls.data?.type" class="d-form">
                                             <ng-container *ngSwitchCase="'string'">
                                                 <p-dropdown
@@ -76,17 +80,14 @@
                                                     >
                                                     </app-array-value-set-form>
                                                     <ng-template #noArrayCase>
-                                                        <input
-                                                            pInputText
-                                                            [formControlName]="index"
-                                                            class="w-full"
-                                                        />
+                                                        <input pInputText [formControlName]="index" class="w-full" />
                                                     </ng-template>
                                                 </ng-template>
                                             </ng-container>
                                             <ng-container *ngSwitchCase="'boolean'">
                                                 <p-triStateCheckbox ngDefaultControl [formControlName]="index">
-                                                </p-triStateCheckbox> {{control.value === null ? 'unset' : control.value }}
+                                                </p-triStateCheckbox>
+                                                {{ control.value === null ? 'unset' : control.value }}
                                             </ng-container>
                                             <ng-container *ngSwitchCase="'number'">
                                                 <p-inputNumber
@@ -112,9 +113,7 @@
                                             </ng-container>
                                             <ng-container *ngSwitchDefault> Something else </ng-container>
                                         </div>
-<!--                                        </div>-->
-
-
+                                        <!--                                        </div>-->
                                     </div>
                                     <button
                                         pRipple
@@ -125,8 +124,16 @@
                                         type="button"
                                         (click)="control.setValue(null)"
                                     ></button>
-                                    <p-button class="flex-none" [text]="true" icon="pi pi-times" [disabled]="control.value === null" title="Clear" (click)="control.setValue(null)" styleClass="sm:hidden sm-no-padding" size="small"/>
-
+                                    <p-button
+                                        class="flex-none"
+                                        [text]="true"
+                                        icon="pi pi-times"
+                                        [disabled]="control.value === null"
+                                        title="Clear"
+                                        (click)="control.setValue(null)"
+                                        styleClass="sm:hidden sm-no-padding"
+                                        size="small"
+                                    />
                                 </div>
                                 <small
                                     *ngIf="control.invalid && (control.dirty || control.touched)"
@@ -136,11 +143,15 @@
                             </ng-container>
                         </ng-container>
                     </div>
-<!--                    <div class="hidden sm:block">-->
-<!--                        <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>-->
-<!--                    </div>-->
+                    <!--                    <div class="hidden sm:block">-->
+                    <!--                        <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>-->
+                    <!--                    </div>-->
                     <div class="hidden sm:inline-flex gap-1 align-items-center text-color-secondary pt-2">
-                        <i class="pi" [class.pi-lock]="!controls.get('unlocked').value" [class.pi-lock-open]="controls.get('unlocked').value"></i>
+                        <i
+                            class="pi"
+                            [class.pi-lock]="!controls.get('unlocked').value"
+                            [class.pi-lock-open]="controls.get('unlocked').value"
+                        ></i>
                         <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                     </div>
                 </div>
