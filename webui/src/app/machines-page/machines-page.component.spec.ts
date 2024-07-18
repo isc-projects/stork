@@ -250,6 +250,16 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).not.toContain('aaa')
     }))
 
+    it('should refresh unauthorized machines count', fakeAsync(() => {
+        spyOn(servicesApi, 'getUnauthorizedMachinesCount').and.returnValue(of(4 as any))
+        tick()
+        fixture.detectChanges()
+        component.refreshUnauthorizedMachinesCount()
+
+        expect(component.unauthorizedMachinesCount).toBe(4)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (4)')
+    }))
+
     it('should list unauthorized machines requested via URL', fakeAsync(() => {
         router.navigate(['/machines/unauthorized'])
         const paramMap = convertToParamMap({

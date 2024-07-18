@@ -261,10 +261,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         if (this.showUnauthorized) {
             return
         }
-        this.servicesApi.getMachines(0, 1, null, null, false).subscribe((data) => {
-            const total = data.total || 0
-            this.unauthorizedMachinesCount = total
-            this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
+        this.servicesApi.getUnauthorizedMachinesCount().subscribe((count: number) => {
+            this.unauthorizedMachinesCount = count
+            this.viewSelectionOptions[1].label = 'Unauthorized (' + count + ')'
 
             // force refresh in UI
             this.viewSelectionOptions = [...this.viewSelectionOptions]
