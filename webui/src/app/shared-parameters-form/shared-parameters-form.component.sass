@@ -48,77 +48,84 @@
 
 .d-root-container
     // repeat
-    display: flex
-    flex-direction: column
-    gap: 1.5rem
-.d-row-param
-    // repeat
-    display: flex
-    flex-direction: column
-    gap: 1.5rem
+    //display: flex
+    //flex-direction: column
+    //gap: 1.5rem //gap-4
 
-    padding-bottom: 1.5rem
-    &:not(:last-child)
-        border-bottom: 1px solid var(--surface-border)
-    @media screen and (min-width: 576px)
-        flex-direction: row
-        align-items: baseline
+    & > .d-row-param
+        // repeat
+        //display: flex
+        //flex-direction: column
+        //gap: 1.5rem
+        //
+        //padding-bottom: 1.5rem
+        &:not(:last-child)
+            border-bottom: 1px solid var(--surface-border)
+        //@media screen and (min-width: 576px)
+        //    flex-direction: row
+        //    align-items: baseline
 
-.d-param-badge
-    //repeat
-    display: flex
-    gap: 0.5rem
+        & > .d-param-badge
+            //repeat
+            display: flex
+            gap: 0.5rem
 
-    @media screen and (min-width: 576px)
-        display: block
-        width: 20%
-        flex: 0 0 auto
-    div:first-child
-        flex: 1 1 auto
-.d-param-form
-    //repeat
-    display: flex
-    gap: 0.5rem
+            @media screen and (min-width: 576px)
+                display: block
+                width: 20%
+                flex: 0 0 auto
+            div:first-child
+                flex: 1 1 auto
 
-    flex: 1 1 auto
-    align-items: start
-.d-column-of-controls
-    display: flex
-    gap: 1rem
-    flex-direction: column
-    flex: 1 1 auto
-    max-width: 100%
-.d-row-control
-    //repeat
-    display: flex
-    gap: 0.5rem
+        & > .d-param-form
+            //repeat
+            display: flex
+            gap: 0.5rem
 
-    align-items: end
-    //@media screen and (min-width: 576px)
-        //align-items: last baseline
-    //width: 100%
-.d-form-and-server-tag
-    //repeat
-    display: flex
-    gap: 0.5rem
+            flex: 1 1 auto
+            align-items: start
 
-    flex: 1 1 auto
-    flex-direction: column
+            & > .d-column-of-controls
+                display: flex
+                gap: 1rem
+                flex-direction: column
+                flex: 1 1 auto
+                max-width: 100%
 
-    @media screen and (min-width: 576px)
-        flex-direction: row
-        .d-form
-            flex: 0 1 var(--max-form-width)
-    .d-form
-        flex: 1 1 auto
-        & > .p-inputwrapper
-            width: 100%
-        &:has(.p-checkbox)
-            padding-top: 0.5rem
-            padding-bottom: 0.5rem
+                & > .d-row-control
+                    //repeat
+                    display: flex
+                    gap: 0.5rem
 
-.d-server-tag
-    display: flex
-    align-items: center
+                    align-items: end
+                    //@media screen and (min-width: 576px)
+                        //align-items: last baseline
+                        //width: 100%
+
+                    & > .d-form-and-server-tag
+                        //repeat
+                        display: flex
+                        gap: 0.5rem
+
+                        flex: 1 1 auto
+                        flex-direction: column
+                        @media screen and (min-width: 576px)
+                            flex-direction: row
+
+                        & > .d-form
+                            flex: 1 1 auto
+                            @media screen and (min-width: 576px)
+                                flex: 0 1 var(--max-form-width)
+
+                            & > .p-inputwrapper
+                                width: 100%
+                            &:has(.p-checkbox)
+                                padding-top: 0.5rem
+                                padding-bottom: 0.5rem
+
+                        & > .d-server-tag
+                            display: flex
+                            align-items: center
+
 .w-20-perc
     width: 20%

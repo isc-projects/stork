@@ -1,6 +1,6 @@
 <!--    flex flex-column gap-4 -->
-<div *ngIf="parameterNames.length > 0; else noRowsBlock" class="d-root-container">
-    <div class="d-row-param font-semibold mt-3">
+<div *ngIf="parameterNames.length > 0; else noRowsBlock" class="d-root-container flex flex-column gap-4">
+    <div class="d-row-param font-semibold mt-3 flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline">
         <div class="d-sm-headers flex justify-content-between sm:hidden">
             <div>Parameter &amp; value</div>
             <div>Unlock</div>
@@ -24,7 +24,10 @@
             let-controls="controls"
         >
             <!--             flex flex-column sm:flex-row gap-4 border-bottom-1 surface-border pb-4 -->
-            <div class="d-row-param" [formGroupName]="parameterName">
+            <div
+                class="d-row-param flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline"
+                [formGroupName]="parameterName"
+            >
                 <!--   flex sm:block sm:w-3 gap-2              -->
                 <div class="d-param-badge">
                     <!--  flex-auto             -->
