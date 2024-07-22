@@ -25,11 +25,21 @@
             &:last-child
                 width: 10%
 
-    // .sm-no-padding class applied to buttons makes
+    // When PrimeNG form component has full width, apply the same style for inner input element.
+    .w-full.p-component > input
+        width: 100%
+        max-width: var(--max-form-width)
+
+    // Override default flex min-width so that text items like
+    // p-chips could shrink.
+    .flex-auto
+        min-width: 0
+
+    // .md-no-padding class applied to buttons makes
     // horizontal padding go away for smaller viewports.
-    .p-button.sm-no-padding
+    .p-button.md-no-padding
         width: auto
-        @media screen and (max-width: 575px)
+        @media screen and (max-width: 767px)
             padding-left: 0
             padding-right: 0
 
@@ -52,13 +62,14 @@
 .w-20-perc
     width: 20%
 
-// Responsive utility classes. They have effect for viewports wider than 575px.
-// This applies to devices that are considered bigger than "small devices" in Primeflex styling.
-@media screen and (min-width: 576px)
+// Responsive utility classes. They have effect for viewports wider than 767px (medium breakpoint in Primeflex).
+@media screen and (min-width: 768px)
     // Utility class, takes 20% of available width.
-    .sm\:w-20-perc
+    .md\:w-20-perc
         width: 20%
+    .md\:w-80-perc
+        width: 80%
     // Set flex item to only shrink, not grow.
     // flex-basis is set to --max-form-width var value.
-    .sm\:flex-form
+    .md\:flex-form
         flex: 0 1 var(--max-form-width) !important

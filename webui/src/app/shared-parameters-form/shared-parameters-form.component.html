@@ -1,14 +1,22 @@
+<div class="flex gap-3">
+<div>SM</div>
+<div class="hidden sm:block">MD</div>
+<div class="hidden md:block">LG</div>
+<div class="hidden lg:block">XL</div>
+<div class="hidden xl:block">XXL</div>
+</div>
+
 <div *ngIf="parameterNames.length > 0; else noRowsBlock" class="flex flex-column gap-4">
     <div
-        class="shared-parameter-wrapper font-semibold mt-3 flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline"
+        class="shared-parameter-wrapper font-semibold mt-3 flex flex-column gap-4 pb-4 md:flex-row md:align-items-baseline"
     >
-        <div class="flex justify-content-between sm:hidden">
+        <div class="flex justify-content-between md:hidden">
             <div>Parameter &amp; value</div>
             <div>Unlock</div>
         </div>
-        <div class="hidden sm:block w-20-perc">Parameter</div>
-        <div class="hidden sm:block flex-auto">Value</div>
-        <div class="hidden sm:block flex-none">Unlock</div>
+        <div class="hidden md:block w-20-perc">Parameter</div>
+        <div class="hidden md:block flex-auto">Value</div>
+        <div class="hidden md:block flex-none">Unlock</div>
     </div>
     <ng-container *ngFor="let parameterName of parameterNames">
         <ng-container
@@ -25,14 +33,14 @@
             let-controls="controls"
         >
             <div
-                class="shared-parameter-wrapper flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline"
+                class="shared-parameter-wrapper flex flex-column gap-4 pb-4 md:flex-row md:align-items-baseline"
                 [formGroupName]="parameterName"
             >
-                <div class="flex gap-2 sm:block sm:w-20-perc">
+                <div class="flex gap-2 md:block md:w-20-perc md:flex-none">
                     <div class="font-semibold text-color-secondary flex-auto">
                         {{ uncamelCase(parameterName) }}
                     </div>
-                    <div class="sm:hidden inline-flex gap-1 align-items-center text-color-secondary">
+                    <div class="md:hidden inline-flex gap-1 align-items-center text-color-secondary">
                         <i
                             class="pi"
                             [class.pi-lock]="!controls.get('unlocked').value"
@@ -48,7 +56,7 @@
                                 *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)"
                             >
                                 <div class="flex gap-2 align-items-end">
-                                    <div class="flex gap-2 flex-auto flex-column sm:flex-row sm:align-items-end">
+                                    <div class="flex gap-2 flex-auto flex-column md:flex-row md:align-items-end">
                                         <span
                                             *ngIf="controls.get('unlocked').value && servers.length > index"
                                             class="flex align-items-center"
@@ -59,7 +67,7 @@
                                         </span>
                                         <div
                                             [ngSwitch]="controls.data?.type"
-                                            class="shared-parameter-form flex-auto sm:flex-form"
+                                            class="shared-parameter-form flex-auto md:flex-form"
                                         >
                                             <ng-container *ngSwitchCase="'string'">
                                                 <p-dropdown
@@ -117,7 +125,7 @@
                                         pButton
                                         [disabled]="control.value === null"
                                         label="Clear"
-                                        class="p-button-text p-button-sm hidden sm:inline-flex sm-no-padding flex-none"
+                                        class="p-button-text p-button-sm hidden md:inline-flex md-no-padding flex-none"
                                         type="button"
                                         (click)="control.setValue(null)"
                                     ></button>
@@ -128,7 +136,7 @@
                                         [disabled]="control.value === null"
                                         title="Clear"
                                         (click)="control.setValue(null)"
-                                        styleClass="sm:hidden sm-no-padding"
+                                        styleClass="md:hidden md-no-padding"
                                         size="small"
                                     />
                                 </div>
@@ -140,7 +148,7 @@
                             </ng-container>
                         </ng-container>
                     </div>
-                    <div class="hidden sm:inline-flex gap-1 align-items-center text-color-secondary pt-2">
+                    <div class="hidden md:inline-flex gap-1 align-items-center text-color-secondary pt-2">
                         <i
                             class="pi"
                             [class.pi-lock]="!controls.get('unlocked').value"
