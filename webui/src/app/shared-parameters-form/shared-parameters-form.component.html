@@ -1,7 +1,8 @@
-<!--    flex flex-column gap-4 -->
-<div *ngIf="parameterNames.length > 0; else noRowsBlock" class="d-root-container flex flex-column gap-4">
-    <div class="d-row-param font-semibold mt-3 flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline">
-        <div class="d-sm-headers flex justify-content-between sm:hidden">
+<div *ngIf="parameterNames.length > 0; else noRowsBlock" class="flex flex-column gap-4">
+    <div
+        class="shared-parameter-wrapper font-semibold mt-3 flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline"
+    >
+        <div class="flex justify-content-between sm:hidden">
             <div>Parameter &amp; value</div>
             <div>Unlock</div>
         </div>
@@ -23,15 +24,12 @@
             let-parameterName="parameterName"
             let-controls="controls"
         >
-            <!--             flex flex-column sm:flex-row gap-4 border-bottom-1 surface-border pb-4 -->
             <div
-                class="d-row-param flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline"
+                class="shared-parameter-wrapper flex flex-column gap-4 pb-4 sm:flex-row sm:align-items-baseline"
                 [formGroupName]="parameterName"
             >
-                <!--   flex sm:block sm:w-3 gap-2              -->
-                <div class="d-param-badge">
-                    <!--  flex-auto             -->
-                    <div class="font-semibold text-color-secondary">
+                <div class="flex gap-2 sm:block sm:w-20-perc">
+                    <div class="font-semibold text-color-secondary flex-auto">
                         {{ uncamelCase(parameterName) }}
                     </div>
                     <div class="sm:hidden inline-flex gap-1 align-items-center text-color-secondary">
@@ -43,28 +41,26 @@
                         <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                     </div>
                 </div>
-                <!-- flex gap-2 flex-auto               -->
-                <div class="d-param-form">
-                    <!--  flex gap-3 flex-column flex-auto                   -->
-                    <div class="d-column-of-controls" formArrayName="values">
+                <div class="flex gap-2 flex-auto align-items-start">
+                    <div class="flex gap-3 flex-column flex-auto max-w-full" formArrayName="values">
                         <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
                             <ng-container
                                 *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)"
                             >
-                                <!--  flex gap-2 w-full                           -->
-                                <div class="d-row-control">
-                                    <!--  flex flex-column-reverse sm:flex-row gap-2 flex-auto    -->
-                                    <div class="d-form-and-server-tag">
+                                <div class="flex gap-2 align-items-end">
+                                    <div class="flex gap-2 flex-auto flex-column sm:flex-row">
                                         <span
                                             *ngIf="controls.get('unlocked').value && servers.length > index"
-                                            class="d-server-tag"
+                                            class="flex align-items-center"
                                         >
                                             <p-tag [severity]="getServerTagSeverity(index)">
                                                 {{ servers[index] }}
                                             </p-tag>
                                         </span>
-                                        <!--                                        <div class="d-form-and-feedback">-->
-                                        <div [ngSwitch]="controls.data?.type" class="d-form">
+                                        <div
+                                            [ngSwitch]="controls.data?.type"
+                                            class="shared-parameter-form flex-auto sm:flex-form"
+                                        >
                                             <ng-container *ngSwitchCase="'string'">
                                                 <p-dropdown
                                                     *ngIf="controls.data?.values?.length > 0; else noValuesCase"
@@ -103,7 +99,6 @@
                                                     locale="en-US"
                                                     [formControlName]="index"
                                                 >
-                                                    <!--                                inputStyleClass="w-full" -->
                                                 </p-inputNumber>
                                             </ng-container>
                                             <ng-container *ngSwitchCase="'client-classes'">
@@ -116,14 +111,13 @@
                                             </ng-container>
                                             <ng-container *ngSwitchDefault> Something else </ng-container>
                                         </div>
-                                        <!--                                        </div>-->
                                     </div>
                                     <button
                                         pRipple
                                         pButton
                                         [disabled]="control.value === null"
                                         label="Clear"
-                                        class="d-btn p-button-text p-button-sm hidden sm:inline-flex sm-no-padding flex-none"
+                                        class="p-button-text p-button-sm hidden sm:inline-flex sm-no-padding flex-none"
                                         type="button"
                                         (click)="control.setValue(null)"
                                     ></button>
@@ -140,15 +134,12 @@
                                 </div>
                                 <small
                                     *ngIf="control.invalid && (control.dirty || control.touched)"
-                                    class="d-row-feedback p-error block"
+                                    class="p-error block"
                                     >{{ controls.data.invalidText }}
                                 </small>
                             </ng-container>
                         </ng-container>
                     </div>
-                    <!--                    <div class="hidden sm:block">-->
-                    <!--                        <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>-->
-                    <!--                    </div>-->
                     <div class="hidden sm:inline-flex gap-1 align-items-center text-color-secondary pt-2">
                         <i
                             class="pi"
@@ -188,7 +179,6 @@
     </ng-template>
 </p-table>
 <ng-template [formGroup]="formGroup" #parameterRow let-parameterName="parameterName" let-controls="controls">
-    <!--    class="text-primary-500" -->
     <tr [formGroupName]="parameterName">
         <td class="font-semibold text-color-secondary">
             {{ uncamelCase(parameterName) }}
@@ -236,7 +226,6 @@
                                 locale="en-US"
                                 [formControlName]="index"
                             >
-                                <!--                                inputStyleClass="w-full" -->
                             </p-inputNumber>
                         </ng-container>
                         <ng-container *ngSwitchCase="'client-classes'">

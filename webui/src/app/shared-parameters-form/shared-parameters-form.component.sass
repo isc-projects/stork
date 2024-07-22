@@ -13,18 +13,6 @@
                 padding-top: 1rem
                 padding-bottom: 1rem
 
-                .w-full > input
-                    width: 100%
-                    max-width: var(--max-form-width)
-                .flex > :first-child
-                    //background-color: red
-                    //flex: 0 1 4rem
-                    flex: 1 0 2rem
-                    //display: inline-flex
-                .flex > input:first-child
-                    //background-color: red
-                    max-width: var(--max-form-width)
-
         .p-datatable-thead tr th
             border-top: none
             border-left: none
@@ -37,95 +25,40 @@
             &:last-child
                 width: 10%
 
-    .w-full.p-component > input
-        width: 100%
-
+    // .sm-no-padding class applied to buttons makes
+    // horizontal padding go away for smaller viewports.
     .p-button.sm-no-padding
         width: auto
         @media screen and (max-width: 575px)
             padding-left: 0
             padding-right: 0
 
-.d-root-container
-    // repeat
-    //display: flex
-    //flex-direction: column
-    //gap: 1.5rem //gap-4
+// Add border between shared parameters.
+.shared-parameter-wrapper:not(:last-child)
+    border-bottom: 1px solid var(--surface-border)
 
-    & > .d-row-param
-        // repeat
-        //display: flex
-        //flex-direction: column
-        //gap: 1.5rem
-        //
-        //padding-bottom: 1.5rem
-        &:not(:last-child)
-            border-bottom: 1px solid var(--surface-border)
-        //@media screen and (min-width: 576px)
-        //    flex-direction: row
-        //    align-items: baseline
+.shared-parameter-form
+    // PrimeNG wraps form input components inside of .p-inputwrapper class.
+    // Let them take full available width inside of .shared-parameter-form parent block.
+    & > .p-inputwrapper
+        width: 100%
+    // When .shared-parameter-form block has checkbox form component inside,
+    // add little padding for better checkbox vertical alignment.
+    &:has(.p-checkbox)
+        padding-top: 0.5rem
+        padding-bottom: 0.5rem
 
-        & > .d-param-badge
-            //repeat
-            display: flex
-            gap: 0.5rem
-
-            @media screen and (min-width: 576px)
-                display: block
-                width: 20%
-                flex: 0 0 auto
-            div:first-child
-                flex: 1 1 auto
-
-        & > .d-param-form
-            //repeat
-            display: flex
-            gap: 0.5rem
-
-            flex: 1 1 auto
-            align-items: start
-
-            & > .d-column-of-controls
-                display: flex
-                gap: 1rem
-                flex-direction: column
-                flex: 1 1 auto
-                max-width: 100%
-
-                & > .d-row-control
-                    //repeat
-                    display: flex
-                    gap: 0.5rem
-
-                    align-items: end
-                    //@media screen and (min-width: 576px)
-                        //align-items: last baseline
-                        //width: 100%
-
-                    & > .d-form-and-server-tag
-                        //repeat
-                        display: flex
-                        gap: 0.5rem
-
-                        flex: 1 1 auto
-                        flex-direction: column
-                        @media screen and (min-width: 576px)
-                            flex-direction: row
-
-                        & > .d-form
-                            flex: 1 1 auto
-                            @media screen and (min-width: 576px)
-                                flex: 0 1 var(--max-form-width)
-
-                            & > .p-inputwrapper
-                                width: 100%
-                            &:has(.p-checkbox)
-                                padding-top: 0.5rem
-                                padding-bottom: 0.5rem
-
-                        & > .d-server-tag
-                            display: flex
-                            align-items: center
-
+// Utility class, takes 20% of available width.
 .w-20-perc
     width: 20%
+
+// Responsive utility classes. They have effect for viewports wider than 575px.
+// This applies to devices that are considered bigger than "small devices" in Primeflex styling.
+@media screen and (min-width: 576px)
+    // Utility class, takes 20% of available width.
+    .sm\:w-20-perc
+        width: 20%
+    // Set flex item to only shrink, not grow.
+    // flex-basis is set to --max-form-width var value.
+    .sm\:flex-form
+        flex: 0 1 var(--max-form-width) !important
