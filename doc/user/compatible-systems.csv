@@ -1,9 +1,10 @@
 System family,System version,Architecture,Unit tests,System tests,Build binaries,Build packages,Installation (without systemD),Installation & run (with systemD)
-Debian,12.1-slim,x64,X,X,X,X,X,
-Debian,12.1-slim,arm64,,,X,X,X,
 Debian,10,x64,,,,,,X
 Debian,11,x64,,,,,,X
 Debian,11,arm64,,,,,,X
+Debian,12,arm64,,,,,,X
+Debian,12.1-slim,x64,X,X,X,X,X,
+Debian,12.1-slim,arm64,,,X,X,X,
 Ubuntu,20.04,x64,,,,,,X
 Ubuntu,22.04,x64,D,D,D,D,,X / D
 Ubuntu,22.04,arm64,,,,,,X
