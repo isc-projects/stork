@@ -384,7 +384,7 @@ func (s *registerSettings) GetHostAndPort() (string, int, error) {
 		// Handle the case when the port is provided in the host.
 		log.Warnf(
 			"The agent port (%s) has been provided in the host address. It "+
-				"takes precedence over the port (%d) from the --port flag or "+
+				"takes precedence over the port (%d) from the --agent-port flag or "+
 				"STORK_AGENT_PORT environment variable. Providing the "+
 				"port in the host address is deprecated, consider the "+
 				"dedicated flag or environment variable.",

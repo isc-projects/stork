@@ -438,7 +438,7 @@ func parseNamedDefaultPath(output []byte) string {
 // It accepts the components of the Bind 9 process name (the "match" argument),
 // the current working directory of the process (the "cwd" argument; it may be
 // empty), a command executor instance, and an optional, explicit path to the
-// configuration that can be check. It uses multiple steps to attempt
+// configuration that can be checked. It uses multiple steps to attempt
 // detection:
 //
 // Step 1: Try to parse -c parameter of the running process.
@@ -502,7 +502,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			case executor.IsFileExist(explicitConfigPath):
 				// Trim the root prefix.
 				bind9ConfPath = explicitConfigPath[len(rootPrefix):]
-				bind9ConfSource = "The explicit path from settings"
+				bind9ConfSource = "the explicit path from settings"
 			default:
 				log.Errorf("File explicitly specified in settings (%s) not found or unreadable.", explicitConfigPath)
 			}
