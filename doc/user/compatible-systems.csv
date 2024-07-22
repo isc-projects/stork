@@ -1,4 +1,4 @@
-System family,System version,Architecture,Unit tests,System tests,Build binaries,Build packages,Installation (without systemD),Installation & run (with systemD)
+System family,System version,Architecture,Unit tests,System tests,Build binaries,Build packages,Installation (without systemD),Installation & upgrade & run (with systemD)
 Debian,10,x64,,,,,,X
 Debian,11,x64,,,,,,X
 Debian,11,arm64,,,,,,X
