@@ -19,6 +19,6 @@ Fedora,38,x64,,,,,,X
 Fedora,40,x64,,,,,,X
 Alpine,3.18,x64,,,X,X,X,
 Alpine,3.18,arm64,,,X,X,X,
-MacOS,11.3,arm64,D,D,D,D,,D
+MacOS,14.4,arm64,D,D,D,D,,D
 FreeBSD,?,x64,U,,U,U,U,
 OpenBSD,?,x64,U,,U,,U,
