@@ -48,7 +48,7 @@
                                 *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)"
                             >
                                 <div class="flex gap-2 align-items-end">
-                                    <div class="flex gap-2 flex-auto flex-column sm:flex-row">
+                                    <div class="flex gap-2 flex-auto flex-column sm:flex-row sm:align-items-end">
                                         <span
                                             *ngIf="controls.get('unlocked').value && servers.length > index"
                                             class="flex align-items-center"
