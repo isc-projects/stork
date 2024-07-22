@@ -44,7 +44,7 @@ after_upgrade () {
     # higher for the older versions, the user must be recreated.
     setup_user
 
-    # Check if the SystemD is available.
+    # Check if the systemd is available.
     has_active_systemd=0
     if command -v systemctl > /dev/null; then
         status=$(systemctl is-system-running || true)
@@ -53,7 +53,7 @@ after_upgrade () {
         fi
     fi
 
-    # Restart the systemD service if needed.
+    # Restart the systemd service if needed.
     if [ $has_active_systemd -eq 1 ]; then
         is_active_service=$(systemctl is-active isc-stork-agent || true)
         if [ "${is_active_service}" = "active" ]; then
