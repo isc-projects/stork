@@ -416,7 +416,7 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	require.EqualValues(t, "foo:hmac-sha256:abcd", point.Key)
 }
 
-// Checks detection with chroot STEP 2: the the explicit config path must be
+// Checks detection with chroot STEP 2: the explicit config path must be
 // prefixed with the chroot directory.
 func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	// Create alternate config file...

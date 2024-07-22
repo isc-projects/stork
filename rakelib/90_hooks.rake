@@ -29,7 +29,7 @@ CLEAN.append pkg_directory
 #
 # 1. Hook directory name
 # 2. Absolute path to the hook directory
-# 3. Absolute path the the subdirectory in the hook directory containing the
+# 3. Absolute path to the subdirectory in the hook directory containing the
 #    go.mod file (source subdirectory).
 #
 # The current working directory during the block execution is the subdirectory
@@ -98,7 +98,7 @@ namespace :hook do
         end
 
         hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
-        
+
         module_directory_name = module_name.gsub(/[^\w\.-]/, '_')
 
         destination = File.expand_path(File.join(hook_directory, module_directory_name))
@@ -118,7 +118,7 @@ namespace :hook do
             sh GO, "mod", "edit", "-replace", "#{main_module}=#{module_directory_rel}"
             sh "touch", "go.sum"
         end
-        
+
         sh "cp", *FileList["backend/hooksutil/boilerplate/*"], destination
     end
 

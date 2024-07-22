@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	// A limit for returned hosts number in the the reservation-get-page command.
+	// A limit for returned hosts number in the reservation-get-page command.
 	defaultHostCmdsPageLimit int64 = 1000
 )
 

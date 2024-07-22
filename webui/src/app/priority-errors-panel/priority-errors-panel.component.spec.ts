@@ -85,7 +85,7 @@ describe('PriorityErrorsPanelComponent', () => {
         fixture.detectChanges()
         tick()
 
-        // It should cause the the component to fetch the apps again.
+        // It should cause the component to fetch the apps again.
         expect(sse.receiveConnectivityEvents).toHaveBeenCalledTimes(1)
         expect(api.getAppsWithCommunicationIssues).toHaveBeenCalledTimes(2)
         expect(component.messages.length).toBe(1)

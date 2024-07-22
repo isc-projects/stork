@@ -54,7 +54,7 @@ type Trigger string
 // triggered when daemon configuration change has been detected.
 // However, some config checkers also use other source of data that,
 // if modified, should also trigger config reviews. Another way to
-// trigger new config review is a manual run from the the UI. The
+// trigger new config review is a manual run from the UI. The
 // special type, internal run, is used internally by the dispatcher.
 const (
 	// Config review is triggered internally by the dispatcher.

@@ -267,7 +267,7 @@ func TestExtractCalloutCarrier(t *testing.T) {
 	require.Nil(t, carrier.(*calloutCarrierMock).settings)
 }
 
-// Test that the the provided settings are passed to the load function.
+// Test that the provided settings are passed to the load function.
 func TestExtractCalloutCarrierPassSettings(t *testing.T) {
 	// Arrange
 	plugin := newPluginMock().
