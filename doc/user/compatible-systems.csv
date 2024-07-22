@@ -16,7 +16,7 @@ RHEL,8,x64,,,,,,X
 RHEL,9,x64,,,,,,X
 RHEL,9,arm64,,,,,,X
 Fedora,36,x64,,,,,,X
-Fedora,38,x64,,,,,,X
+Fedora,39,x64,,,,,,X
 Fedora,40,x64,,,,,,X
 Alpine,3.18,x64,,,X,X,X,
 Alpine,3.18,arm64,,,X,X,X,

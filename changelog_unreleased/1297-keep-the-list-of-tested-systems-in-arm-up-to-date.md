@@ -1,4 +1,4 @@
 [doc] slawek
 
-    Updated a section about support operating systems.
+    Updated a section about supported operating systems.
     (Gitlab #1297)
