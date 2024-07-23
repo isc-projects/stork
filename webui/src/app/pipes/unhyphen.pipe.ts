@@ -6,18 +6,12 @@ import { unhyphen } from '../utils'
 })
 export class UnhyphenPipe implements PipeTransform {
     /**
-     * Converts parameter names from camel case to long names.
+     * Converts parameter names from JSON notation with hyphens to camel case.
      *
-     * The words in the long names begin with upper case and are separated with
-     * space characters. For example: 'cacheThreshold' becomes 'Cache Threshold'.
+     * It removes hyphens and replaces them with spaces. All words following
+     * the hyphens are converted to begin with a capital letter.
      *
-     * It also handles several special cases. When the converted name begins with:
-     * - ddns - it is converted to DDNS,
-     * - pd - it is converted to PD,
-     * - ip - it is converted to IP,
-     * - underscore character - it is removed.
-     *
-     * @param key a name to be converted in camel case notation.
+     * @param value a name to be converted to camel case.
      * @returns converted name.
      */
     transform(value: string | null): string | null {

@@ -534,12 +534,12 @@ export function uncamelCase(key: string): string {
 }
 
 /**
- * Converts a parameter name from JSON notation to long names.
+ * Converts a parameter name from JSON notation with hyphens to camel case.
  *
  * It removes hyphens and replaces them with spaces. All words following
  * the hyphens are converted to begin with a capital letter.
  *
- * @param key a name to be converted from JSON notation.
+ * @param key a name to be converted from JSON notation to camel case.
  * @returns converted name.
  */
 export function unhyphen(key: string): string {
