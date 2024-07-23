@@ -113,7 +113,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                         this.appName = data.appName
                         this.dhcpParameters.push({
                             name: `${data.appName} / ${daemonNameToFriendlyName(data.daemonName)}`,
-                            parameters: [data.config.Dhcp4 || data.config.Dhcp6],
+                            parameters: [data.config.Dhcp4 ?? data.config.Dhcp6],
                         })
                     })
                     .catch((err) => {
