@@ -35,7 +35,7 @@ export class ParameterViewComponent {
      * Checks if the parameter is an array.
      */
     get isParameterArray(): boolean {
-        return Array.isArray(this.parameter) && !this.isParameterObject
+        return Array.isArray(this.parameter)
     }
 
     /**
