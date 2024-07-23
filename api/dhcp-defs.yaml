@@ -528,6 +528,44 @@
         items:
           type: string
 
+  KeaDaemonConfigurableGlobalParameters:
+    type: object
+    properties:
+      daemonId:
+        type: integer
+      daemonName:
+        type: string
+      partialConfig:
+        $ref: '#/definitions/KeaConfigurableGlobalParameters'
+
+  UpdateKeaDaemonsGlobalParametersBeginRequest:
+    type: object
+    properties:
+      daemonIds:
+        type: array
+        items:
+          type: integer
+          format: int64
+
+  UpdateKeaDaemonsGlobalParametersBeginResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      configs:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemonConfig'
+
+  UpdateKeaDaemonsGlobalParametersSubmitRequest:
+    type: object
+    properties:
+      configs:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemonConfigurableGlobalParameters'
+
 # Overview
 
   Dhcp4Stats:

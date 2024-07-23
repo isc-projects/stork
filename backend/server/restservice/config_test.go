@@ -8,13 +8,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
+	apps "isc.org/stork/server/apps"
+	"isc.org/stork/server/apps/kea"
+	appstest "isc.org/stork/server/apps/test"
 	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
+	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/services"
 	storktest "isc.org/stork/server/test/dbmodel"
+	storkutil "isc.org/stork/util"
 )
 
 // Test that GetDaemonConfig works for Kea daemon with assigned configuration.
@@ -1444,4 +1449,638 @@ func TestDeleteKeaConfigHashesError(t *testing.T) {
 	defaultRsp := rsp.(*services.DeleteKeaDaemonConfigHashesDefault)
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+}
+
+// Test the calls for creating new transaction and updating global Kea DHCPv4 parameters.
+func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"valid-lifetime": 2222
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app1, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app1, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app2, err := server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app2, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	daemonIDs := []int64{app1.Daemons[0].GetID(), app2.Daemons[0].GetID()}
+
+	daemons, err := dbmodel.GetDaemonsByIDs(db, daemonIDs)
+	require.NoError(t, err)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateKeaGlobalParametersBeginParams{
+		Request: &models.UpdateKeaDaemonsGlobalParametersBeginRequest{
+			DaemonIds: daemonIDs,
+		},
+	}
+	rsp := rapi.UpdateKeaGlobalParametersBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateKeaGlobalParametersBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID and configurations.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Configs)
+	require.Len(t, contents.Configs, 2)
+	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
+	require.Equal(t, dbmodel.DaemonNameDHCPv4, daemons[0].GetName(), contents.Configs[0].DaemonName)
+	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
+	require.Equal(t, dbmodel.DaemonNameDHCPv4, daemons[1].GetName(), contents.Configs[1].DaemonName)
+
+	// Submit transaction.
+
+	partialConfig := &models.KeaConfigurableGlobalParameters{
+		KeaConfigAssortedGlobalParameters: models.KeaConfigAssortedGlobalParameters{
+			Allocator:                     storkutil.Ptr("flq"),
+			Authoritative:                 storkutil.Ptr(true),
+			EarlyGlobalReservationsLookup: storkutil.Ptr(false),
+			EchoClientID:                  storkutil.Ptr(true),
+			HostReservationIdentifiers:    []string{"hw-address", "client-id"},
+		},
+		KeaConfigCacheParameters: models.KeaConfigCacheParameters{
+			CacheThreshold: storkutil.Ptr(float32(0.2)),
+		},
+		KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
+			DdnsGeneratedPrefix:       storkutil.Ptr("myhost.example.org"),
+			DdnsOverrideClientUpdate:  storkutil.Ptr(true),
+			DdnsOverrideNoUpdate:      storkutil.Ptr(false),
+			DdnsQualifyingSuffix:      storkutil.Ptr("example.org"),
+			DdnsReplaceClientName:     storkutil.Ptr("never"),
+			DdnsSendUpdates:           storkutil.Ptr(false),
+			DdnsUpdateOnRenew:         storkutil.Ptr(true),
+			DdnsUseConflictResolution: storkutil.Ptr(true),
+		},
+		KeaConfigExpiredLeasesProcessingParameters: models.KeaConfigExpiredLeasesProcessingParameters{
+			FlushReclaimedTimerWaitTime: storkutil.Ptr(int64(12)),
+			HoldReclaimedTime:           storkutil.Ptr(int64(13)),
+			MaxReclaimLeases:            storkutil.Ptr(int64(14)),
+			MaxReclaimTime:              storkutil.Ptr(int64(15)),
+			ReclaimTimerWaitTime:        storkutil.Ptr(int64(16)),
+			UnwarnedReclaimCycles:       storkutil.Ptr(int64(17)),
+		},
+		KeaConfigReservationParameters: models.KeaConfigReservationParameters{
+			ReservationsGlobal:    storkutil.Ptr(true),
+			ReservationsInSubnet:  storkutil.Ptr(false),
+			ReservationsOutOfPool: storkutil.Ptr(true),
+		},
+		KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
+			ValidLifetime: storkutil.Ptr(int64(1111)),
+		},
+	}
+	params2 := dhcp.UpdateKeaGlobalParametersSubmitParams{
+		ID: transactionID,
+		Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
+			Configs: []*models.KeaDaemonConfigurableGlobalParameters{
+				{
+					DaemonID:      daemons[0].GetID(),
+					DaemonName:    dbmodel.DaemonNameDHCPv4,
+					PartialConfig: partialConfig,
+				},
+				{
+					DaemonID:      daemons[1].GetID(),
+					DaemonName:    dbmodel.DaemonNameDHCPv4,
+					PartialConfig: partialConfig,
+				},
+			},
+		},
+	}
+
+	rsp2 := rapi.UpdateKeaGlobalParametersSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitOK{}, rsp2)
+
+	// It should result in sending commands to two Kea servers. Each server
+	// receives the config-set and config-write commands.
+	require.Len(t, fa.RecordedCommands, 4)
+
+	for i, c := range fa.RecordedCommands {
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				`{
+					"command": "config-set",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"Dhcp4": {
+							"allocator": "flq",
+							"authoritative": true,
+							"early-global-reservations-lookup": false,
+							"echo-client-id": true,
+							"host-reservation-identifiers": [ "hw-address", "client-id" ],
+							"cache-threshold": 0.2,
+							"ddns-generated-prefix": "myhost.example.org",
+							"ddns-override-client-update": true,
+							"ddns-override-no-update": false,
+							"ddns-qualifying-suffix": "example.org",
+							"ddns-replace-client-name": "never",
+							"ddns-send-updates": false,
+							"ddns-update-on-renew": true,
+							"ddns-use-conflict-resolution": true,
+							"expired-leases-processing": {
+								"flush-reclaimed-timer-wait-time": 12,
+								"hold-reclaimed-time": 13,
+								"max-reclaim-leases": 14,
+								"max-reclaim-time": 15,
+								"reclaim-timer-wait-time": 16,
+								"unwarned-reclaim-cycles": 17
+							},
+							"reservations-global": true,
+							"reservations-in-subnet": false,
+							"reservations-out-of-pool": true,
+							"valid-lifetime": 1111
+						}
+					}
+				}`,
+				c.Marshal())
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp4" ]
+				}`,
+				c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+
+	require.Nil(t, cctx)
+
+	// Make sure that the daemon configurations have been updated in the database.
+	updatedDaemons, err := dbmodel.GetDaemonsByIDs(db, daemonIDs)
+	require.NoError(t, err)
+	require.Len(t, updatedDaemons, 2)
+	for _, daemon := range updatedDaemons {
+		require.NotNil(t, daemon.KeaDaemon)
+		config := daemon.KeaDaemon.Config
+		require.NotNil(t, config)
+
+		require.NotNil(t, config.GetValidLifetimeParameters().ValidLifetime)
+		require.EqualValues(t, 1111, *config.GetValidLifetimeParameters().ValidLifetime)
+	}
+}
+
+// Test the calls for creating new transaction and updating global Kea DHCPv6 sparameters.
+func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp6": {
+			"valid-lifetime": 2222
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app1, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app1, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app2, err := server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app2, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	daemonIDs := []int64{app1.Daemons[0].GetID(), app2.Daemons[0].GetID()}
+
+	daemons, err := dbmodel.GetDaemonsByIDs(db, daemonIDs)
+	require.NoError(t, err)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateKeaGlobalParametersBeginParams{
+		Request: &models.UpdateKeaDaemonsGlobalParametersBeginRequest{
+			DaemonIds: daemonIDs,
+		},
+	}
+	rsp := rapi.UpdateKeaGlobalParametersBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateKeaGlobalParametersBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID and configurations.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Configs)
+	require.Len(t, contents.Configs, 2)
+	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
+	require.Equal(t, dbmodel.DaemonNameDHCPv6, daemons[0].GetName(), contents.Configs[0].DaemonName)
+	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
+	require.Equal(t, dbmodel.DaemonNameDHCPv6, daemons[1].GetName(), contents.Configs[1].DaemonName)
+
+	// Submit transaction.
+
+	partialConfig := &models.KeaConfigurableGlobalParameters{
+		KeaConfigAssortedGlobalParameters: models.KeaConfigAssortedGlobalParameters{
+			Allocator:                     storkutil.Ptr("flq"),
+			EarlyGlobalReservationsLookup: storkutil.Ptr(false),
+			HostReservationIdentifiers:    []string{"hw-address", "client-id"},
+			PdAllocator:                   storkutil.Ptr("random"),
+		},
+		KeaConfigCacheParameters: models.KeaConfigCacheParameters{
+			CacheThreshold: storkutil.Ptr(float32(0.2)),
+		},
+		KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
+			DdnsGeneratedPrefix:       storkutil.Ptr("myhost.example.org"),
+			DdnsOverrideClientUpdate:  storkutil.Ptr(true),
+			DdnsOverrideNoUpdate:      storkutil.Ptr(false),
+			DdnsQualifyingSuffix:      storkutil.Ptr("example.org"),
+			DdnsReplaceClientName:     storkutil.Ptr("never"),
+			DdnsSendUpdates:           storkutil.Ptr(false),
+			DdnsUpdateOnRenew:         storkutil.Ptr(true),
+			DdnsUseConflictResolution: storkutil.Ptr(true),
+		},
+		KeaConfigExpiredLeasesProcessingParameters: models.KeaConfigExpiredLeasesProcessingParameters{
+			FlushReclaimedTimerWaitTime: storkutil.Ptr(int64(12)),
+			HoldReclaimedTime:           storkutil.Ptr(int64(13)),
+			MaxReclaimLeases:            storkutil.Ptr(int64(14)),
+			MaxReclaimTime:              storkutil.Ptr(int64(15)),
+			ReclaimTimerWaitTime:        storkutil.Ptr(int64(16)),
+			UnwarnedReclaimCycles:       storkutil.Ptr(int64(17)),
+		},
+		KeaConfigReservationParameters: models.KeaConfigReservationParameters{
+			ReservationsGlobal:    storkutil.Ptr(true),
+			ReservationsInSubnet:  storkutil.Ptr(false),
+			ReservationsOutOfPool: storkutil.Ptr(true),
+		},
+		KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
+			ValidLifetime: storkutil.Ptr(int64(1111)),
+		},
+	}
+	params2 := dhcp.UpdateKeaGlobalParametersSubmitParams{
+		ID: transactionID,
+		Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
+			Configs: []*models.KeaDaemonConfigurableGlobalParameters{
+				{
+					DaemonID:      daemons[0].GetID(),
+					DaemonName:    dbmodel.DaemonNameDHCPv6,
+					PartialConfig: partialConfig,
+				},
+				{
+					DaemonID:      daemons[1].GetID(),
+					DaemonName:    dbmodel.DaemonNameDHCPv6,
+					PartialConfig: partialConfig,
+				},
+			},
+		},
+	}
+
+	rsp2 := rapi.UpdateKeaGlobalParametersSubmit(ctx, params2)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitOK{}, rsp2)
+
+	// It should result in sending commands to two Kea servers. Each server
+	// receives the config-set and config-write commands.
+	require.Len(t, fa.RecordedCommands, 4)
+
+	for i, c := range fa.RecordedCommands {
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				`{
+					"command": "config-set",
+					"service": [ "dhcp6" ],
+					"arguments": {
+						"Dhcp6": {
+							"allocator": "flq",
+							"early-global-reservations-lookup": false,
+							"host-reservation-identifiers": [ "hw-address", "client-id" ],
+							"cache-threshold": 0.2,
+							"ddns-generated-prefix": "myhost.example.org",
+							"ddns-override-client-update": true,
+							"ddns-override-no-update": false,
+							"ddns-qualifying-suffix": "example.org",
+							"ddns-replace-client-name": "never",
+							"ddns-send-updates": false,
+							"ddns-update-on-renew": true,
+							"ddns-use-conflict-resolution": true,
+							"expired-leases-processing": {
+								"flush-reclaimed-timer-wait-time": 12,
+								"hold-reclaimed-time": 13,
+								"max-reclaim-leases": 14,
+								"max-reclaim-time": 15,
+								"reclaim-timer-wait-time": 16,
+								"unwarned-reclaim-cycles": 17
+							},
+							"pd-allocator": "random",
+							"reservations-global": true,
+							"reservations-in-subnet": false,
+							"reservations-out-of-pool": true,
+							"valid-lifetime": 1111
+						}
+					}
+				}`,
+				c.Marshal())
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp6" ]
+			}`,
+				c.Marshal())
+		}
+	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// Make sure that the daemon configurations have been updated in the database.
+	updatedDaemons, err := dbmodel.GetDaemonsByIDs(db, daemonIDs)
+	require.NoError(t, err)
+	require.Len(t, updatedDaemons, 2)
+	for _, daemon := range updatedDaemons {
+		require.NotNil(t, daemon.KeaDaemon)
+		config := daemon.KeaDaemon.Config
+		require.NotNil(t, config)
+
+		require.NotNil(t, config.GetValidLifetimeParameters().ValidLifetime)
+		require.EqualValues(t, 1111, *config.GetValidLifetimeParameters().ValidLifetime)
+	}
+}
+
+// Test that an error is returned when it is attempted to begin new
+// transaction for updating non-existing daemons' configurations.
+func TestUpdateGlobalParametersBeginNoDaemon(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateKeaGlobalParametersBeginParams{
+		Request: &models.UpdateKeaDaemonsGlobalParametersBeginRequest{
+			DaemonIds: []int64{1},
+		},
+	}
+	rsp := rapi.UpdateKeaGlobalParametersBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersBeginDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
+
+// Test error cases for submitting global parameters update.
+func TestUpdateGlobalParametersSubmitError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp4": {
+			"valid-lifetime": 2222
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	daemonIDs := []int64{app.Daemons[0].GetID()}
+
+	daemon, err := dbmodel.GetDaemonByID(db, app.Daemons[0].GetID())
+	require.NoError(t, err)
+	require.NotNil(t, daemon)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction. It will be needed for the actual part of the
+	// test that relies on the existence of the transaction.
+	params := dhcp.UpdateKeaGlobalParametersBeginParams{
+		Request: &models.UpdateKeaDaemonsGlobalParametersBeginRequest{
+			DaemonIds: daemonIDs,
+		},
+	}
+	rsp := rapi.UpdateKeaGlobalParametersBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateKeaGlobalParametersBeginOK)
+	contents := okRsp.Payload
+
+	// Capture transaction ID.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+
+	// Submit transaction without the subnet information.
+	t.Run("no configurations", func(t *testing.T) {
+		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
+			ID: transactionID,
+			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
+				Configs: nil,
+			},
+		}
+		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with non-matching transaction ID.
+	t.Run("wrong transaction id", func(t *testing.T) {
+		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
+			ID: transactionID + 1,
+			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
+				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
+					{
+						DaemonID:   daemon.GetID(),
+						DaemonName: dbmodel.DaemonNameDHCPv4,
+						PartialConfig: &models.KeaConfigurableGlobalParameters{
+							KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
+								ValidLifetime: storkutil.Ptr(int64(1111)),
+							},
+						},
+					},
+				},
+			},
+		}
+		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with no configurations. It simulates a failure in
+	// "apply" step which typically is caused by some internal server problem
+	// rather than malformed request.
+	t.Run("no daemons in request", func(t *testing.T) {
+		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
+			ID: transactionID,
+			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
+				Configs: []*models.KeaDaemonConfigurableGlobalParameters{},
+			},
+		}
+		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	})
 }

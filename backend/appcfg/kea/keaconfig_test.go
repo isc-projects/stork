@@ -283,6 +283,29 @@ func TestNewConfigFromMap(t *testing.T) {
 	require.Equal(t, "192.0.2.0/24", subnets[0].GetPrefix())
 }
 
+// Test getting raw configuration.
+func TestGetRawConfig(t *testing.T) {
+	// Set the original config.
+	var config Config
+	err := json.Unmarshal(testutil.AllKeysDHCPv4JSON, &config)
+	require.NoError(t, err)
+
+	// Extract the raw config.
+	rawConfig, err := config.GetRawConfig()
+	require.NoError(t, err)
+	require.NotNil(t, rawConfig)
+	require.Equal(t, config.Raw, rawConfig)
+
+	// Make sure it contains the top-level key.
+	require.Contains(t, rawConfig, "Dhcp4")
+
+	// Serialize it again and make sure it is equal to the original.
+	marshalled, err := json.Marshal(config)
+	require.NoError(t, err)
+
+	require.JSONEq(t, string(testutil.AllKeysDHCPv4JSON), string(marshalled))
+}
+
 // Test that DHCPv4 config is returned as a common data accessor.
 func TestGetCommonConfigAccessorDHCPv4(t *testing.T) {
 	cfg := &Config{
@@ -1700,4 +1723,416 @@ func TestGetDHCPOptions6(t *testing.T) {
 	require.Equal(t, "2001:db8:1::2, 2001:db8:1::3", options[1].Data)
 	require.Equal(t, "nis-servers", options[1].Name)
 	require.Equal(t, dhcpmodel.DHCPv6OptionSpace, options[0].Space)
+}
+
+// Test merging a partial config into current config.
+func TestMergeConfig(t *testing.T) {
+	source1 := `{
+		"Dhcp4": {
+			"allocator": "iterative",
+			"valid-lifetime": 123,
+			"host-identifiers": [ "hw-address", "circuit-id" ],
+			"expired-leases-processing": {
+				"reclaim-timer-wait-time": 5,
+				"max-reclaim-leases": 0
+			},
+			"hooks-libraries": [
+				{
+					"library": "/tmp/hooks-library.so"
+				}
+			]
+		}
+	}`
+	source2 := `{
+		"Dhcp4": {
+			"allocator": "flq",
+			"boot-file-name": "/tmp/filename",
+			"expired-leases-processing": {
+				"max-reclaim-leases": 12,
+				"max-reclaim-time": 7
+			}
+		}
+	}`
+	config1, err := NewConfig(source1)
+	require.NoError(t, err)
+	require.NotNil(t, config1)
+
+	config2, err := NewConfig(source2)
+	require.NoError(t, err)
+	require.NotNil(t, config2)
+
+	config1.Merge(config2)
+	require.NotNil(t, config1)
+
+	marshalled, err := json.Marshal(config1)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"Dhcp4": {
+			"allocator": "flq",
+			"boot-file-name": "/tmp/filename",
+			"valid-lifetime": 123,
+			"host-identifiers": [ "hw-address", "circuit-id" ],
+			"expired-leases-processing": {
+				"reclaim-timer-wait-time": 5,
+				"max-reclaim-leases": 12,
+				"max-reclaim-time": 7
+			},
+			"hooks-libraries": [
+				{
+					"library": "/tmp/hooks-library.so"
+				}
+			]
+		}
+	}`, string(marshalled))
+
+	require.NotNil(t, config1.GetAllocator())
+	require.Equal(t, "flq", *config1.GetAllocator())
+
+	require.NotNil(t, config1.GetBootFileName())
+	require.Equal(t, "/tmp/filename", *config1.GetBootFileName())
+
+	require.NotNil(t, config1.GetValidLifetimeParameters().ValidLifetime)
+	require.EqualValues(t, 123, *config1.GetValidLifetimeParameters().ValidLifetime)
+}
+
+// Tests instantiating settable Kea Control Agent configuration.
+func TestNewSettableCtrlAgentConfig(t *testing.T) {
+	settableConfig := NewSettableCtrlAgentConfig()
+	require.NotNil(t, settableConfig)
+	require.NotNil(t, settableConfig.CtrlAgentConfig)
+}
+
+// Tests instantiating settable D2 configuration.
+func TestNewSettableD2Config(t *testing.T) {
+	settableConfig := NewSettableD2Config()
+	require.NotNil(t, settableConfig)
+	require.NotNil(t, settableConfig.D2Config)
+}
+
+// Tests instantiating settable DHCPv4 configuration.
+func TestNewSettableDHCPv4Config(t *testing.T) {
+	settableConfig := NewSettableDHCPv4Config()
+	require.NotNil(t, settableConfig)
+	require.NotNil(t, settableConfig.DHCPv4Config)
+}
+
+// Tests instantiating settable DHCPv6 configuration.
+func TestNewSettableDHCPv6Config(t *testing.T) {
+	settableConfig := NewSettableDHCPv6Config()
+	require.NotNil(t, settableConfig)
+	require.NotNil(t, settableConfig.DHCPv6Config)
+}
+
+// Test getting raw configuration.
+func TestGetRawSettableConfig(t *testing.T) {
+	// Set the original config.
+	config := NewSettableDHCPv4Config()
+	err := config.SetValidLifetime(storkutil.Ptr(int64(1111)))
+	require.NoError(t, err)
+
+	// Extract the raw config.
+	rawConfig, err := config.GetRawConfig()
+	require.NoError(t, err)
+	require.NotNil(t, rawConfig)
+
+	// Make sure it contains the top-level key.
+	require.Contains(t, rawConfig, "Dhcp4")
+
+	// Serialize it again and make sure it is equal to the original.
+	marshalled, err := json.Marshal(config)
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{
+		"Dhcp4": {
+			"valid-lifetime": 1111
+		}
+	}`, string(marshalled))
+}
+
+// Test setting various DHCPv4 global configuration parameters.
+func TestSettingDHCPv4GlobalParameters(t *testing.T) {
+	config := NewSettableDHCPv4Config()
+
+	err := config.SetAllocator(storkutil.Ptr("flq"))
+	require.NoError(t, err)
+
+	err = config.SetCacheThreshold(storkutil.Ptr(float32(0.2)))
+	require.NoError(t, err)
+
+	err = config.SetDDNSSendUpdates(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSOverrideNoUpdate(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSOverrideClientUpdate(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSReplaceClientName(storkutil.Ptr("never"))
+	require.NoError(t, err)
+
+	err = config.SetDDNSGeneratedPrefix(storkutil.Ptr("myhost.example.org"))
+	require.NoError(t, err)
+
+	err = config.SetDDNSQualifyingSuffix(storkutil.Ptr("example.org"))
+	require.NoError(t, err)
+
+	err = config.SetDDNSUpdateOnRenew(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSUseConflictResolution(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSTTLPercent(storkutil.Ptr(float32(0.1)))
+	require.NoError(t, err)
+
+	err = config.SetELPFlushReclaimedTimerWaitTime(storkutil.Ptr(int64(111)))
+	require.NoError(t, err)
+
+	err = config.SetELPHoldReclaimedTime(storkutil.Ptr(int64(111)))
+	require.NoError(t, err)
+
+	err = config.SetELPMaxReclaimLeases(storkutil.Ptr(int64(111)))
+	require.NoError(t, err)
+
+	err = config.SetELPMaxReclaimTime(storkutil.Ptr(int64(2)))
+	require.NoError(t, err)
+
+	err = config.SetELPReclaimTimerWaitTime(storkutil.Ptr(int64(3)))
+	require.NoError(t, err)
+
+	err = config.SetELPUnwarnedReclaimCycles(storkutil.Ptr(int64(10)))
+	require.NoError(t, err)
+
+	err = config.SetReservationsGlobal(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetReservationsInSubnet(storkutil.Ptr(false))
+	require.NoError(t, err)
+
+	err = config.SetReservationsOutOfPool(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetEarlyGlobalReservationsLookup(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetHostReservationIdentifiers([]string{"hw-address", "client-id"})
+	require.NoError(t, err)
+
+	err = config.SetAuthoritative(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetEchoClientID(storkutil.Ptr(false))
+	require.NoError(t, err)
+
+	serializedConfig, err := config.GetSerializedConfig()
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{
+		"Dhcp4": {
+			"cache-threshold": 0.2,
+			"ddns-generated-prefix": "myhost.example.org",
+			"ddns-override-client-update": true,
+			"ddns-override-no-update": true,
+			"ddns-qualifying-suffix": "example.org",
+			"ddns-replace-client-name": "never",
+			"ddns-send-updates": true,
+			"ddns-update-on-renew": true,
+			"ddns-use-conflict-resolution": true,
+			"ddns-ttl-percent": 0.1,
+			"early-global-reservations-lookup": true,
+			"host-reservation-identifiers": [
+				"hw-address",
+				"client-id"
+			],
+			"reservations-global": true,
+			"reservations-in-subnet": false,
+			"reservations-out-of-pool": true,
+			"allocator": "flq",
+			"expired-leases-processing": {
+				"flush-reclaimed-timer-wait-time": 111,
+				"hold-reclaimed-time": 111,
+				"max-reclaim-leases": 111,
+				"max-reclaim-time": 2,
+				"reclaim-timer-wait-time": 3,
+				"unwarned-reclaim-cycles": 10
+			},
+			"authoritative": true,
+			"echo-client-id": false
+		}
+	}`, serializedConfig)
+}
+
+// Test setting expired leases processing for DHCPv4 server.
+func TestSettingDHCPv4ExpiredLeasesProcessing(t *testing.T) {
+	config := NewSettableDHCPv4Config()
+
+	expiredLeasesProcessing := &ExpiredLeasesProcessing{
+		FlushReclaimedTimerWaitTime: storkutil.Ptr(int64(1)),
+		HoldReclaimedTime:           storkutil.Ptr(int64(2)),
+		MaxReclaimLeases:            storkutil.Ptr(int64(3)),
+		MaxReclaimTime:              storkutil.Ptr(int64(4)),
+		ReclaimTimerWaitTime:        storkutil.Ptr(int64(5)),
+		UnwarnedReclaimCycles:       storkutil.Ptr(int64(6)),
+	}
+	err := config.SetExpiredLeasesProcessing(expiredLeasesProcessing)
+	require.NoError(t, err)
+
+	serializedConfig, err := config.GetSerializedConfig()
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{
+		"Dhcp4": {
+			"expired-leases-processing": {
+				"flush-reclaimed-timer-wait-time": 1,
+				"hold-reclaimed-time": 2,
+				"max-reclaim-leases": 3,
+				"max-reclaim-time": 4,
+				"reclaim-timer-wait-time": 5,
+				"unwarned-reclaim-cycles": 6
+			}
+		}
+	}`, serializedConfig)
+}
+
+// Test setting various DHCPv6 global configuration parameters.
+func TestSettingDHCPv6GlobalParameters(t *testing.T) {
+	config := NewSettableDHCPv6Config()
+
+	err := config.SetAllocator(storkutil.Ptr("flq"))
+	require.NoError(t, err)
+
+	err = config.SetCacheThreshold(storkutil.Ptr(float32(0.2)))
+	require.NoError(t, err)
+
+	err = config.SetDDNSSendUpdates(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSOverrideNoUpdate(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSOverrideClientUpdate(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSReplaceClientName(storkutil.Ptr("never"))
+	require.NoError(t, err)
+
+	err = config.SetDDNSGeneratedPrefix(storkutil.Ptr("myhost.example.org"))
+	require.NoError(t, err)
+
+	err = config.SetDDNSQualifyingSuffix(storkutil.Ptr("example.org"))
+	require.NoError(t, err)
+
+	err = config.SetDDNSUpdateOnRenew(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSUseConflictResolution(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDDNSTTLPercent(storkutil.Ptr(float32(0.1)))
+	require.NoError(t, err)
+
+	err = config.SetELPFlushReclaimedTimerWaitTime(storkutil.Ptr(int64(111)))
+	require.NoError(t, err)
+
+	err = config.SetELPHoldReclaimedTime(storkutil.Ptr(int64(111)))
+	require.NoError(t, err)
+
+	err = config.SetELPMaxReclaimLeases(storkutil.Ptr(int64(111)))
+	require.NoError(t, err)
+
+	err = config.SetELPMaxReclaimTime(storkutil.Ptr(int64(2)))
+	require.NoError(t, err)
+
+	err = config.SetELPReclaimTimerWaitTime(storkutil.Ptr(int64(3)))
+	require.NoError(t, err)
+
+	err = config.SetELPUnwarnedReclaimCycles(storkutil.Ptr(int64(10)))
+	require.NoError(t, err)
+
+	err = config.SetReservationsGlobal(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetReservationsInSubnet(storkutil.Ptr(false))
+	require.NoError(t, err)
+
+	err = config.SetReservationsOutOfPool(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetEarlyGlobalReservationsLookup(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetHostReservationIdentifiers([]string{"hw-address", "client-id"})
+	require.NoError(t, err)
+
+	err = config.SetPDAllocator(storkutil.Ptr("random"))
+	require.NoError(t, err)
+
+	serializedConfig, err := config.GetSerializedConfig()
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{
+		"Dhcp6": {
+			"cache-threshold": 0.2,
+			"ddns-generated-prefix": "myhost.example.org",
+			"ddns-override-client-update": true,
+			"ddns-override-no-update": true,
+			"ddns-qualifying-suffix": "example.org",
+			"ddns-replace-client-name": "never",
+			"ddns-send-updates": true,
+			"ddns-update-on-renew": true,
+			"ddns-use-conflict-resolution": true,
+			"ddns-ttl-percent": 0.1,
+			"early-global-reservations-lookup": true,
+			"host-reservation-identifiers": [
+				"hw-address",
+				"client-id"
+			],
+			"reservations-global": true,
+			"reservations-in-subnet": false,
+			"reservations-out-of-pool": true,
+			"allocator": "flq",
+			"expired-leases-processing": {
+				"flush-reclaimed-timer-wait-time": 111,
+				"hold-reclaimed-time": 111,
+				"max-reclaim-leases": 111,
+				"max-reclaim-time": 2,
+				"reclaim-timer-wait-time": 3,
+				"unwarned-reclaim-cycles": 10
+			},
+			"pd-allocator": "random"
+		}
+	}`, serializedConfig)
+}
+
+// Test setting expired leases processing for DHCPv6 server.
+func TestSettingDHCPv6ExpiredLeasesProcessing(t *testing.T) {
+	config := NewSettableDHCPv6Config()
+
+	expiredLeasesProcessing := &ExpiredLeasesProcessing{
+		FlushReclaimedTimerWaitTime: storkutil.Ptr(int64(6)),
+		HoldReclaimedTime:           storkutil.Ptr(int64(5)),
+		MaxReclaimLeases:            storkutil.Ptr(int64(4)),
+		MaxReclaimTime:              storkutil.Ptr(int64(3)),
+		ReclaimTimerWaitTime:        storkutil.Ptr(int64(2)),
+		UnwarnedReclaimCycles:       storkutil.Ptr(int64(1)),
+	}
+	err := config.SetExpiredLeasesProcessing(expiredLeasesProcessing)
+	require.NoError(t, err)
+
+	serializedConfig, err := config.GetSerializedConfig()
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{
+		"Dhcp6": {
+			"expired-leases-processing": {
+				"flush-reclaimed-timer-wait-time": 6,
+				"hold-reclaimed-time": 5,
+				"max-reclaim-leases": 4,
+				"max-reclaim-time": 3,
+				"reclaim-timer-wait-time": 2,
+				"unwarned-reclaim-cycles": 1
+			}
+		}
+	}`, serializedConfig)
 }

@@ -780,6 +780,63 @@
           schema:
             $ref: '#/definitions/ApiError'
 
+  /kea-global-parameters/transaction:
+    post:
+      summary: Begin transaction for updating global Kea parameters.
+      description: >-
+        Creates a transaction in the config manager to update global Kea configurations.
+        A caller specifies the identifiers of the Kea daemons for which they desire
+        configuration updates. The server returns the daemon information including their
+        configurations.
+      operationId: updateKeaGlobalParametersBegin
+      tags:
+        - DHCP
+      parameters:
+        - in: body
+          name: request
+          description: Request to begin new transaction.
+          schema:
+            $ref: '#/definitions/UpdateKeaDaemonsGlobalParametersBeginRequest'
+      responses:
+        200:
+          description: New transaction successfully started.
+          schema:
+            $ref: '#/definitions/UpdateKeaDaemonsGlobalParametersBeginResponse'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /kea-global-parameters/transaction/{id}/submit:
+    post:
+      summary: Submit transaction updating existing global Kea parameters.
+      description: >-
+        Submits a transaction causing the server to update existing configurations
+        on respective Kea servers. It applies and submits the transaction in
+        Stork config manager.
+      operationId:
+        updateKeaGlobalParametersSubmit
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+        - in: body
+          name: request
+          description: Updated configurations for one or more Kea servers.
+          schema:
+            $ref: '#/definitions/UpdateKeaDaemonsGlobalParametersSubmitRequest'
+      responses:
+        200:
+          description: Kea configurations successfully updated.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /overview:
     get:
       summary: Get overview of whole DHCP state.

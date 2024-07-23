@@ -9,13 +9,13 @@ var _ commonConfigAccessor = (*CtrlAgentConfig)(nil)
 
 // Represents Kea Control Agent's configuration.
 type CtrlAgentConfig struct {
-	ControlSockets *ControlSockets `json:"control-sockets"`
-	HTTPHost       *string         `json:"http-host"`
-	HTTPPort       *int64          `json:"http-port"`
-	TrustAnchor    *string         `json:"trust-anchor"`
-	CertFile       *string         `json:"cert-file"`
-	KeyFile        *string         `json:"key-file"`
-	CertRequired   *bool           `json:"cert-required"`
+	ControlSockets *ControlSockets `json:"control-sockets,omitempty"`
+	HTTPHost       *string         `json:"http-host,omitempty"`
+	HTTPPort       *int64          `json:"http-port,omitempty"`
+	TrustAnchor    *string         `json:"trust-anchor,omitempty"`
+	CertFile       *string         `json:"cert-file,omitempty"`
+	KeyFile        *string         `json:"key-file,omitempty"`
+	CertRequired   *bool           `json:"cert-required,omitempty"`
 	HookLibraries  []HookLibrary   `json:"hooks-libraries"`
 	Loggers        []Logger        `json:"loggers"`
 }
@@ -23,10 +23,10 @@ type CtrlAgentConfig struct {
 // A structure representing the configuration of multiple control sockets
 // in the Kea Control Agent.
 type ControlSockets struct {
-	D2      *ControlSocket `json:"d2"`
-	Dhcp4   *ControlSocket `json:"dhcp4"`
-	Dhcp6   *ControlSocket `json:"dhcp6"`
-	NetConf *ControlSocket `json:"netconf"`
+	D2      *ControlSocket `json:"d2,omitempty"`
+	Dhcp4   *ControlSocket `json:"dhcp4,omitempty"`
+	Dhcp6   *ControlSocket `json:"dhcp6,omitempty"`
+	NetConf *ControlSocket `json:"netconf,omitempty"`
 }
 
 // A structure representing a configuration of a single control socket in

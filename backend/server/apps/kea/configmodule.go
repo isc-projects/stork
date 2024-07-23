@@ -26,6 +26,11 @@ type ConfigCommand struct {
 	App     *dbmodel.App
 }
 
+type GlobalConfigRecipeParams struct {
+	KeaDaemonsBeforeConfigUpdate []dbmodel.Daemon
+	KeaDaemonsAfterConfigUpdate  []dbmodel.Daemon
+}
+
 // A structure embedded in the ConfigRecipe grouping parameters used
 // in transactions adding, updating and deleting host reservations.
 type HostConfigRecipeParams struct {
@@ -85,6 +90,9 @@ type ConfigRecipe struct {
 	// apply a configuration update.
 	Commands []ConfigCommand
 	// Embedded structure holding the parameters appropriate for the
+	// global parameters management.
+	GlobalConfigRecipeParams
+	// Embedded structure holding the parameters appropriate for the
 	// host management.
 	HostConfigRecipeParams
 	// Embedded structure holding the parameters appropriate for the
@@ -133,6 +141,8 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 	}
 	for _, pu := range state.Updates {
 		switch pu.Operation {
+		case "global_parameters_update":
+			ctx, err = module.commitGlobalParametersUpdate(ctx)
 		case "host_add":
 			ctx, err = module.commitHostAdd(ctx)
 		case "host_update":
@@ -159,6 +169,128 @@ func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error)
 		}
 	}
 	return ctx, err
+}
+
+// Begins updating global configuration parameters for one or more Kea servers.
+// Since the configuration update can be performed for multiple daemons in a
+// single transaction it is possible to specify multiple daemon IDs for which
+// the transaction should be created.
+func (module *ConfigModule) BeginGlobalParametersUpdate(ctx context.Context, daemonIDs []int64) (context.Context, error) {
+	// Get the daemons with their configurations from the database.
+	daemons, err := dbmodel.GetDaemonsByIDs(module.manager.GetDB(), daemonIDs)
+	if err != nil {
+		// Internal database error.
+		return ctx, err
+	}
+	// Some daemons do not exist.
+	if len(daemons) != len(daemonIDs) {
+		return ctx, errors.WithStack(config.NewSomeDaemonsNotFoundError(daemonIDs...))
+	}
+	// Try to lock configurations.
+	ctx, err = module.manager.Lock(ctx, daemonIDs...)
+	if err != nil {
+		return ctx, errors.WithStack(config.NewLockError())
+	}
+	// Create transaction state.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe]("kea", "global_parameters_update", daemonIDs...)
+	recipe := &ConfigRecipe{
+		GlobalConfigRecipeParams: GlobalConfigRecipeParams{
+			KeaDaemonsBeforeConfigUpdate: daemons,
+		},
+	}
+	if err := state.SetRecipeForUpdate(0, recipe); err != nil {
+		return ctx, err
+	}
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+	return ctx, nil
+}
+
+// Applies global configuration parameters update. It prepares necessary commands to be sent
+// to Kea upon commit.
+func (module *ConfigModule) ApplyGlobalParametersUpdate(ctx context.Context, daemonSettableConfigs []config.AnnotatedEntity[*keaconfig.SettableConfig]) (context.Context, error) {
+	// Retrieve existing configs from the context.
+	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
+	if err != nil {
+		return ctx, err
+	}
+	// Retrieve the existing daemons with their configurations. The partial
+	// configurations will be merged into them.
+	existingDaemons := recipe.KeaDaemonsBeforeConfigUpdate
+	if existingDaemons == nil {
+		return ctx, errors.New("internal server error: existing Kea configs cannot be nil when committing global parameters update")
+	}
+	var (
+		commands         []ConfigCommand
+		updatedDaemonIDs []int64
+	)
+	// Iterate over the received partial configs and match them with the daemons
+	// for which the config update is performed.
+	for _, daemonSettableConfig := range daemonSettableConfigs {
+		for _, existingDaemon := range existingDaemons {
+			if daemonSettableConfig.GetID() == existingDaemon.ID {
+				// Merge the partial configuration into the existing configuration.
+				err = existingDaemon.KeaDaemon.Config.Merge(daemonSettableConfig.GetEntity())
+				if err != nil {
+					return ctx, err
+				}
+				appCommand := ConfigCommand{
+					Command: keactrl.NewCommandConfigSet(existingDaemon.KeaDaemon.Config.Config, existingDaemon.Name),
+					App:     existingDaemon.App,
+				}
+				commands = append(commands, appCommand)
+				updatedDaemonIDs = append(updatedDaemonIDs, daemonSettableConfig.GetID())
+			}
+		}
+	}
+	if len(existingDaemons) != len(updatedDaemonIDs) {
+		return ctx, config.NewInvalidConfigsError(updatedDaemonIDs...)
+	}
+	// Each config-set must come with config-write to persist the configuration.
+	for _, existingDaemon := range existingDaemons {
+		appCommand := ConfigCommand{
+			Command: keactrl.NewCommandBase(keactrl.ConfigWrite, existingDaemon.Name),
+			App:     existingDaemon.App,
+		}
+		commands = append(commands, appCommand)
+	}
+	// Remember the modified configurations.
+	recipe.KeaDaemonsAfterConfigUpdate = existingDaemons
+	recipe.Commands = commands
+	return config.SetRecipeForUpdate(ctx, 0, recipe)
+}
+
+// Sends commands to Kea to update the global configuration parameters.
+// It also updates the respective configurations in the Stork database.
+func (module *ConfigModule) commitGlobalParametersUpdate(ctx context.Context) (context.Context, error) {
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	if !ok {
+		return ctx, errors.New("context lacks state")
+	}
+	// Send the commands to the Kea servers.
+	var err error
+	ctx, err = module.commitChanges(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	for _, update := range state.Updates {
+		if update.Recipe.KeaDaemonsAfterConfigUpdate == nil {
+			return ctx, errors.New("server logic error: the update.Recipe.KeaDaemonsAfterConfigUpdate cannot be nil when committing the global config update")
+		}
+		// Update the daemons with their configurations in the Stork database.
+		for _, daemon := range update.Recipe.KeaDaemonsAfterConfigUpdate {
+			err = module.manager.GetDB().RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+				err := dbmodel.UpdateDaemon(tx, &daemon)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+			if err != nil {
+				return ctx, errors.WithMessage(err, "global configuration updated in Kea but updating it in the Stork database failed")
+			}
+		}
+	}
+	return ctx, nil
 }
 
 // Begins adding a new host reservation. It initializes transaction state.

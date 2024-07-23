@@ -48,6 +48,10 @@
       ddnsUseConflictResolution:
         type: boolean
         x-nullable: true
+      ddnsTTLPercent:
+        type: number
+        format: float
+        x-nullable: true
 
   KeaConfigFourOverSixParameters:
     type: object
@@ -236,3 +240,64 @@
       - $ref: '#/definitions/KeaConfigClientClassParameters'
       - $ref: '#/definitions/KeaConfigAssortedPoolParameters'
       - $ref: '#/definitions/DHCPOptions'
+
+  KeaConfigAssortedGlobalParameters:
+    type: object
+    properties:
+      allocator:
+        type: string
+        x-nullable: true
+      authoritative:
+        type: boolean
+        x-nullable: true
+      earlyGlobalReservationsLookup:
+        type: boolean
+        x-nullable: true
+      echoClientId:
+        type: boolean
+        x-nullable: true
+      hostReservationIdentifiers:
+        type: array
+        items:
+          type: string
+      pdAllocator:
+        type: string
+        x-nullable: true
+
+  KeaConfigExpiredLeasesProcessingParameters:
+    type: object
+    properties:
+      flushReclaimedTimerWaitTime:
+        type: integer
+        format: int64
+        x-nullable: true
+      holdReclaimedTime:
+        type: integer
+        format: int64
+        x-nullable: true
+      maxReclaimLeases:
+        type: integer
+        format: int64
+        x-nullable: true
+      maxReclaimTime:
+        type: integer
+        format: int64
+        x-nullable: true
+      reclaimTimerWaitTime:
+        type: integer
+        format: int64
+        x-nullable: true
+      unwarnedReclaimCycles:
+        type: integer
+        format: int64
+        x-nullable: true
+
+  KeaConfigurableGlobalParameters:
+    type: object
+    allOf:
+      - $ref: '#/definitions/KeaConfigAssortedGlobalParameters'
+      - $ref: '#/definitions/KeaConfigCacheParameters'
+      - $ref: '#/definitions/KeaConfigDdnsParameters'
+      - $ref: '#/definitions/KeaConfigExpiredLeasesProcessingParameters'
+      - $ref: '#/definitions/KeaConfigReservationParameters'
+      - $ref: '#/definitions/KeaConfigValidLifetimeParameters'

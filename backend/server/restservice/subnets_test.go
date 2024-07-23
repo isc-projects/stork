@@ -422,6 +422,9 @@ func TestGetSubnet4(t *testing.T) {
 	// ddns-use-conflict-resolution
 	require.NotNil(t, subnetParams.DdnsUseConflictResolution)
 	require.True(t, *subnetParams.DdnsUseConflictResolution)
+	// ddns-ttl-percent
+	require.NotNil(t, subnetParams.DdnsTTLPercent)
+	require.EqualValues(t, float32(0.65), *subnetParams.DdnsTTLPercent)
 	// hostname-char-replacement
 	require.NotNil(t, subnetParams.HostnameCharReplacement)
 	require.Equal(t, "x", *subnetParams.HostnameCharReplacement)
@@ -1198,6 +1201,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 				DdnsSendUpdates:           storkutil.Ptr(true),
 				DdnsUpdateOnRenew:         storkutil.Ptr(true),
 				DdnsUseConflictResolution: storkutil.Ptr(true),
+				DdnsTTLPercent:            storkutil.Ptr(float32(0.65)),
 			},
 			KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
 				FourOverSixInterface:   storkutil.Ptr("eth0"),
@@ -1389,6 +1393,7 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 							"ddns-send-updates": true,
 							"ddns-update-on-renew": true,
 							"ddns-use-conflict-resolution": true,
+							"ddns-ttl-percent": 0.65,
 							"4o6-interface": "eth0",
 							"4o6-interface-id": "ifaceid",
 							"4o6-subnet": "2001:db8:1::/64",
@@ -1502,6 +1507,8 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 		require.True(t, *ls.KeaParameters.DDNSUpdateOnRenew)
 		require.NotNil(t, ls.KeaParameters.DDNSUseConflictResolution)
 		require.True(t, *ls.KeaParameters.DDNSUseConflictResolution)
+		require.NotNil(t, ls.KeaParameters.DDNSTTLPercent)
+		require.EqualValues(t, float32(0.65), *ls.KeaParameters.DDNSTTLPercent)
 		require.NotNil(t, ls.KeaParameters.FourOverSixInterface)
 		require.Equal(t, "eth0", *ls.KeaParameters.FourOverSixInterface)
 		require.NotNil(t, ls.KeaParameters.FourOverSixInterfaceID)

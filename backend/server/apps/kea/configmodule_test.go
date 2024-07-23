@@ -132,6 +132,327 @@ func TestCommit(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Test the first stage of updating global Kea parameters. It checks that the initial
+// configuration information is fetched from the database and stored in the context.
+// It also checks that appropriate locks are applied.
+func TestBeginGlobalParametersUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {
+			"valid-lifetime": 3000
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app, err = server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	apps, err := dbmodel.GetAllApps(db, true)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+
+	ctx, err := module.BeginGlobalParametersUpdate(context.Background(), []int64{apps[0].Daemons[0].ID, apps[1].Daemons[0].ID})
+	require.NoError(t, err)
+
+	// Make sure that the locks have been applied on the daemons owning
+	// the host.
+	require.Contains(t, manager.locks, apps[0].Daemons[0].ID)
+	require.Contains(t, manager.locks, apps[1].Daemons[0].ID)
+
+	// Make sure that the host information has been stored in the context.
+	state, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, state.Updates, 1)
+	require.Equal(t, datamodel.AppTypeKea, state.Updates[0].Target)
+	require.Equal(t, "global_parameters_update", state.Updates[0].Operation)
+
+	daemons := state.Updates[0].Recipe.GlobalConfigRecipeParams.KeaDaemonsBeforeConfigUpdate
+	require.Len(t, daemons, 2)
+	require.EqualValues(t, apps[0].Daemons[0].ID, daemons[0].ID)
+	require.EqualValues(t, apps[1].Daemons[0].ID, daemons[1].ID)
+
+	require.Nil(t, state.Updates[0].Recipe.GlobalConfigRecipeParams.KeaDaemonsAfterConfigUpdate)
+}
+
+// Test second stage of global parameters update.
+func TestApplyGlobalParametersUpdate(t *testing.T) {
+	daemonConfig, err := dbmodel.NewKeaConfigFromJSON(`{
+		"Dhcp4": {
+			"valid-lifetime": 3000
+		}
+	}`)
+	require.NoError(t, err)
+	require.NotNil(t, daemonConfig)
+
+	daemons := []dbmodel.Daemon{
+		{
+			ID:   1,
+			Name: dbmodel.DaemonNameDHCPv4,
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config: daemonConfig,
+			},
+			App: &dbmodel.App{
+				AccessPoints: []*dbmodel.AccessPoint{
+					{
+						Type:    dbmodel.AccessPointControl,
+						Address: "192.0.2.1",
+						Port:    1234,
+					},
+				},
+			},
+		},
+		{
+			ID:   2,
+			Name: dbmodel.DaemonNameDHCPv4,
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config: daemonConfig,
+			},
+			App: &dbmodel.App{
+				AccessPoints: []*dbmodel.AccessPoint{
+					{
+						Type:    dbmodel.AccessPointControl,
+						Address: "192.0.2.2",
+						Port:    2345,
+					},
+				},
+			},
+		},
+	}
+
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	daemonIDs := []int64{1, 2}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "global_parameters_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		GlobalConfigRecipeParams: GlobalConfigRecipeParams{
+			KeaDaemonsBeforeConfigUpdate: daemons,
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	// Simulate updating configurations.
+	config1 := keaconfig.NewSettableDHCPv4Config()
+	config2 := keaconfig.NewSettableDHCPv4Config()
+	config1.SetValidLifetime(storkutil.Ptr(int64(1111)))
+	config2.SetValidLifetime(storkutil.Ptr(int64(1111)))
+
+	ctx, err = module.ApplyGlobalParametersUpdate(ctx, []config.AnnotatedEntity[*keaconfig.SettableConfig]{
+		*config.NewAnnotatedEntity(1, config1),
+		*config.NewAnnotatedEntity(2, config2),
+	})
+	require.NoError(t, err)
+
+	// Make sure that the transaction state exists and comprises expected data.
+	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.False(t, stateReturned.Scheduled)
+
+	require.Len(t, stateReturned.Updates, 1)
+	update := stateReturned.Updates[0]
+
+	// Basic validation of the retrieved state.
+	require.Equal(t, datamodel.AppTypeKea, update.Target)
+	require.Equal(t, "global_parameters_update", update.Operation)
+	require.NotNil(t, update.Recipe)
+	require.Len(t, update.Recipe.GlobalConfigRecipeParams.KeaDaemonsBeforeConfigUpdate, 2)
+	require.Len(t, update.Recipe.GlobalConfigRecipeParams.KeaDaemonsAfterConfigUpdate, 2)
+
+	commands := update.Recipe.Commands
+	require.Len(t, commands, 4)
+
+	// Validate the commands to be sent to Kea.
+	for i := range commands {
+		command := commands[i].Command
+		marshalled := command.Marshal()
+
+		switch {
+		case i < 2:
+			require.JSONEq(t,
+				`{
+					"command": "config-set",
+					"service": [ "dhcp4" ],
+					"arguments": {
+						"Dhcp4": {
+							"valid-lifetime": 1111
+						}
+					}
+				}`,
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+					"command": "config-write",
+					"service": [ "dhcp4" ]
+				}`,
+				marshalled)
+		}
+		// Verify they are associated with appropriate apps.
+		require.NotNil(t, commands[i].App)
+	}
+}
+
+// Test committing global configuration parameters, i.e. actually sending control
+// commands to Kea.
+func TestCommitGlobalParametersUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	agents := agentcommtest.NewKeaFakeAgents()
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    agents,
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	serverConfig := `{
+		"Dhcp4": {}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app1, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app1, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app2, err := server2.GetKea()
+	require.NoError(t, err)
+
+	err = CommitAppIntoDB(db, app2, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	daemons, err := dbmodel.GetDaemonsByIDs(db, []int64{app1.Daemons[0].GetID(), app2.Daemons[0].GetID()})
+	require.NoError(t, err)
+
+	daemonIDs := []int64{daemons[0].GetID(), daemons[1].GetID()}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](datamodel.AppTypeKea, "global_parameters_update", daemonIDs...)
+	recipe := ConfigRecipe{
+		GlobalConfigRecipeParams: GlobalConfigRecipeParams{
+			KeaDaemonsBeforeConfigUpdate: daemons,
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, config.StateContextKey, *state)
+
+	// Modify the config. The modifications should be applied in
+	// the database upon commit.
+	modifiedConfig := keaconfig.NewSettableDHCPv4Config()
+	modifiedConfig.SetValidLifetime(storkutil.Ptr(int64(1111)))
+
+	ctx, err = module.ApplyGlobalParametersUpdate(ctx, []config.AnnotatedEntity[*keaconfig.SettableConfig]{
+		*config.NewAnnotatedEntity(daemons[0].GetID(), modifiedConfig),
+		*config.NewAnnotatedEntity(daemons[1].GetID(), modifiedConfig),
+	})
+	require.NoError(t, err)
+
+	// Committing the changes should result in sending control commands to Kea servers.
+	_, err = module.Commit(ctx)
+	require.NoError(t, err)
+
+	// Make sure that the correct number of commands were sent.
+	require.Len(t, agents.RecordedURLs, 4)
+	require.Len(t, agents.RecordedCommands, 4)
+
+	// The respective commands should be sent to different servers.
+	require.NotEqual(t, agents.RecordedURLs[0], agents.RecordedURLs[1])
+	require.NotEqual(t, agents.RecordedURLs[2], agents.RecordedURLs[3])
+	require.Equal(t, agents.RecordedURLs[0], agents.RecordedURLs[2])
+	require.Equal(t, agents.RecordedURLs[1], agents.RecordedURLs[3])
+
+	// Validate the sent commands and URLS.
+	for i, command := range agents.RecordedCommands {
+		marshalled := command.Marshal()
+		switch {
+		case i < 2:
+			require.JSONEq(t, `{
+				"command": "config-set",
+				"service": [ "dhcp4" ],
+				"arguments": {
+					"Dhcp4": {
+						"valid-lifetime": 1111
+					}
+				}
+			}`,
+				marshalled)
+		default:
+			require.JSONEq(t,
+				`{
+						"command": "config-write",
+						"service": [ "dhcp4" ]
+					}`,
+				marshalled)
+		}
+	}
+
+	// Make sure that the global configurations have been updated in the database.
+	updatedDaemons, err := dbmodel.GetDaemonsByIDs(db, []int64{daemons[0].GetID(), daemons[1].GetID()})
+	require.NoError(t, err)
+	require.Len(t, updatedDaemons, 2)
+
+	// Make sure that the updated configuration has been stored in the database.
+	for _, daemon := range updatedDaemons {
+		require.NotNil(t, daemon.KeaDaemon)
+		config := daemon.KeaDaemon.Config
+		require.NotNil(t, config)
+
+		require.NotNil(t, config.GetValidLifetimeParameters().ValidLifetime)
+		require.EqualValues(t, 1111, *config.GetValidLifetimeParameters().ValidLifetime)
+	}
+}
+
 // Test first stage of adding a new host.
 func TestBeginHostAdd(t *testing.T) {
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{

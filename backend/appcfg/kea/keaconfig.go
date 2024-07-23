@@ -11,6 +11,11 @@ import (
 	"muzzammil.xyz/jsonc"
 )
 
+var (
+	_ RawConfigAccessor = (*Config)(nil)
+	_ RawConfigAccessor = (*SettableConfig)(nil)
+)
+
 // An interface to the common data for all daemons. It must be implemented
 // for all configuration types (all daemon types).
 type commonConfigAccessor interface {
@@ -35,8 +40,25 @@ type Config struct {
 	*DHCPv6Config    `json:"Dhcp6,omitempty"`
 }
 
+// A structure holding partial configuration for a single Kea server.
+// It exposes functions to set selected configuration parameters. It
+// also implements the RawConfigAccessor interface that can be used to
+// merge this partial configuration into the full server configuration.
+type SettableConfig struct {
+	*CtrlAgentConfig `json:"Control-agent,omitempty"`
+	*D2Config        `json:"DhcpDdns,omitempty"`
+	*DHCPv4Config    `json:"Dhcp4,omitempty"`
+	*DHCPv6Config    `json:"Dhcp6,omitempty"`
+}
+
+// An interface providing a function returning raw configuration. It
+// must be implemented by both Config and SettableConfig.
+type RawConfigAccessor interface {
+	GetRawConfig() (RawConfig, error)
+}
+
 // Raw configuration type for a Kea server.
-type RawConfig map[string]any
+type RawConfig = map[string]any
 
 // Convenience function used by different exported functions returning
 // an interface to the DHCP-specific data.
@@ -118,6 +140,11 @@ func NewConfigFromMap(rawCfg *map[string]any) *Config {
 		return nil
 	}
 	return newCfg
+}
+
+// Returns raw configuration.
+func (c *Config) GetRawConfig() (RawConfig, error) {
+	return c.Raw, nil
 }
 
 // Returns true if the Config holds the control agent's configuration.
@@ -409,7 +436,7 @@ func (c *Config) GetDHCPOptions() (options []SingleOptionData) {
 // configuration and nullifies the values for the following keys: password,
 // secret, token. It doesn't modify the parsed configuration.
 func (c *Config) HideSensitiveData() {
-	hideSensitiveData((*map[string]any)(&c.Raw))
+	hideSensitiveData(&c.Raw)
 }
 
 // Hides the sensitive data in the configuration map. It traverses the raw
@@ -441,4 +468,375 @@ func hideSensitiveData(obj *map[string]any) {
 			hideSensitiveData(&subobject)
 		}
 	}
+}
+
+// Merges raw configuration into current configuration.
+func (c *Config) Merge(source RawConfigAccessor) error {
+	destConfig, _ := c.GetRawConfig()
+	sourceConfig, err := source.GetRawConfig()
+	if err != nil {
+		return errors.Wrap(err, "problem getting raw configuration during Kea configurations merge")
+	}
+	c.Raw = merge(destConfig, sourceConfig).(RawConfig)
+	data, err := json.Marshal(destConfig)
+	if err != nil {
+		return errors.Wrap(err, "problem serializing merged Kea configuration")
+	}
+	type ct Config
+	err = jsonc.Unmarshal(data, (*ct)(c))
+	return errors.Wrap(err, "problem parsing merged Kea configuration")
+}
+
+// Merges branches of the two configurations. If the branches are maps
+// the values of the maps are merged into one. Otherwise, the merged value
+// is preferred and replaces the value in destination.
+func merge(c1, c2 any) any {
+	switch c1 := c1.(type) {
+	case RawConfig:
+		c2, ok := c2.(RawConfig)
+		if !ok {
+			return c1
+		}
+		for k, v2 := range c2 {
+			if v1, ok := c1[k]; ok {
+				c1[k] = merge(v1, v2)
+			} else {
+				c1[k] = v2
+			}
+		}
+	default:
+		if c2 != nil {
+			return c2
+		}
+	}
+	return c1
+}
+
+// Creates new settable Control Agent configuration instance.
+func NewSettableCtrlAgentConfig() *SettableConfig {
+	return &SettableConfig{
+		CtrlAgentConfig: &CtrlAgentConfig{},
+	}
+}
+
+// Creates new settable D2 configuration instance.
+func NewSettableD2Config() *SettableConfig {
+	return &SettableConfig{
+		D2Config: &D2Config{},
+	}
+}
+
+// Creates new settable DHCPv4 configuration instance.
+func NewSettableDHCPv4Config() *SettableConfig {
+	return &SettableConfig{
+		DHCPv4Config: &DHCPv4Config{},
+	}
+}
+
+// Creates new settable DHCPv6 configuration instance.
+func NewSettableDHCPv6Config() *SettableConfig {
+	return &SettableConfig{
+		DHCPv6Config: &DHCPv6Config{},
+	}
+}
+
+// Returns raw settable configuration. The raw configuration is created
+// upon the call to this function from the already configured values.
+func (c *SettableConfig) GetRawConfig() (RawConfig, error) {
+	serializedConfig, err := json.Marshal(c)
+	if err != nil {
+		return nil, errors.Wrap(err, "problem getting raw settable config")
+	}
+	var mapConfig RawConfig
+	err = json.Unmarshal(serializedConfig, &mapConfig)
+	return mapConfig, errors.Wrap(err, "problem getting raw settable config")
+}
+
+// Returns settable configuration as string.
+func (c *SettableConfig) GetSerializedConfig() (string, error) {
+	serializedConfig, err := json.Marshal(c)
+	return string(serializedConfig), errors.Wrap(err, "problem getting serialized settable config")
+}
+
+// Returns true if the Config holds the DHCPv4 server's configuration.
+func (c *SettableConfig) IsDHCPv4() bool {
+	return c.DHCPv4Config != nil
+}
+
+// Returns true if the Config holds the DHCPv6 server's configuration.
+func (c *SettableConfig) IsDHCPv6() bool {
+	return c.DHCPv6Config != nil
+}
+
+// Convenience function used by different exported functions returning
+// an interface to setting the DHCP-specific data.
+func (c *SettableConfig) getDHCPConfigModifier() dhcpConfigModifier {
+	switch {
+	case c.IsDHCPv4():
+		return c.DHCPv4Config
+	case c.IsDHCPv6():
+		return c.DHCPv6Config
+	default:
+		return nil
+	}
+}
+
+// Convenience function used by different exported functions returning
+// an interface to setting the DHCPv4-specific data.
+func (c *SettableConfig) getDHCPv4ConfigModifier() dhcp4ConfigModifier {
+	switch {
+	case c.IsDHCPv4():
+		return c.DHCPv4Config
+	default:
+		return nil
+	}
+}
+
+// Convenience function used by different exported functions returning
+// an interface to setting the DHCPv6-specific data.
+func (c *SettableConfig) getDHCPv6ConfigModifier() dhcp6ConfigModifier {
+	switch {
+	case c.IsDHCPv6():
+		return c.DHCPv6Config
+	default:
+		return nil
+	}
+}
+
+// Sets a DHCPv4 or DHCPv6 parameter using the provided setter or returns an
+// error when such a parameter is not supported by the DHCP servers.
+func (c *SettableConfig) setDHCPParameter(setter func(modifier dhcpConfigModifier), parameterName string) (err error) {
+	if modifier := c.getDHCPConfigModifier(); modifier != nil {
+		setter(modifier)
+	} else {
+		err = NewUnsupportedConfigParameter(parameterName)
+	}
+	return
+}
+
+// Sets a DHCPv4 parameter using the provided setter or returns an error when such a
+// parameter is not supported by the DHCPv4 servers.
+func (c *SettableConfig) setDHCPv4Parameter(setter func(modifier dhcp4ConfigModifier), parameterName string) (err error) {
+	if modifier := c.getDHCPv4ConfigModifier(); modifier != nil {
+		setter(modifier)
+	} else {
+		err = NewUnsupportedConfigParameter(parameterName)
+	}
+	return
+}
+
+// Sets a DHCPv6 parameter using the provided setter or returns an error when such a
+// parameter is not supported by the DHCPv6 servers.
+func (c *SettableConfig) setDHCPv6Parameter(setter func(modifier dhcp6ConfigModifier), parameterName string) (err error) {
+	if modifier := c.getDHCPv6ConfigModifier(); modifier != nil {
+		setter(modifier)
+	} else {
+		err = NewUnsupportedConfigParameter(parameterName)
+	}
+	return
+}
+
+// Sets an allocator.
+func (c *SettableConfig) SetAllocator(allocator *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetAllocator(allocator)
+	}, "allocator")
+}
+
+// Sets cache threshold.
+func (c *SettableConfig) SetCacheThreshold(cacheThreshold *float32) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetCacheThreshold(cacheThreshold)
+	}, "cache-threshold")
+}
+
+// Sets boolean flag indicating if DDNS updates should be sent.
+func (c *SettableConfig) SetDDNSSendUpdates(ddnsSendUpdates *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSSendUpdates(ddnsSendUpdates)
+	}, "ddns-send-updates")
+}
+
+// Sets boolean flag indicating whether the DHCP server should override the
+// client's wish to not update the DNS.
+func (c *SettableConfig) SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate)
+	}, "ddns-override-no-update")
+}
+
+// Sets the boolean flag indicating whether the DHCP server should ignore the
+// client's wish to update the DNS on its own.
+func (c *SettableConfig) SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate)
+	}, "ddns-override-client-update")
+}
+
+// Sets the enumeration specifying whether the server should honor
+// the hostname or Client FQDN sent by the client or replace this name.
+func (c *SettableConfig) SetDDNSReplaceClientName(ddnsReplaceClientName *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSReplaceClientName(ddnsReplaceClientName)
+	}, "ddns-replace-client-name")
+}
+
+// Sets a prefix to be prepended to the generated Client FQDN.
+func (c *SettableConfig) SetDDNSGeneratedPrefix(ddnsGeneratedPrefix *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSGeneratedPrefix(ddnsGeneratedPrefix)
+	}, "ddns-generated-prefix")
+}
+
+// Sets a suffix appended to the partial name sent to the DNS.
+func (c *SettableConfig) SetDDNSQualifyingSuffix(ddnsQualifyingSuffix *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSQualifyingSuffix(ddnsQualifyingSuffix)
+	}, "ddns-qualifying-suffix")
+}
+
+// Sets a boolean flag, which when true instructs the server to always
+// update DNS when leases are renewed, even if the DNS information
+// has not changed.
+func (c *SettableConfig) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSUpdateOnRenew(ddnsUpdateOnRenew)
+	}, "ddns-update-on-renew")
+}
+
+// Sets a boolean flag which is passed to kea-dhcp-ddns with each DDNS
+// update request, to indicate whether DNS update conflict
+// resolution as described in RFC 4703 should be employed for the
+// given update request.
+func (c *SettableConfig) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSUseConflictResolution(ddnsUseConflictResolution)
+	}, "ddns-use-conflict-resolution")
+}
+
+// Sets the the percent of the lease's lifetime to use for the DNS TTL.
+func (c *SettableConfig) SetDDNSTTLPercent(ddnsTTLPercent *float32) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSTTLPercent(ddnsTTLPercent)
+	}, "ddns-ttl-percent")
+}
+
+// Sets the number of seconds since the last removal of the expired
+// leases, when the next removal should occur.
+func (c *SettableConfig) SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime)
+	}, "flush-reclaimed-timer-wait-time")
+}
+
+// Sets the length of time in seconds to keep expired leases in the
+// lease database (lease affinity).
+func (c *SettableConfig) SetELPHoldReclaimedTime(holdReclaimedTime *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetELPHoldReclaimedTime(holdReclaimedTime)
+	}, "hold-reclaimed-time")
+}
+
+// Sets the maximum number of expired leases that can be processed in
+// a single attempt to clean up expired leases from the lease database.
+func (c *SettableConfig) SetELPMaxReclaimLeases(maxReclaimedLeases *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetELPMaxReclaimLeases(maxReclaimedLeases)
+	}, "max-reclaimed-leases")
+}
+
+// Sets the maximum time in milliseconds that a single attempt to clean
+// up expired leases from the lease database may take.
+func (c *SettableConfig) SetELPMaxReclaimTime(maxReclaimTime *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetELPMaxReclaimTime(maxReclaimTime)
+	}, "max-reclaim-time")
+}
+
+// Sets the length of time in seconds since the last attempt to process
+// expired leases before initiating the next attempt.
+func (c *SettableConfig) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetELPReclaimTimerWaitTime(reclaimTimerWaitTime)
+	}, "reclaim-timer-wait-time")
+}
+
+// Sets the maximum number of expired lease-processing cycles which didn't
+// result in full cleanup of the exired leases from the lease database,
+// after which a warning message is issued.
+func (c *SettableConfig) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles)
+	}, "unwarned-reclaim-cycles")
+}
+
+// Sets the expired leases processing structure.
+func (c *SettableConfig) SetExpiredLeasesProcessing(expiredLeasesProcessing *ExpiredLeasesProcessing) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetExpiredLeasesProcessing(expiredLeasesProcessing)
+	}, "expired-leases-processing")
+}
+
+// Sets the boolean flag enabling global reservations.
+func (c *SettableConfig) SetReservationsGlobal(reservationsGlobal *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetReservationsGlobal(reservationsGlobal)
+	}, "reservations-global")
+}
+
+// Sets the boolean flag enabling in-subnet reservations.
+func (c *SettableConfig) SetReservationsInSubnet(reservationsInSubnet *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetReservationsInSubnet(reservationsInSubnet)
+	}, "reservations-in-subnet")
+}
+
+// Sets the boolean flag enabling out-of-pool reservations.
+func (c *SettableConfig) SetReservationsOutOfPool(reservationsOutOfPool *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetReservationsOutOfPool(reservationsOutOfPool)
+	}, "reservations-out-of-pool")
+}
+
+// Sets a boolean flag enabling an early global reservations lookup.
+func (c *SettableConfig) SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup)
+	}, "early-global-reservations-lookup")
+}
+
+// Sets host reservation identifiers to be used for host reservation lookup.
+func (c *SettableConfig) SetHostReservationIdentifiers(hostReservationIdentifiers []string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetHostReservationIdentifiers(hostReservationIdentifiers)
+	}, "host-reservation-identifiers")
+}
+
+// Sets valid lifetime in the configuration.
+func (c *SettableConfig) SetValidLifetime(validLifetime *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetValidLifetime(validLifetime)
+	}, "valid-lifetime")
+}
+
+// Sets a boolean flag indicating whether the server is authoritative.
+func (c *SettableConfig) SetAuthoritative(authoritative *bool) error {
+	return c.setDHCPv4Parameter(func(modifier dhcp4ConfigModifier) {
+		modifier.SetAuthoritative(authoritative)
+	}, "authoritative")
+}
+
+// Sets a boolean flag indicating whether the server should return client
+// ID in its responses.
+func (c *SettableConfig) SetEchoClientID(echoClientID *bool) error {
+	return c.setDHCPv4Parameter(func(modifier dhcp4ConfigModifier) {
+		modifier.SetEchoClientID(echoClientID)
+	}, "authoritative")
+}
+
+// Sets allocator for prefix delegation.
+func (c *SettableConfig) SetPDAllocator(pdAllocator *string) error {
+	return c.setDHCPv6Parameter(func(modifier dhcp6ConfigModifier) {
+		modifier.SetPDAllocator(pdAllocator)
+	}, "authoritative")
 }

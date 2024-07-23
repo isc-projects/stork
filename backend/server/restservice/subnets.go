@@ -37,6 +37,7 @@ func convertGlobalSubnetParametersToRestAPI(cfg *dbmodel.KeaConfig) *models.KeaC
 			DdnsSendUpdates:           cfg.GetDDNSParameters().DDNSSendUpdates,
 			DdnsUpdateOnRenew:         cfg.GetDDNSParameters().DDNSUpdateOnRenew,
 			DdnsUseConflictResolution: cfg.GetDDNSParameters().DDNSUseConflictResolution,
+			DdnsTTLPercent:            cfg.GetDDNSParameters().DDNSTTLPercent,
 		},
 		KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
 			HostnameCharReplacement: storkutil.NullifyEmptyString(cfg.GetHostnameCharParameters().HostnameCharReplacement),
@@ -178,6 +179,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					DdnsSendUpdates:           keaParameters.DDNSSendUpdates,
 					DdnsUpdateOnRenew:         keaParameters.DDNSUpdateOnRenew,
 					DdnsUseConflictResolution: keaParameters.DDNSUseConflictResolution,
+					DdnsTTLPercent:            keaParameters.DDNSTTLPercent,
 				},
 				KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
 					FourOverSixInterface:   storkutil.NullifyEmptyString(keaParameters.FourOverSixInterface),
@@ -360,6 +362,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					DDNSSendUpdates:           keaParameters.DdnsSendUpdates,
 					DDNSUpdateOnRenew:         keaParameters.DdnsUpdateOnRenew,
 					DDNSUseConflictResolution: keaParameters.DdnsUseConflictResolution,
+					DDNSTTLPercent:            keaParameters.DdnsTTLPercent,
 				},
 				FourOverSixParameters: keaconfig.FourOverSixParameters{
 					FourOverSixInterface:   storkutil.NullifyEmptyString(keaParameters.FourOverSixInterface),

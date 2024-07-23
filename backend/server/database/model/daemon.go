@@ -268,6 +268,28 @@ func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 	return &daemon, nil
 }
 
+// Get selected daemons by their ids.
+func GetDaemonsByIDs(dbi pg.DBI, ids []int64) (daemons []Daemon, err error) {
+	err = dbi.Model(&daemons).
+		Relation("App.AccessPoints").
+		Relation("KeaDaemon.KeaDHCPDaemon").
+		Where("daemon.id IN (?)", pg.In(ids)).
+		OrderExpr("daemon.id ASC").
+		Select()
+
+	if errors.Is(err, pg.ErrNoRows) {
+		return daemons, nil
+	} else if err != nil {
+		var sids []string
+		for _, id := range ids {
+			sids = append(sids, fmt.Sprintf("%d", id))
+		}
+		return nil, pkgerrors.Wrapf(err, "problem selecting daemons with IDs: %s",
+			strings.Join(sids, ", "))
+	}
+	return daemons, nil
+}
+
 // Get all Kea DHCP daemons.
 func GetKeaDHCPDaemons(dbi pg.DBI) (daemons []Daemon, err error) {
 	err = dbi.Model(&daemons).

@@ -1,6 +1,51 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+// An error returned when some of the desired daemons were not found in the database.
+type SomeDaemonsNotFoundError struct {
+	daemonIDs []int64
+}
+
+// Create new instance of the SomeDaemonsNotFoundError.
+func NewSomeDaemonsNotFoundError(daemonIDs ...int64) error {
+	return &SomeDaemonsNotFoundError{
+		daemonIDs: daemonIDs,
+	}
+}
+
+// Returns error string.
+func (e SomeDaemonsNotFoundError) Error() string {
+	if len(e.daemonIDs) == 0 {
+		return "daemons were not found for empty set of IDs"
+	}
+	return fmt.Sprintf("some daemons were not found for IDs: %s", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(e.daemonIDs)), ", "), "[]"))
+}
+
+// An error returned when unexpected set of configs was specified during
+// reconfiguration. It may indicate that some configs are missing or there
+// are too many configs.
+type InvalidConfigsError struct {
+	daemonIDs []int64
+}
+
+// Create new instance of the InvalidConfigsError.
+func NewInvalidConfigsError(daemonIDs ...int64) error {
+	return &InvalidConfigsError{
+		daemonIDs: daemonIDs,
+	}
+}
+
+// Returns error string.
+func (e InvalidConfigsError) Error() string {
+	if len(e.daemonIDs) == 0 {
+		return "no configs specified"
+	}
+	return fmt.Sprintf("invalid set of daemons specified with IDs: %s", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(e.daemonIDs)), ", "), "[]"))
+}
 
 // An error returned when specified host is not found in the database.
 type HostNotFoundError struct {

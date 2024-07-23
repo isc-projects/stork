@@ -4,8 +4,8 @@ var _ commonConfigAccessor = (*D2Config)(nil)
 
 // Represents a D2 (DHCP-DDNS) Kea configuration.
 type D2Config struct {
-	HookLibraries []HookLibrary `json:"hooks-libraries"`
-	Loggers       []Logger      `json:"loggers"`
+	HookLibraries []HookLibrary `json:"hooks-libraries,omitempty"`
+	Loggers       []Logger      `json:"loggers,omitempty"`
 }
 
 // Returns the hook libraries configured in the D2 server.

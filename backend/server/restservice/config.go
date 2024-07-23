@@ -4,14 +4,20 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	keaconfig "isc.org/stork/appcfg/kea"
+	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/config"
 	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
+	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/services"
 	storkutil "isc.org/stork/util"
 )
@@ -56,6 +62,7 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 	}
 
 	rsp := services.NewGetDaemonConfigOK().WithPayload(&models.KeaDaemonConfig{
+		DaemonID:   dbDaemon.GetID(),
 		AppID:      dbDaemon.App.GetID(),
 		AppName:    dbDaemon.App.GetName(),
 		AppType:    dbDaemon.GetAppType().String(),
@@ -470,5 +477,203 @@ func (r *RestAPI) DeleteKeaDaemonConfigHashes(ctx context.Context, params servic
 		return rsp
 	}
 	rsp := services.NewDeleteKeaDaemonConfigHashesOK()
+	return rsp
+}
+
+// Implements the POST call to create new transaction for updating global
+// Kea configurations (kea-global-parameters/transaction).
+func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhcp.UpdateKeaGlobalParametersBeginParams) middleware.Responder {
+	// Create configuration context.
+	_, user := r.SessionManager.Logged(ctx)
+	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	if err != nil {
+		msg := "Problem with creating transaction context"
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	cctx, err = r.ConfigManager.GetKeaModule().BeginGlobalParametersUpdate(cctx, params.Request.DaemonIds)
+	if err != nil {
+		var someDaemonsNotFound *config.SomeDaemonsNotFoundError
+		switch {
+		case errors.As(err, &someDaemonsNotFound):
+			// Failed to find some of the daemons.
+			msg := "Unable to update the Kea global parameters because some of the specified daemons do not exist"
+			log.Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		default:
+			// Other error.
+			msg := "Problem with initializing transaction for an update of the Kea configs"
+			log.WithError(err).Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	}
+
+	state, _ := config.GetTransactionState[kea.ConfigRecipe](cctx)
+	daemons := state.Updates[0].Recipe.KeaDaemonsBeforeConfigUpdate
+
+	// Retrieve the generated context ID.
+	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
+	if !ok {
+		msg := "problem with retrieving context ID for a transaction to update Kea configs"
+		log.Error(msg)
+		rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Remember the context, i.e. new transaction has been successfully created.
+	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
+
+	var configs []*models.KeaDaemonConfig
+	for _, daemon := range daemons {
+		if daemon.KeaDaemon == nil {
+			continue
+		}
+		configs = append(configs, &models.KeaDaemonConfig{
+			AppID:    daemon.GetAppID(),
+			AppName:  daemon.App.GetName(),
+			AppType:  "kea",
+			DaemonID: daemon.ID,
+			Config:   daemon.KeaDaemon.Config,
+		})
+	}
+
+	// Return transaction ID and daemons to the user.
+	contents := &models.UpdateKeaDaemonsGlobalParametersBeginResponse{
+		ID:      cctxID,
+		Configs: configs,
+	}
+	rsp := dhcp.NewUpdateKeaGlobalParametersBeginOK().WithPayload(contents)
+	return rsp
+}
+
+// Implements the POST call and commits updated global Kea configurations
+// (kea-global-parameters/transaction/{id}/submit).
+func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dhcp.UpdateKeaGlobalParametersSubmitParams) middleware.Responder {
+	// Retrieve the context from the config manager.
+	_, user := r.SessionManager.Logged(ctx)
+	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
+	if cctx == nil {
+		msg := "Transaction expired for the Kea configs update"
+		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", params.ID, user.ID)
+		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// Configs are mandatory
+	if len(params.Request.Configs) == 0 {
+		msg := "No configs for update have been specified"
+		log.Errorf(msg)
+		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	var settableConfigs []config.AnnotatedEntity[*keaconfig.SettableConfig]
+	for i := range params.Request.Configs {
+		receivedConfig := params.Request.Configs[i]
+		var settableConfig *keaconfig.SettableConfig
+		switch params.Request.Configs[i].DaemonName {
+		case dbmodel.DaemonNameDHCPv4:
+			settableConfig = keaconfig.NewSettableDHCPv4Config()
+		case dbmodel.DaemonNameDHCPv6:
+			settableConfig = keaconfig.NewSettableDHCPv6Config()
+		case dbmodel.DaemonNameD2:
+			settableConfig = keaconfig.NewSettableD2Config()
+		default:
+			settableConfig = keaconfig.NewSettableCtrlAgentConfig()
+		}
+
+		partialConfig := receivedConfig.PartialConfig
+
+		// Set DHCP parameters. We ignore errors from setting the respective
+		// values because we ensure here to set appropriate values depending
+		// on the DHCP server kind.
+		if settableConfig.IsDHCPv4() || settableConfig.IsDHCPv6() {
+			// Common DHCP parameters.
+			_ = settableConfig.SetAllocator(partialConfig.Allocator)
+			_ = settableConfig.SetCacheThreshold(partialConfig.CacheThreshold)
+			_ = settableConfig.SetDDNSGeneratedPrefix(partialConfig.DdnsGeneratedPrefix)
+			_ = settableConfig.SetDDNSOverrideClientUpdate(partialConfig.DdnsOverrideClientUpdate)
+			_ = settableConfig.SetDDNSOverrideNoUpdate(partialConfig.DdnsOverrideNoUpdate)
+			_ = settableConfig.SetDDNSQualifyingSuffix(partialConfig.DdnsQualifyingSuffix)
+			_ = settableConfig.SetDDNSReplaceClientName(partialConfig.DdnsReplaceClientName)
+			_ = settableConfig.SetDDNSSendUpdates(partialConfig.DdnsSendUpdates)
+			_ = settableConfig.SetDDNSTTLPercent(partialConfig.DdnsTTLPercent)
+			_ = settableConfig.SetDDNSUpdateOnRenew(partialConfig.DdnsUpdateOnRenew)
+			_ = settableConfig.SetDDNSUseConflictResolution(partialConfig.DdnsUseConflictResolution)
+			_ = settableConfig.SetELPFlushReclaimedTimerWaitTime(partialConfig.FlushReclaimedTimerWaitTime)
+			_ = settableConfig.SetELPHoldReclaimedTime(partialConfig.HoldReclaimedTime)
+			_ = settableConfig.SetELPMaxReclaimLeases(partialConfig.MaxReclaimLeases)
+			_ = settableConfig.SetELPMaxReclaimTime(partialConfig.MaxReclaimTime)
+			_ = settableConfig.SetELPReclaimTimerWaitTime(partialConfig.ReclaimTimerWaitTime)
+			_ = settableConfig.SetELPUnwarnedReclaimCycles(partialConfig.UnwarnedReclaimCycles)
+			_ = settableConfig.SetEarlyGlobalReservationsLookup(partialConfig.EarlyGlobalReservationsLookup)
+			_ = settableConfig.SetHostReservationIdentifiers(partialConfig.HostReservationIdentifiers)
+			_ = settableConfig.SetReservationsGlobal(partialConfig.ReservationsGlobal)
+			_ = settableConfig.SetReservationsInSubnet(partialConfig.ReservationsInSubnet)
+			_ = settableConfig.SetReservationsOutOfPool(partialConfig.ReservationsOutOfPool)
+			_ = settableConfig.SetValidLifetime(partialConfig.ValidLifetime)
+
+			if settableConfig.IsDHCPv4() {
+				// DHCPv4 specific parameters.
+				_ = settableConfig.SetAuthoritative(partialConfig.Authoritative)
+				_ = settableConfig.SetEchoClientID(partialConfig.EchoClientID)
+			} else {
+				// DHCPv6 specific parameters.
+				_ = settableConfig.SetPDAllocator(partialConfig.PdAllocator)
+			}
+		}
+		settableConfigs = append(settableConfigs, *config.NewAnnotatedEntity(receivedConfig.DaemonID, settableConfig))
+	}
+	var err error
+	cctx, err = r.ConfigManager.GetKeaModule().ApplyGlobalParametersUpdate(cctx, settableConfigs)
+	if err != nil {
+		var invalidConfigs *config.InvalidConfigsError
+		switch {
+		case errors.As(err, &invalidConfigs):
+			// Invalid configs applied.
+			msg := "Problem with applying Kea global parameters because invalid set of configurations have been specified"
+			log.Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		default:
+			// Other error.
+			msg := "Problem with applying Kea global parameters"
+			log.WithError(err).Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	}
+	// Send the commands to Kea servers.
+	cctx, err = r.ConfigManager.Commit(cctx)
+	if err != nil {
+		msg := fmt.Sprintf("Problem with committing Kea config: %s", err)
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// Everything ok. Cleanup and send OK to the client.
+	r.ConfigManager.Done(cctx)
+	rsp := dhcp.NewUpdateKeaGlobalParametersSubmitOK()
 	return rsp
 }

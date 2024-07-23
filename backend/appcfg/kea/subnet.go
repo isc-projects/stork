@@ -70,10 +70,12 @@ type HostnameCharParameters struct {
 
 // Represents Kea configuration parameters for selecting host reservation modes.
 type ReservationParameters struct {
-	ReservationMode       *string `json:"reservation-mode,omitempty"`
-	ReservationsGlobal    *bool   `json:"reservations-global,omitempty"`
-	ReservationsInSubnet  *bool   `json:"reservations-in-subnet,omitempty"`
-	ReservationsOutOfPool *bool   `json:"reservations-out-of-pool,omitempty"`
+	EarlyGlobalReservationsLookup *bool    `json:"early-global-reservations-lookup,omitempty"`
+	HostReservationIdentifiers    []string `json:"host-reservation-identifiers,omitempty"`
+	ReservationMode               *string  `json:"reservation-mode,omitempty"`
+	ReservationsGlobal            *bool    `json:"reservations-global,omitempty"`
+	ReservationsInSubnet          *bool    `json:"reservations-in-subnet,omitempty"`
+	ReservationsOutOfPool         *bool    `json:"reservations-out-of-pool,omitempty"`
 }
 
 // Represents DHCP timer configuration parameters in Kea.

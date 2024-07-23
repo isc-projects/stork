@@ -40,6 +40,7 @@ func convertSharedNetworkParametersToRestAPI(keaParameters *keaconfig.SharedNetw
 			DdnsSendUpdates:           keaParameters.DDNSSendUpdates,
 			DdnsUpdateOnRenew:         keaParameters.DDNSUpdateOnRenew,
 			DdnsUseConflictResolution: keaParameters.DDNSUseConflictResolution,
+			DdnsTTLPercent:            keaParameters.DDNSTTLPercent,
 		},
 		KeaConfigHostnameCharParameters: models.KeaConfigHostnameCharParameters{
 			HostnameCharReplacement: storkutil.NullifyEmptyString(keaParameters.HostnameCharReplacement),
@@ -199,6 +200,7 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 					DDNSSendUpdates:           keaParameters.DdnsSendUpdates,
 					DDNSUpdateOnRenew:         keaParameters.DdnsUpdateOnRenew,
 					DDNSUseConflictResolution: keaParameters.DdnsUseConflictResolution,
+					DDNSTTLPercent:            keaParameters.DdnsTTLPercent,
 				},
 				HostnameCharParameters: keaconfig.HostnameCharParameters{
 					HostnameCharReplacement: storkutil.NullifyEmptyString(keaParameters.HostnameCharReplacement),

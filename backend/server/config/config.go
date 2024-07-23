@@ -56,8 +56,35 @@ type TransactionState[T any] struct {
 // A type representing a configuration lock key.
 type LockKey int64
 
+// A generic structure associating an object (entity) with a
+// database ID.
+type AnnotatedEntity[T any] struct {
+	id     int64
+	entity T
+}
+
+// Instantiates new AnnotatedEntity.
+func NewAnnotatedEntity[T any](id int64, entity T) *AnnotatedEntity[T] {
+	return &AnnotatedEntity[T]{
+		id:     id,
+		entity: entity,
+	}
+}
+
+// Returns entity database ID.
+func (ae AnnotatedEntity[T]) GetID() int64 {
+	return ae.id
+}
+
+// Returns the annotated entity.
+func (ae AnnotatedEntity[T]) GetEntity() T {
+	return ae.entity
+}
+
 // Interface of the Kea configuration module.
 type KeaModule interface {
+	BeginGlobalParametersUpdate(context.Context, []int64) (context.Context, error)
+	ApplyGlobalParametersUpdate(context.Context, []AnnotatedEntity[*keaconfig.SettableConfig]) (context.Context, error)
 	BeginHostAdd(context.Context) (context.Context, error)
 	ApplyHostAdd(context.Context, *dbmodel.Host) (context.Context, error)
 	BeginHostUpdate(context.Context, int64) (context.Context, error)

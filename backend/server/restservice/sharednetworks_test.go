@@ -254,6 +254,9 @@ func TestGetSharedNetwork4(t *testing.T) {
 	// ddns-use-conflict-resolution
 	require.NotNil(t, networkParams.DdnsUseConflictResolution)
 	require.True(t, *networkParams.DdnsUseConflictResolution)
+	// ddns-ttl-percent
+	require.NotNil(t, networkParams.DdnsTTLPercent)
+	require.EqualValues(t, float32(0.65), *networkParams.DdnsTTLPercent)
 	// hostname-char-replacement
 	require.NotNil(t, networkParams.HostnameCharReplacement)
 	require.Equal(t, "x", *networkParams.HostnameCharReplacement)
@@ -803,6 +806,7 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 				DdnsSendUpdates:           storkutil.Ptr(true),
 				DdnsUpdateOnRenew:         storkutil.Ptr(true),
 				DdnsUseConflictResolution: storkutil.Ptr(true),
+				DdnsTTLPercent:            storkutil.Ptr(float32(0.65)),
 			},
 			KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
 				FourOverSixInterface:   storkutil.Ptr("eth0"),
@@ -911,6 +915,7 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 								"ddns-send-updates": true,
 								"ddns-update-on-renew": true,
 								"ddns-use-conflict-resolution": true,
+								"ddns-ttl-percent": 0.65,
 								"hostname-char-replacement": "a",
 								"hostname-char-set": "b",
 								"reservation-mode": "in-pool",
@@ -1005,6 +1010,8 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 		require.True(t, *lsn.KeaParameters.DDNSUpdateOnRenew)
 		require.NotNil(t, lsn.KeaParameters.DDNSUseConflictResolution)
 		require.True(t, *lsn.KeaParameters.DDNSUseConflictResolution)
+		require.NotNil(t, *lsn.KeaParameters.DDNSTTLPercent)
+		require.EqualValues(t, float32(0.65), *lsn.KeaParameters.DDNSTTLPercent)
 		require.NotNil(t, lsn.KeaParameters.HostnameCharReplacement)
 		require.Equal(t, "a", *lsn.KeaParameters.HostnameCharReplacement)
 		require.NotNil(t, lsn.KeaParameters.HostnameCharSet)

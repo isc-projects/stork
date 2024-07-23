@@ -7,6 +7,15 @@ import (
 	"isc.org/stork/datamodel"
 )
 
+// Test instantiating an annotated entity.
+func TestNewAnnotatedEntity(t *testing.T) {
+	entity := NewAnnotatedEntity(23, "entity")
+	require.NotNil(t, entity)
+
+	require.EqualValues(t, 23, entity.GetID())
+	require.Equal(t, "entity", entity.GetEntity())
+}
+
 // Test creating new config update instance.
 func TestNewUpdate(t *testing.T) {
 	cu := NewUpdate[any](datamodel.AppTypeKea, "host_add", 1, 2, 3)

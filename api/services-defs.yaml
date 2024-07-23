@@ -286,6 +286,8 @@
   KeaDaemonConfig:
     type: object
     properties:
+      daemonID:
+        type: integer
       daemonName:
         type: string
       appId:

@@ -286,6 +286,59 @@ func TestGetDaemonByID(t *testing.T) {
 	require.Len(t, dmn.App.AccessPoints, 1)
 }
 
+// Test getting multiple daemons by IDs.
+func TestGetDaemonsByIDs(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Get non-existing daemons
+	returnedDaemons, err := GetDaemonsByIDs(db, []int64{123, 234})
+	require.NoError(t, err)
+	require.Empty(t, returnedDaemons)
+
+	// Create machine and then app with daemon.
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	// add app but without machine, error should be raised
+	var daemons []*Daemon
+	for _, daemonName := range []string{DaemonNameDHCPv4, DaemonNameDHCPv6, DaemonNameD2, DaemonNameCA} {
+		daemons = append(daemons, NewKeaDaemon(daemonName, true))
+	}
+
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, false)
+	app := &App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypeKea,
+		Daemons:      daemons,
+		AccessPoints: accessPoints,
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Len(t, app.Daemons, 4)
+
+	// Get selected daemons.
+	selectedDaemons := []int64{daemons[0].ID, daemons[1].ID}
+	returnedDaemons, err = GetDaemonsByIDs(db, selectedDaemons)
+	require.NoError(t, err)
+	require.Len(t, returnedDaemons, 2)
+
+	var ids []int64
+	for _, rd := range returnedDaemons {
+		ids = append(ids, rd.ID)
+	}
+	require.ElementsMatch(t, ids, selectedDaemons)
+}
+
 // Test getting all Kea DHCP daemons.
 func TestGetKeaDHCPDaemons(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
