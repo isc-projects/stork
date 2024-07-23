@@ -1,19 +1,16 @@
 <div class="flex gap-3">
-<div>SM</div>
-<div class="hidden sm:block">MD</div>
-<div class="hidden md:block">LG</div>
-<div class="hidden lg:block">XL</div>
-<div class="hidden xl:block">XXL</div>
+    <div>SM</div>
+    <div class="hidden sm:block">MD</div>
+    <div class="hidden md:block">LG</div>
+    <div class="hidden lg:block">XL</div>
+    <div class="hidden xl:block">XXL</div>
 </div>
-
+<!--root fc:flex-column container for wrappers-->
 <div *ngIf="parameterNames.length > 0; else noRowsBlock" class="flex flex-column gap-4">
-    <div
-        class="shared-parameter-wrapper font-semibold mt-3 flex flex-column gap-4 pb-4 md:flex-row md:align-items-baseline"
-    >
-        <div class="flex justify-content-between md:hidden">
-            <div>Parameter &amp; value</div>
-            <div>Unlock</div>
-        </div>
+    <!--  header "wrapper styled" fi:row fc:flex-row  -->
+    <div class="shared-parameter-wrapper font-semibold mt-3 flex gap-4 pb-4">
+        <div class="md:hidden flex-auto">Parameter &amp; value</div>
+        <div class="md:hidden flex-none">Unlock</div>
         <div class="hidden md:block w-20-perc">Parameter</div>
         <div class="hidden md:block flex-auto">Value</div>
         <div class="hidden md:block flex-none">Unlock</div>
@@ -32,15 +29,18 @@
             let-parameterName="parameterName"
             let-controls="controls"
         >
+            <!-- wrapper fi:row fc:{sm:flex-column md:flex-row}    -->
             <div
-                class="shared-parameter-wrapper flex flex-column gap-4 pb-4 md:flex-row md:align-items-baseline"
+                class="shared-parameter-wrapper flex flex-column gap-4 pb-4 md:flex-row md:align-items-start"
                 [formGroupName]="parameterName"
             >
+                <!-- form label fi:{sm:row md:col} fc:{sm:flex-row md:none->block}              -->
                 <div class="flex gap-2 md:block md:w-20-perc md:flex-none">
                     <div class="font-semibold text-color-secondary flex-auto">
                         {{ uncamelCase(parameterName) }}
                     </div>
-                    <div class="md:hidden inline-flex gap-1 align-items-center text-color-secondary">
+                    <!-- sm:UNLOCK BTN         -->
+                    <div class="flex-none md:hidden inline-flex gap-1 align-items-center text-color-secondary">
                         <i
                             class="pi"
                             [class.pi-lock]="!controls.get('unlocked').value"
@@ -49,22 +49,23 @@
                         <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                     </div>
                 </div>
-                <div class="flex gap-2 flex-auto align-items-start">
-                    <div class="flex gap-3 flex-column flex-auto max-w-full" formArrayName="values">
-                        <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
-                            <ng-container
-                                *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)"
-                            >
-                                <div class="flex gap-2 align-items-end">
-                                    <div class="flex gap-2 flex-auto flex-column md:flex-row md:align-items-end">
-                                        <span
-                                            *ngIf="controls.get('unlocked').value && servers.length > index"
-                                            class="flex align-items-center"
-                                        >
-                                            <p-tag [severity]="getServerTagSeverity(index)">
-                                                {{ servers[index] }}
-                                            </p-tag>
-                                        </span>
+                <!-- form wrapper fi:{sm:row md:col} -->
+                <div class="md:flex-auto" formArrayName="values">
+                    <!-- form wrapper fi:{sm:row md:col} fc:flex-row         -->
+                    <!--                <div class="flex gap-2 flex-auto align-items-start">-->
+                    <!--                    <div class="flex gap-3 flex-column flex-auto max-w-full" formArrayName="values">-->
+                    <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
+                        <ng-container *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)">
+                            <!-- form wrapper fi:{sm:row md:col} fc: -->
+                            <div class="flex flex-column md:flex-row md:align-items-center">
+                                <span *ngIf="controls.get('unlocked').value && servers.length > index" class="">
+                                    <p-tag [severity]="getServerTagSeverity(index)">
+                                        {{ servers[index] }}
+                                    </p-tag>
+                                </span>
+                                <div class="flex flex-auto align-items-end">
+                                    <!-- form input and feedback below            -->
+                                    <div class="flex-auto">
                                         <div
                                             [ngSwitch]="controls.data?.type"
                                             class="shared-parameter-form flex-auto md:flex-form"
@@ -119,7 +120,13 @@
                                             </ng-container>
                                             <ng-container *ngSwitchDefault> Something else </ng-container>
                                         </div>
+                                        <small
+                                            *ngIf="control.invalid && (control.dirty || control.touched)"
+                                            class="p-error block"
+                                            >{{ controls.data.invalidText }}
+                                        </small>
                                     </div>
+                                    <!-- CLR BTN  -->
                                     <button
                                         pRipple
                                         pButton
@@ -140,23 +147,28 @@
                                         size="small"
                                     />
                                 </div>
-                                <small
-                                    *ngIf="control.invalid && (control.dirty || control.touched)"
-                                    class="p-error block"
-                                    >{{ controls.data.invalidText }}
-                                </small>
-                            </ng-container>
+                            </div>
+                            <!--                                <div class="flex gap-2 align-items-end">-->
+                            <!--                                    <div class="flex gap-2 flex-auto flex-column md:flex-row md:align-items-end">-->
+                            <!--                                        -->
+                            <!--                                        -->
+                            <!--                                    </div>-->
+                            <!--                                    -->
+                            <!--                                </div>-->
                         </ng-container>
-                    </div>
-                    <div class="hidden md:inline-flex gap-1 align-items-center text-color-secondary pt-2">
-                        <i
-                            class="pi"
-                            [class.pi-lock]="!controls.get('unlocked').value"
-                            [class.pi-lock-open]="controls.get('unlocked').value"
-                        ></i>
-                        <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
-                    </div>
+                    </ng-container>
                 </div>
+                <!--                    </div>-->
+                <!-- md:UNLOCK BTN         -->
+                <div class="hidden md:flex-none md:inline-flex gap-1 align-items-center text-color-secondary pt-2">
+                    <i
+                        class="pi"
+                        [class.pi-lock]="!controls.get('unlocked').value"
+                        [class.pi-lock-open]="controls.get('unlocked').value"
+                    ></i>
+                    <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
+                </div>
+                <!--                </div>-->
             </div>
         </ng-template>
     </ng-container>
