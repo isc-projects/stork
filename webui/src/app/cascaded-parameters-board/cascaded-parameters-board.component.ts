@@ -98,6 +98,9 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
      * Parameter names to be excluded.
      *
      * Specifies an array of parameters to not be shown in the table.
+     * The excluded parameters must use a camel case notation. For
+     * example, Kea hooks libraries are specified under "hooks-libraries".
+     * The corresponding excluded parameter name would be "hooksLibraries".
      */
     @Input() excludedParameters: string[]
 
