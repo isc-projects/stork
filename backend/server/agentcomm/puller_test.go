@@ -92,7 +92,7 @@ func TestExecutePullerWhileDatabaseIsDown(t *testing.T) {
 	require.Eventually(t, func() bool {
 		// Periodic executor updates the interval after the pulling. So, the
 		// counter is incremented on failure. If the puller is still running,
-		// the counter should incremented more times.
+		// the counter should be incremented more times.
 		currentCallCount := callCount.Load()
 		return currentCallCount >= callCountAfterFailure+2
 	}, 5*time.Second, time.Second)
