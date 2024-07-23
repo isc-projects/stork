@@ -1,4 +1,4 @@
-[bug] marcin
+[func] marcin
 
     Added global Kea parameters view accessible from the Kea daemon
     tab.
