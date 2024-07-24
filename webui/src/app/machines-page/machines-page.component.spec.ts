@@ -22,7 +22,6 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { RouterModule } from '@angular/router'
 import { HttpErrorResponse } from '@angular/common/http'
 import anything = jasmine.anything
 import { MessagesModule } from 'primeng/messages'
@@ -422,12 +421,7 @@ describe('MachinesPageComponent', () => {
         // and after switching back to authorized machines view; in refreshUnauthorizedMachinesCount().
         // refreshUnauthorizedMachinesCount() asks for details of only one unauthorized machine.
         // The total unauthorized machines count is essential information here, not the detailed items themselves.
-        gmSpy.withArgs(0, 1, null, null, false).and.returnValue(
-            of({
-                items: [{ hostname: 'bbb', id: 2, address: 'addr2' }],
-                total: 2,
-            } as any)
-        )
+        const gumcSpy = spyOn(servicesApi, 'getUnauthorizedMachinesCount').and.returnValue(of(2) as any)
 
         // called two times in loadMachines(event), which lazily loads data for
         // unauthorized machines table. Text and app filters are undefined.
@@ -505,7 +499,8 @@ describe('MachinesPageComponent', () => {
         authSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
-        expect(gmSpy).toHaveBeenCalledTimes(4)
+        expect(gmSpy).toHaveBeenCalledTimes(3)
+        expect(gumcSpy).toHaveBeenCalledTimes(1)
 
         expect(component.showUnauthorized).toBeFalse()
         expect(component.totalMachines).toBe(3)
