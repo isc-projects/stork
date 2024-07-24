@@ -34,11 +34,11 @@
         "path": "0.12.7",
         "primeflex": "3.3.1",
         "primeicons": "7.0.0",
-        "primeng": "17.17.0",
+        "primeng": "17.18.5",
         "rxjs": "7.8.1",
         "swagger-ui-dist": "5.17.14",
-        "tslib": "2.6.2",
-        "zone.js": "0.14.6"
+        "tslib": "2.6.3",
+        "zone.js": "0.14.8"
     },
     "devDependencies": {
         "@angular-devkit/build-angular": "17.3.8",
