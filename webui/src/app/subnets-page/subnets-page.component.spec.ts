@@ -58,6 +58,7 @@ import { PanelModule } from 'primeng/panel'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -136,6 +137,7 @@ describe('SubnetsPageComponent', () => {
                 PluralizePipe,
                 PlaceholderPipe,
                 ArrayValueSetFormComponent,
+                ParameterViewComponent,
             ],
         })
         dhcpService = TestBed.inject(DHCPService)
