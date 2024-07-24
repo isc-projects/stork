@@ -1,26 +1,26 @@
 <div [formGroup]="formGroup">
     <p-fieldset legend="Prefix" styleClass="mt-4">
-        <div class="flex mt-4 mb-2" formGroupName="prefixes">
-            <div class="flex align-items-center p-float-label">
-                <input [id]="uuids.prefix" pInputText formControlName="prefix" />
+        <div class="flex mt-4 mb-2 align-items-center flex-wrap gap-2 row-gap-5" formGroupName="prefixes">
+            <span class="flex-auto p-float-label min-w-0">
+                <input [id]="uuids.prefix" pInputText formControlName="prefix" class="w-full" />
                 <label [for]="uuids.prefix">Pool Prefix</label>
-            </div>
-            <div class="flex align-items-center p-float-label ml-2">
+            </span>
+            <span class="p-float-label min-w-0">
                 <p-inputNumber
                     ngDefaultControl
                     [inputId]="uuids.delegatedLength"
-                    inputStyleClass="delegated-length-input"
+                    inputStyleClass="delegated-length-input w-full"
                     formControlName="delegatedLength"
                     min="1"
                     max="128"
                 >
                 </p-inputNumber>
                 <label [for]="uuids.delegatedLength">Delegated Length</label>
-            </div>
-            <div class="flex align-items-center p-float-label ml-2">
-                <input [id]="uuids.excludedPrefix" pInputText formControlName="excludedPrefix" />
+            </span>
+            <span class="flex-auto p-float-label min-w-0">
+                <input [id]="uuids.excludedPrefix" pInputText formControlName="excludedPrefix" class="w-full" />
                 <label [for]="uuids.excludedPrefix">Excluded Prefix</label>
-            </div>
+            </span>
         </div>
         <ng-container *ngFor="let control of ['prefix', 'excludedPrefix']">
             <small

@@ -53,63 +53,56 @@
                                     </p-tag>
                                 </span>
                                 <div class="flex flex-auto align-items-end">
-                                    <div class="flex-auto">
-                                        <div [ngSwitch]="controls.data?.type" class="shared-parameter-form flex-auto">
-                                            <ng-container *ngSwitchCase="'string'">
-                                                <p-dropdown
-                                                    *ngIf="controls.data?.values?.length > 0; else noValuesCase"
-                                                    [autoDisplayFirst]="false"
-                                                    [options]="controls.data.values"
-                                                    [showClear]="true"
-                                                    [formControlName]="index"
-                                                    styleClass="w-full"
-                                                    placeholder="(not specified)"
-                                                >
-                                                </p-dropdown>
-                                                <ng-template #noValuesCase>
-                                                    <app-array-value-set-form
-                                                        *ngIf="controls.data?.isArray; else noArrayCase"
-                                                        [classFormControl]="control"
-                                                    >
-                                                    </app-array-value-set-form>
-                                                    <ng-template #noArrayCase>
-                                                        <input pInputText [formControlName]="index" class="w-full" />
-                                                    </ng-template>
-                                                </ng-template>
-                                            </ng-container>
-                                            <ng-container *ngSwitchCase="'boolean'">
-                                                <p-triStateCheckbox ngDefaultControl [formControlName]="index">
-                                                </p-triStateCheckbox>
-                                                {{ control.value === null ? 'unset' : control.value }}
-                                            </ng-container>
-                                            <ng-container *ngSwitchCase="'number'">
-                                                <p-inputNumber
-                                                    ngDefaultControl
-                                                    [min]="controls.data.min"
-                                                    [max]="controls.data.max"
-                                                    [minFractionDigits]="0"
-                                                    [maxFractionDigits]="controls.data.fractionDigits"
-                                                    styleClass="w-full"
-                                                    locale="en-US"
-                                                    [formControlName]="index"
-                                                >
-                                                </p-inputNumber>
-                                            </ng-container>
-                                            <ng-container *ngSwitchCase="'client-classes'">
-                                                <app-dhcp-client-class-set-form
+                                    <div [ngSwitch]="controls.data?.type" class="shared-parameter-form flex-auto">
+                                        <ng-container *ngSwitchCase="'string'">
+                                            <p-dropdown
+                                                *ngIf="controls.data?.values?.length > 0; else noValuesCase"
+                                                [autoDisplayFirst]="false"
+                                                [options]="controls.data.values"
+                                                [showClear]="true"
+                                                [formControlName]="index"
+                                                styleClass="w-full"
+                                                placeholder="(not specified)"
+                                            >
+                                            </p-dropdown>
+                                            <ng-template #noValuesCase>
+                                                <app-array-value-set-form
+                                                    *ngIf="controls.data?.isArray; else noArrayCase"
                                                     [classFormControl]="control"
-                                                    [clientClasses]="clientClasses"
-                                                    [floatingPlaceholder]="false"
                                                 >
-                                                </app-dhcp-client-class-set-form>
-                                            </ng-container>
-                                            <ng-container *ngSwitchDefault> Something else </ng-container>
-                                        </div>
-                                        <small
-                                            *ngIf="control.invalid && (control.dirty || control.touched)"
-                                            class="p-error block mt-3"
-                                            >{{ controls.data.invalidText }}
-                                        </small>
+                                                </app-array-value-set-form>
+                                                <ng-template #noArrayCase>
+                                                    <input pInputText [formControlName]="index" class="w-full" />
+                                                </ng-template>
+                                            </ng-template>
+                                        </ng-container>
+                                        <ng-container *ngSwitchCase="'boolean'">
+                                            <p-triStateCheckbox ngDefaultControl [formControlName]="index">
+                                            </p-triStateCheckbox>
+                                            {{ control.value === null ? 'unset' : control.value }}
+                                        </ng-container>
+                                        <ng-container *ngSwitchCase="'number'">
+                                            <p-inputNumber
+                                                ngDefaultControl
+                                                [min]="controls.data.min"
+                                                [max]="controls.data.max"
+                                                [minFractionDigits]="0"
+                                                [maxFractionDigits]="controls.data.fractionDigits"
+                                                styleClass="w-full"
+                                                locale="en-US"
+                                                [formControlName]="index"
+                                            >
+                                            </p-inputNumber>
+                                        </ng-container>
+                                        <ng-container *ngSwitchCase="'client-classes'">
+                                            <app-dhcp-client-class-set-form
+                                                [classFormControl]="control"
+                                                [clientClasses]="clientClasses"
+                                                [floatingPlaceholder]="false"
+                                            >
+                                            </app-dhcp-client-class-set-form>
+                                        </ng-container>
+                                        <ng-container *ngSwitchDefault> Something else </ng-container>
                                     </div>
                                     <button
                                         pRipple
@@ -132,6 +125,11 @@
                                     />
                                 </div>
                             </div>
+                            <small
+                                *ngIf="control.invalid && (control.dirty || control.touched)"
+                                class="p-error block mt-2 pr-4 md:pr-6 text-right"
+                                >{{ controls.data.invalidText }}
+                            </small>
                         </ng-container>
                     </ng-container>
                 </div>
