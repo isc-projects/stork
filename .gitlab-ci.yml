@@ -272,9 +272,6 @@ build_backend_legacy:
 danger:
   extends: .base_build_debian
   stage: checks
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
   tags:
     - linux
     - aws
