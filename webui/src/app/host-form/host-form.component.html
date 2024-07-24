@@ -1,4 +1,4 @@
-<form *ngIf="!form.initError; else showInitError" [formGroup]="formGroup" class="max-w-50rem cust-form">
+<form *ngIf="!form.initError; else showInitError" [formGroup]="formGroup" class="max-w-50rem host-form">
     <p-fieldset legend="Form Settings">
         <div class="flex flex-column">
             <div class="flex align-items-center">
@@ -15,7 +15,7 @@
             </div>
         </div>
     </p-fieldset>
-    <p-fieldset legend="Assignments" styleClass="cust-col">
+    <p-fieldset legend="Assignments" styleClass="host-form-section">
         <div>
             <span class="p-float-label">
                 <p-multiSelect
@@ -68,7 +68,7 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="DHCP Identifier" styleClass="cust-col">
+    <p-fieldset legend="DHCP Identifier" styleClass="host-form-section">
         <div formGroupName="hostIdGroup" class="grid">
             <div class="col-6 sm:col-3">
                 <p-dropdown
@@ -137,7 +137,7 @@
         </div>
     </p-fieldset>
 
-    <p-fieldset legend="Host Reservations" styleClass="cust-col">
+    <p-fieldset legend="Host Reservations" styleClass="host-form-section">
         <div>
             <span class="p-float-label">
                 <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
@@ -296,7 +296,7 @@
         <ng-container *ngFor="let bootFields of bootFieldsArray.controls; let i = index">
             <p-fieldset
                 *ngIf="i === 0 || formGroup.get('splitFormMode').value"
-                styleClass="cust-col"
+                styleClass="host-form-section"
                 [formGroupName]="i"
             >
                 <ng-template pTemplate="header">
@@ -363,7 +363,7 @@
     </ng-container>
 
     <ng-container *ngFor="let clientClassesSet of clientClassesArray.controls; let i = index">
-        <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="cust-col">
+        <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="host-form-section">
             <ng-template pTemplate="header">
                 <ng-container
                     *ngTemplateOutlet="
@@ -383,7 +383,7 @@
 
     <ng-container formArrayName="options">
         <ng-container *ngFor="let optionsSet of optionsArray.controls; let i = index">
-            <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="cust-col">
+            <p-fieldset *ngIf="i === 0 || formGroup.get('splitFormMode').value" styleClass="host-form-section">
                 <ng-template pTemplate="header">
                     <ng-container
                         *ngTemplateOutlet="
