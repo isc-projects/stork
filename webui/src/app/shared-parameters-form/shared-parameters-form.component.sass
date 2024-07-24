@@ -1,30 +1,4 @@
 :host ::ng-deep
-    .shared-parameters-table
-        .p-datatable-tbody tr
-            &:last-child
-                td
-                    border-bottom: none
-            td
-                border-top: none
-                border-left: none
-                border-right: none
-                border-bottom: 1px solid var(--surface-200)
-                vertical-align: top
-                padding-top: 1rem
-                padding-bottom: 1rem
-
-        .p-datatable-thead tr th
-            border-top: none
-            border-left: none
-            border-right: none
-            border-bottom: 1px solid var(--surface-200)
-
-            &:first-child
-                width: 20%
-
-            &:last-child
-                width: 10%
-
     // When PrimeNG form component has full width, apply the same style for inner input element.
     .w-full.p-component input, .w-full.p-chips > .p-inputtext
         width: 100%
@@ -35,13 +9,17 @@
     .flex-auto, .md\:flex-auto
         min-width: 0
 
-    // .md-no-padding class applied to buttons makes
-    // horizontal padding go away for smaller viewports.
-    .p-button.md-no-padding
+    // Minimize horizontal padding for small text buttons.
+    .p-button-sm.p-button.p-button-text
         width: auto
-        @media screen and (max-width: 767px)
-            padding-left: 0
-            padding-right: 0
+        padding-left: 0.125rem
+        padding-right: 0.125rem
+
+    // When small button is inside flex container that has .align-items-end class applied,
+    // add some bottom margin to align the button vertically with other higher flex items.
+    .align-items-end >
+        .p-button-sm, .p-element:has(> .p-button-sm)
+            margin-bottom: 0.25rem
 
 // Add border between shared parameters.
 .shared-parameter-wrapper:not(:last-child)
@@ -58,6 +36,14 @@
         padding-top: 0.5rem
         padding-bottom: 0.5rem
 
+.server-tag
+    // When server tag is displayed next to the form input (not above),
+    // prevent the tag from shrinking.
+    @media screen and (min-width: 768px)
+        // Set flex item to only grow, not shrink.
+        // flex-basis is set to 10rem.
+        flex: 1 0 10rem
+
 // Utility class, takes 20% of available width.
 .w-20-perc
     width: 20%
@@ -67,9 +53,3 @@
     // Utility class, takes 20% of available width.
     .md\:w-20-perc
         width: 20%
-    .md\:w-80-perc
-        width: 80%
-    // Set flex item to only shrink, not grow.
-    // flex-basis is set to --max-form-width var value.
-    .md\:flex-form
-        flex: 0 1 var(--max-form-width) !important
