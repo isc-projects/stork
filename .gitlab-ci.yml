@@ -578,8 +578,7 @@ system_test:
   services:
     - docker:dind
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: manual
+    - when: manual
       allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
@@ -617,6 +616,7 @@ build_hooks:
   stage: hooks
   rules:
     - when: manual
+      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
   needs:
@@ -660,11 +660,10 @@ build_hooks_legacy:
 unittest_hooks:
   stage: hooks
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: manual
+    - when: manual
+      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
-  allow_failure: true
   needs:
     - unittest_backend
   variables:
@@ -676,6 +675,7 @@ tarball_hooks:
   stage: hooks
   rules:
     - when: manual
+      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
   needs: []
@@ -826,6 +826,9 @@ upload_to_repo:
   stage: deploy
   rules:
     - when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: manual
   tags:
     - linux
     - aws
@@ -856,8 +859,8 @@ deploy_demo:
   stage: deploy
   cache: []
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: manual
+    - when: manual
+      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
   tags:
@@ -895,6 +898,9 @@ upload_packages:
   stage: deploy
   rules:
     - when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: manual
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
   tags:
     - docker
