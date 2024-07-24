@@ -63,17 +63,17 @@ func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials
 	// Prepare structure for advanced TLS with custom agent verification.
 	// It sets root CA cert and stork server cert. It also defines hook function
 	// that checks if stork agent cert is still valid.
-	options := &advancedtls.ClientOptions{
+	options := &advancedtls.Options{
 		// set root CA cert to validate agent's certificate
 		RootOptions: advancedtls.RootCertificateOptions{
-			RootCACerts: certPool,
+			RootCertificates: certPool,
 		},
 		// set TLS client (stork server) cert to present its identity to server (stork agent)
 		IdentityOptions: advancedtls.IdentityCertificateOptions{
 			Certificates: []tls.Certificate{certificate},
 		},
 		// check cert and if it matches host IP
-		VType: advancedtls.CertAndHostVerification,
+		VerificationType: advancedtls.CertAndHostVerification,
 		// additional verification hook function that checks if stork agent is not using old cert
 		// VerifyPeer: func(params *advancedtls.VerificationFuncParams) (*advancedtls.VerificationResults, error) {
 		// 	// TODO: add here check if agent cert is not old (compare it with
@@ -82,9 +82,9 @@ func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials
 		// },
 		// Only Stork server is allowed to connect to Stork agent over GRPC
 		// and it always uses TLS 1.3.
-		MinVersion: tls.VersionTLS13,
-		MaxVersion: tls.VersionTLS13,
-		VerifyPeer: verifyPeer,
+		MinTLSVersion:              tls.VersionTLS13,
+		MaxTLSVersion:              tls.VersionTLS13,
+		AdditionalPeerVerification: verifyPeer,
 	}
 	creds, err := advancedtls.NewClientCreds(options)
 	if err != nil {

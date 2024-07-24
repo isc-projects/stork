@@ -171,7 +171,7 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 		return nil, err
 	}
 
-	options := &advancedtls.ServerOptions{
+	options := &advancedtls.Options{
 		// Pull latest root CA cert for stork server cert verification.
 		RootOptions: advancedtls.RootCertificateOptions{
 			// Read the latest root CA cert from file for Stork Server's cert verification.
@@ -185,12 +185,12 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 		// Force stork server cert verification.
 		RequireClientCert: true,
 		// Check cert and if it matches host IP.
-		VType: advancedtls.CertAndHostVerification,
+		VerificationType: advancedtls.CertAndHostVerification,
 		// Only Stork server is allowed to connect to Stork agent over GRPC
 		// and it always uses TLS 1.3.
-		MinVersion: tls.VersionTLS13,
-		MaxVersion: tls.VersionTLS13,
-		VerifyPeer: createVerifyPeer(allowedCertFingerprint),
+		MinTLSVersion:              tls.VersionTLS13,
+		MaxTLSVersion:              tls.VersionTLS13,
+		AdditionalPeerVerification: createVerifyPeer(allowedCertFingerprint),
 	}
 	creds, err := advancedtls.NewServerCreds(options)
 	if err != nil {
