@@ -235,9 +235,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         if (event.filters && event.filters.hasOwnProperty('text')) {
             text = event.filters.text.value
         }
-        // if (event.filters && event.filters.text?.[0]) {
-        //     text = event.filters.text[0].value
-        // }
 
         // ToDo: Uncaught promise
         // If any HTTP exception will be thrown then the promise
