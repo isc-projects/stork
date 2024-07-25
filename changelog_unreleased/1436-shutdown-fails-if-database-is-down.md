@@ -1,7 +1,6 @@
 [bug] slawek
 
-    Fixed a bug that prevents the server from gracefully shutting down
-    while the database is down. Added customizable timeouts for
-    database read/write operations.
+    Added configurable timeouts for database read/write operations.
+    These settings may be useful to avoid the read or write hangs when
+    the server looses connectivity to the database
     (Gitlab #1436)
-
