@@ -159,7 +159,7 @@ func skipIfMissingUserEntryInPgHBAFile(t *testing.T, dbi dbops.DBI, settings *db
 		userName, expectedAuthMethod, connectionType)
 }
 
-// Tests database connection using various DB packages used in Stork.
+// Tests database connection.
 func checkDatabaseConnections(settings *dbops.DatabaseSettings) error {
 	// Go-PG
 	db, err := dbops.NewPgDBConn(settings)
