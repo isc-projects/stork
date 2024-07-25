@@ -1,7 +1,15 @@
-// Specifies a style of the chips representing the selected servers.
-:host ::ng-deep .p-multiselect.p-multiselect-chip .p-multiselect-token
-    background: var(--primary-100)
-    color: var(--text-color)
-    margin-right: 4px
-    margin-top: 2px
-    margin-bottom: 2px
+:host ::ng-deep
+    // Specifies a style of the chips representing the selected servers.
+    .p-multiselect.p-multiselect-chip .p-multiselect-token
+        background: var(--primary-100)
+        color: var(--text-color)
+        margin-right: 4px
+        margin-top: 2px
+        margin-bottom: 2px
+
+    // Limit width of form inputs.
+    input.w-full
+        max-width: var(--max-form-width)
+    .w-full
+        &.p-dropdown, &.p-multiselect
+            max-width: var(--max-form-width)

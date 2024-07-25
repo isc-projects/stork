@@ -188,7 +188,7 @@
 
 <!-- Shared network tab template -->
 <ng-template #openedTabBlock>
-    <div [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component">
+    <div [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component max-w-50rem">
         <app-shared-network-tab
             *ngSwitchCase="SharedNetworkTabType.Display"
             [sharedNetwork]="openedTabs[activeTabIndex].tabSubject"
