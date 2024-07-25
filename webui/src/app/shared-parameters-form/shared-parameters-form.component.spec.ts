@@ -292,25 +292,24 @@ describe('SharedParametersFormComponent', () => {
         ]
         fixture.detectChanges()
 
-        let allRows = fixture.debugElement.queryAll(By.css('tr'))
-        expect(allRows.length).toBe(2)
-
-        // Validate the table header.
-        let cells = allRows[0].queryAll(By.css('th'))
-        expect(cells.length).toBe(3)
-        expect(cells[0].nativeElement.innerText).toBe('Parameter')
-        expect(cells[1].nativeElement.innerText).toBe('Value')
-        expect(cells[2].nativeElement.innerText).toBe('Unlock')
+        // Validate the section header.
+        let divs = fixture.debugElement.queryAll(By.css('.shared-parameter-wrapper.font-semibold > div'))
+        // First two divs are hidden for wider viewports, but visible for smaller viewports.
+        expect(divs.length).toBe(5)
+        // Check last three divs visible for larger viewports.
+        expect(divs[2].nativeElement.innerText).toBe('Parameter')
+        expect(divs[3].nativeElement.innerText).toBe('Value')
+        expect(divs[4].nativeElement.innerText).toBe('Unlock')
 
         // Require Client Classes.
-        cells = allRows[1].queryAll(By.css('td'))
-        expect(cells.length).toBe(3)
-        expect(cells[0].nativeElement.innerText).toBe('Require Client Classes')
-        const controls = cells[1].queryAll(By.css('app-dhcp-client-class-set-form'))
+        divs = fixture.debugElement.queryAll(By.css('.shared-parameter-wrapper:not(.font-semibold) > div'))
+        expect(divs.length).toBe(3)
+        expect(divs[0].childNodes[0].nativeNode.innerText).toBe('Require Client Classes')
+        const controls = divs[1].queryAll(By.css('app-dhcp-client-class-set-form'))
         expect(controls.length).toBe(1)
 
         // Click the List button to list the classes.
-        const btns = cells[1].queryAll(By.css('[label=List]'))
+        const btns = divs[1].queryAll(By.css('[label=List]'))
         expect(btns.length).toBe(1)
         expect(btns[0].nativeElement.innerText).toBe('List')
         btns[0].nativeElement.click()

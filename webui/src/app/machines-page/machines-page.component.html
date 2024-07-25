@@ -154,84 +154,83 @@ sudo ./stork-install-agent.sh</textarea
         <span class="p-input-icon-left flex min-w-0">
             <i class="pi pi-search"></i>
             <input
-                    type="text"
-                    id="filter-machines-text-field"
-                    pInputText
-                    placeholder="Search machines"
-                    (input)="inputFilterText(machinesTable, $event.target?.value)"
-                    (keyup.enter)="inputFilterText(machinesTable, $event.target?.value, true)"
-                    [value]="machinesTable.filters?.text?.value || machinesTable.filters?.text?.[0]?.value"
-                    class="min-w-0"
-                    #searchInput
+                type="text"
+                id="filter-machines-text-field"
+                pInputText
+                placeholder="Search machines"
+                (input)="inputFilterText(machinesTable, $event.target?.value)"
+                (keyup.enter)="inputFilterText(machinesTable, $event.target?.value, true)"
+                [value]="machinesTable.filters?.text?.value || machinesTable.filters?.text?.[0]?.value"
+                class="min-w-0"
+                #searchInput
             />
             <app-help-tip subject="filtering" id="filtering-help-button" [target]="searchInput">
-                    <p>
-                        Machines in the table below can be filtered by entering a text in the search box; the table
-                        shows all machines matching the filter text. Currently supported fields for such filtering are:
-                    </p>
-                    <ul>
-                        <li>Address</li>
-                        <li>Agent Version</li>
-                        <li>Hostname</li>
-                        <li>OS</li>
-                        <li>Platform</li>
-                        <li>Platform Family</li>
-                        <li>Platform Version</li>
-                        <li>Kernel Version</li>
-                        <li>Kernel Arch</li>
-                        <li>Virtualization System</li>
-                        <li>Virtualization Role</li>
-                        <li>Host ID</li>
-                    </ul>
-                    <p>
-                        The search is performed while typing or on pressing Enter. The minimum number of search
-                        characters is 3.
-                    </p>
-                </app-help-tip>
+                <p>
+                    Machines in the table below can be filtered by entering a text in the search box; the table shows
+                    all machines matching the filter text. Currently supported fields for such filtering are:
+                </p>
+                <ul>
+                    <li>Address</li>
+                    <li>Agent Version</li>
+                    <li>Hostname</li>
+                    <li>OS</li>
+                    <li>Platform</li>
+                    <li>Platform Family</li>
+                    <li>Platform Version</li>
+                    <li>Kernel Version</li>
+                    <li>Kernel Arch</li>
+                    <li>Virtualization System</li>
+                    <li>Virtualization Role</li>
+                    <li>Host ID</li>
+                </ul>
+                <p>
+                    The search is performed while typing or on pressing Enter. The minimum number of search characters
+                    is 3.
+                </p>
+            </app-help-tip>
         </span>
         <button
-                pButton
-                label="Clear"
-                class="ml-2 flex-none"
-                icon="pi pi-filter-slash"
-                (click)="clearFilters(machinesTable)"
+            pButton
+            label="Clear"
+            class="ml-2 flex-none"
+            icon="pi pi-filter-slash"
+            (click)="clearFilters(machinesTable)"
         ></button>
         <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
             <div class="flex-auto"></div>
             <button
-                    *ngIf="showUnauthorized && selectedMachines?.length > 0"
-                    type="button"
-                    pButton
-                    label="Authorize selected"
-                    id="authorize-selected-button"
-                    icon="pi pi-lock"
-                    (click)="authorizeSelectedMachines(machinesTable)"
+                *ngIf="showUnauthorized && selectedMachines?.length > 0"
+                type="button"
+                pButton
+                label="Authorize selected"
+                id="authorize-selected-button"
+                icon="pi pi-lock"
+                (click)="authorizeSelectedMachines(machinesTable)"
             ></button>
             <button
-                    type="button"
-                    pButton
-                    label="Refresh"
-                    id="refresh-all-button"
-                    icon="pi pi-refresh"
-                    (click)="refreshMachinesList(machinesTable)"
+                type="button"
+                pButton
+                label="Refresh"
+                id="refresh-all-button"
+                icon="pi pi-refresh"
+                (click)="refreshMachinesList(machinesTable)"
             ></button>
             <button
-                    type="button"
-                    pButton
-                    label="How to Install Agent on New Machine"
-                    icon="pi pi-download"
-                    (click)="showAgentInstallationInstruction()"
-                    id="show-agent-installation-instruction-button"
+                type="button"
+                pButton
+                label="How to Install Agent on New Machine"
+                icon="pi pi-download"
+                (click)="showAgentInstallationInstruction()"
+                id="show-agent-installation-instruction-button"
             ></button>
 
             <p-selectButton
-                    [options]="viewSelectionOptions"
-                    [(ngModel)]="showUnauthorized"
-                    (onChange)="onSelectMachinesListChange(machinesTable)"
-                    [allowEmpty]="false"
-                    id="unauthorized-select-button"
+                [options]="viewSelectionOptions"
+                [(ngModel)]="showUnauthorized"
+                (onChange)="onSelectMachinesListChange(machinesTable)"
+                [allowEmpty]="false"
+                id="unauthorized-select-button"
             ></p-selectButton>
-
         </div>
     </div>
 
