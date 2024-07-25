@@ -271,6 +271,11 @@ namespace :release do
 
             for package_type in ['deb', 'rpm', 'apk'] do
                 type_command = package_type_commands[package_type]
+                distro = 'any-distro'
+                if package_type == 'apk'
+                    distro = 'alpine'
+                end
+
                 for component in components.split(",") do
                     component = component.strip
                     pattern = component + '*\.' + package_type
@@ -279,7 +284,7 @@ namespace :release do
                         fail 'ERROR: could not find any files matching ' + pattern
                     end
                     files.each do |file|
-                        sh CLOUDSMITH, "upload", type_command, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/any-distro/any-version", file
+                        sh CLOUDSMITH, "upload", type_command, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/#{distro}/any-version", file
                     end
                 end
             end
