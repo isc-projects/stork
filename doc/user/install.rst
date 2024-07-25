@@ -218,6 +218,35 @@ is also supported by the ``Stork Server``.
    $ stork-tool db-down -t 0
    $ stork-tool db-up --db-trace-queries 2> stork-schema.txt
 
+Tuning Database Timeouts
+------------------------
+
+In rare cases, reading or writing to the database may hang. This can be caused by a temporary network issue, or by
+misconfiguration of the proxy server switching the connection between different database instances. These situations are
+rare, but users have reported that Kea sometimes hangs while performing database IO operations. Setting appropriate
+timeout values can mitigate such issues.
+
+PostgreSQL exposes two distinct connection options to configure the read and write timeouts. Stork's corresponding
+read-timeout and write-timeout configuration parameters specify the timeouts: ``--db-read-timeout`` (the
+``STORK_DATABASE_READ_TIMEOUT`` environment variable) and ``--db-write-timeout`` (the ``STORK_DATABASE_WRITE_TIMEOUT``).
+The timeout value must be specified with the unit, e.g., ``500ms``` for 500 milliseconds, ``1s`` for one second, ``5m``
+for five minute.
+
+The default value is ``0``, which disables the timeout. In this case, Stork waits indefinitely for the completion of the
+read and write database operations.
+
+.. note::
+
+   Some operations may take a long time to complete (e.g., pulling the hosts), especially when the monitored Kea
+   configurations are large. The timeouts should be adjusted accordingly.
+
+.. warning::
+
+   We don't recommend to specify the database timeout if there is no observed problem with the database connection.
+
+   If you want just limit the time of processing single HTTP request, you can use the ``--rest-read-timeout`` and
+   ``--rest-write-timeout`` flags.
+
 .. _install-pkgs:
 
 Installing From Packages
