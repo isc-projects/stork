@@ -5,10 +5,10 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2">
+<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
         <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
-            <div style="display: flex; justify-content: space-between">
+            <div class="flex justify-content-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
@@ -21,53 +21,44 @@
 
 <!-- Apps tab -->
 <div *ngIf="activeTabIdx === 0">
-    <div style="display: flex; justify-content: space-between; margin: 10px">
-        <div>
-            <span>
-                <i class="fa fa-search mr-1"></i>
-                Filter apps:
-                <input
-                    type="text"
-                    id="filter-apps-text-field"
-                    pInputText
-                    placeholder="version or any other field"
-                    (input)="inputFilterText(appsTable, $event.target?.value)"
-                    (keyup.enter)="inputFilterText(appsTable, $event.target?.value, true)"
-                    [value]="appsTable.filters?.text?.[0]?.value"
-                />
-                <button
-                    pButton
-                    label="Clear"
-                    class="ml-2"
-                    icon="pi pi-filter-slash"
-                    (click)="clearFilters(appsTable)"
-                ></button>
-            </span>
-            <!-- TODO: this is a starting point for implementing a form for filtering apps. -->
-            <!-- <span style="margin-left: 40px;"> -->
-            <!--   App: -->
-            <!--   <p-dropdown [options]="appTypes" [(ngModel)]="selectedAppType" optionLabel="name" (onChange)="filterByApp(appsTable)"></p-dropdown> -->
-            <!-- </span> -->
-        </div>
-
-        <div class="flex align-items-center">
-            <div>
-                <p-button
-                    id="apps-refresh-button"
-                    label="Refresh"
-                    icon="pi pi-refresh"
-                    (click)="refreshAppsList(appsTable)"
-                ></p-button>
-            </div>
-            <div *ngIf="appType === 'kea'" class="ml-2">
-                <p-button
-                    id="sync-kea-configs-button"
-                    label="Resynchronize Kea Configs"
-                    icon="pi pi-file-import"
-                    styleClass="p-button-warning"
-                    (click)="onSyncKeaConfigs()"
-                ></p-button>
-            </div>
+    <div class="flex flex-wrap gap-2 justify-content-end mb-3">
+        <span class="p-input-icon-left flex min-w-0">
+            <i class="pi pi-search"></i>
+            <input
+                type="text"
+                id="filter-apps-text-field"
+                pInputText
+                placeholder="Search apps"
+                (input)="inputFilterText(appsTable, $event.target?.value)"
+                (keyup.enter)="inputFilterText(appsTable, $event.target?.value, true)"
+                [value]="appsTable.filters?.text?.value || appsTable.filters?.[0]?.text?.value"
+            />
+        </span>
+        <button
+            pButton
+            label="Clear"
+            class="ml-2 flex-none"
+            icon="pi pi-filter-slash"
+            (click)="clearFilters(appsTable)"
+        ></button>
+        <div class="flex flex-auto gap-2">
+            <div class="flex-auto"></div>
+            <p-button
+                id="apps-refresh-button"
+                label="Refresh"
+                icon="pi pi-refresh"
+                (click)="refreshAppsList(appsTable)"
+                class="flex-none"
+            ></p-button>
+            <p-button
+                *ngIf="appType === 'kea'"
+                id="sync-kea-configs-button"
+                label="Resynchronize Kea Configs"
+                icon="pi pi-file-import"
+                class="flex-none"
+                styleClass="p-button-warning"
+                (click)="onSyncKeaConfigs()"
+            ></p-button>
         </div>
     </div>
 
