@@ -1,19 +1,27 @@
-:host ::ng-deep .cascaded-parameters-table .p-datatable-tbody tr td
-    border-top: none
-    border-left: none
-    border-right: none
-    border-bottom: 1px solid var(--surface-200)
+:host ::ng-deep
+    .cascaded-parameters-table
+        .p-datatable-tbody tr td
+            border-top: none
+            border-left: none
+            border-right: none
+            border-bottom: 1px solid var(--surface-200)
+            padding-left: 0.5rem
+            padding-right: 0.5rem
 
-:host ::ng-deep .cascaded-parameters-table .p-datatable-thead tr th
-    border-top: 1px solid var(--surface-200)
-    border-left: none
-    border-right: none
-    border-bottom: 1px solid var(--surface-200)
-    width: 20%
+        .p-datatable-thead tr th
+            border-top: 1px solid var(--surface-200)
+            border-left: none
+            border-right: none
+            border-bottom: 1px solid var(--surface-200)
+            padding-left: 0.5rem
+            padding-right: 0.5rem
 
-    &:last-child
-        width: auto
+            &:last-child
+                width: auto
+            &:not(:first-child):not(:last-child)
+                min-width: 25%
 
-:host::ng-deep .cascaded-parameter-effective-icon
-    margin-left: 1rem
-    color: var(--green-600)
+    // Set max-width to prevent horizontal overflow.
+    .max-w-100vw
+        // full viewport width minus some space for margins and paddings
+        max-width: calc(100vw - 5rem)

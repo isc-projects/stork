@@ -1,4 +1,9 @@
-<p-table *ngIf="rows.length > 0; else noRowsBlock" [value]="rows" dataKey="name" styleClass="cascaded-parameters-table">
+<p-table
+    *ngIf="rows.length > 0; else noRowsBlock"
+    [value]="rows"
+    dataKey="name"
+    styleClass="cascaded-parameters-table max-w-100vw"
+>
     <ng-template pTemplate="header">
         <tr>
             <th *ngIf="showCascaded" class="w-3rem"></th>
@@ -31,8 +36,8 @@
     <ng-template pTemplate="rowexpansion" let-row>
         <tr *ngFor="let level of levels; let i = index">
             <td></td>
-            <td>
-                <span class="ml-6">
+            <td class="pl-3 sm:pl-6">
+                <span>
                     {{ level }}
                 </span>
             </td>
@@ -40,7 +45,7 @@
                 <app-parameter-view [parameter]="row.parameters[j].values[i]"></app-parameter-view>
                 <span
                     *ngIf="level === row.parameters[j].level"
-                    class="fa-solid fa-check cascaded-parameter-effective-icon"
+                    class="fa-solid fa-check ml-2 sm:ml-3 text-green-600"
                     pTooltip="Marks an effective value."
                 ></span>
             </td>
