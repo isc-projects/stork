@@ -247,8 +247,9 @@ read and write database operations.
    to infinite reads or writes haven't been observed. Specifying too short timeouts may lead to premature database reads
    or writes errors for long lasting operations.
 
-   If you want just limit the time of processing single HTTP request, you can use the ``--rest-read-timeout`` and
-   ``--rest-write-timeout`` flags.
+   Note that there are distinct flags ``--rest-read-timeout`` and ``--rest-write-timeout`` for controlling how long the
+   REST API operation last. They are more suitable if you want to secure the Stork API against Denial-of-Service attacks
+   that involve sending massive, long-processing requests to the web service to exhaust its resources.
 
 .. _install-pkgs:
 
