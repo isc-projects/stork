@@ -38,7 +38,7 @@ func GetActiveSession(dbi pg.DBI, token string) (*Session, error) {
 		err = errors.Wrapf(err, "problem getting the session with token %s", token)
 		return nil, err
 	}
-	return session, err
+	return session, nil
 }
 
 // Adds a session to the database. If the session already exists, it will be
