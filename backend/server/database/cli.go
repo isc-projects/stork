@@ -213,8 +213,8 @@ type DatabaseCLIFlags struct {
 	SSLKey       string        `long:"db-sslkey" description:"The location of the SSL key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
 	SSLRootCert  string        `long:"db-sslrootcert" description:"The location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
 	TraceSQL     string        `long:"db-trace-queries" description:"Enable tracing SQL queries: run (only run-time, without migrations), all (migrations and run-time), or none (no query logging)" env:"STORK_DATABASE_TRACE" choice:"run" choice:"all" choice:"none" default:"none"` //nolint:staticcheck
-	ReadTimeout  time.Duration `long:"db-read-timeout" description:"Timeout for socket reads. If reached, commands will fail instead of blocking, zero disables the timeout" env:"STORK_DATABASE_READ_TIMEOUT" default:"0s"`
-	WriteTimeout time.Duration `long:"db-write-timeout" description:"Timeout for socket writes. If reached, commands will fail instead of blocking, zero disables the timeout" env:"STORK_DATABASE_WRITE_TIMEOUT" default:"0s"`
+	ReadTimeout  time.Duration `long:"db-read-timeout" description:"Timeout for socket reads. If reached, commands will fail instead of blocking, zero disables the timeout; requires unit: ms (milliseconds), s (seconds), m (minutes), e.g.: 42s" env:"STORK_DATABASE_READ_TIMEOUT" default:"0s"`
+	WriteTimeout time.Duration `long:"db-write-timeout" description:"Timeout for socket writes. If reached, commands will fail instead of blocking, zero disables the timeout; requires unit: ms (milliseconds), s (seconds), m (minutes), e.g.: 42s" env:"STORK_DATABASE_WRITE_TIMEOUT" default:"0s"`
 }
 
 // Converts the CLI flag values to the database settings object.
