@@ -223,8 +223,9 @@ Tuning Database Timeouts
 
 In rare cases, reading or writing to the database may hang. This can be caused by a temporary network issue, or by
 misconfiguration of the proxy server switching the connection between different database instances. These situations are
-rare, but users have reported that Kea sometimes hangs while performing database IO operations. Setting appropriate
-timeout values can mitigate such issues.
+rare, but theoretically, it is possible that Stork sometimes may hang while performing database IO operations. Nobody
+reported it yet but we reproduced this issue in our system tests. Setting appropriate timeout values can mitigate such
+issues.
 
 PostgreSQL exposes two distinct connection options to configure the read and write timeouts. Stork's corresponding
 read-timeout and write-timeout configuration parameters specify the timeouts: ``--db-read-timeout`` (the
