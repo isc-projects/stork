@@ -262,7 +262,7 @@ namespace :release do
 
             sh CLOUDSMITH, "check", "service"
             sh CLOUDSMITH, "whoami", "-k", "#{key}"
-            for package_type in ['deb', 'rpm'] do
+            for package_type in ['deb', 'rpm', 'apk'] do
                 for component in components.split(",") do
                     component = component.strip
                     pattern = component + '*\.' + package_type
@@ -285,4 +285,3 @@ namespace :check do
         check_deps(__FILE__)
     end
 end
-
