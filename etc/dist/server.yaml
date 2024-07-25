@@ -23,12 +23,10 @@ homepage: "https://stork.isc.org"
 license: "MPL 2.0"
 
 contents:
-- src: dist/server/lib
+- src: dist/server/lib/
   dst: /lib
-  type: tree
-- src: dist/server/usr
+- src: dist/server/usr/
   dst: /usr
-  type: tree
 - src: dist/server/etc/stork/server.env
   dst: /etc/stork/server.env
   type: config
