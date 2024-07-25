@@ -23,8 +23,7 @@ type SessionMgr struct {
 	teardown      func()
 }
 
-// Creates new session manager instance. The new connection is created using the
-// lib/pq driver via scs.SessionManager.
+// Creates new session manager instance.
 func NewSessionMgr(db pg.DBI) (*SessionMgr, error) {
 	s := scs.New()
 	s.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
