@@ -255,8 +255,8 @@ Installing From Packages
 ========================
 
 Stork packages are stored in repositories located on the Cloudsmith
-service: https://cloudsmith.io/~isc/repos/stork/packages/. Both
-Debian/Ubuntu and RPM packages may be found there.
+service: https://cloudsmith.io/~isc/repos/stork/packages/. DEB (Debian/Ubuntu
+family), RPM (RedHat-family), and APK (Alpine) packages may be found there.
 
 Detailed instructions for setting up the operating system to use this
 repository are available under the ``Set Me Up`` button on the
@@ -278,6 +278,7 @@ A few command line tools are required for setting up the repository:
 - ``rpm`` in case of an RPM-based distribution
 - one of ``dnf``, ``microdnf``, ``yum``, ``zypper`` in case of an RPM-based
   distribution
+- ``apk`` in case of an Alpine-based distribution
 
 Other command line tools may be required based on how the script evolves or
 based on what OS the script is running on:
@@ -338,6 +339,27 @@ If ``dnf`` is not available, ``yum`` can be used instead:
 .. code-block:: console
 
    $ sudo yum install isc-stork-server
+
+Installing on Alpine
+~~~~~~~~~~~~~~~~~~~~
+
+The first step for Alpine is installing ``bash`` and ``curl``:
+
+.. code-block:: console
+
+   $ apk add bash curl
+
+Next, setup the Cloudsmith repository:
+
+.. code-block:: console
+
+   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.apk.sh' | bash
+
+Then, install the Stork server package:
+
+.. code-block:: console
+
+   $ apk add isc-stork-server
 
 Setup
 ~~~~~
