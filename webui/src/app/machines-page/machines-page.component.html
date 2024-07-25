@@ -129,10 +129,10 @@ sudo ./stork-install-agent.sh</textarea
     ></button>
 </p-dialog>
 
-<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2">
+<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
         <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
-            <div style="display: flex; justify-content: space-between">
+            <div class="flex justify-content-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
@@ -150,23 +150,21 @@ sudo ./stork-install-agent.sh</textarea
 
 <!-- Machines tab -->
 <div *ngIf="activeTabIdx === 0">
-    <div style="display: flex; justify-content: space-between; margin: 10px">
-        <div>
-            <div class="flex align-items-center">
-                <i class="fa fa-search mr-1"></i>
-                Filter machines:
-                <input
+    <div class="flex flex-wrap gap-2 justify-content-end mb-3">
+        <span class="p-input-icon-left flex min-w-0">
+            <i class="pi pi-search"></i>
+            <input
                     type="text"
                     id="filter-machines-text-field"
                     pInputText
-                    placeholder="name or any other field"
+                    placeholder="Search machines"
                     (input)="inputFilterText(machinesTable, $event.target?.value)"
                     (keyup.enter)="inputFilterText(machinesTable, $event.target?.value, true)"
-                    [value]="machinesTable.filters?.text?.[0]?.value"
-                    class="ml-2"
+                    [value]="machinesTable.filters?.text?.value || machinesTable.filters?.text?.[0]?.value"
+                    class="min-w-0"
                     #searchInput
-                />
-                <app-help-tip subject="filtering" id="filtering-help-button" [target]="searchInput">
+            />
+            <app-help-tip subject="filtering" id="filtering-help-button" [target]="searchInput">
                     <p>
                         Machines in the table below can be filtered by entering a text in the search box; the table
                         shows all machines matching the filter text. Currently supported fields for such filtering are:
@@ -190,55 +188,50 @@ sudo ./stork-install-agent.sh</textarea
                         characters is 3.
                     </p>
                 </app-help-tip>
-                <button
+        </span>
+        <button
+                pButton
+                label="Clear"
+                class="ml-2 flex-none"
+                icon="pi pi-filter-slash"
+                (click)="clearFilters(machinesTable)"
+        ></button>
+        <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
+            <div class="flex-auto"></div>
+            <button
+                    *ngIf="showUnauthorized && selectedMachines?.length > 0"
+                    type="button"
                     pButton
-                    label="Clear"
-                    class="ml-2"
-                    icon="pi pi-filter-slash"
-                    (click)="clearFilters(machinesTable)"
-                ></button>
-            </div>
-            <!-- <span style="margin-left: 40px;"> -->
-            <!--   App: -->
-            <!--   <p-dropdown [options]="appTypes" [(ngModel)]="selectedAppType" optionLabel="name" (onChange)="filterByApp(machinesTable)"></p-dropdown> -->
-            <!-- </span> -->
-        </div>
+                    label="Authorize selected"
+                    id="authorize-selected-button"
+                    icon="pi pi-lock"
+                    (click)="authorizeSelectedMachines(machinesTable)"
+            ></button>
+            <button
+                    type="button"
+                    pButton
+                    label="Refresh"
+                    id="refresh-all-button"
+                    icon="pi pi-refresh"
+                    (click)="refreshMachinesList(machinesTable)"
+            ></button>
+            <button
+                    type="button"
+                    pButton
+                    label="How to Install Agent on New Machine"
+                    icon="pi pi-download"
+                    (click)="showAgentInstallationInstruction()"
+                    id="show-agent-installation-instruction-button"
+            ></button>
 
-        <div class="button-group">
-            <button
-                *ngIf="showUnauthorized && selectedMachines?.length > 0"
-                type="button"
-                pButton
-                label="Authorize selected"
-                id="authorize-selected-button"
-                icon="pi pi-lock"
-                (click)="authorizeSelectedMachines(machinesTable)"
-            ></button>
-            <button
-                type="button"
-                pButton
-                label="Refresh"
-                id="refresh-all-button"
-                icon="pi pi-refresh"
-                (click)="refreshMachinesList(machinesTable)"
-            ></button>
-            <button
-                type="button"
-                pButton
-                label="How to Install Agent on New Machine"
-                icon="pi pi-download"
-                (click)="showAgentInstallationInstruction()"
-                id="show-agent-installation-instruction-button"
-            ></button>
-            <div>
-                <p-selectButton
+            <p-selectButton
                     [options]="viewSelectionOptions"
                     [(ngModel)]="showUnauthorized"
                     (onChange)="onSelectMachinesListChange(machinesTable)"
                     [allowEmpty]="false"
                     id="unauthorized-select-button"
-                ></p-selectButton>
-            </div>
+            ></p-selectButton>
+
         </div>
     </div>
 

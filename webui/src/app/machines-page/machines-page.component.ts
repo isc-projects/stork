@@ -276,8 +276,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     loadMachines(event) {
         this.dataLoading = true
         let text
-        if (event.filters?.text?.[0]) {
-            text = event.filters.text[0].value
+        if (event.filters?.hasOwnProperty('text')) {
+            text = event.filters.text.value
         }
 
         let app
