@@ -231,7 +231,7 @@ PostgreSQL exposes two distinct connection options to configure the read and wri
 read-timeout and write-timeout configuration parameters specify the timeouts: ``--db-read-timeout`` (the
 ``STORK_DATABASE_READ_TIMEOUT`` environment variable) and ``--db-write-timeout`` (the ``STORK_DATABASE_WRITE_TIMEOUT``).
 The timeout value must be specified with the unit, e.g., ``500ms``` for 500 milliseconds, ``1s`` for one second, ``5m``
-for five minute.
+for five minutes.
 
 The default value is ``0``, which disables the timeout. In this case, Stork waits indefinitely for the completion of the
 read and write database operations.
