@@ -243,7 +243,9 @@ read and write database operations.
 
 .. warning::
 
-   We don't recommend to specify the database timeout if there is no observed problem with the database connection.
+   We don't recommend specifying short timeouts when the database connection problems are rare and/or the hangs related
+   to infinite reads or writes haven't been observed. Specifying too short timeouts may lead to premature database reads
+   or writes errors for long lasting operations.
 
    If you want just limit the time of processing single HTTP request, you can use the ``--rest-read-timeout`` and
    ``--rest-write-timeout`` flags.
