@@ -31,14 +31,11 @@ func GetActiveSession(dbi pg.DBI, token string) (*Session, error) {
 		Where("token = ?", token).
 		Where("current_timestamp < expiry").
 		Select()
-	if err != nil {
-		if errors.Is(err, pg.ErrNoRows) {
-			return nil, nil
-		}
-		err = errors.Wrapf(err, "problem getting the session with token %s", token)
-		return nil, err
+
+	if errors.Is(err, pg.ErrNoRows) {
+		return nil, nil
 	}
-	return session, nil
+	return session, errors.Wrapf(err, "problem getting the session with token %s", token)
 }
 
 // Adds a session to the database. If the session already exists, it will be
@@ -48,10 +45,7 @@ func AddOrUpdateSession(dbi pg.DBI, session *Session) error {
 		Set("data = EXCLUDED.data").
 		Set("expiry = EXCLUDED.expiry").
 		Insert()
-	if err != nil {
-		err = errors.Wrapf(err, "problem adding session with token %s", session.Token)
-	}
-	return err
+	return errors.Wrapf(err, "problem adding session with token %s", session.Token)
 }
 
 // Deletes a session with a given token from the database.
@@ -59,10 +53,7 @@ func DeleteSession(dbi pg.DBI, token string) error {
 	_, err := dbi.Model((*Session)(nil)).
 		Where("token = ?", token).
 		Delete()
-	if err != nil {
-		err = errors.Wrapf(err, "problem deleting session with token %s", token)
-	}
-	return err
+	return errors.Wrapf(err, "problem deleting session with token %s", token)
 }
 
 // Returns all active sessions.
@@ -71,20 +62,14 @@ func GetAllActiveSessions(dbi pg.DBI) ([]*Session, error) {
 	err := dbi.Model(&sessions).
 		Where("current_timestamp < expiry").
 		Select()
-	if err != nil {
-		err = errors.Wrap(err, "problem getting all active sessions")
-	}
-	return sessions, err
+	return sessions, errors.Wrap(err, "problem getting all active sessions")
 }
 
 // Returns all sessions, including expired ones.
 func GetAllSessions(dbi pg.DBI) ([]*Session, error) {
 	var sessions []*Session
 	err := dbi.Model(&sessions).Select()
-	if err != nil {
-		err = errors.Wrap(err, "problem getting all sessions")
-	}
-	return sessions, err
+	return sessions, errors.Wrap(err, "problem getting all sessions")
 }
 
 // Removes all expired sessions from the database.
@@ -92,8 +77,5 @@ func DeleteAllExpiredSessions(dbi pg.DBI) error {
 	_, err := dbi.Model((*Session)(nil)).
 		Where("expiry < current_timestamp").
 		Delete()
-	if err != nil {
-		err = errors.Wrap(err, "problem removing all expired sessions")
-	}
-	return err
+	return errors.Wrap(err, "problem removing all expired sessions")
 }
