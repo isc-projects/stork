@@ -226,7 +226,7 @@ misconfiguration of the proxy server switching the connection between different 
 timeout values can mitigate such issues.
 
 PostgreSQL exposes two distinct connection options to configure the read and write timeouts. Stork's corresponding
-read-timeout and write-timeout configuration parameters specify the timeouts: ``--db-read-timeout`` (the
+configuration parameters specify the timeouts: ``--db-read-timeout`` (the
 ``STORK_DATABASE_READ_TIMEOUT`` environment variable) and ``--db-write-timeout`` (the ``STORK_DATABASE_WRITE_TIMEOUT``).
 Non-zero timeout value must be specified with the unit, e.g., ``500ms``` for 500 milliseconds, ``1s`` for one second,
 ``5m`` for five minutes.
