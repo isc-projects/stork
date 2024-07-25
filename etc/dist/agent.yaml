@@ -22,12 +22,10 @@ homepage: "https://stork.isc.org"
 license: "MPL 2.0"
 
 contents:
-- src: dist/agent/lib/systemd/system/isc-stork-agent.service
-  dst: /lib/systemd/system/isc-stork-agent.service
-- src: dist/agent/usr/bin/stork-agent
-  dst: /usr/bin/stork-agent
-- src: dist/agent/usr/share/man/man8/stork-agent.8
-  dst: /usr/share/man/man8/stork-agent.8
+- src: dist/agent/lib/
+  dst: /lib
+- src: dist/agent/usr/
+  dst: /usr
 - src: dist/agent/etc/stork/agent.env
   dst: /etc/stork/agent.env
   type: config
