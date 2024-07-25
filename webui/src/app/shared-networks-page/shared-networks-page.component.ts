@@ -364,7 +364,7 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
      * @param sharedNetworkId Shared network ID or a NaN for subnet list.
      */
     openTabBySharedNetworkId(sharedNetworkId: number) {
-        const tabIndex = this.openedTabs.map((t) => t.tabSubject.id).indexOf(sharedNetworkId)
+        const tabIndex = this.openedTabs.map((t) => t.tabSubject?.id).indexOf(sharedNetworkId)
         if (tabIndex < 0) {
             this.createTab(sharedNetworkId).then(() => {
                 this.switchToTab(this.openedTabs.length - 1)
