@@ -575,10 +575,10 @@ system_test:
   services:
     - docker:dind
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
+    - when: manual
+      allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-compose:4
   cache:
     key: $CI_PROJECT_NAME-compose-$CI_COMMIT_REF_SLUG
@@ -612,10 +612,10 @@ system_test:
 build_hooks:
   stage: hooks
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
+    - when: manual
+      allow_failure: true
   needs:
     - build_backend
   variables:
@@ -657,10 +657,10 @@ build_hooks_legacy:
 unittest_hooks:
   stage: hooks
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
+    - when: manual
+      allow_failure: true
   needs:
     - unittest_backend
   variables:
@@ -671,10 +671,10 @@ unittest_hooks:
 tarball_hooks:
   stage: hooks
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
+    - when: manual
+      allow_failure: true
   needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: normal
@@ -822,10 +822,10 @@ packages_hooks:
 upload_to_repo:
   stage: deploy
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: manual
+    - when: manual
+      allow_failure: true
   tags:
     - linux
     - aws
@@ -856,10 +856,10 @@ deploy_demo:
   stage: deploy
   cache: []
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
+    - when: manual
+      allow_failure: true
   tags:
     - linux
     - aws
@@ -894,10 +894,10 @@ deploy_demo:
 upload_packages:
   stage: deploy
   rules:
-    - when: manual
-      allow_failure: true
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: manual
+    - when: manual
+      allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:2
   tags:
     - docker
