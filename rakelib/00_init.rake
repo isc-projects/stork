@@ -648,22 +648,20 @@ directory ruby_tools_bin_bundle_dir
 
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
-goroot = File.join(go_tools_dir, "go")
-gobin = File.join(goroot, "bin")
+gobin = File.join(go_tools_dir, "go", "bin")
 python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
-if libc_musl_system || openbsd_system
-    gobin = ENV["GOBIN"]
+goroot = File.join(go_tools_dir, "go")
+if libc_musl_system || openbsd_system || freebsd_arm64_system
     goroot = ENV["GOROOT"]
-    if gobin.nil?
-        gobin = which("go")
-        if !gobin.nil?
-            gobin = File.dirname gobin
-        else
-            gobin = ""
+    if goroot.nil?
+        goroot = which("go")
+        if !goroot.nil?
+            # Go executable is located in the "bin" subdirectory of GOROOT.
+            goroot = File.dirname File.dirname goroot
         end
     end
 end
