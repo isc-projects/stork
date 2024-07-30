@@ -1012,7 +1012,8 @@ add_version_guard(GDLV, gdlv_ver)
 
 NFPM = File.join(gobin, "nfpm")
 file NFPM => [GO] do
-    sh GO, "install", "github.com/goreleaser/nfpm/v2/cmd/nfpm@#{nfpm_ver}"
+    nfpm_major_ver = nfpm_ver.split('.')[0]
+    sh GO, "install", "github.com/goreleaser/nfpm/#{nfpm_major_ver}/cmd/nfpm@#{nfpm_ver}"
     sh NFPM, "--version"
 end
 add_version_guard(NFPM, nfpm_ver)
