@@ -1144,8 +1144,8 @@ The hook packages are distributed as RPM and DEB packages on Cloudsmith.
 
 The hooks are binary files with the ``.so`` extension. These files must be
 placed in the hook directory. The default location is
-``/var/lib/stork-agent/hooks`` for Stork agent and
-``/var/lib/stork-server/hooks`` for Stork server. You can change it using
+``/usr/lib/stork-agent/hooks`` for Stork agent and
+``/usr/lib/stork-server/hooks`` for Stork server. You can change it using
 the ``--hook-directory`` CLI option or setting the
 ``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_SERVER_HOOK_DIRECTORY`` environment
 variable.

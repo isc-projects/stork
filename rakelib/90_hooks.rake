@@ -199,7 +199,7 @@ namespace :hook do
                     "--vendor", "Internet Systems Consortium, Inc.",
                     # Enables the compatibility with the FIPS mode for RPM packages.
                     "--rpm-digest", "sha256",
-                    "#{hook_filename}=/var/lib/stork-#{kind}/hooks/#{hook_filename}"
+                    "#{hook_filename}=/usr/lib/stork-#{kind}/hooks/#{hook_filename}"
             end
         end
     end
