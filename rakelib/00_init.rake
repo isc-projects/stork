@@ -654,23 +654,10 @@ pythonpath = File.join(python_tools_dir, "lib")
 node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
-goroot = File.join(go_tools_dir, "go")
-if libc_musl_system || openbsd_system || freebsd_arm64_system
-    goroot = ENV["GOROOT"]
-    if goroot.nil?
-        goroot = which("go")
-        if !goroot.nil?
-            # Go executable is located in the "bin" subdirectory of GOROOT.
-            goroot = File.dirname File.dirname goroot
-        end
-    end
-end
-
 # Environment variables
 ENV["GEM_HOME"] = ruby_tools_dir
 ENV["BUNDLE_PATH"] = ruby_tools_dir
 ENV["BUNDLE_BIN"] = ruby_tools_bin_bundle_dir
-ENV["GOROOT"] = goroot
 ENV["GOPATH"] = gopath
 ENV["GOBIN"] = gobin
 ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
