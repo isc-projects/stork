@@ -866,7 +866,7 @@ file go => [WGET, go_tools_dir] do
     sh "touch", "-c", go
     sh go, "version"
 end
-GO = require_manual_install_on(go, libc_musl_system, openbsd_system, freebsd_arm64_system)
+GO = require_manual_install_on(go, openbsd_system, freebsd_arm64_system)
 add_version_guard(GO, go_ver)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
@@ -908,7 +908,7 @@ file protoc => [WGET, UNZIP, go_tools_dir] do
     sh protoc, "--version"
     sh "touch", "-c", protoc
 end
-PROTOC = require_manual_install_on(protoc, libc_musl_system, freebsd_system, openbsd_system)
+PROTOC = require_manual_install_on(protoc, freebsd_system, openbsd_system)
 add_version_guard(PROTOC, protoc_ver)
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
