@@ -1,3 +1,120 @@
+Stork 1.18.0 released on 2024-08-07.
+
+* 437 [build] slawek
+
+    Changed the tool to build packages from "fpm" to "nfpm". This
+    enabled automated build of Stork packages for Alpine Linux.
+    (Gitlab #1114)
+
+* 436 [build] slawek
+
+    Changed the default Stork hook directory to be located outside
+    '/var' to be compatible with strict Linux security policies.
+    (Gitlab #1227)
+
+* 435 [bug] slawek
+
+    Added configurable timeouts for database read/write operations.
+    These settings may be useful to avoid the read or write hangs when
+    the server looses connectivity to the database.
+    (Gitlab #1436)
+
+* 434 [build] slawek
+
+    Fixed the security vulnerabilities reported by the GitHub Dependabot
+    and updated dependencies, including Go 1.22.5, PrimeNG 17.18.5, and
+    several Python and Ruby packages.
+    (Gitlab #1446)
+
+* 433 [bug] slawek
+
+    Fixed the permanent stopping of pullers on the temporary database
+    failure.
+    (Gitlab #1437)
+
+* 432 [func] marcin
+
+    Added global Kea parameters view accessible from the Kea daemon
+    tab.
+    (Gitlab #1449)
+
+* 431 [func] marcin
+
+    Display warning message when new machine requests registration.
+    (Gitlab #1413)
+
+* 430 [func] slawek
+
+    Minor improvements in the Stork agent register command. Added a CLI
+    flag to run the registration in non-interactive mode.
+    (Gitlab #1427)
+
+* 429 [doc] slawek
+
+    Updated a section about supported operating systems.
+    (Gitlab #1297)
+
+* 428 [bug] slawek, marcin, andrei
+
+    Prevented Stork tool from auto-discovering migration files. This
+    feature has never been necessary, but it could raise an error if the
+    Stork user can't access the searched directory.
+    (Gitlab #1439)
+
+* 427 [build] slawek
+
+    Upgraded the Kea version in system tests to 2.7.0.
+    (Gitlab #1350)
+
+* 426 [func] piotrek
+
+    Applied most recent PrimeNG theme Aura Blue. This updates
+    Stork UI. Also dark/light mode support was added.
+    (Gitlab #1379)
+
+* 425 [bug] marcin
+
+    Delete a subnet from shared network in Kea before deleting the
+    subnet. It is a workaround for the Kea issue #3455. Before this
+    change, a subnet could silently fail to delete from a Kea server
+    when it belonged to a shared network.
+    (Gitlab #1425)
+
+* 424 [bug] piotrek
+
+    Fixed a bug with displaying help tooltip in views like
+    Machines list or High Availability section of Kea app view.
+    The help tip was not displayed in proper location, or was
+    not displayed at all.
+    (Gitlab #1399)
+
+* 423 [doc] slawek
+
+    Described why Stork allocates so much virtual memory.
+    (Gitlab #1389)
+
+* 422 [func] slawek
+
+    The Stork server's Prometheus endpoint exports new metrics, such as
+    the number of total and assigned addresses and delegated prefixes.
+    (Gitlab #1375)
+
+* 421 [func] marcin
+
+    Shared networks can be selectively deleted using the Stork UI.
+    (Gitlab #1405)
+
+* 420 [func] marcin
+
+    Implemented a UI form for creating new shared networks.
+    (Gitlab #1403)
+
+* 419 [func] marcin
+
+    Added new page displaying communication issues between the server
+    and the monitored machines.
+    (Gitlab #1316)
+
 Stork 1.17.0 released on 2024-06-12.
 
 * 418 [bug] slawek

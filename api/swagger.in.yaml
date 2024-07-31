@@ -3,7 +3,7 @@ swagger: "2.0"
 info:
   description: An API for Stork
   title: Stork API
-  version: 1.17.0
+  version: 1.18.0
 consumes:
   - application/json
 produces:
