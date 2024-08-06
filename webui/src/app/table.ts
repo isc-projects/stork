@@ -389,12 +389,15 @@ export abstract class PrefilteredTable<
 
                 if (Array.isArray(filterMetadata)) {
                     for (let filter of filterMetadata) {
-                        if (filter.value !== null) {
+                        if ((filterKey != 'text' && filter.value !== null) || (filterKey == 'text' && filter.value)) {
                             return true
                         }
                     }
                 } else if (filterMetadata) {
-                    if (filterMetadata.value !== null) {
+                    if (
+                        (filterKey != 'text' && filterMetadata.value !== null) ||
+                        (filterKey == 'text' && filterMetadata.value)
+                    ) {
                         return true
                     }
                 }
