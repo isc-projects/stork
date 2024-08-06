@@ -12,7 +12,11 @@
     </div>
 </app-breadcrumbs>
 
-<p-dialog header="Change Machine Address" [(visible)]="changeMachineAddressDlgVisible" [style]="{ width: '30vw' }">
+<p-dialog
+    header="Change Machine Address"
+    [(visible)]="changeMachineAddressDlgVisible"
+    [style]="{ 'max-width': '100rem' }"
+>
     <p style="padding-bottom: 1em">
         Stork server will be using the new address and/or port to communicate with this machine. Please ensure that the
         agent running on the machine is using this new address and/or port to avoid communication problems.
