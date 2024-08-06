@@ -27,3 +27,8 @@
   border: 1px solid var(--surface-border)
   padding: 0.25rem 0.375rem
   margin: 0.25rem
+
+// Set min-width for PrimeNG progressbar value div.
+// For small progressbar values the width of the div is too small and the value cannot be read.
+:host ::ng-deep .p-progressbar-value
+  min-width: 1.25rem
