@@ -1,4 +1,4 @@
-<div style="margin: 0" class="grid">
+<div class="grid m-0">
     <app-rename-app-dialog
         [appId]="appTab.app.id"
         [appName]="appTab.app.name"
@@ -12,7 +12,7 @@
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
-                <div class="flex justify-content-between">
+                <div class="flex justify-content-between flex-wrap gap-2">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
                         <i
@@ -42,14 +42,8 @@
         </p-panel>
     </div>
     <div class="p-0 col-12">
-        <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" class="daemon-tabs" ngClass="daemon-tabs">
-            <p-tabPanel
-                *ngFor="let daemon of daemons; let i = index"
-                [selected]="i === activeTabIndex"
-                styleClass="daemon-tabs"
-                class="daemon-tabs"
-                ngClass="daemon-tabs"
-            >
+        <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" [scrollable]="true">
+            <p-tabPanel *ngFor="let daemon of daemons; let i = index">
                 <ng-template pTemplate="header">
                     <div>
                         <span class="pi {{ daemonStatusIconName(daemon) }}" style="font-weight: bold"></span>
