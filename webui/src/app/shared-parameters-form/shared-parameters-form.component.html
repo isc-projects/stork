@@ -14,126 +14,17 @@
                 controls: getParameterFormControls(parameterName)
             }"
         ></ng-container>
-        <ng-template
-            [formGroup]="formGroup"
-            #parameterRowFlex
-            let-parameterName="parameterName"
-            let-controls="controls"
+    </ng-container>
+    <ng-template [formGroup]="formGroup" #parameterRowFlex let-parameterName="parameterName" let-controls="controls">
+        <div
+            class="shared-parameter-wrapper flex flex-column column-gap-2 row-gap-4 pb-4 md:flex-row md:align-items-start"
+            [formGroupName]="parameterName"
         >
-            <div
-                class="shared-parameter-wrapper flex flex-column column-gap-2 row-gap-4 pb-4 md:flex-row md:align-items-start"
-                [formGroupName]="parameterName"
-            >
-                <div class="flex gap-2 md:block md:w-20-perc md:flex-none">
-                    <div class="font-semibold text-color-secondary flex-auto">
-                        {{ uncamelCase(parameterName) }}
-                    </div>
-                    <div class="flex-none md:hidden inline-flex gap-1 align-items-center text-color-secondary">
-                        <i
-                            class="pi"
-                            [class.pi-lock]="!controls.get('unlocked').value"
-                            [class.pi-lock-open]="controls.get('unlocked').value"
-                        ></i>
-                        <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
-                    </div>
+            <div class="flex gap-2 md:block md:w-20-perc md:flex-none">
+                <div class="font-semibold text-color-secondary flex-auto">
+                    {{ uncamelCase(parameterName) }}
                 </div>
-                <div class="md:flex-auto" formArrayName="values">
-                    <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
-                        <ng-container *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)">
-                            <div
-                                class="flex flex-column md:flex-row md:align-items-center gap-2"
-                                [class.mt-3]="index > 0"
-                            >
-                                <span
-                                    *ngIf="controls.get('unlocked').value && servers.length > index"
-                                    class="server-tag"
-                                >
-                                    <p-tag [severity]="getServerTagSeverity(index)">
-                                        {{ servers[index] }}
-                                    </p-tag>
-                                </span>
-                                <div class="flex flex-auto align-items-end">
-                                    <div [ngSwitch]="controls.data?.type" class="shared-parameter-form flex-auto">
-                                        <ng-container *ngSwitchCase="'string'">
-                                            <p-dropdown
-                                                *ngIf="controls.data?.values?.length > 0; else noValuesCase"
-                                                [autoDisplayFirst]="false"
-                                                [options]="controls.data.values"
-                                                [showClear]="true"
-                                                [formControlName]="index"
-                                                styleClass="w-full"
-                                                placeholder="(not specified)"
-                                            >
-                                            </p-dropdown>
-                                            <ng-template #noValuesCase>
-                                                <app-array-value-set-form
-                                                    *ngIf="controls.data?.isArray; else noArrayCase"
-                                                    [classFormControl]="control"
-                                                >
-                                                </app-array-value-set-form>
-                                                <ng-template #noArrayCase>
-                                                    <input pInputText [formControlName]="index" class="w-full" />
-                                                </ng-template>
-                                            </ng-template>
-                                        </ng-container>
-                                        <ng-container *ngSwitchCase="'boolean'">
-                                            <p-triStateCheckbox ngDefaultControl [formControlName]="index">
-                                            </p-triStateCheckbox>
-                                            {{ control.value === null ? 'unset' : control.value }}
-                                        </ng-container>
-                                        <ng-container *ngSwitchCase="'number'">
-                                            <p-inputNumber
-                                                ngDefaultControl
-                                                [min]="controls.data.min"
-                                                [max]="controls.data.max"
-                                                [minFractionDigits]="0"
-                                                [maxFractionDigits]="controls.data.fractionDigits"
-                                                styleClass="w-full"
-                                                locale="en-US"
-                                                [formControlName]="index"
-                                            >
-                                            </p-inputNumber>
-                                        </ng-container>
-                                        <ng-container *ngSwitchCase="'client-classes'">
-                                            <app-dhcp-client-class-set-form
-                                                [classFormControl]="control"
-                                                [clientClasses]="clientClasses"
-                                                [floatingPlaceholder]="false"
-                                            >
-                                            </app-dhcp-client-class-set-form>
-                                        </ng-container>
-                                        <ng-container *ngSwitchDefault> Something else </ng-container>
-                                    </div>
-                                    <button
-                                        pRipple
-                                        pButton
-                                        [disabled]="control.value === null"
-                                        label="Clear"
-                                        class="p-button-text p-button-sm hidden md:inline-flex md-no-padding flex-none ml-2"
-                                        type="button"
-                                        (click)="control.setValue(null)"
-                                    ></button>
-                                    <p-button
-                                        class="flex-none"
-                                        [text]="true"
-                                        icon="pi pi-times"
-                                        [disabled]="control.value === null"
-                                        title="Clear"
-                                        (click)="control.setValue(null)"
-                                        styleClass="md:hidden md-no-padding ml-2"
-                                        size="small"
-                                    />
-                                </div>
-                            </div>
-                            <small
-                                *ngIf="control.invalid && (control.dirty || control.touched)"
-                                class="p-error block mt-2 pr-4 md:pr-6 text-right"
-                                >{{ controls.data.invalidText }}
-                            </small>
-                        </ng-container>
-                    </ng-container>
-                </div>
-                <div class="hidden md:flex-none md:inline-flex gap-1 align-items-center text-color-secondary pt-2">
+                <div class="flex-none md:hidden inline-flex gap-1 align-items-center text-color-secondary">
                     <i
                         class="pi"
                         [class.pi-lock]="!controls.get('unlocked').value"
@@ -142,8 +33,106 @@
                     <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                 </div>
             </div>
-        </ng-template>
-    </ng-container>
+            <div class="md:flex-auto" formArrayName="values">
+                <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
+                    <ng-container *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)">
+                        <div class="flex flex-column md:flex-row md:align-items-center gap-2" [class.mt-3]="index > 0">
+                            <span *ngIf="controls.get('unlocked').value && servers.length > index" class="server-tag">
+                                <p-tag [severity]="getServerTagSeverity(index)">
+                                    {{ servers[index] }}
+                                </p-tag>
+                            </span>
+                            <div class="flex flex-auto align-items-end">
+                                <div [ngSwitch]="controls.data?.type" class="shared-parameter-form flex-auto">
+                                    <ng-container *ngSwitchCase="'string'">
+                                        <p-dropdown
+                                            *ngIf="controls.data?.values?.length > 0; else noValuesCase"
+                                            [autoDisplayFirst]="false"
+                                            [options]="controls.data.values"
+                                            [showClear]="true"
+                                            [formControlName]="index"
+                                            styleClass="w-full"
+                                            placeholder="(not specified)"
+                                        >
+                                        </p-dropdown>
+                                        <ng-template #noValuesCase>
+                                            <app-array-value-set-form
+                                                *ngIf="controls.data?.isArray; else noArrayCase"
+                                                [classFormControl]="control"
+                                            >
+                                            </app-array-value-set-form>
+                                            <ng-template #noArrayCase>
+                                                <input pInputText [formControlName]="index" class="w-full" />
+                                            </ng-template>
+                                        </ng-template>
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="'boolean'">
+                                        <p-triStateCheckbox ngDefaultControl [formControlName]="index">
+                                        </p-triStateCheckbox>
+                                        {{ control.value === null ? 'unset' : control.value }}
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="'number'">
+                                        <p-inputNumber
+                                            ngDefaultControl
+                                            [min]="controls.data.min"
+                                            [max]="controls.data.max"
+                                            [minFractionDigits]="0"
+                                            [maxFractionDigits]="controls.data.fractionDigits"
+                                            styleClass="w-full"
+                                            locale="en-US"
+                                            [formControlName]="index"
+                                        >
+                                        </p-inputNumber>
+                                    </ng-container>
+                                    <ng-container *ngSwitchCase="'client-classes'">
+                                        <app-dhcp-client-class-set-form
+                                            [classFormControl]="control"
+                                            [clientClasses]="clientClasses"
+                                            [floatingPlaceholder]="false"
+                                        >
+                                        </app-dhcp-client-class-set-form>
+                                    </ng-container>
+                                    <ng-container *ngSwitchDefault> Something else </ng-container>
+                                </div>
+                                <button
+                                    pRipple
+                                    pButton
+                                    [disabled]="control.value === null"
+                                    label="Clear"
+                                    class="p-button-text p-button-sm hidden md:inline-flex md-no-padding flex-none ml-2"
+                                    type="button"
+                                    (click)="control.setValue(null)"
+                                ></button>
+                                <p-button
+                                    class="flex-none"
+                                    [text]="true"
+                                    icon="pi pi-times"
+                                    [disabled]="control.value === null"
+                                    title="Clear"
+                                    (click)="control.setValue(null)"
+                                    styleClass="md:hidden md-no-padding ml-2"
+                                    size="small"
+                                />
+                            </div>
+                        </div>
+                        <small
+                            *ngIf="control.invalid && (control.dirty || control.touched)"
+                            class="p-error block mt-2 pr-4 md:pr-6 text-right"
+                            >{{ controls.data.invalidText }}
+                        </small>
+                    </ng-container>
+                </ng-container>
+            </div>
+            <div class="hidden md:flex-none md:inline-flex gap-1 align-items-center text-color-secondary pt-2">
+                <i
+                    class="pi"
+                    [class.pi-lock]="!controls.get('unlocked').value"
+                    [class.pi-lock-open]="controls.get('unlocked').value"
+                ></i>
+                <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
+            </div>
+        </div>
+    </ng-template>
 </div>
 <ng-template #noRowsBlock>
     <span>No parameters configured.</span>
