@@ -1,4 +1,4 @@
-<div style="margin: 0" class="grid">
+<div class="grid m-0">
     <app-rename-app-dialog
         [appId]="appTab.app.id"
         [appName]="appTab.app.name"
@@ -12,7 +12,7 @@
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
-                <div class="flex justify-content-between">
+                <div class="flex justify-content-between flex-wrap gap-2">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
                         <i
@@ -57,54 +57,47 @@
                 </ng-template>
 
                 <ng-template pTemplate="content">
-                    <div class="grid" style="padding: 0">
+                    <div class="grid p-0">
                         <div *ngIf="daemon.statusErred" class="col-6">
                             <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
                         </div>
 
                         <div class="col-12 xl:col-7">
                             <h3>Overview</h3>
-                            <table style="width: 100%">
-                                <tr>
-                                    <td>Version</td>
-                                    <td>{{ daemon.version }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="vertical-align: top">Uptime</td>
-                                    <td>{{ showDuration(daemon.uptime) }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="vertical-align: top">Last Reloaded At</td>
-                                    <td>{{ daemon.reloadedAt | localtime | placeholder: 'never' }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="vertical-align: top">Number of Zones</td>
-                                    <td>{{ daemon.zoneCount }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="vertical-align: top">Query Hit Ratio</td>
-                                    <td>
-                                        <span pTooltip="Hits: {{ daemon.queryHits }}, Misses: {{ daemon.queryMisses }}">
-                                            {{ daemon.queryHitRatio ? getQueryUtilization(daemon) + '%' : '?' }}
-                                            <i
-                                                *ngIf="getQueryUtilization(daemon) < 60"
-                                                class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-red-500"
-                                            ></i>
-                                            <i
-                                                *ngIf="
-                                                    getQueryUtilization(daemon) >= 60 &&
-                                                    getQueryUtilization(daemon) < 80
-                                                "
-                                                class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-orange-400"
-                                            ></i>
-                                            <i
-                                                *ngIf="getQueryUtilization(daemon) >= 80"
-                                                class="pi pi-check-circle text-2xl vertical-align-text-top text-green-500"
-                                            ></i>
-                                        </span>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div class="grid">
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
+                                <div class="col-12 sm:col-9">{{ daemon.version }}</div>
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
+                                <div class="col-12 sm:col-9">{{ showDuration(daemon.uptime) }}</div>
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
+                                <div class="col-12 sm:col-9">
+                                    {{ daemon.reloadedAt | localtime | placeholder: 'never' }}
+                                </div>
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Number of Zones</div>
+                                <div class="col-12 sm:col-9">
+                                    {{ daemon.zoneCount }}
+                                </div>
+                                <div class="col-12 sm:col-3 pb-0 font-medium">Query Hit Ratio</div>
+                                <div class="col-12 sm:col-9">
+                                    <span pTooltip="Hits: {{ daemon.queryHits }}, Misses: {{ daemon.queryMisses }}">
+                                        {{ daemon.queryHitRatio ? getQueryUtilization(daemon) + '%' : '?' }}
+                                        <i
+                                            *ngIf="getQueryUtilization(daemon) < 60"
+                                            class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-red-500"
+                                        ></i>
+                                        <i
+                                            *ngIf="
+                                                getQueryUtilization(daemon) >= 60 && getQueryUtilization(daemon) < 80
+                                            "
+                                            class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-orange-400"
+                                        ></i>
+                                        <i
+                                            *ngIf="getQueryUtilization(daemon) >= 80"
+                                            class="pi pi-check-circle text-2xl vertical-align-text-top text-green-500"
+                                        ></i>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                         <!-- Events -->
                         <div class="col-12 xl:col-5">

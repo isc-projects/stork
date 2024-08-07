@@ -1,13 +1,15 @@
 <table *ngIf="app" class="access-point-list">
     <tr>
-        <td class="access-point-list__label">Hosted on machine:</td>
+        <td class="access-point-list__label w-7rem lg:w-15rem">Hosted on machine:</td>
         <td>
             <a routerLink="/machines/{{ app.machine.id }}">{{ app.machine.address }}</a>
         </td>
     </tr>
     <tr *ngFor="let ap of app.accessPoints">
-        <td class="access-point-list__label p-capitalize-first vertical-align-bottom">{{ ap.type }} access point:</td>
-        <td>
+        <td class="access-point-list__label p-capitalize-first vertical-align-bottom w-7rem lg:w-15rem">
+            {{ ap.type }} access point:
+        </td>
+        <td class="word-break-all">
             {{ formatAddress(ap.address) }}:{{ ap.port }}
             <span
                 *ngIf="ap.useSecureProtocol"
@@ -19,6 +21,7 @@
                 class="access-point-list__icon--unsecured pi pi-lock-open"
                 pTooltip="unsecured connection"
             ></span>
+            <br class="block lg:hidden" />
             <ng-container *ngIf="canShowKeys">
                 Key:
                 <app-access-point-key [accessPointType]="ap.type" [appId]="app.id"></app-access-point-key>
