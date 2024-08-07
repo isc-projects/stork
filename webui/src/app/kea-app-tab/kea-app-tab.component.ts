@@ -82,7 +82,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         'libdhcp_ddns_tuning.so': 'ddns-tuning-ddns-tuning',
         'libdhcp_flex_id.so': 'flex-id-flexible-identifier-for-host-reservations',
         'libdhcp_flex_option.so': 'flex-option-flexible-option-actions-for-option-value-settings',
-        'libdhcp_gss_tsig.so': 'gss-tsig-sign-dns-updates-with-gss-tsig',
+        'libddns_gss_tsig.so': 'gss-tsig-sign-dns-updates-with-gss-tsig',
         'libdhcp_ha.so': 'ha-high-availability-outage-resilience-for-kea-servers',
         'libdhcp_host_cache.so': 'host-cache-host-cache-reservations-for-improved-performance',
         'libdhcp_host_cmds.so': 'host-cmds-host-commands',
@@ -99,6 +99,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
         'libdhcp_user_chk.so': 'user-chk-user-check',
         'libdhcp_ping_check.so': 'ping-check-so-ping-check',
+        'libdhcp_perfmon.so': 'perfmon',
     }
 
     /**

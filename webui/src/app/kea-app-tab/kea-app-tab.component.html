@@ -42,8 +42,8 @@
         </p-panel>
     </div>
     <div class="p-0 col-12">
-        <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" [scrollable]="true">
-            <p-tabPanel *ngFor="let daemon of daemons; let i = index">
+        <p-tabView [(activeIndex)]="activeTabIndex" styleClass="daemon-tabs" [scrollable]="true">
+            <p-tabPanel *ngFor="let daemon of daemons; let i = index" [selected]="i === activeTabIndex">
                 <ng-template pTemplate="header">
                     <div>
                         <span class="pi {{ daemonStatusIconName(daemon) }}" style="font-weight: bold"></span>
@@ -187,27 +187,18 @@
                                 <div class="grid">
                                     <div class="col-12 lg:col-7">
                                         <p-fieldset legend="Daemon Information">
-                                            <table style="width: 100%">
-                                                <tr>
-                                                    <td style="width: 10rem">Version</td>
-                                                    <td>{{ daemon.version }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="width: 10rem; vertical-align: top">Version Ext</td>
-                                                    <td
-                                                        [innerHTML]="daemon.extendedVersion"
-                                                        class="word-break-all"
-                                                    ></td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="width: 10rem; vertical-align: top">Uptime</td>
-                                                    <td>{{ showDuration(daemon.uptime) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="width: 10rem; vertical-align: top">Last Reloaded At</td>
-                                                    <td>{{ daemon.reloadedAt | localtime | placeholder: 'never' }}</td>
-                                                </tr>
-                                            </table>
+                                            <div class="grid">
+                                                <div class="col-12 sm:col-3 pb-0 font-medium">Version</div>
+                                                <div class="col-12 sm:col-9">{{ daemon.version }}</div>
+                                                <div class="col-12 sm:col-3 pb-0 font-medium">Version Ext</div>
+                                                <div class="col-12 sm:col-9" [innerHTML]="daemon.extendedVersion"></div>
+                                                <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
+                                                <div class="col-12 sm:col-9">{{ showDuration(daemon.uptime) }}</div>
+                                                <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
+                                                <div class="col-12 sm:col-9">
+                                                    {{ daemon.reloadedAt | localtime | placeholder: 'never' }}
+                                                </div>
+                                            </div>
                                         </p-fieldset>
                                     </div>
                                     <div class="col-12 lg:col-5">
@@ -278,7 +269,7 @@
                                     </ng-container>
                                     <div *ngIf="daemon.backends" class="col-12 lg:col-6">
                                         <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
-                                            <div *ngFor="let backend of daemon.backends">
+                                            <div *ngFor="let backend of daemon.backends" class="word-break-all">
                                                 <i class="fa fa-database text-gray-400"></i>
                                                 {{ databaseNameFromType(backend.backendType) }} ({{
                                                     backend.database

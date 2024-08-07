@@ -1,5 +1,5 @@
 :host ::ng-deep .config-review-pager .p-paginator
-  border: 0px
+  border: 0
   margin-top: 10px
 
 :host ::ng-deep .p-togglebutton .p-button-label
@@ -43,7 +43,7 @@
   // the right side. It causes the panel may be displayed out of the viewport.
   // The initial width is fixed to a value near to expected target value to
   // prevent this situation.
-  min-width: 20rem
+  min-width: 15rem
 
 :host ::ng-deep .p-dataview.p-dataview-list
   .p-dataview-content > .p-grid > div
@@ -52,3 +52,19 @@
     border-bottom: none
   .p-dataview-content > .p-grid > div:last-child
     padding-bottom: 1em
+
+::ng-deep .p-overlaypanel.checker-panel
+  @media screen and (max-width: 1199px)
+    // For screens more narrow than 1200px there is not enough space on the right to fit
+    // the overlaypanel. Force align it to the left edge of the viewport to prevent content
+    // overlapping.
+    left: 1rem !important
+
+  .p-overlaypanel-content
+    // Set max-width to prevent horizontal overflow on smaller screens.
+    max-width: calc(90vw - 1rem)
+
+  // Hide the default chevron pointing to the target,
+  // because it might be misleading for smaller screens.
+  &::after, &::before
+    content: none
