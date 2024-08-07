@@ -440,7 +440,7 @@ sudo ./stork-install-agent.sh</textarea
 <!-- Single machine tab -->
 <div *ngIf="activeTabIdx !== 0" class="p-component">
     <div class="grid" style="width: 100%">
-        <div class="col-12" style="display: flex">
+        <div class="col-12 flex gap-3 column-gap-8 row-gap-3 flex-wrap">
             <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
                 <i class="fa fa-server pr-2"></i> {{ machineTab.machine.address
                 }}<span class="text-primary-200">:{{ machineTab.machine.agentPort }}</span>
@@ -451,7 +451,7 @@ sudo ./stork-install-agent.sh</textarea
                 ></i>
             </div>
 
-            <div style="margin-left: 10em">
+            <div>
                 <p-message
                     *ngIf="machineTab.machine.error"
                     severity="error"
@@ -460,151 +460,153 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </div>
 
-        <div class="col-4">
-            <h3>System Information</h3>
-            <table [class.text-color-secondary]="machineTab.machine.error">
-                <tr>
-                    <td>Address</td>
-                    <td>{{ machineTab.machine.address }}:{{ machineTab.machine.agentPort }}</td>
-                </tr>
-                <tr>
-                    <td>Hostname</td>
-                    <td>{{ machineTab.machine.hostname }}</td>
-                </tr>
-                <tr>
-                    <td>Agent Version</td>
-                    <td>{{ machineTab.machine.agentVersion }}</td>
-                </tr>
-                <tr>
-                    <td>CPUs</td>
-                    <td>{{ machineTab.machine.cpus }}</td>
-                </tr>
-                <tr>
-                    <td class="flex align-items-center justify-content-between">
-                        <span>CPUs Load</span>
-                        <app-help-tip subject="CPU Load" id="cpu-load-2-help-button">
-                            <p>
-                                These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes.
-                                This is the usual syntax used by <b>top</b> command.
-                            </p>
+        <div class="col-12 xl:col-7 grid">
+            <div class="col-12 md:col-6">
+                <h3>System Information</h3>
+                <table [class.text-color-secondary]="machineTab.machine.error">
+                    <tr>
+                        <td>Address</td>
+                        <td>{{ machineTab.machine.address }}:{{ machineTab.machine.agentPort }}</td>
+                    </tr>
+                    <tr>
+                        <td>Hostname</td>
+                        <td>{{ machineTab.machine.hostname }}</td>
+                    </tr>
+                    <tr>
+                        <td>Agent Version</td>
+                        <td>{{ machineTab.machine.agentVersion }}</td>
+                    </tr>
+                    <tr>
+                        <td>CPUs</td>
+                        <td>{{ machineTab.machine.cpus }}</td>
+                    </tr>
+                    <tr>
+                        <td class="flex align-items-center justify-content-between">
+                            <span>CPUs Load</span>
+                            <app-help-tip subject="CPU Load" id="cpu-load-2-help-button">
+                                <p>
+                                    These three numbers are CPU load averages for last 1 minute, 5 minutes and 15
+                                    minutes. This is the usual syntax used by <b>top</b> command.
+                                </p>
 
-                            <p>
-                                High load averages imply that a system is overloaded. A value of 1.00 means one CPU core
-                                is fully utilized. For example, if your system has load of 1.22 and you have only 1 CPU
-                                core, the system is overloaded. However, if there are 4 cores, you system is working at
-                                a bit over 30% of its capacity.
-                            </p>
-                        </app-help-tip>
-                    </td>
-                    <td>{{ machineTab.machine.cpusLoad }}</td>
-                </tr>
-                <tr>
-                    <td>Memory</td>
-                    <td>{{ machineTab.machine.memory || '?' }} GiB</td>
-                </tr>
-                <tr>
-                    <td>Used Memory</td>
-                    <td>{{ machineTab.machine.usedMemory }} %</td>
-                </tr>
-                <tr>
-                    <td>Uptime</td>
-                    <td>{{ machineTab.machine.uptime || '?' }} days</td>
-                </tr>
-                <tr>
-                    <td>OS</td>
-                    <td>{{ machineTab.machine.os }}</td>
-                </tr>
-                <tr>
-                    <td>Platform Family</td>
-                    <td>{{ machineTab.machine.platformFamily }}</td>
-                </tr>
-                <tr>
-                    <td>Platform</td>
-                    <td>{{ machineTab.machine.platform }}</td>
-                </tr>
-                <tr>
-                    <td>Platform Version</td>
-                    <td>{{ machineTab.machine.platformVersion }}</td>
-                </tr>
-                <tr>
-                    <td>Kernel Version</td>
-                    <td>{{ machineTab.machine.kernelVersion }}</td>
-                </tr>
-                <tr>
-                    <td>Kernel Arch</td>
-                    <td>{{ machineTab.machine.kernelArch }}</td>
-                </tr>
-                <tr>
-                    <td>Virtualization Role</td>
-                    <td>{{ machineTab.machine.virtualizationRole }}</td>
-                </tr>
-                <tr *ngIf="machineTab.machine.virtualizationRole === 'guest'">
-                    <td>Virtualization System</td>
-                    <td>{{ machineTab.machine.virtualizationSystem }}</td>
-                </tr>
-                <tr>
-                    <td class="flex align-items-center justify-content-between">
-                        <span>Use HTTP credentials</span>
-                        <app-help-tip subject="Use HTTP credentials">
-                            <p>
-                                Indicates if the Stork Agent includes the HTTP credentials (i.e., Basic Auth user and
-                                password) in the requests sent to the Kea Control Agent.
-                            </p>
-                            <p>
-                                The credentials are included only in the requests to the hosts specified in the
-                                configuration file. Other hosts don't receive any authorization data.
-                            </p>
-                        </app-help-tip>
-                    </td>
-                    <td>
-                        {{ !!machineTab.machine.agentUsesHttpCredentials }}
-                        <i class="pi pi-key" *ngIf="machineTab.machine.agentUsesHttpCredentials"></i>
-                    </td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Host ID</td>
-                    <td>{{ machineTab.machine.hostID }}</td>
-                </tr>
-                <tr>
-                    <td>Last Visited</td>
-                    <td>{{ machineTab.machine.lastVisitedAt | localtime | placeholder: 'never' }}</td>
-                </tr>
-            </table>
+                                <p>
+                                    High load averages imply that a system is overloaded. A value of 1.00 means one CPU
+                                    core is fully utilized. For example, if your system has load of 1.22 and you have
+                                    only 1 CPU core, the system is overloaded. However, if there are 4 cores, you system
+                                    is working at a bit over 30% of its capacity.
+                                </p>
+                            </app-help-tip>
+                        </td>
+                        <td>{{ machineTab.machine.cpusLoad }}</td>
+                    </tr>
+                    <tr>
+                        <td>Memory</td>
+                        <td>{{ machineTab.machine.memory || '?' }} GiB</td>
+                    </tr>
+                    <tr>
+                        <td>Used Memory</td>
+                        <td>{{ machineTab.machine.usedMemory }} %</td>
+                    </tr>
+                    <tr>
+                        <td>Uptime</td>
+                        <td>{{ machineTab.machine.uptime || '?' }} days</td>
+                    </tr>
+                    <tr>
+                        <td>OS</td>
+                        <td>{{ machineTab.machine.os }}</td>
+                    </tr>
+                    <tr>
+                        <td>Platform Family</td>
+                        <td>{{ machineTab.machine.platformFamily }}</td>
+                    </tr>
+                    <tr>
+                        <td>Platform</td>
+                        <td>{{ machineTab.machine.platform }}</td>
+                    </tr>
+                    <tr>
+                        <td>Platform Version</td>
+                        <td>{{ machineTab.machine.platformVersion }}</td>
+                    </tr>
+                    <tr>
+                        <td>Kernel Version</td>
+                        <td>{{ machineTab.machine.kernelVersion }}</td>
+                    </tr>
+                    <tr>
+                        <td>Kernel Arch</td>
+                        <td>{{ machineTab.machine.kernelArch }}</td>
+                    </tr>
+                    <tr>
+                        <td>Virtualization Role</td>
+                        <td>{{ machineTab.machine.virtualizationRole }}</td>
+                    </tr>
+                    <tr *ngIf="machineTab.machine.virtualizationRole === 'guest'">
+                        <td>Virtualization System</td>
+                        <td>{{ machineTab.machine.virtualizationSystem }}</td>
+                    </tr>
+                    <tr>
+                        <td class="flex align-items-center justify-content-between">
+                            <span>Use HTTP credentials</span>
+                            <app-help-tip subject="Use HTTP credentials">
+                                <p>
+                                    Indicates if the Stork Agent includes the HTTP credentials (i.e., Basic Auth user
+                                    and password) in the requests sent to the Kea Control Agent.
+                                </p>
+                                <p>
+                                    The credentials are included only in the requests to the hosts specified in the
+                                    configuration file. Other hosts don't receive any authorization data.
+                                </p>
+                            </app-help-tip>
+                        </td>
+                        <td>
+                            {{ !!machineTab.machine.agentUsesHttpCredentials }}
+                            <i class="pi pi-key" *ngIf="machineTab.machine.agentUsesHttpCredentials"></i>
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Host ID</td>
+                        <td>{{ machineTab.machine.hostID }}</td>
+                    </tr>
+                    <tr>
+                        <td>Last Visited</td>
+                        <td>{{ machineTab.machine.lastVisitedAt | localtime | placeholder: 'never' }}</td>
+                    </tr>
+                </table>
 
-            <button
-                *ngIf="machineTab.machine.authorized"
-                type="button"
-                pButton
-                label="Get Latest State"
-                id="get-latest-state-button"
-                icon="pi pi-refresh"
-                class="mt-3 mr-2 mb-2"
-                (click)="refreshMachineState(machineTab)"
-            ></button>
-            <button
-                *ngIf="machineTab.machine.authorized"
-                type="button"
-                pButton
-                label="Dump Troubleshooting Data"
-                id="dump-single-machine"
-                icon="pi pi-download"
-                title="Download data archive for troubleshooting purposes"
-                class="mt-3 mr-2 mb-2 p-button-secondary"
-                (click)="downloadDump(machineTab.machine)"
-            ></button>
-        </div>
-        <div class="col-4">
-            <h3>Applications</h3>
-            <div *ngFor="let app of machineTab.machine.apps">
-                <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
-                <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
-                <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
-                <br />
-                <app-app-daemons-status [app]="app"></app-app-daemons-status>
+                <button
+                    *ngIf="machineTab.machine.authorized"
+                    type="button"
+                    pButton
+                    label="Get Latest State"
+                    id="get-latest-state-button"
+                    icon="pi pi-refresh"
+                    class="mt-3 mr-2 mb-2"
+                    (click)="refreshMachineState(machineTab)"
+                ></button>
+                <button
+                    *ngIf="machineTab.machine.authorized"
+                    type="button"
+                    pButton
+                    label="Dump Troubleshooting Data"
+                    id="dump-single-machine"
+                    icon="pi pi-download"
+                    title="Download data archive for troubleshooting purposes"
+                    class="mt-3 mr-2 mb-2 p-button-secondary"
+                    (click)="downloadDump(machineTab.machine)"
+                ></button>
+            </div>
+            <div class="col-12 md:col-6">
+                <h3>Applications</h3>
+                <div *ngFor="let app of machineTab.machine.apps">
+                    <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
+                    <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
+                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
+                    <br />
+                    <app-app-daemons-status [app]="app"></app-app-daemons-status>
+                </div>
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-12 xl:col-5">
             <h3>Events</h3>
             <app-events-panel #eventsTable [filter]="{ machine: machineTab.machine.id }"></app-events-panel>
         </div>
