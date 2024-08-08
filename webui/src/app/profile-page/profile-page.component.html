@@ -32,55 +32,55 @@
     <div class="col-fixed ml-2" style="width: 200px">
         <app-settings-menu></app-settings-menu>
     </div>
-    <div class="col ml-2">
+    <div class="col-12 md:col ml-2">
         <p-panel header="{{ this.profilePanelHeader }}">
-            <div class="grid">
-                <div class="col-2">
+            <div class="grid word-break-all">
+                <div class="col-12 sm:col-3">
                     <b>ID:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ currentUser.id }}
                 </div>
-                <div class="col-2">
+                <div class="col-12 sm:col-3">
                     <b>Login:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ currentUser.login }}
                 </div>
-                <div class="col-2">
+                <div class="col-12 sm:col-3">
                     <b>Email:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ currentUser.email | placeholder }}
                 </div>
-                <div class="col-2">
+                <div class="col-12 sm:col-3">
                     <b>Last name:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ currentUser.lastname | placeholder }}
                 </div>
-                <div class="col-2">
+                <div class="col-12 sm:col-3">
                     <b>First name:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ currentUser.name | placeholder }}
                 </div>
-                <div class="col-2">
+                <div class="col-12 sm:col-3">
                     <b>Group:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ groupName | placeholder }}
                 </div>
-                <div class="col-2">
+                <div class="col-12 sm:col-3">
                     <b>Authentication:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ currentUser.authenticationMethodId }}
                 </div>
-                <div class="col-2">
+                <div class="col-12 sm:col-3">
                     <b>External ID:</b>
                 </div>
-                <div class="col-10">
+                <div class="col-12 sm:col-9">
                     {{ currentUser.externalId | placeholder }}
                 </div>
             </div>
