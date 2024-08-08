@@ -66,7 +66,7 @@
 </p-dialog>
 
 <p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
-    <p style="margin: 10px 10px 10px 0; width: 38em">
+    <p style="margin: 10px 10px 10px 0; max-width: 38em">
         Copy these commands and paste them into a terminal on a machine where Stork Agent is going to be installed.
         <br />
         For more details check
@@ -86,12 +86,13 @@ sudo ./stork-install-agent.sh</textarea
             pButton
             icon="pi pi-copy"
             pTooltip="Copy commands to clipboard"
+            class="flex-none"
         ></button>
     </div>
-    <p style="margin: 10px 10px 10px 0; width: 38em">
+    <p style="margin: 10px 10px 10px 0; max-width: 38em">
         During agent installation you will be prompted for a server token.
     </p>
-    <p style="margin: 10px 10px 10px 0; width: 40em">
+    <p style="margin: 10px 10px 10px 0; max-width: 40em">
         <b>Server token</b> value is
         <input [value]="serverToken" class="monospace server-token" size="32" readonly="" #serverTokenInput />
 
@@ -114,10 +115,10 @@ sudo ./stork-install-agent.sh</textarea
             (click)="regenerateServerToken()"
         ></button>
     </p>
-    <p style="margin: 0 10px 10px 0; width: 38em">
+    <p style="margin: 0 10px 10px 0; max-width: 38em">
         Providing the token will cause the new machine to be automatically added and authorized in the Stork Server.
     </p>
-    <p style="margin: 0 10px 10px 0; width: 38em">
+    <p style="margin: 0 10px 10px 0; max-width: 38em">
         If no token value is provided (just Enter is hit) then this new machine will be waiting for authorization. To
         see unauthorized machines select the <b>Unauthorized</b> button at the top right.
     </p>
