@@ -138,7 +138,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
 
         expect(component.autoExpand).toBe('none')
         let expectedButtonCount = fixture.debugElement
-            .queryAll(By.css('.panel-header__entry'))
+            .queryAll(By.css('.p-panel-header > div:not(.p-panel-icons) > *'))
             .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
             .filter((t) => t === 'Expand').length
         expect(expectedButtonCount).toBe(1)
@@ -148,7 +148,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         await fixture.whenRenderingDone()
         expect(component.autoExpand).toBe('all')
         expectedButtonCount = fixture.debugElement
-            .queryAll(By.css('.panel-header__entry'))
+            .queryAll(By.css('.p-panel-header > div:not(.p-panel-icons) > *'))
             .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
             .filter((t) => t === 'Collapse').length
         expect(expectedButtonCount).toBe(1)
@@ -158,7 +158,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         await fixture.whenRenderingDone()
         expect(component.autoExpand).toBe('none')
         expectedButtonCount = fixture.debugElement
-            .queryAll(By.css('.panel-header__entry'))
+            .queryAll(By.css('.p-panel-header > div:not(.p-panel-icons) > *'))
             .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
             .filter((t) => t === 'Expand').length
         expect(expectedButtonCount).toBe(1)

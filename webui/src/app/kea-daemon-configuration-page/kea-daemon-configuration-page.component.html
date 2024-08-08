@@ -5,14 +5,47 @@
 </app-breadcrumbs>
 
 <p-panel>
-    <p-header>
-        <div class="p-helper-clearfix">
+    <ng-template pTemplate="header">
+        <div class="flex flex-wrap gap-2 w-full justify-content-end">
             <!-- Title -->
-            <span class="p-panel-title panel-header__title">JSON</span>
-            <!-- Buttons are in reversed order and are aligned to the right. -->
+            <span class="panel-header__title flex-auto font-semibold">JSON</span>
+
+            <!-- Collapse/expand button -->
+            <button
+                pButton
+                class="flex-none"
+                type="button"
+                icon="fa fa-expand-alt"
+                label="Expand"
+                (click)="onClickToggleNodes()"
+                *ngIf="autoExpand === 'none'"
+                [disabled]="configuration === null"
+            ></button>
+            <button
+                pButton
+                class="flex-none"
+                type="button"
+                icon="fa fa-compress-alt"
+                label="Collapse"
+                (click)="onClickToggleNodes()"
+                *ngIf="autoExpand === 'all'"
+                [disabled]="configuration === null"
+            ></button>
+
+            <!-- Refresh button -->
+            <button
+                pButton
+                class="flex-none"
+                type="button"
+                icon="fa fa-sync"
+                label="Refresh"
+                (click)="onClickRefresh()"
+                [disabled]="configuration === null && !failedFetch"
+            ></button>
+
             <!-- Download button -->
             <a
-                class="panel-header__entry"
+                class="flex-none"
                 type="button"
                 icon="fa fa-download"
                 [download]="downloadFilename"
@@ -26,41 +59,8 @@
                     [disabled]="configuration === null"
                 ></button>
             </a>
-
-            <!-- Refresh button -->
-            <button
-                pButton
-                class="panel-header__entry"
-                type="button"
-                icon="fa fa-sync"
-                label="Refresh"
-                (click)="onClickRefresh()"
-                [disabled]="configuration === null && !failedFetch"
-            ></button>
-
-            <!-- Collapse/expand button -->
-            <button
-                pButton
-                class="panel-header__entry"
-                type="button"
-                icon="fa fa-expand-alt"
-                label="Expand"
-                (click)="onClickToggleNodes()"
-                *ngIf="autoExpand === 'none'"
-                [disabled]="configuration === null"
-            ></button>
-            <button
-                pButton
-                class="panel-header__entry"
-                type="button"
-                icon="fa fa-compress-alt"
-                label="Collapse"
-                (click)="onClickToggleNodes()"
-                *ngIf="autoExpand === 'all'"
-                [disabled]="configuration === null"
-            ></button>
         </div>
-    </p-header>
+    </ng-template>
 
     <!-- JSON viewer -->
     <app-json-tree-root
