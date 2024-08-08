@@ -37,7 +37,11 @@
                 <ng-container *ngFor="let control of controls.get('values').controls; let index = index">
                     <ng-container *ngIf="index === 0 || (controls.get('unlocked').value && index < servers.length)">
                         <div class="flex flex-column md:flex-row md:align-items-center gap-2" [class.mt-3]="index > 0">
-                            <span *ngIf="controls.get('unlocked').value && servers.length > index" class="server-tag">
+                            <span
+                                *ngIf="controls.get('unlocked').value && servers.length > index"
+                                class="server-tag"
+                                [class.boolean-form]="controls.data?.type === 'boolean'"
+                            >
                                 <p-tag [severity]="getServerTagSeverity(index)">
                                     {{ servers[index] }}
                                 </p-tag>

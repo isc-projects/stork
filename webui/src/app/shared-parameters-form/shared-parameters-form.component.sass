@@ -44,6 +44,10 @@
         // flex-basis is set to 10rem.
         flex: 1 0 10rem
 
+        &:not(.boolean-form)
+            // Prevent from shrinking more than the content of the tag.
+            max-width: fit-content
+
 // Utility class, takes 20% of available width.
 .w-20-perc
     width: 20%
