@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
-import { MessageService } from 'primeng/api'
+import { MenuItem, MessageService } from 'primeng/api'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ServicesService } from '../backend/api/api'
@@ -20,14 +20,7 @@ import { KeaDaemonConfig } from '../backend'
     styleUrls: ['./kea-daemon-configuration-page.component.sass'],
 })
 export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
-    breadcrumbs = [
-        { label: 'Services' },
-        { label: 'Kea Apps', routerLink: '/apps/kea/all' },
-        { label: 'App' },
-        { label: 'Daemons' },
-        { label: 'Daemon' },
-        { label: 'Configuration' },
-    ]
+    breadcrumbs: MenuItem[] = []
 
     // Variables to store values for getters. See specific getter for documentation.
     private _autoExpand: 'none' | 'all' = 'none'
@@ -72,6 +65,15 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
      * application list.
      */
     ngOnInit(): void {
+        this.breadcrumbs = [
+            { label: 'Services' },
+            { label: 'Kea Apps', routerLink: '/apps/kea/all' },
+            { label: 'App' },
+            { label: 'Daemons' },
+            { label: 'Daemon' },
+            { label: 'Configuration' },
+        ]
+
         // Friendly names of daemons
         const DMAP = {
             dhcp4: 'DHCPv4',
@@ -93,10 +95,14 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
                 this._downloadFilename = `${app.name}_${friendlyName}.json`
 
                 // Breadcrumbs
-                this.breadcrumbs[2]['label'] = app.name
-                this.breadcrumbs[2]['routerLink'] = `/apps/kea/${app.id}`
-                this.breadcrumbs[4]['label'] = friendlyName
-                this.breadcrumbs[4]['routerLink'] = `/apps/kea/${app.id}?daemon=${daemonName}`
+                this.breadcrumbs = [
+                    { label: 'Services' },
+                    { label: 'Kea Apps', routerLink: '/apps/kea/all' },
+                    { label: app.name, routerLink: `/apps/kea/${app.id}` },
+                    { label: 'Daemons' },
+                    { label: friendlyName, routerLink: `/apps/kea/${app.id}?daemon=${daemonName}` },
+                    { label: 'Configuration' },
+                ]
             })
         )
 
