@@ -33,66 +33,55 @@
 <ng-container [ngSwitch]="formState">
     <ng-container *ngSwitchCase="'success'">
         <form [formGroup]="settingsForm">
-            <div class="grid">
-                <div class="col-6">
-                    <p-fieldset legend="Security">
+            <div class="w-full max-w-50rem">
+                <p-fieldset legend="Security">
+                    <div class="flex align-items-center">
+                        <p-checkbox
+                            formControlName="enableMachineRegistration"
+                            [binary]="true"
+                            inputId="machine-registration-checkbox"
+                        />
+                        <label class="ml-2" for="machine-registration-checkbox">Enable machine registration</label>
+                        <app-help-tip subject="Enable Machine Registration">
+                            New machines begin registration in the Stork server using a dedicated REST API endpoint. The
+                            same endpoint is used for re-registering already connected machines when they are restarted.
+                            Since new machines are registered rarely it is practical to disable this option to prevent
+                            malicious registration attempts of the fake machines. An administrator can re-enable it at
+                            any time when new registrations are expected. Disabling this option does not affect an
+                            ability to re-register existing machines.
+                        </app-help-tip>
+                    </div>
+                </p-fieldset>
+                <p-fieldset legend="Intervals">
+                    <div *ngFor="let setting of intervalSettings" class="my-2 flex flex-column">
+                        <label [for]="setting.formControlName"> {{ setting.title }} (in seconds): </label>
                         <div class="flex align-items-center">
-                            <p-checkbox
-                                formControlName="enableMachineRegistration"
-                                [binary]="true"
-                                inputId="machine-registration-checkbox"
-                            />
-                            <label class="ml-2" for="machine-registration-checkbox">Enable machine registration</label>
-                            <app-help-tip subject="Enable Machine Registration">
-                                New machines begin registration in the Stork server using a dedicated REST API endpoint.
-                                The same endpoint is used for re-registering already connected machines when they are
-                                restarted. Since new machines are registered rarely it is practical to disable this
-                                option to prevent malicious registration attempts of the fake machines. An administrator
-                                can re-enable it at any time when new registrations are expected. Disabling this option
-                                does not affect an ability to re-register existing machines.
-                            </app-help-tip>
+                            <input
+                                type="number"
+                                [formControlName]="setting.formControlName"
+                                [id]="setting.formControlName"
+                                class="w-full"
+                            /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                         </div>
-                    </p-fieldset>
-                </div>
-                <div class="col-6"></div>
-                <div class="col-6">
-                    <p-fieldset legend="Intervals">
-                        <div *ngFor="let setting of intervalSettings" class="my-2 flex flex-column">
-                            <label [for]="setting.formControlName"> {{ setting.title }} (in seconds): </label>
-                            <div class="flex align-items-center">
-                                <input
-                                    type="number"
-                                    [formControlName]="setting.formControlName"
-                                    [id]="setting.formControlName"
-                                    class="w-full"
-                                /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
-                            </div>
-                            <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">
-                                It is required.
-                            </div>
-                            <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">
-                                It must not be negative.
-                            </div>
+                        <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">It is required.</div>
+                        <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">
+                            It must not be negative.
                         </div>
-                    </p-fieldset>
-                </div>
-                <div class="col-6"></div>
-
-                <div class="col-6">
-                    <p-fieldset legend="Grafana & Prometheus">
-                        <div *ngFor="let setting of urlSettings" class="my-2 flex flex-column">
-                            <label [for]="setting.formControlName">{{ setting.title }}:</label>
-                            <div class="flex align-items-center">
-                                <input
-                                    type="url"
-                                    [formControlName]="setting.formControlName"
-                                    [id]="setting.formControlName"
-                                    class="w-full"
-                                /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
-                            </div>
+                    </div>
+                </p-fieldset>
+                <p-fieldset legend="Grafana & Prometheus">
+                    <div *ngFor="let setting of urlSettings" class="my-2 flex flex-column">
+                        <label [for]="setting.formControlName">{{ setting.title }}:</label>
+                        <div class="flex align-items-center">
+                            <input
+                                type="url"
+                                [formControlName]="setting.formControlName"
+                                [id]="setting.formControlName"
+                                class="w-full"
+                            /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                         </div>
-                    </p-fieldset>
-                </div>
+                    </div>
+                </p-fieldset>
             </div>
         </form>
 
