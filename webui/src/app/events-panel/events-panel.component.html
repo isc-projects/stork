@@ -1,75 +1,67 @@
 <!-- filter bar -->
-<div *ngIf="isTable" style="margin: 10px 0; display: flex; flex-wrap: wrap">
-    <div style="width: 20em">
+<div *ngIf="isTable" class="my-2 flex flex-wrap gap-2 column-gap-5">
+    <div class="w-20rem">
         <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)"></p-selectButton>
     </div>
 
-    <div style="display: flex">
-        <div style="margin: 0 10px 0 30px; padding-top: 5px">Machine:</div>
-        <div>
-            <p-dropdown
-                [options]="machines"
-                [(ngModel)]="selectedMachine"
-                optionLabel="address"
-                id="machines-events"
-                placeholder="any"
-                showClear="true"
-                tooltip="Show events related to selected machine"
-                [style]="{ width: '12em' }"
-                (onChange)="onMachineSelect($event)"
-            ></p-dropdown>
-        </div>
+    <div class="flex align-items-center gap-2 flex-none">
+        <div>Machine:</div>
+        <p-dropdown
+            [options]="machines"
+            [(ngModel)]="selectedMachine"
+            optionLabel="address"
+            id="machines-events"
+            placeholder="any"
+            showClear="true"
+            tooltip="Show events related to selected machine"
+            [style]="{ width: '12em' }"
+            (onChange)="onMachineSelect($event)"
+        ></p-dropdown>
     </div>
 
-    <div style="display: flex">
-        <div style="margin: 0 10px 0 30px; padding-top: 5px">App Type:</div>
-        <div>
-            <p-dropdown
-                [options]="appTypes"
-                [(ngModel)]="selectedAppType"
-                optionLabel="name"
-                id="app-events"
-                placeholder="any"
-                showClear="true"
-                tooltip="Show events related to selected app type"
-                [style]="{ width: '10em' }"
-                (onChange)="onAppTypeSelect($event)"
-            ></p-dropdown>
-        </div>
+    <div class="flex align-items-center gap-2 flex-none">
+        <div>App Type:</div>
+        <p-dropdown
+            [options]="appTypes"
+            [(ngModel)]="selectedAppType"
+            optionLabel="name"
+            id="app-events"
+            placeholder="any"
+            showClear="true"
+            tooltip="Show events related to selected app type"
+            [style]="{ width: '10em' }"
+            (onChange)="onAppTypeSelect($event)"
+        ></p-dropdown>
     </div>
 
-    <div style="display: flex">
-        <div style="margin: 0 10px 0 30px; padding-top: 5px">Daemon:</div>
-        <div>
-            <p-dropdown
-                [options]="daemonTypes"
-                [(ngModel)]="selectedDaemonType"
-                optionLabel="name"
-                id="daemon-events"
-                placeholder="any"
-                showClear="true"
-                tooltip="Show events related to selected daemon type"
-                [style]="{ width: '10em' }"
-                (onChange)="onDaemonTypeSelect($event)"
-            ></p-dropdown>
-        </div>
+    <div class="flex align-items-center gap-2 flex-none">
+        <div>Daemon:</div>
+        <p-dropdown
+            [options]="daemonTypes"
+            [(ngModel)]="selectedDaemonType"
+            optionLabel="name"
+            id="daemon-events"
+            placeholder="any"
+            showClear="true"
+            tooltip="Show events related to selected daemon type"
+            [style]="{ width: '10em' }"
+            (onChange)="onDaemonTypeSelect($event)"
+        ></p-dropdown>
     </div>
 
-    <div style="display: flex" *ngIf="auth.superAdmin()">
-        <div style="margin: 0 10px 0 30px; padding-top: 5px">User:</div>
-        <div>
-            <p-dropdown
-                [options]="users"
-                [(ngModel)]="selectedUser"
-                optionLabel="login"
-                id="user-events"
-                placeholder="any"
-                showClear="true"
-                tooltip="Show events related to selected user"
-                [style]="{ width: '10em' }"
-                (onChange)="onUserSelect($event)"
-            ></p-dropdown>
-        </div>
+    <div class="flex align-items-center gap-2 flex-none" *ngIf="auth.superAdmin()">
+        <div>User:</div>
+        <p-dropdown
+            [options]="users"
+            [(ngModel)]="selectedUser"
+            optionLabel="login"
+            id="user-events"
+            placeholder="any"
+            showClear="true"
+            tooltip="Show events related to selected user"
+            [style]="{ width: '10em' }"
+            (onChange)="onUserSelect($event)"
+        ></p-dropdown>
     </div>
 </div>
 
