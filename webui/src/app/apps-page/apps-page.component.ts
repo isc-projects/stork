@@ -146,8 +146,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
 
                     if (this.appsTable) {
                         this.refreshAppsList(this.appsTable)
-                    } else {
-                        this.loadApps({ first: 0, rows: 10 })
                     }
                 }
 
