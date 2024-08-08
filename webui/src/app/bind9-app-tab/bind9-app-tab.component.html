@@ -58,7 +58,7 @@
 
                 <ng-template pTemplate="content">
                     <div class="grid p-0">
-                        <div *ngIf="daemon.statusErred" class="col-6">
+                        <div *ngIf="daemon.statusErred" class="col-12 sm:col-10 md:col-6">
                             <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
                         </div>
 
