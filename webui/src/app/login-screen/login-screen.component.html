@@ -21,27 +21,50 @@
                 ></p-progressSpinner>
                 <form [formGroup]="loginForm" *ngIf="authenticationMethods">
                     <div class="login-screen__authentication-selector" *ngIf="authenticationMethods.length > 1">
-                        <p-selectButton
-                            name="authenticationMethod"
-                            id="authenticationMethod"
-                            formControlName="authenticationMethod"
-                            [options]="authenticationMethods"
-                            [(ngModel)]="authenticationMethod"
-                        >
-                            <ng-template let-item pTemplate>
-                                <img
-                                    src="/assets/authentication-methods/{{ item.id }}.png"
-                                    (error)="onMissingIcon($event)"
-                                />
-                                <span>{{ item.name }}</span>
-                            </ng-template>
-                        </p-selectButton>
+                        <div class="p-float-label w-full">
+                            <p-dropdown
+                                [options]="authenticationMethods"
+                                formControlName="authenticationMethod"
+                                optionLabel="name"
+                                name="authenticationMethod"
+                                inputId="authenticationMethod"
+                                styleClass="w-full"
+                            >
+                                <ng-template let-item pTemplate="item">
+                                    <div class="flex align-items-center gap-2">
+                                        <img
+                                            src="/assets/authentication-methods/{{ item.id }}.png"
+                                            (error)="onMissingIcon($event)"
+                                        />
+                                        <div>{{ item.name }}</div>
+                                    </div>
+                                </ng-template>
+                                <ng-template pTemplate="selectedItem">
+                                    <div
+                                        class="flex align-items-center gap-2"
+                                        *ngIf="loginForm.get('authenticationMethod').value"
+                                    >
+                                        <img
+                                            src="/assets/authentication-methods/{{
+                                                loginForm.get('authenticationMethod').value.id
+                                            }}.png"
+                                            (error)="onMissingIcon($event)"
+                                        />
+                                        <div>{{ loginForm.get('authenticationMethod').value.name }}</div>
+                                    </div>
+                                </ng-template>
+                            </p-dropdown>
+                            <label for="authenticationMethod" class="text-white">Pick a Method</label>
+                        </div>
                         <p>
-                            {{ authenticationMethod.description }}
+                            {{ loginForm.get('authenticationMethod')?.value.description }}
                         </p>
                     </div>
                     <div class="login-screen__authentication-inputs">
-                        <div *ngIf="authenticationMethod.formLabelIdentifier" class="p-float-label">
+                        <div
+                            *ngIf="loginForm.get('authenticationMethod')?.value.formLabelIdentifier"
+                            class="p-float-label"
+                        >
                             <input
                                 type="text"
                                 name="identifier"
@@ -50,9 +73,11 @@
                                 pInputText
                                 autofocus
                             />
-                            <label htmlFor="identifier">{{ authenticationMethod.formLabelIdentifier }}</label>
+                            <label htmlFor="identifier">{{
+                                loginForm.get('authenticationMethod')?.value.formLabelIdentifier
+                            }}</label>
                         </div>
-                        <div *ngIf="authenticationMethod.formLabelSecret" class="p-float-label">
+                        <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelSecret" class="p-float-label">
                             <p-password
                                 name="secret"
                                 id="secret"
@@ -62,7 +87,9 @@
                                 [feedback]="false"
                                 [toggleMask]="true"
                             />
-                            <label for="secret">{{ authenticationMethod.formLabelSecret }}</label>
+                            <label for="secret">{{
+                                loginForm.get('authenticationMethod')?.value.formLabelSecret
+                            }}</label>
                         </div>
                         <div>
                             <button

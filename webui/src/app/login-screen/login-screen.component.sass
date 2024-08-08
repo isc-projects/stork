@@ -99,19 +99,9 @@ $layout-breakpoint: 640px
     width: 60%
 
 .login-screen__authentication-selector
-    ::ng-deep .p-selectbutton.p-buttonset
-        // Set the same height for all buttons.
-        display: flex
-        flex-wrap: wrap
-        .p-button
-            // Expand buttons to justify them pretty if the number of buttons
-            // causes wrapping.
-            flex-grow: 1
-            // Center the content inside the expanded button.
-            justify-content: center
-            * + *
-                // Add spacing between icon and text if the icon exists.
-                margin-left: 5px
+    .p-float-label
+        // Limit the maximum width of the dropdown to fit inputs that are below.
+        max-width: 400px
     p
         // Justify the authentication description.
         text-align: justify
