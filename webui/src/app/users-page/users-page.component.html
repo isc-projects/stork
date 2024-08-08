@@ -32,7 +32,7 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2">
+<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
         <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
             <div style="display: flex; justify-content: space-between">
@@ -120,81 +120,74 @@
 
 <div *ngIf="existingUserTab" class="p-component">
     <div style="display: flex; margin: 10px">
-        <div style="min-width: 600px">
-            <div class="grid mt-2">
-                <div class="col-2">
-                    <b>ID:</b>
-                </div>
-                <div class="col-10">
-                    {{ userTab.user.id }}
-                </div>
-                <div class="col-2">
-                    <b>Login:</b>
-                </div>
-                <div class="col-10">
-                    {{ userTab.user.login }}
-                </div>
-                <div class="col-2">
-                    <b>Email:</b>
-                </div>
-                <div class="col-10">
-                    {{ userTab.user.email | placeholder }}
-                </div>
-                <div class="col-2">
-                    <b>Last name:</b>
-                </div>
-                <div class="col-10">
-                    {{ userTab.user.lastname | placeholder }}
-                </div>
-                <div class="col-2">
-                    <b>First name:</b>
-                </div>
-                <div class="col-10">
-                    {{ userTab.user.name | placeholder }}
-                </div>
-                <div class="col-2">
-                    <b>Group:</b>
-                </div>
-                <div class="col-10">
-                    {{ getGroupName(userTab.user.groups[0]) }}
-                </div>
-                <div class="col-2">
-                    <b>Authentication:</b>
-                </div>
-                <div class="col-10">
-                    {{ userTab.user.authenticationMethodId }}
-                </div>
-                <div class="col-2">
-                    <b>External ID:</b>
-                </div>
-                <div class="col-10">
-                    {{ userTab.user.externalId | placeholder }}
-                </div>
-                <div class="col-12">
-                    <div class="grid">
-                        <div class="col-2">
-                            <button
-                                type="button"
-                                pButton
-                                label="Edit"
-                                id="edit-user-button"
-                                icon="pi pi-pencil"
-                                (click)="editUserInfo(userTab)"
-                            ></button>
-                        </div>
-                        <div class="col-2">
-                            <button
-                                type="submit"
-                                pButton
-                                class="p-button-danger"
-                                label="Delete"
-                                id="delete-user-button"
-                                icon="pi pi-trash"
-                                (click)="confirmDeleteUser()"
-                            ></button>
-                        </div>
-                    </div>
-                </div>
+        <div class="grid mt-2 max-w-50rem word-break-all">
+            <div class="col-12 sm:col-3">
+                <b>ID:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ userTab.user.id }}
+            </div>
+            <div class="col-12 sm:col-3">
+                <b>Login:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ userTab.user.login }}
+            </div>
+            <div class="col-12 sm:col-3">
+                <b>Email:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ userTab.user.email | placeholder }}
+            </div>
+            <div class="col-12 sm:col-3">
+                <b>Last name:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ userTab.user.lastname | placeholder }}
+            </div>
+            <div class="col-12 sm:col-3">
+                <b>First name:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ userTab.user.name | placeholder }}
+            </div>
+            <div class="col-12 sm:col-3">
+                <b>Group:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ getGroupName(userTab.user.groups[0]) }}
+            </div>
+            <div class="col-12 sm:col-3">
+                <b>Authentication:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ userTab.user.authenticationMethodId }}
+            </div>
+            <div class="col-12 sm:col-3">
+                <b>External ID:</b>
+            </div>
+            <div class="col-12 sm:col-9">
+                {{ userTab.user.externalId | placeholder }}
+            </div>
+            <div class="col-12 flex gap-3">
+                <button
+                    type="button"
+                    pButton
+                    label="Edit"
+                    id="edit-user-button"
+                    icon="pi pi-pencil"
+                    (click)="editUserInfo(userTab)"
+                    class="flex-none"
+                ></button>
+                <button
+                    type="submit"
+                    pButton
+                    class="p-button-danger flex-none"
+                    label="Delete"
+                    id="delete-user-button"
+                    icon="pi pi-trash"
+                    (click)="confirmDeleteUser()"
+                ></button>
             </div>
         </div>
     </div>
