@@ -2,7 +2,7 @@
 <div *ngIf="subnet" class="mt-4 ml-2 max-w-50rem">
     <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
         <div class="fa fa-project-diagram mr-2"></div>
-        <div id="tab-title-span">
+        <div id="tab-title-span" class="word-break-all">
             Subnet {{ subnet.subnet }}
             <ng-container *ngIf="subnet.sharedNetwork">
                 in <app-entity-link entity="shared-network" [attrs]="getSharedNetworkAttrs()"></app-entity-link>
