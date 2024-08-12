@@ -502,7 +502,6 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     it('should cancel transaction for new shared network when cancel button is clicked', fakeAsync(() => {
-        // component.loadNetworks({})
         tick()
         fixture.detectChanges()
 
@@ -554,7 +553,6 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     it('should cancel transaction for shared network update when cancel button is clicked', fakeAsync(() => {
-        // component.loadNetworks({})
         tick()
         fixture.detectChanges()
 
@@ -659,7 +657,6 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     it('should close subnet tab when subnet is deleted', fakeAsync(() => {
-        // component.loadNetworks({})
         tick()
         fixture.detectChanges()
 
