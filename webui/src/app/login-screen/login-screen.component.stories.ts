@@ -8,11 +8,11 @@ import { MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
 import { RouterTestingModule } from '@angular/router/testing'
 import { ToastModule } from 'primeng/toast'
-import { SelectButtonModule } from 'primeng/selectbutton'
 import { ButtonModule } from 'primeng/button'
 import { action } from '@storybook/addon-actions'
 import { importProvidersFrom } from '@angular/core'
 import { PasswordModule } from 'primeng/password'
+import { DropdownModule } from 'primeng/dropdown'
 
 export default {
     title: 'App/LoginScreen',
@@ -28,7 +28,7 @@ export default {
                 RouterTestingModule,
                 HttpClientModule,
                 ProgressSpinnerModule,
-                SelectButtonModule,
+                DropdownModule,
                 ButtonModule,
                 ToastModule,
                 PasswordModule,
