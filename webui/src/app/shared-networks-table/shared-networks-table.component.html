@@ -1,1 +1,233 @@
-<p>shared-networks-table works!</p>
+<div class="mb-2 flex gap-2 flex-wrap justify-content-end">
+    <div class="flex align-items-center flex-auto">
+        <div *ngIf="filterTextFormatErrors?.length > 0">
+            <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
+        </div>
+    </div>
+    <a
+        label="New Shared Network"
+        icon="pi pi-plus"
+        class="p-button-primary no-underline block flex-none p-button"
+        type="button"
+        routerLink="/dhcp/shared-networks/new"
+        pButton
+    ></a>
+    <p-button
+        label="Refresh List"
+        icon="pi pi-refresh"
+        styleClass="block p-button-primary no-underline"
+        (onClick)="reloadData(networksTable)"
+    ></p-button>
+</div>
+
+<p-table
+    #networksTable
+    [value]="dataCollection"
+    [paginator]="true"
+    [rows]="10"
+    [lazy]="true"
+    [loading]="dataLoading"
+    (onLazyLoad)="loadData($event)"
+    [lazyLoadOnInit]="false"
+    (onStateRestore)="stateRestored($event, networksTable)"
+    (onStateSave)="stateSaved(networksTable)"
+    (onFilter)="onFilter()"
+    [totalRecords]="totalRecords"
+    [rowsPerPageOptions]="[10, 30, 100]"
+    [showCurrentPageReport]="true"
+    stateStorage="session"
+    [stateKey]="stateKey"
+    [currentPageReportTemplate]="currentPageReportTemplate"
+    styleClass="p-datatable-striped"
+>
+    <ng-template pTemplate="caption">
+        <p-panel [toggleable]="true">
+            <ng-template pTemplate="header">
+                <div class="flex align-items-center gap-2">
+                    <i class="pi pi-filter"></i>
+                    <span class="font-bold">Filters</span>
+                    <p-tag
+                        icon="pi pi-check"
+                        value="Filter applied"
+                        severity="success"
+                        *ngIf="hasFilter(networksTable)"
+                        [rounded]="true"
+                    ></p-tag>
+                    <app-help-tip subject="filtering" id="filtering-help-button">
+                        <p>
+                            Shared networks in the table below can be filtered by entering a text in the search box; the
+                            table shows all shared networks matching the filter text. Currently supported field for such
+                            filtering is:
+                        </p>
+                        <ul>
+                            <li>Name</li>
+                        </ul>
+                        <p>
+                            The table presents shared networks that meet certain criteria, e.g. <b>alpha</b> shows all
+                            shared networks that contain "alpha" in their names.
+                        </p>
+                        <p>
+                            In addition, shared networks can be filtered by an explicitly selected field using the
+                            expression:
+                            <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported field for
+                            explicit filtering is:
+                        </p>
+                        <ul>
+                            <li class="monospace">appId</li>
+                        </ul>
+                    </app-help-tip>
+                </div>
+            </ng-template>
+            <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
+                <button
+                    pButton
+                    label="Clear"
+                    [class.p-button-warning]="hasFilter(networksTable)"
+                    [class.p-button-secondary]="!hasFilter(networksTable)"
+                    icon="pi pi-filter-slash"
+                    (click)="clearFilters(networksTable)"
+                    [disabled]="!hasFilter(networksTable)"
+                ></button>
+                <div class="flex-auto"></div>
+                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
+                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                        <span class="p-float-label">
+                            <p-inputNumber
+                                inputId="app-id"
+                                mode="decimal"
+                                [useGrouping]="false"
+                                (onInput)="filter($event.value)"
+                                [ngModel]="value"
+                                [disabled]="hasPrefilter()"
+                            ></p-inputNumber>
+                            <label for="app-id">Kea App Id</label>
+                        </span>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
+                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                        <span class="p-float-label">
+                            <p-dropdown
+                                inputId="dhcp-version"
+                                [options]="[
+                                    { label: 'DHCPv4', value: 4 },
+                                    { label: 'DHCPv6', value: 6 }
+                                ]"
+                                optionLabel="label"
+                                optionValue="value"
+                                (onChange)="filter($event.value)"
+                                [ngModel]="value"
+                                styleClass="w-10rem"
+                            ></p-dropdown>
+                            <label for="dhcp-version">Dhcp version</label>
+                        </span>
+                    </ng-template>
+                </p-columnFilter>
+                <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
+                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                        <span class="p-input-icon-left">
+                            <i class="pi pi-search"></i>
+                            <input
+                                pInputText
+                                type="text"
+                                (input)="filter($event.target.value)"
+                                [ngModel]="value"
+                                placeholder="Search shared networks"
+                            />
+                        </span>
+                    </ng-template>
+                </p-columnFilter>
+            </div>
+        </p-panel>
+    </ng-template>
+    <ng-template pTemplate="header">
+        <tr>
+            <th rowspan="2" style="width: 7rem">Name</th>
+            <th colspan="3" style="width: 16rem">Addresses</th>
+            <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
+            <th rowspan="2">Subnets</th>
+            <th rowspan="2" style="width: 14rem">App Name</th>
+        </tr>
+        <tr>
+            <th>Total</th>
+            <th style="padding: 0.571rem 0.5rem">Assigned</th>
+            <th>Used %</th>
+            <ng-container *ngIf="isAnyIPv6SubnetVisible">
+                <th>Total</th>
+                <th style="padding: 0.571rem 0.5rem">Assigned</th>
+                <th>Used %</th>
+            </ng-container>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-net>
+        <tr>
+            <td>
+                <app-entity-link entity="shared-network" [showEntityName]="false" [attrs]="net"></app-entity-link>
+            </td>
+            <td>
+                <app-human-count [value]="getTotalAddresses(net)"></app-human-count>
+            </td>
+            <td>
+                <app-human-count [value]="getAssignedAddresses(net)"></app-human-count>
+            </td>
+            <td>
+                {{ net.addrUtilization ?? '0' }} %
+                <i
+                    *ngIf="net.addrUtilization > 80 && net.addrUtilization <= 90"
+                    class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
+                ></i>
+                <i
+                    *ngIf="net.addrUtilization > 90"
+                    class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
+                ></i>
+            </td>
+            <ng-container *ngIf="isAnyIPv6SubnetVisible">
+                <td>
+                    <app-human-count [value]="getTotalDelegatedPrefixes(net)"></app-human-count>
+                </td>
+                <td>
+                    <app-human-count [value]="getAssignedDelegatedPrefixes(net)"></app-human-count>
+                </td>
+                <td>
+                    {{ net.pdUtilization ?? '0' }} %
+                    <i
+                        *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
+                        class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
+                    ></i>
+                    <i
+                        *ngIf="net.pdUtilization > 90"
+                        class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
+                    ></i>
+                </td>
+            </ng-container>
+            <td>
+                <app-subnet-bar class="utilization-bar" *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>
+            </td>
+            <td>
+                <div *ngFor="let app of getApps(net)">
+                    <a routerLink="/apps/kea/{{ app.id }}">{{ app.name }}</a>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="6">
+                No shared networks found.
+                <span *ngIf="hasFilter(networksTable)">
+                    Try to clear filtering.
+                    <button
+                        pButton
+                        label="Clear"
+                        class="p-button-outlined"
+                        icon="pi pi-filter-slash"
+                        (click)="clearFilters(networksTable)"
+                    ></button>
+                </span>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="paginatorright" let-paginatorState>
+        Total: {{ paginatorState.totalRecords | pluralize: 'shared network' }}
+    </ng-template>
+</p-table>

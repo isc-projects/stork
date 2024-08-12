@@ -20,7 +20,7 @@
             <h4>Shared Networks</h4>
             <div *ngFor="let net of searchResults.sharedNetworks.items">[{{ net.id }}] {{ net.name }}</div>
             <div style="margin-top: 10px">
-                <a routerLink="/dhcp/shared-networks" [queryParams]="{ text: searchText }">more</a>
+                <a routerLink="/dhcp/shared-networks" [queryParams]="{ text: searchText, gs: true }">more</a>
             </div>
         </div>
         <div *ngIf="searchResults.hosts.items.length > 0" style="margin-right: 20px; min-width: 17em">

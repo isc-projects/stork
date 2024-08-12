@@ -137,6 +137,7 @@ import { ParameterViewComponent } from './parameter-view/parameter-view.componen
 import { UncamelPipe } from './pipes/uncamel.pipe'
 import { UnhyphenPipe } from './pipes/unhyphen.pipe'
 import { SubnetsTableComponent } from './subnets-table/subnets-table.component'
+import { SharedNetworksTableComponent } from './shared-networks-table/shared-networks-table.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -226,6 +227,7 @@ export function cfgFactory() {
         UncamelPipe,
         UnhyphenPipe,
         SubnetsTableComponent,
+        SharedNetworksTableComponent,
     ],
     imports: [
         BrowserModule,

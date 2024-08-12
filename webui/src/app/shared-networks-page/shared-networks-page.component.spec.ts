@@ -47,6 +47,7 @@ import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-
 import { ChipsModule } from 'primeng/chips'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { SharedNetworksTableComponent } from '../shared-networks-table/shared-networks-table.component'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -109,6 +110,7 @@ describe('SharedNetworksPageComponent', () => {
                 SubnetBarComponent,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
+                SharedNetworksTableComponent,
             ],
             providers: [
                 ConfirmationService,
@@ -349,7 +351,7 @@ describe('SharedNetworksPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
-        const stats: { [key: string]: BigInt } = component.networks[0].stats as any
+        const stats: { [key: string]: BigInt } = component.table.dataCollection[0].stats as any
         expect(stats['assigned-addresses']).toBe(
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
         )
@@ -366,7 +368,7 @@ describe('SharedNetworksPageComponent', () => {
         await fixture.whenStable()
 
         // Assert
-        const stats: { [key: string]: BigInt } = component.networks[0].subnets[0].stats as any
+        const stats: { [key: string]: BigInt } = component.table.dataCollection[0].subnets[0].stats as any
         expect(stats['assigned-addresses']).toBe(BigInt('42'))
         expect(stats['total-addresses']).toBe(
             BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
@@ -376,11 +378,11 @@ describe('SharedNetworksPageComponent', () => {
 
     it('should not fail on empty statistics', async () => {
         // Act
-        component.loadNetworks({})
+        // component.loadNetworks({})
         await fixture.whenStable()
 
         // Assert
-        expect(component.networks[0].stats).toBeUndefined()
+        expect(component.table.dataCollection[0].stats).toBeUndefined()
         // No throw
     })
 
@@ -401,25 +403,25 @@ describe('SharedNetworksPageComponent', () => {
             },
         ]
 
-        component.networks = networks
-        expect(component.isAnyIPv6SubnetVisible).toBeFalse()
+        component.table.dataCollection = networks
+        expect(component.table.isAnyIPv6SubnetVisible).toBeFalse()
 
         networks.push({
             subnets: [{ subnet: 'fe80::/64' }],
         })
-        expect(component.isAnyIPv6SubnetVisible).toBeTrue()
+        expect(component.table.isAnyIPv6SubnetVisible).toBeTrue()
     })
 
     it('should display proper utilization bars', async () => {
-        component.loadNetworks({})
+        // component.loadNetworks({})
         await fixture.whenStable()
-        component.loadNetworks({})
+        // component.loadNetworks({})
         await fixture.whenStable()
         await fixture.whenStable()
         fixture.detectChanges()
 
-        expect(component.networks.length).toBe(1)
-        expect(component.networks[0].subnets.length).toBe(4)
+        expect(component.table.dataCollection.length).toBe(1)
+        expect(component.table.dataCollection[0].subnets.length).toBe(4)
 
         const barElements = fixture.debugElement.queryAll(By.directive(SubnetBarComponent))
         expect(barElements.length).toBe(4)
@@ -478,7 +480,7 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     it('should cancel transaction for new shared network when cancel button is clicked', fakeAsync(() => {
-        component.loadNetworks({})
+        // component.loadNetworks({})
         tick()
         fixture.detectChanges()
 
@@ -530,7 +532,7 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     it('should cancel transaction for shared network update when cancel button is clicked', fakeAsync(() => {
-        component.loadNetworks({})
+        // component.loadNetworks({})
         tick()
         fixture.detectChanges()
 
@@ -635,7 +637,7 @@ describe('SharedNetworksPageComponent', () => {
     }))
 
     it('should close subnet tab when subnet is deleted', fakeAsync(() => {
-        component.loadNetworks({})
+        // component.loadNetworks({})
         tick()
         fixture.detectChanges()
 

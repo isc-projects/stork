@@ -6,7 +6,13 @@
 
 <p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
+        <a
+            role="menuitem"
+            pRipple
+            [routerLink]="item.routerLink"
+            [queryParams]="i === 0 ? networksTableComponent?.validFilter : null"
+            class="p-ripple p-element p-menuitem-link"
+        >
             <div class="flex justify-content-space-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
@@ -14,181 +20,13 @@
                 </div>
                 <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTabByIndex(i, $event)"></div>
             </div>
-            <div style="margin: 0 0 10px 5px; display: flex; justify-content: space-between"></div>
         </a>
     </ng-template>
 </p-tabMenu>
 
-<div *ngIf="activeTabIndex === 0; else openedTabBlock">
-    <div class="flex flex-wrap gap-2 justify-content-end mb-3">
-        <span class="p-input-icon-left flex min-w-0">
-            <i class="pi pi-search"></i>
-            <input
-                type="text"
-                id="filter-networks-text-field"
-                pInputText
-                [(ngModel)]="filterText"
-                placeholder="Search shared networks"
-                (keyup)="keyupFilterText($event)"
-                class="flex-auto min-w-0"
-                #searchInput
-            />
-            <app-help-tip subject="filtering" id="filtering-help-button" [target]="searchInput">
-                <p>
-                    Shared networks in the table below can be filtered by entering a text in the search box; the table
-                    shows all shared networks matching the filter text. Currently supported field for such filtering is:
-                </p>
-                <ul>
-                    <li>Name</li>
-                </ul>
-                <p>
-                    The table presents shared networks that meet certain criteria, e.g. <b>alpha</b> shows all shared
-                    networks that contain "alpha" in their names.
-                </p>
-                <p>
-                    In addition, shared networks can be filtered by an explicitly selected field using the expression:
-                    <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported field for explicit
-                    filtering is:
-                </p>
-                <ul>
-                    <li class="monospace">appId</li>
-                </ul>
-            </app-help-tip>
-        </span>
-        <div class="flex-none">
-            Protocol:
-            <p-dropdown
-                [options]="dhcpVersions"
-                id="protocol-dropdown-menu"
-                [(ngModel)]="queryParams.dhcpVersion"
-                [style]="{ width: '10em' }"
-                styleClass="w-10rem ml-2"
-                (onChange)="filterByDhcpVersion()"
-            ></p-dropdown>
-        </div>
-        <div class="flex flex-auto">
-            <div class="flex-auto"></div>
-            <a
-                label="New Shared Network"
-                icon="pi pi-plus"
-                class="p-button-primary no-underline block flex-none"
-                type="button"
-                routerLink="/dhcp/shared-networks/new"
-                pButton
-            ></a>
-        </div>
-    </div>
-    <div>
-        <p-table
-            #networksTable
-            [value]="networks"
-            [paginator]="true"
-            [rows]="10"
-            [lazy]="true"
-            [loading]="loading"
-            (onLazyLoad)="loadNetworks($event)"
-            [totalRecords]="totalNetworks"
-            [rowsPerPageOptions]="[10, 30, 100]"
-            [showCurrentPageReport]="true"
-            currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            stateStorage="session"
-            stateKey="networks-table-session"
-            styleClass="p-datatable-striped"
-        >
-            <ng-template pTemplate="header">
-                <tr>
-                    <th rowspan="2" style="width: 7rem">Name</th>
-                    <th colspan="3" style="width: 16rem">Addresses</th>
-                    <th colspan="3" style="width: 16rem" *ngIf="isAnyIPv6SubnetVisible">Prefixes</th>
-                    <th rowspan="2">Subnets</th>
-                    <th rowspan="2" style="width: 14rem">App Name</th>
-                </tr>
-                <tr>
-                    <th>Total</th>
-                    <th style="padding: 0.571rem 0.5rem">Assigned</th>
-                    <th>Used %</th>
-                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                        <th>Total</th>
-                        <th style="padding: 0.571rem 0.5rem">Assigned</th>
-                        <th>Used %</th>
-                    </ng-container>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-net>
-                <tr>
-                    <td>
-                        <app-entity-link
-                            entity="shared-network"
-                            [showEntityName]="false"
-                            [attrs]="net"
-                        ></app-entity-link>
-                    </td>
-                    <td>
-                        <app-human-count [value]="getTotalAddresses(net)"></app-human-count>
-                    </td>
-                    <td>
-                        <app-human-count [value]="getAssignedAddresses(net)"></app-human-count>
-                    </td>
-                    <td>
-                        {{ net.addrUtilization ?? '0' }} %
-                        <i
-                            *ngIf="net.addrUtilization > 80 && net.addrUtilization <= 90"
-                            class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                        ></i>
-                        <i
-                            *ngIf="net.addrUtilization > 90"
-                            class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                        ></i>
-                    </td>
-                    <ng-container *ngIf="isAnyIPv6SubnetVisible">
-                        <td>
-                            <app-human-count [value]="getTotalDelegatedPrefixes(net)"></app-human-count>
-                        </td>
-                        <td>
-                            <app-human-count [value]="getAssignedDelegatedPrefixes(net)"></app-human-count>
-                        </td>
-                        <td>
-                            {{ net.pdUtilization ?? '0' }} %
-                            <i
-                                *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
-                                class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                            ></i>
-                            <i
-                                *ngIf="net.pdUtilization > 90"
-                                class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                            ></i>
-                        </td>
-                    </ng-container>
-                    <td>
-                        <app-subnet-bar
-                            class="utilization-bar"
-                            *ngFor="let sn of net.subnets"
-                            [subnet]="sn"
-                        ></app-subnet-bar>
-                    </td>
-                    <td>
-                        <div *ngFor="let app of getApps(net)">
-                            <a routerLink="/apps/kea/{{ app.id }}">{{ app.name }}</a>
-                        </div>
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="emptymessage">
-                <tr>
-                    <td colspan="6">No shared networks found.</td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="paginatorright" let-state>
-                Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
-                {{ state.totalRecords === 1 ? 'shared networks' : 'shared networks' }}
-            </ng-template>
-        </p-table>
-    </div>
-</div>
-
-<!-- Shared network tab template -->
-<ng-template #openedTabBlock>
-    <div [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component max-w-50rem">
+<div>
+    <!-- Shared network tab template -->
+    <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex].tabType" class="p-component max-w-50rem">
         <app-shared-network-tab
             *ngSwitchCase="SharedNetworkTabType.Display"
             [sharedNetwork]="openedTabs[activeTabIndex].tabSubject"
@@ -211,4 +49,10 @@
             (formCancel)="onSharedNetworkFormCancel(openedTabs[activeTabIndex].tabSubject.id)"
         ></app-shared-network-form>
     </div>
-</ng-template>
+
+    <app-shared-networks-table
+        #networksTableComponent
+        [hidden]="activeTabIndex !== 0"
+        [dataLoading]="loading"
+    ></app-shared-networks-table>
+</div>

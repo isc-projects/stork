@@ -1,0 +1,14 @@
+.utilization-bar
+  display: inline-block
+  margin: 0 4px 4px 0
+
+:host ::ng-deep
+  // Prevent inputNumber from becoming too wide.
+  input.p-inputnumber-input
+    max-width: 8rem
+
+  // When the table header has p-panel inside, do not add extra horizontal padding,
+  // because the panel has it's own padding.
+  .p-datatable .p-datatable-header:has(.p-panel)
+    padding-left: 0
+    padding-right: 0
