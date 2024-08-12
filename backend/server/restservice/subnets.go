@@ -124,8 +124,8 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					},
 				}
 				// DHCP options.
-				pool.KeaConfigPoolParameters.OptionsHash = poolDetails.DHCPOptionSetHash
-				pool.KeaConfigPoolParameters.Options = r.unflattenDHCPOptions(poolDetails.DHCPOptionSet, "", 0)
+				pool.KeaConfigPoolParameters.OptionsHash = poolDetails.DHCPOptionSet.Hash
+				pool.KeaConfigPoolParameters.Options = r.unflattenDHCPOptions(poolDetails.DHCPOptionSet.Options, "", 0)
 			}
 
 			localSubnet.Pools = append(localSubnet.Pools, pool)
@@ -308,13 +308,11 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					PoolID: poolDetails.KeaConfigPoolParameters.PoolID,
 				}
 				// DHCP options.
-				pool.DHCPOptionSet, err = r.flattenDHCPOptions("", poolDetails.KeaConfigPoolParameters.Options, 0)
+				options, err := r.flattenDHCPOptions("", poolDetails.KeaConfigPoolParameters.Options, 0)
 				if err != nil {
 					return nil, err
 				}
-				if len(pool.DHCPOptionSet) > 0 {
-					pool.DHCPOptionSetHash = hasher.Hash(pool.DHCPOptionSet)
-				}
+				pool.SetDHCPOptions(options, hasher)
 			}
 			localSubnet.AddressPools = append(localSubnet.AddressPools, *pool)
 		}

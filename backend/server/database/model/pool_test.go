@@ -378,12 +378,12 @@ func TestAddressPoolGetDHCPOptions(t *testing.T) {
 	pool := AddressPool{
 		LowerBound: "2001:db8:1::cafe",
 		UpperBound: "2001:db8:1::ffff",
-		DHCPOptionSet: []DHCPOption{
+		DHCPOptionSet: NewDHCPOptionSet([]DHCPOption{
 			{
 				Code:  10,
 				Space: dhcpmodel.DHCPv6OptionSpace,
 			},
-		},
+		}, keaconfig.NewHasher()),
 	}
 	options := pool.GetDHCPOptions()
 	require.Len(t, options, 1)

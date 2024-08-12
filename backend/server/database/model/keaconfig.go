@@ -166,15 +166,16 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 		}
 		addressPool := NewAddressPool(lb, ub)
 		addressPool.KeaParameters = pool.GetPoolParameters()
+		var options []DHCPOption
 		// Options.
 		for _, d := range p.OptionData {
 			option, err := NewDHCPOptionFromKea(d, keaSubnet.GetUniverse(), lookup)
 			if err != nil {
 				return nil, err
 			}
-			addressPool.DHCPOptionSet = append(addressPool.DHCPOptionSet, *option)
-			addressPool.DHCPOptionSetHash = hasher.Hash(addressPool.DHCPOptionSet)
+			options = append(options, *option)
 		}
+		addressPool.SetDHCPOptions(options, hasher)
 		convertedSubnet.LocalSubnets[0].AddressPools = append(convertedSubnet.LocalSubnets[0].AddressPools, *addressPool)
 	}
 	for _, p := range keaSubnet.GetPDPools() {

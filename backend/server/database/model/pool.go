@@ -19,14 +19,14 @@ var (
 
 // Reflects IPv4 or IPv6 address pool.
 type AddressPool struct {
-	ID                int64
-	CreatedAt         time.Time
-	LowerBound        string
-	UpperBound        string
-	DHCPOptionSet     []DHCPOption
-	DHCPOptionSetHash string
-	LocalSubnetID     int64
-	LocalSubnet       *LocalSubnet `pg:"rel:has-one"`
+	DHCPOptionSet
+
+	ID            int64
+	CreatedAt     time.Time
+	LowerBound    string
+	UpperBound    string
+	LocalSubnetID int64
+	LocalSubnet   *LocalSubnet `pg:"rel:has-one"`
 
 	KeaParameters *keaconfig.PoolParameters
 }
@@ -48,8 +48,8 @@ func (ap *AddressPool) GetKeaParameters() *keaconfig.PoolParameters {
 
 // Returns a slice of interfaces describing the DHCP options for a pool.
 func (ap *AddressPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccessor) {
-	for i := range ap.DHCPOptionSet {
-		accessors = append(accessors, ap.DHCPOptionSet[i])
+	for i := range ap.DHCPOptionSet.Options {
+		accessors = append(accessors, ap.DHCPOptionSet.Options[i])
 	}
 	return
 }
