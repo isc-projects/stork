@@ -7,10 +7,17 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { ActivatedRoute, RouterModule } from '@angular/router'
-import { DHCPService, SharedNetwork, SharedNetworks } from '../backend'
+import {
+    ActivatedRoute,
+    ActivatedRouteSnapshot,
+    convertToParamMap,
+    NavigationEnd,
+    Router,
+    RouterModule,
+} from '@angular/router'
+import { DHCPService, SharedNetwork } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { of } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -32,7 +39,6 @@ import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-p
 import { DividerModule } from 'primeng/divider'
 import { ChartModule } from 'primeng/chart'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { MockParamMap } from '../utils'
 import { TabType } from '../tab'
 import { SharedNetworkFormComponent } from '../shared-network-form/shared-network-form.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
@@ -48,11 +54,17 @@ import { ChipsModule } from 'primeng/chips'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { SharedNetworksTableComponent } from '../shared-networks-table/shared-networks-table.component'
+import { PanelModule } from 'primeng/panel'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { TagModule } from 'primeng/tag'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
     let fixture: ComponentFixture<SharedNetworksPageComponent>
     let dhcpService: DHCPService
+    let route: ActivatedRoute
+    let router: Router
+    let routerEventSubject: BehaviorSubject<NavigationEnd>
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -88,6 +100,8 @@ describe('SharedNetworksPageComponent', () => {
                 TableModule,
                 TabMenuModule,
                 TooltipModule,
+                PanelModule,
+                TagModule,
             ],
             declarations: [
                 AddressPoolBarComponent,
@@ -111,27 +125,27 @@ describe('SharedNetworksPageComponent', () => {
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
                 SharedNetworksTableComponent,
+                PluralizePipe,
             ],
-            providers: [
-                ConfirmationService,
-                DHCPService,
-                MessageService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
-                        paramMap: of(new MockParamMap()),
-                    },
-                },
-            ],
+            providers: [ConfirmationService, MessageService],
         })
 
         dhcpService = TestBed.inject(DHCPService)
-    }))
+        fixture = TestBed.createComponent(SharedNetworksPageComponent)
+        component = fixture.componentInstance
+        route = fixture.debugElement.injector.get(ActivatedRoute)
+        route.snapshot = {
+            paramMap: convertToParamMap({}),
+            queryParamMap: convertToParamMap({}),
+        } as ActivatedRouteSnapshot
+        router = fixture.debugElement.injector.get(Router)
+        routerEventSubject = new BehaviorSubject(
+            new NavigationEnd(1, 'dhcp/shared-networks', 'dhcp/shared-networks/all')
+        )
 
-    beforeEach(() => {
-        const fakeResponses: SharedNetworks[] = [
+        spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
+
+        const fakeResponses: any[] = [
             {
                 items: [
                     {
@@ -181,7 +195,7 @@ describe('SharedNetworksPageComponent', () => {
                 items: [
                     {
                         id: 2,
-                        name: 'frog',
+                        name: 'frog-no-stats',
                         subnets: [
                             {
                                 clientClass: 'class-00-00',
@@ -325,13 +339,13 @@ describe('SharedNetworksPageComponent', () => {
                 total: 10496,
             },
         ]
-        spyOn(dhcpService, 'getSharedNetworks').and.returnValues(
-            // The shared networks are fetched twice before the unit test starts.
-            of(fakeResponses[0] as HttpEvent<SharedNetworks>),
-            of(fakeResponses[0] as HttpEvent<SharedNetworks>),
-            of(fakeResponses[1] as HttpEvent<SharedNetworks>),
-            of(fakeResponses[2] as HttpEvent<SharedNetworks>)
-        )
+        const getNetworksSpy = spyOn(dhcpService, 'getSharedNetworks')
+        // Prepare response when no filtering is applied.
+        getNetworksSpy.withArgs(0, 10, null, null, null).and.returnValue(of(fakeResponses[0]))
+        // Prepare response when shared networks are filtered by text to get an item without stats.
+        getNetworksSpy.withArgs(0, 10, null, null, 'frog-no-stats').and.returnValue(of(fakeResponses[1]))
+        // Prepare response when shared networks are filtered by text to get an item with 4 subnets.
+        getNetworksSpy.withArgs(0, 10, null, null, 'cat').and.returnValue(of(fakeResponses[2]))
 
         spyOn(dhcpService, 'getSharedNetwork').and.returnValues(
             of(fakeResponses[0].items[0] as HttpEvent<SharedNetwork>)
@@ -340,7 +354,13 @@ describe('SharedNetworksPageComponent', () => {
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
-    })
+
+        // PrimeNG table is stateful in the component, so clear stored filter between tests.
+        component.table.table.clearFilterValues()
+        component.table.filter$.next({ filter: {} })
+
+        fixture.detectChanges()
+    }))
 
     it('should create', () => {
         expect(component).toBeTruthy()
@@ -377,8 +397,10 @@ describe('SharedNetworksPageComponent', () => {
     })
 
     it('should not fail on empty statistics', async () => {
+        // Filter by text to get subnet without stats.
+        component.table.filter$.next({ filter: { text: 'frog-no-stats' } })
         // Act
-        // component.loadNetworks({})
+        fixture.detectChanges()
         await fixture.whenStable()
 
         // Assert
@@ -413,12 +435,12 @@ describe('SharedNetworksPageComponent', () => {
     })
 
     it('should display proper utilization bars', async () => {
-        // component.loadNetworks({})
-        await fixture.whenStable()
-        // component.loadNetworks({})
-        await fixture.whenStable()
+        // Filter by text to get shared network with proper data.
+        component.table.filter$.next({ filter: { text: 'cat' } })
+        fixture.detectChanges()
         await fixture.whenStable()
         fixture.detectChanges()
+        await fixture.whenStable()
 
         expect(component.table.dataCollection.length).toBe(1)
         expect(component.table.dataCollection[0].subnets.length).toBe(4)
