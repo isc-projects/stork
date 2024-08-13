@@ -1,11 +1,21 @@
-<p-fieldset legend="Global DHCP Parameters">
-    <app-cascaded-parameters-board
-        [levels]="['Global']"
-        [data]="dhcpParameters"
-        [excludedParameters]="excludedParameters"
-        [formatComplexTypes]="true"
-    ></app-cascaded-parameters-board>
-</p-fieldset>
+<div class="grid">
+    <p-fieldset legend="Global DHCP Parameters" class="col max-w-50rem">
+        <app-cascaded-parameters-board
+            [levels]="['Global']"
+            [data]="dhcpParameters"
+            [excludedParameters]="excludedParameters"
+            [formatComplexTypes]="true"
+        ></app-cascaded-parameters-board>
+    </p-fieldset>
+    <p-fieldset legend="Global DHCP Options" class="col max-w-50rem">
+        <app-dhcp-option-set-view
+            [options]="dhcpParameters[0]?.parameters | pluck: 'option-data'"
+            [levels]="['global']"
+        >
+        </app-dhcp-option-set-view>
+    </p-fieldset>
+</div>
+
 <div class="flex mt-5">
     <p-button
         label="Edit"

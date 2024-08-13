@@ -26,6 +26,10 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
 import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
 import { MessagesModule } from 'primeng/messages'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { TreeModule } from 'primeng/tree'
+import { PluckPipe } from '../pipes/pluck.pipe'
+import { TagModule } from 'primeng/tag'
 
 const mockGetDaemonConfig = {
     appName: 'kea-server',
@@ -218,6 +222,8 @@ export default {
                 ProgressSpinnerModule,
                 TableModule,
                 ToastModule,
+                TreeModule,
+                TagModule,
             ],
             declarations: [
                 BreadcrumbsComponent,
@@ -228,9 +234,11 @@ export default {
                 KeaGlobalConfigurationViewComponent,
                 KeaGlobalConfigurationPageComponent,
                 ParameterViewComponent,
+                DhcpOptionSetViewComponent,
                 UncamelPipe,
                 UnhyphenPipe,
                 PlaceholderPipe,
+                PluckPipe,
             ],
         }),
         toastDecorator,

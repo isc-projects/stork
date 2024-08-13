@@ -24,6 +24,10 @@ import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { HttpErrorResponse } from '@angular/common/http'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
 import { ButtonModule } from 'primeng/button'
+import { TreeModule } from 'primeng/tree'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { PluckPipe } from '../pipes/pluck.pipe'
+import { TagModule } from 'primeng/tag'
 
 describe('KeaGlobalConfigurationPageComponent', () => {
     let component: KeaGlobalConfigurationPageComponent
@@ -53,6 +57,8 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 TableModule,
+                TreeModule,
+                TagModule,
             ],
             declarations: [
                 BreadcrumbsComponent,
@@ -61,9 +67,11 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 KeaGlobalConfigurationPageComponent,
                 KeaGlobalConfigurationViewComponent,
                 ParameterViewComponent,
+                DhcpOptionSetViewComponent,
                 PlaceholderPipe,
                 UncamelPipe,
                 UnhyphenPipe,
+                PluckPipe,
             ],
         }).compileComponents()
 

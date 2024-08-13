@@ -1,29 +1,27 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <p>This page displays configured global DHCP parameters.</p>
+        <p>This page displays configured global DHCP parameters and options.</p>
     </div>
 </app-breadcrumbs>
 <div class="mt-2 mb-4">
     <a *ngIf="appId" routerLink="/apps/kea/{{ appId }}" [queryParams]="{ daemon: daemonName }">
         <span class="fa fa-arrow-left"></span>
-        <span class="ml-2">Back to {{ appName }}</span>
+        <span class="ml-2">Back to {{ appName ?? 'app' }}</span>
     </a>
 </div>
 <div *ngIf="loaded; else showSpinner">
-    <div class="max-w-50rem">
-        <app-kea-global-configuration-form
-            *ngIf="edit"
-            [daemonId]="daemonId"
-            (formCancel)="onFormCancel()"
-            (formSubmit)="onFormSubmit()"
-        ></app-kea-global-configuration-form>
-        <app-kea-global-configuration-view
-            *ngIf="!edit"
-            [dhcpParameters]="dhcpParameters"
-            [disableEdit]="disableEdit"
-            (editBegin)="onEditBegin()"
-        ></app-kea-global-configuration-view>
-    </div>
+    <app-kea-global-configuration-form
+        *ngIf="edit"
+        [daemonId]="daemonId"
+        (formCancel)="onFormCancel()"
+        (formSubmit)="onFormSubmit()"
+    ></app-kea-global-configuration-form>
+    <app-kea-global-configuration-view
+        *ngIf="!edit"
+        [dhcpParameters]="dhcpParameters"
+        [disableEdit]="disableEdit"
+        (editBegin)="onEditBegin()"
+    ></app-kea-global-configuration-view>
 </div>
 <ng-template #showSpinner>
     <p-progressSpinner></p-progressSpinner>

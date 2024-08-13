@@ -139,6 +139,7 @@ import { UnhyphenPipe } from './pipes/unhyphen.pipe'
 import { SubnetsTableComponent } from './subnets-table/subnets-table.component'
 import { SharedNetworksTableComponent } from './shared-networks-table/shared-networks-table.component'
 import { KeaGlobalConfigurationViewComponent } from './kea-global-configuration-view/kea-global-configuration-view.component'
+import { PluckPipe } from './pipes/pluck.pipe'
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form/kea-global-configuration-form.component'
 import { PositivePipe } from './pipes/positive.pipe'
 
@@ -234,6 +235,7 @@ export function cfgFactory() {
         KeaGlobalConfigurationViewComponent,
         KeaGlobalConfigurationFormComponent,
         PositivePipe,
+        PluckPipe,
     ],
     imports: [
         BrowserModule,

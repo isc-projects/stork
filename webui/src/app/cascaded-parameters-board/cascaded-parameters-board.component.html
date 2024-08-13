@@ -53,5 +53,11 @@
     </ng-template>
 </p-table>
 <ng-template #noRowsBlock>
-    <span>No parameters configured.</span>
+    <!--
+     This small margin is necessary to have the empty placeholder at the same
+     level and the same height as in the p-tree component. It improves a look
+     when this empty component and the empty p-tree component are displayed
+     side-by-side.
+    -->
+    <span class="block mt-1 mb-1">No parameters configured.</span>
 </ng-template>

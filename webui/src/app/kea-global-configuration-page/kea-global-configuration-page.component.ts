@@ -51,9 +51,9 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     appName: string
 
     /**
-     * Holds fetched configuration.
+     * Holds fetched configuration. It always contains one (or zero) element.
      */
-    dhcpParameters: Array<NamedCascadedParameters<Object>> = []
+    dhcpParameters: Array<NamedCascadedParameters<Record<string, any>>> = []
 
     /**
      * Subscriptions released when the component is destroyed.
@@ -117,6 +117,8 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 const daemonIdStr = params.get('daemonId')
                 const daemonId = parseInt(daemonIdStr, 10)
                 this.daemonId = daemonId
+                this.appId = parseInt(params.get('appId'), 10)
+                this.updateBreadcrumbs(this.appId, this.daemonId)
                 this.load()
             })
         )
@@ -165,16 +167,23 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
         this.disableEdit = true
         lastValueFrom(this.servicesService.getDaemonConfig(this.daemonId))
             .then((data: KeaDaemonConfig) => {
+                // Update daemon and app identifiers.
                 this.daemonName = data.daemonName
+                const friendlyDaemonName = daemonNameToFriendlyName(data.daemonName)
                 this.appId = data.appId
                 this.appName = data.appName
+
+                // Update DHCP parameters.
                 this.dhcpParameters = [
                     {
-                        name: `${data.appName} / ${daemonNameToFriendlyName(data.daemonName)}`,
+                        name: `${data.appName} / ${friendlyDaemonName}`,
                         parameters: [data.config.Dhcp4 ?? data.config.Dhcp6],
                     },
                 ]
                 this.disableEdit = !data.editable
+
+                // Update breadcrumbs.
+                this.updateBreadcrumbs(this.appId, this.daemonId, this.appName, friendlyDaemonName)
             })
             .catch((err) => {
                 let msg = getErrorMessage(err)
@@ -188,5 +197,27 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
             .finally(() => {
                 this.loaded = true
             })
+    }
+
+    /** Updates the breadcrumbs links and labels. */
+    updateBreadcrumbs(appId: number, daemonId: number, appName?: string, daemonName?: string): void {
+        const breadcrumb = [...this.breadcrumbs]
+
+        if (appId != null) {
+            breadcrumb[2].routerLink = `/apps/kea/${appId}`
+            if (daemonId != null) {
+                breadcrumb[4].routerLink = `/apps/kea/${appId}?daemon=${daemonId}`
+            }
+        }
+
+        if (appName != null) {
+            breadcrumb[2].label = appName
+        }
+
+        if (daemonName != null) {
+            breadcrumb[4].label = daemonName
+        }
+
+        this.breadcrumbs = breadcrumb
     }
 }
