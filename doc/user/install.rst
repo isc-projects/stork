@@ -353,7 +353,7 @@ Next, setup the Cloudsmith repository:
 
 .. code-block:: console
 
-   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.apk.sh' | bash
+   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.alpine.sh' | bash
 
 Then, install the Stork server package:
 
