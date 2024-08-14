@@ -366,48 +366,6 @@ describe('SharedNetworksPageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should convert shared network statistics to big integers', async () => {
-        // Act
-        await fixture.whenStable()
-
-        // Assert
-        const stats: { [key: string]: BigInt } = component.table.dataCollection[0].stats as any
-        expect(stats['assigned-addresses']).toBe(
-            BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
-        )
-        expect(stats['total-addresses']).toBe(
-            BigInt(
-                '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890'
-            )
-        )
-        expect(stats['declined-addresses']).toBe(BigInt('-2'))
-    })
-
-    it('should convert subnet statistics to big integers', async () => {
-        // Act
-        await fixture.whenStable()
-
-        // Assert
-        const stats: { [key: string]: BigInt } = component.table.dataCollection[0].subnets[0].stats as any
-        expect(stats['assigned-addresses']).toBe(BigInt('42'))
-        expect(stats['total-addresses']).toBe(
-            BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
-        )
-        expect(stats['declined-addresses']).toBe(BigInt('0'))
-    })
-
-    it('should not fail on empty statistics', async () => {
-        // Filter by text to get subnet without stats.
-        component.table.filter$.next({ filter: { text: 'frog-no-stats' } })
-        // Act
-        fixture.detectChanges()
-        await fixture.whenStable()
-
-        // Assert
-        expect(component.table.dataCollection[0].stats).toBeUndefined()
-        // No throw
-    })
-
     it('should have breadcrumbs', () => {
         const breadcrumbsElement = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
         expect(breadcrumbsElement).not.toBeNull()
@@ -416,70 +374,6 @@ describe('SharedNetworksPageComponent', () => {
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('DHCP')
         expect(breadcrumbsComponent.items[1].label).toEqual('Shared Networks')
-    })
-
-    it('should detect IPv6 subnets', () => {
-        const networks: SharedNetwork[] = [
-            {
-                subnets: [{ subnet: '10.0.0.0/8' }, { subnet: '192.168.0.0/16' }],
-            },
-        ]
-
-        component.table.dataCollection = networks
-        expect(component.table.isAnyIPv6SubnetVisible).toBeFalse()
-
-        networks.push({
-            subnets: [{ subnet: 'fe80::/64' }],
-        })
-        expect(component.table.isAnyIPv6SubnetVisible).toBeTrue()
-    })
-
-    it('should display proper utilization bars', async () => {
-        // Filter by text to get shared network with proper data.
-        component.table.filter$.next({ filter: { text: 'cat' } })
-        fixture.detectChanges()
-        await fixture.whenStable()
-        fixture.detectChanges()
-        await fixture.whenStable()
-
-        expect(component.table.dataCollection.length).toBe(1)
-        expect(component.table.dataCollection[0].subnets.length).toBe(4)
-
-        const barElements = fixture.debugElement.queryAll(By.directive(SubnetBarComponent))
-        expect(barElements.length).toBe(4)
-
-        for (let i = 0; i < barElements.length; i++) {
-            const barElement = barElements[i]
-            const bar: SubnetBarComponent = barElement.componentInstance
-            expect(bar.isIPv6).toBeTrue()
-
-            switch (i) {
-                case 0:
-                    expect(bar.hasZeroAddressStats).toBeFalse()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeFalse()
-                    expect(bar.addrUtilization).toBe(10)
-                    expect(bar.pdUtilization).toBe(15)
-                    break
-                case 1:
-                    expect(bar.hasZeroAddressStats).toBeFalse()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeTrue()
-                    expect(bar.addrUtilization).toBe(20)
-                    expect(bar.pdUtilization).toBe(0)
-                    break
-                case 2:
-                    expect(bar.hasZeroAddressStats).toBeTrue()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeFalse()
-                    expect(bar.addrUtilization).toBe(0)
-                    expect(bar.pdUtilization).toBe(35)
-                    break
-                case 3:
-                    expect(bar.hasZeroAddressStats).toBeTrue()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeTrue()
-                    expect(bar.addrUtilization).toBe(0)
-                    expect(bar.pdUtilization).toBe(0)
-                    break
-            }
-        }
     })
 
     it('should open and close tabs', fakeAsync(() => {
