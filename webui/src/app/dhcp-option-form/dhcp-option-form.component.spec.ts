@@ -64,12 +64,11 @@ describe('DhcpOptionFormComponent', () => {
         // By default, the component should display a dropdown with option codes.
         const dropdownEl = fixture.debugElement.query(By.css('p-dropdown'))
         expect(dropdownEl).toBeTruthy()
-        const inputId = dropdownEl.componentInstance.inputId
 
-        // The dropdown should include a floating label associated with it using for/inputId.
-        const labelEl = fixture.debugElement.query(By.css('[for="' + inputId + '"]'))
-        expect(labelEl).toBeTruthy()
-        expect(labelEl.nativeElement.innerText).toBe('Select or Type Option Code')
+        // The dropdown should include a placeholder informing about its purpose.
+        const inputEl = dropdownEl.query(By.css('input'))
+        expect(inputEl).toBeTruthy()
+        expect(inputEl.nativeElement.placeholder).toBe('Select or Type Option Code')
 
         // By default, we should display DHCPv4 options. Let's get one from the list
         // and ensure it is the DHCPv4 option.
@@ -86,12 +85,11 @@ describe('DhcpOptionFormComponent', () => {
         // There should be a dropdown.
         const dropdownEl = fixture.debugElement.query(By.css('p-dropdown'))
         expect(dropdownEl).toBeTruthy()
-        const inputId = dropdownEl.componentInstance.inputId
 
-        // There should be a label for it.
-        const labelEl = fixture.debugElement.query(By.css('[for="' + inputId + '"]'))
-        expect(labelEl).toBeTruthy()
-        expect(labelEl.nativeElement.innerText).toBe('Select or Type Option Code')
+        // The dropdown should include a placeholder informing about its purpose.
+        const inputEl = dropdownEl.query(By.css('input'))
+        expect(inputEl).toBeTruthy()
+        expect(inputEl.nativeElement.placeholder).toBe('Select or Type Option Code')
 
         // This time the list should comprise DHCPv6 options.
         const nameServer = dropdownEl.componentInstance.options.find((opt) => opt.value === 31)
