@@ -345,7 +345,8 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         component.updateBreadcrumbs(1, 2)
         fixture.detectChanges()
 
-        const breadcrumbs = fixture.debugElement.query(By.directive(BreadcrumbsComponent)).componentInstance as BreadcrumbsComponent
+        const breadcrumbs = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+            .componentInstance as BreadcrumbsComponent
         expect(breadcrumbs).toBeTruthy()
 
         expect(breadcrumbs.items.length).toBe(6)
@@ -360,7 +361,8 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         component.updateBreadcrumbs(1, 2, 'My App', 'My Daemon')
         fixture.detectChanges()
 
-        const breadcrumbs = fixture.debugElement.query(By.directive(BreadcrumbsComponent)).componentInstance as BreadcrumbsComponent
+        const breadcrumbs = fixture.debugElement.query(By.directive(BreadcrumbsComponent))
+            .componentInstance as BreadcrumbsComponent
         expect(breadcrumbs).toBeTruthy()
 
         expect(breadcrumbs.items.length).toBe(6)
