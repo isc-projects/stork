@@ -11,7 +11,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ServicesService } from '../backend'
+import { KeaDaemonConfig, ServicesService } from '../backend'
 import { By } from '@angular/platform-browser'
 import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { FieldsetModule } from 'primeng/fieldset'
@@ -34,6 +34,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
     let fixture: ComponentFixture<KeaGlobalConfigurationPageComponent>
     let messageService: MessageService
     let servicesService: ServicesService
+    let daemonConfigValid: KeaDaemonConfig
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -80,30 +81,8 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         messageService = fixture.debugElement.injector.get(MessageService)
         servicesService = fixture.debugElement.injector.get(ServicesService)
         fixture.detectChanges()
-    })
 
-    it('should create', () => {
-        expect(component).toBeTruthy()
-    })
-
-    it('should exclude parameters', () => {
-        expect(component.excludedParameters.length).toBe(11)
-
-        expect(component.excludedParameters).toContain('clientClasses')
-        expect(component.excludedParameters).toContain('configControl')
-        expect(component.excludedParameters).toContain('hooksLibraries')
-        expect(component.excludedParameters).toContain('loggers')
-        expect(component.excludedParameters).toContain('optionData')
-        expect(component.excludedParameters).toContain('optionDef')
-        expect(component.excludedParameters).toContain('optionsHash')
-        expect(component.excludedParameters).toContain('reservations')
-        expect(component.excludedParameters).toContain('sharedNetworks')
-        expect(component.excludedParameters).toContain('subnet4')
-        expect(component.excludedParameters).toContain('subnet6')
-    })
-
-    it('should fetch global configuration parameters', fakeAsync(() => {
-        const config: any = {
+        daemonConfigValid = {
             appName: 'kea-server',
             appType: 'kea',
             daemonName: 'dhcp4',
@@ -257,7 +236,30 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 },
             },
         }
-        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(config))
+    })
+
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+
+    it('should exclude parameters', () => {
+        expect(component.excludedParameters.length).toBe(11)
+
+        expect(component.excludedParameters).toContain('clientClasses')
+        expect(component.excludedParameters).toContain('configControl')
+        expect(component.excludedParameters).toContain('hooksLibraries')
+        expect(component.excludedParameters).toContain('loggers')
+        expect(component.excludedParameters).toContain('optionData')
+        expect(component.excludedParameters).toContain('optionDef')
+        expect(component.excludedParameters).toContain('optionsHash')
+        expect(component.excludedParameters).toContain('reservations')
+        expect(component.excludedParameters).toContain('sharedNetworks')
+        expect(component.excludedParameters).toContain('subnet4')
+        expect(component.excludedParameters).toContain('subnet6')
+    })
+
+    it('should fetch global configuration parameters', fakeAsync(() => {
+        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(daemonConfigValid) as any)
 
         component.daemonId = 1
         component.ngOnInit()
@@ -304,6 +306,21 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         expect(component.disableEdit).toBeTrue()
     }))
 
+    it('should update breadcrumbs before and after fetching global configuration parameters', fakeAsync(() => {
+        spyOn(component, 'updateBreadcrumbs')
+        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(daemonConfigValid as any))
+
+        component.appId = 1
+        component.daemonId = 2
+        component.ngOnInit()
+        expect(component.updateBreadcrumbs).toHaveBeenCalledTimes(1)
+
+        tick()
+        fixture.detectChanges()
+
+        expect(component.updateBreadcrumbs).toHaveBeenCalledTimes(2)
+    }))
+
     it('should display a message on error', fakeAsync(() => {
         spyOn(messageService, 'add')
         spyOn(servicesService, 'getDaemonConfig').and.returnValue(
@@ -322,5 +339,35 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         spyOn(component.subscriptions, 'unsubscribe')
         component.ngOnDestroy()
         expect(component.subscriptions.unsubscribe).toHaveBeenCalledTimes(1)
+    })
+
+    it('should update breadcrumbs if only app and daemon ID are provided', () => {
+        component.updateBreadcrumbs(1, 2)
+        fixture.detectChanges()
+
+        const breadcrumbs = fixture.debugElement.query(By.directive(BreadcrumbsComponent)).componentInstance as BreadcrumbsComponent
+        expect(breadcrumbs).toBeTruthy()
+
+        expect(breadcrumbs.items.length).toBe(6)
+        expect(breadcrumbs.items[2].label).toBe('App')
+        expect(breadcrumbs.items[2].routerLink).toBe('/apps/kea/1')
+
+        expect(breadcrumbs.items[4].label).toBe('Daemon')
+        expect(breadcrumbs.items[4].routerLink).toBe('/apps/kea/1?daemon=2')
+    })
+
+    it('should update breadcrumbs if app, daemon ID, app name and daemon name are provided', () => {
+        component.updateBreadcrumbs(1, 2, 'My App', 'My Daemon')
+        fixture.detectChanges()
+
+        const breadcrumbs = fixture.debugElement.query(By.directive(BreadcrumbsComponent)).componentInstance as BreadcrumbsComponent
+        expect(breadcrumbs).toBeTruthy()
+
+        expect(breadcrumbs.items.length).toBe(6)
+        expect(breadcrumbs.items[2].label).toBe('My App')
+        expect(breadcrumbs.items[2].routerLink).toBe('/apps/kea/1')
+
+        expect(breadcrumbs.items[4].label).toBe('My Daemon')
+        expect(breadcrumbs.items[4].routerLink).toBe('/apps/kea/1?daemon=2')
     })
 })
