@@ -1,5 +1,44 @@
 <ng-container *ngIf="!state.initError; else showInitError">
     <ng-container *ngIf="state.loaded; else showSpinner" [formGroup]="state.group">
+        <p-fieldset *ngIf="!state.wizard" legend="Assignments" styleClass="mt-4">
+            <div class="mt-4" [formGroup]="state.group">
+                <span class="p-float-label mb-2">
+                    <p-multiSelect
+                        inputId="servers-select"
+                        optionLabel="label"
+                        optionValue="id"
+                        [options]="state.filteredDaemons"
+                        formControlName="selectedDaemons"
+                        display="chip"
+                        [showToggleAll]="false"
+                        styleClass="w-full adaptive-chips-background"
+                        autofocus="true"
+                        (onChange)="onDaemonsChange($event)"
+                    >
+                    </p-multiSelect>
+                    <label for="servers-select">DHCP Servers</label>
+                </span>
+                <small
+                    *ngIf="
+                        state.group.get('selectedDaemons').invalid &&
+                        (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
+                    "
+                    class="p-error block"
+                    >At least one server must be selected.
+                </small>
+                <div *ngIf="state.group.get('selectedDaemons')?.disabled" class="flex align-items-center">
+                    <div>Servers selection is disabled</div>
+                    <div class="ml-2">
+                        <app-help-tip subject="disabled servers selection">
+                            When a subnet belongs to a shared network it is not allowed to change the assignments of the
+                            subnet to servers. These assignments can only be controlled in the shared network form for
+                            the entire shared network. The subnet assignments can be directly controlled only when the
+                            subnet does not belong to a shared network.
+                        </app-help-tip>
+                    </div>
+                </div>
+            </div>
+        </p-fieldset>
         <p-fieldset legend="Subnet" styleClass="mt-4">
             <span class="p-float-label mt-4 mb-2">
                 <input id="subnet" pInputText formControlName="subnet" class="w-full" />
@@ -42,44 +81,6 @@
                 </p-dropdown>
                 <label for="shared-network-select">Shared Network</label>
             </span>
-        </p-fieldset>
-        <p-fieldset *ngIf="!state.wizard" legend="Assignments" styleClass="mt-4">
-            <div class="mt-4" [formGroup]="state.group">
-                <span class="p-float-label mb-2">
-                    <p-multiSelect
-                        inputId="servers-select"
-                        optionLabel="label"
-                        optionValue="id"
-                        [options]="state.filteredDaemons"
-                        formControlName="selectedDaemons"
-                        display="chip"
-                        [showToggleAll]="false"
-                        styleClass="w-full adaptive-chips-background"
-                        (onChange)="onDaemonsChange($event)"
-                    >
-                    </p-multiSelect>
-                    <label for="servers-select">DHCP Servers</label>
-                </span>
-                <small
-                    *ngIf="
-                        state.group.get('selectedDaemons').invalid &&
-                        (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
-                    "
-                    class="p-error block"
-                    >At least one server must be selected.
-                </small>
-                <div *ngIf="state.group.get('selectedDaemons')?.disabled" class="flex align-items-center">
-                    <div>Servers selection is disabled</div>
-                    <div class="ml-2">
-                        <app-help-tip subject="disabled servers selection">
-                            When a subnet belongs to a shared network it is not allowed to change the assignments of the
-                            subnet to servers. These assignments can only be controlled in the shared network form for
-                            the entire shared network. The subnet assignments can be directly controlled only when the
-                            subnet does not belong to a shared network.
-                        </app-help-tip>
-                    </div>
-                </div>
-            </div>
         </p-fieldset>
         <p-fieldset *ngIf="!state.wizard" legend="Pools" styleClass="mt-4">
             <p-accordion>

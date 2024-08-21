@@ -1,24 +1,5 @@
 <ng-container *ngIf="!state.initError; else showInitError">
     <ng-container *ngIf="state.loaded; else showSpinner" [formGroup]="state.group">
-        <p-fieldset legend="Shared Network" styleClass="mt-4">
-            <span class="p-float-label mt-4 mb-2">
-                <input id="name" pInputText formControlName="name" class="w-full" />
-                <label for="name">Name</label>
-            </span>
-            <ng-container
-                *ngIf="
-                    state.group.get('name').invalid &&
-                    (state.group.get('name').dirty || state.group.get('name').touched)
-                "
-            >
-                <small *ngIf="state.group.get('name').hasError('valueInList')" class="p-error block"
-                    >A shared network with this name already exists.
-                </small>
-                <small *ngIf="!state.group.get('name').hasError('valueInList')" class="p-error block"
-                    >A shared network name is required.</small
-                >
-            </ng-container>
-        </p-fieldset>
         <p-fieldset legend="Assignments" styleClass="mt-4">
             <div class="mt-4" [formGroup]="state.group">
                 <span class="p-float-label mb-2">
@@ -45,6 +26,25 @@
                     >At least one server must be selected.
                 </small>
             </div>
+        </p-fieldset>
+        <p-fieldset legend="Shared Network" styleClass="mt-4">
+            <span class="p-float-label mt-4 mb-2">
+                <input id="name" pInputText formControlName="name" class="w-full" />
+                <label for="name">Name</label>
+            </span>
+            <ng-container
+                *ngIf="
+                    state.group.get('name').invalid &&
+                    (state.group.get('name').dirty || state.group.get('name').touched)
+                "
+            >
+                <small *ngIf="state.group.get('name').hasError('valueInList')" class="p-error block"
+                    >A shared network with this name already exists.
+                </small>
+                <small *ngIf="!state.group.get('name').hasError('valueInList')" class="p-error block"
+                    >A shared network name is required.</small
+                >
+            </ng-container>
         </p-fieldset>
         <p-fieldset legend="DHCP Parameters" styleClass="mt-4">
             <app-shared-parameters-form
