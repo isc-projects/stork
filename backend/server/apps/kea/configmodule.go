@@ -217,7 +217,7 @@ func (module *ConfigModule) ApplyGlobalParametersUpdate(ctx context.Context, dae
 	// configurations will be merged into them.
 	existingDaemons := recipe.KeaDaemonsBeforeConfigUpdate
 	if existingDaemons == nil {
-		return ctx, errors.New("internal server error: existing Kea configs cannot be nil when committing global parameters update")
+		return ctx, errors.New("internal server error - existing Kea configs cannot be nil when committing global parameters update")
 	}
 	var (
 		commands         []ConfigCommand
@@ -421,7 +421,7 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 	}
 	existingHost := recipe.HostBeforeUpdate
 	if existingHost == nil {
-		return ctx, errors.New("internal server error: host instance cannot be nil when committing host update")
+		return ctx, errors.New("internal server error - host instance cannot be nil when committing host update")
 	}
 
 	var commands []ConfigCommand
@@ -829,7 +829,7 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 	}
 	existingSharedNetwork := recipe.SharedNetworkBeforeUpdate
 	if existingSharedNetwork == nil {
-		return ctx, errors.New("internal server error: shared network instance cannot be nil when committing shared network update")
+		return ctx, errors.New("internal server error - shared network instance cannot be nil when committing shared network update")
 	}
 
 	var commands []ConfigCommand
@@ -1238,7 +1238,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	}
 	existingSubnet := recipe.SubnetBeforeUpdate
 	if existingSubnet == nil {
-		return ctx, errors.New("internal server error: subnet instance cannot be nil when committing subnet update")
+		return ctx, errors.New("internal server error - subnet instance cannot be nil when committing subnet update")
 	}
 
 	var (
