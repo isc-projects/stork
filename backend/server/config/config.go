@@ -58,6 +58,15 @@ type LockKey int64
 
 // A generic structure associating an object (entity) with a
 // database ID.
+//
+// Configurations passed to the Config Manager must be associated with
+// the daemons they belong to, so that the Config Manager knows which
+// config should be sent to which daemon. The keaconfig package has no
+// notion of the daemon ID, so the structures representing Kea
+// configurations do not contain these identifiers. This structure can be
+// used to make associations between any object and an ID. It is used
+// for making associations described above, but it is generic and can be
+// used for making associations between any object and an ID.
 type AnnotatedEntity[T any] struct {
 	id     int64
 	entity T
