@@ -168,7 +168,7 @@ type CommonDHCPConfig struct {
 	StoreExtendedInfo       *bool                    `json:"store-extended-info,omitempty"`
 }
 
-// Represnts the collection of settings pertaining to the expired
+// Represents the collection of settings pertaining to the expired
 // leases processing.
 type ExpiredLeasesProcessing struct {
 	FlushReclaimedTimerWaitTime *int64 `json:"flush-reclaimed-timer-wait-time,omitempty"`
