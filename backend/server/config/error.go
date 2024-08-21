@@ -22,7 +22,11 @@ func (e SomeDaemonsNotFoundError) Error() string {
 	if len(e.daemonIDs) == 0 {
 		return "daemons were not found for empty set of IDs"
 	}
-	return fmt.Sprintf("some daemons were not found for IDs: %s", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(e.daemonIDs)), ", "), "[]"))
+	ids := make([]string, len(e.daemonIDs))
+	for i, id := range e.daemonIDs {
+		ids[i] = fmt.Sprint(id)
+	}
+	return fmt.Sprintf("some daemons were not found for IDs: %s", strings.Join(ids, ", "))
 }
 
 // An error returned when unexpected set of configs was specified during
@@ -44,7 +48,11 @@ func (e InvalidConfigsError) Error() string {
 	if len(e.daemonIDs) == 0 {
 		return "no configs specified"
 	}
-	return fmt.Sprintf("invalid set of daemons specified with IDs: %s", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(e.daemonIDs)), ", "), "[]"))
+	ids := make([]string, len(e.daemonIDs))
+	for i, id := range e.daemonIDs {
+		ids[i] = fmt.Sprint(id)
+	}
+	return fmt.Sprintf("invalid set of daemons specified with IDs: %s", strings.Join(ids, ", "))
 }
 
 // An error returned when specified host is not found in the database.
