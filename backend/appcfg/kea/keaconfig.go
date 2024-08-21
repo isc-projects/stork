@@ -95,10 +95,8 @@ func (c *Config) getCommonConfigAccessor() commonConfigAccessor {
 // performing two passes and by the Merge function.
 func (c *Config) unmarshalIntoAccessibleConfig(data []byte) error {
 	type ct Config
-	if err := jsonc.Unmarshal(data, (*ct)(c)); err != nil {
-		return err
-	}
-	return nil
+	err := jsonc.Unmarshal(data, (*ct)(c))
+	return errors.Wrapf(err, "cannot unmarshal the data into an accessible config")
 }
 
 // Custom unmarshaller making two passes. The first pass parses the configuration
@@ -111,10 +109,8 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 	}
 	// Second pass.
 	type rt map[string]any
-	if err := jsonc.Unmarshal(data, (*rt)(&c.Raw)); err != nil {
-		return err
-	}
-	return nil
+	err := jsonc.Unmarshal(data, (*rt)(&c.Raw))
+	return errors.Wrapf(err, "cannot unmarshal the data into a raw config")
 }
 
 // Converts the configuration to the JSON form.
@@ -505,7 +501,7 @@ func (c *Config) Merge(source RawConfigAccessor) error {
 	// into server-specific structures. It does not unmarshal into the raw
 	// configuration because it has been already updated by the call to Merge().
 	err = c.unmarshalIntoAccessibleConfig(data)
-	return errors.Wrap(err, "problem parsing merged Kea configuration")
+	return errors.WithMessage(err, "problem parsing merged Kea configuration")
 }
 
 // Merges branches of the two configurations. If the branches are maps
