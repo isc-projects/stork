@@ -90,13 +90,23 @@ func (c *Config) getCommonConfigAccessor() commonConfigAccessor {
 	}
 }
 
+// Custom unmarshaller parsing configuration into the dedicated structures
+// held in the Config object. It is called internally by the custom unmarshaller
+// performing two passes and by the Merge function.
+func (c *Config) unmarshalIntoAccessibleConfig(data []byte) error {
+	type ct Config
+	if err := jsonc.Unmarshal(data, (*ct)(c)); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Custom unmarshaller making two passes. The first pass parses the configuration
 // into the dedicated structures. The second pass parses the entire configuration
 // into the raw map.
 func (c *Config) UnmarshalJSON(data []byte) error {
 	// First pass.
-	type ct Config
-	if err := jsonc.Unmarshal(data, (*ct)(c)); err != nil {
+	if err := c.unmarshalIntoAccessibleConfig(data); err != nil {
 		return err
 	}
 	// Second pass.
@@ -472,18 +482,29 @@ func hideSensitiveData(obj *map[string]any) {
 
 // Merges raw configuration into current configuration.
 func (c *Config) Merge(source RawConfigAccessor) error {
+	// Get source and destrination raw configurations. The merge is performed
+	// at the raw configuration levels.
 	destConfig, _ := c.GetRawConfig()
 	sourceConfig, err := source.GetRawConfig()
 	if err != nil {
 		return errors.Wrap(err, "problem getting raw configuration during Kea configurations merge")
 	}
+	// Merge the source config into destination config. The resulting
+	// configuration is stored in the Config.Raw field. However, the
+	// server-specific configurations (e.g., Config.DHCPv4Config) have
+	// not been updated at this point.
 	c.Raw = merge(destConfig, sourceConfig).(RawConfig)
-	data, err := json.Marshal(destConfig)
+	// In order to update the server-specific configuration structures
+	// we need to serialize the raw configuration and then unmarshal this
+	// configuration.
+	data, err := json.Marshal(c.Raw)
 	if err != nil {
 		return errors.Wrap(err, "problem serializing merged Kea configuration")
 	}
-	type ct Config
-	err = jsonc.Unmarshal(data, (*ct)(c))
+	// This call only performs only one pass which unmarshals the configuration
+	// into server-specific structures. It does not unmarshal into the raw
+	// configuration because it has been already updated by the call to Merge().
+	err = c.unmarshalIntoAccessibleConfig(data)
 	return errors.Wrap(err, "problem parsing merged Kea configuration")
 }
 
