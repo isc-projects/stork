@@ -619,11 +619,13 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 		return rsp
 	}
 
+	lookup := r.DHCPOptionDefinitionLookup
+
 	var settableConfigs []config.AnnotatedEntity[*keaconfig.SettableConfig]
 	for i := range params.Request.Configs {
 		receivedConfig := params.Request.Configs[i]
 		var settableConfig *keaconfig.SettableConfig
-		switch params.Request.Configs[i].DaemonName {
+		switch receivedConfig.DaemonName {
 		case dbmodel.DaemonNameDHCPv4:
 			settableConfig = keaconfig.NewSettableDHCPv4Config()
 		case dbmodel.DaemonNameDHCPv6:
@@ -673,6 +675,31 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 			_ = settableConfig.SetReservationsInSubnet(partialConfig.ReservationsInSubnet)
 			_ = settableConfig.SetReservationsOutOfPool(partialConfig.ReservationsOutOfPool)
 			_ = settableConfig.SetValidLifetime(partialConfig.ValidLifetime)
+
+			options, err := r.flattenDHCPOptions("", partialConfig.Options, 0)
+			if err != nil {
+				msg := "Problem with flattening DHCP options"
+				log.WithError(err).Error(msg)
+				rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+					Message: &msg,
+				})
+				return rsp
+			}
+
+			singleOptions := make([]keaconfig.SingleOptionData, 0, len(options))
+			for _, option := range options {
+				singleOption, err := keaconfig.CreateSingleOptionData(receivedConfig.DaemonID, lookup, option)
+				if err != nil {
+					msg := "Problem with creating Kea representation of the DHCP option"
+					log.WithError(err).Error(msg)
+					rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+						Message: &msg,
+					})
+					return rsp
+				}
+				singleOptions = append(singleOptions, *singleOption)
+			}
+			_ = settableConfig.SetDHCPOptions(singleOptions)
 
 			if settableConfig.IsDHCPv4() {
 				// DHCPv4 specific parameters.

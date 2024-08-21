@@ -944,6 +944,13 @@ func (c *SettableConfig) SetValidLifetime(validLifetime *int64) error {
 	}, "valid-lifetime")
 }
 
+// Sets DHCP option data in the configuration.
+func (c *SettableConfig) SetDHCPOptions(options []SingleOptionData) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPOptions(options)
+	}, "option-data")
+}
+
 // Sets a boolean flag indicating whether the server is authoritative.
 func (c *SettableConfig) SetAuthoritative(authoritative *bool) error {
 	return c.setDHCPv4Parameter(func(modifier dhcp4ConfigModifier) {

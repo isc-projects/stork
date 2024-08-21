@@ -106,7 +106,7 @@ type dhcpConfigModifier interface {
 	// expired leases before initiating the next attempt.
 	SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64)
 	// Sets the maximum number of expired lease-processing cycles which didn't
-	// result in full cleanup of the exired leases from the lease database,
+	// result in full cleanup of the expired leases from the lease database,
 	// after which a warning message is issued.
 	SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64)
 	// Sets the expired leases processing structure.
@@ -123,6 +123,8 @@ type dhcpConfigModifier interface {
 	SetReservationsOutOfPool(reservationsOutOfPool *bool)
 	// Sets global valid lifetime.
 	SetValidLifetime(validLifetime *int64)
+	// Sets DHCP options data.
+	SetDHCPOptions(options []SingleOptionData)
 }
 
 // An interface for setting the parts of the DHCPv4 configurations. It is
@@ -146,7 +148,6 @@ type DHCPv4Config struct {
 	EchoClientID    *bool              `json:"echo-client-id,omitempty"`
 	MatchClientID   *bool              `json:"match-client-id,omitempty"`
 	NextServer      *string            `json:"next-server,omitempty"`
-	OptionData      []SingleOptionData `json:"option-data,omitempty"`
 	ServerHostname  *string            `json:"server-hostname,omitempty"`
 	SharedNetworks  []SharedNetwork4   `json:"shared-networks,omitempty"`
 	Subnet4         []Subnet4          `json:"subnet4,omitempty"`
@@ -169,7 +170,6 @@ type DHCPv6Config struct {
 	PreferredLifetimeParameters
 	PDAllocator     *string            `json:"pd-allocator,omitempty"`
 	RapidCommit     *bool              `json:"rapid-commit,omitempty"`
-	OptionData      []SingleOptionData `json:"option-data,omitempty"`
 	SharedNetworks  []SharedNetwork6   `json:"shared-networks,omitempty"`
 	Subnet6         []Subnet6          `json:"subnet6,omitempty"`
 	Subnet6ByPrefix map[string]Subnet6 `json:"-"`
@@ -201,6 +201,7 @@ type CommonDHCPConfig struct {
 	LeaseDatabase           *Database                `json:"lease-database,omitempty"`
 	Loggers                 []Logger                 `json:"loggers,omitempty"`
 	MultiThreading          *MultiThreading          `json:"multi-threading,omitempty"`
+	OptionData              []SingleOptionData       `json:"option-data,omitempty"`
 	Reservations            []Reservation            `json:"reservations,omitempty"`
 	StoreExtendedInfo       *bool                    `json:"store-extended-info,omitempty"`
 }
@@ -214,6 +215,7 @@ type SettableCommonDHCPConfig struct {
 	Allocator               *storkutil.Nullable[string]                          `json:"allocator,omitempty"`
 	DHCPDDNS                *storkutil.Nullable[SettableDHCPDDNS]                `json:"dhcp-ddns,omitempty"`
 	ExpiredLeasesProcessing *storkutil.Nullable[SettableExpiredLeasesProcessing] `json:"expired-leases-processing,omitempty"`
+	OptionData              *storkutil.NullableArray[SingleOptionData]           `json:"option-data,omitempty"`
 }
 
 // Represents DHCP DDNS configuration parameters for the DHCPv4 and DHCPv6 servers.
@@ -323,7 +325,7 @@ func (c *DHCPv4Config) GetSharedNetworks(includeRootSubnets bool) (sharedNetwork
 	return
 }
 
-// Finds a DHCPv4 subnet by prefix. It returns nil ponter if the subnet
+// Finds a DHCPv4 subnet by prefix. It returns nil pointer if the subnet
 // is not found.
 func (c *DHCPv4Config) GetSubnetByPrefix(prefix string) Subnet {
 	if cidr := storkutil.ParseIP(prefix); cidr != nil {
@@ -499,7 +501,7 @@ func (c *SettableDHCPv4Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *
 }
 
 // Sets the maximum number of expired lease-processing cycles which didn't
-// result in full cleanup of the exired leases from the lease database,
+// result in full cleanup of the expired leases from the lease database,
 // after which a warning message is issued.
 func (c *SettableDHCPv4Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
 	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = storkutil.NewNullable(unwarnedReclaimCycles)
@@ -544,8 +546,13 @@ func (c *SettableDHCPv4Config) SetHostReservationIdentifiers(hostReservationIden
 }
 
 // Sets global valid lifetime.
-func (c *SettableDHCPv4Config) SetValidLifetime(validLiftime *int64) {
-	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLiftime)
+func (c *SettableDHCPv4Config) SetValidLifetime(validLifetime *int64) {
+	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLifetime)
+}
+
+// Sets global DHCP option data.
+func (c *SettableDHCPv4Config) SetDHCPOptions(options []SingleOptionData) {
+	c.OptionData = storkutil.NewNullableArray(options)
 }
 
 // Sets a boolean flag indicating whether the server is authoritative.
@@ -612,7 +619,7 @@ func (c *DHCPv6Config) GetSharedNetworks(includeRootSubnets bool) (sharedNetwork
 	return
 }
 
-// Finds a DHCPv6 subnet by prefix. It returns nil ponter if the subnet
+// Finds a DHCPv6 subnet by prefix. It returns nil pointer if the subnet
 // is not found.
 func (c *DHCPv6Config) GetSubnetByPrefix(prefix string) Subnet {
 	if cidr := storkutil.ParseIP(prefix); cidr != nil {
@@ -788,7 +795,7 @@ func (c *SettableDHCPv6Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *
 }
 
 // Sets the maximum number of expired lease-processing cycles which didn't
-// result in full cleanup of the exired leases from the lease database,
+// result in full cleanup of the expired leases from the lease database,
 // after which a warning message is issued.
 func (c *SettableDHCPv6Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
 	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = storkutil.NewNullable(unwarnedReclaimCycles)
@@ -833,8 +840,13 @@ func (c *SettableDHCPv6Config) SetHostReservationIdentifiers(hostReservationIden
 }
 
 // Sets global valid lifetime.
-func (c *SettableDHCPv6Config) SetValidLifetime(validLiftime *int64) {
-	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLiftime)
+func (c *SettableDHCPv6Config) SetValidLifetime(validLifetime *int64) {
+	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLifetime)
+}
+
+// Sets global DHCP option data.
+func (c *SettableDHCPv6Config) SetDHCPOptions(options []SingleOptionData) {
+	c.OptionData = storkutil.NewNullableArray(options)
 }
 
 // Sets allocator for prefix delegation.
