@@ -336,3 +336,4 @@
       - $ref: '#/definitions/KeaConfigExpiredLeasesProcessingParameters'
       - $ref: '#/definitions/KeaConfigReservationParameters'
       - $ref: '#/definitions/KeaConfigValidLifetimeParameters'
+      - $ref: '#/definitions/DHCPOptions'
