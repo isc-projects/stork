@@ -664,7 +664,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 	// Send the commands to Kea servers.
 	cctx, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
-		msg := fmt.Sprintf("Problem with committing Kea config: %s", err)
+		msg := "Problem with committing Kea config"
 		log.WithError(err).Error(msg)
 		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
