@@ -555,6 +555,31 @@ func TestSetDHCPv4EchoClientID(t *testing.T) {
 	require.Nil(t, cfg.EchoClientID.GetValue())
 }
 
+// Test setting DHCPv4 option data.
+func TestSetDHCPv4OptionData(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPOptions([]SingleOptionData{
+		{
+			Name:       "routers",
+			AlwaysSend: true,
+			Code:       3,
+			CSVFormat:  true,
+			Data:       "foobar",
+			Space:      "dhcp4",
+		},
+	})
+	require.Len(t, cfg.OptionData, 1)
+	require.Equal(t, "routers", cfg.OptionData[0].Name)
+	require.True(t, cfg.OptionData[0].AlwaysSend)
+	require.EqualValues(t, 3, cfg.OptionData[0].Code)
+	require.True(t, cfg.OptionData[0].CSVFormat)
+	require.Equal(t, "foobar", cfg.OptionData[0].Data)
+	require.Equal(t, "dhcp4", cfg.OptionData[0].Space)
+
+	cfg.SetDHCPOptions(nil)
+	require.Nil(t, cfg.OptionData)
+}
+
 // Test getting configured hook libraries from the DHCPv6 server configuration.
 func TestGetDHCPv6HookLibraries(t *testing.T) {
 	cfg := &DHCPv6Config{
@@ -1090,4 +1115,29 @@ func TestSetDHCPv6PDAllocator(t *testing.T) {
 	require.EqualValues(t, "flq", *cfg.PDAllocator.GetValue())
 	cfg.SetPDAllocator(nil)
 	require.Nil(t, cfg.PDAllocator.GetValue())
+}
+
+// Test setting DHCPv6 option data.
+func TestSetDHCPv6OptionData(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPOptions([]SingleOptionData{
+		{
+			Name:       "routers",
+			AlwaysSend: true,
+			Code:       3,
+			CSVFormat:  true,
+			Data:       "foobar",
+			Space:      "dhcp4",
+		},
+	})
+	require.Len(t, cfg.OptionData, 1)
+	require.Equal(t, "routers", cfg.OptionData[0].Name)
+	require.True(t, cfg.OptionData[0].AlwaysSend)
+	require.EqualValues(t, 3, cfg.OptionData[0].Code)
+	require.True(t, cfg.OptionData[0].CSVFormat)
+	require.Equal(t, "foobar", cfg.OptionData[0].Data)
+	require.Equal(t, "dhcp4", cfg.OptionData[0].Space)
+
+	cfg.SetDHCPOptions(nil)
+	require.Nil(t, cfg.OptionData)
 }

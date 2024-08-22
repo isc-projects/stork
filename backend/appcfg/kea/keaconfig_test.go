@@ -2109,6 +2109,24 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 	err = config.SetEchoClientID(storkutil.Ptr(false))
 	require.NoError(t, err)
 
+	err = config.SetDHCPOptions([]SingleOptionData{
+		{
+			AlwaysSend: true,
+			Code:       42,
+			CSVFormat:  true,
+			Data:       "foo",
+			Name:       "forty-two",
+			Space:      "dhcp4",
+		},
+		{
+			Code:  24,
+			Data:  "bar",
+			Name:  "twenty-four",
+			Space: "dhcp4",
+		},
+	})
+	require.NoError(t, err)
+
 	serializedConfig, err := config.GetSerializedConfig()
 	require.NoError(t, err)
 
@@ -2153,7 +2171,24 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 				"unwarned-reclaim-cycles": 10
 			},
 			"authoritative": true,
-			"echo-client-id": false
+			"echo-client-id": false,
+			"option-data": [
+				{
+					"always-send": true,
+					"code": 42,
+					"csv-format": true,
+					"data": "foo",
+					"name": "forty-two",
+					"space": "dhcp4"
+				},
+				{
+					"code": 24,
+					"csv-format": false,
+					"data": "bar",
+					"name": "twenty-four",
+					"space": "dhcp4"
+				}
+			]
 		}
 	}`, serializedConfig)
 }
