@@ -1748,6 +1748,21 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 		KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
 			ValidLifetime: storkutil.Ptr(int64(1111)),
 		},
+		DHCPOptions: models.DHCPOptions{
+			Options: []*models.DHCPOption{
+				{
+					Code:       42,
+					AlwaysSend: true,
+					Fields: []*models.DHCPOptionField{
+						{
+							FieldType: "int32",
+							Values:    []string{"4242"},
+						},
+					},
+					Universe: 4,
+				},
+			},
+		},
 	}
 	params2 := dhcp.UpdateKeaGlobalParametersSubmitParams{
 		ID: transactionID,
@@ -1816,6 +1831,15 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 								"reclaim-timer-wait-time": 16,
 								"unwarned-reclaim-cycles": 17
 							},
+							"option-data": [
+								{
+									"code": 42,
+									"always-send": true,
+									"csv-format": true,
+									"data": "4242",
+									"space": "dhcp4"
+								}
+							],
 							"reservations-global": true,
 							"reservations-in-subnet": false,
 							"reservations-out-of-pool": true,
@@ -1999,6 +2023,21 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 		KeaConfigValidLifetimeParameters: models.KeaConfigValidLifetimeParameters{
 			ValidLifetime: storkutil.Ptr(int64(1111)),
 		},
+		DHCPOptions: models.DHCPOptions{
+			Options: []*models.DHCPOption{
+				{
+					Code:       42,
+					AlwaysSend: true,
+					Fields: []*models.DHCPOptionField{
+						{
+							FieldType: "int32",
+							Values:    []string{"4242"},
+						},
+					},
+					Universe: 6,
+				},
+			},
+		},
 	}
 	params2 := dhcp.UpdateKeaGlobalParametersSubmitParams{
 		ID: transactionID,
@@ -2065,6 +2104,15 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 								"reclaim-timer-wait-time": 16,
 								"unwarned-reclaim-cycles": 17
 							},
+							"option-data": [
+								{
+									"code": 42,
+									"always-send": true,
+									"csv-format": true,
+									"data": "4242",
+									"space": "dhcp6"
+								}
+							],
 							"pd-allocator": "random",
 							"reservations-global": true,
 							"reservations-in-subnet": false,
@@ -2278,6 +2326,41 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 			ID: transactionID,
 			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
 				Configs: []*models.KeaDaemonConfigurableGlobalParameters{},
+			},
+		}
+		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	})
+
+	t.Run("invalid DHCP option", func(t *testing.T) {
+		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
+			ID: transactionID,
+			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
+				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
+					{
+						DaemonID:   daemon.GetID(),
+						DaemonName: dbmodel.DaemonNameDHCPv6,
+						PartialConfig: &models.KeaConfigurableGlobalParameters{
+							DHCPOptions: models.DHCPOptions{
+								Options: []*models.DHCPOption{
+									{
+										Code:     42,
+										Universe: 4,
+										Fields: []*models.DHCPOptionField{
+											{
+												FieldType: "uint32",
+												// The field value is missing.
+												Values: []string{},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		}
 		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)

@@ -619,8 +619,6 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 		return rsp
 	}
 
-	lookup := r.DHCPOptionDefinitionLookup
-
 	var settableConfigs []config.AnnotatedEntity[*keaconfig.SettableConfig]
 	for i := range params.Request.Configs {
 		receivedConfig := params.Request.Configs[i]
@@ -680,7 +678,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 			if err != nil {
 				msg := "Problem with flattening DHCP options"
 				log.WithError(err).Error(msg)
-				rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 					Message: &msg,
 				})
 				return rsp
@@ -688,11 +686,15 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 
 			singleOptions := make([]keaconfig.SingleOptionData, 0, len(options))
 			for _, option := range options {
-				singleOption, err := keaconfig.CreateSingleOptionData(receivedConfig.DaemonID, lookup, option)
+				singleOption, err := keaconfig.CreateSingleOptionData(
+					receivedConfig.DaemonID,
+					r.DHCPOptionDefinitionLookup,
+					option,
+				)
 				if err != nil {
 					msg := "Problem with creating Kea representation of the DHCP option"
 					log.WithError(err).Error(msg)
-					rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+					rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 						Message: &msg,
 					})
 					return rsp
@@ -721,7 +723,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 			// Invalid configs applied.
 			msg := "Problem with applying Kea global parameters because invalid set of configurations have been specified"
 			log.Error(msg)
-			rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
