@@ -925,6 +925,7 @@ func (d *dispatcherImpl) ReviewInProgress(daemonID int64) bool {
 // implemented it should be included in this function.
 func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", GetDefaultTriggers(), statCmdsPresence)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "lease_cmds_presence", GetDefaultTriggers(), leaseCmdsPresence)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "host_cmds_presence", GetDefaultTriggers(), hostCmdsPresence)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "dispensable_shared_network", GetDefaultTriggers(), sharedNetworkDispensable)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "dispensable_subnet", ExtendDefaultTriggers(DBHostsModified), subnetDispensable)

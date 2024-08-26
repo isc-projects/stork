@@ -162,6 +162,8 @@ export class ConfigCheckerPreferencePickerComponent {
         switch (checkerName) {
             case 'stat_cmds_presence':
                 return 'The checker verifying if the stat_cmds hooks library is loaded.'
+            case 'lease_cmds_presence':
+                return 'The checker verifying if the lease_cmds hooks library is loaded.'
             case 'host_cmds_presence':
                 return (
                     'The checker verifying if the host_cmds hooks library is ' + 'loaded when host backend is in use.'

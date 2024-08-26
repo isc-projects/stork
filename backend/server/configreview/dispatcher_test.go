@@ -682,6 +682,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 		checkerNames = append(checkerNames, p.name)
 	}
 	require.Contains(t, checkerNames, "stat_cmds_presence")
+	require.Contains(t, checkerNames, "lease_cmds_presence")
 	require.Contains(t, checkerNames, "host_cmds_presence")
 	require.Contains(t, checkerNames, "dispensable_shared_network")
 	require.Contains(t, checkerNames, "dispensable_subnet")
@@ -709,8 +710,8 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ConfigModified)
 	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, DBHostsModified)
 
-	require.EqualValues(t, 13, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
-	require.EqualValues(t, 13, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
+	require.EqualValues(t, 14, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
+	require.EqualValues(t, 14, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
 	require.EqualValues(t, 4, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
 	require.EqualValues(t, 0, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[StorkAgentConfigModified])
 	require.EqualValues(t, 2, dispatcher.groups[KeaCADaemon].triggerRefCounts[ManualRun])

@@ -177,13 +177,13 @@ func TestLeaseCmdsPresent(t *testing.T) {
 // the report when the library is not loaded.
 func TestLeaseCmdsAbsent(t *testing.T) {
 	configStr := `{"Dhcp4": { }}`
-	report, err := statCmdsPresence(createReviewContext(
+	report, err := leaseCmdsPresence(createReviewContext(
 		t, nil, configStr, "2.2.0",
 	))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
-	require.Contains(t, *report.content, "The Kea Statistics Commands library")
+	require.Contains(t, *report.content, "The Kea Lease Commands library")
 }
 
 // Tests that the checker checking host_cmds hooks library presence
