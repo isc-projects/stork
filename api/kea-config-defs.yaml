@@ -48,6 +48,9 @@
       ddnsUseConflictResolution:
         type: boolean
         x-nullable: true
+      ddnsConflictResolutionMode:
+        type: string
+        x-nullable: true
       ddnsTTLPercent:
         type: number
         format: float

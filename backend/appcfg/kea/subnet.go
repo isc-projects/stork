@@ -51,15 +51,16 @@ type FourOverSixParameters struct {
 
 // Represents DDNS configuration parameters in Kea.
 type DDNSParameters struct {
-	DDNSGeneratedPrefix       *string  `json:"ddns-generated-prefix,omitempty"`
-	DDNSOverrideClientUpdate  *bool    `json:"ddns-override-client-update,omitempty"`
-	DDNSOverrideNoUpdate      *bool    `json:"ddns-override-no-update,omitempty"`
-	DDNSQualifyingSuffix      *string  `json:"ddns-qualifying-suffix,omitempty"`
-	DDNSReplaceClientName     *string  `json:"ddns-replace-client-name,omitempty"`
-	DDNSSendUpdates           *bool    `json:"ddns-send-updates,omitempty"`
-	DDNSUpdateOnRenew         *bool    `json:"ddns-update-on-renew,omitempty"`
-	DDNSUseConflictResolution *bool    `json:"ddns-use-conflict-resolution,omitempty"`
-	DDNSTTLPercent            *float32 `json:"ddns-ttl-percent,omitempty"`
+	DDNSGeneratedPrefix        *string  `json:"ddns-generated-prefix,omitempty"`
+	DDNSOverrideClientUpdate   *bool    `json:"ddns-override-client-update,omitempty"`
+	DDNSOverrideNoUpdate       *bool    `json:"ddns-override-no-update,omitempty"`
+	DDNSQualifyingSuffix       *string  `json:"ddns-qualifying-suffix,omitempty"`
+	DDNSReplaceClientName      *string  `json:"ddns-replace-client-name,omitempty"`
+	DDNSSendUpdates            *bool    `json:"ddns-send-updates,omitempty"`
+	DDNSUpdateOnRenew          *bool    `json:"ddns-update-on-renew,omitempty"`
+	DDNSUseConflictResolution  *bool    `json:"ddns-use-conflict-resolution,omitempty"`
+	DDNSConflictResolutionMode *string  `json:"ddns-conflict-resolution-mode,omitempty"`
+	DDNSTTLPercent             *float32 `json:"ddns-ttl-percent,omitempty"`
 }
 
 // Represents Kea configuration parameters for hostname manipulation.

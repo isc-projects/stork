@@ -625,6 +625,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 			_ = settableConfig.SetDDNSTTLPercent(partialConfig.DdnsTTLPercent)
 			_ = settableConfig.SetDDNSUpdateOnRenew(partialConfig.DdnsUpdateOnRenew)
 			_ = settableConfig.SetDDNSUseConflictResolution(partialConfig.DdnsUseConflictResolution)
+			_ = settableConfig.SetDDNSConflictResolutionMode(partialConfig.DdnsConflictResolutionMode)
 			_ = settableConfig.SetELPFlushReclaimedTimerWaitTime(partialConfig.FlushReclaimedTimerWaitTime)
 			_ = settableConfig.SetELPHoldReclaimedTime(partialConfig.HoldReclaimedTime)
 			_ = settableConfig.SetELPMaxReclaimLeases(partialConfig.MaxReclaimLeases)

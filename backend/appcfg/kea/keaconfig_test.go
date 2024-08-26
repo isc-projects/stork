@@ -1885,6 +1885,9 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 	err = config.SetDDNSUseConflictResolution(storkutil.Ptr(true))
 	require.NoError(t, err)
 
+	err = config.SetDDNSConflictResolutionMode(storkutil.Ptr("check-with-dhcid"))
+	require.NoError(t, err)
+
 	err = config.SetDDNSTTLPercent(storkutil.Ptr(float32(0.1)))
 	require.NoError(t, err)
 
@@ -1941,6 +1944,7 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 			"ddns-send-updates": true,
 			"ddns-update-on-renew": true,
 			"ddns-use-conflict-resolution": true,
+			"ddns-conflict-resolution-mode": "check-with-dhcid",
 			"ddns-ttl-percent": 0.1,
 			"early-global-reservations-lookup": true,
 			"host-reservation-identifiers": [

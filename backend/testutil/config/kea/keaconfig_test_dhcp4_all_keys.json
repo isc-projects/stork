@@ -51,6 +51,7 @@
         "ddns-send-updates": true,
         "ddns-update-on-renew": true,
         "ddns-use-conflict-resolution": true,
+        "ddns-conflict-resolution-mode": "check-with-dhcid",
         "decline-probation-period": 86400,
         "dhcp-ddns": {
             "enable-updates": false,
@@ -202,6 +203,7 @@
                 "ddns-send-updates": true,
                 "ddns-update-on-renew": true,
                 "ddns-use-conflict-resolution": true,
+                "ddns-conflict-resolution-mode": "check-with-dhcid",
                 "ddns-ttl-percent": 0.65,
                 "hostname-char-replacement": "x",
                 "hostname-char-set": "[^A-Za-z0-9.-]",
@@ -253,6 +255,7 @@
                         "ddns-send-updates": true,
                         "ddns-update-on-renew": true,
                         "ddns-use-conflict-resolution": true,
+                        "ddns-conflict-resolution-mode": "check-with-dhcid",
                         "ddns-ttl-percent": 0.65,
                         "hostname-char-replacement": "x",
                         "hostname-char-set": "[^A-Za-z0-9.-]",

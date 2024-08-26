@@ -254,6 +254,9 @@ func TestGetSharedNetwork4(t *testing.T) {
 	// ddns-use-conflict-resolution
 	require.NotNil(t, networkParams.DdnsUseConflictResolution)
 	require.True(t, *networkParams.DdnsUseConflictResolution)
+	// ddns-conflict-resolution-mode
+	require.NotNil(t, networkParams.DdnsConflictResolutionMode)
+	require.Equal(t, "check-with-dhcid", *networkParams.DdnsConflictResolutionMode)
 	// ddns-ttl-percent
 	require.NotNil(t, networkParams.DdnsTTLPercent)
 	require.EqualValues(t, float32(0.65), *networkParams.DdnsTTLPercent)
@@ -371,6 +374,9 @@ func TestGetSharedNetwork4(t *testing.T) {
 	// ddns-use-conflict-resolution
 	require.NotNil(t, globalParams.DdnsUseConflictResolution)
 	require.True(t, *globalParams.DdnsUseConflictResolution)
+	// ddns-conflict-resolution-mode
+	require.NotNil(t, networkParams.DdnsConflictResolutionMode)
+	require.Equal(t, "check-with-dhcid", *networkParams.DdnsConflictResolutionMode)
 	// hostname-char-replacement
 	require.NotNil(t, globalParams.HostnameCharReplacement)
 	require.Equal(t, "x", *globalParams.HostnameCharReplacement)
@@ -798,15 +804,16 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 				RequireClientClasses: []string{"bar"},
 			},
 			KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
-				DdnsGeneratedPrefix:       storkutil.Ptr("abc"),
-				DdnsOverrideClientUpdate:  storkutil.Ptr(true),
-				DdnsOverrideNoUpdate:      storkutil.Ptr(false),
-				DdnsQualifyingSuffix:      storkutil.Ptr("example.org"),
-				DdnsReplaceClientName:     storkutil.Ptr("never"),
-				DdnsSendUpdates:           storkutil.Ptr(true),
-				DdnsUpdateOnRenew:         storkutil.Ptr(true),
-				DdnsUseConflictResolution: storkutil.Ptr(true),
-				DdnsTTLPercent:            storkutil.Ptr(float32(0.65)),
+				DdnsGeneratedPrefix:        storkutil.Ptr("abc"),
+				DdnsOverrideClientUpdate:   storkutil.Ptr(true),
+				DdnsOverrideNoUpdate:       storkutil.Ptr(false),
+				DdnsQualifyingSuffix:       storkutil.Ptr("example.org"),
+				DdnsReplaceClientName:      storkutil.Ptr("never"),
+				DdnsSendUpdates:            storkutil.Ptr(true),
+				DdnsUpdateOnRenew:          storkutil.Ptr(true),
+				DdnsUseConflictResolution:  storkutil.Ptr(true),
+				DdnsConflictResolutionMode: storkutil.Ptr("check-with-dhcid"),
+				DdnsTTLPercent:             storkutil.Ptr(float32(0.65)),
 			},
 			KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
 				FourOverSixInterface:   storkutil.Ptr("eth0"),
@@ -915,6 +922,7 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 								"ddns-send-updates": true,
 								"ddns-update-on-renew": true,
 								"ddns-use-conflict-resolution": true,
+								"ddns-conflict-resolution-mode": "check-with-dhcid",
 								"ddns-ttl-percent": 0.65,
 								"hostname-char-replacement": "a",
 								"hostname-char-set": "b",
@@ -1523,14 +1531,15 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 				RequireClientClasses: []string{"bar"},
 			},
 			KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
-				DdnsGeneratedPrefix:       storkutil.Ptr("abc"),
-				DdnsOverrideClientUpdate:  storkutil.Ptr(true),
-				DdnsOverrideNoUpdate:      storkutil.Ptr(false),
-				DdnsQualifyingSuffix:      storkutil.Ptr("example.org"),
-				DdnsReplaceClientName:     storkutil.Ptr("never"),
-				DdnsSendUpdates:           storkutil.Ptr(true),
-				DdnsUpdateOnRenew:         storkutil.Ptr(true),
-				DdnsUseConflictResolution: storkutil.Ptr(true),
+				DdnsGeneratedPrefix:        storkutil.Ptr("abc"),
+				DdnsOverrideClientUpdate:   storkutil.Ptr(true),
+				DdnsOverrideNoUpdate:       storkutil.Ptr(false),
+				DdnsQualifyingSuffix:       storkutil.Ptr("example.org"),
+				DdnsReplaceClientName:      storkutil.Ptr("never"),
+				DdnsSendUpdates:            storkutil.Ptr(true),
+				DdnsUpdateOnRenew:          storkutil.Ptr(true),
+				DdnsUseConflictResolution:  storkutil.Ptr(true),
+				DdnsConflictResolutionMode: storkutil.Ptr("check-with-dhcid"),
 			},
 			KeaConfigFourOverSixParameters: models.KeaConfigFourOverSixParameters{
 				FourOverSixInterface:   storkutil.Ptr("eth0"),
@@ -1693,6 +1702,7 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 								"ddns-send-updates": true,
 								"ddns-update-on-renew": true,
 								"ddns-use-conflict-resolution": true,
+								"ddns-conflict-resolution-mode": "check-with-dhcid",
 								"hostname-char-replacement": "a",
 								"hostname-char-set": "b",
 								"reservation-mode": "in-pool",

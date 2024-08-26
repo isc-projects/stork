@@ -236,6 +236,16 @@ func TestSetDHCPv4DDNSUseConflictResolution(t *testing.T) {
 	require.Nil(t, cfg.DDNSUseConflictResolution)
 }
 
+// Test setting a DDNS conflict resolution mode.
+func TestSetDHCPv4DDNSConflictResolutionMode(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDDNSConflictResolutionMode(storkutil.Ptr("check-with-dhcid"))
+	require.NotNil(t, cfg.DDNSConflictResolutionMode)
+	require.Equal(t, "check-with-dhcid", *cfg.DDNSConflictResolutionMode)
+	cfg.SetDDNSConflictResolutionMode(nil)
+	require.Nil(t, cfg.DDNSConflictResolutionMode)
+}
+
 // Test setting the the percent of the lease's lifetime to use for the DNS TTL.
 func TestSetDHCPv4DDNSTTLPercent(t *testing.T) {
 	cfg := &DHCPv4Config{}
@@ -636,6 +646,16 @@ func TestSetDHCPv6DDNSUseConflictResolution(t *testing.T) {
 	require.True(t, *cfg.DDNSUseConflictResolution)
 	cfg.SetDDNSUseConflictResolution(nil)
 	require.Nil(t, cfg.DDNSUseConflictResolution)
+}
+
+// Test setting a DDNS conflict resolution mode.
+func TestSetDHCPv6DDNSConflictResolutionMode(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDDNSConflictResolutionMode(storkutil.Ptr("check-with-dhcid"))
+	require.NotNil(t, cfg.DDNSConflictResolutionMode)
+	require.Equal(t, "check-with-dhcid", *cfg.DDNSConflictResolutionMode)
+	cfg.SetDDNSConflictResolutionMode(nil)
+	require.Nil(t, cfg.DDNSConflictResolutionMode)
 }
 
 // Test setting the the percent of the lease's lifetime to use for the DNS TTL.

@@ -68,6 +68,8 @@ type dhcpConfigModifier interface {
 	// resolution as described in RFC 4703 should be employed for the
 	// given update request.
 	SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool)
+	// Sets a DDNS conflict resolution mode.
+	SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string)
 	// Sets the the percent of the lease's lifetime to use for the DNS TTL.
 	SetDDNSTTLPercent(ddnsTTLPercent *float32)
 	// Sets the number of seconds since the last removal of the expired
@@ -321,6 +323,11 @@ func (c *DHCPv4Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *b
 	c.CommonDHCPConfig.DDNSUseConflictResolution = ddnsUseConflictResolution
 }
 
+// Sets a DDNS conflict resolution mode.
+func (c *DHCPv4Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
+	c.CommonDHCPConfig.DDNSConflictResolutionMode = ddnsConflictResolutionMode
+}
+
 // Sets the the percent of the lease's lifetime to use for the DNS TTL.
 func (c *DHCPv4Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
 	c.CommonDHCPConfig.DDNSTTLPercent = ddnsTTLPercent
@@ -550,6 +557,11 @@ func (c *DHCPv6Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
 // given update request.
 func (c *DHCPv6Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) {
 	c.CommonDHCPConfig.DDNSUseConflictResolution = ddnsUseConflictResolution
+}
+
+// Sets a DDNS conflict resolution mode.
+func (c *DHCPv6Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
+	c.CommonDHCPConfig.DDNSConflictResolutionMode = ddnsConflictResolutionMode
 }
 
 // Sets the the percent of the lease's lifetime to use for the DNS TTL.

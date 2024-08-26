@@ -733,6 +733,16 @@ func (c *SettableConfig) SetDDNSUseConflictResolution(ddnsUseConflictResolution 
 	}, "ddns-use-conflict-resolution")
 }
 
+// Sets a boolean flag which is passed to kea-dhcp-ddns with each DDNS
+// update request, to indicate whether DNS update conflict
+// resolution as described in RFC 4703 should be employed for the
+// given update request.
+func (c *SettableConfig) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDDNSConflictResolutionMode(ddnsConflictResolutionMode)
+	}, "ddns-conflict-resolution-mode")
+}
+
 // Sets the the percent of the lease's lifetime to use for the DNS TTL.
 func (c *SettableConfig) SetDDNSTTLPercent(ddnsTTLPercent *float32) error {
 	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
