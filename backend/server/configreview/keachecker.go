@@ -32,6 +32,25 @@ func statCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	return nil, nil
 }
 
+// The checker verifying if the lease_cmds hooks library is loaded.
+func leaseCmdsPresence(ctx *ReviewContext) (*Report, error) {
+	config := ctx.subjectDaemon.KeaDaemon.Config
+	if _, _, present := config.GetHookLibrary("libdhcp_lease_cmds"); !present {
+		r, err := NewReport(ctx, "The Kea Lease Commands library "+
+			"(libdhcp_lease_cmds) provides commands for retrieving "+
+			"DHCP leases from Kea DHCP servers. Stork sends these "+
+			"commands to look for leases matching the criteria provided in the "+
+			"lease search box and leases related to the host reservations. "+
+			"Stork found that {daemon} is not using this hook library. The "+
+			"searching for leases feature will not be available until the "+
+			"library is loaded.").
+			referencingDaemon(ctx.subjectDaemon).
+			create()
+		return r, err
+	}
+	return nil, nil
+}
+
 // The checker verifying if the host_cmds hooks library is loaded when
 // host backend is in use.
 func hostCmdsPresence(ctx *ReviewContext) (*Report, error) {
