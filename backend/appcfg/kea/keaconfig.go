@@ -490,6 +490,8 @@ func (c *Config) Merge(source RawConfigAccessor) error {
 	// server-specific configurations (e.g., Config.DHCPv4Config) have
 	// not been updated at this point.
 	c.Raw = merge(destConfig, sourceConfig).(RawConfig)
+	// After the merge, the hash is no longer valid, so let's delete it.
+	delete(c.Raw, "hash")
 	// In order to update the server-specific configuration structures
 	// we need to serialize the raw configuration and then unmarshal this
 	// configuration.

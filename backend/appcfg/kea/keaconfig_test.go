@@ -1741,7 +1741,8 @@ func TestMergeConfig(t *testing.T) {
 					"library": "/tmp/hooks-library.so"
 				}
 			]
-		}
+		},
+		"hash": "01020304"
 	}`
 	source2 := `{
 		"Dhcp4": {
@@ -1751,7 +1752,8 @@ func TestMergeConfig(t *testing.T) {
 				"max-reclaim-leases": 12,
 				"max-reclaim-time": 7
 			}
-		}
+		},
+		"hash": "02030405"
 	}`
 	config1, err := NewConfig(source1)
 	require.NoError(t, err)
