@@ -272,6 +272,7 @@ func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 func GetDaemonsByIDs(dbi pg.DBI, ids []int64) (daemons []Daemon, err error) {
 	err = dbi.Model(&daemons).
 		Relation("App.AccessPoints").
+		Relation("App.Machine").
 		Relation("KeaDaemon.KeaDHCPDaemon").
 		Where("daemon.id IN (?)", pg.In(ids)).
 		OrderExpr("daemon.id ASC").

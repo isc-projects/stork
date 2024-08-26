@@ -335,6 +335,15 @@ func TestGetDaemonsByIDs(t *testing.T) {
 	var ids []int64
 	for _, rd := range returnedDaemons {
 		ids = append(ids, rd.ID)
+		require.NotNil(t, rd.App)
+		require.EqualValues(t, app.ID, rd.App.ID)
+		require.NotNil(t, rd.App.AccessPoints)
+		require.Len(t, rd.App.AccessPoints, 1)
+		require.Equal(t, accessPoints[0].Port, rd.App.AccessPoints[0].Port)
+		require.NotNil(t, rd.App.Machine)
+		require.EqualValues(t, m.ID, rd.App.Machine.ID)
+		require.NotNil(t, rd.KeaDaemon)
+		require.NotNil(t, rd.KeaDaemon.KeaDHCPDaemon)
 	}
 	require.ElementsMatch(t, ids, selectedDaemons)
 }
