@@ -794,6 +794,7 @@
       parameters:
         - in: body
           name: request
+          required: true
           description: Request to begin new transaction.
           schema:
             $ref: '#/definitions/UpdateKeaDaemonsGlobalParametersBeginRequest'
@@ -802,6 +803,27 @@
           description: New transaction successfully started.
           schema:
             $ref: '#/definitions/UpdateKeaDaemonsGlobalParametersBeginResponse'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /kea-global-parameters/transaction/{id}:
+    delete:
+      summary: Cancel transaction for updating global Kea parameters.
+      description: Cancels the transaction for updating Kea global parameters in the config manager.
+      operationId: updateKeaGlobalParametersDelete
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+      responses:
+        200:
+          description: Transaction successfully deleted.
         default:
           description: generic error response
           schema:

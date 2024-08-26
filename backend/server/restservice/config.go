@@ -496,13 +496,24 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 	}
 	cctx, err = r.ConfigManager.GetKeaModule().BeginGlobalParametersUpdate(cctx, params.Request.DaemonIds)
 	if err != nil {
-		var someDaemonsNotFound *config.SomeDaemonsNotFoundError
+		var (
+			someDaemonsNotFound *config.SomeDaemonsNotFoundError
+			lock                *config.LockError
+		)
 		switch {
 		case errors.As(err, &someDaemonsNotFound):
 			// Failed to find some of the daemons.
 			msg := "Unable to update the Kea global parameters because some of the specified daemons do not exist"
 			log.Error(msg)
 			rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		case errors.As(err, &lock):
+			// Failed to lock daemons.
+			msg := "Unable to edit Kea global parameters because they may be currently edited by another user"
+			log.WithError(err).Error(msg)
+			rsp := dhcp.NewUpdateKeaGlobalParametersBeginDefault(http.StatusLocked).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -675,5 +686,24 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 	// Everything ok. Cleanup and send OK to the client.
 	r.ConfigManager.Done(cctx)
 	rsp := dhcp.NewUpdateKeaGlobalParametersSubmitOK()
+	return rsp
+}
+
+// Implements the DELETE call to cancel updating Kea global parameters (kea-global-parameters/transaction/{id}).
+// It removes the specified transaction from the config manager, if the transaction exists.
+func (r *RestAPI) UpdateKeaGlobalParametersDelete(ctx context.Context, params dhcp.UpdateKeaGlobalParametersDeleteParams) middleware.Responder {
+	// Retrieve the context from the config manager.
+	_, user := r.SessionManager.Logged(ctx)
+	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
+	if cctx == nil {
+		msg := "Transaction expired for updating Kea global parameters"
+		log.Errorf("Problem with recovering transaction context for transaction ID %d and user ID %d", params.ID, user.ID)
+		rsp := dhcp.NewUpdateKeaGlobalParametersDeleteDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	r.ConfigManager.Done(cctx)
+	rsp := dhcp.NewUpdateKeaGlobalParametersDeleteOK()
 	return rsp
 }

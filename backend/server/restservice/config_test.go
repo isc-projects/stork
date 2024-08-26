@@ -2084,3 +2084,135 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	})
 }
+
+// Test that the transaction to update global Kea parameters can be canceled,
+// resulting in the removal of this transaction from the config manager and
+// allowing another user to apply config updates.
+func TestUpdateGlobalParametersBeginCancel(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	serverConfig := `{
+		"Dhcp6": {
+			"valid-lifetime": 2222
+		}
+	}`
+
+	server1, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server1.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app1, err := server1.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app1, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
+	require.NoError(t, err)
+	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+
+	app2, err := server2.GetKea()
+	require.NoError(t, err)
+
+	err = kea.CommitAppIntoDB(db, app2, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	daemonIDs := []int64{app1.Daemons[0].GetID(), app2.Daemons[0].GetID()}
+
+	daemons, err := dbmodel.GetDaemonsByIDs(db, daemonIDs)
+	require.NoError(t, err)
+
+	// Create fake agents receiving commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	// Create the config manager.
+	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:        db,
+		Agents:    fa,
+		DefLookup: lookup,
+	})
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm, lookup)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.UpdateKeaGlobalParametersBeginParams{
+		Request: &models.UpdateKeaDaemonsGlobalParametersBeginRequest{
+			DaemonIds: daemonIDs,
+		},
+	}
+	rsp := rapi.UpdateKeaGlobalParametersBegin(ctx, params)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.UpdateKeaGlobalParametersBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID and configurations.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.NotNil(t, contents.Configs)
+	require.Len(t, contents.Configs, 2)
+	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
+	require.Equal(t, dbmodel.DaemonNameDHCPv6, daemons[0].GetName(), contents.Configs[0].DaemonName)
+	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
+	require.Equal(t, dbmodel.DaemonNameDHCPv6, daemons[1].GetName(), contents.Configs[1].DaemonName)
+
+	// Try to start another session by another user.
+	ctx2, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user = &dbmodel.SystemUser{
+		ID: 2345,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx2, user)
+	require.NoError(t, err)
+
+	// It should fail because the first session locked the daemons for
+	// update.
+	rsp = rapi.UpdateKeaGlobalParametersBegin(ctx2, params)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersBeginDefault)
+	require.Equal(t, http.StatusLocked, getStatusCode(*defaultRsp))
+
+	// Cancel the transaction.
+	params2 := dhcp.UpdateKeaGlobalParametersDeleteParams{
+		ID: transactionID,
+	}
+	rsp2 := rapi.UpdateKeaGlobalParametersDelete(ctx, params2)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersDeleteOK{}, rsp2)
+
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
+
+	// After we released the lock, another user should be able to apply
+	// his changes.
+	rsp = rapi.UpdateKeaGlobalParametersBegin(ctx2, params)
+	require.IsType(t, &dhcp.UpdateKeaGlobalParametersBeginOK{}, rsp)
+}
