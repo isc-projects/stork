@@ -154,6 +154,38 @@ func TestStatCmdsAbsent(t *testing.T) {
 	require.Contains(t, *report.content, "The Kea Statistics Commands library")
 }
 
+// Tests that the checker checking lease_cmds hooks library presence returns
+// nil when the library is loaded.
+func TestLeaseCmdsPresent(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_lease_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := leaseCmdsPresence(createReviewContext(
+		t, nil, configStr, "2.2.0",
+	))
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker checking lease_cmds hooks library presence returns
+// the report when the library is not loaded.
+func TestLeaseCmdsAbsent(t *testing.T) {
+	configStr := `{"Dhcp4": { }}`
+	report, err := statCmdsPresence(createReviewContext(
+		t, nil, configStr, "2.2.0",
+	))
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.NotNil(t, report.content)
+	require.Contains(t, *report.content, "The Kea Statistics Commands library")
+}
+
 // Tests that the checker checking host_cmds hooks library presence
 // returns nil when the library is loaded.
 func TestHostCmdsPresent(t *testing.T) {
