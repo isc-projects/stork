@@ -270,27 +270,27 @@
   KeaConfigExpiredLeasesProcessingParameters:
     type: object
     properties:
-      flushReclaimedTimerWaitTime:
+      expiredFlushReclaimedTimerWaitTime:
         type: integer
         format: int64
         x-nullable: true
-      holdReclaimedTime:
+      expiredHoldReclaimedTime:
         type: integer
         format: int64
         x-nullable: true
-      maxReclaimLeases:
+      expiredMaxReclaimLeases:
         type: integer
         format: int64
         x-nullable: true
-      maxReclaimTime:
+      expiredMaxReclaimTime:
         type: integer
         format: int64
         x-nullable: true
-      reclaimTimerWaitTime:
+      expiredReclaimTimerWaitTime:
         type: integer
         format: int64
         x-nullable: true
-      unwarnedReclaimCycles:
+      expiredUnwarnedReclaimCycles:
         type: integer
         format: int64
         x-nullable: true
