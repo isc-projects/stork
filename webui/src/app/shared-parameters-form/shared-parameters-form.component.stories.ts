@@ -15,6 +15,7 @@ import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { CheckboxModule } from 'primeng/checkbox'
 import { StorkValidators } from '../validators'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { MultiSelectModule } from 'primeng/multiselect'
 
 interface SubnetForm {
     allocator: SharedParameterFormGroup<string>
@@ -22,6 +23,7 @@ interface SubnetForm {
     cacheThreshold: SharedParameterFormGroup<number>
     ddnsGeneratedPrefix: SharedParameterFormGroup<string>
     ddnsOverrideClientUpdate: SharedParameterFormGroup<boolean>
+    hostReservationIdentifiers: SharedParameterFormGroup<string[]>
     requireClientClasses: SharedParameterFormGroup<string[]>
     relayAddresses: SharedParameterFormGroup<string[]>
 }
@@ -48,6 +50,7 @@ export default {
                 DropdownModule,
                 FormsModule,
                 InputNumberModule,
+                MultiSelectModule,
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
@@ -101,6 +104,14 @@ export const VariousParameters: Story = {
                     type: 'boolean',
                 },
                 [new FormControl<boolean>(true), new FormControl<boolean>(true)]
+            ),
+            hostReservationIdentifiers: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    isArray: true,
+                    values: ['hw-address', 'client-id', 'duid', 'circuit-id'],
+                },
+                [new FormControl(['hw-address']), new FormControl(['hw-address'])]
             ),
             relayAddresses: new SharedParameterFormGroup(
                 {

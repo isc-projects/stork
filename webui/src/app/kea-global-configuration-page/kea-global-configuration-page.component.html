@@ -10,14 +10,19 @@
     </a>
 </div>
 <div *ngIf="loaded; else showSpinner">
-    <p-fieldset legend="Global DHCP Parameters">
-        <app-cascaded-parameters-board
-            [levels]="['Global']"
-            [data]="dhcpParameters"
-            [excludedParameters]="excludedParameters"
-            [formatComplexTypes]="true"
-        ></app-cascaded-parameters-board>
-    </p-fieldset>
+    <div class="max-w-50rem">
+        <app-kea-global-configuration-form
+            *ngIf="edit"
+            [daemonId]="daemonId"
+            (formCancel)="onFormCancel()"
+            (formSubmit)="onFormSubmit()"
+        ></app-kea-global-configuration-form>
+        <app-kea-global-configuration-view
+            *ngIf="!edit"
+            [dhcpParameters]="dhcpParameters"
+            (editBegin)="onEditBegin()"
+        ></app-kea-global-configuration-view>
+    </div>
 </div>
 <ng-template #showSpinner>
     <p-progressSpinner></p-progressSpinner>

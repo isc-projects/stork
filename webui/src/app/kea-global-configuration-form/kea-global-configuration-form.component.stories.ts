@@ -1,102 +1,41 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
-
-import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page.component'
+import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { MockParamMap } from '../utils'
-import { of, throwError } from 'rxjs'
+import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { ServicesService } from '../backend'
-import { By } from '@angular/platform-browser'
-import { CascadedParametersBoardComponent } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { FieldsetModule } from 'primeng/fieldset'
+import { importProvidersFrom } from '@angular/core'
+import { HttpClientModule } from '@angular/common/http'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { toastDecorator } from '../utils-stories'
+import { ToastModule } from 'primeng/toast'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { FieldsetModule } from 'primeng/fieldset'
 import { TableModule } from 'primeng/table'
-import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
-import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { UncamelPipe } from '../pipes/uncamel.pipe'
-import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
-import { HttpErrorResponse } from '@angular/common/http'
-import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
+import { ButtonModule } from 'primeng/button'
+import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form.component'
+import { UpdateKeaDaemonsGlobalParametersBeginResponse } from '../backend'
+import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { CheckboxModule } from 'primeng/checkbox'
+import { ChipsModule } from 'primeng/chips'
+import { DropdownModule } from 'primeng/dropdown'
+import { InputNumberModule } from 'primeng/inputnumber'
+import { TagModule } from 'primeng/tag'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { MessagesModule } from 'primeng/messages'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { MultiSelectModule } from 'primeng/multiselect'
 
-describe('KeaGlobalConfigurationPageComponent', () => {
-    let component: KeaGlobalConfigurationPageComponent
-    let fixture: ComponentFixture<KeaGlobalConfigurationPageComponent>
-    let messageService: MessageService
-    let servicesService: ServicesService
-
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
-                        paramMap: of(convertToParamMap({ daemonId: '1' })),
-                    },
-                },
-                MessageService,
-            ],
-            imports: [
-                BreadcrumbModule,
-                FieldsetModule,
-                HttpClientTestingModule,
-                NoopAnimationsModule,
-                OverlayPanelModule,
-                ProgressSpinnerModule,
-                TableModule,
-            ],
-            declarations: [
-                BreadcrumbsComponent,
-                CascadedParametersBoardComponent,
-                HelpTipComponent,
-                KeaGlobalConfigurationPageComponent,
-                KeaGlobalConfigurationViewComponent,
-                ParameterViewComponent,
-                PlaceholderPipe,
-                UncamelPipe,
-                UnhyphenPipe,
-            ],
-        }).compileComponents()
-
-        fixture = TestBed.createComponent(KeaGlobalConfigurationPageComponent)
-        component = fixture.componentInstance
-        messageService = fixture.debugElement.injector.get(MessageService)
-        servicesService = fixture.debugElement.injector.get(ServicesService)
-        fixture.detectChanges()
-    })
-
-    it('should create', () => {
-        expect(component).toBeTruthy()
-    })
-
-    it('should exclude parameters', () => {
-        expect(component.excludedParameters.length).toBe(11)
-
-        expect(component.excludedParameters).toContain('clientClasses')
-        expect(component.excludedParameters).toContain('configControl')
-        expect(component.excludedParameters).toContain('hooksLibraries')
-        expect(component.excludedParameters).toContain('loggers')
-        expect(component.excludedParameters).toContain('optionData')
-        expect(component.excludedParameters).toContain('optionDef')
-        expect(component.excludedParameters).toContain('optionsHash')
-        expect(component.excludedParameters).toContain('reservations')
-        expect(component.excludedParameters).toContain('sharedNetworks')
-        expect(component.excludedParameters).toContain('subnet4')
-        expect(component.excludedParameters).toContain('subnet6')
-    })
-
-    it('should fetch global configuration parameters', fakeAsync(() => {
-        const config: any = {
-            appName: 'kea-server',
-            appType: 'kea',
+const mockUpdateKeaGlobalParameters4BeginData: UpdateKeaDaemonsGlobalParametersBeginResponse = {
+    id: 123,
+    configs: [
+        {
+            daemonId: 1,
             daemonName: 'dhcp4',
+            appId: 1,
+            appName: 'kea@agent1',
+            appType: 'kea',
             config: {
                 Dhcp4: {
                     allocator: 'iterative',
@@ -245,44 +184,94 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                     'server-tag': '',
                 },
             },
-        }
-        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(config))
+        },
+    ],
+}
 
-        component.daemonId = 1
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
+export default {
+    title: 'App/KeaGlobalConfigurationForm',
+    component: KeaGlobalConfigurationFormComponent,
+    argTypes: {
+        formGroup: {
+            table: {
+                disable: true,
+            },
+        },
+    },
+    decorators: [
+        applicationConfig({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParamMap: new MockParamMap() },
+                        queryParamMap: of(new MockParamMap()),
+                        paramMap: of(convertToParamMap({ daemonId: '1' })),
+                    },
+                },
+                MessageService,
+                importProvidersFrom(HttpClientModule),
+                importProvidersFrom(NoopAnimationsModule),
+            ],
+        }),
+        moduleMetadata({
+            imports: [
+                ButtonModule,
+                CheckboxModule,
+                ChipsModule,
+                DropdownModule,
+                FieldsetModule,
+                FormsModule,
+                InputNumberModule,
+                MessagesModule,
+                MultiSelectModule,
+                NoopAnimationsModule,
+                OverlayPanelModule,
+                ProgressSpinnerModule,
+                ReactiveFormsModule,
+                TableModule,
+                TagModule,
+                TriStateCheckboxModule,
+                ToastModule,
+            ],
+            declarations: [ArrayValueSetFormComponent, SharedParametersFormComponent],
+        }),
+        toastDecorator,
+    ],
+} as Meta
 
-        expect(servicesService.getDaemonConfig).toHaveBeenCalledOnceWith(1)
+type Story = StoryObj<KeaGlobalConfigurationFormComponent>
 
-        expect(component.loaded).toBeTrue()
+export const UpdateConfiguration: Story = {
+    args: {
+        daemonId: 1,
+    },
+    parameters: {
+        mockData: [
+            {
+                url: 'http://localhost/api/kea-global-parameters/transaction',
+                method: 'POST',
+                status: 200,
+                delay: 2000,
+                response: mockUpdateKeaGlobalParameters4BeginData,
+            },
+        ],
+    },
+}
 
-        expect(component.dhcpParameters.length).toBe(1)
-        expect(component.dhcpParameters.at(0).name).toBe('kea-server / DHCPv4')
-        expect(component.dhcpParameters.at(0).parameters.length).toBe(1)
-        expect(component.dhcpParameters.at(0).parameters[0].hasOwnProperty('allocator'))
-        expect(component.dhcpParameters.at(0).parameters[0]['allocator']).toBe('iterative')
-
-        const parametersBoard = fixture.debugElement.query(By.css('app-cascaded-parameters-board'))
-        expect(parametersBoard).toBeTruthy()
-    }))
-
-    it('should display a message on error', fakeAsync(() => {
-        spyOn(messageService, 'add')
-        spyOn(servicesService, 'getDaemonConfig').and.returnValue(
-            throwError(() => new HttpErrorResponse({ status: 404 }))
-        )
-
-        component.ngOnInit()
-        tick()
-        fixture.detectChanges()
-
-        expect(messageService.add).toHaveBeenCalledTimes(1)
-    }))
-
-    it('should unsubscribe on destroy', () => {
-        spyOn(component.subscriptions, 'unsubscribe')
-        component.ngOnDestroy()
-        expect(component.subscriptions.unsubscribe).toHaveBeenCalledTimes(1)
-    })
-})
+export const ErrorMessage: Story = {
+    args: {
+        daemonId: 1,
+    },
+    parameters: {
+        mockData: [
+            {
+                url: 'http://localhost/api/kea-global-parameters/transaction',
+                method: 'POST',
+                status: 500,
+                delay: 1000,
+                response: mockUpdateKeaGlobalParameters4BeginData,
+            },
+        ],
+    },
+}

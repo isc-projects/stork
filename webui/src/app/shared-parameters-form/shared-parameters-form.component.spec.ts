@@ -25,6 +25,7 @@ import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { MultiSelectModule } from 'primeng/multiselect'
 
 /**
  * Intrface to the form used in the unit tests.
@@ -35,6 +36,7 @@ interface SubnetForm {
     cacheThreshold?: SharedParameterFormGroup<number>
     ddnsGeneratedPrefix?: SharedParameterFormGroup<string>
     ddnsOverrideClientUpdate?: SharedParameterFormGroup<boolean>
+    hostReservationIdentifiers?: SharedParameterFormGroup<string[]>
     requireClientClasses?: SharedParameterFormGroup<string[]>
     relayAddresses?: SharedParameterFormGroup<string[]>
 }
@@ -58,6 +60,7 @@ describe('SharedParametersFormComponent', () => {
                 DropdownModule,
                 FormsModule,
                 InputNumberModule,
+                MultiSelectModule,
                 NoopAnimationsModule,
                 TableModule,
                 TagModule,
@@ -115,6 +118,14 @@ describe('SharedParametersFormComponent', () => {
                 },
                 [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
             ),
+            hostReservationIdentifiers: new SharedParameterFormGroup(
+                {
+                    type: 'string',
+                    isArray: true,
+                    values: ['hw-address', 'client-id', 'duid', 'circuit-id'],
+                },
+                [new FormControl(['hw-address']), new FormControl(['hw-address'])]
+            ),
             requireClientClasses: new SharedParameterFormGroup(
                 {
                     type: 'client-classes',
@@ -141,6 +152,7 @@ describe('SharedParametersFormComponent', () => {
             'cacheThreshold',
             'ddnsGeneratedPrefix',
             'ddnsOverrideClientUpdate',
+            'hostReservationIdentifiers',
             'relayAddresses',
             'requireClientClasses',
         ])
@@ -155,7 +167,7 @@ describe('SharedParametersFormComponent', () => {
         expect(divs[4].nativeElement.innerText).toBe('Unlock')
 
         let allWrapperDivs = fixture.debugElement.queryAll(By.css('.shared-parameter-wrapper:not(.font-semibold)'))
-        expect(allWrapperDivs.length).toBe(7)
+        expect(allWrapperDivs.length).toBe(8)
 
         // Allocator.
         let labelDiv = allWrapperDivs[0].queryAll(By.css('div.font-semibold'))
@@ -239,28 +251,25 @@ describe('SharedParametersFormComponent', () => {
         checkbox = allWrapperDivs[4].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
 
-        // Relay
+        // Host Reservation Identifiers.
         labelDiv = allWrapperDivs[5].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
-        expect(labelDiv[0].nativeElement.innerText).toBe('Relay Addresses')
-        controls = allWrapperDivs[5].queryAll(By.css('app-array-value-set-form'))
-        expect(controls.length).toBe(2)
+        expect(labelDiv[0].nativeElement.innerText).toBe('Host Reservation Identifiers')
+        controls = allWrapperDivs[5].queryAll(By.css('p-multiSelect'))
+        expect(controls.length).toBe(1)
         tags = allWrapperDivs[5].queryAll(By.css('p-tag'))
-        expect(tags.length).toBe(2)
-        expect(tags[0].nativeElement.innerText).toBe('server 1')
-        expect(tags[1].nativeElement.innerText).toBe('server 2')
-        btns = allWrapperDivs[5].queryAll(By.css('[label=Clear]'))
-        expect(btns.length).toBe(2)
+        expect(tags.length).toBe(0)
+        btns = allWrapperDivs[4].queryAll(By.css('[label=Clear]'))
+        expect(btns.length).toBe(1)
         expect(btns[0].nativeElement.innerText).toBe('Clear')
-        expect(btns[1].nativeElement.innerText).toBe('Clear')
         checkbox = allWrapperDivs[5].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
 
-        // Require Client Classes.
+        // Relay
         labelDiv = allWrapperDivs[6].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
-        expect(labelDiv[0].nativeElement.innerText).toBe('Require Client Classes')
-        controls = allWrapperDivs[6].queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(labelDiv[0].nativeElement.innerText).toBe('Relay Addresses')
+        controls = allWrapperDivs[6].queryAll(By.css('app-array-value-set-form'))
         expect(controls.length).toBe(2)
         tags = allWrapperDivs[6].queryAll(By.css('p-tag'))
         expect(tags.length).toBe(2)
@@ -271,6 +280,23 @@ describe('SharedParametersFormComponent', () => {
         expect(btns[0].nativeElement.innerText).toBe('Clear')
         expect(btns[1].nativeElement.innerText).toBe('Clear')
         checkbox = allWrapperDivs[6].query(By.css('p-checkbox'))
+        expect(checkbox).toBeTruthy()
+
+        // Require Client Classes.
+        labelDiv = allWrapperDivs[7].queryAll(By.css('div.font-semibold'))
+        expect(labelDiv.length).toBe(1)
+        expect(labelDiv[0].nativeElement.innerText).toBe('Require Client Classes')
+        controls = allWrapperDivs[7].queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(controls.length).toBe(2)
+        tags = allWrapperDivs[7].queryAll(By.css('p-tag'))
+        expect(tags.length).toBe(2)
+        expect(tags[0].nativeElement.innerText).toBe('server 1')
+        expect(tags[1].nativeElement.innerText).toBe('server 2')
+        btns = allWrapperDivs[7].queryAll(By.css('[label=Clear]'))
+        expect(btns.length).toBe(2)
+        expect(btns[0].nativeElement.innerText).toBe('Clear')
+        expect(btns[1].nativeElement.innerText).toBe('Clear')
+        checkbox = allWrapperDivs[7].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
     })
 

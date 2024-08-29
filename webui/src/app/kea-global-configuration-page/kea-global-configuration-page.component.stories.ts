@@ -23,6 +23,9 @@ import { ParameterViewComponent } from '../parameter-view/parameter-view.compone
 import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
+import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
+import { MessagesModule } from 'primeng/messages'
 
 const mockGetDaemonConfig = {
     appName: 'kea-server',
@@ -210,6 +213,7 @@ export default {
                 BreadcrumbModule,
                 ButtonModule,
                 FieldsetModule,
+                MessagesModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 TableModule,
@@ -220,6 +224,8 @@ export default {
                 CascadedParametersBoardComponent,
                 EntityLinkComponent,
                 HelpTipComponent,
+                KeaGlobalConfigurationFormComponent,
+                KeaGlobalConfigurationViewComponent,
                 KeaGlobalConfigurationPageComponent,
                 ParameterViewComponent,
                 UncamelPipe,

@@ -1,0 +1,18 @@
+<p-fieldset legend="Global DHCP Parameters">
+    <app-cascaded-parameters-board
+        [levels]="['Global']"
+        [data]="dhcpParameters"
+        [excludedParameters]="excludedParameters"
+        [formatComplexTypes]="true"
+    ></app-cascaded-parameters-board>
+</p-fieldset>
+<div class="flex mt-5">
+    <button
+        type="button"
+        pButton
+        label="Edit"
+        icon="pi pi-pencil"
+        class="p-button-info ml-2"
+        (click)="onEditBegin()"
+    ></button>
+</div>

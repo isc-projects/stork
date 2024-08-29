@@ -25,6 +25,15 @@ interface SharedParameterForm {
 }
 
 /**
+ * Returns an inner array type or its own type.
+ *
+ * This is specifically useful in {@link EditableParameterSpec} when the
+ * generic type is an array. In that case, we want to extract the inner
+ * array type and use this type for the possible input values.
+ */
+type Unarray<T> = T extends Array<infer U> ? U : T
+
+/**
  * A shared parameter descriptor in the form group.
  *
  * It provides the metadata for each shared parameter describing its
@@ -35,7 +44,7 @@ interface SharedParameterForm {
  */
 interface EditableParameterSpec<T> {
     type: string
-    values?: T[]
+    values?: Unarray<T>[]
     isArray?: boolean
     min?: number
     max?: number

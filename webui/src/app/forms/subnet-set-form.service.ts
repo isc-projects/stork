@@ -14,6 +14,8 @@ import {
     DelegatedPrefixPool,
     KeaConfigPoolParameters,
     KeaConfigSubnetDerivedParameters,
+    KeaConfigurableGlobalParameters,
+    KeaDaemonConfig,
     LocalSharedNetwork,
     LocalSubnet,
     Pool,
@@ -74,6 +76,7 @@ export interface KeaSubnetParametersForm {
     ddnsSendUpdates?: SharedParameterFormGroup<boolean>
     ddnsUpdateOnRenew?: SharedParameterFormGroup<boolean>
     ddnsUseConflictResolution?: SharedParameterFormGroup<boolean>
+    ddnsConflictResolutionMode?: SharedParameterFormGroup<string>
     fourOverSixInterface?: SharedParameterFormGroup<string>
     fourOverSixInterfaceID?: SharedParameterFormGroup<string>
     fourOverSixSubnet?: SharedParameterFormGroup<string>
@@ -264,6 +267,55 @@ export interface SharedNetworkForm {
      */
     selectedDaemons: FormControl<number[]>
 }
+
+/**
+ * An interface describing the form for editing global Kea parameters.
+ */
+export interface KeaGlobalParametersForm {
+    allocator?: SharedParameterFormGroup<string>
+    authoritative?: SharedParameterFormGroup<boolean>
+    cacheThreshold?: SharedParameterFormGroup<number>
+    ddnsGeneratedPrefix?: SharedParameterFormGroup<string>
+    ddnsOverrideClientUpdate?: SharedParameterFormGroup<boolean>
+    ddnsOverrideNoUpdate?: SharedParameterFormGroup<boolean>
+    ddnsQualifyingSuffix?: SharedParameterFormGroup<string>
+    ddnsReplaceClientName?: SharedParameterFormGroup<string>
+    ddnsSendUpdates?: SharedParameterFormGroup<boolean>
+    ddnsUpdateOnRenew?: SharedParameterFormGroup<boolean>
+    ddnsUseConflictResolution?: SharedParameterFormGroup<boolean>
+    ddnsConflictResolutionMode?: SharedParameterFormGroup<string>
+    earlyGlobalReservationsLookup?: SharedParameterFormGroup<boolean>
+    echoClientId?: SharedParameterFormGroup<boolean>
+    expiredFlushReclaimedTimerWaitTime?: SharedParameterFormGroup<number>
+    expiredHoldReclaimedTime?: SharedParameterFormGroup<number>
+    expiredMaxReclaimLeases?: SharedParameterFormGroup<number>
+    expiredMaxReclaimTime?: SharedParameterFormGroup<number>
+    expiredReclaimTimerWaitTime?: SharedParameterFormGroup<number>
+    expiredUnwarnedReclaimCycles?: SharedParameterFormGroup<number>
+    hostReservationIdentifiers?: SharedParameterFormGroup<string[]>
+    reservationsGlobal?: SharedParameterFormGroup<boolean>
+    reservationsInSubnet?: SharedParameterFormGroup<boolean>
+    reservationsOutOfPool?: SharedParameterFormGroup<boolean>
+    pdAllocator?: SharedParameterFormGroup<string>
+}
+
+/**
+ * An interface describing the form for editing global Kea configuration.
+ */
+export interface KeaGlobalConfigurationForm {
+    /**
+     * Kea global parameters.
+     */
+    parameters: FormGroup<KeaGlobalParametersForm>
+}
+
+/**
+ * Raw Kea configuration type.
+ *
+ * It is an alias for a raw configuration returned by the Kea server
+ * in the {@link KeaDaemonConfig}.
+ */
+export type KeaRawConfig = { [key: string]: any }
 
 /**
  * A service exposing functions converting subnet data to a form and
@@ -532,6 +584,18 @@ export class SubnetSetFormService {
                     type: 'boolean',
                 },
                 parameters.map((params) => new FormControl<boolean>(params.ddnsUseConflictResolution))
+            ),
+            ddnsConflictResolutionMode: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: [
+                        'check-with-dhcid',
+                        'no-check-with-dhcid',
+                        'check-exists-with-dhcid',
+                        'no-check-without-dhcid',
+                    ],
+                },
+                parameters.map((params) => new FormControl<string>(params.ddnsConflictResolutionMode))
             ),
             hostnameCharReplacement: new SharedParameterFormGroup<string>(
                 {
@@ -1242,6 +1306,273 @@ export class SubnetSetFormService {
             }
         }
         return sharedNetwork
+    }
+
+    /**
+     * Converts Kea global parameters to a form.
+     *
+     * The created form is used in the {@link SharedParametersForm} for editing
+     * the global Kea parameters. It comprises the metadata describing each
+     * parameter.
+     *
+     * @param ipType universe (IPv4 or IPv6).
+     * @param configs Kea-specific global parameters parameters.
+     * @returns Created form group instance.
+     */
+    convertKeaGlobalParametersToForm(
+        topLevelKey: 'Dhcp4' | 'Dhcp6',
+        configs: KeaRawConfig[]
+    ): FormGroup<KeaGlobalParametersForm> {
+        // Common parameters.
+        let form: KeaGlobalParametersForm = {
+            authoritative: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['authoritative']))
+            ),
+            cacheThreshold: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                    min: 0,
+                    max: 1,
+                    fractionDigits: 2,
+                },
+                configs.map((params) => new FormControl<number>(params['cache-threshold']))
+            ),
+            ddnsGeneratedPrefix: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    invalidText: 'Please specify a valid prefix.',
+                },
+                configs.map((params) => new FormControl<string>(params['ddns-generated-prefix'], StorkValidators.fqdn))
+            ),
+            ddnsOverrideClientUpdate: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['ddns-override-client-update']))
+            ),
+            ddnsOverrideNoUpdate: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['ddns-override-no-update']))
+            ),
+            ddnsQualifyingSuffix: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    invalidText: 'Please specify a valid suffix.',
+                },
+                configs.map((params) => new FormControl<string>(params['ddns-qualifying-suffix'], StorkValidators.fqdn))
+            ),
+            ddnsReplaceClientName: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: ['never', 'always', 'when-not-present'],
+                },
+                configs.map((params) => new FormControl<string>(params['ddns-replace-client-name']))
+            ),
+            ddnsSendUpdates: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['ddns-send-updates']))
+            ),
+            ddnsUpdateOnRenew: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['ddns-update-on-renew']))
+            ),
+            ddnsUseConflictResolution: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['ddns-use-conflict-resolution']))
+            ),
+            ddnsConflictResolutionMode: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: [
+                        'check-with-dhcid',
+                        'no-check-with-dhcid',
+                        'check-exists-with-dhcid',
+                        'no-check-without-dhcid',
+                    ],
+                },
+                configs.map((params) => new FormControl<string>(params['ddns-conflict-resolution-mode']))
+            ),
+            earlyGlobalReservationsLookup: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['early-global-reservations-lookup']))
+            ),
+            echoClientId: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['echo-client-id']))
+            ),
+            expiredFlushReclaimedTimerWaitTime: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map(
+                    (params) =>
+                        new FormControl<number>(
+                            params?.['expired-leases-processing']?.['flush-reclaimed-timer-wait-time']
+                        )
+                )
+            ),
+            expiredHoldReclaimedTime: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map(
+                    (params) => new FormControl<number>(params?.['expired-leases-processing']?.['hold-reclaimed-time'])
+                )
+            ),
+            expiredMaxReclaimLeases: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map(
+                    (params) => new FormControl<number>(params?.['expired-leases-processing']?.['max-reclaim-leases'])
+                )
+            ),
+            expiredMaxReclaimTime: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map(
+                    (params) => new FormControl<number>(params?.['expired-leases-processing']?.['max-reclaim-time'])
+                )
+            ),
+            expiredReclaimTimerWaitTime: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map(
+                    (params) =>
+                        new FormControl<number>(params?.['expired-leases-processing']?.['reclaim-timer-wait-time'])
+                )
+            ),
+            expiredUnwarnedReclaimCycles: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map(
+                    (params) =>
+                        new FormControl<number>(params?.['expired-leases-processing']?.['unwarned-reclaim-cycles'])
+                )
+            ),
+            hostReservationIdentifiers: new SharedParameterFormGroup<string[]>(
+                {
+                    type: 'string',
+                    isArray: true,
+                    values: ['circuit-id', 'hw-address', 'duid', 'client-id'],
+                },
+                configs.map((params) => new FormControl<string[]>(params['host-reservation-identifiers']))
+            ),
+            reservationsGlobal: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['reservations-global']))
+            ),
+            reservationsInSubnet: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['reservations-in-subnet']))
+            ),
+            reservationsOutOfPool: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params['reservations-out-of-pool']))
+            ),
+            allocator: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: ['iterative', 'random', 'flq'],
+                },
+                configs.map((params) => new FormControl<string>(params['allocator']))
+            ),
+        }
+        switch (topLevelKey) {
+            // DHCPv4 parameters.
+            case 'Dhcp4':
+                form.authoritative = new SharedParameterFormGroup<boolean>(
+                    {
+                        type: 'boolean',
+                    },
+                    configs.map((params) => new FormControl<boolean>(params['authoritative']))
+                )
+            // DHCPv6 parameters.
+            default:
+                form.pdAllocator = new SharedParameterFormGroup<string>(
+                    {
+                        type: 'string',
+                        values: ['iterative', 'random', 'flq'],
+                    },
+                    configs.map((params) => new FormControl<string>(params['pd-allocator']))
+                )
+        }
+        let formGroup = new FormGroup<KeaSubnetParametersForm>(form)
+        return formGroup
+    }
+
+    /**
+     * Converts Kea global configuration to a form.
+     *
+     * The created form is used in the {@link SharedParametersForm} for editing
+     * the global Kea configuration. It comprises the metadata describing each
+     * parameter.
+     *
+     * @param ipType universe (IPv4 or IPv6).
+     * @param parameters Kea-specific global parameters parameters.
+     * @returns Created form group instance.
+     */
+    convertKeaGlobalConfigurationToForm(configs: KeaDaemonConfig[]): FormGroup<KeaGlobalConfigurationForm> {
+        if (!configs?.length) {
+            return null
+        }
+        const topLevelKeys = configs.map((config) => {
+            if (config.config?.hasOwnProperty('Dhcp4')) {
+                return 'Dhcp4'
+            }
+            if (config.config?.hasOwnProperty('Dhcp6')) {
+                return 'Dhcp6'
+            }
+            return null
+        })
+        if (!topLevelKeys.every((key) => key === topLevelKeys[0]) || topLevelKeys.every((key) => key == null)) {
+            return null
+        }
+        const innerConfigs = configs.map((config) => config.config[topLevelKeys[0]])
+        const formGroup = new FormGroup<KeaGlobalConfigurationForm>({
+            parameters: this.convertKeaGlobalParametersToForm(topLevelKeys[0], innerConfigs),
+        })
+        return formGroup
+    }
+
+    /**
+     * Converts a form holding subnet data to a subnet instance.
+     *
+     * It currently only converts the simple DHCP parameters and options.
+     *
+     * @param form a form comprising subnet data.
+     * @returns A subnet instance converted from the form.
+     */
+    convertFormToKeaGlobalParameters(form: FormGroup<KeaGlobalParametersForm>): KeaConfigurableGlobalParameters[] {
+        const convertedParameters = this.convertFormToKeaParameters<
+            KeaGlobalParametersForm,
+            KeaConfigurableGlobalParameters
+        >(form)
+        return convertedParameters
     }
 
     /**

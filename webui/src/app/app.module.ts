@@ -138,6 +138,8 @@ import { UncamelPipe } from './pipes/uncamel.pipe'
 import { UnhyphenPipe } from './pipes/unhyphen.pipe'
 import { SubnetsTableComponent } from './subnets-table/subnets-table.component'
 import { SharedNetworksTableComponent } from './shared-networks-table/shared-networks-table.component'
+import { KeaGlobalConfigurationViewComponent } from './kea-global-configuration-view/kea-global-configuration-view.component'
+import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form/kea-global-configuration-form.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -228,6 +230,8 @@ export function cfgFactory() {
         UnhyphenPipe,
         SubnetsTableComponent,
         SharedNetworksTableComponent,
+        KeaGlobalConfigurationViewComponent,
+        KeaGlobalConfigurationFormComponent,
     ],
     imports: [
         BrowserModule,

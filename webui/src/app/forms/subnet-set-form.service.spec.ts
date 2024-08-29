@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing'
 
-import { KeaPoolParametersForm, KeaSubnetParametersForm, SubnetSetFormService } from './subnet-set-form.service'
+import {
+    KeaGlobalParametersForm,
+    KeaPoolParametersForm,
+    KeaRawConfig,
+    KeaSubnetParametersForm,
+    SubnetSetFormService,
+} from './subnet-set-form.service'
 import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, SharedNetwork, Subnet } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
@@ -1642,7 +1648,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv4)
-        expect(Object.keys(form.controls).length).toBe(35)
+        expect(Object.keys(form.controls).length).toBe(36)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1654,7 +1660,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters for for an IPv6 shared network', () => {
         let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv6)
-        expect(Object.keys(form.controls).length).toBe(36)
+        expect(Object.keys(form.controls).length).toBe(37)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1666,7 +1672,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4)
-        expect(Object.keys(form.controls).length).toBe(38)
+        expect(Object.keys(form.controls).length).toBe(39)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1678,7 +1684,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters form for an IPv6 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6)
-        expect(Object.keys(form.controls).length).toBe(36)
+        expect(Object.keys(form.controls).length).toBe(37)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -2417,5 +2423,266 @@ describe('SubnetSetFormService', () => {
             subnet1.localSharedNetworks[1].keaConfigSharedNetworkParameters.sharedNetworkLevelParameters.options[0]
                 .fields[0].values[0]
         ).toBe('192.0.2.1')
+    })
+
+    it('should convert DHCPv4 global parameters to form', () => {
+        const configs: KeaRawConfig[] = [
+            {
+                allocator: 'iterative',
+                authoritative: false,
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+                'ddns-generated-prefix': 'myhost',
+                'ddns-override-client-update': false,
+                'ddns-override-no-update': false,
+                'ddns-qualifying-suffix': '',
+                'ddns-replace-client-name': 'never',
+                'ddns-send-updates': true,
+                'ddns-update-on-renew': false,
+                'dhcp-ddns': {
+                    'enable-updates': false,
+                    'max-queue-size': 1024,
+                    'ncr-format': 'JSON',
+                    'ncr-protocol': 'UDP',
+                    'sender-ip': '0.0.0.0',
+                    'sender-port': 0,
+                    'server-ip': '127.0.0.1',
+                    'server-port': 53001,
+                },
+                'early-global-reservations-lookup': false,
+                'echo-client-id': true,
+                'expired-leases-processing': {
+                    'flush-reclaimed-timer-wait-time': 25,
+                    'hold-reclaimed-time': 3600,
+                    'max-reclaim-leases': 100,
+                    'max-reclaim-time': 250,
+                    'reclaim-timer-wait-time': 10,
+                    'unwarned-reclaim-cycles': 5,
+                },
+                'host-reservation-identifiers': ['hw-address', 'duid', 'circuit-id', 'client-id'],
+                'reservations-global': false,
+                'reservations-in-subnet': true,
+                'reservations-lookup-first': false,
+                'reservations-out-of-pool': false,
+            },
+            {
+                allocator: 'iterative',
+                authoritative: true,
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+                'ddns-generated-prefix': 'myhost',
+                'ddns-override-client-update': false,
+                'ddns-override-no-update': false,
+                'ddns-qualifying-suffix': 'example.org',
+                'ddns-replace-client-name': 'never',
+                'ddns-send-updates': true,
+                'ddns-update-on-renew': false,
+                'dhcp-ddns': {
+                    'enable-updates': false,
+                    'max-queue-size': 1024,
+                    'ncr-format': 'JSON',
+                    'ncr-protocol': 'UDP',
+                    'sender-ip': '0.0.0.0',
+                    'sender-port': 0,
+                    'server-ip': '127.0.0.1',
+                    'server-port': 53001,
+                },
+                'early-global-reservations-lookup': false,
+                'echo-client-id': true,
+                'expired-leases-processing': {
+                    'flush-reclaimed-timer-wait-time': 30,
+                    'hold-reclaimed-time': 3600,
+                    'max-reclaim-leases': 100,
+                    'max-reclaim-time': 250,
+                    'reclaim-timer-wait-time': 10,
+                    'unwarned-reclaim-cycles': 5,
+                },
+                'host-reservation-identifiers': ['hw-address', 'duid', 'circuit-id'],
+                'reservations-global': false,
+                'reservations-in-subnet': true,
+                'reservations-lookup-first': false,
+                'reservations-out-of-pool': false,
+            },
+        ]
+        const formGroup = service.convertKeaGlobalParametersToForm('Dhcp4', configs)
+        expect(formGroup.get('allocator.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('allocator.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('allocator.values.0')?.value).toBe('iterative')
+        expect(formGroup.get('allocator.values.1')?.value).toBe('iterative')
+
+        expect(formGroup.get('authoritative.unlocked')?.value).toBeTrue()
+        expect((formGroup.get('authoritative.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('authoritative.values.0')?.value).toBe(false)
+        expect(formGroup.get('authoritative.values.1')?.value).toBe(true)
+
+        expect(formGroup.get('ddnsConflictResolutionMode.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsConflictResolutionMode.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsConflictResolutionMode.values.0')?.value).toBe('check-with-dhcid')
+        expect(formGroup.get('ddnsConflictResolutionMode.values.1')?.value).toBe('check-with-dhcid')
+
+        expect(formGroup.get('ddnsUseConflictResolution.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsUseConflictResolution.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsUseConflictResolution.values.0')?.value).toBe(true)
+        expect(formGroup.get('ddnsUseConflictResolution.values.1')?.value).toBe(true)
+
+        expect(formGroup.get('ddnsGeneratedPrefix.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsGeneratedPrefix.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsGeneratedPrefix.values.0')?.value).toBe('myhost')
+        expect(formGroup.get('ddnsGeneratedPrefix.values.1')?.value).toBe('myhost')
+
+        expect(formGroup.get('ddnsOverrideClientUpdate.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsOverrideClientUpdate.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsOverrideClientUpdate.values.0')?.value).toBe(false)
+        expect(formGroup.get('ddnsOverrideClientUpdate.values.1')?.value).toBe(false)
+
+        expect(formGroup.get('ddnsOverrideNoUpdate.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsOverrideNoUpdate.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsOverrideNoUpdate.values.0')?.value).toBe(false)
+        expect(formGroup.get('ddnsOverrideNoUpdate.values.1')?.value).toBe(false)
+
+        expect(formGroup.get('ddnsQualifyingSuffix.unlocked')?.value).toBeTrue()
+        expect((formGroup.get('ddnsQualifyingSuffix.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsQualifyingSuffix.values.0')?.value).toBe('')
+        expect(formGroup.get('ddnsQualifyingSuffix.values.1')?.value).toBe('example.org')
+
+        expect(formGroup.get('ddnsReplaceClientName.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsReplaceClientName.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsReplaceClientName.values.0')?.value).toBe('never')
+        expect(formGroup.get('ddnsReplaceClientName.values.1')?.value).toBe('never')
+
+        expect(formGroup.get('ddnsSendUpdates.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsSendUpdates.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsSendUpdates.values.0')?.value).toBe(true)
+        expect(formGroup.get('ddnsSendUpdates.values.1')?.value).toBe(true)
+
+        expect(formGroup.get('ddnsUpdateOnRenew.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('ddnsUpdateOnRenew.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('ddnsUpdateOnRenew.values.0')?.value).toBe(false)
+        expect(formGroup.get('ddnsUpdateOnRenew.values.1')?.value).toBe(false)
+
+        expect(formGroup.get('earlyGlobalReservationsLookup.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('earlyGlobalReservationsLookup.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('earlyGlobalReservationsLookup.values.0')?.value).toBe(false)
+        expect(formGroup.get('earlyGlobalReservationsLookup.values.1')?.value).toBe(false)
+
+        expect(formGroup.get('echoClientId.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('echoClientId.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('echoClientId.values.0')?.value).toBe(true)
+        expect(formGroup.get('echoClientId.values.1')?.value).toBe(true)
+
+        expect(formGroup.get('expiredFlushReclaimedTimerWaitTime.unlocked')?.value).toBeTrue()
+        expect((formGroup.get('expiredFlushReclaimedTimerWaitTime.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('expiredFlushReclaimedTimerWaitTime.values.0')?.value).toBe(25)
+        expect(formGroup.get('expiredFlushReclaimedTimerWaitTime.values.1')?.value).toBe(30)
+
+        expect(formGroup.get('expiredHoldReclaimedTime.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('expiredHoldReclaimedTime.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('expiredHoldReclaimedTime.values.0')?.value).toBe(3600)
+        expect(formGroup.get('expiredHoldReclaimedTime.values.1')?.value).toBe(3600)
+
+        expect(formGroup.get('expiredMaxReclaimLeases.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('expiredMaxReclaimLeases.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('expiredMaxReclaimLeases.values.0')?.value).toBe(100)
+        expect(formGroup.get('expiredMaxReclaimLeases.values.1')?.value).toBe(100)
+
+        expect(formGroup.get('expiredMaxReclaimTime.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('expiredMaxReclaimTime.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('expiredMaxReclaimTime.values.0')?.value).toBe(250)
+        expect(formGroup.get('expiredMaxReclaimTime.values.1')?.value).toBe(250)
+
+        expect(formGroup.get('expiredReclaimTimerWaitTime.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('expiredReclaimTimerWaitTime.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('expiredReclaimTimerWaitTime.values.0')?.value).toBe(10)
+        expect(formGroup.get('expiredReclaimTimerWaitTime.values.1')?.value).toBe(10)
+
+        expect(formGroup.get('expiredUnwarnedReclaimCycles.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('expiredUnwarnedReclaimCycles.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('expiredUnwarnedReclaimCycles.values.0')?.value).toBe(5)
+        expect(formGroup.get('expiredUnwarnedReclaimCycles.values.1')?.value).toBe(5)
+
+        expect(formGroup.get('hostReservationIdentifiers.unlocked')?.value).toBeTrue()
+        expect((formGroup.get('hostReservationIdentifiers.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('hostReservationIdentifiers.values.0')?.value).toEqual([
+            'hw-address',
+            'duid',
+            'circuit-id',
+            'client-id',
+        ])
+        expect(formGroup.get('hostReservationIdentifiers.values.1')?.value).toEqual([
+            'hw-address',
+            'duid',
+            'circuit-id',
+        ])
+
+        expect(formGroup.get('reservationsGlobal.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('reservationsGlobal.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('reservationsGlobal.values.0')?.value).toBe(false)
+        expect(formGroup.get('reservationsGlobal.values.1')?.value).toBe(false)
+
+        expect(formGroup.get('reservationsInSubnet.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('reservationsInSubnet.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('reservationsInSubnet.values.0')?.value).toBe(true)
+        expect(formGroup.get('reservationsInSubnet.values.1')?.value).toBe(true)
+
+        expect(formGroup.get('reservationsOutOfPool.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('reservationsOutOfPool.values') as UntypedFormArray).length).toBe(2)
+        expect(formGroup.get('reservationsOutOfPool.values.0')?.value).toBe(false)
+        expect(formGroup.get('reservationsOutOfPool.values.1')?.value).toBe(false)
+    })
+
+    it('should convert DHCPv6 global parameters to form', () => {
+        const configs: KeaRawConfig[] = [
+            {
+                allocator: 'iterative',
+                'pd-allocator': 'flq',
+            },
+        ]
+        const formGroup = service.convertKeaGlobalParametersToForm('Dhcp6', configs)
+        expect(formGroup.get('allocator.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('allocator.values') as UntypedFormArray).length).toBe(1)
+        expect(formGroup.get('allocator.values.0')?.value).toBe('iterative')
+
+        expect(formGroup.get('pdAllocator.unlocked')?.value).toBeFalse()
+        expect((formGroup.get('pdAllocator.values') as UntypedFormArray).length).toBe(1)
+        expect(formGroup.get('pdAllocator.values.0')?.value).toBe('flq')
+    })
+
+    it('should convert a form to Kea parameters', () => {
+        const params = service.convertFormToKeaSubnetParameters(
+            new FormGroup<KeaGlobalParametersForm>({
+                cacheThreshold: new SharedParameterFormGroup<number>(
+                    {
+                        type: 'number',
+                        min: 0,
+                        max: 1,
+                        fractionDigits: 2,
+                    },
+                    [new FormControl<number>(0.5), new FormControl<number>(0.5)]
+                ),
+                allocator: new SharedParameterFormGroup<string>(
+                    {
+                        type: 'string',
+                        values: ['iterative', 'random', 'flq'],
+                    },
+                    [new FormControl<string>('flq'), new FormControl<string>('random')]
+                ),
+                authoritative: new SharedParameterFormGroup<boolean>(
+                    {
+                        type: 'boolean',
+                    },
+                    [new FormControl<boolean>(true), new FormControl<boolean>(false), new FormControl<boolean>(false)]
+                ),
+            })
+        )
+        expect(params.length).toBe(3)
+        expect(params[0].cacheThreshold).toBe(0.5)
+        expect(params[0].allocator).toBe('flq')
+        expect(params[0].authoritative).toBeTrue()
+        expect(params[1].cacheThreshold).toBe(0.5)
+        expect(params[1].allocator).toBe('random')
+        expect(params[1].authoritative).toBeFalse()
+        expect(params[2].cacheThreshold).toBeFalsy()
+        expect(params[2].allocator).toBeFalsy()
+        expect(params[2].authoritative).toBeFalse()
     })
 })

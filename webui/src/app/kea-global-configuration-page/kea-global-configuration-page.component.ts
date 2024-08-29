@@ -1,10 +1,11 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { Subscription, lastValueFrom } from 'rxjs'
 import { MessageService } from 'primeng/api'
 import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ActivatedRoute } from '@angular/router'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
+import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
 
 /**
  * A component that displays global configuration parameter for Kea.
@@ -15,6 +16,8 @@ import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-p
     styleUrl: './kea-global-configuration-page.component.sass',
 })
 export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
+    @ViewChild(KeaGlobalConfigurationFormComponent) keaGlobalConfigurationForm: KeaGlobalConfigurationFormComponent
+
     /**
      * Breadcrumbs for this view.
      */
@@ -63,6 +66,11 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     loaded: boolean = false
 
     /**
+     * A boolean flag indicating if the configuration is currently edited.
+     */
+    edit: boolean = false
+
+    /**
      * A list of parameters not presented in this view but fetched from
      * the server in the configuration.
      */
@@ -104,30 +112,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                 const daemonIdStr = params.get('daemonId')
                 const daemonId = parseInt(daemonIdStr, 10)
                 this.daemonId = daemonId
-
-                this.loaded = false
-                lastValueFrom(this.servicesService.getDaemonConfig(this.daemonId))
-                    .then((data: KeaDaemonConfig) => {
-                        this.daemonName = data.daemonName
-                        this.appId = data.appId
-                        this.appName = data.appName
-                        this.dhcpParameters.push({
-                            name: `${data.appName} / ${daemonNameToFriendlyName(data.daemonName)}`,
-                            parameters: [data.config.Dhcp4 ?? data.config.Dhcp6],
-                        })
-                    })
-                    .catch((err) => {
-                        let msg = getErrorMessage(err)
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Failed to fetch Kea daemon configuration',
-                            detail: `Failed to fetch Kea daemon configuration: ${msg}`,
-                            life: 10000,
-                        })
-                    })
-                    .finally(() => {
-                        this.loaded = true
-                    })
+                this.load()
             })
         )
     }
@@ -138,6 +123,63 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
      * It removes all subscriptions.
      */
     ngOnDestroy(): void {
+        // When leaving the page the form can be still open. We have to
+        // cancel the transaction if it hasn't been canceled.
+        this.keaGlobalConfigurationForm?.onCancel()
         this.subscriptions.unsubscribe()
+    }
+
+    /**
+     * Callback invoked when the user begins editing the configuration.
+     */
+    onEditBegin(): void {
+        this.edit = true
+    }
+
+    /**
+     * Callback invoked when the user clicks cancel in the form.
+     */
+    onFormCancel(): void {
+        this.edit = false
+    }
+
+    /**
+     * Callback invoked when the user submits updated configuration.
+     */
+    onFormSubmit(): void {
+        this.edit = false
+        // Reload the configuration after the update.
+        this.load()
+    }
+
+    /**
+     * Fetches Kea daemon configuration from the server.
+     */
+    private load(): void {
+        this.loaded = false
+        lastValueFrom(this.servicesService.getDaemonConfig(this.daemonId))
+            .then((data: KeaDaemonConfig) => {
+                this.daemonName = data.daemonName
+                this.appId = data.appId
+                this.appName = data.appName
+                this.dhcpParameters = [
+                    {
+                        name: `${data.appName} / ${daemonNameToFriendlyName(data.daemonName)}`,
+                        parameters: [data.config.Dhcp4 ?? data.config.Dhcp6],
+                    },
+                ]
+            })
+            .catch((err) => {
+                let msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Failed to fetch Kea daemon configuration',
+                    detail: `Failed to fetch Kea daemon configuration: ${msg}`,
+                    life: 10000,
+                })
+            })
+            .finally(() => {
+                this.loaded = true
+            })
     }
 }
