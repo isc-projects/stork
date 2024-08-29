@@ -1536,9 +1536,9 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 	require.NotNil(t, contents.Configs)
 	require.Len(t, contents.Configs, 2)
 	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
-	require.Equal(t, dbmodel.DaemonNameDHCPv4, daemons[0].GetName(), contents.Configs[0].DaemonName)
+	require.Equal(t, dbmodel.DaemonNameDHCPv4, contents.Configs[0].DaemonName)
 	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
-	require.Equal(t, dbmodel.DaemonNameDHCPv4, daemons[1].GetName(), contents.Configs[1].DaemonName)
+	require.Equal(t, dbmodel.DaemonNameDHCPv4, contents.Configs[1].DaemonName)
 
 	// Submit transaction.
 
@@ -1768,9 +1768,9 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 	require.NotNil(t, contents.Configs)
 	require.Len(t, contents.Configs, 2)
 	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
-	require.Equal(t, dbmodel.DaemonNameDHCPv6, daemons[0].GetName(), contents.Configs[0].DaemonName)
+	require.Equal(t, dbmodel.DaemonNameDHCPv6, contents.Configs[0].DaemonName)
 	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
-	require.Equal(t, dbmodel.DaemonNameDHCPv6, daemons[1].GetName(), contents.Configs[1].DaemonName)
+	require.Equal(t, dbmodel.DaemonNameDHCPv6, contents.Configs[1].DaemonName)
 
 	// Submit transaction.
 

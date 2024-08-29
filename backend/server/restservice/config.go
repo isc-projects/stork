@@ -550,11 +550,12 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 			continue
 		}
 		configs = append(configs, &models.KeaDaemonConfig{
-			AppID:    daemon.GetAppID(),
-			AppName:  daemon.App.GetName(),
-			AppType:  "kea",
-			DaemonID: daemon.ID,
-			Config:   daemon.KeaDaemon.Config,
+			AppID:      daemon.GetAppID(),
+			AppName:    daemon.App.GetName(),
+			AppType:    "kea",
+			DaemonID:   daemon.ID,
+			DaemonName: daemon.Name,
+			Config:     daemon.KeaDaemon.Config,
 		})
 	}
 
