@@ -285,18 +285,18 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	// Act & Assert
 	// Wait for collecting.
 	require.Eventually(t, func() bool {
-		return testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]) > 0
+		metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+			prometheus.Labels{
+				"subnet_id": "7",
+				"prefix":    "10.0.0.0/8",
+				"subnet":    "10.0.0.0/8",
+			},
+		)
+
+		return testutil.ToFloat64(metric) == 13.0
 	}, 10*time.Second, 500*time.Millisecond)
 
-	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
-		prometheus.Labels{
-			"subnet_id": "7",
-			"prefix":    "10.0.0.0/8",
-			"subnet":    "10.0.0.0/8",
-		},
-	)
-
-	require.Equal(t, 13.0, testutil.ToFloat64(metric))
+	require.NotZero(t, testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]))
 }
 
 // Fake Kea CA request sender.
