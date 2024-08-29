@@ -256,6 +256,106 @@ func TestSetDHCPv4DDNSTTLPercent(t *testing.T) {
 	require.Nil(t, cfg.DDNSTTLPercent)
 }
 
+// Test enabling connectivity with the DHCP DDNS daemon.
+func TestSetDHCPv4DDNSEnableUpdates(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSEnableUpdates(storkutil.Ptr(true))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.EnableUpdates)
+	require.True(t, *cfg.DHCPDDNS.EnableUpdates)
+	cfg.SetDHCPDDNSEnableUpdates(nil)
+	require.Nil(t, cfg.DHCPDDNS.EnableUpdates)
+}
+
+// Test setting the IP address on which D2 listens for requests.
+func TestSetDHCPv4DDNSServerIP(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSServerIP(storkutil.Ptr("192.0.2.1"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.ServerIP)
+	require.Equal(t, "192.0.2.1", *cfg.DHCPDDNS.ServerIP)
+	cfg.SetDHCPDDNSServerIP(nil)
+	require.Nil(t, cfg.DHCPDDNS.ServerIP)
+}
+
+// Test setting the port on which D2 listens for requests.
+func TestSetDHCPv4DDNSServerPort(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSServerPort(storkutil.Ptr(int64(8080)))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.ServerPort)
+	require.EqualValues(t, 8080, *cfg.DHCPDDNS.ServerPort)
+	cfg.SetDHCPDDNSServerPort(nil)
+	require.Nil(t, cfg.DHCPDDNS.ServerPort)
+}
+
+// Test setting the IP address which DHCP server uses to send requests to D2.
+func TestSetDHCPv4DDNSSenderIP(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSSenderIP(storkutil.Ptr("192.0.2.1"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.SenderIP)
+	require.Equal(t, "192.0.2.1", *cfg.DHCPDDNS.SenderIP)
+	cfg.SetDHCPDDNSSenderIP(nil)
+	require.Nil(t, cfg.DHCPDDNS.SenderIP)
+}
+
+// Test setting the port which DHCP server uses to send requests to D2.
+func TestSetDHCPv4DDNSSenderPort(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSSenderPort(storkutil.Ptr(int64(8080)))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.SenderPort)
+	require.EqualValues(t, 8080, *cfg.DHCPDDNS.SenderPort)
+	cfg.SetDHCPDDNSSenderPort(nil)
+	require.Nil(t, cfg.DHCPDDNS.SenderPort)
+}
+
+// Test setting the maximum number of requests allowed to queue while waiting
+// to be sent to D2.
+func TestSetDHCPv4DDNSMaxQueueSize(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSMaxQueueSize(storkutil.Ptr(int64(8080)))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.MaxQueueSize)
+	require.EqualValues(t, 8080, *cfg.DHCPDDNS.MaxQueueSize)
+	cfg.SetDHCPDDNSMaxQueueSize(nil)
+	require.Nil(t, cfg.DHCPDDNS.MaxQueueSize)
+}
+
+// Test setting the socket protocol to use when sending requests to D2.
+func TestSetDHCPv4DDNSNCRProtocol(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSNCRProtocol(storkutil.Ptr("UDP"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.NCRProtocol)
+	require.Equal(t, "UDP", *cfg.DHCPDDNS.NCRProtocol)
+	cfg.SetDHCPDDNSNCRProtocol(nil)
+	require.Nil(t, cfg.DHCPDDNS.NCRProtocol)
+}
+
+// Test setting the packet format to use when sending requests to D2.
+func TestSetDHCPv4DDNSNCRFormat(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	cfg.SetDHCPDDNSNCRFormat(storkutil.Ptr("JSON"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.NCRFormat)
+	require.Equal(t, "JSON", *cfg.DHCPDDNS.NCRFormat)
+	cfg.SetDHCPDDNSNCRFormat(nil)
+	require.Nil(t, cfg.DHCPDDNS.NCRFormat)
+}
+
+// Test setting the DHCP DDNS configuration.
+func TestSetDHCPv4DDNS(t *testing.T) {
+	cfg := &DHCPv4Config{}
+	dhcpDDNS := &DHCPDDNS{}
+	cfg.SetDHCPDDNS(dhcpDDNS)
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.Equal(t, dhcpDDNS, cfg.DHCPDDNS)
+	cfg.SetDHCPDDNS(nil)
+	require.Nil(t, cfg.DHCPDDNS)
+}
+
 // Test setting the number of seconds since the last removal of the expired
 // leases, when the next removal should occur.
 func TestSetDHCPv4ELPFlushReclaimedTimerWaitTime(t *testing.T) {
@@ -558,6 +658,106 @@ func TestSetDHCPv6CacheThreshold(t *testing.T) {
 	require.EqualValues(t, float32(0.2), *cfg.CacheThreshold)
 	cfg.SetCacheThreshold(nil)
 	require.Nil(t, cfg.CacheThreshold)
+}
+
+// Test enabling connectivity with the DHCP DDNS daemon.
+func TestSetDHCPv6DDNSEnableUpdates(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSEnableUpdates(storkutil.Ptr(true))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.EnableUpdates)
+	require.True(t, *cfg.DHCPDDNS.EnableUpdates)
+	cfg.SetDHCPDDNSEnableUpdates(nil)
+	require.Nil(t, cfg.DHCPDDNS.EnableUpdates)
+}
+
+// Test setting the IP address on which D2 listens for requests.
+func TestSetDHCPv6DDNSServerIP(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSServerIP(storkutil.Ptr("192.0.2.1"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.ServerIP)
+	require.Equal(t, "192.0.2.1", *cfg.DHCPDDNS.ServerIP)
+	cfg.SetDHCPDDNSServerIP(nil)
+	require.Nil(t, cfg.DHCPDDNS.ServerIP)
+}
+
+// Test setting the port on which D2 listens for requests.
+func TestSetDHCPv6DDNSServerPort(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSServerPort(storkutil.Ptr(int64(8080)))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.ServerPort)
+	require.EqualValues(t, 8080, *cfg.DHCPDDNS.ServerPort)
+	cfg.SetDHCPDDNSServerPort(nil)
+	require.Nil(t, cfg.DHCPDDNS.ServerPort)
+}
+
+// Test setting the IP address which DHCP server uses to send requests to D2.
+func TestSetDHCPv6DDNSSenderIP(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSSenderIP(storkutil.Ptr("192.0.2.1"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.SenderIP)
+	require.Equal(t, "192.0.2.1", *cfg.DHCPDDNS.SenderIP)
+	cfg.SetDHCPDDNSSenderIP(nil)
+	require.Nil(t, cfg.DHCPDDNS.SenderIP)
+}
+
+// Test setting the port which DHCP server uses to send requests to D2.
+func TestSetDHCPv6DDNSSenderPort(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSSenderPort(storkutil.Ptr(int64(8080)))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.SenderPort)
+	require.EqualValues(t, 8080, *cfg.DHCPDDNS.SenderPort)
+	cfg.SetDHCPDDNSSenderPort(nil)
+	require.Nil(t, cfg.DHCPDDNS.SenderPort)
+}
+
+// Test setting the maximum number of requests allowed to queue while waiting
+// to be sent to D2.
+func TestSetDHCPv6DDNSMaxQueueSize(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSMaxQueueSize(storkutil.Ptr(int64(8080)))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.MaxQueueSize)
+	require.EqualValues(t, 8080, *cfg.DHCPDDNS.MaxQueueSize)
+	cfg.SetDHCPDDNSMaxQueueSize(nil)
+	require.Nil(t, cfg.DHCPDDNS.MaxQueueSize)
+}
+
+// Test setting the socket protocol to use when sending requests to D2.
+func TestSetDHCPv6DDNSNCRProtocol(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSNCRProtocol(storkutil.Ptr("UDP"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.NCRProtocol)
+	require.Equal(t, "UDP", *cfg.DHCPDDNS.NCRProtocol)
+	cfg.SetDHCPDDNSNCRProtocol(nil)
+	require.Nil(t, cfg.DHCPDDNS.NCRProtocol)
+}
+
+// Test setting the packet format to use when sending requests to D2.
+func TestSetDHCPv6DDNSNCRFormat(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	cfg.SetDHCPDDNSNCRFormat(storkutil.Ptr("JSON"))
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.NotNil(t, cfg.DHCPDDNS.NCRFormat)
+	require.Equal(t, "JSON", *cfg.DHCPDDNS.NCRFormat)
+	cfg.SetDHCPDDNSNCRFormat(nil)
+	require.Nil(t, cfg.DHCPDDNS.NCRFormat)
+}
+
+// Test setting the DHCP DDNS configuration.
+func TestSetDHCPv6DDNS(t *testing.T) {
+	cfg := &DHCPv6Config{}
+	dhcpDDNS := &DHCPDDNS{}
+	cfg.SetDHCPDDNS(dhcpDDNS)
+	require.NotNil(t, cfg.DHCPDDNS)
+	require.Equal(t, dhcpDDNS, cfg.DHCPDDNS)
+	cfg.SetDHCPDDNS(nil)
+	require.Nil(t, cfg.DHCPDDNS)
 }
 
 // Test setting boolean flag indicating if DDNS updates should be sent.

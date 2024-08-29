@@ -750,6 +750,69 @@ func (c *SettableConfig) SetDDNSTTLPercent(ddnsTTLPercent *float32) error {
 	}, "ddns-ttl-percent")
 }
 
+// Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
+func (c *SettableConfig) SetDHCPDDNSEnableUpdates(enableUpdates *bool) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSEnableUpdates(enableUpdates)
+	}, "enable-updates")
+}
+
+// Sets the IP address on which D2 listens for requests.
+func (c *SettableConfig) SetDHCPDDNSServerIP(serverIP *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSServerIP(serverIP)
+	}, "server-ip")
+}
+
+// Sets the port on which D2 listens for requests.
+func (c *SettableConfig) SetDHCPDDNSServerPort(serverPort *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSServerPort(serverPort)
+	}, "server-port")
+}
+
+// Sets the IP address which DHCP server uses to send requests to D2.
+func (c *SettableConfig) SetDHCPDDNSSenderIP(senderIP *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSSenderIP(senderIP)
+	}, "sender-ip")
+}
+
+// Sets the port which DHCP server uses to send requests to D2.
+func (c *SettableConfig) SetDHCPDDNSSenderPort(senderPort *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSSenderPort(senderPort)
+	}, "sender-port")
+}
+
+// Sets the maximum number of requests allowed to queue while waiting to be sent to D2.
+func (c *SettableConfig) SetDHCPDDNSMaxQueueSize(maxQueueSize *int64) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSMaxQueueSize(maxQueueSize)
+	}, "max-queue-size")
+}
+
+// Sets the socket protocol to use when sending requests to D2.
+func (c *SettableConfig) SetDHCPDDNSNCRProtocol(ncrProtocol *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSNCRProtocol(ncrProtocol)
+	}, "ncr-protocol")
+}
+
+// Sets the packet format to use when sending requests to D2.
+func (c *SettableConfig) SetDHCPDDNSNCRFormat(ncrFormat *string) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNSNCRFormat(ncrFormat)
+	}, "ncr-format")
+}
+
+// Sets the DHCP DDNS structure.
+func (c *SettableConfig) SetDHCPDDNS(dhcpDDNS *DHCPDDNS) error {
+	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
+		modifier.SetDHCPDDNS(dhcpDDNS)
+	}, "dhcp-ddns")
+}
+
 // Sets the number of seconds since the last removal of the expired
 // leases, when the next removal should occur.
 func (c *SettableConfig) SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64) error {

@@ -56,6 +56,37 @@
         format: float
         x-nullable: true
 
+  KeaConfigDhcpDdnsParameters:
+    type: object
+    properties:
+      dhcpDdnsEnableUpdates:
+        type: boolean
+        x-nullable: true
+      dhcpDdnsServerIP:
+        type: string
+        x-nullable: true
+      dhcpDdnsServerPort:
+        type: number
+        format: int64
+        x-nullable: true
+      dhcpDdnsSenderIP:
+        type: string
+        x-nullable: true
+      dhcpDdnsSenderPort:
+        type: number
+        format: int64
+        x-nullable: true
+      dhcpDdnsMaxQueueSize:
+        type: number
+        format: int64
+        x-nullable: true
+      dhcpDdnsNcrProtocol:
+        type: string
+        x-nullable: true
+      dhcpDdnsNcrFormat:
+        type: string
+        x-nullable: true
+
   KeaConfigFourOverSixParameters:
     type: object
     properties:
@@ -301,6 +332,7 @@
       - $ref: '#/definitions/KeaConfigAssortedGlobalParameters'
       - $ref: '#/definitions/KeaConfigCacheParameters'
       - $ref: '#/definitions/KeaConfigDdnsParameters'
+      - $ref: '#/definitions/KeaConfigDhcpDdnsParameters'
       - $ref: '#/definitions/KeaConfigExpiredLeasesProcessingParameters'
       - $ref: '#/definitions/KeaConfigReservationParameters'
       - $ref: '#/definitions/KeaConfigValidLifetimeParameters'

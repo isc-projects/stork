@@ -1891,6 +1891,30 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 	err = config.SetDDNSTTLPercent(storkutil.Ptr(float32(0.1)))
 	require.NoError(t, err)
 
+	err = config.SetDHCPDDNSEnableUpdates(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSMaxQueueSize(storkutil.Ptr(int64(100)))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSNCRFormat(storkutil.Ptr("JSON"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSNCRProtocol(storkutil.Ptr("UDP"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSSenderIP(storkutil.Ptr("192.0.2.1"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSSenderPort(storkutil.Ptr(int64(8080)))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSServerIP(storkutil.Ptr("192.0.2.2"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSServerPort(storkutil.Ptr(int64(8081)))
+	require.NoError(t, err)
+
 	err = config.SetELPFlushReclaimedTimerWaitTime(storkutil.Ptr(int64(111)))
 	require.NoError(t, err)
 
@@ -1946,6 +1970,16 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 			"ddns-use-conflict-resolution": true,
 			"ddns-conflict-resolution-mode": "check-with-dhcid",
 			"ddns-ttl-percent": 0.1,
+			"dhcp-ddns": {
+				"enable-updates": true,
+				"max-queue-size": 100,
+				"ncr-format": "JSON",
+				"ncr-protocol": "UDP",
+				"sender-ip": "192.0.2.1",
+				"sender-port": 8080,
+				"server-ip": "192.0.2.2",
+				"server-port": 8081
+			},
 			"early-global-reservations-lookup": true,
 			"host-reservation-identifiers": [
 				"hw-address",
@@ -1965,6 +1999,42 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 			},
 			"authoritative": true,
 			"echo-client-id": false
+		}
+	}`, serializedConfig)
+}
+
+// Test setting DHCP DDNS for the DHCPv4 server.
+func TestSettingDHCPv4DHCPDDNS(t *testing.T) {
+	config := NewSettableDHCPv4Config()
+
+	dhcpDDNS := &DHCPDDNS{
+		EnableUpdates: storkutil.Ptr(true),
+		ServerIP:      storkutil.Ptr("192.0.2.1"),
+		ServerPort:    storkutil.Ptr(int64(8080)),
+		SenderIP:      storkutil.Ptr("192.0.2.2"),
+		SenderPort:    storkutil.Ptr(int64(8081)),
+		MaxQueueSize:  storkutil.Ptr(int64(100)),
+		NCRProtocol:   storkutil.Ptr("UDP"),
+		NCRFormat:     storkutil.Ptr("JSON"),
+	}
+	err := config.SetDHCPDDNS(dhcpDDNS)
+	require.NoError(t, err)
+
+	serializedConfig, err := config.GetSerializedConfig()
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{
+		"Dhcp4": {
+			"dhcp-ddns": {
+				"enable-updates": true,
+				"server-ip": "192.0.2.1",
+				"server-port": 8080,
+				"sender-ip": "192.0.2.2",
+				"sender-port": 8081,
+				"max-queue-size": 100,
+				"ncr-format": "JSON",
+				"ncr-protocol": "UDP"
+			}
 		}
 	}`, serializedConfig)
 }
@@ -2038,6 +2108,30 @@ func TestSettingDHCPv6GlobalParameters(t *testing.T) {
 	err = config.SetDDNSTTLPercent(storkutil.Ptr(float32(0.1)))
 	require.NoError(t, err)
 
+	err = config.SetDHCPDDNSEnableUpdates(storkutil.Ptr(true))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSMaxQueueSize(storkutil.Ptr(int64(100)))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSNCRFormat(storkutil.Ptr("JSON"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSNCRProtocol(storkutil.Ptr("UDP"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSSenderIP(storkutil.Ptr("2001:db8:1::1"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSSenderPort(storkutil.Ptr(int64(8080)))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSServerIP(storkutil.Ptr("2001:db8:1::2"))
+	require.NoError(t, err)
+
+	err = config.SetDHCPDDNSServerPort(storkutil.Ptr(int64(8081)))
+	require.NoError(t, err)
+
 	err = config.SetELPFlushReclaimedTimerWaitTime(storkutil.Ptr(int64(111)))
 	require.NoError(t, err)
 
@@ -2089,6 +2183,16 @@ func TestSettingDHCPv6GlobalParameters(t *testing.T) {
 			"ddns-update-on-renew": true,
 			"ddns-use-conflict-resolution": true,
 			"ddns-ttl-percent": 0.1,
+			"dhcp-ddns": {
+				"enable-updates": true,
+				"max-queue-size": 100,
+				"ncr-format": "JSON",
+				"ncr-protocol": "UDP",
+				"sender-ip": "2001:db8:1::1",
+				"sender-port": 8080,
+				"server-ip": "2001:db8:1::2",
+				"server-port": 8081
+			},
 			"early-global-reservations-lookup": true,
 			"host-reservation-identifiers": [
 				"hw-address",
@@ -2107,6 +2211,42 @@ func TestSettingDHCPv6GlobalParameters(t *testing.T) {
 				"unwarned-reclaim-cycles": 10
 			},
 			"pd-allocator": "random"
+		}
+	}`, serializedConfig)
+}
+
+// Test setting DHCP DDNS for the DHCPv6 server.
+func TestSettingDHCPv6DHCPDDNS(t *testing.T) {
+	config := NewSettableDHCPv6Config()
+
+	dhcpDDNS := &DHCPDDNS{
+		EnableUpdates: storkutil.Ptr(true),
+		ServerIP:      storkutil.Ptr("2001:db8:1::1"),
+		ServerPort:    storkutil.Ptr(int64(8080)),
+		SenderIP:      storkutil.Ptr("2001:db8:1::2"),
+		SenderPort:    storkutil.Ptr(int64(8081)),
+		MaxQueueSize:  storkutil.Ptr(int64(100)),
+		NCRProtocol:   storkutil.Ptr("UDP"),
+		NCRFormat:     storkutil.Ptr("JSON"),
+	}
+	err := config.SetDHCPDDNS(dhcpDDNS)
+	require.NoError(t, err)
+
+	serializedConfig, err := config.GetSerializedConfig()
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{
+		"Dhcp6": {
+			"dhcp-ddns": {
+				"enable-updates": true,
+				"server-ip": "2001:db8:1::1",
+				"server-port": 8080,
+				"sender-ip": "2001:db8:1::2",
+				"sender-port": 8081,
+				"max-queue-size": 100,
+				"ncr-format": "JSON",
+				"ncr-protocol": "UDP"
+			}
 		}
 	}`, serializedConfig)
 }

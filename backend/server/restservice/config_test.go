@@ -1564,6 +1564,16 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 			DdnsUseConflictResolution:  storkutil.Ptr(true),
 			DdnsConflictResolutionMode: storkutil.Ptr("check-with-dhcid"),
 		},
+		KeaConfigDhcpDdnsParameters: models.KeaConfigDhcpDdnsParameters{
+			DhcpDdnsEnableUpdates: storkutil.Ptr(true),
+			DhcpDdnsMaxQueueSize:  storkutil.Ptr(int64(100)),
+			DhcpDdnsNcrFormat:     storkutil.Ptr("JSON"),
+			DhcpDdnsNcrProtocol:   storkutil.Ptr("UDP"),
+			DhcpDdnsSenderIP:      storkutil.Ptr("192.0.2.1"),
+			DhcpDdnsSenderPort:    storkutil.Ptr(int64(8080)),
+			DhcpDdnsServerIP:      storkutil.Ptr("192.0.2.2"),
+			DhcpDdnsServerPort:    storkutil.Ptr(int64(8081)),
+		},
 		KeaConfigExpiredLeasesProcessingParameters: models.KeaConfigExpiredLeasesProcessingParameters{
 			ExpiredFlushReclaimedTimerWaitTime: storkutil.Ptr(int64(12)),
 			ExpiredHoldReclaimedTime:           storkutil.Ptr(int64(13)),
@@ -1630,6 +1640,16 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 							"ddns-update-on-renew": true,
 							"ddns-use-conflict-resolution": true,
 							"ddns-conflict-resolution-mode": "check-with-dhcid",
+							"dhcp-ddns": {
+								"enable-updates": true,
+								"max-queue-size": 100,
+								"ncr-format": "JSON",
+								"ncr-protocol": "UDP",
+								"sender-ip": "192.0.2.1",
+								"sender-port": 8080,
+								"server-ip": "192.0.2.2",
+								"server-port": 8081
+							},
 							"expired-leases-processing": {
 								"flush-reclaimed-timer-wait-time": 12,
 								"hold-reclaimed-time": 13,
@@ -1795,6 +1815,16 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 			DdnsUseConflictResolution:  storkutil.Ptr(true),
 			DdnsConflictResolutionMode: storkutil.Ptr("check-with-dhcid"),
 		},
+		KeaConfigDhcpDdnsParameters: models.KeaConfigDhcpDdnsParameters{
+			DhcpDdnsEnableUpdates: storkutil.Ptr(true),
+			DhcpDdnsMaxQueueSize:  storkutil.Ptr(int64(100)),
+			DhcpDdnsNcrFormat:     storkutil.Ptr("JSON"),
+			DhcpDdnsNcrProtocol:   storkutil.Ptr("UDP"),
+			DhcpDdnsSenderIP:      storkutil.Ptr("2001:db8:1::1"),
+			DhcpDdnsSenderPort:    storkutil.Ptr(int64(8080)),
+			DhcpDdnsServerIP:      storkutil.Ptr("2001:db8:1::2"),
+			DhcpDdnsServerPort:    storkutil.Ptr(int64(8081)),
+		},
 		KeaConfigExpiredLeasesProcessingParameters: models.KeaConfigExpiredLeasesProcessingParameters{
 			ExpiredFlushReclaimedTimerWaitTime: storkutil.Ptr(int64(12)),
 			ExpiredHoldReclaimedTime:           storkutil.Ptr(int64(13)),
@@ -1859,6 +1889,16 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 							"ddns-update-on-renew": true,
 							"ddns-use-conflict-resolution": true,
 							"ddns-conflict-resolution-mode": "check-with-dhcid",
+							"dhcp-ddns": {
+								"enable-updates": true,
+								"max-queue-size": 100,
+								"ncr-format": "JSON",
+								"ncr-protocol": "UDP",
+								"sender-ip": "2001:db8:1::1",
+								"sender-port": 8080,
+								"server-ip": "2001:db8:1::2",
+								"server-port": 8081
+							},
 							"expired-leases-processing": {
 								"flush-reclaimed-timer-wait-time": 12,
 								"hold-reclaimed-time": 13,

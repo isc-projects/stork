@@ -72,6 +72,24 @@ type dhcpConfigModifier interface {
 	SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string)
 	// Sets the the percent of the lease's lifetime to use for the DNS TTL.
 	SetDDNSTTLPercent(ddnsTTLPercent *float32)
+	// Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
+	SetDHCPDDNSEnableUpdates(enableUpdates *bool)
+	// Sets the IP address on which D2 listens for requests.
+	SetDHCPDDNSServerIP(serverIP *string)
+	// Sets the port on which D2 listens for requests.
+	SetDHCPDDNSServerPort(serverPort *int64)
+	// Sets the IP address which DHCP server uses to send requests to D2.
+	SetDHCPDDNSSenderIP(senderIP *string)
+	// Sets the port which DHCP server uses to send requests to D2.
+	SetDHCPDDNSSenderPort(senderPort *int64)
+	// Sets the maximum number of requests allowed to queue while waiting to be sent to D2.
+	SetDHCPDDNSMaxQueueSize(maxQueueSize *int64)
+	// Sets the socket protocol to use when sending requests to D2.
+	SetDHCPDDNSNCRProtocol(ncrProtocol *string)
+	// Sets the packet format to use when sending requests to D2.
+	SetDHCPDDNSNCRFormat(ncrFormat *string)
+	// Sets the DHCP DDNS structure.
+	SetDHCPDDNS(dhcpDDNS *DHCPDDNS)
 	// Sets the number of seconds since the last removal of the expired
 	// leases, when the next removal should occur.
 	SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64)
@@ -159,6 +177,7 @@ type CommonDHCPConfig struct {
 	ClientClasses           []ClientClass            `json:"client-classes,omitempty"`
 	ConfigControl           *ConfigControl           `json:"config-control,omitempty"`
 	ControlSocket           *ControlSocket           `json:"control-socket,omitempty"`
+	DHCPDDNS                *DHCPDDNS                `json:"dhcp-ddns,omitempty"`
 	ExpiredLeasesProcessing *ExpiredLeasesProcessing `json:"expired-leases-processing,omitempty"`
 	HostsDatabase           *Database                `json:"hosts-database,omitempty"`
 	HostsDatabases          []Database               `json:"hosts-databases,omitempty"`
@@ -168,6 +187,18 @@ type CommonDHCPConfig struct {
 	MultiThreading          *MultiThreading          `json:"multi-threading,omitempty"`
 	Reservations            []Reservation            `json:"reservations,omitempty"`
 	StoreExtendedInfo       *bool                    `json:"store-extended-info,omitempty"`
+}
+
+// Represents DHCP DDNS configuration parameters for the DHCPv4 and DHCPv6 servers.
+type DHCPDDNS struct {
+	EnableUpdates *bool   `json:"enable-updates,omitempty"`
+	ServerIP      *string `json:"server-ip,omitempty"`
+	ServerPort    *int64  `json:"server-port,omitempty"`
+	SenderIP      *string `json:"sender-ip,omitempty"`
+	SenderPort    *int64  `json:"sender-port,omitempty"`
+	MaxQueueSize  *int64  `json:"max-queue-size,omitempty"`
+	NCRProtocol   *string `json:"ncr-protocol,omitempty"`
+	NCRFormat     *string `json:"ncr-format,omitempty"`
 }
 
 // Represents the collection of settings pertaining to the expired
@@ -333,12 +364,57 @@ func (c *DHCPv4Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
 	c.CommonDHCPConfig.DDNSTTLPercent = ddnsTTLPercent
 }
 
-// Initializes the structure holding expired leases processing settings.
-func (c *DHCPv4Config) ensureExpiredLeasesProcessing() *ExpiredLeasesProcessing {
-	if c.ExpiredLeasesProcessing == nil {
-		c.ExpiredLeasesProcessing = &ExpiredLeasesProcessing{}
+// Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
+func (c *DHCPv4Config) SetDHCPDDNSEnableUpdates(enableUpdates *bool) {
+	c.ensureDHCPDDNS().EnableUpdates = enableUpdates
+}
+
+// Sets the IP address on which D2 listens for requests.
+func (c *DHCPv4Config) SetDHCPDDNSServerIP(serverIP *string) {
+	c.ensureDHCPDDNS().ServerIP = serverIP
+}
+
+// Sets the port on which D2 listens for requests.
+func (c *DHCPv4Config) SetDHCPDDNSServerPort(serverPort *int64) {
+	c.ensureDHCPDDNS().ServerPort = serverPort
+}
+
+// Sets the IP address which DHCP server uses to send requests to D2.
+func (c *DHCPv4Config) SetDHCPDDNSSenderIP(senderIP *string) {
+	c.ensureDHCPDDNS().SenderIP = senderIP
+}
+
+// Sets the port which DHCP server uses to send requests to D2.
+func (c *DHCPv4Config) SetDHCPDDNSSenderPort(senderPort *int64) {
+	c.ensureDHCPDDNS().SenderPort = senderPort
+}
+
+// Sets the maximum number of requests allowed to queue while waiting to be sent to D2.
+func (c *DHCPv4Config) SetDHCPDDNSMaxQueueSize(maxQueueSize *int64) {
+	c.ensureDHCPDDNS().MaxQueueSize = maxQueueSize
+}
+
+// Sets the socket protocol to use when sending requests to D2.
+func (c *DHCPv4Config) SetDHCPDDNSNCRProtocol(ncrProtocol *string) {
+	c.ensureDHCPDDNS().NCRProtocol = ncrProtocol
+}
+
+// Sets the packet format to use when sending requests to D2.
+func (c *DHCPv4Config) SetDHCPDDNSNCRFormat(ncrFormat *string) {
+	c.ensureDHCPDDNS().NCRFormat = ncrFormat
+}
+
+// Initializes the structure holding DHCP DDNS configuration.
+func (c *DHCPv4Config) ensureDHCPDDNS() *DHCPDDNS {
+	if c.DHCPDDNS == nil {
+		c.DHCPDDNS = &DHCPDDNS{}
 	}
-	return c.ExpiredLeasesProcessing
+	return c.DHCPDDNS
+}
+
+// Sets the DHCP DDNS structure.
+func (c *DHCPv4Config) SetDHCPDDNS(dhcpDDNS *DHCPDDNS) {
+	c.DHCPDDNS = dhcpDDNS
 }
 
 // Sets the number of seconds since the last removal of the expired
@@ -376,6 +452,14 @@ func (c *DHCPv4Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64) {
 // after which a warning message is issued.
 func (c *DHCPv4Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
 	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = unwarnedReclaimCycles
+}
+
+// Initializes the structure holding expired leases processing settings.
+func (c *DHCPv4Config) ensureExpiredLeasesProcessing() *ExpiredLeasesProcessing {
+	if c.ExpiredLeasesProcessing == nil {
+		c.ExpiredLeasesProcessing = &ExpiredLeasesProcessing{}
+	}
+	return c.ExpiredLeasesProcessing
 }
 
 // Sets the expired leases processing structure.
@@ -569,12 +653,57 @@ func (c *DHCPv6Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
 	c.CommonDHCPConfig.DDNSTTLPercent = ddnsTTLPercent
 }
 
-// Initializes the structure holding expired leases processing settings.
-func (c *DHCPv6Config) ensureExpiredLeasesProcessing() *ExpiredLeasesProcessing {
-	if c.ExpiredLeasesProcessing == nil {
-		c.ExpiredLeasesProcessing = &ExpiredLeasesProcessing{}
+// Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
+func (c *DHCPv6Config) SetDHCPDDNSEnableUpdates(enableUpdates *bool) {
+	c.ensureDHCPDDNS().EnableUpdates = enableUpdates
+}
+
+// Sets the IP address on which D2 listens for requests.
+func (c *DHCPv6Config) SetDHCPDDNSServerIP(serverIP *string) {
+	c.ensureDHCPDDNS().ServerIP = serverIP
+}
+
+// Sets the port on which D2 listens for requests.
+func (c *DHCPv6Config) SetDHCPDDNSServerPort(serverPort *int64) {
+	c.ensureDHCPDDNS().ServerPort = serverPort
+}
+
+// Sets the IP address which DHCP server uses to send requests to D2.
+func (c *DHCPv6Config) SetDHCPDDNSSenderIP(senderIP *string) {
+	c.ensureDHCPDDNS().SenderIP = senderIP
+}
+
+// Sets the port which DHCP server uses to send requests to D2.
+func (c *DHCPv6Config) SetDHCPDDNSSenderPort(senderPort *int64) {
+	c.ensureDHCPDDNS().SenderPort = senderPort
+}
+
+// Sets the maximum number of requests allowed to queue while waiting to be sent to D2.
+func (c *DHCPv6Config) SetDHCPDDNSMaxQueueSize(maxQueueSize *int64) {
+	c.ensureDHCPDDNS().MaxQueueSize = maxQueueSize
+}
+
+// Sets the socket protocol to use when sending requests to D2.
+func (c *DHCPv6Config) SetDHCPDDNSNCRProtocol(ncrProtocol *string) {
+	c.ensureDHCPDDNS().NCRProtocol = ncrProtocol
+}
+
+// Sets the packet format to use when sending requests to D2.
+func (c *DHCPv6Config) SetDHCPDDNSNCRFormat(ncrFormat *string) {
+	c.ensureDHCPDDNS().NCRFormat = ncrFormat
+}
+
+// Initializes the structure holding DHCP DDNS configuration.
+func (c *DHCPv6Config) ensureDHCPDDNS() *DHCPDDNS {
+	if c.DHCPDDNS == nil {
+		c.DHCPDDNS = &DHCPDDNS{}
 	}
-	return c.ExpiredLeasesProcessing
+	return c.DHCPDDNS
+}
+
+// Sets the DHCP DDNS structure.
+func (c *DHCPv6Config) SetDHCPDDNS(dhcpDDNS *DHCPDDNS) {
+	c.DHCPDDNS = dhcpDDNS
 }
 
 // Sets the number of seconds since the last removal of the expired
@@ -612,6 +741,14 @@ func (c *DHCPv6Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64) {
 // after which a warning message is issued.
 func (c *DHCPv6Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
 	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = unwarnedReclaimCycles
+}
+
+// Initializes the structure holding expired leases processing settings.
+func (c *DHCPv6Config) ensureExpiredLeasesProcessing() *ExpiredLeasesProcessing {
+	if c.ExpiredLeasesProcessing == nil {
+		c.ExpiredLeasesProcessing = &ExpiredLeasesProcessing{}
+	}
+	return c.ExpiredLeasesProcessing
 }
 
 // Sets the expired leases processing structure.
