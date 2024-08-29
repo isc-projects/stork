@@ -284,6 +284,14 @@ export interface KeaGlobalParametersForm {
     ddnsUpdateOnRenew?: SharedParameterFormGroup<boolean>
     ddnsUseConflictResolution?: SharedParameterFormGroup<boolean>
     ddnsConflictResolutionMode?: SharedParameterFormGroup<string>
+    dhcpDdnsEnableUpdates?: SharedParameterFormGroup<boolean>
+    dhcpDdnsServerIP?: SharedParameterFormGroup<string>
+    dhcpDdnsServerPort?: SharedParameterFormGroup<number>
+    dhcpDdnsSenderIP?: SharedParameterFormGroup<string>
+    dhcpDdnsSenderPort?: SharedParameterFormGroup<number>
+    dhcpDdnsMaxQueueSize?: SharedParameterFormGroup<number>
+    dhcpDdnsNcrProtocol?: SharedParameterFormGroup<string>
+    dhcpDdnsNcrFormat?: SharedParameterFormGroup<string>
     earlyGlobalReservationsLookup?: SharedParameterFormGroup<boolean>
     echoClientId?: SharedParameterFormGroup<boolean>
     expiredFlushReclaimedTimerWaitTime?: SharedParameterFormGroup<number>
@@ -1325,12 +1333,6 @@ export class SubnetSetFormService {
     ): FormGroup<KeaGlobalParametersForm> {
         // Common parameters.
         let form: KeaGlobalParametersForm = {
-            authoritative: new SharedParameterFormGroup<boolean>(
-                {
-                    type: 'boolean',
-                },
-                configs.map((params) => new FormControl<boolean>(params['authoritative']))
-            ),
             cacheThreshold: new SharedParameterFormGroup<number>(
                 {
                     type: 'number',
@@ -1402,6 +1404,56 @@ export class SubnetSetFormService {
                     ],
                 },
                 configs.map((params) => new FormControl<string>(params['ddns-conflict-resolution-mode']))
+            ),
+            dhcpDdnsEnableUpdates: new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                },
+                configs.map((params) => new FormControl<boolean>(params?.['dhcp-ddns']?.['enable-updates']))
+            ),
+            dhcpDdnsServerIP: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                },
+                configs.map((params) => new FormControl<string>(params?.['dhcp-ddns']?.['server-ip']))
+            ),
+            dhcpDdnsServerPort: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map((params) => new FormControl<number>(params?.['dhcp-ddns']?.['server-port']))
+            ),
+            dhcpDdnsSenderIP: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                },
+                configs.map((params) => new FormControl<string>(params?.['dhcp-ddns']?.['sender-ip']))
+            ),
+            dhcpDdnsSenderPort: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map((params) => new FormControl<number>(params?.['dhcp-ddns']?.['sender-port']))
+            ),
+            dhcpDdnsMaxQueueSize: new SharedParameterFormGroup<number>(
+                {
+                    type: 'number',
+                },
+                configs.map((params) => new FormControl<number>(params?.['dhcp-ddns']?.['max-queue-size']))
+            ),
+            dhcpDdnsNcrProtocol: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: ['UDP'],
+                },
+                configs.map((params) => new FormControl<string>(params?.['dhcp-ddns']?.['ncr-protocol']))
+            ),
+            dhcpDdnsNcrFormat: new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: ['JSON'],
+                },
+                configs.map((params) => new FormControl<string>(params?.['dhcp-ddns']?.['ncr-format']))
             ),
             earlyGlobalReservationsLookup: new SharedParameterFormGroup<boolean>(
                 {
@@ -1511,6 +1563,7 @@ export class SubnetSetFormService {
                     },
                     configs.map((params) => new FormControl<boolean>(params['authoritative']))
                 )
+                break
             // DHCPv6 parameters.
             default:
                 form.pdAllocator = new SharedParameterFormGroup<string>(
@@ -1521,7 +1574,7 @@ export class SubnetSetFormService {
                     configs.map((params) => new FormControl<string>(params['pd-allocator']))
                 )
         }
-        let formGroup = new FormGroup<KeaSubnetParametersForm>(form)
+        let formGroup = new FormGroup<KeaGlobalParametersForm>(form)
         return formGroup
     }
 

@@ -512,10 +512,15 @@ export class MockParamMap {
  * space characters. For example: 'cacheThreshold' becomes 'Cache Threshold'.
  *
  * It also handles several special cases. When the converted name begins with:
- * - ddns - it is converted to DDNS,
  * - pd - it is converted to PD,
  * - ip - it is converted to IP,
  * - underscore character - it is removed.
+ *
+ * When the name contains:
+ * - ddns - it is converted to DDNS,
+ * - dhcp - it is converted to DHCP
+ *
+ * The case of the converted special case strings is ignored.
  *
  * @param key a name to be converted in camel case notation.
  * @returns converted name.
@@ -526,9 +531,10 @@ export function uncamelCase(key: string): string {
         return key
     }
     text = text.replace(/([A-Z]+)/g, ' $1')
-    text = text.replace(/^ddns/g, 'DDNS')
-    text = text.replace(/^pd/g, 'PD')
-    text = text.replace(/^ip/g, 'IP')
+    text = text.replace(/ddns/gi, 'DDNS')
+    text = text.replace(/dhcp/gi, 'DHCP')
+    text = text.replace(/^pd/gi, 'PD')
+    text = text.replace(/^ip/gi, 'IP')
     text = text.charAt(0).toUpperCase() + text.slice(1)
     return text
 }

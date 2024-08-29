@@ -2628,6 +2628,8 @@ describe('SubnetSetFormService', () => {
         expect((formGroup.get('reservationsOutOfPool.values') as UntypedFormArray).length).toBe(2)
         expect(formGroup.get('reservationsOutOfPool.values.0')?.value).toBe(false)
         expect(formGroup.get('reservationsOutOfPool.values.1')?.value).toBe(false)
+
+        expect(formGroup.get('pdAllocator')).toBeFalsy()
     })
 
     it('should convert DHCPv6 global parameters to form', () => {
@@ -2645,6 +2647,8 @@ describe('SubnetSetFormService', () => {
         expect(formGroup.get('pdAllocator.unlocked')?.value).toBeFalse()
         expect((formGroup.get('pdAllocator.values') as UntypedFormArray).length).toBe(1)
         expect(formGroup.get('pdAllocator.values.0')?.value).toBe('flq')
+
+        expect(formGroup.get('authoritative')).toBeFalsy()
     })
 
     it('should convert a form to Kea parameters', () => {

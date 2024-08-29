@@ -302,6 +302,8 @@ describe('utils', () => {
 
     it('should convert a camel case name to a user-friendly parameter name', () => {
         expect(uncamelCase('ddnsParameterName')).toBe('DDNS Parameter Name')
+        expect(uncamelCase('dhcpDdnsValue')).toBe('DHCP DDNS Value')
+        expect(uncamelCase('dhcpValue')).toBe('DHCP Value')
         expect(uncamelCase('pdValue')).toBe('PD Value')
         expect(uncamelCase('ipPrefix')).toBe('IP Prefix')
         expect(uncamelCase('anotherParameter')).toBe('Another Parameter')
