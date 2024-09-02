@@ -20,6 +20,7 @@
         <app-kea-global-configuration-view
             *ngIf="!edit"
             [dhcpParameters]="dhcpParameters"
+            [disableEdit]="disableEdit"
             (editBegin)="onEditBegin()"
         ></app-kea-global-configuration-view>
     </div>

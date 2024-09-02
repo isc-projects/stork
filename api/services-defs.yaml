@@ -296,6 +296,8 @@
         type: string
       appType:
         type: string
+      editable:
+        type: boolean
       config:
         type: object
         additionalProperties: true

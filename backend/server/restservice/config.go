@@ -67,6 +67,7 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 		AppName:    dbDaemon.App.GetName(),
 		AppType:    dbDaemon.GetAppType().String(),
 		DaemonName: dbDaemon.GetName(),
+		Editable:   dbDaemon.Monitored && dbDaemon.Active,
 		Config:     dbDaemon.KeaDaemon.Config,
 	})
 	return rsp

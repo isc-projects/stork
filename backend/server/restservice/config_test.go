@@ -95,6 +95,7 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.Equal(t, "test-app", okRsp.Payload.AppName)
 	require.Equal(t, "dhcp4", okRsp.Payload.DaemonName)
 	require.Equal(t, "kea", okRsp.Payload.AppType)
+	require.True(t, okRsp.Payload.Editable)
 
 	params = services.GetDaemonConfigParams{
 		ID: app.Daemons[1].ID,
@@ -110,6 +111,7 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.Equal(t, "test-app", okRsp.Payload.AppName)
 	require.Equal(t, "dhcp6", okRsp.Payload.DaemonName)
 	require.Equal(t, "kea", okRsp.Payload.AppType)
+	require.True(t, okRsp.Payload.Editable)
 }
 
 // Test that GetDaemonConfig returns the secrets for super admin.
@@ -308,6 +310,101 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, expected)
 	require.Equal(t, expected, okRsp.Payload.Config)
+}
+
+// Test that GetDaemonConfig returns correct editable flag value when
+// daemon is not active and not monitored.
+func TestGetDaemonConfigForNonActiveKeaDaemon(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// setup a user session, it is required to check user role
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add app kea to machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, true)
+	app := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app",
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+			dbmodel.NewKeaDaemon("dhcp6", true),
+		},
+	}
+	// Daemon has assigned configuration
+	configDhcp4, err := dbmodel.NewKeaConfigFromJSON(`{
+		"Dhcp4": { }
+    }`)
+	require.NoError(t, err)
+
+	app.Daemons[0].KeaDaemon.Config = configDhcp4
+	app.Daemons[0].Active = false
+
+	configDhcp6, err := dbmodel.NewKeaConfigFromJSON(`{
+		"Dhcp6": { }
+    }`)
+	require.NoError(t, err)
+
+	app.Daemons[1].KeaDaemon.Config = configDhcp6
+	app.Daemons[1].Monitored = false
+
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Check Dhcp4 daemon
+	params := services.GetDaemonConfigParams{
+		ID: app.Daemons[0].ID,
+	}
+
+	rsp := rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonConfigOK)
+	require.NotEmpty(t, okRsp.Payload)
+	require.Equal(t, configDhcp4, okRsp.Payload.Config)
+	require.NotZero(t, okRsp.Payload.AppID)
+	require.Equal(t, "test-app", okRsp.Payload.AppName)
+	require.Equal(t, "dhcp4", okRsp.Payload.DaemonName)
+	require.Equal(t, "kea", okRsp.Payload.AppType)
+	require.False(t, okRsp.Payload.Editable)
+
+	params = services.GetDaemonConfigParams{
+		ID: app.Daemons[1].ID,
+	}
+
+	// Check Dhcp6 daemon
+	rsp = rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonConfigOK)
+	require.NotEmpty(t, okRsp.Payload)
+	require.Equal(t, configDhcp6, okRsp.Payload.Config)
+	require.NotZero(t, okRsp.Payload.AppID)
+	require.Equal(t, "test-app", okRsp.Payload.AppName)
+	require.Equal(t, "dhcp6", okRsp.Payload.DaemonName)
+	require.Equal(t, "kea", okRsp.Payload.AppType)
+	require.False(t, okRsp.Payload.Editable)
 }
 
 // Test that GetDaemonConfig returns HTTP Not Found status for Kea daemon

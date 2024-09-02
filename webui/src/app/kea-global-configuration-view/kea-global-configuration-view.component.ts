@@ -18,6 +18,11 @@ export class KeaGlobalConfigurationViewComponent {
     @Input() dhcpParameters: Array<NamedCascadedParameters<Object>> = []
 
     /**
+     * Boolean flag indicating if the edit button should be disabled.
+     */
+    @Input() disableEdit: boolean = false
+
+    /**
      * An event emitter notifying a parent that user has clicked the
      * Edit button to modify the global parameters.
      */

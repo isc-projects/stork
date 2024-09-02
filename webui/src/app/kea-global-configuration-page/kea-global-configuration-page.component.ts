@@ -71,6 +71,11 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
     edit: boolean = false
 
     /**
+     * Boolean flag disabling the edit button in the configuration view.
+     */
+    disableEdit: boolean = true
+
+    /**
      * A list of parameters not presented in this view but fetched from
      * the server in the configuration.
      */
@@ -157,6 +162,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
      */
     private load(): void {
         this.loaded = false
+        this.disableEdit = true
         lastValueFrom(this.servicesService.getDaemonConfig(this.daemonId))
             .then((data: KeaDaemonConfig) => {
                 this.daemonName = data.daemonName
@@ -168,6 +174,7 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                         parameters: [data.config.Dhcp4 ?? data.config.Dhcp6],
                     },
                 ]
+                this.disableEdit = !data.editable
             })
             .catch((err) => {
                 let msg = getErrorMessage(err)

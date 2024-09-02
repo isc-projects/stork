@@ -23,6 +23,7 @@ import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { HttpErrorResponse } from '@angular/common/http'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
+import { ButtonModule } from 'primeng/button'
 
 describe('KeaGlobalConfigurationPageComponent', () => {
     let component: KeaGlobalConfigurationPageComponent
@@ -45,6 +46,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
             ],
             imports: [
                 BreadcrumbModule,
+                ButtonModule,
                 FieldsetModule,
                 HttpClientTestingModule,
                 NoopAnimationsModule,
@@ -97,6 +99,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
             appName: 'kea-server',
             appType: 'kea',
             daemonName: 'dhcp4',
+            editable: true,
             config: {
                 Dhcp4: {
                     allocator: 'iterative',
@@ -256,6 +259,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         expect(servicesService.getDaemonConfig).toHaveBeenCalledOnceWith(1)
 
         expect(component.loaded).toBeTrue()
+        expect(component.disableEdit).toBeFalse()
 
         expect(component.dhcpParameters.length).toBe(1)
         expect(component.dhcpParameters.at(0).name).toBe('kea-server / DHCPv4')
@@ -265,6 +269,31 @@ describe('KeaGlobalConfigurationPageComponent', () => {
 
         const parametersBoard = fixture.debugElement.query(By.css('app-cascaded-parameters-board'))
         expect(parametersBoard).toBeTruthy()
+    }))
+
+    it('should disable edit button for global parameters', fakeAsync(() => {
+        const config: any = {
+            appName: 'kea-server',
+            appType: 'kea',
+            daemonName: 'dhcp4',
+            editable: false,
+            config: {
+                Dhcp4: {
+                    allocator: 'iterative',
+                },
+            },
+        }
+        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(config))
+
+        component.daemonId = 1
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(servicesService.getDaemonConfig).toHaveBeenCalledOnceWith(1)
+
+        expect(component.loaded).toBeTrue()
+        expect(component.disableEdit).toBeTrue()
     }))
 
     it('should display a message on error', fakeAsync(() => {
@@ -278,6 +307,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         fixture.detectChanges()
 
         expect(messageService.add).toHaveBeenCalledTimes(1)
+        expect(component.disableEdit).toBeTrue()
     }))
 
     it('should unsubscribe on destroy', () => {
