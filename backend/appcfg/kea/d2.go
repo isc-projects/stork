@@ -8,6 +8,9 @@ type D2Config struct {
 	Loggers       []Logger      `json:"loggers,omitempty"`
 }
 
+// Represents settable D2 (DHCP-DDNS) Kea configuration.
+type SettableD2Config struct{}
+
 // Returns the hook libraries configured in the D2 server.
 func (c *D2Config) GetHookLibraries() HookLibraries {
 	return c.HookLibraries

@@ -20,6 +20,9 @@ type CtrlAgentConfig struct {
 	Loggers        []Logger        `json:"loggers"`
 }
 
+// Represents settable Kea Control Agent's configuration.
+type SettableCtrlAgentConfig struct{}
+
 // A structure representing the configuration of multiple control sockets
 // in the Kea Control Agent.
 type ControlSockets struct {

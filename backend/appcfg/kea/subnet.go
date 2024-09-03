@@ -63,6 +63,20 @@ type DDNSParameters struct {
 	DDNSTTLPercent             *float32 `json:"ddns-ttl-percent,omitempty"`
 }
 
+// Represents DDNS configuration parameters in Kea.
+type SettableDDNSParameters struct {
+	DDNSGeneratedPrefix        *storkutil.Nullable[string]  `json:"ddns-generated-prefix,omitempty"`
+	DDNSOverrideClientUpdate   *storkutil.Nullable[bool]    `json:"ddns-override-client-update,omitempty"`
+	DDNSOverrideNoUpdate       *storkutil.Nullable[bool]    `json:"ddns-override-no-update,omitempty"`
+	DDNSQualifyingSuffix       *storkutil.Nullable[string]  `json:"ddns-qualifying-suffix,omitempty"`
+	DDNSReplaceClientName      *storkutil.Nullable[string]  `json:"ddns-replace-client-name,omitempty"`
+	DDNSSendUpdates            *storkutil.Nullable[bool]    `json:"ddns-send-updates,omitempty"`
+	DDNSUpdateOnRenew          *storkutil.Nullable[bool]    `json:"ddns-update-on-renew,omitempty"`
+	DDNSUseConflictResolution  *storkutil.Nullable[bool]    `json:"ddns-use-conflict-resolution,omitempty"`
+	DDNSConflictResolutionMode *storkutil.Nullable[string]  `json:"ddns-conflict-resolution-mode,omitempty"`
+	DDNSTTLPercent             *storkutil.Nullable[float32] `json:"ddns-ttl-percent,omitempty"`
+}
+
 // Represents Kea configuration parameters for hostname manipulation.
 type HostnameCharParameters struct {
 	HostnameCharReplacement *string `json:"hostname-char-replacement,omitempty"`
@@ -77,6 +91,17 @@ type ReservationParameters struct {
 	ReservationsGlobal            *bool    `json:"reservations-global,omitempty"`
 	ReservationsInSubnet          *bool    `json:"reservations-in-subnet,omitempty"`
 	ReservationsOutOfPool         *bool    `json:"reservations-out-of-pool,omitempty"`
+}
+
+// Represents settable Kea configuration parameters for selecting host reservation
+// modes.
+type SettableReservationParameters struct {
+	EarlyGlobalReservationsLookup *storkutil.Nullable[bool]        `json:"early-global-reservations-lookup,omitempty"`
+	HostReservationIdentifiers    *storkutil.NullableArray[string] `json:"host-reservation-identifiers,omitempty"`
+	ReservationMode               *storkutil.Nullable[string]      `json:"reservation-mode,omitempty"`
+	ReservationsGlobal            *storkutil.Nullable[bool]        `json:"reservations-global,omitempty"`
+	ReservationsInSubnet          *storkutil.Nullable[bool]        `json:"reservations-in-subnet,omitempty"`
+	ReservationsOutOfPool         *storkutil.Nullable[bool]        `json:"reservations-out-of-pool,omitempty"`
 }
 
 // Represents DHCP timer configuration parameters in Kea.
@@ -94,6 +119,11 @@ type CacheParameters struct {
 	CacheMaxAge    *int64   `json:"cache-max-age,omitempty"`
 }
 
+// Represents settable DHCP lease caching parameters in Kea.
+type SettableCacheParameters struct {
+	CacheThreshold *storkutil.Nullable[float32] `json:"cache-threshold,omitempty"`
+}
+
 // Represents client-class configuration in Kea.
 type ClientClassParameters struct {
 	ClientClass          *string  `json:"client-class,omitempty"`
@@ -105,6 +135,13 @@ type ValidLifetimeParameters struct {
 	ValidLifetime    *int64 `json:"valid-lifetime,omitempty"`
 	MinValidLifetime *int64 `json:"min-valid-lifetime,omitempty"`
 	MaxValidLifetime *int64 `json:"max-valid-lifetime,omitempty"`
+}
+
+// Represents settable valid lifetime configuration parameters in Kea.
+type SettableValidLifetimeParameters struct {
+	ValidLifetime    *storkutil.Nullable[int64] `json:"valid-lifetime,omitempty"`
+	MinValidLifetime *storkutil.Nullable[int64] `json:"min-valid-lifetime,omitempty"`
+	MaxValidLifetime *storkutil.Nullable[int64] `json:"max-valid-lifetime,omitempty"`
 }
 
 // Represents preferred lifetime configuration parameters in Kea.

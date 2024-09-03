@@ -45,10 +45,10 @@ type Config struct {
 // also implements the RawConfigAccessor interface that can be used to
 // merge this partial configuration into the full server configuration.
 type SettableConfig struct {
-	*CtrlAgentConfig `json:"Control-agent,omitempty"`
-	*D2Config        `json:"DhcpDdns,omitempty"`
-	*DHCPv4Config    `json:"Dhcp4,omitempty"`
-	*DHCPv6Config    `json:"Dhcp6,omitempty"`
+	*SettableCtrlAgentConfig `json:"Control-agent,omitempty"`
+	*SettableD2Config        `json:"DhcpDdns,omitempty"`
+	*SettableDHCPv4Config    `json:"Dhcp4,omitempty"`
+	*SettableDHCPv6Config    `json:"Dhcp6,omitempty"`
 }
 
 // An interface providing a function returning raw configuration. It
@@ -95,6 +95,10 @@ func (c *Config) getCommonConfigAccessor() commonConfigAccessor {
 // performing two passes and by the Merge function.
 func (c *Config) unmarshalIntoAccessibleConfig(data []byte) error {
 	type ct Config
+	c.CtrlAgentConfig = nil
+	c.D2Config = nil
+	c.DHCPv4Config = nil
+	c.DHCPv6Config = nil
 	err := jsonc.Unmarshal(data, (*ct)(c))
 	return errors.Wrapf(err, "cannot unmarshal the data into an accessible config")
 }
@@ -247,6 +251,22 @@ func (c *Config) GetClientClasses() (clientClasses []ClientClass) {
 func (c *Config) GetDDNSParameters() (parameters DDNSParameters) {
 	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
 		parameters = accessor.GetCommonDHCPConfig().DDNSParameters
+	}
+	return
+}
+
+// Returns DHCP DDNS connectivity parameters.
+func (c *Config) GetDHCPDDNSParameters() (parameters *DHCPDDNS) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		parameters = accessor.GetCommonDHCPConfig().DHCPDDNS
+	}
+	return
+}
+
+// Returns parameters pertaining to lease expiration processing.
+func (c *Config) GetExpiredLeasesProcessingParameters() (parameters *ExpiredLeasesProcessing) {
+	if accessor := c.getDHCPConfigAccessor(); accessor != nil {
+		parameters = accessor.GetCommonDHCPConfig().ExpiredLeasesProcessing
 	}
 	return
 }
@@ -508,7 +528,9 @@ func (c *Config) Merge(source RawConfigAccessor) error {
 
 // Merges branches of the two configurations. If the branches are maps
 // the values of the maps are merged into one. Otherwise, the merged value
-// is preferred and replaces the value in destination.
+// is preferred and replaces the value in destination. Explicit null values
+// in the source config designate the corresponding values to be removed
+// from the target.
 func merge(c1, c2 any) any {
 	switch c1 := c1.(type) {
 	case RawConfig:
@@ -518,15 +540,29 @@ func merge(c1, c2 any) any {
 		}
 		for k, v2 := range c2 {
 			if v1, ok := c1[k]; ok {
-				c1[k] = merge(v1, v2)
+				if v := merge(v1, v2); v != nil {
+					c1[k] = v
+				} else {
+					delete(c1, k)
+				}
 			} else {
-				c1[k] = v2
+				if v2 != nil {
+					c1[k] = v2
+				}
+			}
+			// Delete any explicit null values in the target config.
+			// These values are merely used in the source config to
+			// indicate which fields should be removed.
+			if c, ok := c1[k].(RawConfig); ok {
+				for k := range c {
+					if c[k] == nil {
+						delete(c, k)
+					}
+				}
 			}
 		}
 	default:
-		if c2 != nil {
-			return c2
-		}
+		return c2
 	}
 	return c1
 }
@@ -534,28 +570,28 @@ func merge(c1, c2 any) any {
 // Creates new settable Control Agent configuration instance.
 func NewSettableCtrlAgentConfig() *SettableConfig {
 	return &SettableConfig{
-		CtrlAgentConfig: &CtrlAgentConfig{},
+		SettableCtrlAgentConfig: &SettableCtrlAgentConfig{},
 	}
 }
 
 // Creates new settable D2 configuration instance.
 func NewSettableD2Config() *SettableConfig {
 	return &SettableConfig{
-		D2Config: &D2Config{},
+		SettableD2Config: &SettableD2Config{},
 	}
 }
 
 // Creates new settable DHCPv4 configuration instance.
 func NewSettableDHCPv4Config() *SettableConfig {
 	return &SettableConfig{
-		DHCPv4Config: &DHCPv4Config{},
+		SettableDHCPv4Config: &SettableDHCPv4Config{},
 	}
 }
 
 // Creates new settable DHCPv6 configuration instance.
 func NewSettableDHCPv6Config() *SettableConfig {
 	return &SettableConfig{
-		DHCPv6Config: &DHCPv6Config{},
+		SettableDHCPv6Config: &SettableDHCPv6Config{},
 	}
 }
 
@@ -579,12 +615,12 @@ func (c *SettableConfig) GetSerializedConfig() (string, error) {
 
 // Returns true if the Config holds the DHCPv4 server's configuration.
 func (c *SettableConfig) IsDHCPv4() bool {
-	return c.DHCPv4Config != nil
+	return c.SettableDHCPv4Config != nil
 }
 
 // Returns true if the Config holds the DHCPv6 server's configuration.
 func (c *SettableConfig) IsDHCPv6() bool {
-	return c.DHCPv6Config != nil
+	return c.SettableDHCPv6Config != nil
 }
 
 // Convenience function used by different exported functions returning
@@ -592,9 +628,9 @@ func (c *SettableConfig) IsDHCPv6() bool {
 func (c *SettableConfig) getDHCPConfigModifier() dhcpConfigModifier {
 	switch {
 	case c.IsDHCPv4():
-		return c.DHCPv4Config
+		return c.SettableDHCPv4Config
 	case c.IsDHCPv6():
-		return c.DHCPv6Config
+		return c.SettableDHCPv6Config
 	default:
 		return nil
 	}
@@ -605,7 +641,7 @@ func (c *SettableConfig) getDHCPConfigModifier() dhcpConfigModifier {
 func (c *SettableConfig) getDHCPv4ConfigModifier() dhcp4ConfigModifier {
 	switch {
 	case c.IsDHCPv4():
-		return c.DHCPv4Config
+		return c.SettableDHCPv4Config
 	default:
 		return nil
 	}
@@ -616,7 +652,7 @@ func (c *SettableConfig) getDHCPv4ConfigModifier() dhcp4ConfigModifier {
 func (c *SettableConfig) getDHCPv6ConfigModifier() dhcp6ConfigModifier {
 	switch {
 	case c.IsDHCPv6():
-		return c.DHCPv6Config
+		return c.SettableDHCPv6Config
 	default:
 		return nil
 	}
@@ -807,7 +843,7 @@ func (c *SettableConfig) SetDHCPDDNSNCRFormat(ncrFormat *string) error {
 }
 
 // Sets the DHCP DDNS structure.
-func (c *SettableConfig) SetDHCPDDNS(dhcpDDNS *DHCPDDNS) error {
+func (c *SettableConfig) SetDHCPDDNS(dhcpDDNS *SettableDHCPDDNS) error {
 	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
 		modifier.SetDHCPDDNS(dhcpDDNS)
 	}, "dhcp-ddns")
@@ -863,7 +899,7 @@ func (c *SettableConfig) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int6
 }
 
 // Sets the expired leases processing structure.
-func (c *SettableConfig) SetExpiredLeasesProcessing(expiredLeasesProcessing *ExpiredLeasesProcessing) error {
+func (c *SettableConfig) SetExpiredLeasesProcessing(expiredLeasesProcessing *SettableExpiredLeasesProcessing) error {
 	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
 		modifier.SetExpiredLeasesProcessing(expiredLeasesProcessing)
 	}, "expired-leases-processing")

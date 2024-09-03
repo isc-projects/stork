@@ -12,10 +12,10 @@ var (
 	_ dhcpConfigAccessor   = (*DHCPv4Config)(nil)
 	_ commonConfigAccessor = (*DHCPv6Config)(nil)
 	_ dhcpConfigAccessor   = (*DHCPv6Config)(nil)
-	_ dhcpConfigModifier   = (*DHCPv4Config)(nil)
-	_ dhcp4ConfigModifier  = (*DHCPv4Config)(nil)
-	_ dhcpConfigModifier   = (*DHCPv6Config)(nil)
-	_ dhcp6ConfigModifier  = (*DHCPv6Config)(nil)
+	_ dhcpConfigModifier   = (*SettableDHCPv4Config)(nil)
+	_ dhcp4ConfigModifier  = (*SettableDHCPv4Config)(nil)
+	_ dhcpConfigModifier   = (*SettableDHCPv6Config)(nil)
+	_ dhcp6ConfigModifier  = (*SettableDHCPv6Config)(nil)
 )
 
 // An interface for fetching the parts of the DHCP configurations.
@@ -89,7 +89,7 @@ type dhcpConfigModifier interface {
 	// Sets the packet format to use when sending requests to D2.
 	SetDHCPDDNSNCRFormat(ncrFormat *string)
 	// Sets the DHCP DDNS structure.
-	SetDHCPDDNS(dhcpDDNS *DHCPDDNS)
+	SetDHCPDDNS(dhcpDDNS *SettableDHCPDDNS)
 	// Sets the number of seconds since the last removal of the expired
 	// leases, when the next removal should occur.
 	SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64)
@@ -110,7 +110,7 @@ type dhcpConfigModifier interface {
 	// after which a warning message is issued.
 	SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64)
 	// Sets the expired leases processing structure.
-	SetExpiredLeasesProcessing(expiredLeasesProcessing *ExpiredLeasesProcessing)
+	SetExpiredLeasesProcessing(expiredLeasesProcessing *SettableExpiredLeasesProcessing)
 	// Sets a boolean flag enabling an early global reservations lookup.
 	SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool)
 	// Sets host reservation identifiers to be used for host reservation lookup.
@@ -153,6 +153,16 @@ type DHCPv4Config struct {
 	Subnet4ByPrefix map[string]Subnet4 `json:"-"`
 }
 
+// Represents settable Kea DHCPv4 configuration.
+type SettableDHCPv4Config struct {
+	SettableCommonDHCPConfig
+	Authoritative *storkutil.Nullable[bool]   `json:"authoritative,omitempty"`
+	BootFileName  *storkutil.Nullable[string] `json:"boot-file-name,omitempty"`
+	EchoClientID  *storkutil.Nullable[bool]   `json:"echo-client-id,omitempty"`
+	MatchClientID *storkutil.Nullable[bool]   `json:"match-client-id,omitempty"`
+	NextServer    *storkutil.Nullable[string] `json:"next-server,omitempty"`
+}
+
 // Represents Kea DHCPv6 configuration.
 type DHCPv6Config struct {
 	CommonDHCPConfig
@@ -163,6 +173,12 @@ type DHCPv6Config struct {
 	SharedNetworks  []SharedNetwork6   `json:"shared-networks,omitempty"`
 	Subnet6         []Subnet6          `json:"subnet6,omitempty"`
 	Subnet6ByPrefix map[string]Subnet6 `json:"-"`
+}
+
+// Represents settable Kea DHCPv6 configuration.
+type SettableDHCPv6Config struct {
+	SettableCommonDHCPConfig
+	PDAllocator *storkutil.Nullable[string] `json:"pd-allocator,omitempty"`
 }
 
 // Represents common configuration parameters for the DHCPv4 and DHCPv6 servers.
@@ -189,6 +205,17 @@ type CommonDHCPConfig struct {
 	StoreExtendedInfo       *bool                    `json:"store-extended-info,omitempty"`
 }
 
+// Represents settable common configuration parameters for the DHCPv4 and DHCPv6 servers.
+type SettableCommonDHCPConfig struct {
+	SettableCacheParameters
+	SettableDDNSParameters
+	SettableReservationParameters
+	SettableValidLifetimeParameters
+	Allocator               *storkutil.Nullable[string]                          `json:"allocator,omitempty"`
+	DHCPDDNS                *storkutil.Nullable[SettableDHCPDDNS]                `json:"dhcp-ddns,omitempty"`
+	ExpiredLeasesProcessing *storkutil.Nullable[SettableExpiredLeasesProcessing] `json:"expired-leases-processing,omitempty"`
+}
+
 // Represents DHCP DDNS configuration parameters for the DHCPv4 and DHCPv6 servers.
 type DHCPDDNS struct {
 	EnableUpdates *bool   `json:"enable-updates,omitempty"`
@@ -201,6 +228,19 @@ type DHCPDDNS struct {
 	NCRFormat     *string `json:"ncr-format,omitempty"`
 }
 
+// Represents settable DHCP DDNS configuration parameters for the DHCPv4 and
+// DHCPv6 servers.
+type SettableDHCPDDNS struct {
+	EnableUpdates *storkutil.Nullable[bool]   `json:"enable-updates,omitempty"`
+	ServerIP      *storkutil.Nullable[string] `json:"server-ip,omitempty"`
+	ServerPort    *storkutil.Nullable[int64]  `json:"server-port,omitempty"`
+	SenderIP      *storkutil.Nullable[string] `json:"sender-ip,omitempty"`
+	SenderPort    *storkutil.Nullable[int64]  `json:"sender-port,omitempty"`
+	MaxQueueSize  *storkutil.Nullable[int64]  `json:"max-queue-size,omitempty"`
+	NCRProtocol   *storkutil.Nullable[string] `json:"ncr-protocol,omitempty"`
+	NCRFormat     *storkutil.Nullable[string] `json:"ncr-format,omitempty"`
+}
+
 // Represents the collection of settings pertaining to the expired
 // leases processing.
 type ExpiredLeasesProcessing struct {
@@ -210,6 +250,17 @@ type ExpiredLeasesProcessing struct {
 	MaxReclaimTime              *int64 `json:"max-reclaim-time,omitempty"`
 	ReclaimTimerWaitTime        *int64 `json:"reclaim-timer-wait-time,omitempty"`
 	UnwarnedReclaimCycles       *int64 `json:"unwarned-reclaim-cycles,omitempty"`
+}
+
+// Represents the collection of settable settings pertaining to the expired
+// leases processing.
+type SettableExpiredLeasesProcessing struct {
+	FlushReclaimedTimerWaitTime *storkutil.Nullable[int64] `json:"flush-reclaimed-timer-wait-time,omitempty"`
+	HoldReclaimedTime           *storkutil.Nullable[int64] `json:"hold-reclaimed-time,omitempty"`
+	MaxReclaimLeases            *storkutil.Nullable[int64] `json:"max-reclaim-leases,omitempty"`
+	MaxReclaimTime              *storkutil.Nullable[int64] `json:"max-reclaim-time,omitempty"`
+	ReclaimTimerWaitTime        *storkutil.Nullable[int64] `json:"reclaim-timer-wait-time,omitempty"`
+	UnwarnedReclaimCycles       *storkutil.Nullable[int64] `json:"unwarned-reclaim-cycles,omitempty"`
 }
 
 // Represents the global DHCP multi-threading parameters.
@@ -297,215 +348,215 @@ func (c *DHCPv4Config) GetDHCPOptions() (options []SingleOptionData) {
 }
 
 // Sets an allocator.
-func (c *DHCPv4Config) SetAllocator(allocator *string) {
-	c.Allocator = allocator
+func (c *SettableDHCPv4Config) SetAllocator(allocator *string) {
+	c.Allocator = storkutil.NewNullable(allocator)
 }
 
 // Sets cache threshold.
-func (c *DHCPv4Config) SetCacheThreshold(cacheThreshold *float32) {
-	c.CacheParameters.CacheThreshold = cacheThreshold
+func (c *SettableDHCPv4Config) SetCacheThreshold(cacheThreshold *float32) {
+	c.CacheThreshold = storkutil.NewNullable(cacheThreshold)
 }
 
 // Sets boolean flag indicating if DDNS updates should be sent.
-func (c *DHCPv4Config) SetDDNSSendUpdates(ddnsSendUpdates *bool) {
-	c.CommonDHCPConfig.DDNSSendUpdates = ddnsSendUpdates
+func (c *SettableDHCPv4Config) SetDDNSSendUpdates(ddnsSendUpdates *bool) {
+	c.SettableCommonDHCPConfig.DDNSSendUpdates = storkutil.NewNullable(ddnsSendUpdates)
 }
 
 // Sets boolean flag indicating whether the DHCP server should override the
 // client's wish to not update the DNS.
-func (c *DHCPv4Config) SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate *bool) {
-	c.CommonDHCPConfig.DDNSOverrideNoUpdate = ddnsOverrideNoUpdate
+func (c *SettableDHCPv4Config) SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate *bool) {
+	c.SettableCommonDHCPConfig.DDNSOverrideNoUpdate = storkutil.NewNullable(ddnsOverrideNoUpdate)
 }
 
 // Sets the boolean flag indicating whether the DHCP server should ignore the
 // client's wish to update the DNS on its own.
-func (c *DHCPv4Config) SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate *bool) {
-	c.CommonDHCPConfig.DDNSOverrideClientUpdate = ddnsOverrideClientUpdate
+func (c *SettableDHCPv4Config) SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate *bool) {
+	c.SettableCommonDHCPConfig.DDNSOverrideClientUpdate = storkutil.NewNullable(ddnsOverrideClientUpdate)
 }
 
 // Sets the enumeration specifying whether the server should honor
 // the hostname or Client FQDN sent by the client or replace this name.
-func (c *DHCPv4Config) SetDDNSReplaceClientName(ddnsReplaceClientName *string) {
-	c.CommonDHCPConfig.DDNSReplaceClientName = ddnsReplaceClientName
+func (c *SettableDHCPv4Config) SetDDNSReplaceClientName(ddnsReplaceClientName *string) {
+	c.SettableCommonDHCPConfig.DDNSReplaceClientName = storkutil.NewNullable(ddnsReplaceClientName)
 }
 
 // Sets a prefix to be prepended to the generated Client FQDN.
-func (c *DHCPv4Config) SetDDNSGeneratedPrefix(ddnsGeneratedPrefix *string) {
-	c.CommonDHCPConfig.DDNSGeneratedPrefix = ddnsGeneratedPrefix
+func (c *SettableDHCPv4Config) SetDDNSGeneratedPrefix(ddnsGeneratedPrefix *string) {
+	c.SettableCommonDHCPConfig.DDNSGeneratedPrefix = storkutil.NewNullable(ddnsGeneratedPrefix)
 }
 
 // Sets a suffix appended to the partial name sent to the DNS.
-func (c *DHCPv4Config) SetDDNSQualifyingSuffix(ddnsQualifyingSuffix *string) {
-	c.CommonDHCPConfig.DDNSQualifyingSuffix = ddnsQualifyingSuffix
+func (c *SettableDHCPv4Config) SetDDNSQualifyingSuffix(ddnsQualifyingSuffix *string) {
+	c.SettableCommonDHCPConfig.DDNSQualifyingSuffix = storkutil.NewNullable(ddnsQualifyingSuffix)
 }
 
 // Sets a boolean flag, which when true instructs the server to always
 // update DNS when leases are renewed, even if the DNS information
 // has not changed.
-func (c *DHCPv4Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
-	c.CommonDHCPConfig.DDNSUpdateOnRenew = ddnsUpdateOnRenew
+func (c *SettableDHCPv4Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
+	c.SettableCommonDHCPConfig.DDNSUpdateOnRenew = storkutil.NewNullable(ddnsUpdateOnRenew)
 }
 
 // Sets a boolean flag which is passed to kea-dhcp-ddns with each DDNS
 // update request, to indicate whether DNS update conflict
 // resolution as described in RFC 4703 should be employed for the
 // given update request.
-func (c *DHCPv4Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) {
-	c.CommonDHCPConfig.DDNSUseConflictResolution = ddnsUseConflictResolution
+func (c *SettableDHCPv4Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) {
+	c.SettableCommonDHCPConfig.DDNSUseConflictResolution = storkutil.NewNullable(ddnsUseConflictResolution)
 }
 
 // Sets a DDNS conflict resolution mode.
-func (c *DHCPv4Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
-	c.CommonDHCPConfig.DDNSConflictResolutionMode = ddnsConflictResolutionMode
+func (c *SettableDHCPv4Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
+	c.SettableCommonDHCPConfig.DDNSConflictResolutionMode = storkutil.NewNullable(ddnsConflictResolutionMode)
 }
 
 // Sets the the percent of the lease's lifetime to use for the DNS TTL.
-func (c *DHCPv4Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
-	c.CommonDHCPConfig.DDNSTTLPercent = ddnsTTLPercent
+func (c *SettableDHCPv4Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
+	c.SettableCommonDHCPConfig.DDNSTTLPercent = storkutil.NewNullable(ddnsTTLPercent)
 }
 
 // Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
-func (c *DHCPv4Config) SetDHCPDDNSEnableUpdates(enableUpdates *bool) {
-	c.ensureDHCPDDNS().EnableUpdates = enableUpdates
+func (c *SettableDHCPv4Config) SetDHCPDDNSEnableUpdates(enableUpdates *bool) {
+	c.ensureDHCPDDNS().EnableUpdates = storkutil.NewNullable(enableUpdates)
 }
 
 // Sets the IP address on which D2 listens for requests.
-func (c *DHCPv4Config) SetDHCPDDNSServerIP(serverIP *string) {
-	c.ensureDHCPDDNS().ServerIP = serverIP
+func (c *SettableDHCPv4Config) SetDHCPDDNSServerIP(serverIP *string) {
+	c.ensureDHCPDDNS().ServerIP = storkutil.NewNullable(serverIP)
 }
 
 // Sets the port on which D2 listens for requests.
-func (c *DHCPv4Config) SetDHCPDDNSServerPort(serverPort *int64) {
-	c.ensureDHCPDDNS().ServerPort = serverPort
+func (c *SettableDHCPv4Config) SetDHCPDDNSServerPort(serverPort *int64) {
+	c.ensureDHCPDDNS().ServerPort = storkutil.NewNullable(serverPort)
 }
 
 // Sets the IP address which DHCP server uses to send requests to D2.
-func (c *DHCPv4Config) SetDHCPDDNSSenderIP(senderIP *string) {
-	c.ensureDHCPDDNS().SenderIP = senderIP
+func (c *SettableDHCPv4Config) SetDHCPDDNSSenderIP(senderIP *string) {
+	c.ensureDHCPDDNS().SenderIP = storkutil.NewNullable(senderIP)
 }
 
 // Sets the port which DHCP server uses to send requests to D2.
-func (c *DHCPv4Config) SetDHCPDDNSSenderPort(senderPort *int64) {
-	c.ensureDHCPDDNS().SenderPort = senderPort
+func (c *SettableDHCPv4Config) SetDHCPDDNSSenderPort(senderPort *int64) {
+	c.ensureDHCPDDNS().SenderPort = storkutil.NewNullable(senderPort)
 }
 
 // Sets the maximum number of requests allowed to queue while waiting to be sent to D2.
-func (c *DHCPv4Config) SetDHCPDDNSMaxQueueSize(maxQueueSize *int64) {
-	c.ensureDHCPDDNS().MaxQueueSize = maxQueueSize
+func (c *SettableDHCPv4Config) SetDHCPDDNSMaxQueueSize(maxQueueSize *int64) {
+	c.ensureDHCPDDNS().MaxQueueSize = storkutil.NewNullable(maxQueueSize)
 }
 
 // Sets the socket protocol to use when sending requests to D2.
-func (c *DHCPv4Config) SetDHCPDDNSNCRProtocol(ncrProtocol *string) {
-	c.ensureDHCPDDNS().NCRProtocol = ncrProtocol
+func (c *SettableDHCPv4Config) SetDHCPDDNSNCRProtocol(ncrProtocol *string) {
+	c.ensureDHCPDDNS().NCRProtocol = storkutil.NewNullable(ncrProtocol)
 }
 
 // Sets the packet format to use when sending requests to D2.
-func (c *DHCPv4Config) SetDHCPDDNSNCRFormat(ncrFormat *string) {
-	c.ensureDHCPDDNS().NCRFormat = ncrFormat
+func (c *SettableDHCPv4Config) SetDHCPDDNSNCRFormat(ncrFormat *string) {
+	c.ensureDHCPDDNS().NCRFormat = storkutil.NewNullable(ncrFormat)
 }
 
 // Initializes the structure holding DHCP DDNS configuration.
-func (c *DHCPv4Config) ensureDHCPDDNS() *DHCPDDNS {
+func (c *SettableDHCPv4Config) ensureDHCPDDNS() *SettableDHCPDDNS {
 	if c.DHCPDDNS == nil {
-		c.DHCPDDNS = &DHCPDDNS{}
+		c.DHCPDDNS = storkutil.NewNullable(&SettableDHCPDDNS{})
 	}
-	return c.DHCPDDNS
+	return c.DHCPDDNS.GetValue()
 }
 
 // Sets the DHCP DDNS structure.
-func (c *DHCPv4Config) SetDHCPDDNS(dhcpDDNS *DHCPDDNS) {
-	c.DHCPDDNS = dhcpDDNS
+func (c *SettableDHCPv4Config) SetDHCPDDNS(dhcpDDNS *SettableDHCPDDNS) {
+	c.DHCPDDNS = storkutil.NewNullable(dhcpDDNS)
 }
 
 // Sets the number of seconds since the last removal of the expired
 // leases, when the next removal should occur.
-func (c *DHCPv4Config) SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64) {
-	c.ensureExpiredLeasesProcessing().FlushReclaimedTimerWaitTime = flushReclaimedTimerWaitTime
+func (c *SettableDHCPv4Config) SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64) {
+	c.ensureExpiredLeasesProcessing().FlushReclaimedTimerWaitTime = storkutil.NewNullable(flushReclaimedTimerWaitTime)
 }
 
 // Sets the length of time in seconds to keep expired leases in the
 // lease database (lease affinity).
-func (c *DHCPv4Config) SetELPHoldReclaimedTime(holdReclaimedTime *int64) {
-	c.ensureExpiredLeasesProcessing().HoldReclaimedTime = holdReclaimedTime
+func (c *SettableDHCPv4Config) SetELPHoldReclaimedTime(holdReclaimedTime *int64) {
+	c.ensureExpiredLeasesProcessing().HoldReclaimedTime = storkutil.NewNullable(holdReclaimedTime)
 }
 
 // Sets the maximum number of expired leases that can be processed in
 // a single attempt to clean up expired leases from the lease database.
-func (c *DHCPv4Config) SetELPMaxReclaimLeases(maxReclaimedLeases *int64) {
-	c.ensureExpiredLeasesProcessing().MaxReclaimLeases = maxReclaimedLeases
+func (c *SettableDHCPv4Config) SetELPMaxReclaimLeases(maxReclaimedLeases *int64) {
+	c.ensureExpiredLeasesProcessing().MaxReclaimLeases = storkutil.NewNullable(maxReclaimedLeases)
 }
 
 // Sets the maximum time in milliseconds that a single attempt to clean
 // up expired leases from the lease database may take.
-func (c *DHCPv4Config) SetELPMaxReclaimTime(maxReclaimTime *int64) {
-	c.ensureExpiredLeasesProcessing().MaxReclaimTime = maxReclaimTime
+func (c *SettableDHCPv4Config) SetELPMaxReclaimTime(maxReclaimTime *int64) {
+	c.ensureExpiredLeasesProcessing().MaxReclaimTime = storkutil.NewNullable(maxReclaimTime)
 }
 
 // Sets the length of time in seconds since the last attempt to process
 // expired leases before initiating the next attempt.
-func (c *DHCPv4Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64) {
-	c.ensureExpiredLeasesProcessing().ReclaimTimerWaitTime = reclaimTimerWaitTime
+func (c *SettableDHCPv4Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64) {
+	c.ensureExpiredLeasesProcessing().ReclaimTimerWaitTime = storkutil.NewNullable(reclaimTimerWaitTime)
 }
 
 // Sets the maximum number of expired lease-processing cycles which didn't
 // result in full cleanup of the exired leases from the lease database,
 // after which a warning message is issued.
-func (c *DHCPv4Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
-	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = unwarnedReclaimCycles
+func (c *SettableDHCPv4Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
+	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = storkutil.NewNullable(unwarnedReclaimCycles)
 }
 
 // Initializes the structure holding expired leases processing settings.
-func (c *DHCPv4Config) ensureExpiredLeasesProcessing() *ExpiredLeasesProcessing {
+func (c *SettableDHCPv4Config) ensureExpiredLeasesProcessing() *SettableExpiredLeasesProcessing {
 	if c.ExpiredLeasesProcessing == nil {
-		c.ExpiredLeasesProcessing = &ExpiredLeasesProcessing{}
+		c.ExpiredLeasesProcessing = storkutil.NewNullable(&SettableExpiredLeasesProcessing{})
 	}
-	return c.ExpiredLeasesProcessing
+	return c.ExpiredLeasesProcessing.GetValue()
 }
 
 // Sets the expired leases processing structure.
-func (c *DHCPv4Config) SetExpiredLeasesProcessing(expiredLeasesProcessing *ExpiredLeasesProcessing) {
-	c.ExpiredLeasesProcessing = expiredLeasesProcessing
+func (c *SettableDHCPv4Config) SetExpiredLeasesProcessing(expiredLeasesProcessing *SettableExpiredLeasesProcessing) {
+	c.ExpiredLeasesProcessing = storkutil.NewNullable(expiredLeasesProcessing)
 }
 
 // Sets the boolean flag enabling global reservations.
-func (c *DHCPv4Config) SetReservationsGlobal(reservationsGlobal *bool) {
-	c.ReservationParameters.ReservationsGlobal = reservationsGlobal
+func (c *SettableDHCPv4Config) SetReservationsGlobal(reservationsGlobal *bool) {
+	c.SettableReservationParameters.ReservationsGlobal = storkutil.NewNullable(reservationsGlobal)
 }
 
 // Sets the boolean flag enabling in-subnet reservations.
-func (c *DHCPv4Config) SetReservationsInSubnet(reservationsInSubnet *bool) {
-	c.ReservationParameters.ReservationsInSubnet = reservationsInSubnet
+func (c *SettableDHCPv4Config) SetReservationsInSubnet(reservationsInSubnet *bool) {
+	c.SettableReservationParameters.ReservationsInSubnet = storkutil.NewNullable(reservationsInSubnet)
 }
 
 // Sets the boolean flag enabling out-of-pool reservations.
-func (c *DHCPv4Config) SetReservationsOutOfPool(reservationsOutOfPool *bool) {
-	c.ReservationParameters.ReservationsOutOfPool = reservationsOutOfPool
+func (c *SettableDHCPv4Config) SetReservationsOutOfPool(reservationsOutOfPool *bool) {
+	c.SettableReservationParameters.ReservationsOutOfPool = storkutil.NewNullable(reservationsOutOfPool)
 }
 
 // Sets a boolean flag enabling an early global reservations lookup.
-func (c *DHCPv4Config) SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool) {
-	c.ReservationParameters.EarlyGlobalReservationsLookup = earlyGlobalReservationsLookup
+func (c *SettableDHCPv4Config) SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool) {
+	c.SettableReservationParameters.EarlyGlobalReservationsLookup = storkutil.NewNullable(earlyGlobalReservationsLookup)
 }
 
 // Sets host reservation identifiers to be used for host reservation lookup.
-func (c *DHCPv4Config) SetHostReservationIdentifiers(hostReservationIdentifiers []string) {
-	c.ReservationParameters.HostReservationIdentifiers = hostReservationIdentifiers
+func (c *SettableDHCPv4Config) SetHostReservationIdentifiers(hostReservationIdentifiers []string) {
+	c.SettableReservationParameters.HostReservationIdentifiers = storkutil.NewNullableArray(hostReservationIdentifiers)
 }
 
 // Sets global valid lifetime.
-func (c *DHCPv4Config) SetValidLifetime(validLiftime *int64) {
-	c.ValidLifetimeParameters.ValidLifetime = validLiftime
+func (c *SettableDHCPv4Config) SetValidLifetime(validLiftime *int64) {
+	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLiftime)
 }
 
 // Sets a boolean flag indicating whether the server is authoritative.
-func (c *DHCPv4Config) SetAuthoritative(authoritative *bool) {
-	c.Authoritative = authoritative
+func (c *SettableDHCPv4Config) SetAuthoritative(authoritative *bool) {
+	c.Authoritative = storkutil.NewNullable(authoritative)
 }
 
 // Sets a boolean flag indicating whether the server should return client
 // ID in its responses.
-func (c *DHCPv4Config) SetEchoClientID(echoClientID *bool) {
-	c.EchoClientID = echoClientID
+func (c *SettableDHCPv4Config) SetEchoClientID(echoClientID *bool) {
+	c.EchoClientID = storkutil.NewNullable(echoClientID)
 }
 
 // Unmarshals the DHCPv6 configuration and builds an index of the
@@ -586,207 +637,207 @@ func (c *DHCPv6Config) GetDHCPOptions() (options []SingleOptionData) {
 }
 
 // Sets an allocator.
-func (c *DHCPv6Config) SetAllocator(allocator *string) {
-	c.Allocator = allocator
+func (c *SettableDHCPv6Config) SetAllocator(allocator *string) {
+	c.Allocator = storkutil.NewNullable(allocator)
 }
 
 // Sets cache threshold.
-func (c *DHCPv6Config) SetCacheThreshold(cacheThreshold *float32) {
-	c.CacheParameters.CacheThreshold = cacheThreshold
+func (c *SettableDHCPv6Config) SetCacheThreshold(cacheThreshold *float32) {
+	c.CacheThreshold = storkutil.NewNullable(cacheThreshold)
 }
 
 // Sets boolean flag indicating if DDNS updates should be sent.
-func (c *DHCPv6Config) SetDDNSSendUpdates(ddnsSendUpdates *bool) {
-	c.CommonDHCPConfig.DDNSSendUpdates = ddnsSendUpdates
+func (c *SettableDHCPv6Config) SetDDNSSendUpdates(ddnsSendUpdates *bool) {
+	c.SettableCommonDHCPConfig.DDNSSendUpdates = storkutil.NewNullable(ddnsSendUpdates)
 }
 
 // Sets boolean flag indicating whether the DHCP server should override the
 // client's wish to not update the DNS.
-func (c *DHCPv6Config) SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate *bool) {
-	c.CommonDHCPConfig.DDNSOverrideNoUpdate = ddnsOverrideNoUpdate
+func (c *SettableDHCPv6Config) SetDDNSOverrideNoUpdate(ddnsOverrideNoUpdate *bool) {
+	c.SettableCommonDHCPConfig.DDNSOverrideNoUpdate = storkutil.NewNullable(ddnsOverrideNoUpdate)
 }
 
 // Sets the boolean flag indicating whether the DHCP server should ignore the
 // client's wish to update the DNS on its own.
-func (c *DHCPv6Config) SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate *bool) {
-	c.CommonDHCPConfig.DDNSOverrideClientUpdate = ddnsOverrideClientUpdate
+func (c *SettableDHCPv6Config) SetDDNSOverrideClientUpdate(ddnsOverrideClientUpdate *bool) {
+	c.SettableCommonDHCPConfig.DDNSOverrideClientUpdate = storkutil.NewNullable(ddnsOverrideClientUpdate)
 }
 
 // Sets the enumeration specifying whether the server should honor
 // the hostname or Client FQDN sent by the client or replace this name.
-func (c *DHCPv6Config) SetDDNSReplaceClientName(ddnsReplaceClientName *string) {
-	c.CommonDHCPConfig.DDNSReplaceClientName = ddnsReplaceClientName
+func (c *SettableDHCPv6Config) SetDDNSReplaceClientName(ddnsReplaceClientName *string) {
+	c.SettableCommonDHCPConfig.DDNSReplaceClientName = storkutil.NewNullable(ddnsReplaceClientName)
 }
 
 // Sets a prefix to be prepended to the generated Client FQDN.
-func (c *DHCPv6Config) SetDDNSGeneratedPrefix(ddnsGeneratedPrefix *string) {
-	c.CommonDHCPConfig.DDNSGeneratedPrefix = ddnsGeneratedPrefix
+func (c *SettableDHCPv6Config) SetDDNSGeneratedPrefix(ddnsGeneratedPrefix *string) {
+	c.SettableCommonDHCPConfig.DDNSGeneratedPrefix = storkutil.NewNullable(ddnsGeneratedPrefix)
 }
 
 // Sets a suffix appended to the partial name sent to the DNS.
-func (c *DHCPv6Config) SetDDNSQualifyingSuffix(ddnsQualifyingSuffix *string) {
-	c.CommonDHCPConfig.DDNSQualifyingSuffix = ddnsQualifyingSuffix
+func (c *SettableDHCPv6Config) SetDDNSQualifyingSuffix(ddnsQualifyingSuffix *string) {
+	c.SettableCommonDHCPConfig.DDNSQualifyingSuffix = storkutil.NewNullable(ddnsQualifyingSuffix)
 }
 
 // Sets a boolean flag, which when true instructs the server to always
 // update DNS when leases are renewed, even if the DNS information
 // has not changed.
-func (c *DHCPv6Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
-	c.CommonDHCPConfig.DDNSUpdateOnRenew = ddnsUpdateOnRenew
+func (c *SettableDHCPv6Config) SetDDNSUpdateOnRenew(ddnsUpdateOnRenew *bool) {
+	c.SettableCommonDHCPConfig.DDNSUpdateOnRenew = storkutil.NewNullable(ddnsUpdateOnRenew)
 }
 
 // Sets a boolean flag which is passed to kea-dhcp-ddns with each DDNS
 // update request, to indicate whether DNS update conflict
 // resolution as described in RFC 4703 should be employed for the
 // given update request.
-func (c *DHCPv6Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) {
-	c.CommonDHCPConfig.DDNSUseConflictResolution = ddnsUseConflictResolution
+func (c *SettableDHCPv6Config) SetDDNSUseConflictResolution(ddnsUseConflictResolution *bool) {
+	c.SettableCommonDHCPConfig.DDNSUseConflictResolution = storkutil.NewNullable(ddnsUseConflictResolution)
 }
 
 // Sets a DDNS conflict resolution mode.
-func (c *DHCPv6Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
-	c.CommonDHCPConfig.DDNSConflictResolutionMode = ddnsConflictResolutionMode
+func (c *SettableDHCPv6Config) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) {
+	c.SettableCommonDHCPConfig.DDNSConflictResolutionMode = storkutil.NewNullable(ddnsConflictResolutionMode)
 }
 
 // Sets the the percent of the lease's lifetime to use for the DNS TTL.
-func (c *DHCPv6Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
-	c.CommonDHCPConfig.DDNSTTLPercent = ddnsTTLPercent
+func (c *SettableDHCPv6Config) SetDDNSTTLPercent(ddnsTTLPercent *float32) {
+	c.SettableCommonDHCPConfig.DDNSTTLPercent = storkutil.NewNullable(ddnsTTLPercent)
 }
 
 // Enables connectivity with the DHCP DDNS daemon and sending DNS updates.
-func (c *DHCPv6Config) SetDHCPDDNSEnableUpdates(enableUpdates *bool) {
-	c.ensureDHCPDDNS().EnableUpdates = enableUpdates
+func (c *SettableDHCPv6Config) SetDHCPDDNSEnableUpdates(enableUpdates *bool) {
+	c.ensureDHCPDDNS().EnableUpdates = storkutil.NewNullable(enableUpdates)
 }
 
 // Sets the IP address on which D2 listens for requests.
-func (c *DHCPv6Config) SetDHCPDDNSServerIP(serverIP *string) {
-	c.ensureDHCPDDNS().ServerIP = serverIP
+func (c *SettableDHCPv6Config) SetDHCPDDNSServerIP(serverIP *string) {
+	c.ensureDHCPDDNS().ServerIP = storkutil.NewNullable(serverIP)
 }
 
 // Sets the port on which D2 listens for requests.
-func (c *DHCPv6Config) SetDHCPDDNSServerPort(serverPort *int64) {
-	c.ensureDHCPDDNS().ServerPort = serverPort
+func (c *SettableDHCPv6Config) SetDHCPDDNSServerPort(serverPort *int64) {
+	c.ensureDHCPDDNS().ServerPort = storkutil.NewNullable(serverPort)
 }
 
 // Sets the IP address which DHCP server uses to send requests to D2.
-func (c *DHCPv6Config) SetDHCPDDNSSenderIP(senderIP *string) {
-	c.ensureDHCPDDNS().SenderIP = senderIP
+func (c *SettableDHCPv6Config) SetDHCPDDNSSenderIP(senderIP *string) {
+	c.ensureDHCPDDNS().SenderIP = storkutil.NewNullable(senderIP)
 }
 
 // Sets the port which DHCP server uses to send requests to D2.
-func (c *DHCPv6Config) SetDHCPDDNSSenderPort(senderPort *int64) {
-	c.ensureDHCPDDNS().SenderPort = senderPort
+func (c *SettableDHCPv6Config) SetDHCPDDNSSenderPort(senderPort *int64) {
+	c.ensureDHCPDDNS().SenderPort = storkutil.NewNullable(senderPort)
 }
 
 // Sets the maximum number of requests allowed to queue while waiting to be sent to D2.
-func (c *DHCPv6Config) SetDHCPDDNSMaxQueueSize(maxQueueSize *int64) {
-	c.ensureDHCPDDNS().MaxQueueSize = maxQueueSize
+func (c *SettableDHCPv6Config) SetDHCPDDNSMaxQueueSize(maxQueueSize *int64) {
+	c.ensureDHCPDDNS().MaxQueueSize = storkutil.NewNullable(maxQueueSize)
 }
 
 // Sets the socket protocol to use when sending requests to D2.
-func (c *DHCPv6Config) SetDHCPDDNSNCRProtocol(ncrProtocol *string) {
-	c.ensureDHCPDDNS().NCRProtocol = ncrProtocol
+func (c *SettableDHCPv6Config) SetDHCPDDNSNCRProtocol(ncrProtocol *string) {
+	c.ensureDHCPDDNS().NCRProtocol = storkutil.NewNullable(ncrProtocol)
 }
 
 // Sets the packet format to use when sending requests to D2.
-func (c *DHCPv6Config) SetDHCPDDNSNCRFormat(ncrFormat *string) {
-	c.ensureDHCPDDNS().NCRFormat = ncrFormat
+func (c *SettableDHCPv6Config) SetDHCPDDNSNCRFormat(ncrFormat *string) {
+	c.ensureDHCPDDNS().NCRFormat = storkutil.NewNullable(ncrFormat)
 }
 
 // Initializes the structure holding DHCP DDNS configuration.
-func (c *DHCPv6Config) ensureDHCPDDNS() *DHCPDDNS {
+func (c *SettableDHCPv6Config) ensureDHCPDDNS() *SettableDHCPDDNS {
 	if c.DHCPDDNS == nil {
-		c.DHCPDDNS = &DHCPDDNS{}
+		c.DHCPDDNS = storkutil.NewNullable(&SettableDHCPDDNS{})
 	}
-	return c.DHCPDDNS
+	return c.DHCPDDNS.GetValue()
 }
 
 // Sets the DHCP DDNS structure.
-func (c *DHCPv6Config) SetDHCPDDNS(dhcpDDNS *DHCPDDNS) {
-	c.DHCPDDNS = dhcpDDNS
+func (c *SettableDHCPv6Config) SetDHCPDDNS(dhcpDDNS *SettableDHCPDDNS) {
+	c.DHCPDDNS = storkutil.NewNullable(dhcpDDNS)
 }
 
 // Sets the number of seconds since the last removal of the expired
 // leases, when the next removal should occur.
-func (c *DHCPv6Config) SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64) {
-	c.ensureExpiredLeasesProcessing().FlushReclaimedTimerWaitTime = flushReclaimedTimerWaitTime
+func (c *SettableDHCPv6Config) SetELPFlushReclaimedTimerWaitTime(flushReclaimedTimerWaitTime *int64) {
+	c.ensureExpiredLeasesProcessing().FlushReclaimedTimerWaitTime = storkutil.NewNullable(flushReclaimedTimerWaitTime)
 }
 
 // Sets the length of time in seconds to keep expired leases in the
 // lease database (lease affinity).
-func (c *DHCPv6Config) SetELPHoldReclaimedTime(holdReclaimedTime *int64) {
-	c.ensureExpiredLeasesProcessing().HoldReclaimedTime = holdReclaimedTime
+func (c *SettableDHCPv6Config) SetELPHoldReclaimedTime(holdReclaimedTime *int64) {
+	c.ensureExpiredLeasesProcessing().HoldReclaimedTime = storkutil.NewNullable(holdReclaimedTime)
 }
 
 // Sets the maximum number of expired leases that can be processed in
 // a single attempt to clean up expired leases from the lease database.
-func (c *DHCPv6Config) SetELPMaxReclaimLeases(maxReclaimedLeases *int64) {
-	c.ensureExpiredLeasesProcessing().MaxReclaimLeases = maxReclaimedLeases
+func (c *SettableDHCPv6Config) SetELPMaxReclaimLeases(maxReclaimedLeases *int64) {
+	c.ensureExpiredLeasesProcessing().MaxReclaimLeases = storkutil.NewNullable(maxReclaimedLeases)
 }
 
 // Sets the maximum time in milliseconds that a single attempt to clean
 // up expired leases from the lease database may take.
-func (c *DHCPv6Config) SetELPMaxReclaimTime(maxReclaimTime *int64) {
-	c.ensureExpiredLeasesProcessing().MaxReclaimTime = maxReclaimTime
+func (c *SettableDHCPv6Config) SetELPMaxReclaimTime(maxReclaimTime *int64) {
+	c.ensureExpiredLeasesProcessing().MaxReclaimTime = storkutil.NewNullable(maxReclaimTime)
 }
 
 // Sets the length of time in seconds since the last attempt to process
 // expired leases before initiating the next attempt.
-func (c *DHCPv6Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64) {
-	c.ensureExpiredLeasesProcessing().ReclaimTimerWaitTime = reclaimTimerWaitTime
+func (c *SettableDHCPv6Config) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64) {
+	c.ensureExpiredLeasesProcessing().ReclaimTimerWaitTime = storkutil.NewNullable(reclaimTimerWaitTime)
 }
 
 // Sets the maximum number of expired lease-processing cycles which didn't
 // result in full cleanup of the exired leases from the lease database,
 // after which a warning message is issued.
-func (c *DHCPv6Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
-	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = unwarnedReclaimCycles
+func (c *SettableDHCPv6Config) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) {
+	c.ensureExpiredLeasesProcessing().UnwarnedReclaimCycles = storkutil.NewNullable(unwarnedReclaimCycles)
 }
 
 // Initializes the structure holding expired leases processing settings.
-func (c *DHCPv6Config) ensureExpiredLeasesProcessing() *ExpiredLeasesProcessing {
+func (c *SettableDHCPv6Config) ensureExpiredLeasesProcessing() *SettableExpiredLeasesProcessing {
 	if c.ExpiredLeasesProcessing == nil {
-		c.ExpiredLeasesProcessing = &ExpiredLeasesProcessing{}
+		c.ExpiredLeasesProcessing = storkutil.NewNullable(&SettableExpiredLeasesProcessing{})
 	}
-	return c.ExpiredLeasesProcessing
+	return c.ExpiredLeasesProcessing.GetValue()
 }
 
 // Sets the expired leases processing structure.
-func (c *DHCPv6Config) SetExpiredLeasesProcessing(expiredLeasesProcessing *ExpiredLeasesProcessing) {
-	c.ExpiredLeasesProcessing = expiredLeasesProcessing
+func (c *SettableDHCPv6Config) SetExpiredLeasesProcessing(expiredLeasesProcessing *SettableExpiredLeasesProcessing) {
+	c.ExpiredLeasesProcessing = storkutil.NewNullable(expiredLeasesProcessing)
 }
 
 // Sets the boolean flag enabling global reservations.
-func (c *DHCPv6Config) SetReservationsGlobal(reservationsGlobal *bool) {
-	c.ReservationParameters.ReservationsGlobal = reservationsGlobal
+func (c *SettableDHCPv6Config) SetReservationsGlobal(reservationsGlobal *bool) {
+	c.SettableReservationParameters.ReservationsGlobal = storkutil.NewNullable(reservationsGlobal)
 }
 
 // Sets the boolean flag enabling in-subnet reservations.
-func (c *DHCPv6Config) SetReservationsInSubnet(reservationsInSubnet *bool) {
-	c.ReservationParameters.ReservationsInSubnet = reservationsInSubnet
+func (c *SettableDHCPv6Config) SetReservationsInSubnet(reservationsInSubnet *bool) {
+	c.SettableReservationParameters.ReservationsInSubnet = storkutil.NewNullable(reservationsInSubnet)
 }
 
 // Sets the boolean flag enabling out-of-pool reservations.
-func (c *DHCPv6Config) SetReservationsOutOfPool(reservationsOutOfPool *bool) {
-	c.ReservationParameters.ReservationsOutOfPool = reservationsOutOfPool
+func (c *SettableDHCPv6Config) SetReservationsOutOfPool(reservationsOutOfPool *bool) {
+	c.SettableReservationParameters.ReservationsOutOfPool = storkutil.NewNullable(reservationsOutOfPool)
 }
 
 // Sets a boolean flag enabling an early global reservations lookup.
-func (c *DHCPv6Config) SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool) {
-	c.ReservationParameters.EarlyGlobalReservationsLookup = earlyGlobalReservationsLookup
+func (c *SettableDHCPv6Config) SetEarlyGlobalReservationsLookup(earlyGlobalReservationsLookup *bool) {
+	c.SettableReservationParameters.EarlyGlobalReservationsLookup = storkutil.NewNullable(earlyGlobalReservationsLookup)
 }
 
 // Sets host reservation identifiers to be used for host reservation lookup.
-func (c *DHCPv6Config) SetHostReservationIdentifiers(hostReservationIdentifiers []string) {
-	c.ReservationParameters.HostReservationIdentifiers = hostReservationIdentifiers
+func (c *SettableDHCPv6Config) SetHostReservationIdentifiers(hostReservationIdentifiers []string) {
+	c.SettableReservationParameters.HostReservationIdentifiers = storkutil.NewNullableArray(hostReservationIdentifiers)
 }
 
 // Sets global valid lifetime.
-func (c *DHCPv6Config) SetValidLifetime(validLiftime *int64) {
-	c.ValidLifetimeParameters.ValidLifetime = validLiftime
+func (c *SettableDHCPv6Config) SetValidLifetime(validLiftime *int64) {
+	c.SettableValidLifetimeParameters.ValidLifetime = storkutil.NewNullable(validLiftime)
 }
 
 // Sets allocator for prefix delegation.
-func (c *DHCPv6Config) SetPDAllocator(pdAllocator *string) {
-	c.PDAllocator = pdAllocator
+func (c *SettableDHCPv6Config) SetPDAllocator(pdAllocator *string) {
+	c.PDAllocator = storkutil.NewNullable(pdAllocator)
 }

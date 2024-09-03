@@ -755,6 +755,80 @@ func TestGetDDNSParameters(t *testing.T) {
 	require.Equal(t, float32(0.55), *cfg.GetDDNSParameters().DDNSTTLPercent)
 }
 
+// Test that DHCP DDNS parameters are parsed and returned correctly.
+func TestGetDHCPDDNSParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+			"dhcp-ddns": {
+				"enable-updates": true,
+				"max-queue-size": 7,
+				"ncr-format": "JSON",
+				"ncr-protocol": "UDP",
+				"sender-ip": "192.0.2.1",
+				"sender-port": 8080,
+				"server-ip": "192.0.2.2",
+				"server-port": 8081
+			}
+		}
+	}`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetDHCPDDNSParameters())
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().EnableUpdates)
+	require.True(t, *cfg.GetDHCPDDNSParameters().EnableUpdates)
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().MaxQueueSize)
+	require.EqualValues(t, 7, *cfg.GetDHCPDDNSParameters().MaxQueueSize)
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().NCRFormat)
+	require.Equal(t, "JSON", *cfg.GetDHCPDDNSParameters().NCRFormat)
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().NCRProtocol)
+	require.EqualValues(t, "UDP", *cfg.GetDHCPDDNSParameters().NCRProtocol)
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().SenderIP)
+	require.Equal(t, "192.0.2.1", *cfg.GetDHCPDDNSParameters().SenderIP)
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().SenderPort)
+	require.EqualValues(t, 8080, *cfg.GetDHCPDDNSParameters().SenderPort)
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().ServerIP)
+	require.Equal(t, "192.0.2.2", *cfg.GetDHCPDDNSParameters().ServerIP)
+	require.NotNil(t, cfg.GetDHCPDDNSParameters().ServerPort)
+	require.EqualValues(t, 8081, *cfg.GetDHCPDDNSParameters().ServerPort)
+}
+
+// Test that expiration lease processing parameters are parsed and returned correctly.
+func TestGetExpiredLeasesProcessingParameters(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+			"expired-leases-processing": {
+				"flush-reclaimed-timer-wait-time": 15,
+				"hold-reclaimed-time": 3,
+				"max-reclaim-leases": 18,
+				"max-reclaim-time": 123,
+				"reclaim-timer-wait-time": 11,
+				"unwarned-reclaim-cycles": 1
+			}
+		}
+	}`
+
+	cfg, err := NewConfig(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	require.NotNil(t, cfg.GetExpiredLeasesProcessingParameters())
+	require.NotNil(t, cfg.GetExpiredLeasesProcessingParameters().FlushReclaimedTimerWaitTime)
+	require.EqualValues(t, 15, *cfg.GetExpiredLeasesProcessingParameters().FlushReclaimedTimerWaitTime)
+	require.NotNil(t, cfg.GetExpiredLeasesProcessingParameters().HoldReclaimedTime)
+	require.EqualValues(t, 3, *cfg.GetExpiredLeasesProcessingParameters().HoldReclaimedTime)
+	require.NotNil(t, cfg.GetExpiredLeasesProcessingParameters().MaxReclaimLeases)
+	require.EqualValues(t, 18, *cfg.GetExpiredLeasesProcessingParameters().MaxReclaimLeases)
+	require.NotNil(t, cfg.GetExpiredLeasesProcessingParameters().MaxReclaimTime)
+	require.EqualValues(t, 123, *cfg.GetExpiredLeasesProcessingParameters().MaxReclaimTime)
+	require.NotNil(t, cfg.GetExpiredLeasesProcessingParameters().ReclaimTimerWaitTime)
+	require.EqualValues(t, 11, *cfg.GetExpiredLeasesProcessingParameters().ReclaimTimerWaitTime)
+	require.NotNil(t, cfg.GetExpiredLeasesProcessingParameters().UnwarnedReclaimCycles)
+	require.EqualValues(t, 1, *cfg.GetExpiredLeasesProcessingParameters().UnwarnedReclaimCycles)
+}
+
 // Test that hostname char parameters are parsed and returned correctly.
 func TestGetHostnameCharParameters(t *testing.T) {
 	configStr := `{
@@ -1797,32 +1871,113 @@ func TestMergeConfig(t *testing.T) {
 	require.EqualValues(t, 123, *config1.GetValidLifetimeParameters().ValidLifetime)
 }
 
+// Test merging a settable config into current config.
+func TestMergeSettableConfig(t *testing.T) {
+	source1 := `{
+		"Dhcp4": {
+			"allocator": "iterative",
+			"valid-lifetime": 123,
+			"host-reservation-identifiers": [ "hw-address", "circuit-id" ],
+			"expired-leases-processing": {
+				"reclaim-timer-wait-time": 5,
+				"max-reclaim-leases": 0
+			},
+			"hooks-libraries": [
+				{
+					"library": "/tmp/hooks-library.so"
+				}
+			]
+		},
+		"hash": "01020304"
+	}`
+	config1, err := NewConfig(source1)
+	require.NoError(t, err)
+	require.NotNil(t, config1)
+
+	config2 := NewSettableDHCPv4Config()
+	require.NoError(t, err)
+
+	config2.SetAllocator(storkutil.Ptr("flq"))
+	config2.SetELPMaxReclaimLeases(storkutil.Ptr(int64(12)))
+	config2.SetELPMaxReclaimTime(storkutil.Ptr(int64(7)))
+	config2.SetDHCPDDNSEnableUpdates(storkutil.Ptr(true))
+	config2.SetDHCPDDNSMaxQueueSize(nil)
+	config2.SetValidLifetime(nil)
+
+	config1.Merge(config2)
+	require.NotNil(t, config1)
+
+	marshalled, err := json.Marshal(config1)
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"Dhcp4": {
+			"allocator": "flq",
+			"host-reservation-identifiers": [ "hw-address", "circuit-id" ],
+			"dhcp-ddns": {
+				"enable-updates": true
+			},
+			"expired-leases-processing": {
+				"reclaim-timer-wait-time": 5,
+				"max-reclaim-leases": 12,
+				"max-reclaim-time": 7
+			},
+			"hooks-libraries": [
+				{
+					"library": "/tmp/hooks-library.so"
+				}
+			]
+		}
+	}`, string(marshalled))
+
+	require.NotNil(t, config1.GetAllocator())
+	require.Equal(t, "flq", *config1.GetAllocator())
+
+	require.ElementsMatch(t, config1.GetGlobalReservationParameters().HostReservationIdentifiers, []string{"hw-address", "circuit-id"})
+
+	d2 := config1.GetDHCPDDNSParameters()
+	require.NotNil(t, d2)
+	require.NotNil(t, d2.EnableUpdates)
+	require.True(t, *d2.EnableUpdates)
+	require.Nil(t, d2.MaxQueueSize)
+
+	elp := config1.GetExpiredLeasesProcessingParameters()
+	require.NotNil(t, elp)
+	require.NotNil(t, elp.ReclaimTimerWaitTime)
+	require.EqualValues(t, 5, *elp.ReclaimTimerWaitTime)
+	require.NotNil(t, elp.MaxReclaimLeases)
+	require.EqualValues(t, 12, *elp.MaxReclaimLeases)
+	require.NotNil(t, elp.MaxReclaimTime)
+	require.EqualValues(t, 7, *elp.MaxReclaimTime)
+
+	require.Nil(t, config1.GetValidLifetimeParameters().ValidLifetime)
+}
+
 // Tests instantiating settable Kea Control Agent configuration.
 func TestNewSettableCtrlAgentConfig(t *testing.T) {
 	settableConfig := NewSettableCtrlAgentConfig()
 	require.NotNil(t, settableConfig)
-	require.NotNil(t, settableConfig.CtrlAgentConfig)
+	require.NotNil(t, settableConfig.SettableCtrlAgentConfig)
 }
 
 // Tests instantiating settable D2 configuration.
 func TestNewSettableD2Config(t *testing.T) {
 	settableConfig := NewSettableD2Config()
 	require.NotNil(t, settableConfig)
-	require.NotNil(t, settableConfig.D2Config)
+	require.NotNil(t, settableConfig.SettableD2Config)
 }
 
 // Tests instantiating settable DHCPv4 configuration.
 func TestNewSettableDHCPv4Config(t *testing.T) {
 	settableConfig := NewSettableDHCPv4Config()
 	require.NotNil(t, settableConfig)
-	require.NotNil(t, settableConfig.DHCPv4Config)
+	require.NotNil(t, settableConfig.SettableDHCPv4Config)
 }
 
 // Tests instantiating settable DHCPv6 configuration.
 func TestNewSettableDHCPv6Config(t *testing.T) {
 	settableConfig := NewSettableDHCPv6Config()
 	require.NotNil(t, settableConfig)
-	require.NotNil(t, settableConfig.DHCPv6Config)
+	require.NotNil(t, settableConfig.SettableDHCPv6Config)
 }
 
 // Test getting raw configuration.
@@ -2007,15 +2162,15 @@ func TestSettingDHCPv4GlobalParameters(t *testing.T) {
 func TestSettingDHCPv4DHCPDDNS(t *testing.T) {
 	config := NewSettableDHCPv4Config()
 
-	dhcpDDNS := &DHCPDDNS{
-		EnableUpdates: storkutil.Ptr(true),
-		ServerIP:      storkutil.Ptr("192.0.2.1"),
-		ServerPort:    storkutil.Ptr(int64(8080)),
-		SenderIP:      storkutil.Ptr("192.0.2.2"),
-		SenderPort:    storkutil.Ptr(int64(8081)),
-		MaxQueueSize:  storkutil.Ptr(int64(100)),
-		NCRProtocol:   storkutil.Ptr("UDP"),
-		NCRFormat:     storkutil.Ptr("JSON"),
+	dhcpDDNS := &SettableDHCPDDNS{
+		EnableUpdates: storkutil.NewNullableFromValue(true),
+		ServerIP:      storkutil.NewNullableFromValue("192.0.2.1"),
+		ServerPort:    storkutil.NewNullableFromValue(int64(8080)),
+		SenderIP:      storkutil.NewNullableFromValue("192.0.2.2"),
+		SenderPort:    storkutil.NewNullableFromValue(int64(8081)),
+		MaxQueueSize:  storkutil.NewNullableFromValue(int64(100)),
+		NCRProtocol:   storkutil.NewNullableFromValue("UDP"),
+		NCRFormat:     storkutil.NewNullableFromValue("JSON"),
 	}
 	err := config.SetDHCPDDNS(dhcpDDNS)
 	require.NoError(t, err)
@@ -2043,13 +2198,13 @@ func TestSettingDHCPv4DHCPDDNS(t *testing.T) {
 func TestSettingDHCPv4ExpiredLeasesProcessing(t *testing.T) {
 	config := NewSettableDHCPv4Config()
 
-	expiredLeasesProcessing := &ExpiredLeasesProcessing{
-		FlushReclaimedTimerWaitTime: storkutil.Ptr(int64(1)),
-		HoldReclaimedTime:           storkutil.Ptr(int64(2)),
-		MaxReclaimLeases:            storkutil.Ptr(int64(3)),
-		MaxReclaimTime:              storkutil.Ptr(int64(4)),
-		ReclaimTimerWaitTime:        storkutil.Ptr(int64(5)),
-		UnwarnedReclaimCycles:       storkutil.Ptr(int64(6)),
+	expiredLeasesProcessing := &SettableExpiredLeasesProcessing{
+		FlushReclaimedTimerWaitTime: storkutil.NewNullableFromValue(int64(1)),
+		HoldReclaimedTime:           storkutil.NewNullableFromValue(int64(2)),
+		MaxReclaimLeases:            storkutil.NewNullableFromValue(int64(3)),
+		MaxReclaimTime:              storkutil.NewNullableFromValue(int64(4)),
+		ReclaimTimerWaitTime:        storkutil.NewNullableFromValue(int64(5)),
+		UnwarnedReclaimCycles:       storkutil.NewNullableFromValue(int64(6)),
 	}
 	err := config.SetExpiredLeasesProcessing(expiredLeasesProcessing)
 	require.NoError(t, err)
@@ -2219,15 +2374,15 @@ func TestSettingDHCPv6GlobalParameters(t *testing.T) {
 func TestSettingDHCPv6DHCPDDNS(t *testing.T) {
 	config := NewSettableDHCPv6Config()
 
-	dhcpDDNS := &DHCPDDNS{
-		EnableUpdates: storkutil.Ptr(true),
-		ServerIP:      storkutil.Ptr("2001:db8:1::1"),
-		ServerPort:    storkutil.Ptr(int64(8080)),
-		SenderIP:      storkutil.Ptr("2001:db8:1::2"),
-		SenderPort:    storkutil.Ptr(int64(8081)),
-		MaxQueueSize:  storkutil.Ptr(int64(100)),
-		NCRProtocol:   storkutil.Ptr("UDP"),
-		NCRFormat:     storkutil.Ptr("JSON"),
+	dhcpDDNS := &SettableDHCPDDNS{
+		EnableUpdates: storkutil.NewNullableFromValue(true),
+		ServerIP:      storkutil.NewNullableFromValue("2001:db8:1::1"),
+		ServerPort:    storkutil.NewNullableFromValue(int64(8080)),
+		SenderIP:      storkutil.NewNullableFromValue("2001:db8:1::2"),
+		SenderPort:    storkutil.NewNullableFromValue(int64(8081)),
+		MaxQueueSize:  storkutil.NewNullableFromValue(int64(100)),
+		NCRProtocol:   storkutil.NewNullableFromValue("UDP"),
+		NCRFormat:     storkutil.NewNullableFromValue("JSON"),
 	}
 	err := config.SetDHCPDDNS(dhcpDDNS)
 	require.NoError(t, err)
@@ -2255,13 +2410,13 @@ func TestSettingDHCPv6DHCPDDNS(t *testing.T) {
 func TestSettingDHCPv6ExpiredLeasesProcessing(t *testing.T) {
 	config := NewSettableDHCPv6Config()
 
-	expiredLeasesProcessing := &ExpiredLeasesProcessing{
-		FlushReclaimedTimerWaitTime: storkutil.Ptr(int64(6)),
-		HoldReclaimedTime:           storkutil.Ptr(int64(5)),
-		MaxReclaimLeases:            storkutil.Ptr(int64(4)),
-		MaxReclaimTime:              storkutil.Ptr(int64(3)),
-		ReclaimTimerWaitTime:        storkutil.Ptr(int64(2)),
-		UnwarnedReclaimCycles:       storkutil.Ptr(int64(1)),
+	expiredLeasesProcessing := &SettableExpiredLeasesProcessing{
+		FlushReclaimedTimerWaitTime: storkutil.NewNullableFromValue(int64(6)),
+		HoldReclaimedTime:           storkutil.NewNullableFromValue(int64(5)),
+		MaxReclaimLeases:            storkutil.NewNullableFromValue(int64(4)),
+		MaxReclaimTime:              storkutil.NewNullableFromValue(int64(3)),
+		ReclaimTimerWaitTime:        storkutil.NewNullableFromValue(int64(2)),
+		UnwarnedReclaimCycles:       storkutil.NewNullableFromValue(int64(1)),
 	}
 	err := config.SetExpiredLeasesProcessing(expiredLeasesProcessing)
 	require.NoError(t, err)
