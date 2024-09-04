@@ -145,7 +145,7 @@ file AGENT_PACKAGE_STUB_FILE => [NFPM, agent_nfpm_config_file, agent_dist_dir, p
         "--packager", get_pkg_type(),
         "--target", pkgs_dir
 
-    sh "touch", SERVER_PACKAGE_STUB_FILE
+    sh "touch", AGENT_PACKAGE_STUB_FILE
 end
 
 ##############
