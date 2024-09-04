@@ -661,8 +661,6 @@ unittest_hooks:
       when: always
     - when: manual
       allow_failure: true
-  needs:
-    - unittest_backend
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -693,7 +691,6 @@ build_hooks_debs_amd64:
   rules:
     - when: on_success
   needs:
-    - unittest_hooks
     # Use the binaries compiled by the legacy image.
     - build_hooks_legacy
   script:
@@ -714,7 +711,6 @@ build_hooks_debs_arm64:
   needs:
     - job: build_hooks
       artifacts: false
-    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.deb ./
@@ -733,7 +729,6 @@ build_hooks_rpms_amd64:
   needs:
     - job: build_hooks
       artifacts: false
-    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.rpm ./
@@ -752,7 +747,6 @@ build_hooks_rpms_arm64:
   needs:
     - job: build_hooks
       artifacts: false
-    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.rpm ./
@@ -771,7 +765,6 @@ build_hooks_apks_amd64:
   needs:
     - job: build_hooks
       artifacts: false
-    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -790,7 +783,6 @@ build_hooks_apks_arm64:
   needs:
     - job: build_hooks
       artifacts: false
-    - unittest_hooks
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -865,8 +857,6 @@ deploy_demo:
     - aws
     - runner-manager
     - amd64
-  needs:
-    - danger
   before_script:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
