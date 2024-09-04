@@ -498,6 +498,25 @@ case uname_os.rstrip
         fail
 end
 
+distro = 'unknown'
+if File.exist?('/etc/os-release')
+    values = {}
+    File.readlines('/etc/os-release').each do |line|
+        parts = line.split('=')
+        if parts.size != 2
+          next
+        end
+        values[parts[0]] = parts[1].tr('"', '').strip()
+    end
+    for i in ['ID_LIKE', 'ID', 'NAME'] do
+        if values.key? i
+            distro = values[i]
+            break
+        end
+    end
+end
+DISTRO = distro
+
 uname_arch, _ = Open3.capture2 "uname", "-m"
 case uname_arch.rstrip
     when "x86_64", "amd64"

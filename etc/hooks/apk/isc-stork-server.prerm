@@ -1,3 +1,8 @@
 #!/bin/sh
 
-# Do nothing.
+set -eu
+
+if command -V rc-service > /dev/null; then
+  # Stop if started.
+  rc-service --ifstarted isc-stork-server stop
+fi

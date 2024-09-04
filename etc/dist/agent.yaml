@@ -31,6 +31,9 @@ contents:
   type: config
 - src: dist/agent/etc/stork/agent-credentials.json.template
   dst: /etc/stork/agent-credentials.json.template
+- src: dist/agent/etc/init.d
+  dst: /etc/init.d
+  packager: apk
 
 overrides:
   deb:
