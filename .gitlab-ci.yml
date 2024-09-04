@@ -605,7 +605,7 @@ system_test:
   artifacts:
     paths:
       - tests/system/test-results/
-    expire_in: 1 week
+    expire_in: 6 months
     when: always
 
 ### hooks ###
