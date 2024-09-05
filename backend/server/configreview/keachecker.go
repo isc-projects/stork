@@ -39,11 +39,10 @@ func leaseCmdsPresence(ctx *ReviewContext) (*Report, error) {
 		r, err := NewReport(ctx, "The Kea Lease Commands library "+
 			"(libdhcp_lease_cmds) provides commands for retrieving "+
 			"DHCP leases from Kea DHCP servers. Stork sends these "+
-			"commands to look for leases matching the criteria provided in the "+
-			"lease search box and leases related to the host reservations. "+
-			"Stork found that {daemon} is not using this hook library. The "+
-			"searching for leases feature will not be available until the "+
-			"library is loaded.").
+			"commands to search for leases matching the criteria specified in the "+
+			"lease search box and to check if the host reservations are used. "+
+			"Stork found that {daemon} is not using this hook library. These "+
+			"features will not be available until the library is loaded.").
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
