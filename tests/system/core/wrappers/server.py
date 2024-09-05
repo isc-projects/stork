@@ -16,7 +16,7 @@ from openapi_client.api.services_api import (
     Machines,
     ServicesApi,
 )
-from openapi_client.api.settings_api import SettingsApi
+from openapi_client.api.settings_api import Settings, SettingsApi
 from openapi_client.api.users_api import Groups, User, UserAccount, Users, UsersApi
 from openapi_client.models.create_host_begin_response import CreateHostBeginResponse
 from openapi_client.models.update_host_begin_response import UpdateHostBeginResponse
@@ -326,6 +326,11 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         api_instance = SettingsApi(self._api_client)
         return api_instance.get_puller(id=puller_id)
 
+    def get_settings(self) -> Settings:
+        """Read server configuration settings."""
+        api_instance = SettingsApi(self._api_client)
+        return api_instance.get_settings()
+
     # Update
 
     def update_machine(self, machine: Machine) -> Machine:
@@ -342,6 +347,11 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """Shorthand to update a host reservation."""
         with self.transaction_update_host_reservation(host.id) as (_, submit, _):
             submit(host)
+
+    def update_settings(self, settings: Settings):
+        """Updates the server configuration settings in the database."""
+        api_instance = SettingsApi(self._api_client)
+        api_instance.update_settings(settings)
 
     # Delete
 

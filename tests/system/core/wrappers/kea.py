@@ -50,6 +50,12 @@ class Kea(Agent):
             "Number overflow:"
         ) in stdout
 
+    def has_encountered_machine_registration_disabled(self):
+        """Check if the Stork Agent has encountered an error indicating that
+        new machine registration is administratively disabled."""
+        stdout, _ = self._compose.logs(self._service_name)
+        return "Machine registration is administratively disabled" in stdout
+
     def get_version(self):
         """Returns the Kea version as a tuple."""
         stdout: str

@@ -169,3 +169,31 @@ def test_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(
     assert len(labels) == 3
     assert labels["prefix"] == labels["subnet"]
     assert labels["subnet"] != labels["subnet_id"]
+
+
+def test_agent_registration_administratively_disabled(
+    server_service: Server, kea_service: Kea
+):
+    """Check that the agent doesn't re-register when the registration
+    is administratively disabled."""
+    server_service.log_in_as_admin()
+    machine = server_service.authorize_all_machines().items[0]
+
+    # Delete the registered machine from the database. The machine will
+    # attempt to refresh registration but it will be refused because it
+    # will be treated as a new registration.
+    server_service.delete_machine(machine.id)
+
+    # Disable new machine registration. It should prevent the re-registration
+    # of our machine.
+    settings = server_service.get_settings()
+    settings.enable_machine_registration = False
+    server_service.update_settings(settings)
+
+    # Restart the agent to enfoce re-registration attempt.
+    kea_service.restart_stork_agent()
+
+    # The registraion should fail and the machine should not be added to
+    # the database.
+    assert kea_service.has_encountered_machine_registration_disabled()
+    assert len(server_service.list_machines().items) == 0
