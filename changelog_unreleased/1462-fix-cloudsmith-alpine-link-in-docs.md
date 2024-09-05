@@ -1,5 +1,5 @@
 [doc] slawek
 
-    Fixed a link to the script in docs to set up the CloudSmith
+    Fixed a link in the docs to the script setting up the CloudSmith
     repository on Alpine operating systems.
     (Gitlab #1462)
