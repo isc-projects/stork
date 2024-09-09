@@ -335,7 +335,7 @@ services:
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
-      - ./docker/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
+      - ./docker/config/supervisor/prometheus-alpine.conf:/etc/supervisor/conf.d/prometheus.conf
 
   # ToDo: This service should be created using --scale agent-bind9=2 option
   # but it isn't supported by the STORK_AGENT_HOST envvar. Both services use

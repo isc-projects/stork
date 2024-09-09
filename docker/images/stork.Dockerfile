@@ -334,14 +334,22 @@ HEALTHCHECK CMD [ "supervisorctl", "status" ]
 # Bind9 with Stork Agent container
 FROM internetsystemsconsortium/bind9:${BIND9_VERSION} AS bind
 # Install Bind9 dependencies
-RUN apt-get update \
-        && apt-get install \
-                -y \
-                --no-install-recommends \
-                supervisor=4.2.* \
-                prometheus-node-exporter=1.3.* \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
+# BIND9 images switched to Alpine 3.20 some time around Aug 2024.
+# The --no-cache prevents any local caching (prevents storing
+# anythin in /var/cache/apk). We use trust-but-verify, so we
+# delete the dir anyway.
+RUN apk update \
+        && apk add \
+        --no-cache \
+        --no-interactive \
+        supervisor \
+        prometheus-node-exporter \
+        libc6-compat \
+        && rm -rf /var/cache/apk/* \
+        # Alpine specific: need to generate rndc key on our own.
+        && /usr/sbin/rndc-confgen -a \
+        && chown bind:bind /etc/bind/* \
+        && chmod g+w /etc/bind \
         # Puts empty database file to allow mounting it as a volume.
         && touch /etc/bind/db.test \
         # The bind image uses a dedicated user. We need to run the entry point
