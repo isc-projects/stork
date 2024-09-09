@@ -49,9 +49,9 @@
                             <div class="flex flex-auto align-items-end">
                                 <div [ngSwitch]="controls.data?.type" class="shared-parameter-form flex-auto">
                                     <ng-container *ngSwitchCase="'string'">
-                                        <ng-container *ngIf="controls.data?.values?.length > 0; else noValuesCase">
+                                        <ng-container *ngIf="controls.data.values?.length > 0; else noValuesCase">
                                             <p-multiSelect
-                                                *ngIf="controls.data?.isArray; else noArrayCase"
+                                                *ngIf="controls.data.isArray; else noArrayCase"
                                                 [options]="controls.data.values"
                                                 [showClear]="true"
                                                 [formControlName]="index"
@@ -73,7 +73,7 @@
                                         </ng-container>
                                         <ng-template #noValuesCase>
                                             <app-array-value-set-form
-                                                *ngIf="controls.data?.isArray; else noValuesNoArrayCase"
+                                                *ngIf="controls.data.isArray; else noValuesNoArrayCase"
                                                 [classFormControl]="control"
                                             >
                                             </app-array-value-set-form>
