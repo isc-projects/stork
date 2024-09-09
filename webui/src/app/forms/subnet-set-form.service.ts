@@ -1408,6 +1408,8 @@ export class SubnetSetFormService {
             dhcpDdnsEnableUpdates: new SharedParameterFormGroup<boolean>(
                 {
                     type: 'boolean',
+                    required: true,
+                    clearValue: false,
                 },
                 configs.map((params) => new FormControl<boolean>(params?.['dhcp-ddns']?.['enable-updates']))
             ),

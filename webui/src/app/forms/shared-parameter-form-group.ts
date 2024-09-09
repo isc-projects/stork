@@ -50,6 +50,8 @@ interface EditableParameterSpec<T> {
     max?: number
     fractionDigits?: number
     invalidText?: string
+    required?: boolean
+    clearValue?: T
 }
 
 /**

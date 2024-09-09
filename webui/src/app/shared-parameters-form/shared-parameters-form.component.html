@@ -86,9 +86,16 @@
                                         </ng-template>
                                     </ng-container>
                                     <ng-container *ngSwitchCase="'boolean'">
-                                        <p-triStateCheckbox ngDefaultControl [formControlName]="index">
-                                        </p-triStateCheckbox>
-                                        {{ control.value === null ? 'unset' : control.value }}
+                                        <ng-container *ngIf="controls.data.required">
+                                            <p-checkbox ngDefaultControl [formControlName]="index" [binary]="true">
+                                            </p-checkbox>
+                                            {{ control.value || false }}
+                                        </ng-container>
+                                        <ng-container *ngIf="!controls.data.required">
+                                            <p-triStateCheckbox ngDefaultControl [formControlName]="index">
+                                            </p-triStateCheckbox>
+                                            {{ control.value === null ? 'unset' : control.value }}
+                                        </ng-container>
                                     </ng-container>
                                     <ng-container *ngSwitchCase="'number'">
                                         <p-inputNumber
@@ -117,19 +124,19 @@
                                 <button
                                     pRipple
                                     pButton
-                                    [disabled]="control.value === null"
+                                    [disabled]="control.value === (controls.data?.clearValue ?? null)"
                                     label="Clear"
                                     class="p-button-text p-button-sm hidden md:inline-flex flex-none ml-2"
                                     type="button"
-                                    (click)="control.setValue(null)"
+                                    (click)="control.setValue(controls.data.clearValue ?? null)"
                                 ></button>
                                 <p-button
                                     class="flex-none"
                                     [text]="true"
                                     icon="pi pi-times"
-                                    [disabled]="control.value === null"
+                                    [disabled]="control.value === (controls.data?.clearValue ?? null)"
                                     title="Clear"
-                                    (click)="control.setValue(null)"
+                                    (click)="control.setValue(controls.data.clearValue ?? null)"
                                     styleClass="md:hidden ml-2"
                                     size="small"
                                 />

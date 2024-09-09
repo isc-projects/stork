@@ -36,6 +36,7 @@ interface SubnetForm {
     cacheThreshold?: SharedParameterFormGroup<number>
     ddnsGeneratedPrefix?: SharedParameterFormGroup<string>
     ddnsOverrideClientUpdate?: SharedParameterFormGroup<boolean>
+    dhcpDdnsEnableUpdates?: SharedParameterFormGroup<boolean>
     hostReservationIdentifiers?: SharedParameterFormGroup<string[]>
     requireClientClasses?: SharedParameterFormGroup<string[]>
     relayAddresses?: SharedParameterFormGroup<string[]>
@@ -118,6 +119,13 @@ describe('SharedParametersFormComponent', () => {
                 },
                 [new FormControl('myhost', StorkValidators.fqdn), new FormControl('hishost', StorkValidators.fqdn)]
             ),
+            dhcpDdnsEnableUpdates: new SharedParameterFormGroup(
+                {
+                    type: 'boolean',
+                    required: true,
+                },
+                [new FormControl<boolean>(true), new FormControl<boolean>(true)]
+            ),
             hostReservationIdentifiers: new SharedParameterFormGroup(
                 {
                     type: 'string',
@@ -152,6 +160,7 @@ describe('SharedParametersFormComponent', () => {
             'cacheThreshold',
             'ddnsGeneratedPrefix',
             'ddnsOverrideClientUpdate',
+            'dhcpDdnsEnableUpdates',
             'hostReservationIdentifiers',
             'relayAddresses',
             'requireClientClasses',
@@ -167,7 +176,7 @@ describe('SharedParametersFormComponent', () => {
         expect(divs[4].nativeElement.innerText).toBe('Unlock')
 
         let allWrapperDivs = fixture.debugElement.queryAll(By.css('.shared-parameter-wrapper:not(.font-semibold)'))
-        expect(allWrapperDivs.length).toBe(8)
+        expect(allWrapperDivs.length).toBe(9)
 
         // Allocator.
         let labelDiv = allWrapperDivs[0].queryAll(By.css('div.font-semibold'))
@@ -251,42 +260,37 @@ describe('SharedParametersFormComponent', () => {
         checkbox = allWrapperDivs[4].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
 
-        // Host Reservation Identifiers.
+        // DHCP DDNS Enable Updates.
         labelDiv = allWrapperDivs[5].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
-        expect(labelDiv[0].nativeElement.innerText).toBe('Host Reservation Identifiers')
-        controls = allWrapperDivs[5].queryAll(By.css('p-multiSelect'))
-        expect(controls.length).toBe(1)
+        expect(labelDiv[0].nativeElement.innerText).toBe('DHCP DDNS Enable Updates')
+        controls = allWrapperDivs[5].queryAll(By.css('p-checkbox'))
+        expect(controls.length).toBe(3)
         tags = allWrapperDivs[5].queryAll(By.css('p-tag'))
         expect(tags.length).toBe(0)
-        btns = allWrapperDivs[4].queryAll(By.css('[label=Clear]'))
+        btns = allWrapperDivs[5].queryAll(By.css('[label=Clear]'))
         expect(btns.length).toBe(1)
         expect(btns[0].nativeElement.innerText).toBe('Clear')
-        checkbox = allWrapperDivs[5].query(By.css('p-checkbox'))
-        expect(checkbox).toBeTruthy()
 
-        // Relay
+        // Host Reservation Identifiers.
         labelDiv = allWrapperDivs[6].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
-        expect(labelDiv[0].nativeElement.innerText).toBe('Relay Addresses')
-        controls = allWrapperDivs[6].queryAll(By.css('app-array-value-set-form'))
-        expect(controls.length).toBe(2)
+        expect(labelDiv[0].nativeElement.innerText).toBe('Host Reservation Identifiers')
+        controls = allWrapperDivs[6].queryAll(By.css('p-multiSelect'))
+        expect(controls.length).toBe(1)
         tags = allWrapperDivs[6].queryAll(By.css('p-tag'))
-        expect(tags.length).toBe(2)
-        expect(tags[0].nativeElement.innerText).toBe('server 1')
-        expect(tags[1].nativeElement.innerText).toBe('server 2')
+        expect(tags.length).toBe(0)
         btns = allWrapperDivs[6].queryAll(By.css('[label=Clear]'))
-        expect(btns.length).toBe(2)
+        expect(btns.length).toBe(1)
         expect(btns[0].nativeElement.innerText).toBe('Clear')
-        expect(btns[1].nativeElement.innerText).toBe('Clear')
         checkbox = allWrapperDivs[6].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
 
-        // Require Client Classes.
+        // Relay
         labelDiv = allWrapperDivs[7].queryAll(By.css('div.font-semibold'))
         expect(labelDiv.length).toBe(1)
-        expect(labelDiv[0].nativeElement.innerText).toBe('Require Client Classes')
-        controls = allWrapperDivs[7].queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(labelDiv[0].nativeElement.innerText).toBe('Relay Addresses')
+        controls = allWrapperDivs[7].queryAll(By.css('app-array-value-set-form'))
         expect(controls.length).toBe(2)
         tags = allWrapperDivs[7].queryAll(By.css('p-tag'))
         expect(tags.length).toBe(2)
@@ -297,6 +301,23 @@ describe('SharedParametersFormComponent', () => {
         expect(btns[0].nativeElement.innerText).toBe('Clear')
         expect(btns[1].nativeElement.innerText).toBe('Clear')
         checkbox = allWrapperDivs[7].query(By.css('p-checkbox'))
+        expect(checkbox).toBeTruthy()
+
+        // Require Client Classes.
+        labelDiv = allWrapperDivs[8].queryAll(By.css('div.font-semibold'))
+        expect(labelDiv.length).toBe(1)
+        expect(labelDiv[0].nativeElement.innerText).toBe('Require Client Classes')
+        controls = allWrapperDivs[8].queryAll(By.css('app-dhcp-client-class-set-form'))
+        expect(controls.length).toBe(2)
+        tags = allWrapperDivs[8].queryAll(By.css('p-tag'))
+        expect(tags.length).toBe(2)
+        expect(tags[0].nativeElement.innerText).toBe('server 1')
+        expect(tags[1].nativeElement.innerText).toBe('server 2')
+        btns = allWrapperDivs[8].queryAll(By.css('[label=Clear]'))
+        expect(btns.length).toBe(2)
+        expect(btns[0].nativeElement.innerText).toBe('Clear')
+        expect(btns[1].nativeElement.innerText).toBe('Clear')
+        checkbox = allWrapperDivs[8].query(By.css('p-checkbox'))
         expect(checkbox).toBeTruthy()
     })
 
