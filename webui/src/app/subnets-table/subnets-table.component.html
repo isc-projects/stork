@@ -261,7 +261,7 @@
                     [href]="getGrafanaUrl('dhcp4', sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
                     [title]="getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
                     target="blank"
-                    *ngIf="sn.localSubnets?.[0]"
+                    *ngIf="sn.localSubnets?.[0] && sn.subnet?.includes('.')"
                 >
                     <i class="pi pi-chart-line text-2xl"></i>
                 </a>

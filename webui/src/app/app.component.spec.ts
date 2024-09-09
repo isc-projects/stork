@@ -1,4 +1,4 @@
-import { TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
 import { AppComponent } from './app.component'
 import { TooltipModule } from 'primeng/tooltip'
@@ -6,7 +6,7 @@ import { MenubarModule } from 'primeng/menubar'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ToastModule } from 'primeng/toast'
-import { GeneralService, UsersService, SettingsService, ServicesService } from './backend'
+import { GeneralService, UsersService, SettingsService, ServicesService, Settings } from './backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { GlobalSearchComponent } from './global-search/global-search.component'
@@ -17,8 +17,19 @@ import { PriorityErrorsPanelComponent } from './priority-errors-panel/priority-e
 import { ServerSentEventsService, ServerSentEventsTestingService } from './server-sent-events.service'
 import { MessagesModule } from 'primeng/messages'
 import { ToggleButtonModule } from 'primeng/togglebutton'
+import { SettingService } from './setting.service'
+import { of } from 'rxjs'
+import { AuthService } from './auth.service'
+import { ServerDataService } from './server-data.service'
 
 describe('AppComponent', () => {
+    let component: AppComponent
+    let fixture: ComponentFixture<AppComponent>
+    let authService: AuthService
+    let userService: UsersService
+    let settingService: SettingService
+    let serverDataService: ServerDataService
+
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
@@ -45,20 +56,41 @@ describe('AppComponent', () => {
                 SettingsService,
             ],
         }).compileComponents()
+        authService = TestBed.inject(AuthService)
+        userService = TestBed.inject(UsersService)
+        settingService = TestBed.inject(SettingService)
+        serverDataService = TestBed.inject(ServerDataService)
     }))
 
+    beforeEach(() => {
+        spyOn(userService, 'createSession').and.returnValues(
+            of({
+                id: 1,
+                login: 'foo',
+                email: 'foo@bar.baz',
+                name: 'foo',
+                lastname: 'bar',
+                groups: [],
+            } as any),
+            of({
+                id: 1,
+                login: 'foo',
+                email: 'foo@bar.baz',
+                name: 'foo',
+                lastname: 'bar',
+                groups: [1],
+            } as any)
+        )
+        authService.login('boz', 'foo', 'bar', 'abc')
+        fixture = TestBed.createComponent(AppComponent)
+        component = fixture.componentInstance
+    })
+
     it('should create the app', () => {
-        const fixture = TestBed.createComponent(AppComponent)
-        const app = fixture.debugElement.componentInstance
-        expect(app).toBeTruthy()
+        expect(component).toBeTruthy()
     })
 
     it(`should have necessary menu items`, () => {
-        // This test checks if the menu items are there. It is basic for now.
-        // @todo: extend this to check if the menu items are shown or hidden (e.g. grafana is hidden by default)
-        const fixture = TestBed.createComponent(AppComponent)
-        const app = fixture.debugElement.componentInstance
-
         // This is the list of menu elements that are expected to be there.
         const expMenuItems = [
             'DHCP',
@@ -90,7 +122,7 @@ describe('AppComponent', () => {
 
         for (const name of expMenuItems) {
             // Check if the menu item is there
-            const m = app.getMenuItem(name)
+            const m = component.getMenuItem(name)
             expect(m).toBeTruthy()
 
             // Check if the menu is hidden or visible. See the expHiddenItems list above.
@@ -113,4 +145,21 @@ describe('AppComponent', () => {
         // This works in a browser, but not here.
         // expect(document.querySelector('app-login-screen').textContent).toContain('Dashboard for')
     })
+
+    it('should show grafana menu item', fakeAsync(() => {
+        const settings: Settings = {
+            grafanaUrl: 'http://localhost:3000',
+        }
+        spyOn(settingService, 'getSettings').and.returnValue(of(settings))
+        spyOn(serverDataService, 'getAppsStats').and.returnValue(of({} as any))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(serverDataService.getAppsStats).toHaveBeenCalled()
+        expect(settingService.getSettings).toHaveBeenCalled()
+        const menuItem = component.getMenuItem('Grafana')
+        expect(menuItem).toBeTruthy()
+        expect(menuItem.visible).toBeTrue()
+    }))
 })

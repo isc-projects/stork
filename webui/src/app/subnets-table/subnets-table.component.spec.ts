@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
 import { SubnetsTableComponent } from './subnets-table.component'
 import { ButtonModule } from 'primeng/button'
@@ -16,10 +16,19 @@ import { RouterModule } from '@angular/router'
 import { SubnetsPageComponent } from '../subnets-page/subnets-page.component'
 import { TagModule } from 'primeng/tag'
 import { DropdownModule } from 'primeng/dropdown'
+import { DHCPService, Subnets } from '../backend'
+import { By } from '@angular/platform-browser'
+import { of } from 'rxjs'
+import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
+import { HumanCountPipe } from '../pipes/human-count.pipe'
+import { HumanCountComponent } from '../human-count/human-count.component'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { TooltipModule } from 'primeng/tooltip'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
     let fixture: ComponentFixture<SubnetsTableComponent>
+    let dhcpApi: DHCPService
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -46,10 +55,20 @@ describe('SubnetsTableComponent', () => {
                         component: SubnetsPageComponent,
                     },
                 ]),
+                TooltipModule,
             ],
-            declarations: [SubnetsTableComponent, HelpTipComponent, PluralizePipe],
+            declarations: [
+                EntityLinkComponent,
+                HelpTipComponent,
+                HumanCountComponent,
+                HumanCountPipe,
+                SubnetBarComponent,
+                SubnetsTableComponent,
+                PluralizePipe,
+            ],
         }).compileComponents()
 
+        dhcpApi = TestBed.inject(DHCPService)
         fixture = TestBed.createComponent(SubnetsTableComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
@@ -58,4 +77,50 @@ describe('SubnetsTableComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
     })
+
+    it('should display links to grafana', fakeAsync(() => {
+        const subnets: Subnets = {
+            items: [
+                {
+                    subnet: '192.0.2.0/24',
+                    localSubnets: [
+                        {
+                            id: 1,
+                            machineHostname: 'foo',
+                        },
+                    ],
+                },
+                {
+                    subnet: '192.0.3.0/24',
+                    localSubnets: [
+                        {
+                            id: 2,
+                            machineHostname: 'foo',
+                        },
+                    ],
+                },
+                {
+                    subnet: '2001:db8:1::/64',
+                    localSubnets: [
+                        {
+                            id: 2,
+                            machineHostname: 'foo',
+                        },
+                    ],
+                },
+            ],
+            total: 3,
+        }
+        spyOn(dhcpApi, 'getSubnets').and.returnValue(of(subnets as any))
+        component.grafanaUrl = 'http://localhost:3000/'
+        component.loadData({
+            first: 0,
+            rows: 10,
+        })
+        tick()
+        fixture.detectChanges()
+
+        const grafanaIcons = fixture.debugElement.queryAll(By.css('.pi-chart-line'))
+        expect(grafanaIcons?.length).toBe(3)
+    }))
 })

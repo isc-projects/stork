@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { DashboardComponent } from './dashboard.component'
 import { PanelModule } from 'primeng/panel'
@@ -23,12 +23,14 @@ import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { SurroundPipe } from '../pipes/surround.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
+import { SettingService } from '../setting.service'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
     let fixture: ComponentFixture<DashboardComponent>
     let dhcpService: DHCPService
     let dataService: ServerDataService
+    let settingService: SettingService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -66,6 +68,7 @@ describe('DashboardComponent', () => {
 
         dhcpService = TestBed.inject(DHCPService)
         dataService = TestBed.inject(ServerDataService)
+        settingService = TestBed.inject(SettingService)
     }))
 
     beforeEach(() => {
@@ -199,6 +202,22 @@ describe('DashboardComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
     })
+
+    it('should fetch grafana url', fakeAsync(() => {
+        spyOn(settingService, 'getSettings').and.returnValue(
+            of({
+                grafanaUrl: 'http://localhost:3000',
+            } as any)
+        )
+
+        component.ngOnInit()
+        tick()
+        expect(component.grafanaUrl).toBe('http://localhost:3000')
+
+        fixture.detectChanges()
+        const grafanaIcons = fixture.debugElement.queryAll(By.css('i.pi-chart-line'))
+        expect(grafanaIcons?.length).toBe(1)
+    }))
 
     it('should indicate that HA is not enabled', () => {
         // This test doesn't check that the state is rendered correctly

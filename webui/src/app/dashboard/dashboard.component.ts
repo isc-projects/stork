@@ -19,7 +19,7 @@ import { ServerDataService } from '../server-data.service'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
-import { DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview } from '../backend'
+import { DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview, Settings } from '../backend'
 import { ModifyDeep } from '../utiltypes'
 
 type DhcpOverviewParsed = ModifyDeep<
@@ -169,8 +169,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.refreshDhcpOverview()
 
         this.subscriptions.add(
-            this.settingSvc.getSettings().subscribe((data) => {
-                this.grafanaUrl = data['grafana_url']
+            this.settingSvc.getSettings().subscribe((data: Settings) => {
+                this.grafanaUrl = data?.grafanaUrl
             })
         )
     }

@@ -59,12 +59,14 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
+import { SettingService } from '../setting.service'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
     let dhcpService: DHCPService
     let messageService: MessageService
+    let settingService: SettingService
     let route: ActivatedRoute
     let router: Router
     let routerEventSubject: BehaviorSubject<NavigationEnd>
@@ -142,6 +144,7 @@ describe('SubnetsPageComponent', () => {
         })
         dhcpService = TestBed.inject(DHCPService)
         messageService = TestBed.inject(MessageService)
+        settingService = TestBed.inject(SettingService)
         fixture = TestBed.createComponent(SubnetsPageComponent)
         component = fixture.componentInstance
         route = fixture.debugElement.injector.get(ActivatedRoute)
@@ -327,6 +330,12 @@ describe('SubnetsPageComponent', () => {
         component.table.filter$.next({ filter: {} })
 
         fixture.detectChanges()
+
+        spyOn(settingService, 'getSettings').and.returnValue(
+            of({
+                grafanaUrl: 'http://localhost:3000',
+            } as any)
+        )
     }))
 
     /**
@@ -348,6 +357,12 @@ describe('SubnetsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('should fetch grafana url', async () => {
+        component.ngOnInit()
+        await fixture.whenStable()
+        expect(component.grafanaUrl).toBe('http://localhost:3000')
     })
 
     it('should convert statistics to big integers', async () => {

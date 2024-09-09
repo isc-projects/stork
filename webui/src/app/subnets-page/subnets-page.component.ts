@@ -7,7 +7,7 @@ import { parseSubnetsStatisticValues, extractUniqueSubnetPools, parseSubnetStati
 import { SettingService } from '../setting.service'
 import { Subscription, lastValueFrom, EMPTY } from 'rxjs'
 import { catchError, filter, map } from 'rxjs/operators'
-import { Subnet } from '../backend'
+import { Settings, Subnet } from '../backend'
 import { MenuItem, MessageService } from 'primeng/api'
 import { SubnetFormState } from '../forms/subnet-form'
 import { Tab, TabType } from '../tab'
@@ -88,8 +88,8 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
         // ToDo: Silent error catching
         this.subscriptions.add(
             this.settingSvc.getSettings().subscribe(
-                (data) => {
-                    this.grafanaUrl = data['grafana_url']
+                (data: Settings) => {
+                    this.grafanaUrl = data?.grafanaUrl
                 },
                 (error) => {
                     this.messageService.add({

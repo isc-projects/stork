@@ -9,7 +9,7 @@ import { AuthService } from './auth.service'
 import { LoadingService } from './loading.service'
 import { SettingService } from './setting.service'
 import { ServerDataService } from './server-data.service'
-import { User } from './backend'
+import { Settings, User } from './backend'
 import { ThemeService } from './theme.service'
 
 @Component({
@@ -294,8 +294,8 @@ export class AppComponent implements OnInit, OnDestroy {
                     // If Grafana url is not empty, we need to make
                     // Services.Grafana menu choice visible and set it's url.
                     // Otherwise we need to make sure it's not visible.
-                    this.settingSvc.getSettings().subscribe((data) => {
-                        const grafanaUrl = data['grafana_url']
+                    this.settingSvc.getSettings().subscribe((data: Settings) => {
+                        const grafanaUrl = data?.grafanaUrl
 
                         const grafanaMenuItem = this.getMenuItem('Grafana')
 
