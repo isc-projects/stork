@@ -141,6 +141,7 @@ import { SharedNetworksTableComponent } from './shared-networks-table/shared-net
 import { KeaGlobalConfigurationViewComponent } from './kea-global-configuration-view/kea-global-configuration-view.component'
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form/kea-global-configuration-form.component'
 import { PositivePipe } from './pipes/positive.pipe'
+import { VersionStatusComponent } from './version-status/version-status.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -234,6 +235,7 @@ export function cfgFactory() {
         KeaGlobalConfigurationViewComponent,
         KeaGlobalConfigurationFormComponent,
         PositivePipe,
+        VersionStatusComponent,
     ],
     imports: [
         BrowserModule,

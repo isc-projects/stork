@@ -1,0 +1,13 @@
+
+[
+  {
+    "name": "kea",
+    "latest-stable": "2.6.1",
+    "latest-dev": "2.7.2"
+  },
+  {
+    "name": "stork",
+    "latest-dev": "1.18.0",
+    "latest-secure": "1.15.1"
+  }
+]
