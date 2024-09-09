@@ -769,10 +769,7 @@ func (c *SettableConfig) SetDDNSUseConflictResolution(ddnsUseConflictResolution 
 	}, "ddns-use-conflict-resolution")
 }
 
-// Sets a boolean flag which is passed to kea-dhcp-ddns with each DDNS
-// update request, to indicate whether DNS update conflict
-// resolution as described in RFC 4703 should be employed for the
-// given update request.
+// Sets the DDNS conflict resolution mode.
 func (c *SettableConfig) SetDDNSConflictResolutionMode(ddnsConflictResolutionMode *string) error {
 	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
 		modifier.SetDDNSConflictResolutionMode(ddnsConflictResolutionMode)
