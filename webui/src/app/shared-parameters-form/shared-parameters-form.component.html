@@ -1,10 +1,10 @@
 <div *ngIf="parameterNames.length > 0; else noRowsBlock" class="flex flex-column gap-4">
     <div class="shared-parameter-wrapper font-semibold mt-3 flex gap-4 pb-4">
         <div class="md:hidden flex-auto">Parameter &amp; value</div>
-        <div class="md:hidden flex-none">Unlock</div>
+        <div *ngIf="servers?.length > 1" class="md:hidden flex-none">Unlock</div>
         <div class="hidden md:block w-20-perc">Parameter</div>
         <div class="hidden md:block flex-auto">Value</div>
-        <div class="hidden md:block flex-none">Unlock</div>
+        <div *ngIf="servers?.length > 1" class="hidden md:block flex-none">Unlock</div>
     </div>
     <ng-container *ngFor="let parameterName of parameterNames">
         <ng-container
@@ -24,7 +24,10 @@
                 <div class="font-semibold text-color-secondary flex-auto">
                     {{ uncamelCase(parameterName) }}
                 </div>
-                <div class="flex-none md:hidden inline-flex gap-1 align-items-center text-color-secondary">
+                <div
+                    *ngIf="servers?.length > 1"
+                    class="flex-none md:hidden inline-flex gap-1 align-items-center text-color-secondary"
+                >
                     <i
                         class="pi"
                         [class.pi-lock]="!controls.get('unlocked').value"
@@ -140,7 +143,10 @@
                     </ng-container>
                 </ng-container>
             </div>
-            <div class="hidden md:flex-none md:inline-flex gap-1 align-items-center text-color-secondary pt-2">
+            <div
+                *ngIf="servers?.length > 1"
+                class="hidden md:flex-none md:inline-flex gap-1 align-items-center text-color-secondary pt-2"
+            >
                 <i
                     class="pi"
                     [class.pi-lock]="!controls.get('unlocked').value"

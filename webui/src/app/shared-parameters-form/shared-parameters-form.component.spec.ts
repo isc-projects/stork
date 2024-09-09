@@ -322,16 +322,15 @@ describe('SharedParametersFormComponent', () => {
 
         // Validate the section header.
         let divs = fixture.debugElement.queryAll(By.css('.shared-parameter-wrapper.font-semibold > div'))
-        // First two divs are hidden for wider viewports, but visible for smaller viewports.
-        expect(divs.length).toBe(5)
-        // Check last three divs visible for larger viewports.
-        expect(divs[2].nativeElement.innerText).toBe('Parameter')
-        expect(divs[3].nativeElement.innerText).toBe('Value')
-        expect(divs[4].nativeElement.innerText).toBe('Unlock')
+        // First div is hidden for wider viewports, but visible for smaller viewports.
+        expect(divs.length).toBe(3)
+        // Check last two divs visible for larger viewports.
+        expect(divs[1].nativeElement.innerText).toBe('Parameter')
+        expect(divs[2].nativeElement.innerText).toBe('Value')
 
         // Require Client Classes.
         divs = fixture.debugElement.queryAll(By.css('.shared-parameter-wrapper:not(.font-semibold) > div'))
-        expect(divs.length).toBe(3)
+        expect(divs.length).toBe(2)
         expect(divs[0].childNodes[0].nativeNode.innerText).toBe('Require Client Classes')
         const controls = divs[1].queryAll(By.css('app-dhcp-client-class-set-form'))
         expect(controls.length).toBe(1)
