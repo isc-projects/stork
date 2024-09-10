@@ -96,6 +96,7 @@
                 </td>
                 <td>
                     <a routerLink="/apps/{{ appType }}/{{ a.id }}">{{ a.version }}</a>
+                    <app-version-status [app]="appType" [version]="a.version"></app-version-status>
                 </td>
                 <td>
                     <app-app-daemons-status [app]="a"></app-app-daemons-status>

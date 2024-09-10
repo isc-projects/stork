@@ -386,7 +386,10 @@ sudo ./stork-install-agent.sh</textarea
                     <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
                 </td>
                 <td>{{ m.address }}:{{ m.agentPort }}</td>
-                <td>{{ m.agentVersion }}</td>
+                <td>
+                    {{ m.agentVersion }}
+                    <app-version-status app="stork" [version]="m.agentVersion"></app-version-status>
+                </td>
                 <td>
                     <div *ngFor="let a of m.apps">
                         <app-app-daemons-status [app]="a"></app-app-daemons-status>
@@ -475,7 +478,13 @@ sudo ./stork-install-agent.sh</textarea
                     </tr>
                     <tr>
                         <td>Agent Version</td>
-                        <td>{{ machineTab.machine.agentVersion }}</td>
+                        <td>
+                            {{ machineTab.machine.agentVersion }}
+                            <app-version-status
+                                app="stork"
+                                [version]="machineTab.machine.agentVersion"
+                            ></app-version-status>
+                        </td>
                     </tr>
                     <tr>
                         <td>CPUs</td>
@@ -602,6 +611,7 @@ sudo ./stork-install-agent.sh</textarea
                     <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
                     <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
                     <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
+                    <app-version-status [app]="app.type" [version]="app.version"></app-version-status>
                     <br />
                     <app-app-daemons-status [app]="app"></app-app-daemons-status>
                 </div>

@@ -57,7 +57,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
     breadcrumbs: MenuItem[] = []
 
-    appType = ''
+    appType: 'kea' | 'bind9'
     // apps table
     apps: any[]
     totalApps: number
@@ -128,7 +128,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 const newAppType = params.get('appType')
 
                 if (newAppType !== this.appType) {
-                    this.appType = newAppType
+                    this.appType = newAppType as 'kea' | 'bind9'
                     this.breadcrumbs = [{ label: 'Services' }, { label: this.getAppsLabel() }]
 
                     this.tabs = [{ label: 'All', routerLink: '/apps/' + this.appType + '/all' }]
@@ -224,7 +224,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
      * Function called by the table data loader. Accepts the pagination event.
      */
     loadApps(event) {
-        if (this.appType === '') {
+        if (!this.appType) {
             // appType has not been set yet so do not load anything
             return
         }
