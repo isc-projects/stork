@@ -128,7 +128,7 @@
                                     label="Clear"
                                     class="p-button-text p-button-sm hidden md:inline-flex flex-none ml-2"
                                     type="button"
-                                    (click)="control.setValue(controls.data.clearValue ?? null)"
+                                    (click)="control.setValue(controls.data?.clearValue ?? null)"
                                 ></button>
                                 <p-button
                                     class="flex-none"
@@ -136,7 +136,7 @@
                                     icon="pi pi-times"
                                     [disabled]="control.value === (controls.data?.clearValue ?? null)"
                                     title="Clear"
-                                    (click)="control.setValue(controls.data.clearValue ?? null)"
+                                    (click)="control.setValue(controls.data?.clearValue ?? null)"
                                     styleClass="md:hidden ml-2"
                                     size="small"
                                 />
