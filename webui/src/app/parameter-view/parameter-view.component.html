@@ -1,21 +1,29 @@
 <!-- Object type containing named values. -->
 <div *ngIf="isParameterObject">
-    <ul class="list-none pl-0 mt-0 mb-0">
+    <ul *ngIf="parameterObjectHasValues; else emptyRecordCase" class="list-none pl-0 mt-0 mb-0">
         <li *ngFor="let subp of parameterAsRecord | keyvalue">
             {{ subp.key | unhyphen | uncamel }}:
             <span class="text-color-secondary monospace">{{ subp.value | placeholder }}</span>
         </li>
     </ul>
 </div>
+<!-- Show placeholder when object includes no explicit values. -->
+<ng-template #emptyRecordCase>
+    <span class="text-color-secondary monospace">{{ null | placeholder }}</span>
+</ng-template>
 
 <!-- Array containing a collection of values. -->
 <span *ngIf="isParameterArray">
-    <ul class="list-none pl-0 mt-0 mb-0">
+    <ul *ngIf="parameterAsArray?.length > 0; else emptyArrayCase" class="list-none pl-0 mt-0 mb-0">
         <li *ngFor="let subp of parameterAsArray">
             <span class="text-color-secondary monospace">{{ subp | placeholder }}</span>
         </li>
     </ul>
 </span>
+<!-- Show placeholder when an array includes no values. -->
+<ng-template #emptyArrayCase>
+    <span class="text-color-secondary monospace">{{ [] | placeholder }}</span>
+</ng-template>
 
 <!-- Basic type, such as string, number etc. -->
 <span *ngIf="isParameterBasicType" class="text-color-secondary monospace">{{ parameterAsAny | placeholder }}</span>

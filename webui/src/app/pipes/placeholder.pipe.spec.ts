@@ -47,4 +47,16 @@ describe('PlaceholderPipe', () => {
         const placeholder = pipe.transform(0 as any, 'foo', 'bar')
         expect(placeholder).toBe('0')
     })
+
+    it('should display transformed array', () => {
+        const pipe = new PlaceholderPipe()
+        const placeholder = pipe.transform(['foo', 'bar'])
+        expect(placeholder).toBe('foo,bar')
+    })
+
+    it('should display empty placeholder for empty array', () => {
+        const pipe = new PlaceholderPipe()
+        const placeholder = pipe.transform([])
+        expect(placeholder).toBe('(empty)')
+    })
 })

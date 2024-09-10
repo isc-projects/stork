@@ -54,4 +54,18 @@ describe('ParameterViewComponent', () => {
 
         expect(fixture.nativeElement.innerText).toContain('screw')
     })
+
+    it('should display placeholder for an empty object', () => {
+        component.parameter = {}
+        fixture.detectChanges()
+
+        expect(fixture.nativeElement.innerText).toContain('(not specified)')
+    })
+
+    it('should display placeholder for an empty array', () => {
+        component.parameter = []
+        fixture.detectChanges()
+
+        expect(fixture.nativeElement.innerText).toContain('(empty)')
+    })
 })

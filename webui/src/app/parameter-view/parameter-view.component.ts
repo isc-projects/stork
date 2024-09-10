@@ -25,6 +25,16 @@ export class ParameterViewComponent {
     }
 
     /**
+     * Checks if object parameter has any values.
+     *
+     * It is used to determine if the placeholder should be displayed
+     * instead of the key/value pairs.
+     */
+    get parameterObjectHasValues(): boolean {
+        return this.parameter && this.isParameterObject && Object.keys(this.parameterAsRecord).length > 0
+    }
+
+    /**
      * Casts the parameter to a record.
      */
     get parameterAsRecord(): Record<string, any> {
