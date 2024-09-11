@@ -1,13 +1,50 @@
-
-[
-  {
-    "name": "kea",
-    "latest-stable": "2.6.1",
-    "latest-dev": "2.7.2"
+{
+  "date": "2024-09-10",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      },
+      {
+        "version": "2.4.1",
+        "releaseDate": "2023-11-29",
+        "eolDate": "2025-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.2",
+      "releaseDate": "2024-08-28"
+    }
   },
-  {
-    "name": "stork",
-    "latest-dev": "1.18.0",
-    "latest-secure": "1.15.1"
+  "stork": {
+    "latestDev": {
+      "version": "1.18.0",
+      "releaseDate": "2024-08-07"
+    },
+    "latestSecure": {
+      "version": "1.15.1",
+      "releaseDate": "2024-03-27"
+    }
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.29",
+        "releaseDate": "2024-08-21",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      },
+      {
+        "version": "9.20.1",
+        "releaseDate": "2024-08-28",
+        "eolDate": "2028-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.0",
+      "releaseDate": "2024-08-28"
+    }
   }
-]
+}
