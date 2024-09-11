@@ -28,7 +28,6 @@ import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration
 import { MessagesModule } from 'primeng/messages'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { TreeModule } from 'primeng/tree'
-import { PluckPipe } from '../pipes/pluck.pipe'
 import { TagModule } from 'primeng/tag'
 
 const mockGetDaemonConfig = {
@@ -238,7 +237,6 @@ export default {
                 UncamelPipe,
                 UnhyphenPipe,
                 PlaceholderPipe,
-                PluckPipe,
             ],
         }),
         toastDecorator,

@@ -6,6 +6,7 @@ import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { ActivatedRoute } from '@angular/router'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
+import { DHCPOption } from '../backend'
 
 /**
  * A component that displays global configuration parameter for Kea.
@@ -54,6 +55,11 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
      * Holds fetched configuration. It always contains one (or zero) element.
      */
     dhcpParameters: Array<NamedCascadedParameters<Record<string, any>>> = []
+
+    /**
+     * Holds fetched DHCP options. It always contains one (or zero) element.
+     */
+    dhcpOptions: DHCPOption[][] = []
 
     /**
      * Subscriptions released when the component is destroyed.
@@ -181,6 +187,8 @@ export class KeaGlobalConfigurationPageComponent implements OnInit, OnDestroy {
                     },
                 ]
                 this.disableEdit = !data.editable
+
+                this.dhcpOptions = data.options ? [data.options.options] : []
 
                 // Update breadcrumbs.
                 this.updateBreadcrumbs(this.appId, this.daemonId, this.appName, friendlyDaemonName)

@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
+import { DHCPOption } from '../backend'
 
 /**
  * A component displaying global Kea configuration.
@@ -16,6 +17,11 @@ export class KeaGlobalConfigurationViewComponent {
      * Holds fetched configuration.
      */
     @Input() dhcpParameters: Array<NamedCascadedParameters<Object>> = []
+
+    /**
+     * Holds fetched DHCP options.
+     */
+    @Input() dhcpOptions: DHCPOption[][] = []
 
     /**
      * Boolean flag indicating if the edit button should be disabled.

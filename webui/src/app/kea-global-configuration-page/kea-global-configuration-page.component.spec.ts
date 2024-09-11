@@ -26,7 +26,6 @@ import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration
 import { ButtonModule } from 'primeng/button'
 import { TreeModule } from 'primeng/tree'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
-import { PluckPipe } from '../pipes/pluck.pipe'
 import { TagModule } from 'primeng/tag'
 
 describe('KeaGlobalConfigurationPageComponent', () => {
@@ -72,7 +71,6 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 PlaceholderPipe,
                 UncamelPipe,
                 UnhyphenPipe,
-                PluckPipe,
             ],
         }).compileComponents()
 
