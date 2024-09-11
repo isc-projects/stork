@@ -40,6 +40,7 @@ export class VersionStatusComponent implements OnInit {
     ngOnInit(): void {
         if (valid(this.version)) {
             this.appName = this.app[0].toUpperCase() + this.app.slice(1)
+            this.appName += this.app === 'stork' ? ' agent' : ''
             this.checkDevelopmentVersion()
             this.compareVersions()
         } else {
