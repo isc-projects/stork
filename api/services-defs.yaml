@@ -301,6 +301,8 @@
       config:
         type: object
         additionalProperties: true
+      options:
+        $ref: '#/definitions/DHCPOptions'
 
   AppKea:
     type: object

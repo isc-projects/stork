@@ -61,6 +61,30 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 		dbDaemon.KeaDaemon.Config.HideSensitiveData()
 	}
 
+	var options *models.DHCPOptions
+	if dbDaemon.KeaDaemon.Config.IsDHCPv4() || dbDaemon.KeaDaemon.Config.IsDHCPv6() {
+		ipType := storkutil.IPType(4)
+		if dbDaemon.KeaDaemon.Config.IsDHCPv6() {
+			ipType = storkutil.IPType(6)
+		}
+
+		var convertedOptions []dbmodel.DHCPOption
+		for _, option := range dbDaemon.KeaDaemon.Config.GetDHCPOptions() {
+			convertedOption, err := dbmodel.NewDHCPOptionFromKea(
+				option, ipType, r.DHCPOptionDefinitionLookup,
+			)
+			if err != nil {
+				continue
+			}
+			convertedOptions = append(convertedOptions, *convertedOption)
+		}
+
+		options = &models.DHCPOptions{
+			OptionsHash: keaconfig.NewHasher().Hash(convertedOptions),
+			Options:     r.unflattenDHCPOptions(convertedOptions, "", 0),
+		}
+	}
+
 	rsp := services.NewGetDaemonConfigOK().WithPayload(&models.KeaDaemonConfig{
 		DaemonID:   dbDaemon.GetID(),
 		AppID:      dbDaemon.App.GetID(),
@@ -69,6 +93,7 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 		DaemonName: dbDaemon.GetName(),
 		Editable:   dbDaemon.Monitored && dbDaemon.Active,
 		Config:     dbDaemon.KeaDaemon.Config,
+		Options:    options,
 	})
 	return rsp
 }

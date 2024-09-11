@@ -625,6 +625,73 @@ func TestGetDaemonConfigForDatabaseError(t *testing.T) {
 	require.Equal(t, msg, *defaultRsp.Payload.Message)
 }
 
+// Test that the converted DHCP options are included in the response.
+func TestGetDaemonConfigWithDHCPOptions(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fd := &storktest.FakeDispatcher{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	rapi, _ := NewRestAPI(dbSettings, db, fa, fd, lookup)
+	ctx := context.Background()
+
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	ctx, _ = rapi.SessionManager.Load(ctx, "")
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, m)
+
+	app := &dbmodel.App{
+		MachineID: m.ID,
+		Machine:   m,
+		Type:      dbmodel.AppTypeKea,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "localhost",
+				Port:    1234,
+			},
+		},
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
+		},
+	}
+
+	app.Daemons[0].SetConfigFromJSON(`{
+		"Dhcp4": {
+			"option-data": [{
+				"always-send": true,
+				"code": 3,
+				"csv-format": true,
+				"data": "192.0.3.1",
+				"name": "routers",
+				"space": "dhcp4"
+			}]
+		}
+	}`)
+
+	daemons, _ := dbmodel.AddApp(db, app)
+
+	params := services.GetDaemonConfigParams{
+		ID: daemons[0].ID,
+	}
+
+	// Act
+	rsp := rapi.GetDaemonConfig(ctx, params)
+
+	// Assert
+	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonConfigOK)
+	require.NotEmpty(t, okRsp.Payload)
+	require.NotEmpty(t, okRsp.Payload.Options)
+}
+
 // Test that config review reports are successfully retrieved for a daemon.
 func TestGetDaemonConfigReports(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
