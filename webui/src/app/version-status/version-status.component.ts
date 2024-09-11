@@ -19,6 +19,8 @@ export class VersionStatusComponent implements OnInit {
 
     @Input({ required: true }) version: string
 
+    @Input() showAppName = false
+
     appName: string
 
     isDevelopmentVersion: boolean
@@ -88,7 +90,7 @@ export class VersionStatusComponent implements OnInit {
         // case - development version
         if (this.isDevelopmentVersion === true && this.versionsMetadata[this.app]?.hasOwnProperty('latestDev')) {
             if (lt(this.version, (this.versionsMetadata[this.app] as VersionMetadata).latestDev)) {
-                this.feedback = `You are using ${this.appName} development release ${this.version}. Latest development release is ${(this.versionsMetadata[this.app] as VersionMetadata).latestDev}. Please consider updating.`
+                this.feedback = `You are using ${this.appName} development version ${this.version}. Latest development version is ${(this.versionsMetadata[this.app] as VersionMetadata).latestDev}. Please consider updating.`
                 this.severity = 'warning'
                 this.iconClasses = { 'text-orange-400': true, 'pi-exclamation-triangle': true }
             } else {
@@ -106,7 +108,7 @@ export class VersionStatusComponent implements OnInit {
                 }
                 this.feedback = [
                     this.feedback,
-                    `Please be advised that using dev release in production is not recommended! Consider updating ${this.appName} to the latest stable.`,
+                    `Please be advised that using development version in production is not recommended! Consider using ${this.appName} stable release.`,
                 ].join(' ')
             }
         }

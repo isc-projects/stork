@@ -273,7 +273,7 @@ sudo ./stork-install-agent.sh</textarea
     >
         <ng-template pTemplate="emptymessage" let-columns>
             <tr>
-                <td [attr.colspan]="showUnauthorized ? 5 : 12" style="padding: 20px 20px 20px 20px; font-size: 1.1em">
+                <td [attr.colspan]="showUnauthorized ? 5 : 13" style="padding: 20px 20px 20px 20px; font-size: 1.1em">
                     <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
                     No {{ showUnauthorized ? 'unauthorized' : 'authorized' }} machines found.
                     <span *ngIf="machinesTable.hasFilter()">
@@ -320,6 +320,7 @@ sudo ./stork-install-agent.sh</textarea
                     >
                 </th>
                 <th style="width: 4.5rem">Agent Version</th>
+                <th class="w-4rem">Apps Version</th>
                 <th style="width: 7rem">Daemons</th>
                 <th style="width: 4rem">CPUs</th>
                 <th style="width: 8rem">
@@ -389,6 +390,15 @@ sudo ./stork-install-agent.sh</textarea
                 <td>
                     {{ m.agentVersion }}
                     <app-version-status app="stork" [version]="m.agentVersion"></app-version-status>
+                </td>
+                <td>
+                    <ng-container *ngFor="let a of m.apps"
+                        ><app-version-status
+                            [app]="a.type"
+                            [version]="a.version"
+                            [showAppName]="true"
+                        ></app-version-status
+                    ></ng-container>
                 </td>
                 <td>
                     <div *ngFor="let a of m.apps">
