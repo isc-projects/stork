@@ -1,6 +1,6 @@
 <div class="mb-5" *ngIf="hasStats || hasUtilization">
     <div *ngIf="title" class="flex justify-content-center font-bold">{{ title }}</div>
-    <div *ngIf="hasUtilization" class="flex justify-content-center">
+    <div *ngIf="chartCase !== 'invalid' && hasUtilization" class="flex justify-content-center">
         {{ isPD ? 'Prefix' : 'Address' }} Utilization ({{ utilization.toFixed(0) }}%)
     </div>
     <div class="flex justify-content-center mb-3" *ngIf="!!data">
@@ -10,20 +10,30 @@
         <table>
             <tr>
                 <td class="whitespace-no-wrap">Total {{ isPD ? 'Prefixes' : 'Addresses' }}:</td>
-                <td class="pl-2"><app-human-count [value]="total"></app-human-count></td>
+                <td class="pl-2"><app-human-count [value]="total | positive"></app-human-count></td>
+            </tr>
+            <tr *ngIf="chartCase === 'valid'">
+                <td class="whitespace-no-wrap">Assigned {{ isPD ? 'Prefixes' : 'Addresses' }}:</td>
+                <td class="pl-2"><app-human-count [value]="assigned | positive"></app-human-count></td>
             </tr>
             <tr>
-                <td class="whitespace-no-wrap">Assigned {{ isPD ? 'Prefixes' : 'Addresses' }}:</td>
-                <td class="pl-2"><app-human-count [value]="assigned"></app-human-count></td>
+                <td class="whitespace-no-wrap">Free {{ isPD ? 'Prefixes' : 'Addresses' }}:</td>
+                <td class="pl-2"><app-human-count [value]="free | positive"></app-human-count></td>
             </tr>
-            <tr *ngIf="!isPD">
-                <td class="whitespace-no-wrap">Used Addresses:</td>
-                <td class="pl-2"><app-human-count [value]="used"></app-human-count></td>
-            </tr>
-            <tr *ngIf="leaseType !== 'pd'">
-                <td class="whitespace-no-wrap">Declined Addresses:</td>
-                <td class="pl-2"><app-human-count [value]="declined"></app-human-count></td>
-            </tr>
+            <ng-container *ngIf="!isPD">
+                <tr *ngIf="chartCase === 'valid'">
+                    <td class="whitespace-no-wrap">Used Addresses:</td>
+                    <td class="pl-2"><app-human-count [value]="used | positive"></app-human-count></td>
+                </tr>
+                <tr *ngIf="chartCase === 'invalid'">
+                    <td class="whitespace-no-wrap">Uncertain Addresses:</td>
+                    <td class="pl-2"><app-human-count [value]="uncertain | positive"></app-human-count></td>
+                </tr>
+                <tr>
+                    <td class="whitespace-no-wrap">Declined Addresses:</td>
+                    <td class="pl-2"><app-human-count [value]="declined | positive"></app-human-count></td>
+                </tr>
+            </ng-container>
         </table>
     </div>
 </div>

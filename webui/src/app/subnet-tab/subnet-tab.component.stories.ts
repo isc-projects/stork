@@ -32,6 +32,7 @@ import { HttpClientModule } from '@angular/common/http'
 import { ToastModule } from 'primeng/toast'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { RouterModule, provideRouter } from '@angular/router'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 export default {
     title: 'App/SubnetTab',
@@ -77,6 +78,7 @@ export default {
                 HumanCountPipe,
                 LocalNumberPipe,
                 PlaceholderPipe,
+                PositivePipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],

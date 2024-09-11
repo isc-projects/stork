@@ -11,6 +11,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 describe('UtilizationStatsChartsComponent', () => {
     let component: UtilizationStatsChartsComponent
@@ -24,6 +25,7 @@ describe('UtilizationStatsChartsComponent', () => {
                 HumanCountPipe,
                 LocalNumberPipe,
                 PlaceholderPipe,
+                PositivePipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
             ],

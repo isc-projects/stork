@@ -36,6 +36,7 @@ import { RouterModule } from '@angular/router'
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -77,6 +78,7 @@ describe('SubnetTabComponent', () => {
                 LocalNumberPipe,
                 ParameterViewComponent,
                 PlaceholderPipe,
+                PositivePipe,
                 SubnetTabComponent,
                 UncamelPipe,
                 UnhyphenPipe,

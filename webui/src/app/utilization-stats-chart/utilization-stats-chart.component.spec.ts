@@ -8,6 +8,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { TooltipModule } from 'primeng/tooltip'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 describe('UtilizationStatsChartComponent', () => {
     let component: UtilizationStatsChartComponent
@@ -16,7 +17,13 @@ describe('UtilizationStatsChartComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [ChartModule, NoopAnimationsModule, TooltipModule],
-            declarations: [HumanCountComponent, HumanCountPipe, LocalNumberPipe, UtilizationStatsChartComponent],
+            declarations: [
+                HumanCountComponent,
+                HumanCountPipe,
+                LocalNumberPipe,
+                PositivePipe,
+                UtilizationStatsChartComponent,
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(UtilizationStatsChartComponent)
@@ -34,7 +41,7 @@ describe('UtilizationStatsChartComponent', () => {
             addrUtilization: 48.123,
             stats: {
                 'total-addresses': 256,
-                'assigned-addresses': 128,
+                'assigned-addresses': 127,
                 'declined-addresses': 11,
             },
         }
@@ -43,22 +50,24 @@ describe('UtilizationStatsChartComponent', () => {
 
         expect(component.utilization).toBe(48.123)
         expect(component.total).toBe(BigInt(256))
-        expect(component.assigned).toBe(BigInt(128))
+        expect(component.assigned).toBe(BigInt(127))
         expect(component.declined).toBe(BigInt(11))
 
         expect(fixture.debugElement.nativeElement.innerText).toContain('Address Utilization (48%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(4)
+        expect(stats.length).toBe(5)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
         expect(stats[0].nativeElement.innerText).toContain('256')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Addresses')
-        expect(stats[1].nativeElement.innerText).toContain('128')
-        expect(stats[2].nativeElement.innerText).toContain('Used Addresses')
-        expect(stats[2].nativeElement.innerText).toContain('117')
-        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
-        expect(stats[3].nativeElement.innerText).toContain('11')
+        expect(stats[1].nativeElement.innerText).toContain('127')
+        expect(stats[2].nativeElement.innerText).toContain('Free Addresses')
+        expect(stats[2].nativeElement.innerText).toContain('129')
+        expect(stats[3].nativeElement.innerText).toContain('Used Addresses')
+        expect(stats[3].nativeElement.innerText).toContain('116')
+        expect(stats[4].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[4].nativeElement.innerText).toContain('11')
     })
 
     it('should initialize all DHCPv6 address stats', () => {
@@ -82,16 +91,18 @@ describe('UtilizationStatsChartComponent', () => {
         expect(fixture.debugElement.nativeElement.innerText).toContain('Address Utilization (90%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(4)
+        expect(stats.length).toBe(5)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
         expect(stats[0].nativeElement.innerText).toContain('6.0k')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Addresses')
         expect(stats[1].nativeElement.innerText).toContain('2.0k')
-        expect(stats[2].nativeElement.innerText).toContain('Used Addresses')
-        expect(stats[2].nativeElement.innerText).toContain('1.9k')
-        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
-        expect(stats[3].nativeElement.innerText).toContain('100')
+        expect(stats[2].nativeElement.innerText).toContain('Free Addresses')
+        expect(stats[2].nativeElement.innerText).toContain('4.0k')
+        expect(stats[3].nativeElement.innerText).toContain('Used Addresses')
+        expect(stats[3].nativeElement.innerText).toContain('1.9k')
+        expect(stats[4].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[4].nativeElement.innerText).toContain('100')
     })
 
     it('should initialize all prefix stats', () => {
@@ -116,12 +127,14 @@ describe('UtilizationStatsChartComponent', () => {
         expect(fixture.debugElement.nativeElement.innerText).toContain('Prefix Utilization (50%)')
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
-        expect(stats.length).toBe(2)
+        expect(stats.length).toBe(3)
 
         expect(stats[0].nativeElement.innerText).toContain('Total Prefixes')
         expect(stats[0].nativeElement.innerText).toContain('1.0k')
         expect(stats[1].nativeElement.innerText).toContain('Assigned Prefixes')
         expect(stats[1].nativeElement.innerText).toContain('498')
+        expect(stats[2].nativeElement.innerText).toContain('Free Prefixes')
+        expect(stats[2].nativeElement.innerText).toContain('502')
     })
 
     it('should use address utilization when other stats are not available', () => {
@@ -188,5 +201,67 @@ describe('UtilizationStatsChartComponent', () => {
 
         const stats = fixture.debugElement.queryAll(By.css('tr'))
         expect(stats.length).toBe(0)
+    })
+
+    it('should show uncertain addresses when there are no free addresses', () => {
+        component.leaseType = 'na'
+        component.network = {
+            addrUtilization: 100,
+            stats: {
+                'total-addresses': 256,
+                'assigned-addresses': 127,
+                'declined-addresses': 240,
+            },
+        }
+
+        fixture.detectChanges()
+
+        expect(component.utilization).toBe(100)
+        expect(component.total).toBe(BigInt(256))
+        expect(component.assigned).toBe(BigInt(127))
+        expect(component.declined).toBe(BigInt(240))
+
+        const stats = fixture.debugElement.queryAll(By.css('tr'))
+        expect(stats.length).toBe(4)
+
+        expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
+        expect(stats[0].nativeElement.innerText).toContain('256')
+        expect(stats[1].nativeElement.innerText).toContain('Free Addresses')
+        expect(stats[1].nativeElement.innerText).toContain('0')
+        expect(stats[2].nativeElement.innerText).toContain('Uncertain Addresses')
+        expect(stats[2].nativeElement.innerText).toContain('16')
+        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[3].nativeElement.innerText).toContain('240')
+    })
+
+    it('should show uncertain addresses when there are free addresses', () => {
+        component.leaseType = 'na'
+        component.network = {
+            addrUtilization: 100,
+            stats: {
+                'total-addresses': 512,
+                'assigned-addresses': 4,
+                'declined-addresses': 120,
+            },
+        }
+
+        fixture.detectChanges()
+
+        expect(component.utilization).toBe(100)
+        expect(component.total).toBe(BigInt(512))
+        expect(component.assigned).toBe(BigInt(4))
+        expect(component.declined).toBe(BigInt(120))
+
+        const stats = fixture.debugElement.queryAll(By.css('tr'))
+        expect(stats.length).toBe(4)
+
+        expect(stats[0].nativeElement.innerText).toContain('Total Addresses')
+        expect(stats[0].nativeElement.innerText).toContain('512')
+        expect(stats[1].nativeElement.innerText).toContain('Free Addresses')
+        expect(stats[1].nativeElement.innerText).toContain('388')
+        expect(stats[2].nativeElement.innerText).toContain('Uncertain Addresses')
+        expect(stats[2].nativeElement.innerText).toContain('4')
+        expect(stats[3].nativeElement.innerText).toContain('Declined Addresses')
+        expect(stats[3].nativeElement.innerText).toContain('120')
     })
 })

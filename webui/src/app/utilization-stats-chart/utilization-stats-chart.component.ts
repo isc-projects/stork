@@ -4,6 +4,7 @@ import { Subnet } from '../backend/model/subnet'
 import { SharedNetwork } from '../backend/model/sharedNetwork'
 import { clamp } from '../utils'
 import { LocalSubnet } from '../backend'
+import {} from 'chart.js'
 
 /**
  * A component displaying a pie chart with address or delegated prefix utilization
@@ -28,22 +29,45 @@ export class UtilizationStatsChartComponent {
     /**
      * Total number of leases fetched from the statistics.
      */
-    total: bigint | number = null
+    total: bigint = null
 
     /**
      * Number of assigned leases fetched from the statistics.
      */
-    assigned: bigint | number = null
+    assigned: bigint = null
 
     /**
      * Number of declined leases fetched from the statistics.
      */
-    declined: bigint | number = null
+    declined: bigint = null
 
     /**
      * Address or delegated prefix utilization fetched from the statistics.
      */
     utilization: number = null
+
+    /**
+     * Specifies which type of a chart is currently displayed.
+     *
+     * There are three different cases this component supports:
+     * - when detailed statistics are specified and the statistics are
+     *   valid (i.e., numbers are consistent and the number of assigned
+     *   leases is greater or equal the number of declined leases);
+     * - when detailed statistics are not available but the utilization
+     *   percentages are specified;
+     * - when the number of assigned addresses is lower than the number of
+     *   declined addresses.
+     *
+     * The last case is rare but it is possible due to the bug #3565 in Kea.
+     * In this case, it is impossible to determine whether or not the assigned
+     * leases include the declined leases. Thus, it is also impossible to
+     * exactly tell how many leases in the subnet or shared network are still
+     * free. There is some pool of free leases that can be estimated. Availability
+     * of the other leases is uncertain. Thus, this component introduces the
+     * metrics of uncertain addresses. These addresses can be free but can be
+     * unavailable as well.
+     */
+    chartCase: 'valid' | 'utilization' | 'invalid' | null = null
 
     /**
      * Optional chart title displayed at the top.
@@ -92,20 +116,6 @@ export class UtilizationStatsChartComponent {
         // of data (i.e., free leases and assigned leases).
         const documentStyle = getComputedStyle(document.documentElement)
 
-        const dataset = {
-            data: [],
-            backgroundColor: [
-                documentStyle.getPropertyValue('--blue-500'),
-                documentStyle.getPropertyValue('--yellow-500'),
-            ],
-            hoverBackgroundColor: [
-                documentStyle.getPropertyValue('--blue-400'),
-                documentStyle.getPropertyValue('--yellow-400'),
-            ],
-        }
-
-        let hasValidStats = false
-
         if (this.hasStats) {
             // The chart cannot handle the big integers. Typically, the statistics fit
             // into the 64-bit integers, so this is not a big deal. Let's try to convert
@@ -118,45 +128,91 @@ export class UtilizationStatsChartComponent {
             // The total of 0 also cannot be presented on the chart, so we fallback to the percentages
             // in this case. Also, if the assigned and declined counters are too high to fit into
             // 64-bits or they don't make any sense we'd rather use the percentages.
-            if (
-                total64 &&
-                assigned64 != null &&
-                declined64 != null &&
-                total64 - assigned64 >= 0 &&
-                assigned64 - declined64 >= 0
-            ) {
-                hasValidStats = true
+            if (total64 && assigned64 != null && declined64 != null && total64 >= assigned64 && total64 >= declined64) {
+                if (assigned64 >= declined64) {
+                    // Per Kea design, the assigned leases should include declined leases as well.
+                    // If this is the case, we proceed with a valid scenario in which the
+                    // chart contains free, used and possibly declined leases.
+                    this.chartCase = 'valid'
+                    this.data = {
+                        labels: ['Free', 'Used'].concat(!this.isPD ? 'Declined' : []),
+                        datasets: [
+                            {
+                                data: [total64 - assigned64, assigned64 - declined64].concat(
+                                    !this.isPD ? declined64 : []
+                                ),
+                                backgroundColor: [
+                                    documentStyle.getPropertyValue('--green-500'),
+                                    documentStyle.getPropertyValue('--red-500'),
+                                ].concat(!this.isPD ? documentStyle.getPropertyValue('--gray-500') : []),
+                                hoverBackgroundColor: [
+                                    documentStyle.getPropertyValue('--green-400'),
+                                    documentStyle.getPropertyValue('--red-400'),
+                                ].concat(!this.isPD ? documentStyle.getPropertyValue('--gray-400') : []),
+                            },
+                        ],
+                    }
+                    // Calculate the utilization from the statistics if it is missing.
+                    if (!this.hasUtilization) {
+                        this.utilization = clamp((assigned64 / total64) * 100, 0, 100)
+                    }
+                } else {
+                    // We're getting into an interesting scenario whereby the number of declined
+                    // leases exceeds the number of assigned leases. This shouldn't happen but
+                    // it somtimes does when client declines an expired or released (unassigned)
+                    // lease. In this case, we use "uncertain" metrics instead of "used" metrics
+                    // in the chart. The uncertain addresses are those for which we're unable to
+                    // tell whether they are allocated, declined or free.
 
-                // The total numbers are correct, so we can present them on the chart.
-                dataset.data = [total64 - assigned64, assigned64 - declined64]
-                this.data = {
-                    labels: ['free', 'used'],
-                    datasets: [dataset],
+                    // Estimate the number of uncertain leases by taking the worst case when
+                    // none of the assigned addresses include the declined addresses. In this
+                    // case, if we add declined and assigned, the remaining addresses to total
+                    // can be assumed free. All assigned addresses are marked uncertain because
+                    // we don't know whether they are in fact assigned or declined.
+                    const uncertain64 = Math.min(total64 - declined64, assigned64)
+                    const free64 = total64 - uncertain64 - declined64
+                    this.chartCase = 'invalid'
+                    this.data = {
+                        labels: ['Free', 'Uncertain', 'Declined'],
+                        datasets: [
+                            {
+                                data: [free64, uncertain64, declined64],
+                                backgroundColor: [
+                                    documentStyle.getPropertyValue('--green-500'),
+                                    documentStyle.getPropertyValue('--orange-500'),
+                                    documentStyle.getPropertyValue('--surface-700'),
+                                ],
+                                hoverBackgroundColor: [
+                                    documentStyle.getPropertyValue('--green-400'),
+                                    documentStyle.getPropertyValue('--orange-400'),
+                                    documentStyle.getPropertyValue('--surface-600'),
+                                ],
+                            },
+                        ],
+                    }
                 }
-                // Only addresses can be declined, so we don't include this statistic for
-                // prefix delegation.
-                if (!this.isPD) {
-                    this.data.labels.push('declined')
-                    dataset.data.push(declined64)
-                    dataset.backgroundColor.push(documentStyle.getPropertyValue('--red-500'))
-                    dataset.hoverBackgroundColor.push(documentStyle.getPropertyValue('--red-400'))
-                }
-
-                // Calculate the utilization from the statistics if it is missing.
-                if (!this.hasUtilization) {
-                    this.utilization = clamp((assigned64 / total64) * 100, 0, 100)
-                }
+                return
             }
         }
-
         // If the stats are invalid or missing, we fallback to the utilization.
-        if (!hasValidStats && this.hasUtilization) {
-            dataset.data = [100 - this.utilization, this.utilization]
+        if (this.hasUtilization) {
+            this.chartCase = 'utilization'
             this.data = {
-                labels: ['% free', '% used'],
-                datasets: [dataset],
+                labels: ['% Free', '% Used'],
+                datasets: [
+                    {
+                        data: [100 - this.utilization, this.utilization],
+                        backgroundColor: [
+                            documentStyle.getPropertyValue('--green-500'),
+                            documentStyle.getPropertyValue('--red-500'),
+                        ],
+                        hoverBackgroundColor: [
+                            documentStyle.getPropertyValue('--green-400'),
+                            documentStyle.getPropertyValue('--red-400'),
+                        ],
+                    },
+                ],
             }
-            return
         }
     }
 
@@ -187,8 +243,41 @@ export class UtilizationStatsChartComponent {
     /**
      * It is calculated by subtracting declined from assigned addresses.
      */
-    get used(): bigint | number {
-        return (this.assigned as bigint) - (this.declined as bigint)
+    get used(): bigint {
+        return this.assigned - this.declined
+    }
+
+    /**
+     * Returns the number of free leases.
+     *
+     * It takes into account two cases. In the normal case, the number of free leases
+     * is simply a difference between the total and assigned addresses because assigned
+     * include declined ones. If, however, the number of declines is greater than the
+     * number of assigned we assume a worst case scenario that assigned include no declined
+     * addresses. In this case, we also substract the number of declined leases to estimate
+     * free leases. Note that this function may return a negative value.
+     */
+    get free(): bigint {
+        let free = this.total - this.assigned
+        if (this.assigned < this.declined) {
+            free -= this.declined
+        }
+        return free
+    }
+
+    /**
+     * Returns the number of leases with uncertain state.
+     *
+     * This metric is only meaningful when the number of declined addresses
+     * exceeds the number of assigned addresses. This normally shouldn't be
+     * the case because assigned addresses should include the declined addresses.
+     * However, due to the bug #3565 in Kea the number of assigned and declined
+     * leases may get inconsistent.  In this case, the proportions between the
+     * declined and valid leases in the assigned metrics cannot be determined.
+     * Thus, the non-declined leases are marked as having an uncertain state.
+     */
+    get uncertain(): bigint {
+        return this.assigned < this.total - this.declined ? this.assigned : this.total - this.declined
     }
 
     /**
@@ -197,7 +286,7 @@ export class UtilizationStatsChartComponent {
      * @param stat statistic to be converted to a 64-bit number.
      * @returns converted number or null if the value is too high.
      */
-    private clampTo64(stat: bigint | number): number | null {
+    private clampTo64(stat: bigint): number | null {
         if (!stat) {
             return 0
         }

@@ -38,6 +38,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { UncamelPipe } from '../pipes/uncamel.pipe'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
@@ -60,6 +61,7 @@ describe('SharedNetworkTabComponent', () => {
                 LocalNumberPipe,
                 ParameterViewComponent,
                 PlaceholderPipe,
+                PositivePipe,
                 UncamelPipe,
                 UnhyphenPipe,
                 SharedNetworkTabComponent,

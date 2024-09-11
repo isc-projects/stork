@@ -57,6 +57,7 @@ import { SharedNetworksTableComponent } from '../shared-networks-table/shared-ne
 import { PanelModule } from 'primeng/panel'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -117,6 +118,7 @@ describe('SharedNetworksPageComponent', () => {
                 LocalNumberPipe,
                 DelegatedPrefixBarComponent,
                 PlaceholderPipe,
+                PositivePipe,
                 SharedNetworkFormComponent,
                 SharedNetworksPageComponent,
                 SharedNetworkTabComponent,

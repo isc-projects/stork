@@ -5,6 +5,7 @@ import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
+import { PositivePipe } from '../pipes/positive.pipe'
 
 export default {
     title: 'App/UtilizationStatsChart',
@@ -15,7 +16,7 @@ export default {
         }),
         moduleMetadata({
             imports: [ChartModule, TooltipModule],
-            declarations: [HumanCountComponent, HumanCountPipe, LocalNumberPipe],
+            declarations: [HumanCountComponent, HumanCountPipe, LocalNumberPipe, PositivePipe],
         }),
     ],
 } as Meta
@@ -82,6 +83,34 @@ export const NoDetailedStats: Story = {
         network: {
             addrUtilization: 50,
             stats: {},
+        },
+    },
+}
+
+export const DeclinesExceedAssignedWithFree: Story = {
+    args: {
+        leaseType: 'na',
+        network: {
+            addrUtilization: 34,
+            stats: {
+                'total-addresses': 847,
+                'assigned-addresses': 100,
+                'declined-addresses': 570,
+            },
+        },
+    },
+}
+
+export const DeclinesExceedAssignedNoFree: Story = {
+    args: {
+        leaseType: 'na',
+        network: {
+            addrUtilization: 34,
+            stats: {
+                'total-addresses': 847,
+                'assigned-addresses': 315,
+                'declined-addresses': 570,
+            },
         },
     },
 }

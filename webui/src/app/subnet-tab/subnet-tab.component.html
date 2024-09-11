@@ -44,7 +44,20 @@
                         <span class="monospace">used</span> - the number of allocated leases excluding declined leases.
                     </li>
                     <li><span class="monospace">declined</span> - the number of declined leases.</li>
+                    <li>
+                        <span class="monospace">uncertain</span> - optional statistics only presented when the number of
+                        declined leases is greater than assigned (see below).
+                    </li>
                 </ul>
+                <p>
+                    There are rare cases when a Kea server can return inconsistent statistics, with the number of
+                    declined leases greater than assigned leases. It may happen when some of the DHCP clients decline
+                    already released or expired leases. These leases are not counted as assigned, but the declined
+                    statistics is affected. Stork deals with such cases by introducing the uncertain leases count. It
+                    holds an estimated number of leases for which it is unclear whether they are allocated, declined or
+                    free. This statistic is only computed and presented when the number of declined leases is greater
+                    than assigned.
+                </p>
                 <p>
                     The DHCP parameters can be specified at different configuration levels and the subnet configuration
                     can inherit them from the gloal and/or shared network level. The list below contains all parameters
