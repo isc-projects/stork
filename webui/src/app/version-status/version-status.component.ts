@@ -225,17 +225,17 @@ export class VersionStatusComponent implements OnInit {
                         if (lt(this.version, details.version)) {
                             this.setSeverity(
                                 'warning',
-                                `Latest stable ${this.appName} version known as of ${this.extendedMetadata.date} is ${details.version}. You are using ${this.version}. Update is recommended.`
+                                `Current stable ${this.appName} version known as of ${this.extendedMetadata.date} is ${details.version}. You are using ${this.version}. Update is recommended.`
                             )
                         } else if (gt(this.version, details.version)) {
                             this.setSeverity(
                                 'info',
-                                `Latest stable ${this.appName} version known as of ${this.extendedMetadata.date} is ${details.version}. You are using more recent version ${this.version}.`
+                                `Current stable ${this.appName} version known as of ${this.extendedMetadata.date} is ${details.version}. You are using more recent version ${this.version}.`
                             )
                         } else {
                             this.setSeverity(
                                 'success',
-                                `You have the latest ${this.appName} stable version known as of ${this.extendedMetadata.date}.`
+                                `You have current ${this.appName} stable version known as of ${this.extendedMetadata.date}.`
                             )
                         }
                         return
@@ -267,17 +267,17 @@ export class VersionStatusComponent implements OnInit {
             if (lt(this.version, (this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version)) {
                 this.setSeverity(
                     'warning',
-                    `You are using ${this.appName} development version ${this.version}. Latest development version known as of ${this.extendedMetadata.date} is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. Please consider updating.`
+                    `You are using ${this.appName} development version ${this.version}. Current development version known as of ${this.extendedMetadata.date} is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. Please consider updating.`
                 )
             } else if (gt(this.version, (this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version)) {
                 this.setSeverity(
                     'info',
-                    `Latest development ${this.appName} version known as of ${this.extendedMetadata.date} is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. You are using more recent version ${this.version}.`
+                    `Current development ${this.appName} version known as of ${this.extendedMetadata.date} is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. You are using more recent version ${this.version}.`
                 )
             } else {
                 this.setSeverity(
                     'success',
-                    `You have the latest ${this.appName} development version known as of ${this.extendedMetadata.date}.`
+                    `You have current ${this.appName} development version known as of ${this.extendedMetadata.date}.`
                 )
             }
             if (this.extendedMetadata[this.app]?.hasOwnProperty('currentStable')) {
