@@ -7,20 +7,23 @@ interface VersionMetadata {
     latestSecure?: string
 }
 
-interface VersionDetails {
+export interface VersionDetails {
     version: string
     releaseDate: string
     eolDate?: string
     ESV?: string
+    status?: string
+    major?: number
+    minor?: number
 }
 
-interface AppVersionMetadata {
+export interface AppVersionMetadata {
     currentStable?: VersionDetails[]
     latestDev: VersionDetails
     latestSecure?: VersionDetails
 }
 
-type App = 'kea' | 'bind9' | 'stork'
+export type App = 'kea' | 'bind9' | 'stork'
 
 @Component({
     selector: 'app-version-status',

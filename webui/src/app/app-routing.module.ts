@@ -22,6 +22,7 @@ import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page/config-checker-preference-page.component'
 import { CommunicationStatusPageComponent } from './communication-status-page/communication-status-page.component'
 import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page/kea-global-configuration-page.component'
+import { VersionPageComponent } from './version-page/version-page.component'
 
 const routes: Routes = [
     {
@@ -169,6 +170,11 @@ const routes: Routes = [
     {
         path: 'review-checkers',
         component: ConfigCheckerPreferencePageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'versions',
+        component: VersionPageComponent,
         canActivate: [AuthGuard],
     },
 

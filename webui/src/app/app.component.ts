@@ -151,6 +151,12 @@ export class AppComponent implements OnInit, OnDestroy {
                         icon: 'fa fa-signal',
                         routerLink: '/communication',
                     },
+                    {
+                        label: 'Software versions',
+                        id: 'versions',
+                        icon: 'pi pi-history',
+                        routerLink: '/versions',
+                    },
                 ],
             },
             {

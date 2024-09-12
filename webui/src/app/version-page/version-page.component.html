@@ -1,1 +1,95 @@
-<p>version-page works!</p>
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>
+            This page displays information about current versions of ISC software that may be used in your Stork
+            deployment.
+        </p>
+    </div>
+</app-breadcrumbs>
+<div class="max-w-100rem">
+    <p-panel header="Kea current releases">
+        <p-table [value]="keaVersions" styleClass="p-datatable-striped">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Version</th>
+                    <th>Status</th>
+                    <th>Documentation</th>
+                    <th>Release date</th>
+                    <th>EoL Date</th>
+                    <th>Download</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-v>
+                <tr>
+                    <td>{{ v.version }}</td>
+                    <td>{{ v.status }}</td>
+                    <td>
+                        Kea ARM (<a href="https://kea.readthedocs.io/en/kea-{{ v.version }}/" target="_blank">HTML</a>)
+                        <br />
+                        Release Notes (<a
+                            href="https://downloads.isc.org/isc/kea/{{ v.version }}/Kea-{{
+                                v.version
+                            }}-ReleaseNotes.txt"
+                            target="_blank"
+                            >TXT</a
+                        >)
+                    </td>
+                    <td>
+                        {{ v.releaseDate | date: 'MMMM YYYY' }}
+                    </td>
+                    <td>
+                        {{ v.eolDate | date: 'MMMM YYYY' }}
+                    </td>
+                    <td>
+                        Download (<a
+                            target="_blank"
+                            href="https://cloudsmith.io/~isc/repos/kea-{{
+                                v.status === 'Development' ? 'dev' : v.major + '-' + v.minor
+                            }}/packages/"
+                            >Packages</a
+                        ><a
+                            target="_blank"
+                            class="ml-2"
+                            href="https://dl.cloudsmith.io/public/isc/kea-{{
+                                v.status === 'Development' ? 'dev' : v.major + '-' + v.minor
+                            }}/raw/versions/{{ v.version }}/kea-{{ v.version }}.tar.gz"
+                            >Tarball</a
+                        >)
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-panel>
+    <p-panel header="Bind 9 current releases" styleClass="mt-3">
+        <p-table [value]="bind9Versions" styleClass="p-datatable-striped">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Version</th>
+                    <th>Status</th>
+                    <th>Documentation</th>
+                    <th>Release date</th>
+                    <th>EoL Date</th>
+                    <th>Download</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-v>
+                <tr>
+                    <td>{{ v.version }}</td>
+                    <td>{{ v.status }}<ng-container *ngIf="v.ESV">, ESV</ng-container></td>
+                    <td>
+                        Bind {{ v.major + '.' + v.minor }} ARM (<a href="tbd" target="_blank">HTML</a>)
+                        <br />
+                        Release Notes (<a href="tbd" target="_blank">TXT</a>)
+                    </td>
+                    <td>
+                        {{ v.releaseDate | date: 'MMMM YYYY' }}
+                    </td>
+                    <td>
+                        {{ v.eolDate | date: 'MMMM YYYY' }}
+                    </td>
+                    <td>Download (<a href="tbd">Packages</a><a class="ml-2" href="tbd">Tarball</a>)</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-panel>
+</div>
