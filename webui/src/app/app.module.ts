@@ -142,6 +142,7 @@ import { KeaGlobalConfigurationViewComponent } from './kea-global-configuration-
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form/kea-global-configuration-form.component'
 import { PositivePipe } from './pipes/positive.pipe'
 import { VersionStatusComponent } from './version-status/version-status.component'
+import { VersionPageComponent } from './version-page/version-page.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -236,6 +237,7 @@ export function cfgFactory() {
         KeaGlobalConfigurationFormComponent,
         PositivePipe,
         VersionStatusComponent,
+        VersionPageComponent,
     ],
     imports: [
         BrowserModule,
