@@ -32,7 +32,7 @@ def test_recovery_after_database_shutdown(
     server_service.overview()
 
 
-@server_parametrize("server-non-debug")
+@server_parametrize("server")
 def test_interrupt_during_database_shutdown(
     server_service: Server, postgres_service: Postgres
 ):

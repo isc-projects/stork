@@ -3,7 +3,7 @@ from core.wrappers import Server, Kea
 from core.compose_factory import create_docker_compose
 
 
-@server_parametrize("server-non-debug")
+@server_parametrize("server")
 def test_reload_server_with_sighup(server_service: Server):
     # Remember current server's PID.
     pid_before = server_service.get_stork_server_pid()
@@ -19,7 +19,7 @@ def test_reload_server_with_sighup(server_service: Server):
 
 
 @kea_parametrize("agent-kea")
-@server_parametrize("server-non-debug")
+@server_parametrize("server")
 def test_reload_agent_with_sighup(server_service: Server, kea_service: Kea):
     # Remember current agent's PID.
     pid_before = kea_service.get_stork_agent_pid()
