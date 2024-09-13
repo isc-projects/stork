@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core'
 import { App, AppVersionMetadata, VersionDetails } from '../version-status/version-status.component'
 import { minor, major } from 'semver'
 
+/**
+ *
+ */
 @Component({
     selector: 'app-version-page',
     templateUrl: './version-page.component.html',
@@ -10,8 +13,11 @@ import { minor, major } from 'semver'
 export class VersionPageComponent implements OnInit {
     keaVersions: VersionDetails[] = []
     bind9Versions: VersionDetails[] = []
-    storkVersions: VersionDetails[]
+    storkVersions: VersionDetails[] = []
 
+    /**
+     *
+     */
     ngOnInit(): void {
         // prepare kea data
         for (let s of (this.extendedMetadata.kea as AppVersionMetadata).currentStable) {
@@ -21,6 +27,7 @@ export class VersionPageComponent implements OnInit {
             record.minor = minor(s.version)
             this.keaVersions.push(record)
         }
+
         let devRecord = (this.extendedMetadata.kea as AppVersionMetadata).latestDev
         devRecord.status = 'Development'
         devRecord.major = major(devRecord.version)
@@ -35,13 +42,34 @@ export class VersionPageComponent implements OnInit {
             record.minor = minor(s.version)
             this.bind9Versions.push(record)
         }
+
         devRecord = (this.extendedMetadata.bind9 as AppVersionMetadata).latestDev
         devRecord.status = 'Development'
         devRecord.major = major(devRecord.version)
         devRecord.minor = minor(devRecord.version)
         this.bind9Versions.push(devRecord)
+
+        // prepare stork data
+        if ((this.extendedMetadata.stork as AppVersionMetadata).currentStable) {
+            for (let s of (this.extendedMetadata.stork as AppVersionMetadata).currentStable) {
+                let record = s
+                record.status = 'Current Stable'
+                record.major = major(s.version)
+                record.minor = minor(s.version)
+                this.storkVersions.push(record)
+            }
+        }
+
+        devRecord = (this.extendedMetadata.stork as AppVersionMetadata).latestDev
+        devRecord.status = 'Development'
+        devRecord.major = major(devRecord.version)
+        devRecord.minor = minor(devRecord.version)
+        this.storkVersions.push(devRecord)
     }
 
+    /**
+     *
+     */
     extendedMetadata: { [a in App | 'date']: AppVersionMetadata | string } = {
         date: '2024-09-01',
         kea: {

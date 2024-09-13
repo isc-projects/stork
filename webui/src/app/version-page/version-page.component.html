@@ -110,4 +110,50 @@
             </ng-template>
         </p-table>
     </p-panel>
+    <p-panel header="Stork current releases" styleClass="mt-3">
+        <p-table [value]="storkVersions" styleClass="p-datatable-striped">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Version</th>
+                    <th>Status</th>
+                    <th>Documentation</th>
+                    <th>Release date</th>
+                    <th>EoL Date</th>
+                    <th>Download</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-v>
+                <tr>
+                    <td>{{ v.version }}</td>
+                    <td>{{ v.status }}</td>
+                    <td>
+                        Stork ARM (<a href="https://stork.readthedocs.io/en/v{{ v.version }}/" target="_blank">HTML</a>)
+                        <br />
+                        Release Notes (<a
+                            href="https://downloads.isc.org/isc/stork/{{ v.version }}/Stork-{{
+                                v.version
+                            }}-ReleaseNotes.txt"
+                            target="_blank"
+                            >TXT</a
+                        >)
+                    </td>
+                    <td>
+                        {{ v.releaseDate | date: 'MMMM YYYY' }}
+                    </td>
+                    <td>
+                        {{ v.eolDate | date: 'MMMM YYYY' }}
+                    </td>
+                    <td>
+                        Download (<a href="https://cloudsmith.io/~isc/repos/stork/groups/" target="_blank">Packages</a
+                        ><a
+                            target="_blank"
+                            class="ml-2"
+                            href="https://downloads.isc.org/isc/stork/{{ v.version }}/stork-{{ v.version }}.tar.gz"
+                            >Tarball</a
+                        >)
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-panel>
 </div>
