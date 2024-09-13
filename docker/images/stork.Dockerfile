@@ -335,9 +335,12 @@ HEALTHCHECK CMD [ "supervisorctl", "status" ]
 FROM internetsystemsconsortium/bind9:${BIND9_VERSION} AS bind
 # Install Bind9 dependencies
 # BIND9 images switched to Alpine 3.20 some time around Aug 2024.
-# The --no-cache prevents any local caching (prevents storing
-# anythin in /var/cache/apk). We use trust-but-verify, so we
-# delete the dir anyway.
+# The --no-cache prevents any local caching (storing anything
+# in /var/cache/apk). We use trust-but-verify, so later we delete
+# the dir anyway.
+#
+# Once we have native musl builds, we should remove the libc6-compat
+# package.
 RUN apk update \
         && apk add \
         --no-cache \
