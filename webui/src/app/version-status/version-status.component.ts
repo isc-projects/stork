@@ -1,12 +1,18 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { valid, minor, lt, major, satisfies, gt, sort } from 'semver'
+import { valid, minor, lt, major, satisfies, gt, sort, coerce } from 'semver'
 
+/**
+ *
+ */
 interface VersionMetadata {
     latestStable?: string
     latestDev?: string
     latestSecure?: string
 }
 
+/**
+ *
+ */
 export interface VersionDetails {
     version: string
     releaseDate: string
@@ -17,37 +23,73 @@ export interface VersionDetails {
     minor?: number
 }
 
+/**
+ *
+ */
 export interface AppVersionMetadata {
     currentStable?: VersionDetails[]
     latestDev: VersionDetails
     latestSecure?: VersionDetails
 }
 
+/**
+ *
+ */
 export type App = 'kea' | 'bind9' | 'stork'
 
+/**
+ *
+ */
 @Component({
     selector: 'app-version-status',
     templateUrl: './version-status.component.html',
     styleUrl: './version-status.component.sass',
 })
 export class VersionStatusComponent implements OnInit {
+    /**
+     *
+     */
     @Input({ required: true }) app: App
 
+    /**
+     *
+     */
     @Input({ required: true }) version: string
 
+    /**
+     *
+     */
     @Input() showAppName = false
 
+    /**
+     *
+     */
     appName: string
 
+    /**
+     *
+     */
     isDevelopmentVersion: boolean
 
+    /**
+     *
+     */
     severity: 'error' | 'warning' | 'success' | 'info'
 
+    /**
+     *
+     */
     iconClasses = {}
 
+    /**
+     *
+     */
     feedback: string
 
     // hardcode for now
+    /**
+     *
+     */
     versionsMetadata: { [a in App | 'date']: VersionMetadata | string } = {
         kea: { latestStable: '2.6.1', latestDev: '2.7.2' },
         stork: { latestDev: '1.18.0', latestSecure: '1.15.1' },
@@ -55,6 +97,9 @@ export class VersionStatusComponent implements OnInit {
         date: '2024-09-10',
     }
 
+    /**
+     *
+     */
     extendedMetadata: { [a in App | 'date']: AppVersionMetadata | string } = {
         date: '2024-09-01',
         kea: {
@@ -106,7 +151,11 @@ export class VersionStatusComponent implements OnInit {
         },
     }
 
+    /**
+     *
+     */
     ngOnInit(): void {
+        this.version = coerce(this.version).version
         if (valid(this.version)) {
             this.appName = this.app[0].toUpperCase() + this.app.slice(1)
             this.appName += this.app === 'stork' ? ' agent' : ''
@@ -118,6 +167,10 @@ export class VersionStatusComponent implements OnInit {
         }
     }
 
+    /**
+     *
+     * @private
+     */
     private checkDevelopmentVersion() {
         if (this.app === 'kea' || this.app === 'bind9') {
             const minorVersion = minor(this.version)
@@ -128,6 +181,10 @@ export class VersionStatusComponent implements OnInit {
         }
     }
 
+    /**
+     *
+     * @private
+     */
     private compareVersions() {
         // check security releases first
         if (
@@ -181,6 +238,12 @@ export class VersionStatusComponent implements OnInit {
         }
     }
 
+    /**
+     *
+     * @param severity
+     * @param feedback
+     * @private
+     */
     private setSeverity(severity: typeof this.severity, feedback: string) {
         this.severity = severity
         this.feedback = feedback
@@ -200,6 +263,10 @@ export class VersionStatusComponent implements OnInit {
         }
     }
 
+    /**
+     *
+     * @private
+     */
     private compareVersionsExt() {
         // todo: consider moving part of this code to service for performance reasons. Case: many machines (e.g. 1000).
 
@@ -228,17 +295,17 @@ export class VersionStatusComponent implements OnInit {
                         if (lt(this.version, details.version)) {
                             this.setSeverity(
                                 'warning',
-                                `Current stable ${this.appName} version known as of ${this.extendedMetadata.date} is ${details.version}. You are using ${this.version}. Update is recommended.`
+                                `Current stable ${this.appName} version (known as of ${this.extendedMetadata.date}) is ${details.version}. You are using ${this.version}. Update is recommended.`
                             )
                         } else if (gt(this.version, details.version)) {
                             this.setSeverity(
                                 'info',
-                                `Current stable ${this.appName} version known as of ${this.extendedMetadata.date} is ${details.version}. You are using more recent version ${this.version}.`
+                                `Current stable ${this.appName} version (known as of ${this.extendedMetadata.date}) is ${details.version}. You are using more recent version ${this.version}.`
                             )
                         } else {
                             this.setSeverity(
                                 'success',
-                                `You have current ${this.appName} stable version known as of ${this.extendedMetadata.date}.`
+                                `You have current ${this.appName} stable version (known as of ${this.extendedMetadata.date}).`
                             )
                         }
                         return
@@ -257,7 +324,7 @@ export class VersionStatusComponent implements OnInit {
                     // either semver major or minor are bigger than current stable
                     this.setSeverity(
                         'info',
-                        `Your ${this.appName} version ${this.version} is more recent than current stable version/s ${versionsText} known as of ${this.extendedMetadata.date}.`
+                        `Your ${this.appName} version ${this.version} is more recent than current stable version/s ${versionsText} (known as of ${this.extendedMetadata.date}).`
                     )
                     // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${this.version}.`
                 }
@@ -270,17 +337,17 @@ export class VersionStatusComponent implements OnInit {
             if (lt(this.version, (this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version)) {
                 this.setSeverity(
                     'warning',
-                    `You are using ${this.appName} development version ${this.version}. Current development version known as of ${this.extendedMetadata.date} is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. Please consider updating.`
+                    `You are using ${this.appName} development version ${this.version}. Current development version (known as of ${this.extendedMetadata.date}) is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. Please consider updating.`
                 )
             } else if (gt(this.version, (this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version)) {
                 this.setSeverity(
                     'info',
-                    `Current development ${this.appName} version known as of ${this.extendedMetadata.date} is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. You are using more recent version ${this.version}.`
+                    `Current development ${this.appName} version (known as of ${this.extendedMetadata.date}) is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. You are using more recent version ${this.version}.`
                 )
             } else {
                 this.setSeverity(
                     'success',
-                    `You have current ${this.appName} development version known as of ${this.extendedMetadata.date}.`
+                    `You have current ${this.appName} development version (known as of ${this.extendedMetadata.date}).`
                 )
             }
             if (this.extendedMetadata[this.app]?.hasOwnProperty('currentStable')) {
