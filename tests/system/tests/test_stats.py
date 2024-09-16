@@ -42,4 +42,5 @@ def test_get_kea_stats(
     assert data.subnets6.items is not None
 
     # Check if Stork Agent handles all metrics returned by Kea.
-    # assert not kea_service.has_encountered_unsupported_statistic()
+    # The pool statistics are currently not supported.
+    assert kea_service.has_encountered_unsupported_statistic()
