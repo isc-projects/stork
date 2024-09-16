@@ -33,7 +33,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
     let fixture: ComponentFixture<KeaGlobalConfigurationPageComponent>
     let messageService: MessageService
     let servicesService: ServicesService
-    let daemonConfigValid: KeaDaemonConfig
+    let validDaemonConfig: KeaDaemonConfig
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -80,7 +80,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         servicesService = fixture.debugElement.injector.get(ServicesService)
         fixture.detectChanges()
 
-        daemonConfigValid = {
+        validDaemonConfig = {
             appId: 2,
             appName: 'kea-server',
             appType: 'kea',
@@ -258,7 +258,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
     })
 
     it('should fetch global configuration parameters', fakeAsync(() => {
-        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(daemonConfigValid) as any)
+        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(validDaemonConfig) as any)
 
         component.daemonId = 1
         component.ngOnInit()
@@ -307,7 +307,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
 
     it('should update breadcrumbs before and after fetching global configuration parameters', fakeAsync(() => {
         spyOn(component, 'updateBreadcrumbs')
-        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(daemonConfigValid as any))
+        spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(validDaemonConfig as any))
 
         component.ngOnInit()
         expect(component.updateBreadcrumbs).toHaveBeenCalledOnceWith(2, 1)
