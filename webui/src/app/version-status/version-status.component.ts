@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { valid, minor, lt, major, satisfies, gt, sort, coerce } from 'semver'
+import { VersionService } from '../version.service'
 
 /**
  *
@@ -151,6 +152,8 @@ export class VersionStatusComponent implements OnInit {
         },
     }
 
+    constructor(private versionService: VersionService) {}
+
     /**
      *
      */
@@ -271,48 +274,48 @@ export class VersionStatusComponent implements OnInit {
         // todo: consider moving part of this code to service for performance reasons. Case: many machines (e.g. 1000).
 
         // check security releases first
-        if (
-            this.extendedMetadata[this.app]?.hasOwnProperty('latestSecure') &&
-            lt(this.version, (this.extendedMetadata[this.app] as AppVersionMetadata).latestSecure.version)
-        ) {
+        let latestSecureVersion = this.versionService.getVersion(this.app, 'latestSecure')
+        if (latestSecureVersion && lt(this.version, latestSecureVersion as string)) {
             this.setSeverity(
                 'error',
-                `Security update ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestSecure.version} was released for ${this.appName}. Please update as soon as possible!`
+                `Security update ${latestSecureVersion} was released for ${this.appName}. Please update as soon as possible!`
             )
             return
         }
 
         // case - stable version
-        if (this.isDevelopmentVersion === false && this.extendedMetadata[this.app]?.hasOwnProperty('currentStable')) {
-            if ((this.extendedMetadata[this.app] as AppVersionMetadata).currentStable.length >= 1) {
-                let versions: string[] = []
-                for (let details of (this.extendedMetadata[this.app] as AppVersionMetadata).currentStable) {
-                    versions.push(details.version)
-                    let stableMajor = major(details.version)
-                    let stableMinor = minor(details.version)
+        let currentStableVersion = this.versionService.getVersion(this.app, 'currentStable')
+        let dataDate = this.versionService.getDataManufactureDate()
+        if (this.isDevelopmentVersion === false && currentStableVersion) {
+            if (Array.isArray(currentStableVersion) && currentStableVersion.length >= 1) {
+                // let versions: string[] = []
+                for (let version of currentStableVersion) {
+                    // versions.push(details.version)
+                    let stableMajor = major(version)
+                    let stableMinor = minor(version)
                     let stableRange = `${stableMajor}.${stableMinor}.x`
                     if (satisfies(this.version, stableRange)) {
-                        if (lt(this.version, details.version)) {
+                        if (lt(this.version, version)) {
                             this.setSeverity(
                                 'warning',
-                                `Current stable ${this.appName} version (known as of ${this.extendedMetadata.date}) is ${details.version}. You are using ${this.version}. Update is recommended.`
+                                `Current stable ${this.appName} version (known as of ${dataDate}) is ${version}. You are using ${this.version}. Update is recommended.`
                             )
-                        } else if (gt(this.version, details.version)) {
+                        } else if (gt(this.version, version)) {
                             this.setSeverity(
                                 'info',
-                                `Current stable ${this.appName} version (known as of ${this.extendedMetadata.date}) is ${details.version}. You are using more recent version ${this.version}.`
+                                `Current stable ${this.appName} version (known as of ${dataDate}) is ${version}. You are using more recent version ${this.version}.`
                             )
                         } else {
                             this.setSeverity(
                                 'success',
-                                `You have current ${this.appName} stable version (known as of ${this.extendedMetadata.date}).`
+                                `You have current ${this.appName} stable version (known as of ${dataDate}).`
                             )
                         }
                         return
                     }
                 }
                 // current version not matching currentStable ranges
-                versions = sort(versions)
+                let versions = sort(currentStableVersion)
                 let versionsText = versions.join(', ')
                 if (lt(this.version, versions[0])) {
                     // either semver major or minor are below min(current stable)
@@ -324,7 +327,7 @@ export class VersionStatusComponent implements OnInit {
                     // either semver major or minor are bigger than current stable
                     this.setSeverity(
                         'info',
-                        `Your ${this.appName} version ${this.version} is more recent than current stable version/s ${versionsText} (known as of ${this.extendedMetadata.date}).`
+                        `Your ${this.appName} version ${this.version} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`
                     )
                     // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${this.version}.`
                 }
@@ -333,24 +336,25 @@ export class VersionStatusComponent implements OnInit {
         }
 
         // case - development version
-        if (this.isDevelopmentVersion === true && this.extendedMetadata[this.app]?.hasOwnProperty('latestDev')) {
-            if (lt(this.version, (this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version)) {
+        let latestDevVersion = this.versionService.getVersion(this.app, 'latestDev')
+        if (this.isDevelopmentVersion === true && latestDevVersion) {
+            if (lt(this.version, latestDevVersion as string)) {
                 this.setSeverity(
                     'warning',
-                    `You are using ${this.appName} development version ${this.version}. Current development version (known as of ${this.extendedMetadata.date}) is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. Please consider updating.`
+                    `You are using ${this.appName} development version ${this.version}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`
                 )
-            } else if (gt(this.version, (this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version)) {
+            } else if (gt(this.version, latestDevVersion as string)) {
                 this.setSeverity(
                     'info',
-                    `Current development ${this.appName} version (known as of ${this.extendedMetadata.date}) is ${(this.extendedMetadata[this.app] as AppVersionMetadata).latestDev.version}. You are using more recent version ${this.version}.`
+                    `Current development ${this.appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${this.version}.`
                 )
             } else {
                 this.setSeverity(
                     'success',
-                    `You have current ${this.appName} development version (known as of ${this.extendedMetadata.date}).`
+                    `You have current ${this.appName} development version (known as of ${dataDate}).`
                 )
             }
-            if (this.extendedMetadata[this.app]?.hasOwnProperty('currentStable')) {
+            if (currentStableVersion) {
                 this.setSeverity(
                     'warning',
                     [
