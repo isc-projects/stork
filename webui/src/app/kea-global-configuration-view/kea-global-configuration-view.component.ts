@@ -3,7 +3,8 @@ import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-p
 import { DHCPOption } from '../backend'
 
 /**
- * A component displaying global Kea configuration.
+ * A component displaying global Kea configuration including the DHCP global
+ * parameters and options.
  *
  * It displays an edit button to start editing the configuration.
  */
