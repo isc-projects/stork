@@ -641,29 +641,7 @@ func TestGetDaemonConfigWithDHCPOptions(t *testing.T) {
 	ctx, _ = rapi.SessionManager.Load(ctx, "")
 	_ = rapi.SessionManager.LoginHandler(ctx, user)
 
-	m := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	_ = dbmodel.AddMachine(db, m)
-
-	app := &dbmodel.App{
-		MachineID: m.ID,
-		Machine:   m,
-		Type:      dbmodel.AppTypeKea,
-		AccessPoints: []*dbmodel.AccessPoint{
-			{
-				Type:    dbmodel.AccessPointControl,
-				Address: "localhost",
-				Port:    1234,
-			},
-		},
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
-		},
-	}
-
-	app.Daemons[0].SetConfigFromJSON(`{
+	serverConfig := `{
 		"Dhcp4": {
 			"option-data": [{
 				"always-send": true,
@@ -674,12 +652,18 @@ func TestGetDaemonConfigWithDHCPOptions(t *testing.T) {
 				"space": "dhcp4"
 			}]
 		}
-	}`)
+	}`
 
-	daemons, _ := dbmodel.AddApp(db, app)
+	server, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	require.NoError(t, err)
+	err = server.Configure(serverConfig)
+	require.NoError(t, err)
+	kea, _ := server.GetKea()
+	require.NotNil(t, kea)
+	require.NotEmpty(t, kea.Daemons)
 
 	params := services.GetDaemonConfigParams{
-		ID: daemons[0].ID,
+		ID: kea.Daemons[0].ID,
 	}
 
 	// Act
