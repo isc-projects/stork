@@ -159,7 +159,7 @@ export class UtilizationStatsChartComponent {
                 } else {
                     // We're getting into an interesting scenario whereby the number of declined
                     // leases exceeds the number of assigned leases. This shouldn't happen but
-                    // it somtimes does when client declines an expired or released (unassigned)
+                    // it sometimes does when client declines an expired or released (unassigned)
                     // lease. In this case, we use "uncertain" metrics instead of "used" metrics
                     // in the chart. The uncertain addresses are those for which we're unable to
                     // tell whether they are allocated, declined or free.
