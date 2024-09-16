@@ -22,7 +22,7 @@ export class KeaGlobalConfigurationViewComponent {
     /**
      * Holds fetched DHCP options.
      */
-    @Input() dhcpOptions: DHCPOption[][] = []
+    @Input() dhcpOptions: DHCPOption[][] = [[]]
 
     /**
      * Boolean flag indicating if the edit button should be disabled.

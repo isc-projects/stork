@@ -8,6 +8,11 @@ import { By } from '@angular/platform-browser'
 import { ButtonModule } from 'primeng/button'
 import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
+import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
+import { TreeModule } from 'primeng/tree'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { TagModule } from 'primeng/tag'
 
 describe('KeaGlobalConfigurationViewComponent', () => {
     let component: KeaGlobalConfigurationViewComponent
@@ -15,8 +20,8 @@ describe('KeaGlobalConfigurationViewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [ButtonModule, FieldsetModule, NoopAnimationsModule, TableModule, TooltipModule],
-            declarations: [CascadedParametersBoardComponent, KeaGlobalConfigurationViewComponent],
+            imports: [ButtonModule, FieldsetModule, NoopAnimationsModule, TableModule, TooltipModule, TreeModule, OverlayPanelModule, TagModule],
+            declarations: [CascadedParametersBoardComponent, KeaGlobalConfigurationViewComponent, DhcpOptionSetViewComponent, HelpTipComponent]
         }).compileComponents()
 
         fixture = TestBed.createComponent(KeaGlobalConfigurationViewComponent)
@@ -43,5 +48,11 @@ describe('KeaGlobalConfigurationViewComponent', () => {
         spyOn(component.editBegin, 'emit')
         component.onEditBegin()
         expect(component.editBegin.emit).toHaveBeenCalled()
+    })
+
+    it('should display the DHCP options view', () => {
+        const fieldset = fixture.debugElement.query(By.css("[legend='Global DHCP Options']"))
+        expect(fieldset).toBeTruthy()
+        expect(fieldset.nativeElement.innerText).toContain('No options configured')
     })
 })
