@@ -20,8 +20,22 @@ describe('KeaGlobalConfigurationViewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [ButtonModule, FieldsetModule, NoopAnimationsModule, TableModule, TooltipModule, TreeModule, OverlayPanelModule, TagModule],
-            declarations: [CascadedParametersBoardComponent, KeaGlobalConfigurationViewComponent, DhcpOptionSetViewComponent, HelpTipComponent]
+            imports: [
+                ButtonModule,
+                FieldsetModule,
+                NoopAnimationsModule,
+                TableModule,
+                TooltipModule,
+                TreeModule,
+                OverlayPanelModule,
+                TagModule,
+            ],
+            declarations: [
+                CascadedParametersBoardComponent,
+                KeaGlobalConfigurationViewComponent,
+                DhcpOptionSetViewComponent,
+                HelpTipComponent,
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(KeaGlobalConfigurationViewComponent)

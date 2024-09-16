@@ -200,7 +200,7 @@ const mockGetDaemonConfig = {
             },
         ],
         optionsHash: '234',
-    }
+    },
 }
 
 export default {
