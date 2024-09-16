@@ -183,6 +183,24 @@ const mockGetDaemonConfig = {
             'server-tag': '',
         },
     },
+    options: {
+        options: [
+            {
+                alwaysSend: true,
+                code: 5,
+                encapsulate: '',
+                fields: [
+                    {
+                        fieldType: 'ipv4-address',
+                        values: ['192.0.2.2'],
+                    },
+                ],
+                options: [],
+                universe: 4,
+            },
+        ],
+        optionsHash: '234',
+    }
 }
 
 export default {
@@ -241,6 +259,12 @@ export default {
         }),
         toastDecorator,
     ],
+} as Meta
+
+type Story = StoryObj<KeaGlobalConfigurationPageComponent>
+
+export const Dhcp4Configuration: Story = {
+    args: {},
     parameters: {
         mockData: [
             {
@@ -252,10 +276,26 @@ export default {
             },
         ],
     },
-} as Meta
+}
 
-type Story = StoryObj<KeaGlobalConfigurationPageComponent>
-
-export const Dhcp4Configuration: Story = {
+export const Empty: Story = {
     args: {},
+    parameters: {
+        mockData: [
+            {
+                url: 'http://localhost/api/daemons/1/config',
+                method: 'GET',
+                status: 200,
+                delay: 2000,
+                response: {
+                    appName: 'kea-server',
+                    appType: 'kea',
+                    appId: 1,
+                    daemonName: 'dhcp4',
+                    config: {},
+                    options: {},
+                },
+            },
+        ],
+    },
 }
