@@ -673,7 +673,17 @@ func TestGetDaemonConfigWithDHCPOptions(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
 	okRsp := rsp.(*services.GetDaemonConfigOK)
 	require.NotEmpty(t, okRsp.Payload)
-	require.NotEmpty(t, okRsp.Payload.Options)
+	require.Len(t, okRsp.Payload.Options.Options, 1)
+	option := okRsp.Payload.Options.Options[0]
+	require.True(t, option.AlwaysSend)
+	require.EqualValues(t, 3, option.Code)
+	require.Empty(t, option.Encapsulate)
+	require.EqualValues(t, 4, option.Universe)
+	require.Len(t, option.Fields, 1)
+	field := option.Fields[0]
+	require.Len(t, field.Values, 1)
+	require.EqualValues(t, "192.0.3.1", field.Values[0])
+	require.EqualValues(t, "ipv4-address", field.FieldType)
 }
 
 // Test that config review reports are successfully retrieved for a daemon.
