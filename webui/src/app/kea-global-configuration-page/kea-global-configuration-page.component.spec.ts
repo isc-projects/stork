@@ -43,7 +43,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                     useValue: {
                         snapshot: { queryParamMap: new MockParamMap() },
                         queryParamMap: of(new MockParamMap()),
-                        paramMap: of(convertToParamMap({ daemonId: '1' })),
+                        paramMap: of(convertToParamMap({ appId: '2', daemonId: '1' })),
                     },
                 },
                 MessageService,
@@ -81,6 +81,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         fixture.detectChanges()
 
         daemonConfigValid = {
+            appId: 2,
             appName: 'kea-server',
             appType: 'kea',
             daemonName: 'dhcp4',
@@ -308,15 +309,14 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         spyOn(component, 'updateBreadcrumbs')
         spyOn(servicesService, 'getDaemonConfig').and.returnValue(of(daemonConfigValid as any))
 
-        component.appId = 1
-        component.daemonId = 2
         component.ngOnInit()
-        expect(component.updateBreadcrumbs).toHaveBeenCalledTimes(1)
+        expect(component.updateBreadcrumbs).toHaveBeenCalledOnceWith(2, 1)
 
         tick()
         fixture.detectChanges()
 
         expect(component.updateBreadcrumbs).toHaveBeenCalledTimes(2)
+        expect(component.updateBreadcrumbs).toHaveBeenCalledWith(2, 1, 'kea-server', 'DHCPv4')
     }))
 
     it('should display a message on error', fakeAsync(() => {
