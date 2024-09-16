@@ -575,6 +575,31 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 		if daemon.KeaDaemon == nil {
 			continue
 		}
+
+		var options *models.DHCPOptions
+		if daemon.KeaDaemon.Config.IsDHCPv4() || daemon.KeaDaemon.Config.IsDHCPv6() {
+			ipType := storkutil.IPType(4)
+			if daemon.KeaDaemon.Config.IsDHCPv6() {
+				ipType = storkutil.IPType(6)
+			}
+
+			var convertedOptions []dbmodel.DHCPOption
+			for _, option := range daemon.KeaDaemon.Config.GetDHCPOptions() {
+				convertedOption, err := dbmodel.NewDHCPOptionFromKea(
+					option, ipType, r.DHCPOptionDefinitionLookup,
+				)
+				if err != nil {
+					continue
+				}
+				convertedOptions = append(convertedOptions, *convertedOption)
+			}
+
+			options = &models.DHCPOptions{
+				OptionsHash: keaconfig.NewHasher().Hash(convertedOptions),
+				Options:     r.unflattenDHCPOptions(convertedOptions, "", 0),
+			}
+		}
+
 		configs = append(configs, &models.KeaDaemonConfig{
 			AppID:      daemon.GetAppID(),
 			AppName:    daemon.App.GetName(),
@@ -582,6 +607,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersBegin(ctx context.Context, params dhc
 			DaemonID:   daemon.ID,
 			DaemonName: daemon.Name,
 			Config:     daemon.KeaDaemon.Config,
+			Options:    options,
 		})
 	}
 
