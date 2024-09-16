@@ -169,16 +169,6 @@ ENTRYPOINT [ "/bin/sh", "-c", \
 EXPOSE 8080
 HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
-FROM server-builder AS server-debug
-WORKDIR /app/rakelib
-COPY rakelib/30_dev.rake ./
-WORKDIR /app
-ENTRYPOINT [ "/bin/sh", "-c", \
-        "supervisord -c /etc/supervisor/supervisord.conf" ]
-EXPOSE 8080
-EXPOSE 45678
-HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
-
 # Web UI container
 FROM nginx:1.25-alpine AS webui
 ENV CI=true
