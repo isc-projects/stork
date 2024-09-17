@@ -1,9 +1,36 @@
 import { Injectable } from '@angular/core'
-import { App, AppVersionMetadata, VersionDetails } from './version-status/version-status.component'
 import { minor, major, sort } from 'semver'
 import { deepCopy } from './utils'
 
 type SwRelease = 'latestSecure' | 'currentStable' | 'latestDev'
+
+/**
+ *
+ */
+export interface VersionDetails {
+    version: string
+    releaseDate: string
+    eolDate?: string
+    ESV?: string
+    status?: string
+    major?: number
+    minor?: number
+    range?: string
+}
+
+/**
+ *
+ */
+export interface AppVersionMetadata {
+    currentStable?: VersionDetails[]
+    latestDev: VersionDetails
+    latestSecure?: VersionDetails
+}
+
+/**
+ *
+ */
+export type App = 'kea' | 'bind9' | 'stork'
 
 @Injectable({
     providedIn: 'root',
@@ -11,9 +38,9 @@ type SwRelease = 'latestSecure' | 'currentStable' | 'latestDev'
 export class VersionService {
     dataManufactureDate: string
 
-    private _processedData: {}
+    private _processedData: { [a in App | 'date']: AppVersionMetadata | string }
 
-    private _stableVersion: {}
+    private readonly _stableVersion: { [a in App]: string[] }
 
     // static for now; to be provided from server
     versionMetadata: { [a in App | 'date']: AppVersionMetadata | string } = {
@@ -68,6 +95,7 @@ export class VersionService {
     }
 
     constructor() {
+        this._stableVersion = { kea: [], bind9: [], stork: [] }
         this.dataManufactureDate = '2024-09-01'
         this.processData()
     }
@@ -76,17 +104,30 @@ export class VersionService {
      * Returns software version for given app and type.
      * @param app app for which the version lookup is done; accepted values: 'kea' | 'bind9' | 'stork'
      * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
+     * @return version as either string (in case of latestSecure and latestDev) or array of strings (in case of currentStable)
      */
     getVersion(app: App, swType: SwRelease): string | string[] | null {
-        switch (swType) {
-            case 'latestSecure':
-            case 'latestDev':
-                return this.versionMetadata[app]?.[swType]?.version || null
-            case 'currentStable':
-                return (
-                    this.versionMetadata[app]?.[swType]?.map((swDetails: VersionDetails) => swDetails.version) || null
-                )
-        }
+        return swType === 'currentStable'
+            ? this._stableVersion[app] || null
+            : this._processedData[app]?.[swType]?.version || null
+    }
+
+    /**
+     * Returns software version details for given app and type.
+     * @param app app for which the version lookup is done; accepted values: 'kea' | 'bind9' | 'stork'
+     * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
+     * @return version details as either single VersionDetails (in case of latestSecure and latestDev) or array of VersionDetails (in case of currentStable)
+     */
+    getVersionDetails(app: App, swType: SwRelease): VersionDetails | VersionDetails[] | null {
+        return this._processedData[app]?.[swType] || null
+    }
+
+    /**
+     * Returns sorted current stable semver versions as an array of strings for given app.
+     * @param app either kea, bind9 or stork app
+     */
+    getStableVersions(app: App): string[] | null {
+        return this._stableVersion[app] || null
     }
 
     /**
@@ -99,28 +140,30 @@ export class VersionService {
 
     private processData() {
         let newData = deepCopy(this.versionMetadata)
-        Object.keys(newData).forEach((k) => {
-            if (newData[k] !== 'date') {
-                Object.keys(newData[k]).forEach((innerK) => {
-                    switch (innerK) {
+        Object.keys(newData).forEach((app) => {
+            if (newData[app] !== 'date') {
+                Object.keys(newData[app]).forEach((swType) => {
+                    switch (swType) {
                         case 'latestSecure':
-                            newData[k][innerK].status = 'Security release'
-                            newData[k][innerK].major = major(newData[k][innerK].version)
-                            newData[k][innerK].minor = minor(newData[k][innerK].version)
+                            newData[app][swType].status = 'Security release'
+                            newData[app][swType].major = major(newData[app][swType].version)
+                            newData[app][swType].minor = minor(newData[app][swType].version)
                             break
                         case 'latestDev':
-                            newData[k][innerK].status = 'Security release'
-                            newData[k][innerK].major = major(newData[k][innerK].version)
-                            newData[k][innerK].minor = minor(newData[k][innerK].version)
+                            newData[app][swType].status = 'Development'
+                            newData[app][swType].major = major(newData[app][swType].version)
+                            newData[app][swType].minor = minor(newData[app][swType].version)
                             break
                         case 'currentStable':
-                            for (let e of newData[k][innerK]) {
+                            for (let e of newData[app][swType]) {
                                 e.status = 'Current Stable'
                                 e.major = major(e.version)
                                 e.minor = minor(e.version)
+                                e.range = `${e.major}.${e.minor}.x`
                             }
-                            let versionsText = newData[k][innerK].map((ver: VersionDetails) => ver.version)
-                            this._stableVersion[k] = sort(versionsText)
+
+                            let versionsText = newData[app][swType].map((ver: VersionDetails) => ver.version)
+                            this._stableVersion[app] = sort(versionsText)
                             break
                     }
                 })
