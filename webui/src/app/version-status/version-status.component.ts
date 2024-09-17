@@ -26,6 +26,8 @@ export class VersionStatusComponent implements OnInit {
      */
     @Input() showAppName = false
 
+    @Input() inline = true
+
     /**
      *
      */
@@ -39,7 +41,7 @@ export class VersionStatusComponent implements OnInit {
     /**
      *
      */
-    severity: 'error' | 'warning' | 'success' | 'info'
+    severity: 'error' | 'warn' | 'success' | 'info'
 
     /**
      *
@@ -99,7 +101,7 @@ export class VersionStatusComponent implements OnInit {
             case 'success':
                 this.iconClasses = { 'text-green-500': true, 'pi-check': true }
                 break
-            case 'warning':
+            case 'warn':
                 this.iconClasses = { 'text-orange-400': true, 'pi-exclamation-triangle': true }
                 break
             case 'error':
@@ -135,7 +137,7 @@ export class VersionStatusComponent implements OnInit {
                     if (satisfies(this.version, details.range)) {
                         if (lt(this.version, details.version)) {
                             this.setSeverity(
-                                'warning',
+                                'warn',
                                 `Current stable ${this.appName} version (known as of ${dataDate}) is ${details.version}. You are using ${this.version}. Update is recommended.`
                             )
                         } else if (gt(this.version, details.version)) {
@@ -159,7 +161,7 @@ export class VersionStatusComponent implements OnInit {
                     if (lt(this.version, stableVersions[0])) {
                         // either semver major or minor are below min(current stable)
                         this.setSeverity(
-                            'warning',
+                            'warn',
                             `Your ${this.appName} version ${this.version} is older than current stable version/s ${versionsText}. Update to current stable is recommended.`
                         )
                     } else {
@@ -180,7 +182,7 @@ export class VersionStatusComponent implements OnInit {
         if (this.isDevelopmentVersion === true && latestDevVersion) {
             if (lt(this.version, latestDevVersion as string)) {
                 this.setSeverity(
-                    'warning',
+                    'warn',
                     `You are using ${this.appName} development version ${this.version}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`
                 )
             } else if (gt(this.version, latestDevVersion as string)) {
@@ -196,7 +198,7 @@ export class VersionStatusComponent implements OnInit {
             }
             if (currentStableVersionDetails) {
                 this.setSeverity(
-                    'warning',
+                    'warn',
                     [
                         this.feedback,
                         `Please be advised that using development version in production is not recommended! Consider using ${this.appName} stable release.`,

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { VersionDetails, VersionService } from '../version.service'
+import {Machine, ServicesService} from "../backend";
 
 /**
  *
@@ -13,11 +14,12 @@ export class VersionPageComponent implements OnInit {
     keaVersions: VersionDetails[]
     bind9Versions: VersionDetails[]
     storkVersions: VersionDetails[]
+    machines: Machine[];
 
     /**
      *
      */
-    constructor(private versionService: VersionService) {}
+    constructor(private versionService: VersionService, private servicesApi: ServicesService) {}
 
     /**
      *
@@ -46,6 +48,10 @@ export class VersionPageComponent implements OnInit {
         if (storkDetails) {
             this.storkVersions.push(storkDetails as VersionDetails)
         }
+
+        this.servicesApi.getMachines(0, 1000, undefined, undefined, true).subscribe((data) => {
+            this.machines = data.items ?? []
+        })
     }
 
     /**

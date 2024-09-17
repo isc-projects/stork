@@ -1,4 +1,5 @@
-<div class="ml-2 inline-flex">
+<div *ngIf="inline" class="ml-2 inline-flex">
     <span *ngIf="showAppName" class="mr-1">{{ appName }} {{ version }}</span>
     <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedback"></i>
 </div>
+<p-message *ngIf="!inline" [severity]="severity" [text]="feedback"></p-message>

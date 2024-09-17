@@ -166,4 +166,55 @@
             </ng-template>
         </p-table>
     </p-panel>
+
+    <p-panel header="Summary of software versions detected by Stork" styleClass="mt-3">
+        <p-table [value]="machines" styleClass="p-datatable-striped">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 8rem">Hostname</th>
+                    <th style="width: 10rem">
+                        Location
+                        <app-help-tip subject="Location" id="location-help-button">
+                            <p>
+                                Specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
+                                localhost:8888).
+                            </p></app-help-tip
+                        >
+                    </th>
+                    <th style="width: 4.5rem">Agent Version</th>
+                    <th class="w-4rem">Apps Version</th>
+                    <th>Summary</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-m>
+                <tr>
+                    <td>
+                        <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
+                    </td>
+                    <td>{{ m.address }}:{{ m.agentPort }}</td>
+                    <td>
+                        {{ m.agentVersion }}
+                        <app-version-status app="stork" [version]="m.agentVersion"></app-version-status>
+                    </td>
+                    <td>
+                        <ng-container *ngFor="let a of m.apps"
+                        ><app-version-status
+                                [app]="a.type"
+                                [version]="a.version"
+                                [showAppName]="true"
+                        ></app-version-status
+                        ></ng-container>
+                    </td>
+                    <td><ng-container *ngFor="let a of m.apps"
+                    ><app-version-status
+                            [app]="a.type"
+                            [version]="a.version"
+                            [showAppName]="true"
+                            [inline]="false"
+                    ></app-version-status
+                    ></ng-container></td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-panel>
 </div>
