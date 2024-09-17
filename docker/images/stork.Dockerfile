@@ -365,7 +365,7 @@ ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 EXPOSE 8080
 # Prometheus Bind9 port
 EXPOSE 9119
-HEALTHCHECK CMD [ "supervisorctl", "status" ]
+HEALTHCHECK CMD [ "supervisorctl", "-c", "/etc/supervisor/supervisord.conf", "status" ]
 # Configuration files:
 # Supervisor: /etc/supervisor/supervisord.conf
 # Stork Agent: /etc/stork
@@ -382,11 +382,8 @@ RUN mkdir -p /chroot/etc \
         && rm -rf /etc/bind \
         # Create the necessary directories.
         && mkdir -p /chroot/var/cache/bind \
-        && chown bind:bind /chroot/var/cache/bind \
         && mkdir -p /chroot/run/named \
-        && chown bind:bind /chroot/run/named \
-        && mkdir -p /chroot/usr/share \
-        && cp -R -p /usr/share/dns /chroot/usr/share
+        && chown -R bind:bind /chroot
 
 #################
 ### Packaging ###
