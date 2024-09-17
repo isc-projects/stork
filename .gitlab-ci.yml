@@ -661,6 +661,7 @@ unittest_hooks:
       when: always
     - when: manual
       allow_failure: true
+  needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -852,6 +853,7 @@ deploy_demo:
       when: always
     - when: manual
       allow_failure: true
+  needs: []
   tags:
     - linux
     - aws
