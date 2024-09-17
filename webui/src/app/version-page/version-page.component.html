@@ -7,6 +7,16 @@
     </div>
 </app-breadcrumbs>
 <div class="max-w-100rem">
+    <p-message
+        styleClass="max-w-50rem mb-3"
+        *ngIf="isDataOffline()"
+        severity="info"
+        [escape]="false"
+        text="Below information about software versions relies on data that was generated on {{
+            getDataManufactureDate()
+        }}. To see up-to-date information, please visit the <a href='https://www.isc.org'>ISC webpage</a>."
+    ></p-message>
+    <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
     <p-panel header="Kea current releases">
         <p-table [value]="keaVersions" styleClass="p-datatable-striped">
             <ng-template pTemplate="header">

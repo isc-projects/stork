@@ -94,10 +94,14 @@ export class VersionService {
         },
     }
 
+    private _onlineData: boolean
+
     constructor() {
         this._stableVersion = { kea: [], bind9: [], stork: [] }
         this.dataManufactureDate = '2024-09-01'
         this.processData()
+        // For now force to false.
+        this._onlineData = false
     }
 
     /**
@@ -136,6 +140,13 @@ export class VersionService {
     getDataManufactureDate(): string {
         // This will have to be updated in case of "online concept"
         return this.versionMetadata.date as string
+    }
+
+    /**
+     *
+     */
+    isOnlineData(): boolean {
+        return this._onlineData
     }
 
     private processData() {

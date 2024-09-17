@@ -52,4 +52,18 @@ export class VersionPageComponent implements OnInit {
      * Configures the breadcrumbs for the component.
      */
     breadcrumbs = [{ label: 'Monitoring' }, { label: 'Software versions' }]
+
+    /**
+     * Returns true if version data source is offline json file.
+     */
+    isDataOffline() {
+        return !this.versionService.isOnlineData()
+    }
+
+    /**
+     *
+     */
+    getDataManufactureDate() {
+        return this.versionService.getDataManufactureDate()
+    }
 }
