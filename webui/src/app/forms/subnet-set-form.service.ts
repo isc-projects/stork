@@ -27,6 +27,7 @@ import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { IPType } from '../iptype'
 import {
     extractUniqueSubnetPools,
+    hasDifferentGlobalLevelOptions,
     hasDifferentLocalPoolOptions,
     hasDifferentSharedNetworkLevelOptions,
     hasDifferentSubnetLevelOptions,
@@ -315,6 +316,11 @@ export interface KeaGlobalConfigurationForm {
      * Kea global parameters.
      */
     parameters: FormGroup<KeaGlobalParametersForm>
+
+    /**
+     * Kea global DHCP options.
+     */
+    options: FormGroup<OptionsForm>
 }
 
 /**
@@ -1610,23 +1616,51 @@ export class SubnetSetFormService {
         const innerConfigs = configs.map((config) => config.config[topLevelKeys[0]])
         const formGroup = new FormGroup<KeaGlobalConfigurationForm>({
             parameters: this.convertKeaGlobalParametersToForm(topLevelKeys[0], innerConfigs),
+            options: new FormGroup({
+                unlocked: new FormControl(hasDifferentGlobalLevelOptions(configs)),
+                data: new UntypedFormArray(
+                    configs.map((c) =>
+                        this.optionService.convertOptionsToForm(
+                            topLevelKeys[0] === 'Dhcp4' ? IPType.IPv4 : IPType.IPv6,
+                            c.options.options
+                        )
+                    ) || []
+                ),
+            }),
         })
         return formGroup
     }
 
     /**
-     * Converts a form holding subnet data to a subnet instance.
+     * Converts a form holding global configuration data to an API instance.
      *
      * It currently only converts the simple DHCP parameters and options.
      *
-     * @param form a form comprising subnet data.
-     * @returns A subnet instance converted from the form.
+     * @param form A form comprising global configuration data.
+     * @returns A configuration instance converted from the form.
      */
-    convertFormToKeaGlobalParameters(form: FormGroup<KeaGlobalParametersForm>): KeaConfigurableGlobalParameters[] {
+    convertFormToKeaGlobalParameters(
+        form: FormGroup<KeaGlobalConfigurationForm>,
+        ipType: IPType
+    ): KeaConfigurableGlobalParameters[] {
+        const parametersForm = form.get('parameters') as FormGroup<KeaGlobalParametersForm>
+
         const convertedParameters = this.convertFormToKeaParameters<
             KeaGlobalParametersForm,
             KeaConfigurableGlobalParameters
-        >(form)
+        >(parametersForm)
+
+        const options = form.get('options') as UntypedFormGroup
+        for (let i = 0; i < convertedParameters.length; i++) {
+            const data = options.get('data') as UntypedFormArray
+            if (data?.length > i) {
+                convertedParameters[i].options = this.optionService.convertFormToOptions(
+                    ipType,
+                    data.at(!!options.get('unlocked')?.value ? i : 0) as UntypedFormArray
+                )
+            }
+        }
+
         return convertedParameters
     }
 

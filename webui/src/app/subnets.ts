@@ -1,5 +1,13 @@
 import { AddressRange } from './address-range'
-import { DelegatedPrefixPool, KeaConfigPoolParameters, LocalSubnet, Pool, SharedNetwork, Subnet } from './backend'
+import {
+    DelegatedPrefixPool,
+    KeaConfigPoolParameters,
+    KeaDaemonConfig,
+    LocalSubnet,
+    Pool,
+    SharedNetwork,
+    Subnet,
+} from './backend'
 
 /**
  * Association of the pool with a daemon and daemon-specific pool
@@ -376,6 +384,23 @@ export function hasDifferentSubnetLevelOptions(subnet: Subnet) {
                     ls.keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash !==
                     subnet.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.optionsHash
             )
+    )
+}
+
+/**
+ * Utility function checking if there are differences between global-level
+ * DHCP options.
+ *
+ * @param configs Configs from various daemons.
+ * @returns true if there are differences in DHCP options, false otherwise.
+ */
+export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]) {
+    return (
+        !!(configs.length > 0) &&
+        configs
+            .map((c) => c.options)
+            .slice(1)
+            .some((c) => c.optionsHash !== configs[0].options.optionsHash)
     )
 }
 

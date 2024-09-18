@@ -5,14 +5,16 @@ import {
     UpdateKeaDaemonsGlobalParametersSubmitRequest,
 } from '../backend'
 import { lastValueFrom } from 'rxjs'
-import { getErrorMessage } from '../utils'
+import { getErrorMessage, getSeverityByIndex } from '../utils'
 import { MessageService } from 'primeng/api'
 import {
     KeaGlobalConfigurationForm,
     KeaGlobalParametersForm,
     SubnetSetFormService,
 } from '../forms/subnet-set-form.service'
-import { FormGroup } from '@angular/forms'
+import { FormGroup, UntypedFormArray } from '@angular/forms'
+import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
+import { IPType } from '../iptype'
 
 /**
  * A component providing a form for editing global Kea parameters.
@@ -86,9 +88,7 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
     onSubmit(): void {
         const request: UpdateKeaDaemonsGlobalParametersSubmitRequest = {
             configs: this.subnetSetFormService
-                .convertFormToKeaGlobalParameters(
-                    this.formGroup.get('parameters') as FormGroup<KeaGlobalParametersForm>
-                )
+                .convertFormToKeaGlobalParameters(this.formGroup, this.isIPv6 ? IPType.IPv6 : IPType.IPv4)
                 .map((params) => {
                     return {
                         daemonId: this.daemonId,
@@ -144,6 +144,18 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
     }
 
     /**
+     * A function called when a user clicked to add a new option form.
+     *
+     * It creates a new default form group for the option.
+     *
+     * @param index server index in the {@link servers} array.
+     */
+    onOptionAdd(index: number): void {
+        const ipType = this.isIPv6 ? IPType.IPv6 : IPType.IPv4
+        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(ipType))
+    }
+
+    /**
      * Sends a request to the server to begin a new transaction for updating
      * Kea global parameters.
      */
@@ -172,5 +184,43 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
             .finally(() => {
                 this.loaded = true
             })
+    }
+
+    /**
+     * Returns severity of a tag associating a form control with a server.
+     *
+     * @param index server index in the {@link servers} array.
+     * @returns `success` for the first server, `warning` for the second
+     * server, `danger` for the third server, and 'info' for any other
+     * server.
+     */
+    getServerTagSeverity(index: number): string {
+        return getSeverityByIndex(index)
+    }
+
+    /**
+     * Returns an array of server names associated with the configs.
+     */
+    get servers(): string[] {
+        return this.response?.configs?.map((c) => `${c.appName}/${c.daemonName}`) ?? []
+    }
+
+    /**
+     * Indicates if the configurations are IPv4 or IPv6.
+     */
+    get isIPv6(): boolean {
+        return this.response?.configs?.[0]?.daemonName === 'dhcp6'
+    }
+
+    /**
+     * Returns options data for all servers or for a specified server.
+     *
+     * @param index optional index of the server.
+     * @returns An array of options data for all servers or for a single server.
+     */
+    private getOptionsData(index?: number): UntypedFormArray {
+        return index === undefined
+            ? (this.formGroup.get('options.data') as UntypedFormArray)
+            : (this.getOptionsData().at(index) as UntypedFormArray)
     }
 }

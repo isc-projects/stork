@@ -4,6 +4,30 @@
             <p-fieldset *ngIf="formGroup" legend="Global Parameters" styleClass="mt-4">
                 <app-shared-parameters-form [formGroup]="formGroup.get('parameters')"> </app-shared-parameters-form>
             </p-fieldset>
+
+            <p-fieldset [formGroup]="formGroup.get('options')" legend="DHCP Options" styleClass="mt-4">
+                <div class="flex mt-2 pb-4">
+                    <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
+                    <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
+                </div>
+                <ng-container *ngFor="let optionSet of formGroup.get('options.data')?.controls; let i = index">
+                    <div *ngIf="i === 0 || formGroup.get('options.unlocked')?.value" class="mb-3 mt-3">
+                        <div *ngIf="formGroup.get('options.unlocked')?.value" class="pb-5">
+                            <p-divider *ngIf="formGroup.get('options.data')?.length > 1" align="center">
+                                <p-tag [severity]="getServerTagSeverity(i)">
+                                    {{ servers[i] }}
+                                </p-tag>
+                            </p-divider>
+                        </div>
+                        <app-dhcp-option-set-form
+                            [v6]="isIPv6"
+                            [formArray]="optionSet"
+                            (optionAdd)="onOptionAdd(i)"
+                        ></app-dhcp-option-set-form>
+                    </div>
+                </ng-container>
+            </p-fieldset>
+
             <div class="flex align-items-center m-5">
                 <p-button label="Cancel" styleClass="mr-2 p-button-secondary" (onClick)="onCancel()"></p-button>
                 <p-button label="Submit" [disabled]="formGroup?.invalid" (onClick)="onSubmit()"></p-button>
