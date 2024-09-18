@@ -1622,7 +1622,7 @@ export class SubnetSetFormService {
                     configs.map((c) =>
                         this.optionService.convertOptionsToForm(
                             topLevelKeys[0] === 'Dhcp4' ? IPType.IPv4 : IPType.IPv6,
-                            c.options.options
+                            c.options?.options
                         )
                     ) || []
                 ),

@@ -10,7 +10,7 @@ import { UsersService } from '../backend'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 
 import { JsonTreeRootComponent } from './json-tree-root.component'
-import { RouterTestingModule } from '@angular/router/testing'
+import { RouterModule } from '@angular/router'
 
 describe('JsonTreeRootComponent', () => {
     let component: JsonTreeRootComponent
@@ -20,7 +20,7 @@ describe('JsonTreeRootComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterTestingModule],
+            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterModule],
             declarations: [JsonTreeRootComponent, JsonTreeComponent],
             providers: [MessageService, UsersService],
         }).compileComponents()
@@ -48,7 +48,7 @@ describe('JsonTreeRootComponent', () => {
             } as any)
         )
 
-        authService.login('boz', 'foo', 'bar', 'baz')
+        authService.login('boz', 'foo', 'bar', '/')
 
         fixture = TestBed.createComponent(JsonTreeRootComponent)
         component = fixture.componentInstance

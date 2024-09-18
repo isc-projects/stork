@@ -23,6 +23,7 @@ import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-
 import { ChipsModule } from 'primeng/chips'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { By } from '@angular/platform-browser'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 
 describe('KeaGlobalConfigurationFormComponent', () => {
     let component: KeaGlobalConfigurationFormComponent
@@ -231,6 +232,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                 ArrayValueSetFormComponent,
                 KeaGlobalConfigurationFormComponent,
                 SharedParametersFormComponent,
+                DhcpOptionSetFormComponent,
             ],
             providers: [MessageService],
         }).compileComponents()
@@ -303,6 +305,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                         reservationsGlobal: false,
                         reservationsInSubnet: true,
                         reservationsOutOfPool: false,
+                        options: [],
                     },
                 },
             ],
@@ -339,6 +342,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                     partialConfig: {
                         allocator: 'random',
                         pdAllocator: 'flq',
+                        options: [],
                     },
                 },
             ],

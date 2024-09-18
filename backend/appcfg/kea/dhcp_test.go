@@ -443,7 +443,7 @@ func TestSetDHCPv4ELPReclaimTimerWaitTime(t *testing.T) {
 }
 
 // Test setting the maximum number of expired lease-processing cycles which didn't
-// result in full cleanup of the exired leases from the lease database,
+// result in full cleanup of the expired leases from the lease database,
 // after which a warning message is issued.
 func TestSetDHCPv4ELPUnwarnedReclaimCycles(t *testing.T) {
 	cfg := &SettableDHCPv4Config{}
@@ -557,7 +557,7 @@ func TestSetDHCPv4EchoClientID(t *testing.T) {
 
 // Test setting DHCPv4 option data.
 func TestSetDHCPv4OptionData(t *testing.T) {
-	cfg := &DHCPv4Config{}
+	cfg := &SettableDHCPv4Config{}
 	cfg.SetDHCPOptions([]SingleOptionData{
 		{
 			Name:       "routers",
@@ -568,16 +568,56 @@ func TestSetDHCPv4OptionData(t *testing.T) {
 			Space:      "dhcp4",
 		},
 	})
-	require.Len(t, cfg.OptionData, 1)
-	require.Equal(t, "routers", cfg.OptionData[0].Name)
-	require.True(t, cfg.OptionData[0].AlwaysSend)
-	require.EqualValues(t, 3, cfg.OptionData[0].Code)
-	require.True(t, cfg.OptionData[0].CSVFormat)
-	require.Equal(t, "foobar", cfg.OptionData[0].Data)
-	require.Equal(t, "dhcp4", cfg.OptionData[0].Space)
+	options := cfg.OptionData.GetValue()
+	require.Len(t, options, 1)
+	require.Equal(t, "routers", options[0].Name)
+	require.True(t, options[0].AlwaysSend)
+	require.EqualValues(t, 3, options[0].Code)
+	require.True(t, options[0].CSVFormat)
+	require.Equal(t, "foobar", options[0].Data)
+	require.Equal(t, "dhcp4", options[0].Space)
 
 	cfg.SetDHCPOptions(nil)
-	require.Nil(t, cfg.OptionData)
+	require.Nil(t, cfg.OptionData.GetValue())
+}
+
+// Test setting DHCPv4 option data.
+func TestSetDHCPv4Options(t *testing.T) {
+	// Arrange
+	cfg := &SettableDHCPv4Config{}
+
+	t.Run("Non-nil options", func(t *testing.T) {
+		// Act
+		cfg.SetDHCPOptions([]SingleOptionData{
+			{
+				Name:       "routers",
+				AlwaysSend: true,
+				Code:       3,
+				CSVFormat:  true,
+				Data:       "foobar",
+				Space:      "dhcp6",
+			},
+		})
+
+		// Assert
+		options := cfg.OptionData.GetValue()
+		require.Len(t, options, 1)
+		option := options[0]
+		require.Equal(t, "routers", option.Name)
+		require.True(t, option.AlwaysSend)
+		require.EqualValues(t, 3, option.Code)
+		require.True(t, option.CSVFormat)
+		require.Equal(t, "foobar", option.Data)
+		require.Equal(t, "dhcp6", option.Space)
+	})
+
+	t.Run("Nil options", func(t *testing.T) {
+		// Act
+		cfg.SetDHCPOptions(nil)
+
+		// Assert
+		require.Nil(t, cfg.OptionData.GetValue())
+	})
 }
 
 // Test getting configured hook libraries from the DHCPv6 server configuration.
@@ -1016,7 +1056,7 @@ func TestSetDHCPv6ELPReclaimTimerWaitTime(t *testing.T) {
 }
 
 // Test setting the maximum number of expired lease-processing cycles which didn't
-// result in full cleanup of the exired leases from the lease database,
+// result in full cleanup of the expired leases from the lease database,
 // after which a warning message is issued.
 func TestSetDHCPv6ELPUnwarnedReclaimCycles(t *testing.T) {
 	cfg := &SettableDHCPv6Config{}
@@ -1119,7 +1159,7 @@ func TestSetDHCPv6PDAllocator(t *testing.T) {
 
 // Test setting DHCPv6 option data.
 func TestSetDHCPv6OptionData(t *testing.T) {
-	cfg := &DHCPv6Config{}
+	cfg := &SettableDHCPv4Config{}
 	cfg.SetDHCPOptions([]SingleOptionData{
 		{
 			Name:       "routers",
@@ -1130,14 +1170,54 @@ func TestSetDHCPv6OptionData(t *testing.T) {
 			Space:      "dhcp4",
 		},
 	})
-	require.Len(t, cfg.OptionData, 1)
-	require.Equal(t, "routers", cfg.OptionData[0].Name)
-	require.True(t, cfg.OptionData[0].AlwaysSend)
-	require.EqualValues(t, 3, cfg.OptionData[0].Code)
-	require.True(t, cfg.OptionData[0].CSVFormat)
-	require.Equal(t, "foobar", cfg.OptionData[0].Data)
-	require.Equal(t, "dhcp4", cfg.OptionData[0].Space)
+	options := cfg.OptionData.GetValue()
+	require.Len(t, options, 1)
+	require.Equal(t, "routers", options[0].Name)
+	require.True(t, options[0].AlwaysSend)
+	require.EqualValues(t, 3, options[0].Code)
+	require.True(t, options[0].CSVFormat)
+	require.Equal(t, "foobar", options[0].Data)
+	require.Equal(t, "dhcp4", options[0].Space)
 
 	cfg.SetDHCPOptions(nil)
-	require.Nil(t, cfg.OptionData)
+	require.Nil(t, cfg.OptionData.GetValue())
+}
+
+// Test setting DHCPv6 option data.
+func TestSetDHCPv6Options(t *testing.T) {
+	// Arrange
+	cfg := &SettableDHCPv6Config{}
+
+	t.Run("Non-nil options", func(t *testing.T) {
+		// Act
+		cfg.SetDHCPOptions([]SingleOptionData{
+			{
+				Name:       "routers",
+				AlwaysSend: true,
+				Code:       3,
+				CSVFormat:  true,
+				Data:       "foobar",
+				Space:      "dhcp6",
+			},
+		})
+
+		// Assert
+		options := cfg.OptionData.GetValue()
+		require.Len(t, options, 1)
+		option := options[0]
+		require.Equal(t, "routers", option.Name)
+		require.True(t, option.AlwaysSend)
+		require.EqualValues(t, 3, option.Code)
+		require.True(t, option.CSVFormat)
+		require.Equal(t, "foobar", option.Data)
+		require.Equal(t, "dhcp6", option.Space)
+	})
+
+	t.Run("Nil options", func(t *testing.T) {
+		// Act
+		cfg.SetDHCPOptions(nil)
+
+		// Assert
+		require.Nil(t, cfg.OptionData.GetValue())
+	})
 }

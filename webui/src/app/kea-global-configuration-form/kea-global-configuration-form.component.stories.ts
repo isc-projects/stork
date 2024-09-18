@@ -26,6 +26,7 @@ import { MessagesModule } from 'primeng/messages'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { MultiSelectModule } from 'primeng/multiselect'
+import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 
 const mockUpdateKeaGlobalParameters4BeginData: UpdateKeaDaemonsGlobalParametersBeginResponse = {
     id: 123,
@@ -234,7 +235,7 @@ export default {
                 TriStateCheckboxModule,
                 ToastModule,
             ],
-            declarations: [ArrayValueSetFormComponent, SharedParametersFormComponent],
+            declarations: [ArrayValueSetFormComponent, SharedParametersFormComponent, DhcpOptionSetFormComponent],
         }),
         toastDecorator,
     ],

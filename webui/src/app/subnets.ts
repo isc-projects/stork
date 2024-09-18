@@ -400,7 +400,7 @@ export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]) {
         configs
             .map((c) => c.options)
             .slice(1)
-            .some((c) => c.optionsHash !== configs[0].options.optionsHash)
+            .some((opts) => opts?.optionsHash !== configs[0].options?.optionsHash)
     )
 }
 

@@ -7,11 +7,7 @@ import {
 import { lastValueFrom } from 'rxjs'
 import { getErrorMessage, getSeverityByIndex } from '../utils'
 import { MessageService } from 'primeng/api'
-import {
-    KeaGlobalConfigurationForm,
-    KeaGlobalParametersForm,
-    SubnetSetFormService,
-} from '../forms/subnet-set-form.service'
+import { KeaGlobalConfigurationForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { FormGroup, UntypedFormArray } from '@angular/forms'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
