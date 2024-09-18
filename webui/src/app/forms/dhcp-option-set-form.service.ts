@@ -7,6 +7,7 @@ import { DHCPOption } from '../backend/model/dHCPOption'
 import { DHCPOptionField } from '../backend/model/dHCPOptionField'
 import { StorkValidators } from '../validators'
 import { FormProcessor } from './form-processor'
+import { EMPTY } from 'rxjs'
 
 /**
  * A service for converting reactive forms with DHCP options to the REST API
@@ -505,9 +506,16 @@ export class DhcpOptionSetFormService extends FormProcessor {
      * @returns created form group instance.
      */
     createFqdnField(value: string = ''): DhcpOptionFieldFormGroup {
-        return this._createSimpleField(
-            DhcpOptionFieldType.Fqdn,
-            this._formBuilder.control(value, [Validators.required, StorkValidators.fullFqdn])
-        )
+        let control = this._formBuilder.control(value, [Validators.required, StorkValidators.fullFqdn])
+        let isPartialFqdn = false
+        if (StorkValidators.partialFqdn(control) == null) {
+            control.setValidators([Validators.required, StorkValidators.partialFqdn])
+            isPartialFqdn = true
+        }
+
+        return this._createComplexField(DhcpOptionFieldType.Fqdn, {
+            control: control,
+            isPartialFqdn: this._formBuilder.control(isPartialFqdn),
+        })
     }
 }
