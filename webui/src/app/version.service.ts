@@ -152,7 +152,7 @@ export class VersionService {
     private processData() {
         let newData = deepCopy(this.versionMetadata)
         Object.keys(newData).forEach((app) => {
-            if (newData[app] !== 'date') {
+            if (app !== 'date') {
                 Object.keys(newData[app]).forEach((swType) => {
                     switch (swType) {
                         case 'latestSecure':

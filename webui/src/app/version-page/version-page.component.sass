@@ -1,2 +1,10 @@
-:host ::ng-deep .p-panel-title
-  font-size: 1.5rem
+:host ::ng-deep
+  // Use bigger font for panel headers.
+  .p-panel-title
+    font-size: 1.5rem
+
+  #summary-table .p-datatable-tbody tr td
+    // When responsive table stack layout is applied, customize table cells to wrap content when it is too wide.
+    @media screen and (max-width: 48rem)
+      flex-wrap: wrap
+      gap: 0.5rem

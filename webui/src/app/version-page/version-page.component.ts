@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { VersionDetails, VersionService } from '../version.service'
-import {Machine, ServicesService} from "../backend";
+import { Machine, ServicesService } from '../backend'
+import { deepCopy } from '../utils'
 
 /**
  *
@@ -14,42 +15,45 @@ export class VersionPageComponent implements OnInit {
     keaVersions: VersionDetails[]
     bind9Versions: VersionDetails[]
     storkVersions: VersionDetails[]
-    machines: Machine[];
+    machines: Machine[]
 
     /**
      *
      */
-    constructor(private versionService: VersionService, private servicesApi: ServicesService) {}
+    constructor(
+        private versionService: VersionService,
+        private servicesApi: ServicesService
+    ) {}
 
     /**
      *
      */
     ngOnInit(): void {
         // prepare kea data
-        let keaDetails = this.versionService.getVersionDetails('kea', 'currentStable')
+        let keaDetails = deepCopy(this.versionService.getVersionDetails('kea', 'currentStable'))
         this.keaVersions = keaDetails ? (keaDetails as VersionDetails[]) : []
-        keaDetails = this.versionService.getVersionDetails('kea', 'latestDev')
+        keaDetails = deepCopy(this.versionService.getVersionDetails('kea', 'latestDev'))
         if (keaDetails) {
             this.keaVersions.push(keaDetails as VersionDetails)
         }
 
         // prepare bind9 data
-        let bindDetails = this.versionService.getVersionDetails('bind9', 'currentStable')
+        let bindDetails = deepCopy(this.versionService.getVersionDetails('bind9', 'currentStable'))
         this.bind9Versions = bindDetails ? (bindDetails as VersionDetails[]) : []
-        bindDetails = this.versionService.getVersionDetails('bind9', 'latestDev')
+        bindDetails = deepCopy(this.versionService.getVersionDetails('bind9', 'latestDev'))
         if (bindDetails) {
             this.bind9Versions.push(bindDetails as VersionDetails)
         }
 
         // prepare stork data
-        let storkDetails = this.versionService.getVersionDetails('stork', 'currentStable')
+        let storkDetails = deepCopy(this.versionService.getVersionDetails('stork', 'currentStable'))
         this.storkVersions = storkDetails ? (storkDetails as VersionDetails[]) : []
-        storkDetails = this.versionService.getVersionDetails('stork', 'latestDev')
+        storkDetails = deepCopy(this.versionService.getVersionDetails('stork', 'latestDev'))
         if (storkDetails) {
             this.storkVersions.push(storkDetails as VersionDetails)
         }
 
-        this.servicesApi.getMachines(0, 1000, undefined, undefined, true).subscribe((data) => {
+        this.servicesApi.getMachines(0, 100, undefined, undefined, true).subscribe((data) => {
             this.machines = data.items ?? []
         })
     }
