@@ -158,6 +158,8 @@
         type: array
         items:
           $ref: '#/definitions/App'
+      versionCheckSeverity:
+        type: string
 
   Machines:
     type: object

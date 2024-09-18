@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { VersionDetails, VersionService } from '../version.service'
+import { App, Severity, VersionDetails, VersionService } from '../version.service'
 import { Machine, ServicesService } from '../backend'
 import { deepCopy } from '../utils'
 
@@ -55,6 +55,15 @@ export class VersionPageComponent implements OnInit {
 
         this.servicesApi.getMachines(0, 100, undefined, undefined, true).subscribe((data) => {
             this.machines = data.items ?? []
+            for (let m of this.machines) {
+                for (let a of m.apps) {
+                    let versionCheck = this.versionService.checkVersion(a.version, a.type as App)
+                    if (versionCheck) {
+                        // TODO: severity precedence if more than one app per machine
+                        m.versionCheckSeverity = this.mapSeverityToLetter(versionCheck.severity)
+                    }
+                }
+            }
         })
     }
 
@@ -75,5 +84,44 @@ export class VersionPageComponent implements OnInit {
      */
     getDataManufactureDate() {
         return this.versionService.getDataManufactureDate()
+    }
+
+    private mapSeverityToLetter(s: Severity) {
+        switch (s) {
+            case 'error':
+                return 'a'
+            case 'warn':
+                return 'b'
+            case 'info':
+                return 'c'
+            case 'success':
+                return 'd'
+        }
+    }
+
+    mapLetterToSeverity(l: string): Severity {
+        switch (l) {
+            case 'a':
+                return 'error'
+            case 'b':
+                return 'warn'
+            case 'c':
+                return 'info'
+            case 'd':
+                return 'success'
+        }
+    }
+
+    getSubheader(l: string) {
+        switch (l) {
+            case 'a':
+                return 'Stork detected that below machines use software for which security updates are available.'
+            case 'b':
+                return 'Below machines use software versions that require your attention. Updating is possible.'
+            case 'c':
+                return 'All good but update is possible.'
+            case 'd':
+                return 'All good here. Current versions detected.'
+        }
     }
 }

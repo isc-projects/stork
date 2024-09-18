@@ -174,7 +174,13 @@
             responsiveLayout="stack"
             [breakpoint]="'48rem'"
             id="summary-table"
+            rowGroupMode="subheader"
+            groupRowsBy="versionCheckSeverity"
+            sortField="versionCheckSeverity"
+            sortMode="single"
+            [tableStyle]="{ 'min-width': '15rem' }"
         >
+            >
             <ng-template pTemplate="header">
                 <tr>
                     <th style="width: 8rem">Hostname</th>
@@ -184,7 +190,26 @@
                     <th>Summary</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-m>
+
+            <ng-template pTemplate="groupheader" let-m let-rowIndex="rowIndex" let-expanded="expanded">
+                <tr>
+                    <td colspan="5">
+                        <button
+                            type="button"
+                            pButton
+                            pRipple
+                            [pRowToggler]="m"
+                            class="p-button-text p-button-rounded p-button-plain mr-2"
+                            [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                        ></button>
+                        <p-message
+                            [severity]="mapLetterToSeverity(m.versionCheckSeverity)"
+                            [text]="getSubheader(m.versionCheckSeverity)"
+                        ></p-message>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="rowexpansion" let-m>
                 <tr>
                     <td>
                         <span class="p-column-title">Hostname</span>
