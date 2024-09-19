@@ -792,6 +792,28 @@ func TestParseInetSpecForDifferentKeysFormatting(t *testing.T) {
 	}
 }
 
+// Test that the wildcard addresses are resolved to the localhost address.
+func TestParseInetSpecForDifferentWildcardAddresses(t *testing.T) {
+	// Arrange
+	addresses := []string{"*", "0.0.0.0", "::", "localhost"}
+
+	for _, address := range addresses {
+		inetClause := fmt.Sprintf("inet %s allow { };", address)
+
+		config := fmt.Sprintf(`
+			controls {
+				%s
+			};
+		`, inetClause)
+
+		// Act
+		address, _, _ := parseInetSpec(config, inetClause)
+
+		// Assert
+		require.Equal(t, "localhost", address)
+	}
+}
+
 // Test that the RNDC key is converted to string properly.
 func TestBind9RndcKeyString(t *testing.T) {
 	// Arrange

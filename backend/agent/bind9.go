@@ -268,7 +268,12 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key *Bin
 		}
 	}
 
-	if address == "*" {
+	// The named-checkconf tool converts the asterisk (*) to the IPv4 wildcard
+	// address (0.0.0.0). I'm not sure if this worked the same way in previous
+	// versions of BIND9, so I keep the old behavior for now. I cannot find an
+	// exact place where the wildcard is converted in the BIND9 source code
+	// then I added the check for the zero IPv6 address too to be sure.
+	if address == "*" || address == "0.0.0.0" || address == "::" {
 		address = "localhost"
 	}
 
