@@ -29,6 +29,11 @@ export class VersionStatusComponent implements OnInit {
     @Input() inline = true
 
     /**
+     * Style class of the component.
+     */
+    @Input() styleClass: string | undefined
+
+    /**
      *
      */
     appName: string
@@ -103,16 +108,32 @@ export class VersionStatusComponent implements OnInit {
             case 'success':
                 this.iconClasses = { 'text-green-500': true, 'pi-check': true }
                 break
-            case 'warn':
+            // case 'warn':
+            case 'warning':
                 this.iconClasses = { 'text-orange-400': true, 'pi-exclamation-triangle': true }
                 break
-            case 'error':
+            // case 'error':
+            case 'danger':
                 this.iconClasses = { 'text-red-500': true, 'pi-exclamation-circle': false, 'pi-times': true }
                 break
             case 'info':
+            case 'secondary':
                 this.iconClasses = { 'text-blue-300': true, 'pi-info-circle': true }
                 break
         }
+    }
+
+    get mappedSeverityClass() {
+        return [
+            this.severity === 'warning'
+                ? 'p-inline-message-warn'
+                : this.severity === 'danger'
+                  ? 'p-inline-message-error'
+                  : this.severity === 'secondary'
+                    ? 'p-message p-message-secondary m-0'
+                    : '',
+            this.styleClass,
+        ].join(' ')
     }
 
     /**

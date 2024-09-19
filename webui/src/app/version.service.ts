@@ -2,10 +2,8 @@ import { Injectable } from '@angular/core'
 import { minor, major, sort, coerce, valid, lt, satisfies, gt } from 'semver'
 import { deepCopy } from './utils'
 
-type SwRelease = 'latestSecure' | 'currentStable' | 'latestDev'
-
 /**
- *
+ * Interface defining fields for an object which describes either Stork, Kea or Bind9 software release.
  */
 export interface VersionDetails {
     version: string
@@ -19,7 +17,7 @@ export interface VersionDetails {
 }
 
 /**
- *
+ * Interface defining fields for an object which describes all possible types for either Stork, Kea or Bind9 software release.
  */
 export interface AppVersionMetadata {
     currentStable?: VersionDetails[]
@@ -28,22 +26,40 @@ export interface AppVersionMetadata {
 }
 
 /**
- *
+ * Interface defining fields for an object which is returned after assessment of software version is done for particular App.
  */
-export type App = 'kea' | 'bind9' | 'stork'
-
-export type Severity = 'error' | 'warn' | 'success' | 'info'
-
 export interface VersionFeedback {
     severity: Severity
     feedback: string
 }
 
+/**
+ * Type for all possible ISC apps that have monitored software versions.
+ */
+export type App = 'kea' | 'bind9' | 'stork'
+
+/**
+ * Type for severity assigned after assessment of software version is done.
+ */
+export type Severity = 'danger' | 'warning' | 'success' | 'info' | 'secondary'
+
+/**
+ * Type for different sorts of released software.
+ */
+type ReleaseType = 'latestSecure' | 'currentStable' | 'latestDev'
+
+/**
+ * Service providing current ISC Kea, Bind9 and Stork software versions.
+ * Current data is fetched from Stork server.
+ * The service also provides utilities to assess whether used ISC software is up to date.
+ */
 @Injectable({
     providedIn: 'root',
 })
 export class VersionService {
     dataManufactureDate: string
+
+    private _checkedVersionCache: Map<string, VersionFeedback>
 
     private _processedData: { [a in App | 'date']: AppVersionMetadata | string }
 
@@ -101,12 +117,13 @@ export class VersionService {
         },
     }
 
-    private _onlineData: boolean
+    private readonly _onlineData: boolean
 
     constructor() {
         this._stableVersion = { kea: [], bind9: [], stork: [] }
         this.dataManufactureDate = '2024-09-01'
         this.processData()
+        this._checkedVersionCache = new Map()
         // For now force to false.
         this._onlineData = false
     }
@@ -117,7 +134,7 @@ export class VersionService {
      * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
      * @return version as either string (in case of latestSecure and latestDev) or array of strings (in case of currentStable)
      */
-    private getVersion(app: App, swType: SwRelease): string | string[] | null {
+    private getVersion(app: App, swType: ReleaseType): string | string[] | null {
         return swType === 'currentStable'
             ? this._stableVersion[app] || null
             : this._processedData[app]?.[swType]?.version || null
@@ -129,7 +146,7 @@ export class VersionService {
      * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
      * @return version details as either single VersionDetails (in case of latestSecure and latestDev) or array of VersionDetails (in case of currentStable)
      */
-    getVersionDetails(app: App, swType: SwRelease): VersionDetails | VersionDetails[] | null {
+    getVersionDetails(app: App, swType: ReleaseType): VersionDetails | VersionDetails[] | null {
         return this._processedData[app]?.[swType] || null
     }
 
@@ -196,7 +213,13 @@ export class VersionService {
      * @param app
      */
     checkVersion(version: string, app: App): VersionFeedback | null {
-        // TODO: cache responses; the same set of app and version is very likely to be repeated
+        let cachedFeedback = this._checkedVersionCache.get(version + app)
+        if (cachedFeedback) {
+            console.log('cache used')
+            return cachedFeedback
+        }
+
+        let response: VersionFeedback = { severity: 'info', feedback: '' }
         let sanitizedSemver = coerce(version).version
         let appName = ''
         if (valid(sanitizedSemver)) {
@@ -207,10 +230,14 @@ export class VersionService {
             // check security releases first
             let latestSecureVersion = this.getVersion(app, 'latestSecure')
             if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
-                return {
-                    severity: 'error',
+                response = {
+                    // severity: 'error',
+                    severity: 'danger',
                     feedback: `Security update ${latestSecureVersion} was released for ${appName}. Please update as soon as possible!`,
                 }
+
+                this._checkedVersionCache.set(version + app, response)
+                return response
             }
 
             // case - stable version
@@ -221,22 +248,25 @@ export class VersionService {
                     for (let details of currentStableVersionDetails) {
                         if (satisfies(sanitizedSemver, details.range)) {
                             if (lt(sanitizedSemver, details.version)) {
-                                return {
+                                response = {
                                     // severity: 'warn',
                                     severity: 'info',
-                                    feedback: `Current stable ${appName} version (known as of ${dataDate}) is ${details.version}. You are using ${sanitizedSemver}. Updating to current stable is possible.`,
+                                    feedback: `Stable ${appName} version update (${details.version}) is available (known as of ${dataDate}).`,
                                 }
                             } else if (gt(sanitizedSemver, details.version)) {
-                                return {
-                                    severity: 'info',
+                                response = {
+                                    severity: 'secondary',
                                     feedback: `Current stable ${appName} version (known as of ${dataDate}) is ${details.version}. You are using more recent version ${sanitizedSemver}.`,
                                 }
                             } else {
-                                return {
+                                response = {
                                     severity: 'success',
-                                    feedback: `You have current ${appName} stable version (known as of ${dataDate}).`,
+                                    feedback: `${sanitizedSemver} is current ${appName} stable version (known as of ${dataDate}).`,
                                 }
                             }
+
+                            this._checkedVersionCache.set(version + app, response)
+                            return response
                         }
                     }
 
@@ -246,18 +276,22 @@ export class VersionService {
                         let versionsText = stableVersions.join(', ')
                         if (lt(sanitizedSemver, stableVersions[0])) {
                             // either semver major or minor are below min(current stable)
-                            return {
-                                severity: 'warn', // TODO: or info ?
-                                feedback: `Your ${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}. Updating to current stable is possible.`,
+                            response = {
+                                severity: 'warning', // TODO: or info ?
+                                // feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}. Updating to current stable is possible.`,
+                                feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
                             }
                         } else {
                             // either semver major or minor are bigger than current stable
-                            return {
-                                severity: 'info',
-                                feedback: `Your ${appName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
+                            response = {
+                                severity: 'secondary',
+                                feedback: `${appName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
                             }
                             // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${sanitizedSemver}.`
                         }
+
+                        this._checkedVersionCache.set(version + app, response)
+                        return response
                     }
                 }
 
@@ -267,35 +301,39 @@ export class VersionService {
             // case - development version
             let latestDevVersion = this.getVersion(app, 'latestDev')
             if (isDevelopmentVersion === true && latestDevVersion) {
-                let response: VersionFeedback = { severity: 'info', feedback: '' }
                 if (lt(sanitizedSemver, latestDevVersion as string)) {
                     response = {
-                        severity: 'warn',
-                        feedback: `You are using ${appName} development version ${sanitizedSemver}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`,
+                        // severity: 'warn',
+                        severity: 'warning',
+                        feedback: `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
+                        // feedback: `You are using ${appName} development version ${sanitizedSemver}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`,
                     }
                 } else if (gt(sanitizedSemver, latestDevVersion as string)) {
                     response = {
-                        severity: 'info',
+                        severity: 'secondary',
                         feedback: `Current development ${appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
                     }
                 } else {
                     response = {
                         severity: 'success',
-                        feedback: `You have current ${appName} development version (known as of ${dataDate}).`,
+                        feedback: `${sanitizedSemver} is current ${appName} development version (known as of ${dataDate}).`,
                     }
                 }
 
                 if (currentStableVersionDetails) {
                     let extFeedback = [
                         response.feedback,
-                        `Please be advised that using development version in production is not recommended! Consider using ${appName} stable release.`,
+                        // `Please be advised that using development version in production is not recommended! Consider using ${appName} stable release.`,
+                        `Please be advised that using development version in production is not recommended.`,
                     ].join(' ')
                     response = {
-                        severity: 'warn',
+                        // severity: 'warn',
+                        severity: 'warning',
                         feedback: extFeedback,
                     }
                 }
 
+                this._checkedVersionCache.set(version + app, response)
                 return response
             }
         }

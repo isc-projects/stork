@@ -9,11 +9,11 @@
 <div class="max-w-100rem">
     <p-message
         styleClass="max-w-50rem mb-3"
-        *ngIf="isDataOffline()"
+        *ngIf="isDataOffline"
         severity="info"
         [escape]="false"
-        text="Below information about software versions relies on data that was generated on {{
-            getDataManufactureDate()
+        text="Below information about ISC software versions relies on a data that was generated on {{
+            dataManufactureDate
         }}. To see up-to-date information, please visit the <a href='https://www.isc.org'>ISC webpage</a>."
     ></p-message>
     <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
@@ -167,7 +167,7 @@
         </p-table>
     </p-panel>
 
-    <p-panel header="Summary of software versions detected by Stork" styleClass="mt-3">
+    <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
         <p-table
             [value]="machines"
             styleClass="p-datatable-striped"
@@ -193,18 +193,28 @@
 
             <ng-template pTemplate="groupheader" let-m let-rowIndex="rowIndex" let-expanded="expanded">
                 <tr>
-                    <td colspan="5">
+                    <td colspan="5" class="row-toggle">
                         <button
                             type="button"
                             pButton
                             pRipple
                             [pRowToggler]="m"
-                            class="p-button-text p-button-rounded p-button-plain mr-2"
+                            class="p-button-text p-button-rounded p-button-plain mr-2 flex-none"
                             [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                         ></button>
                         <p-message
-                            [severity]="mapLetterToSeverity(m.versionCheckSeverity)"
+                            [severity]="mapNumberToSeverity(m.versionCheckSeverity)"
                             [text]="getSubheader(m.versionCheckSeverity)"
+                            [styleClass]="
+                                [
+                                    m.versionCheckSeverity === 2
+                                        ? 'p-inline-message-warn'
+                                        : m.versionCheckSeverity === 1
+                                          ? 'p-inline-message-error'
+                                          : '',
+                                    'max-w-30rem'
+                                ].join(' ')
+                            "
                         ></p-message>
                     </td>
                 </tr>
@@ -219,7 +229,6 @@
                     <td>
                         <span class="p-column-title">Agent Version</span>
                         {{ m.agentVersion }}
-                        <app-version-status app="stork" [version]="m.agentVersion"></app-version-status>
                     </td>
                     <td>
                         <span class="p-column-title">App(s) Version</span>
@@ -227,14 +236,22 @@
                     </td>
                     <td>
                         <span class="p-column-title">Summary</span>
-                        <ng-container *ngFor="let a of m.apps"
+                        <ng-container *ngFor="let a of m.apps; let i = index"
                             ><app-version-status
                                 [app]="a.type"
                                 [version]="a.version"
                                 [showAppName]="true"
                                 [inline]="false"
+                                [styleClass]="[i > 0 ? 'mt-1' : '', 'max-w-50rem'].join(' ')"
                             ></app-version-status
                         ></ng-container>
+                        <app-version-status
+                            app="stork"
+                            [version]="m.agentVersion"
+                            [showAppName]="true"
+                            [inline]="false"
+                            styleClass="mt-1 max-w-50rem"
+                        ></app-version-status>
                     </td>
                 </tr>
             </ng-template>

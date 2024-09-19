@@ -3,8 +3,9 @@
   .p-panel-title
     font-size: 1.5rem
 
-  #summary-table .p-datatable-tbody tr td
+  #summary-table .p-datatable-tbody tr td:not(.row-toggle)
     // When responsive table stack layout is applied, customize table cells to wrap wide content for better visibility.
+    // Do not apply the style to row toggles table cells.
     @media screen and (max-width: 48rem)
       flex-wrap: wrap
       gap: 0.5rem

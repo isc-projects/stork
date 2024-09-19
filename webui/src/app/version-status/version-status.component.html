@@ -1,5 +1,12 @@
-<div *ngIf="inline" class="ml-2 inline-flex">
+<div *ngIf="inline" class="ml-2 inline-flex" [class]="styleClass">
     <span *ngIf="showAppName" class="mr-1">{{ appName }} {{ version }}</span>
-    <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedback"></i>
+    <a routerLink="/versions">
+        <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedback"></i>
+    </a>
 </div>
-<p-message *ngIf="!inline" [severity]="severity" [text]="feedback"></p-message>
+<p-message
+    *ngIf="!inline"
+    [severity]="severity"
+    [text]="appName + ' - ' + feedback"
+    [styleClass]="mappedSeverityClass"
+></p-message>

@@ -159,7 +159,7 @@
         items:
           $ref: '#/definitions/App'
       versionCheckSeverity:
-        type: string
+        type: integer
 
   Machines:
     type: object
