@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { SharedNetwork } from './backend'
+import { DHCPOption, SharedNetwork } from './backend'
 
 import {
     getTotalAddresses,
@@ -18,6 +18,7 @@ import {
     PoolWithLocalPools,
     hasDifferentLocalPoolOptions,
     hasDifferentSharedNetworkLevelOptions,
+    hasDifferentGlobalLevelOptions,
 } from './subnets'
 
 describe('subnets', () => {
@@ -1360,6 +1361,75 @@ describe('subnets', () => {
             ],
         }
         expect(hasDifferentLocalPoolOptions(pool)).toBeFalse()
+    })
+
+    it('does not detect different global options for no configs', () => {
+        expect(hasDifferentGlobalLevelOptions([])).toBeFalse()
+    })
+
+    it('does not detect different global options for a single config', () => {
+        const config = {
+            options: {
+                options: [],
+                optionsHash: 'foo',
+            },
+        }
+        expect(hasDifferentGlobalLevelOptions([config])).toBeFalse()
+    })
+
+    it('does not detect different global options for the same configs', () => {
+        const config = {
+            options: {
+                options: [
+                    {
+                        code: 1,
+                    },
+                ] as DHCPOption[],
+                optionsHash: 'foo',
+            },
+        }
+
+        expect(hasDifferentGlobalLevelOptions([config, config])).toBeFalse()
+    })
+
+    it('detects different global options for different configs', () => {
+        const configs = [
+            {
+                options: {
+                    options: [
+                        {
+                            code: 1,
+                        },
+                    ] as DHCPOption[],
+                    optionsHash: 'foo',
+                },
+            },
+            {
+                options: {
+                    options: [
+                        {
+                            code: 2,
+                        },
+                    ] as DHCPOption[],
+                    optionsHash: 'bar',
+                },
+            },
+        ]
+
+        expect(hasDifferentGlobalLevelOptions(configs)).toBeTrue()
+    })
+
+    it('handles the case when the options are missing', () => {
+        expect(hasDifferentGlobalLevelOptions([{}, {}])).toBeFalse()
+
+        const config = {
+            options: {
+                options: [],
+                optionsHash: 'foo',
+            },
+        }
+
+        expect(hasDifferentGlobalLevelOptions([{}, config])).toBeTrue()
     })
 
     it('should extract the total addresses', () => {
