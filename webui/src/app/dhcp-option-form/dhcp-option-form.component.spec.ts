@@ -353,13 +353,70 @@ describe('DhcpOptionFormComponent', () => {
         expect(component.formGroup.valid).toBeTrue()
 
         component.addFqdnField()
-        component.optionFields.at(0).get('control').setValue('fqdn..invalid.')
+
+        const input = component.optionFields.at(0).get('control')
+        const toggleButton = component.optionFields.at(0).get('isPartialFqdn')
+
+        // By default, the FQDN field is set to be full.
+        const isPartialFQDN = toggleButton.getRawValue()
+        expect(isPartialFQDN).toBeFalse()
+
+        // Invalid FQDN.
+        input.setValue('fqdn..invalid.')
         expect(component.formGroup.valid).toBeFalse()
 
-        component.optionFields.at(0).get('control').setValue(null)
+        // Null FQDN.
+        input.setValue(null)
         expect(component.formGroup.valid).toBeFalse()
 
-        component.optionFields.at(0).get('control').setValue('fqdn.valid.')
+        // Partial FQDN.
+        input.setValue('foo.bar-baz')
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Full FQDN.
+        input.setValue('fqdn.valid.')
+        expect(component.formGroup.valid).toBeTrue()
+
+        // Switch to partial FQDN.
+        toggleButton.setValue(true)
+        component.togglePartialFqdn({ checked: true }, 0)
+        fixture.detectChanges()
+
+        // Invalid FQDN.
+        input.setValue('fqdn..invalid.')
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Null FQDN.
+        input.setValue(null)
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Partial FQDN.
+        input.setValue('foo.bar-baz')
+        expect(component.formGroup.valid).toBeTrue()
+
+        // Full FQDN.
+        input.setValue('fqdn.valid.')
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Switch back to full FQDN.
+        toggleButton.setValue(false)
+        component.togglePartialFqdn({ checked: false }, 0)
+        fixture.detectChanges()
+
+        // Invalid FQDN.
+        input.setValue('fqdn..invalid.')
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Null FQDN.
+        input.setValue(null)
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Partial FQDN.
+        input.setValue('foo.bar-baz')
+        expect(component.formGroup.valid).toBeFalse()
+
+        // Full FQDN.
+        input.setValue('fqdn.valid.')
         expect(component.formGroup.valid).toBeTrue()
     })
 
