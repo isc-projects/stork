@@ -1,13 +1,21 @@
 import { TestBed } from '@angular/core/testing'
 
 import {
+    KeaGlobalConfigurationForm,
     KeaGlobalParametersForm,
     KeaPoolParametersForm,
     KeaRawConfig,
     KeaSubnetParametersForm,
+    OptionsForm,
     SubnetSetFormService,
 } from './subnet-set-form.service'
-import { KeaConfigPoolParameters, KeaConfigSubnetDerivedParameters, SharedNetwork, Subnet } from '../backend'
+import {
+    KeaConfigPoolParameters,
+    KeaConfigSubnetDerivedParameters,
+    KeaDaemonConfig,
+    SharedNetwork,
+    Subnet,
+} from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { IPType } from '../iptype'
@@ -2651,6 +2659,148 @@ describe('SubnetSetFormService', () => {
         expect(formGroup.get('authoritative')).toBeFalsy()
     })
 
+    it('should convert global DHCPv4 configurations to form - single config', () => {
+        const configs: KeaDaemonConfig[] = [
+            {
+                appId: 1,
+                appName: 'kea',
+                daemonId: 1,
+                daemonName: 'dhcp6',
+                config: {
+                    Dhcp6: {
+                        allocator: 'iterative',
+                    },
+                },
+                options: {
+                    options: [
+                        {
+                            alwaysSend: true,
+                            code: 42,
+                            encapsulate: '',
+                            universe: 6,
+                        },
+                    ],
+                },
+            },
+        ]
+
+        const form = service.convertKeaGlobalConfigurationToForm(configs)
+
+        expect(form).toBeDefined()
+
+        const parameters = form.get('parameters') as FormGroup<KeaGlobalParametersForm>
+        expect(parameters).toBeDefined()
+        expect(parameters.get('allocator.unlocked')?.value).toBeFalse()
+        expect(parameters.get('allocator.unlocked')?.value).toBeFalse()
+        expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(1)
+        expect(parameters.get('allocator.values.0')?.value).toBe('iterative')
+
+        const options = form.get('options') as FormGroup<OptionsForm>
+        expect(options).toBeDefined()
+        expect(options.get('unlocked')?.value).toBeFalse()
+        expect((options.get('data') as UntypedFormArray).length).toBe(1)
+        expect(options.get('data.0.0.optionCode')?.value).toBe(42)
+    })
+
+    it('should convert global DHCPv6 configurations to form - many configs', () => {
+        const configs: KeaDaemonConfig[] = [
+            {
+                appId: 1,
+                appName: 'kea',
+                daemonId: 1,
+                daemonName: 'dhcp4',
+                config: {
+                    Dhcp4: {
+                        allocator: 'iterative',
+                    },
+                },
+                options: {
+                    options: [
+                        {
+                            alwaysSend: true,
+                            code: 42,
+                            encapsulate: '',
+                            universe: 4,
+                        },
+                    ],
+                    optionsHash: 'foo',
+                },
+            },
+            {
+                appId: 2,
+                appName: 'kea',
+                daemonId: 2,
+                daemonName: 'dhcp4',
+                config: {
+                    Dhcp4: {
+                        allocator: 'random',
+                    },
+                },
+                options: {
+                    options: [
+                        {
+                            alwaysSend: false,
+                            code: 24,
+                            encapsulate: '',
+                            universe: 4,
+                        },
+                    ],
+                    optionsHash: 'true',
+                },
+            },
+        ]
+
+        const form = service.convertKeaGlobalConfigurationToForm(configs)
+
+        expect(form).toBeDefined()
+
+        const parameters = form.get('parameters') as FormGroup<KeaGlobalParametersForm>
+        expect(parameters).toBeDefined()
+        expect(parameters.get('allocator.unlocked')?.value).toBeTrue()
+        expect(parameters.get('allocator.unlocked')?.value).toBeTrue()
+        expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(2)
+        expect(parameters.get('allocator.values.0')?.value).toBe('iterative')
+        expect(parameters.get('allocator.values.1')?.value).toBe('random')
+
+        const options = form.get('options') as FormGroup<OptionsForm>
+        expect(options).toBeDefined()
+        expect(options.get('unlocked')?.value).toBeTrue()
+        expect((options.get('data') as UntypedFormArray).length).toBe(2)
+        expect(options.get('data.0.0.optionCode')?.value).toBe(42)
+        expect(options.get('data.1.0.optionCode')?.value).toBe(24)
+    })
+
+    it('should convert global DHCPv6 configurations to form - daemon mishmash', () => {
+        const configs: KeaDaemonConfig[] = [
+            {
+                appId: 1,
+                appName: 'kea',
+                daemonId: 1,
+                daemonName: 'dhcp4',
+                config: {
+                    Dhcp4: {
+                        allocator: 'iterative',
+                    },
+                },
+            },
+            {
+                appId: 2,
+                appName: 'kea',
+                daemonId: 2,
+                daemonName: 'dhcp6',
+                config: {
+                    Dhcp6: {
+                        allocator: 'random',
+                    },
+                },
+            },
+        ]
+
+        const form = service.convertKeaGlobalConfigurationToForm(configs)
+
+        expect(form).toBeNull()
+    })
+
     it('should convert a form to Kea parameters', () => {
         const params = service.convertFormToKeaSubnetParameters(
             new FormGroup<KeaGlobalParametersForm>({
@@ -2688,5 +2838,77 @@ describe('SubnetSetFormService', () => {
         expect(params[2].cacheThreshold).toBeFalsy()
         expect(params[2].allocator).toBeFalsy()
         expect(params[2].authoritative).toBeFalse()
+    })
+
+    it('should convert a form to the global Kea configuration', () => {
+        const form = new FormGroup<KeaGlobalConfigurationForm>({
+            parameters: new FormGroup<KeaGlobalParametersForm>({
+                cacheThreshold: new SharedParameterFormGroup<number>(
+                    {
+                        type: 'number',
+                        min: 0,
+                        max: 1,
+                        fractionDigits: 2,
+                    },
+                    [new FormControl<number>(0.5), new FormControl<number>(0.5)]
+                ),
+                allocator: new SharedParameterFormGroup<string>(
+                    {
+                        type: 'string',
+                        values: ['iterative', 'random', 'flq'],
+                    },
+                    [new FormControl<string>('flq'), new FormControl<string>('random')]
+                ),
+                authoritative: new SharedParameterFormGroup<boolean>(
+                    {
+                        type: 'boolean',
+                    },
+                    [new FormControl<boolean>(true), new FormControl<boolean>(false)]
+                ),
+            }),
+            options: new FormGroup<OptionsForm>({
+                unlocked: new FormControl<boolean>(true),
+                data: new UntypedFormArray([
+                    new UntypedFormArray([
+                        new FormGroup({
+                            alwaysSend: new FormControl(false),
+                            optionCode: new FormControl(6),
+                            optionFields: new UntypedFormArray([]),
+                            suboptions: new UntypedFormArray([]),
+                        }),
+                    ]),
+                    new UntypedFormArray([
+                        new FormGroup({
+                            alwaysSend: new FormControl(true),
+                            optionCode: new FormControl(42),
+                            optionFields: new UntypedFormArray([]),
+                            suboptions: new UntypedFormArray([]),
+                        }),
+                    ]),
+                ]),
+            }),
+        })
+
+        const configs = service.convertFormToKeaGlobalParameters(form, IPType.IPv4)
+        expect(configs).toBeDefined()
+        expect(configs.length).toBe(2)
+
+        let config = configs[0]
+        expect(config.cacheThreshold).toBe(0.5)
+        expect(config.allocator).toBe('flq')
+        expect(config.authoritative).toBeTrue()
+        expect(config.options).toBeDefined()
+        expect(config.options.length).toBe(1)
+        expect(config.options[0].alwaysSend).toBeFalse()
+        expect(config.options[0].code).toBe(6)
+
+        config = configs[1]
+        expect(config.cacheThreshold).toBe(0.5)
+        expect(config.allocator).toBe('random')
+        expect(config.authoritative).toBeFalse()
+        expect(config.options).toBeDefined()
+        expect(config.options.length).toBe(1)
+        expect(config.options[0].alwaysSend).toBeTrue()
+        expect(config.options[0].code).toBe(42)
     })
 })

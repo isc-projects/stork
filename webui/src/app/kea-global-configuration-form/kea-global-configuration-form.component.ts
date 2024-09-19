@@ -152,6 +152,18 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
     }
 
     /**
+     * Returns options data for all servers or for a specified server.
+     *
+     * @param index optional index of the server.
+     * @returns An array of options data for all servers or for a single server.
+     */
+    private getOptionsData(index?: number): UntypedFormArray {
+        return index === undefined
+            ? (this.formGroup.get('options.data') as UntypedFormArray)
+            : (this.getOptionsData().at(index) as UntypedFormArray)
+    }
+
+    /**
      * Sends a request to the server to begin a new transaction for updating
      * Kea global parameters.
      */
@@ -206,17 +218,5 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
      */
     get isIPv6(): boolean {
         return this.response?.configs?.[0]?.daemonName === 'dhcp6'
-    }
-
-    /**
-     * Returns options data for all servers or for a specified server.
-     *
-     * @param index optional index of the server.
-     * @returns An array of options data for all servers or for a single server.
-     */
-    private getOptionsData(index?: number): UntypedFormArray {
-        return index === undefined
-            ? (this.formGroup.get('options.data') as UntypedFormArray)
-            : (this.getOptionsData().at(index) as UntypedFormArray)
     }
 }

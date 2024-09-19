@@ -24,6 +24,8 @@ import { ChipsModule } from 'primeng/chips'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { By } from '@angular/platform-browser'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
+import { SplitButtonModule } from 'primeng/splitbutton'
 
 describe('KeaGlobalConfigurationFormComponent', () => {
     let component: KeaGlobalConfigurationFormComponent
@@ -189,6 +191,26 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                         'server-tag': '',
                     },
                 },
+                options: {
+                    optionsHash: 'hash',
+                    options: [
+                        {
+                            alwaysSend: false,
+                            code: 6,
+                            fields: [
+                                {
+                                    fieldType: 'ipv4-address',
+                                    values: ['192.0.2.1'],
+                                },
+                                {
+                                    fieldType: 'ipv4-address',
+                                    values: ['192.0.2.2'],
+                                },
+                            ],
+                            universe: 4,
+                        },
+                    ],
+                },
             },
         ],
     }
@@ -227,12 +249,14 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                 NoopAnimationsModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
+                SplitButtonModule,
             ],
             declarations: [
                 ArrayValueSetFormComponent,
                 KeaGlobalConfigurationFormComponent,
                 SharedParametersFormComponent,
                 DhcpOptionSetFormComponent,
+                DhcpOptionFormComponent,
             ],
             providers: [MessageService],
         }).compileComponents()
@@ -305,7 +329,25 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                         reservationsGlobal: false,
                         reservationsInSubnet: true,
                         reservationsOutOfPool: false,
-                        options: [],
+                        options: [
+                            {
+                                alwaysSend: false,
+                                code: 6,
+                                encapsulate: '',
+                                fields: [
+                                    {
+                                        fieldType: 'ipv4-address',
+                                        values: ['192.0.2.1'],
+                                    },
+                                    {
+                                        fieldType: 'ipv4-address',
+                                        values: ['192.0.2.2'],
+                                    },
+                                ],
+                                options: [],
+                                universe: 4,
+                            },
+                        ],
                     },
                 },
             ],
@@ -387,4 +429,47 @@ describe('KeaGlobalConfigurationFormComponent', () => {
         expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
         expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
     }))
+
+    it('should list the server names', () => {
+        const response = {
+            id: 1,
+            configs: [
+                {
+                    appName: 'foo',
+                    daemonName: 'dhcp4',
+                    config: { Dhcp4: {} },
+                },
+                {
+                    appName: 'bar',
+                    daemonName: 'dhcp4',
+                    config: { Dhcp4: {} },
+                },
+            ],
+        } as UpdateKeaDaemonsGlobalParametersBeginResponse
+        component.response = response
+
+        expect(component.servers.length).toBe(2)
+        expect(component.servers).toContain('foo/dhcp4')
+        expect(component.servers).toContain('bar/dhcp4')
+    })
+
+    it('should detect IPv6 servers', () => {
+        component.response = { configs: [{ daemonName: 'dhcp4' }] }
+        expect(component.isIPv6).toBeFalse()
+
+        component.response = { configs: [{ daemonName: 'dhcp6' }] }
+        expect(component.isIPv6).toBeTrue()
+
+        component.response = { configs: [{ daemonName: 'dhcp4' }, { daemonName: 'dhcp6' }] }
+        expect(component.isIPv6).toBeFalse()
+
+        component.response = { configs: [{ daemonName: 'dhcp6' }, { daemonName: 'dhcp4' }] }
+        expect(component.isIPv6).toBeTrue()
+
+        component.response = null
+        expect(component.isIPv6).toBeFalse()
+
+        component.response = { configs: [] }
+        expect(component.isIPv6).toBeFalse()
+    })
 })
