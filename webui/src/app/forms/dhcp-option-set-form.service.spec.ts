@@ -4,6 +4,7 @@ import { DHCPOption } from '../backend/model/dHCPOption'
 import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { IPType } from '../iptype'
+import { StorkValidators } from '../validators'
 
 describe('DhcpOptionSetFormService', () => {
     let service: DhcpOptionSetFormService
@@ -844,11 +845,59 @@ describe('DhcpOptionSetFormService', () => {
         expect(formGroup.get('psidLength').value).toBe('8')
     })
 
-    it('creates fqdn field', () => {
+    it('creates fqdn field initialized with a full FQDN', () => {
+        let formGroup = service.createFqdnField('foo.example.org.')
+        expect(formGroup).toBeTruthy()
+        expect(formGroup.data.fieldType).toBe(DhcpOptionFieldType.Fqdn)
+        expect(formGroup.contains('control')).toBeTrue()
+        const control = formGroup.get('control')
+        expect(control.value).toBe('foo.example.org.')
+        expect(control.hasValidator(StorkValidators.fullFqdn)).toBeTrue()
+        expect(control.hasValidator(StorkValidators.partialFqdn)).toBeFalse()
+        const toggleButton = formGroup.get('isPartialFqdn')
+        expect(toggleButton).toBeTruthy()
+        expect(toggleButton.value).toBeFalse()
+    })
+
+    it('creates fqdn field initialized with a partial FQDN', () => {
         let formGroup = service.createFqdnField('foo.example.org')
         expect(formGroup).toBeTruthy()
         expect(formGroup.data.fieldType).toBe(DhcpOptionFieldType.Fqdn)
         expect(formGroup.contains('control')).toBeTrue()
-        expect(formGroup.get('control').value).toBe('foo.example.org')
+        const control = formGroup.get('control')
+        expect(control.value).toBe('foo.example.org')
+        expect(control.hasValidator(StorkValidators.fullFqdn)).toBeFalse()
+        expect(control.hasValidator(StorkValidators.partialFqdn)).toBeTrue()
+        const toggleButton = formGroup.get('isPartialFqdn')
+        expect(toggleButton).toBeTruthy()
+        expect(toggleButton.value).toBeTrue()
+    })
+
+    it('creates fqdn field initialized with an empty FQDN', () => {
+        let formGroup = service.createFqdnField('')
+        expect(formGroup).toBeTruthy()
+        expect(formGroup.data.fieldType).toBe(DhcpOptionFieldType.Fqdn)
+        expect(formGroup.contains('control')).toBeTrue()
+        const control = formGroup.get('control')
+        expect(control.value).toBe('')
+        expect(control.hasValidator(StorkValidators.fullFqdn)).toBeTrue()
+        expect(control.hasValidator(StorkValidators.partialFqdn)).toBeFalse()
+        const toggleButton = formGroup.get('isPartialFqdn')
+        expect(toggleButton).toBeTruthy()
+        expect(toggleButton.value).toBeFalse()
+    })
+
+    it('creates fqdn field initialized with an invalid FQDN', () => {
+        let formGroup = service.createFqdnField('---')
+        expect(formGroup).toBeTruthy()
+        expect(formGroup.data.fieldType).toBe(DhcpOptionFieldType.Fqdn)
+        expect(formGroup.contains('control')).toBeTrue()
+        const control = formGroup.get('control')
+        expect(control.value).toBe('---')
+        expect(control.hasValidator(StorkValidators.fullFqdn)).toBeTrue()
+        expect(control.hasValidator(StorkValidators.partialFqdn)).toBeFalse()
+        const toggleButton = formGroup.get('isPartialFqdn')
+        expect(toggleButton).toBeTruthy()
+        expect(toggleButton.value).toBeFalse()
     })
 })
