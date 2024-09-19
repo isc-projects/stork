@@ -2655,6 +2655,64 @@ func TestAppToRestAPIForNilKeaConfig(t *testing.T) {
 	require.NotNil(t, restApp)
 }
 
+// Test that converting app with nil BIND9 daemon doesn't cause panic.
+func TestAppToRestAPIForNilBIND9Daemon(t *testing.T) {
+	// Arrange
+	app := &dbmodel.App{
+		MachineID: 1,
+		Type:      dbmodel.AppTypeBind9,
+		Machine: &dbmodel.Machine{
+			Address:   "localhost",
+			AgentPort: 8080,
+		},
+	}
+
+	bind9Mock := func(callNo int, statsOutput interface{}) {
+		json := `{
+		    "json-stats-version":"1.2",
+		    "views":{
+		        "_default":{
+		            "resolver":{
+		                "cachestats":{
+		                    "CacheHits": 60,
+		                    "CacheMisses": 40,
+		                    "QueryHits": 10,
+		                    "QueryMisses": 90
+		                }
+		            }
+		        },
+		        "_bind":{
+		            "resolver":{
+		                "cachestats":{
+		                    "CacheHits": 30,
+		                    "CacheMisses": 70,
+		                    "QueryHits": 20,
+		                    "QueryMisses": 80
+		                }
+		            }
+		        }
+		    }
+		}`
+
+		agentcomm.UnmarshalNamedStatsResponse(json, statsOutput)
+	}
+	fa := agentcommtest.NewFakeAgents(nil, bind9Mock)
+
+	rapi, _ := NewRestAPI(&dbops.DatabaseSettings{}, fa)
+
+	// Act & Assert
+	var restApp *models.App
+	require.NotPanics(t, func() {
+		restApp = rapi.appToRestAPI(app)
+	})
+
+	require.NotNil(t, restApp)
+	require.EqualValues(t, dbmodel.AppTypeBind9, restApp.Type)
+	require.NotNil(t, restApp.Details.AppBind9)
+	require.Nil(t, restApp.Details.AppBind9.Daemon)
+	require.Empty(t, restApp.Details.Daemons)
+}
+
 // Test that converting BIND9 app with no daemons doesn't cause panic.
 // The daemon list is empty when the Stork agent detects the BIND9 process but
 // it fails to establish connection to it through the RNDC control channel
