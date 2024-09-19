@@ -1,0 +1,6 @@
+[bug] slawek
+
+    Fixed a rare bug that caused a Stork server to crash when the Stork
+    agent was able to detect the BIND 9 process, but it couldn't fetch
+    its configuration due to insufficient rights.
+    (Gitlab #1492)
