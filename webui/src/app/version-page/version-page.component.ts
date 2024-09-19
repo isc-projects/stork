@@ -56,11 +56,20 @@ export class VersionPageComponent implements OnInit {
         this.servicesApi.getMachines(0, 100, undefined, undefined, true).subscribe((data) => {
             this.machines = data.items ?? []
             for (let m of this.machines) {
+                // TODO: enum?
+                m.versionCheckSeverity = 4
+                let storkVersionSeverity = this.versionService.checkVersion(m.agentVersion, 'stork')
+                m.versionCheckSeverity = Math.min(
+                    this.mapSeverityToNumber(storkVersionSeverity.severity),
+                    m.versionCheckSeverity
+                )
                 for (let a of m.apps) {
                     let versionCheck = this.versionService.checkVersion(a.version, a.type as App)
                     if (versionCheck) {
-                        // TODO: severity precedence if more than one app per machine
-                        m.versionCheckSeverity = this.mapSeverityToLetter(versionCheck.severity)
+                        m.versionCheckSeverity = Math.min(
+                            this.mapSeverityToNumber(versionCheck.severity),
+                            m.versionCheckSeverity
+                        )
                     }
                 }
             }
@@ -75,53 +84,71 @@ export class VersionPageComponent implements OnInit {
     /**
      * Returns true if version data source is offline json file.
      */
-    isDataOffline() {
+    get isDataOffline() {
         return !this.versionService.isOnlineData()
     }
 
     /**
      *
      */
-    getDataManufactureDate() {
+    get dataManufactureDate() {
         return this.versionService.getDataManufactureDate()
     }
 
-    private mapSeverityToLetter(s: Severity) {
-        switch (s) {
-            case 'error':
-                return 'a'
-            case 'warn':
-                return 'b'
+    /**
+     *
+     * @param severity
+     * @private
+     */
+    private mapSeverityToNumber(severity: Severity) {
+        switch (severity) {
+            // case 'error':
+            case 'danger':
+                return 1
+            // case 'warn':
+            case 'warning':
+                return 2
             case 'info':
-                return 'c'
+                return 3
             case 'success':
-                return 'd'
+            case 'secondary':
+                return 4
         }
     }
 
-    mapLetterToSeverity(l: string): Severity {
-        switch (l) {
-            case 'a':
-                return 'error'
-            case 'b':
-                return 'warn'
-            case 'c':
+    /**
+     *
+     * @param number
+     */
+    mapNumberToSeverity(number: number): Severity {
+        switch (number) {
+            case 1:
+                // return 'error'
+                return 'danger'
+            case 2:
+                // return 'warn'
+                return 'warning'
+            case 3:
                 return 'info'
-            case 'd':
+            case 4:
                 return 'success'
         }
     }
 
-    getSubheader(l: string) {
-        switch (l) {
-            case 'a':
-                return 'Stork detected that below machines use software for which security updates are available.'
-            case 'b':
-                return 'Below machines use software versions that require your attention. Updating is possible.'
-            case 'c':
-                return 'All good but update is possible.'
-            case 'd':
-                return 'All good here. Current versions detected.'
+    /**
+     *
+     * @param number
+     */
+    getSubheader(number: number) {
+        switch (number) {
+            case 1:
+                return 'Security updates were found for ISC software used on those machines!'
+            case 2:
+                return 'Those machines use ISC software version that require your attention. Software updates are available.'
+            case 3:
+                return 'ISC software updates are available for those machines.'
+            case 4:
+                return `Those machines use up-to-date ISC software (known as of ${this.dataManufactureDate})`
         }
     }
 }

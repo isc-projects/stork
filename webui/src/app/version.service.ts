@@ -38,6 +38,16 @@ export interface VersionFeedback {
  */
 export type App = 'kea' | 'bind9' | 'stork'
 
+export enum SeverityEnum {
+    danger,
+    warning,
+    info,
+    secondary,
+    success,
+}
+
+export type SeverityStrings = keyof typeof SeverityEnum
+
 /**
  * Type for severity assigned after assessment of software version is done.
  */
@@ -295,6 +305,7 @@ export class VersionService {
                     }
                 }
 
+                // wrong json syntax - this shouldn't happen
                 return null
             }
 
