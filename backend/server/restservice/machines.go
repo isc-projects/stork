@@ -988,6 +988,26 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			}
 		}
 
+		app.Details = struct {
+			models.AppKea
+			models.AppBind9
+		}{
+			models.AppKea{
+				Daemons: []*models.KeaDaemon{},
+			},
+			models.AppBind9{
+				Daemon: nil,
+			},
+		}
+
+		if bind9DaemonDB == nil {
+			// The BIND9 daemon is missing when the Stork Agent detects that the
+			// BIND9 daemon is running, but there are problems with fetching its
+			// configuration (e.g., cannot call the named-checkconf -v command).
+			// In this case, the application entry is created but no daemon.
+			break
+		}
+
 		var queryHitRatio float64
 		var queryHits int64
 		var queryMisses int64
@@ -1003,48 +1023,31 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			}
 		}
 
-		// The BIND9 daemon is missing when the Stork Agent detects that the
-		// BIND9 daemon is running, but there are problems with fetching its
-		// configuration (e.g., cannot call the named-checkconf -v command).
-		// In this case, the application entry is created but no daemon.
-		var bind9Daemon *models.Bind9Daemon
-		if bind9DaemonDB != nil {
-			bind9Daemon = &models.Bind9Daemon{
-				ID:              bind9DaemonDB.ID,
-				Pid:             int64(bind9DaemonDB.Pid),
-				Name:            bind9DaemonDB.Name,
-				Active:          bind9DaemonDB.Active,
-				Monitored:       bind9DaemonDB.Monitored,
-				Version:         bind9DaemonDB.Version,
-				Uptime:          bind9DaemonDB.Uptime,
-				ReloadedAt:      convertToOptionalDatetime(bind9DaemonDB.ReloadedAt),
-				QueryHits:       queryHits,
-				QueryMisses:     queryMisses,
-				QueryHitRatio:   queryHitRatio,
-				AgentCommErrors: agentErrors,
-			}
+		bind9Daemon := &models.Bind9Daemon{
+			ID:              bind9DaemonDB.ID,
+			Pid:             int64(bind9DaemonDB.Pid),
+			Name:            bind9DaemonDB.Name,
+			Active:          bind9DaemonDB.Active,
+			Monitored:       bind9DaemonDB.Monitored,
+			Version:         bind9DaemonDB.Version,
+			Uptime:          bind9DaemonDB.Uptime,
+			ReloadedAt:      convertToOptionalDatetime(bind9DaemonDB.ReloadedAt),
+			QueryHits:       queryHits,
+			QueryMisses:     queryMisses,
+			QueryHitRatio:   queryHitRatio,
+			AgentCommErrors: agentErrors,
+		}
+		app.Details.AppBind9.Daemon = bind9Daemon
 
-			if bind9DaemonDB.Bind9Daemon != nil {
-				bind9Daemon.ZoneCount = bind9DaemonDB.Bind9Daemon.Stats.ZoneCount
-				bind9Daemon.AutoZoneCount = bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount
-			}
+		if bind9DaemonDB.Bind9Daemon != nil {
+			bind9Daemon.ZoneCount = bind9DaemonDB.Bind9Daemon.Stats.ZoneCount
+			bind9Daemon.AutoZoneCount = bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount
 		}
 
 		if agentStats != nil {
 			bind9Errors := agentStats.GetStats().GetBind9CommErrorStats(app.ID)
 			bind9Daemon.RndcCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelRNDC)
 			bind9Daemon.StatsCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelStats)
-		}
-		app.Details = struct {
-			models.AppKea
-			models.AppBind9
-		}{
-			models.AppKea{
-				Daemons: []*models.KeaDaemon{},
-			},
-			models.AppBind9{
-				Daemon: bind9Daemon,
-			},
 		}
 	}
 
