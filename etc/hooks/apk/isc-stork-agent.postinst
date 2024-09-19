@@ -13,14 +13,14 @@ chmod 700 "${home_dir}/tokens"
 addgroup -S stork-agent >/dev/null
 adduser -h "${home_dir}" -D -S -H -g "Stork Agent User" -G stork-agent stork-agent >/dev/null
 
-# Add stork-agent user to bind so it can read its config files.
-if getent group bind > /dev/null; then
-    addgroup stork-agent bind
+# Add stork-agent user to BIND9 group so it can read its config files.
+if getent group named > /dev/null; then
+    addgroup stork-agent named
 fi
 
 # Add stork-agent user to kea so it can read its config files.
-if getent group _kea > /dev/null; then
-    addgroup stork-agent _kea
+if getent group kea > /dev/null; then
+    addgroup stork-agent kea
 fi
 
 # Change ownership of all folders and files in home dir to stork-agent user.

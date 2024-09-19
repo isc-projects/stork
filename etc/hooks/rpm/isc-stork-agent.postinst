@@ -22,8 +22,8 @@ after_install () {
     fi
 
     # Add stork-agent user to kea so it can read its config files.
-    if getent group _kea > /dev/null; then
-        usermod -aG _kea stork-agent
+    if getent group kea > /dev/null; then
+        usermod -aG kea stork-agent
     fi
 
     # Change ownership of all folders and files in home dir to stork-agent user.
