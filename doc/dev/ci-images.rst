@@ -146,6 +146,14 @@ Changelog
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
+**Tag: 5**
+
+    - ``alpine.Dockerfile``:
+
+        Introduced in the #1512 ticket to upgrade overall dependencies.
+        Upgraded Go to 1.23.1, NodeJS 20, and Protoc to 24.4. Removed the FPM
+        dependencies i.e., gcc, make, and tar.
+
 **Tag: 4**
 
     - ``compose.Dockerfile``:
