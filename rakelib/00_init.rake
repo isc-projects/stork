@@ -540,7 +540,7 @@ goswagger_ver = 'v0.31.0'
 protoc_ver = '26.1'
 protoc_gen_go_ver = 'v1.34.2'
 protoc_gen_go_grpc_ver = 'v1.4.0'
-richgo_ver = 'v0.3.12'
+tparse_ver = 'v0.15.0'
 govulncheck_ver = 'v1.1.3'
 mockery_ver = 'v2.43.2'
 mockgen_ver = 'v0.4.0'
@@ -958,12 +958,12 @@ end
 SHELLCHECK = require_manual_install_on(shellcheck, freebsd_system, openbsd_system, macos_arm64_system)
 add_version_guard(SHELLCHECK, shellcheck_ver)
 
-RICHGO = "#{gobin}/richgo"
-file RICHGO => [GO] do
-    sh GO, "install", "github.com/kyoh86/richgo@#{richgo_ver}"
-    sh RICHGO, "version"
+TPARSE = "#{gobin}/tparse"
+file TPARSE => [GO] do
+    sh GO, "install", "github.com/mfridman/tparse@#{tparse_ver}"
+    sh TPARSE, "--version"
 end
-add_version_guard(RICHGO, richgo_ver)
+add_version_guard(TPARSE, tparse_ver)
 
 MOCKERY = File.join(gobin, "mockery")
 file MOCKERY => [GO] do

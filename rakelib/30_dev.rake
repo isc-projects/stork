@@ -105,7 +105,7 @@ namespace :unittest do
         VERBOSE - Print results for successful cases - default: false
         See "db:migrate" task for the database-related parameters
     '
-    task :backend => [RICHGO, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
+    task :backend => [GO, TPARSE, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
         scope = ENV["SCOPE"] || "./..."
         benchmark = ENV["BENCHMARK"] || "false"
         short = ENV["SHORT"] || "false"
@@ -139,13 +139,19 @@ namespace :unittest do
             }
         end
 
+        tparse_otps = []
+        if ENV["CI"] == "true"
+            tparse_otps.append("-nocolor")
+        end
+
         Dir.chdir('backend') do
-            sh RICHGO, "test", *opts, "-race", scope
+            Open3.pipeline(
+                [GO, "test", "-json", *opts, "-race", scope],
+                [TPARSE, "-progress", *tparse_otps]
+            )
 
             if with_cov_tests
-                out = `"#{GO}" tool cover -func=coverage.out`
-
-                puts out, ''
+                out, _ = Open3.capture2 GO, "tool", "cover", "-func=coverage.out"
 
                 problem = false
                 out.each_line do |line|
