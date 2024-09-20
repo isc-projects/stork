@@ -2,7 +2,7 @@ package agent
 
 import (
 	"github.com/pkg/errors"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 // Process interface. Using interface allows to mock the processes.
