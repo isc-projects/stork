@@ -112,8 +112,8 @@ namespace :push do
         DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
     task :rhel do
         Rake::Task["push:build_and_push"].invoke(
-            "docker/images/ci/redhat-ubi8.Dockerfile",
-            "registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi8",
+            "docker/images/ci/redhat-ubi.Dockerfile",
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi",
             true
         )
     end

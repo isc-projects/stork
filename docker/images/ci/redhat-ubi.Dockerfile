@@ -1,22 +1,17 @@
-FROM redhat/ubi8:8.8
+FROM redhat/ubi9:9.4
 
 WORKDIR /repo
 RUN dnf install -y \
-    gcc-8.5.* \
-    git-2.39.* \
+    git-2.43.* \
     java-17-openjdk-headless-17.0.* \
-    tzdata-java-2023c-* \
-    make-4.2.* \
-    man-db-2.7.* \
-    procps-ng-3.3.* \
+    tzdata-java-2024a \
+    man-db-2.9.* \
     python3.11-3.11.* \
-    python3-virtualenv-15.1.* \
-    rpm-build-4.14.* \
-    rubygem-rake-12.3.* \
-    ruby-devel-2.5.* \
+    rubygem-rake-13.0.* \
+    ruby-devel-3.0.* \
     unzip-6.0 \
-    wget-1.19.* \
-    gcc-c++-8.5.* \
+    wget-1.21.* \
+    xz-5.2.* \
     # Clean up cache.
     && dnf clean all \
     # Replace default Python.

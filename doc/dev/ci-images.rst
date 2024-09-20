@@ -31,9 +31,9 @@ Currently available images:
     - ``debian.Dockerfile`` - Debian-based image, it is a default base for CI task.
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
       registry as the ``ci-base`` image.
-    - ``redhat-ubi8.Dockerfile`` - RedHat-based image
+    - ``redhat-ubi8.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile``) - RedHat-based image
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
-      registry as the ``pkgs-redhat-ubi8`` image.
+      registry as the ``pkgs-redhat-ubi`` image (prior tag ``5``: ````pkgs-redhat-ubi8``).
     - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines
       Available only for AMD64 architecture. Stored in the registry as the
       ``pkgs-compose`` image.
@@ -153,6 +153,12 @@ The image names are the file names of their Dockerfiles.
         Introduced in the #1512 ticket to upgrade overall dependencies.
         Upgraded Go to 1.23.1, NodeJS 20, and Protoc to 24.4. Removed the FPM
         dependencies i.e., gcc, make, and tar.
+
+    - ``redhat-ubi.Dockerfile``:
+
+        Introduced in the #1512 ticket to upgrade overall dependencies.
+        Upgraded Universal Base Image 9.4 and Ruby 3. Removed the FPM
+        dependencies i.e., gcc and make.
 
 **Tag: 4**
 
