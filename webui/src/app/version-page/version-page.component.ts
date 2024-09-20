@@ -20,7 +20,7 @@ export class VersionPageComponent implements OnInit {
         Severity.danger,
         Severity.warning,
         Severity.info,
-        Severity.success, // SeverityEnum.secondary is mapped to SeverityEnum.secondary
+        Severity.success, // SeverityEnum.secondary is mapped to SeverityEnum.success
         Severity.success,
     ]
     subheaderMap = [
