@@ -38,20 +38,16 @@ export interface VersionFeedback {
  */
 export type App = 'kea' | 'bind9' | 'stork'
 
-export enum SeverityEnum {
+/**
+ * Severity assigned after assessment of software version is done.
+ */
+export enum Severity {
     danger,
     warning,
     info,
     secondary,
     success,
 }
-
-export type SeverityStrings = keyof typeof SeverityEnum
-
-/**
- * Type for severity assigned after assessment of software version is done.
- */
-export type Severity = 'danger' | 'warning' | 'success' | 'info' | 'secondary'
 
 /**
  * Type for different sorts of released software.
@@ -229,7 +225,7 @@ export class VersionService {
             return cachedFeedback
         }
 
-        let response: VersionFeedback = { severity: 'info', feedback: '' }
+        let response: VersionFeedback = { severity: Severity.info, feedback: '' }
         let sanitizedSemver = coerce(version).version
         let appName = ''
         if (valid(sanitizedSemver)) {
@@ -242,7 +238,7 @@ export class VersionService {
             if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
                 response = {
                     // severity: 'error',
-                    severity: 'danger',
+                    severity: Severity.danger,
                     feedback: `Security update ${latestSecureVersion} was released for ${appName}. Please update as soon as possible!`,
                 }
 
@@ -260,17 +256,17 @@ export class VersionService {
                             if (lt(sanitizedSemver, details.version)) {
                                 response = {
                                     // severity: 'warn',
-                                    severity: 'info',
+                                    severity: Severity.info,
                                     feedback: `Stable ${appName} version update (${details.version}) is available (known as of ${dataDate}).`,
                                 }
                             } else if (gt(sanitizedSemver, details.version)) {
                                 response = {
-                                    severity: 'secondary',
+                                    severity: Severity.secondary,
                                     feedback: `Current stable ${appName} version (known as of ${dataDate}) is ${details.version}. You are using more recent version ${sanitizedSemver}.`,
                                 }
                             } else {
                                 response = {
-                                    severity: 'success',
+                                    severity: Severity.success,
                                     feedback: `${sanitizedSemver} is current ${appName} stable version (known as of ${dataDate}).`,
                                 }
                             }
@@ -287,14 +283,14 @@ export class VersionService {
                         if (lt(sanitizedSemver, stableVersions[0])) {
                             // either semver major or minor are below min(current stable)
                             response = {
-                                severity: 'warning', // TODO: or info ?
+                                severity: Severity.warning, // TODO: or info ?
                                 // feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}. Updating to current stable is possible.`,
                                 feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
                             }
                         } else {
                             // either semver major or minor are bigger than current stable
                             response = {
-                                severity: 'secondary',
+                                severity: Severity.secondary,
                                 feedback: `${appName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
                             }
                             // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${sanitizedSemver}.`
@@ -315,18 +311,18 @@ export class VersionService {
                 if (lt(sanitizedSemver, latestDevVersion as string)) {
                     response = {
                         // severity: 'warn',
-                        severity: 'warning',
+                        severity: Severity.warning,
                         feedback: `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
                         // feedback: `You are using ${appName} development version ${sanitizedSemver}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`,
                     }
                 } else if (gt(sanitizedSemver, latestDevVersion as string)) {
                     response = {
-                        severity: 'secondary',
+                        severity: Severity.secondary,
                         feedback: `Current development ${appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
                     }
                 } else {
                     response = {
-                        severity: 'success',
+                        severity: Severity.success,
                         feedback: `${sanitizedSemver} is current ${appName} development version (known as of ${dataDate}).`,
                     }
                 }
@@ -339,7 +335,7 @@ export class VersionService {
                     ].join(' ')
                     response = {
                         // severity: 'warn',
-                        severity: 'warning',
+                        severity: Severity.warning,
                         feedback: extFeedback,
                     }
                 }

@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { coerce } from 'semver'
-import { VersionService, App, Severity } from '../version.service'
+import { App, Severity, VersionService } from '../version.service'
 import { MessageService } from 'primeng/api'
 
 /**
@@ -66,6 +66,12 @@ export class VersionStatusComponent implements OnInit {
     feedback: string
 
     /**
+     * Severity enumeration field used by template.
+     * @protected
+     */
+    protected readonly SeverityEnum = Severity
+
+    /**
      * Class constructor.
      * @param versionService version service used to do software version checking; it returns the feedback about version used
      * @param messageService message service used to display errors
@@ -108,11 +114,11 @@ export class VersionStatusComponent implements OnInit {
      */
     get mappedSeverityClass() {
         return [
-            this.severity === 'warning'
+            this.severity === Severity.warning
                 ? 'p-inline-message-warn'
-                : this.severity === 'danger'
+                : this.severity === Severity.danger
                   ? 'p-inline-message-error'
-                  : this.severity === 'secondary'
+                  : this.severity === Severity.secondary
                     ? 'p-message p-message-secondary m-0'
                     : '',
             this.styleClass,
@@ -125,21 +131,21 @@ export class VersionStatusComponent implements OnInit {
      * @param feedback feedback message to be set
      * @private
      */
-    private setSeverity(severity: typeof this.severity, feedback: string) {
+    private setSeverity(severity: Severity, feedback: string) {
         this.severity = severity
         this.feedback = feedback
         switch (severity) {
-            case 'success':
+            case Severity.success:
                 this.iconClasses = { 'text-green-500': true, 'pi-check': true }
                 break
-            case 'warning':
+            case Severity.warning:
                 this.iconClasses = { 'text-orange-400': true, 'pi-exclamation-triangle': true }
                 break
-            case 'danger':
+            case Severity.danger:
                 this.iconClasses = { 'text-red-500': true, 'pi-exclamation-circle': false, 'pi-times': true }
                 break
-            case 'info':
-            case 'secondary':
+            case Severity.info:
+            case Severity.secondary:
                 this.iconClasses = { 'text-blue-300': true, 'pi-info-circle': true }
                 break
         }

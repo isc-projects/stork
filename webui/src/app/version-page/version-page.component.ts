@@ -15,6 +15,22 @@ export class VersionPageComponent implements OnInit {
     keaVersions: VersionDetails[]
     bind9Versions: VersionDetails[]
     storkVersions: VersionDetails[]
+    protected readonly SeverityEnum = Severity
+    severityMap: Severity[] = [
+        Severity.danger,
+        Severity.warning,
+        Severity.info,
+        Severity.success, // SeverityEnum.secondary is mapped to SeverityEnum.secondary
+        Severity.success,
+    ]
+    subheaderMap = [
+        'Security updates were found for ISC software used on those machines!',
+        'Those machines use ISC software version that require your attention. Software updates are available.',
+        'ISC software updates are available for those machines.',
+        '',
+        `Those machines use up-to-date ISC software (known as of ${this.dataManufactureDate})`,
+    ]
+
     machines: Machine[]
 
     /**
@@ -57,17 +73,17 @@ export class VersionPageComponent implements OnInit {
             this.machines = data.items ?? []
             for (let m of this.machines) {
                 // TODO: enum?
-                m.versionCheckSeverity = 4
-                let storkVersionSeverity = this.versionService.checkVersion(m.agentVersion, 'stork')
-                m.versionCheckSeverity = Math.min(
-                    this.mapSeverityToNumber(storkVersionSeverity.severity),
-                    m.versionCheckSeverity
-                )
+                m.versionCheckSeverity = Severity.success
+                let storkCheck = this.versionService.checkVersion(m.agentVersion, 'stork')
+                if (storkCheck) {
+                    m.versionCheckSeverity = Math.min(this.severityMap[storkCheck.severity], m.versionCheckSeverity)
+                }
+
                 for (let a of m.apps) {
                     let versionCheck = this.versionService.checkVersion(a.version, a.type as App)
                     if (versionCheck) {
                         m.versionCheckSeverity = Math.min(
-                            this.mapSeverityToNumber(versionCheck.severity),
+                            this.severityMap[versionCheck.severity],
                             m.versionCheckSeverity
                         )
                     }
@@ -93,62 +109,5 @@ export class VersionPageComponent implements OnInit {
      */
     get dataManufactureDate() {
         return this.versionService.getDataManufactureDate()
-    }
-
-    /**
-     *
-     * @param severity
-     * @private
-     */
-    private mapSeverityToNumber(severity: Severity) {
-        switch (severity) {
-            // case 'error':
-            case 'danger':
-                return 1
-            // case 'warn':
-            case 'warning':
-                return 2
-            case 'info':
-                return 3
-            case 'success':
-            case 'secondary':
-                return 4
-        }
-    }
-
-    /**
-     *
-     * @param number
-     */
-    mapNumberToSeverity(number: number): Severity {
-        switch (number) {
-            case 1:
-                // return 'error'
-                return 'danger'
-            case 2:
-                // return 'warn'
-                return 'warning'
-            case 3:
-                return 'info'
-            case 4:
-                return 'success'
-        }
-    }
-
-    /**
-     *
-     * @param number
-     */
-    getSubheader(number: number) {
-        switch (number) {
-            case 1:
-                return 'Security updates were found for ISC software used on those machines!'
-            case 2:
-                return 'Those machines use ISC software version that require your attention. Software updates are available.'
-            case 3:
-                return 'ISC software updates are available for those machines.'
-            case 4:
-                return `Those machines use up-to-date ISC software (known as of ${this.dataManufactureDate})`
-        }
     }
 }

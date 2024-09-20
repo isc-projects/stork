@@ -2,7 +2,7 @@
     <div page-help>
         <p>
             This page displays information about current versions of ISC software that may be used in your Stork
-            deployment.
+            deployment. Below you can find summary of ISC software found on your machines.
         </p>
     </div>
 </app-breadcrumbs>
@@ -203,13 +203,13 @@
                             [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                         ></button>
                         <p-message
-                            [severity]="mapNumberToSeverity(m.versionCheckSeverity)"
-                            [text]="getSubheader(m.versionCheckSeverity)"
+                            [severity]="SeverityEnum[m.versionCheckSeverity]"
+                            [text]="subheaderMap[m.versionCheckSeverity]"
                             [styleClass]="
                                 [
-                                    m.versionCheckSeverity === 2
+                                    m.versionCheckSeverity === SeverityEnum.warning
                                         ? 'p-inline-message-warn'
-                                        : m.versionCheckSeverity === 1
+                                        : m.versionCheckSeverity === SeverityEnum.danger
                                           ? 'p-inline-message-error'
                                           : '',
                                     'max-w-30rem'

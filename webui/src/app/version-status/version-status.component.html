@@ -6,7 +6,7 @@
 </div>
 <p-message
     *ngIf="!inline"
-    [severity]="severity"
+    [severity]="SeverityEnum[severity]"
     [text]="appName + ' - ' + feedback"
     [styleClass]="mappedSeverityClass"
 ></p-message>
