@@ -638,7 +638,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 	// Configs are mandatory
 	if len(params.Request.Configs) == 0 {
 		msg := "No configs for update have been specified"
-		log.Errorf(msg)
+		log.Error(msg)
 		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})

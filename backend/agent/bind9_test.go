@@ -761,9 +761,7 @@ func TestParseInetSpecForDifferentKeysFormatting(t *testing.T) {
 	}
 
 	for keysClauseName, keysClause := range keysClauses {
-		keysClause := keysClause
 		for allowClauseName, allowClause := range allowClauses {
-			allowClause := allowClause
 			testCaseName := fmt.Sprintf("%s_%s", keysClauseName, allowClauseName)
 			t.Run(testCaseName, func(t *testing.T) {
 				inetClause := fmt.Sprintf("inet 127.0.0.1 %s %s;", allowClause, keysClause)

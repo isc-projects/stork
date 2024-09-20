@@ -304,7 +304,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	}
 	if params.Machine.AgentCSR == nil {
 		msg := "Agent CSR cannot be empty"
-		log.Warnf(msg)
+		log.Warn(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -313,7 +313,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 	if *params.Machine.AgentToken == "" {
 		msg := "Agent token cannot be empty"
-		log.Warnf(msg)
+		log.Warn(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -323,7 +323,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, addr, params.Machine.AgentPort)
 	if err != nil {
 		msg := fmt.Sprintf("Problem finding machine %s:%d in database", addr, params.Machine.AgentPort)
-		log.Warnf(msg)
+		log.Warn(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

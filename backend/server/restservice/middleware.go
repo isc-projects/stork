@@ -200,8 +200,8 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
 			pkgsDir := path.Join(staticFilesDir, pkgsRelativeDir)
 			files, err := os.ReadDir(pkgsDir)
 			if err != nil {
-				msg := fmt.Sprintf("Problem reading '%s' directory with packages: %s\n", pkgsDir, err)
-				log.Errorf(msg)
+				msg := fmt.Sprintf("Problem reading '%s' directory with packages\n", pkgsDir)
+				log.WithError(err).Error(msg)
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Fprint(w, msg)
 				return
@@ -229,7 +229,7 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
 						"stork-install-agent.sh work.\n",
 					pkgsDir,
 				)
-				log.Errorf(msg)
+				log.Error(msg)
 				w.WriteHeader(http.StatusNotFound)
 				fmt.Fprint(w, msg)
 				return
@@ -271,8 +271,8 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
 			t := template.Must(template.New("script").Parse(agentInstallerScript))
 			err = t.Execute(w, data)
 			if err != nil {
-				msg := fmt.Sprintf("Problem preparing install script: %s\n", err)
-				log.Errorf(msg)
+				msg := "Problem preparing install script"
+				log.WithError(err).Error(msg)
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Fprint(w, msg)
 				return

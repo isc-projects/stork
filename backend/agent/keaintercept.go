@@ -154,7 +154,7 @@ func (i *keaInterceptor) handle(targets map[keactrl.CommandName]*keaInterceptorT
 
 	// Check what daemons the callbacks need to be invoked for.
 	var daemons []keactrl.DaemonName
-	if command.Daemons == nil || len(command.Daemons) == 0 {
+	if len(command.Daemons) == 0 {
 		daemons = append(daemons, "ca")
 	} else {
 		daemons = command.Daemons

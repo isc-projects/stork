@@ -1184,8 +1184,6 @@ func TestGetHostsByPageDuplicate(t *testing.T) {
 	}
 
 	for label, localHost := range testCases {
-		label := label
-
 		_, _ = DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
 		localHostFirst := localHost
 		localHostSecond := localHost
@@ -1341,8 +1339,6 @@ func TestGetHostsByPageConflict(t *testing.T) {
 	}
 
 	for label, localHosts := range testCases {
-		label := label
-
 		_, _ = DeleteDaemonsFromHost(db, host.ID, HostDataSourceUnspecified)
 		host.LocalHosts = localHosts
 		_ = UpdateHost(db, &host)

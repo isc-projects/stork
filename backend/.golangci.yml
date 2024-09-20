@@ -12,7 +12,7 @@ linters:
     - dogsled
     - errorlint
     - exhaustive
-    - exportloopref
+    - copyloopvar
     - gochecknoglobals
     - gochecknoinits
     - gocognit
@@ -35,7 +35,6 @@ linters:
     - noctx
     - nolintlint
     - rowserrcheck
-    - exportloopref
     - sqlclosecheck
     - stylecheck
     - tparallel
@@ -107,11 +106,12 @@ issues:
 
     - linters:
         - gosec
-      text: "G107"
-
-    - linters:
-        - gosec
-      text: "G202"
+      # G115: integer overflow conversion
+      # Temporary disabled due to false positives.
+      # The problem is already fixed in the gosec repository but golangci-lint
+      # still uses the old version.
+      # https://github.com/securego/gosec/issues/1212
+      text: "G115"
 
     - path: api/gomock
       linters:

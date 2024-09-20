@@ -121,7 +121,6 @@ func TestGenerateCSR(t *testing.T) {
 
 	testCases := []string{"hostname", "10.0.0.1"}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase, func(t *testing.T) {
 			// Act
 			csr, fingerprint, err := store.GenerateCSR(testCase)
