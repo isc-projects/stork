@@ -278,7 +278,7 @@ export abstract class PrefilteredTable<
      */
     getTableFilterValue(k: string, filters?: { [p: string]: FilterMetadata | FilterMetadata[] }): any {
         if (filters) {
-            return filters?.hasOwnProperty(k) ? filters[k][0]?.value ?? (filters[k] as FilterMetadata).value : null
+            return filters?.hasOwnProperty(k) ? (filters[k][0]?.value ?? (filters[k] as FilterMetadata).value) : null
         }
 
         if (!this.table?.filters?.hasOwnProperty(k)) {

@@ -39,7 +39,7 @@
                 class="tree-level__value tree-level__value--collapse"
                 [ngClass]="{
                     'tree-level__value--object': isObject(),
-                    'tree-level__value--array': isArray()
+                    'tree-level__value--array': isArray(),
                 }"
                 >...</span
             >
@@ -87,7 +87,7 @@
             'tree-level__value--object': isObject(),
             'tree-level__value--array': isArray(),
             'tree-level__value--not-assigned': !hasAssignedValue(),
-            'tree-level__value--clickable': isRecursionLevelReached()
+            'tree-level__value--clickable': isRecursionLevelReached(),
         }"
     >
         <!-- Primitive value or empty, but not object -->
