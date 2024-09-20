@@ -181,6 +181,7 @@ class DockerCompose:
     def __init__(  # pylint: disable=too-many-arguments
         self,
         project_directory: str,
+        *,
         compose_file_name="docker-compose.yml",
         pull=False,
         build=False,
