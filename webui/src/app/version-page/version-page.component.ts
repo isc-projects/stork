@@ -30,6 +30,7 @@ export class VersionPageComponent implements OnInit {
         '',
         `Those machines use up-to-date ISC software (known as of ${this.dataManufactureDate})`,
     ]
+    dataLoading: boolean
 
     machines: Machine[]
 
@@ -45,6 +46,7 @@ export class VersionPageComponent implements OnInit {
      *
      */
     ngOnInit(): void {
+        this.dataLoading = true
         // prepare kea data
         let keaDetails = deepCopy(this.versionService.getVersionDetails('kea', 'currentStable'))
         this.keaVersions = keaDetails ? (keaDetails as VersionDetails[]) : []
@@ -89,6 +91,7 @@ export class VersionPageComponent implements OnInit {
                     }
                 }
             }
+            this.dataLoading = false
         })
     }
 
