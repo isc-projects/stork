@@ -250,7 +250,11 @@ task :pre_run_server do
                 testing_time = File.mtime(WEBUI_DEBUG_DIRECTORY)
             end
             use_testing_ui = testing_time > production_time
-            puts "Using testing UI - testing UI is newer than production"
+            if use_testing_ui
+                puts "Using testing UI - testing UI is newer than production"
+            else
+                puts "Using production UI - production UI is newer than testing"
+            end
         end
     elsif ui_mode == "testing"
         # Check if user manually forces the UI mode
