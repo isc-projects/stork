@@ -28,7 +28,7 @@ export function datetimeToLocal(d: moment.MomentInput): string | null {
         }
 
         return md.format('YYYY-MM-DD HH:mm:ss') + tz
-    } catch (e) {
+    } catch {
         return d.toString()
     }
 }

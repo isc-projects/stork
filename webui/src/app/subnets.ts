@@ -222,7 +222,7 @@ export function extractUniqueSubnetPools(subnets: Subnet[] | Subnet): SubnetWith
                 } else if (range1.first.isGreaterThan(range2.first)) {
                     return 1
                 }
-            } catch (_) {
+            } catch {
                 // Parsing error is very unlikely but we have to handle it.
                 return 1
             }

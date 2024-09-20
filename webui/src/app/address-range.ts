@@ -33,7 +33,7 @@ export class AddressRange {
             // Parse both ends of the address range as IP addresses.
             first = ipRangeFirst.includes('.') ? new IPv4(ipRangeFirst.trim()) : new IPv6(ipRangeFirst.trim())
             last = ipRangeLast.includes('.') ? new IPv4(ipRangeLast.trim()) : new IPv6(ipRangeLast.trim())
-        } catch (error) {
+        } catch {
             throw Error(`invalid IP addresses in the ${ipRangeFirst}-${ipRangeLast} range`)
         }
         // They should both have the same family.

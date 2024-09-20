@@ -249,7 +249,7 @@ export class StorkValidators {
                     ipv6ExcludedPrefix: `${excludedPrefix} excluded prefix is not within the ${prefix} prefix.`,
                 }
             }
-        } catch (_) {
+        } catch {
             return null
         }
         return null
@@ -278,7 +278,7 @@ export class StorkValidators {
                     if (range.getFirst().isGreaterThan(ipv4) || range.getLast().isLessThan(ipv4)) {
                         return { ipInSubnet: `${control.value} does not belong to subnet ${subnet}.` }
                     }
-                } catch (_) {
+                } catch {
                     return { ipInSubnet: `${control.value} is not a valid IPv4 address.` }
                 }
                 return null
@@ -289,7 +289,7 @@ export class StorkValidators {
                     if (range.getFirst().isGreaterThan(ipv6) || range.getLast().isLessThan(ipv6)) {
                         return { ipInSubnet: `${control.value} does not belong to subnet ${subnet}.` }
                     }
-                } catch (_) {
+                } catch {
                     return { ipInSubnet: `${control.value} is not a valid IPv6 address.` }
                 }
             } else {
@@ -330,7 +330,7 @@ export class StorkValidators {
             if (start && end) {
                 AddressRange.fromStringBounds(start, end)
             }
-        } catch (_) {
+        } catch {
             if (fg.get('start').valid) {
                 fg.get('start').setErrors({ addressBounds: true })
                 fg.get('end').markAsDirty()
@@ -497,7 +497,7 @@ export class StorkValidators {
                         control: ctl.get('range'),
                         failedOnThisPass: false,
                     }
-                } catch (_) {
+                } catch {
                     StorkValidators.clearControlError(ctl.get('range'), 'ipRangeOverlaps')
                     return null
                 }
@@ -578,7 +578,7 @@ export class StorkValidators {
                         control: ctl.get('prefixes'),
                         failedOnThisPass: false,
                     }
-                } catch (_) {
+                } catch {
                     StorkValidators.clearControlError(ctl.get('prefixes'), 'ipv6PrefixOverlaps')
                     return null
                 }
@@ -645,7 +645,7 @@ export class StorkValidators {
                     ipv6PrefixDelegatedLength: `Delegated prefix length must be greater or equal the ${prefix} prefix length.`,
                 }
             }
-        } catch (_) {
+        } catch {
             return null
         }
         return result
@@ -673,7 +673,7 @@ export class StorkValidators {
                     ipv6ExcludedPrefixDelegatedLength: `Delegated prefix length must be lower than the ${prefix} excluded prefix length.`,
                 }
             }
-        } catch (_) {
+        } catch {
             // This validator does not check invalid prefixes.
             return null
         }
@@ -752,14 +752,14 @@ export class StorkValidators {
             try {
                 // Is it an IPv6 prefix?
                 cidr = collapseIPv6Number(IPv6CidrRange.fromCidr(control.value).toCidrString())
-            } catch (_) {
+            } catch {
                 // Do nothing here. We'll check it is an IPv4 prefix.
             }
             if (cidr == null) {
                 try {
                     // Maybe it is an IPv4 prefix?
                     cidr = IPv4CidrRange.fromCidr(control.value).toCidrString()
-                } catch (_) {
+                } catch {
                     // It is neither IPv4 nor IPv6 prefix. This validator doesn't apply.
                     return null
                 }
