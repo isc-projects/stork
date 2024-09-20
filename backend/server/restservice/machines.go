@@ -243,7 +243,7 @@ func (r *RestAPI) GetMachinesAppsVersions(ctx context.Context, params services.G
 		machines.Items = append(machines.Items, machine)
 	}
 
-	rsp := services.NewGetMachinesDirectoryOK().WithPayload(machines)
+	rsp := services.NewGetMachinesAppsVersionsOK().WithPayload(machines)
 	return rsp
 }
 
