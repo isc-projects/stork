@@ -103,6 +103,27 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /machines/apps/versions:
+    get:
+      summary: Returns authorized machines with ISC apps software versions.
+      description: >-
+        Returns a list of all machines' ids and ISC apps versions. It excludes detailed
+        information about the machines to return reasonably compact information. Having
+        the machines' names and/or apps versions is useful for assessment of ISC software
+        versions being used on machines that are monitored by Stork.
+      operationId: getMachinesAppsVersions
+      tags:
+        - Services
+      responses:
+        200:
+          description: List of machine ids and apps versions.
+          schema:
+            $ref: '#/definitions/Machines'
+        default:
+          description: 'generic error response'
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /machines/{id}:
     get:
       summary: Get machine by ID.

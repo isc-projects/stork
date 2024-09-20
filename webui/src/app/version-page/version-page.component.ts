@@ -70,13 +70,14 @@ export class VersionPageComponent implements OnInit {
         if (storkDetails) {
             this.storkVersions.push(storkDetails as VersionDetails)
         }
-
-        this.servicesApi.getMachines(0, 100, undefined, undefined, true).subscribe((data) => {
+        // this.servicesApi.getMachines(0, 100, undefined, undefined, true)
+        this.servicesApi.getMachinesAppsVersions().subscribe((data) => {
             this.machines = data.items ?? []
             for (let m of this.machines) {
                 // TODO: enum?
                 m.versionCheckSeverity = Severity.success
                 let storkCheck = this.versionService.checkVersion(m.agentVersion, 'stork')
+                // TODO: daemons version match check
                 if (storkCheck) {
                     m.versionCheckSeverity = Math.min(this.severityMap[storkCheck.severity], m.versionCheckSeverity)
                 }

@@ -78,6 +78,26 @@ func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	return &m
 }
 
+// Convert db machine to flattened rest structure.
+func (r *RestAPI) machineFlattenedToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
+	apps := []*models.App{}
+	for _, app := range dbMachine.Apps {
+		a := r.appToRestAPI(app)
+		apps = append(apps, a)
+	}
+
+	// Return only minimal information about the machine but provide full information about Apps.
+	m := models.Machine{
+		ID:           dbMachine.ID,
+		Address:      &dbMachine.Address,
+		AgentPort:    dbMachine.AgentPort,
+		AgentVersion: dbMachine.State.AgentVersion,
+		Hostname:     dbMachine.State.Hostname,
+		Apps:         apps,
+	}
+	return &m
+}
+
 // Get runtime state of indicated machine.
 func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachineStateParams) middleware.Responder {
 	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
@@ -196,6 +216,31 @@ func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetM
 			Address: &dbMachines[i].Address,
 		}
 		machines.Items = append(machines.Items, &machine)
+	}
+
+	rsp := services.NewGetMachinesDirectoryOK().WithPayload(machines)
+	return rsp
+}
+
+// Returns a list of all authorized machines' ids and apps versions.
+func (r *RestAPI) GetMachinesAppsVersions(ctx context.Context, params services.GetMachinesAppsVersionsParams) middleware.Responder {
+	authorized := true
+	dbMachines, err := dbmodel.GetAllMachines(r.DB, &authorized)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot get machines apps versions from the database"
+		rsp := services.NewGetMachinesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	machines := &models.Machines{
+		Total: int64(len(dbMachines)),
+	}
+	for i := range dbMachines {
+		machine := r.machineFlattenedToRestAPI(dbMachines[i])
+		machines.Items = append(machines.Items, machine)
 	}
 
 	rsp := services.NewGetMachinesDirectoryOK().WithPayload(machines)
