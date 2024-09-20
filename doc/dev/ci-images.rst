@@ -158,7 +158,7 @@ The image names are the file names of their Dockerfiles.
 
         Introduced in the #1512 ticket to upgrade overall dependencies.
         Upgraded Universal Base Image 9.4 and Ruby 3. Removed the FPM
-        dependencies i.e., gcc and make.
+        dependencies i.e., gcc.
 
 **Tag: 4**
 
