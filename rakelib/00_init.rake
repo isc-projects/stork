@@ -483,7 +483,7 @@ def fetch_file(url, target)
 end
 
 ### Recognize the operating system
-uname_os=`uname -s`
+uname_os, _ = Open3.capture2 "uname", "-s"
 case uname_os.rstrip
     when "Darwin"
         OS="macos"
@@ -498,7 +498,7 @@ case uname_os.rstrip
         fail
 end
 
-uname_arch=`uname -m`
+uname_arch, _ = Open3.capture2 "uname", "-m"
 case uname_arch.rstrip
     when "x86_64", "amd64"
         ARCH="amd64"
@@ -535,46 +535,46 @@ macos_arm64_system = OS == "macos" && arm64_system
 any_system = true
 
 ### Define package versions
-go_ver='1.22.5'
-goswagger_ver='v0.31.0'
-protoc_ver='26.1'
-protoc_gen_go_ver='v1.34.2'
-protoc_gen_go_grpc_ver='v1.4.0'
-richgo_ver='v0.3.12'
-govulncheck_ver='v1.1.3'
-mockery_ver='v2.43.2'
-mockgen_ver='v0.4.0'
-golangcilint_ver='1.59.0'
-dlv_ver='v1.22.1'
-gdlv_ver='v1.12.0'
-nfpm_ver='v2.39.0'
-openapi_generator_ver='7.6.0'
-node_ver='20.14.0'
-npm_ver='10.8.2'
-storybook_ver='8.1.5'
-yamlinc_ver='0.1.10'
-bundler_ver='2.3.26'
-shellcheck_ver='0.10.0'
-pip_tools_ver='7.4.1'
-pip_audit_ver='2.7.3'
+go_ver = '1.22.5'
+goswagger_ver = 'v0.31.0'
+protoc_ver = '26.1'
+protoc_gen_go_ver = 'v1.34.2'
+protoc_gen_go_grpc_ver = 'v1.4.0'
+richgo_ver = 'v0.3.12'
+govulncheck_ver = 'v1.1.3'
+mockery_ver = 'v2.43.2'
+mockgen_ver = 'v0.4.0'
+golangcilint_ver = '1.59.0'
+dlv_ver = 'v1.22.1'
+gdlv_ver = 'v1.12.0'
+nfpm_ver = 'v2.39.0'
+openapi_generator_ver = '7.6.0'
+node_ver = '20.14.0'
+npm_ver = '10.8.2'
+storybook_ver = '8.1.5'
+yamlinc_ver = '0.1.10'
+bundler_ver = '2.3.26'
+shellcheck_ver = '0.10.0'
+pip_tools_ver = '7.4.1'
+pip_audit_ver = '2.7.3'
 
 # System-dependent variables
 case OS
 when "macos"
     case ARCH
     when "amd64"
-        go_suffix="darwin-amd64"
-        protoc_suffix="osx-x86_64"
-        node_suffix="darwin-x64"
-        golangcilint_suffix="darwin-amd64"
-        goswagger_suffix="darwin_amd64"
-        shellcheck_suffix="darwin.x86_64"
+        go_suffix = "darwin-amd64"
+        protoc_suffix = "osx-x86_64"
+        node_suffix = "darwin-x64"
+        golangcilint_suffix = "darwin-amd64"
+        goswagger_suffix = "darwin_amd64"
+        shellcheck_suffix = "darwin.x86_64"
     when "arm64"
-        go_suffix="darwin-arm64"
-        protoc_suffix="osx-aarch_64"
-        node_suffix="darwin-arm64"
-        golangcilint_suffix="darwin-arm64"
-        goswagger_suffix="darwin_arm64"
+        go_suffix = "darwin-arm64"
+        protoc_suffix = "osx-aarch_64"
+        node_suffix = "darwin-arm64"
+        golangcilint_suffix = "darwin-arm64"
+        goswagger_suffix = "darwin_arm64"
         # Shellcheck has no binaries for Darwin ARM: https://github.com/koalaman/shellcheck/issues/2714
     end
     puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
@@ -582,27 +582,27 @@ when "macos"
 when "linux"
     case ARCH
     when "amd64"
-        go_suffix="linux-amd64"
-        protoc_suffix="linux-x86_64"
-        node_suffix="linux-x64"
-        golangcilint_suffix="linux-amd64"
-        goswagger_suffix = "linux_amd64"
-        shellcheck_suffix="linux.x86_64"
+        go_suffix = "linux-amd64"
+        protoc_suffix = "linux-x86_64"
+        node_suffix = "linux-x64"
+        golangcilint_suffix = "linux-amd64"
+        goswagger_suffix   = "linux_amd64"
+        shellcheck_suffix = "linux.x86_64"
     when "arm64"
-        go_suffix="linux-arm64"
-        protoc_suffix="linux-aarch_64"
-        node_suffix="linux-arm64"
-        golangcilint_suffix="linux-arm64"
-        goswagger_suffix = "linux_arm64"
-        shellcheck_suffix="linux.aarch64"
+        go_suffix = "linux-arm64"
+        protoc_suffix = "linux-aarch_64"
+        node_suffix = "linux-arm64"
+        golangcilint_suffix = "linux-arm64"
+        goswagger_suffix   = "linux_arm64"
+        shellcheck_suffix = "linux.aarch64"
     end
 when "FreeBSD"
     case ARCH
     when "amd64"
-        go_suffix="freebsd-amd64"
-        golangcilint_suffix="freebsd-amd64"
+         go_suffix = "freebsd-amd64"
+         golangcilint_suffix = "freebsd-amd64"
     when "arm64"
-        golangcilint_suffix="freebsd-armv7"
+        golangcilint_suffix = "freebsd-armv7"
     end
 when "OpenBSD"
 else
