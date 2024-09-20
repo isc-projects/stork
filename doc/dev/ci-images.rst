@@ -157,8 +157,7 @@ The image names are the file names of their Dockerfiles.
     - ``redhat-ubi.Dockerfile``:
 
         Introduced in the #1512 ticket to upgrade overall dependencies.
-        Upgraded Universal Base Image 9.4 and Ruby 3. Removed the FPM
-        dependencies i.e., gcc.
+        Upgraded Universal Base Image 9.4 and Ruby 3.
 
 **Tag: 4**
 

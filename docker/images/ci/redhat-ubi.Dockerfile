@@ -6,6 +6,7 @@ RUN dnf install -y \
     java-17-openjdk-headless-17.0.* \
     tzdata-java-2024a \
     man-db-2.9.* \
+    gcc-c++-11.4.* \
     make-4.* \
     python3.11-3.11.* \
     rubygem-rake-13.0.* \
