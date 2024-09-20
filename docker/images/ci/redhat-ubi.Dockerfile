@@ -8,6 +8,7 @@ RUN dnf install -y \
     man-db-2.9.* \
     gcc-c++-11.4.* \
     make-4.* \
+    procps-ng-3.3.* \
     python3.11-3.11.* \
     rubygem-rake-13.0.* \
     ruby-devel-3.0.* \
