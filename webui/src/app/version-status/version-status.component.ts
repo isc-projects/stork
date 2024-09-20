@@ -1,9 +1,13 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { valid, coerce } from 'semver'
+import { coerce } from 'semver'
 import { VersionService, App, Severity } from '../version.service'
+import { MessageService } from 'primeng/api'
 
 /**
- *
+ * This component displays feedback information about the used version of either Kea, Bind9, or Stork software.
+ * The given version is compared with current known released versions. Feedback contains information
+ * about available software updates and how severe the urge to update the software is.
+ * The component can be either an inline icon with a tooltip or a block container with feedback visible upfront.
  */
 @Component({
     selector: 'app-version-status',
@@ -12,20 +16,27 @@ import { VersionService, App, Severity } from '../version.service'
 })
 export class VersionStatusComponent implements OnInit {
     /**
-     *
+     * Type of software for which the version check is done.
      */
     @Input({ required: true }) app: App
 
     /**
-     *
+     * Version of the software for which the check is done. This must contain parsable semver.
      */
     @Input({ required: true }) version: string
 
     /**
-     *
+     * For inline component version, this flag enables showing the app name with its version on the left side
+     * of the icon with the tooltip.
+     * Defaults to false.
      */
     @Input() showAppName = false
 
+    /**
+     * This flag sets whether the component has a form of inline icon with the tooltip,
+     * or block message.
+     * Defaults to true.
+     */
     @Input() inline = true
 
     /**
@@ -34,95 +45,67 @@ export class VersionStatusComponent implements OnInit {
     @Input() styleClass: string | undefined
 
     /**
-     *
+     * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on app field.
      */
-    appName: string
+    private _appName: string
 
     /**
-     *
-     */
-    // isDevelopmentVersion: boolean
-
-    /**
-     *
+     * This holds the information how severe the urge to update the software is.
+     * It is used to style the icon or the block message.
      */
     severity: Severity
 
     /**
-     *
+     * HTML classes added to the icon to apply the style based on severity.
      */
     iconClasses = {}
 
     /**
-     *
+     * Feedback message displayed either in the tooltip or in the block message.
      */
     feedback: string
 
     /**
-     *
+     * Class constructor.
+     * @param versionService version service used to do software version checking; it returns the feedback about version used
+     * @param messageService message service used to display errors
      */
-    constructor(private versionService: VersionService) {}
+    constructor(
+        private versionService: VersionService,
+        private messageService: MessageService
+    ) {}
 
     /**
-     *
+     * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
         let feedback = this.versionService.checkVersion(this.version, this.app)
-        this.setSeverity(feedback.severity, feedback.feedback)
-        this.version = coerce(this.version).version
-        if (valid(this.version)) {
-            this.appName = this.app[0].toUpperCase() + this.app.slice(1)
-            this.appName += this.app === 'stork' ? ' agent' : ''
-            // this.checkDevelopmentVersion()
-            // this.compareVersionsExt()
+        if (feedback) {
+            this.setSeverity(feedback.severity, feedback.feedback)
+            this.version = coerce(this.version).version
+            this._appName = this.app[0].toUpperCase() + this.app.slice(1)
+            this._appName += this.app === 'stork' ? ' agent' : ''
         } else {
-            // TODO: graceful error logging
-            console.error(`Provided semver ${this.version} is not valid!`)
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error parsing software version',
+                detail: `Provided semver ${this.version} is not valid!`,
+                life: 10000,
+            })
         }
     }
 
     /**
-     *
-     * @private
+     * Getter of the full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on the app field.
      */
-    // private checkDevelopmentVersion() {
-    //     if (this.app === 'kea' || this.app === 'bind9') {
-    //         const minorVersion = minor(this.version)
-    //         this.isDevelopmentVersion = minorVersion % 2 === 1
-    //     } else {
-    //         // Stork versions are all dev for now. To be updated with Stork 2.0.0.
-    //         this.isDevelopmentVersion = true
-    //     }
-    // }
-
-    /**
-     *
-     * @param severity
-     * @param feedback
-     * @private
-     */
-    private setSeverity(severity: typeof this.severity, feedback: string) {
-        this.severity = severity
-        this.feedback = feedback
-        switch (severity) {
-            case 'success':
-                this.iconClasses = { 'text-green-500': true, 'pi-check': true }
-                break
-            // case 'warn':
-            case 'warning':
-                this.iconClasses = { 'text-orange-400': true, 'pi-exclamation-triangle': true }
-                break
-            // case 'error':
-            case 'danger':
-                this.iconClasses = { 'text-red-500': true, 'pi-exclamation-circle': false, 'pi-times': true }
-                break
-            case 'info':
-            case 'secondary':
-                this.iconClasses = { 'text-blue-300': true, 'pi-info-circle': true }
-                break
-        }
+    get appName() {
+        return this._appName
     }
 
+    /**
+     * Holds the information about PrimeNG classes that should be used to style properly block message
+     * based on the severity.
+     */
     get mappedSeverityClass() {
         return [
             this.severity === 'warning'
@@ -137,97 +120,28 @@ export class VersionStatusComponent implements OnInit {
     }
 
     /**
-     *
+     * Sets the severity and the feedback message. Icon classes are set based on the severity.
+     * @param severity severity to be set
+     * @param feedback feedback message to be set
      * @private
      */
-    // private compareVersionsExt() {
-    //     // check security releases first
-    //     let latestSecureVersion = this.versionService.getVersion(this.app, 'latestSecure')
-    //     if (latestSecureVersion && lt(this.version, latestSecureVersion as string)) {
-    //         this.setSeverity(
-    //             'error',
-    //             `Security update ${latestSecureVersion} was released for ${this.appName}. Please update as soon as possible!`
-    //         )
-    //         return
-    //     }
-    //
-    //     // case - stable version
-    //     let currentStableVersionDetails = this.versionService.getVersionDetails(this.app, 'currentStable')
-    //     let dataDate = this.versionService.getDataManufactureDate()
-    //     if (this.isDevelopmentVersion === false && currentStableVersionDetails) {
-    //         if (Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length >= 1) {
-    //             for (let details of currentStableVersionDetails) {
-    //                 if (satisfies(this.version, details.range)) {
-    //                     if (lt(this.version, details.version)) {
-    //                         this.setSeverity(
-    //                             'warn',
-    //                             `Current stable ${this.appName} version (known as of ${dataDate}) is ${details.version}. You are using ${this.version}. Update is recommended.`
-    //                         )
-    //                     } else if (gt(this.version, details.version)) {
-    //                         this.setSeverity(
-    //                             'info',
-    //                             `Current stable ${this.appName} version (known as of ${dataDate}) is ${details.version}. You are using more recent version ${this.version}.`
-    //                         )
-    //                     } else {
-    //                         this.setSeverity(
-    //                             'success',
-    //                             `You have current ${this.appName} stable version (known as of ${dataDate}).`
-    //                         )
-    //                     }
-    //                     return
-    //                 }
-    //             }
-    //             // current version not matching currentStable ranges
-    //             let stableVersions = this.versionService.getStableVersions(this.app)
-    //             if (Array.isArray(stableVersions) && stableVersions.length > 0) {
-    //                 let versionsText = stableVersions.join(', ')
-    //                 if (lt(this.version, stableVersions[0])) {
-    //                     // either semver major or minor are below min(current stable)
-    //                     this.setSeverity(
-    //                         'warn',
-    //                         `Your ${this.appName} version ${this.version} is older than current stable version/s ${versionsText}. Update to current stable is recommended.`
-    //                     )
-    //                 } else {
-    //                     // either semver major or minor are bigger than current stable
-    //                     this.setSeverity(
-    //                         'info',
-    //                         `Your ${this.appName} version ${this.version} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`
-    //                     )
-    //                     // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${this.version}.`
-    //                 }
-    //             }
-    //         }
-    //         return
-    //     }
-    //
-    //     // case - development version
-    //     let latestDevVersion = this.versionService.getVersion(this.app, 'latestDev')
-    //     if (this.isDevelopmentVersion === true && latestDevVersion) {
-    //         if (lt(this.version, latestDevVersion as string)) {
-    //             this.setSeverity(
-    //                 'warn',
-    //                 `You are using ${this.appName} development version ${this.version}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`
-    //             )
-    //         } else if (gt(this.version, latestDevVersion as string)) {
-    //             this.setSeverity(
-    //                 'info',
-    //                 `Current development ${this.appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${this.version}.`
-    //             )
-    //         } else {
-    //             this.setSeverity(
-    //                 'success',
-    //                 `You have current ${this.appName} development version (known as of ${dataDate}).`
-    //             )
-    //         }
-    //         if (currentStableVersionDetails) {
-    //             this.setSeverity(
-    //                 'warn',
-    //                 [
-    //                     this.feedback,
-    //                     `Please be advised that using development version in production is not recommended! Consider using ${this.appName} stable release.`,
-    //                 ].join(' ')
-    //             )
-    //         }
-    //     }
-    // }
+    private setSeverity(severity: typeof this.severity, feedback: string) {
+        this.severity = severity
+        this.feedback = feedback
+        switch (severity) {
+            case 'success':
+                this.iconClasses = { 'text-green-500': true, 'pi-check': true }
+                break
+            case 'warning':
+                this.iconClasses = { 'text-orange-400': true, 'pi-exclamation-triangle': true }
+                break
+            case 'danger':
+                this.iconClasses = { 'text-red-500': true, 'pi-exclamation-circle': false, 'pi-times': true }
+                break
+            case 'info':
+            case 'secondary':
+                this.iconClasses = { 'text-blue-300': true, 'pi-info-circle': true }
+                break
+        }
+    }
 }
