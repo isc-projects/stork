@@ -1515,6 +1515,10 @@ values are:
   - ``mutex`` (number of mutexes)
   - ``block`` (number of blocks).
 
+  .. code-block:: shell
+
+    $ rake unittest:backend:profile TEST=TestAddMachine SCOPE="server/database/model" KIND=mem
+
 .. note::
 
     For small or fast unit tests, the CPU profiling may display blank results
