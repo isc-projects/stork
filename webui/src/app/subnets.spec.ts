@@ -1378,7 +1378,7 @@ describe('subnets', () => {
     })
 
     it('does not detect different global options for the same configs', () => {
-        const config = {
+        const configReference = {
             options: {
                 options: [
                     {
@@ -1389,7 +1389,31 @@ describe('subnets', () => {
             },
         }
 
-        expect(hasDifferentGlobalLevelOptions([config, config])).toBeFalse()
+        const configSameHashSameOptions = {
+            options: {
+                options: [
+                    {
+                        code: 1,
+                    },
+                ] as DHCPOption[],
+                optionsHash: 'foo',
+            },
+        }
+
+        const configSameHashOnly = {
+            options: {
+                options: [
+                    {
+                        code: 42,
+                    },
+                ] as DHCPOption[],
+                optionsHash: 'foo',
+            },
+        }
+
+        expect(hasDifferentGlobalLevelOptions([configReference, configReference])).toBeFalse()
+        expect(hasDifferentGlobalLevelOptions([configReference, configSameHashSameOptions])).toBeFalse()
+        expect(hasDifferentGlobalLevelOptions([configReference, configSameHashOnly])).toBeFalse()
     })
 
     it('detects different global options for different configs', () => {
