@@ -1438,6 +1438,12 @@ The Go programming language provides a built-in profiling tool ``pprof`` that
 can be used to profile the performance of the Stork applications. The profiling
 tool can generate the CPU, memory, and blocking profiles.
 
+.. note::
+
+    The block profile tracks time spent blocked on synchronization primitives,
+    such as sync.Mutex, sync.RWMutex, sync.WaitGroup, sync.Cond, and channel
+    send/receive/select.
+
 To profile a Stork application, first run it using a Rakefile task. The
 build system will compile the application with conditionally enabled profiling.
 The commands to run the applications are: ``rake run:server`` and
