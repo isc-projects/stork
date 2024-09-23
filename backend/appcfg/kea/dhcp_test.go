@@ -586,38 +586,40 @@ func TestSetDHCPv4Options(t *testing.T) {
 	// Arrange
 	cfg := &SettableDHCPv4Config{}
 
-	t.Run("Non-nil options", func(t *testing.T) {
-		// Act
-		cfg.SetDHCPOptions([]SingleOptionData{
-			{
-				Name:       "routers",
-				AlwaysSend: true,
-				Code:       3,
-				CSVFormat:  true,
-				Data:       "foobar",
-				Space:      "dhcp4",
-			},
-		})
-
-		// Assert
-		options := cfg.OptionData.GetValue()
-		require.Len(t, options, 1)
-		option := options[0]
-		require.Equal(t, "routers", option.Name)
-		require.True(t, option.AlwaysSend)
-		require.EqualValues(t, 3, option.Code)
-		require.True(t, option.CSVFormat)
-		require.Equal(t, "foobar", option.Data)
-		require.Equal(t, "dhcp6", option.Space)
+	// Act
+	cfg.SetDHCPOptions([]SingleOptionData{
+		{
+			Name:       "routers",
+			AlwaysSend: true,
+			Code:       3,
+			CSVFormat:  true,
+			Data:       "foobar",
+			Space:      "dhcp4",
+		},
 	})
 
-	t.Run("Nil options", func(t *testing.T) {
-		// Act
-		cfg.SetDHCPOptions(nil)
+	// Assert
+	options := cfg.OptionData.GetValue()
+	require.Len(t, options, 1)
+	option := options[0]
+	require.Equal(t, "routers", option.Name)
+	require.True(t, option.AlwaysSend)
+	require.EqualValues(t, 3, option.Code)
+	require.True(t, option.CSVFormat)
+	require.Equal(t, "foobar", option.Data)
+	require.Equal(t, "dhcp6", option.Space)
+}
 
-		// Assert
-		require.Nil(t, cfg.OptionData.GetValue())
-	})
+// Test setting nil as DHCPv4 option data.
+func TestSetDHCPv4NilOptions(t *testing.T) {
+	// Arrange
+	cfg := &SettableDHCPv4Config{}
+
+	// Act
+	cfg.SetDHCPOptions(nil)
+
+	// Assert
+	require.Nil(t, cfg.OptionData.GetValue())
 }
 
 // Test getting configured hook libraries from the DHCPv6 server configuration.
@@ -1188,36 +1190,38 @@ func TestSetDHCPv6Options(t *testing.T) {
 	// Arrange
 	cfg := &SettableDHCPv6Config{}
 
-	t.Run("Non-nil options", func(t *testing.T) {
-		// Act
-		cfg.SetDHCPOptions([]SingleOptionData{
-			{
-				Name:       "routers",
-				AlwaysSend: true,
-				Code:       3,
-				CSVFormat:  true,
-				Data:       "foobar",
-				Space:      "dhcp6",
-			},
-		})
-
-		// Assert
-		options := cfg.OptionData.GetValue()
-		require.Len(t, options, 1)
-		option := options[0]
-		require.Equal(t, "routers", option.Name)
-		require.True(t, option.AlwaysSend)
-		require.EqualValues(t, 3, option.Code)
-		require.True(t, option.CSVFormat)
-		require.Equal(t, "foobar", option.Data)
-		require.Equal(t, "dhcp6", option.Space)
+	// Act
+	cfg.SetDHCPOptions([]SingleOptionData{
+		{
+			Name:       "routers",
+			AlwaysSend: true,
+			Code:       3,
+			CSVFormat:  true,
+			Data:       "foobar",
+			Space:      "dhcp6",
+		},
 	})
 
-	t.Run("Nil options", func(t *testing.T) {
-		// Act
-		cfg.SetDHCPOptions(nil)
+	// Assert
+	options := cfg.OptionData.GetValue()
+	require.Len(t, options, 1)
+	option := options[0]
+	require.Equal(t, "routers", option.Name)
+	require.True(t, option.AlwaysSend)
+	require.EqualValues(t, 3, option.Code)
+	require.True(t, option.CSVFormat)
+	require.Equal(t, "foobar", option.Data)
+	require.Equal(t, "dhcp6", option.Space)
+}
 
-		// Assert
-		require.Nil(t, cfg.OptionData.GetValue())
-	})
+// Test setting nil as DHCPv6 option data.
+func TestSetDHCPv6NilOptions(t *testing.T) {
+	// Arrange
+	cfg := &SettableDHCPv6Config{}
+
+	// Act
+	cfg.SetDHCPOptions(nil)
+
+	// Assert
+	require.Nil(t, cfg.OptionData.GetValue())
 }
