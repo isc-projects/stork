@@ -190,10 +190,10 @@ def test_agent_registration_administratively_disabled(
     settings.enable_machine_registration = False
     server_service.update_settings(settings)
 
-    # Restart the agent to enfoce re-registration attempt.
+    # Restart the agent to enforce the re-registration attempt.
     kea_service.restart_stork_agent()
 
-    # The registraion should fail and the machine should not be added to
+    # The registration should fail and the machine should not be added to
     # the database.
     assert kea_service.has_encountered_machine_registration_disabled()
     assert len(server_service.list_machines().items) == 0
