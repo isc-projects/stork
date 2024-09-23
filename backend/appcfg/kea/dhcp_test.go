@@ -1161,7 +1161,7 @@ func TestSetDHCPv6PDAllocator(t *testing.T) {
 
 // Test setting DHCPv6 option data.
 func TestSetDHCPv6OptionData(t *testing.T) {
-	cfg := &SettableDHCPv4Config{}
+	cfg := &SettableDHCPv6Config{}
 	cfg.SetDHCPOptions([]SingleOptionData{
 		{
 			Name:       "routers",
