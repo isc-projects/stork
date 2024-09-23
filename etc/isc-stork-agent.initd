@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+
+cfgfile="/etc/stork/agent.conf"
+command="/usr/bin/stork-agent"
+command_args="--use-env-file"
+command_background="yes"
+command_user="stork-agent"
+output_log="/var/log/isc-stork-agent.log"
+pidfile="/run/isc-stork-agent.pid"
+
+depend() {
+    use net
+}
+
+start_pre() {
+    touch "${output_log}"
+    chown "${command_user}" "${output_log}"
+}

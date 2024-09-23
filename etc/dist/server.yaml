@@ -30,9 +30,8 @@ contents:
 - src: dist/server/etc/stork/server.env
   dst: /etc/stork/server.env
   type: config
-- src: dist/server/etc/init.d
-  dst: /etc/init.d
-  packager: apk
+- src: dist/server/etc/init.d/isc-stork-server
+  dst: /etc/init.d/isc-stork-server
 
 overrides:
   deb:

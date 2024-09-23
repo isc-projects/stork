@@ -114,14 +114,12 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
     sh "rm", "-f", agent_dist_system_service_file + ".tmp"
 end
 
-if DISTRO == 'alpine'
-    openrc_dir = 'dist/agent/etc/init.d'
-    directory openrc_dir
-    agent_openrc_file = File.join(openrc_dir, 'isc-stork-agent')
-    file agent_openrc_file => [openrc_dir, 'etc/stork.initd.in'] do
-        sh 'cp', '-a', 'etc/stork.initd.in', agent_openrc_file
-        sh 'chmod', '755', agent_openrc_file
-    end
+agent_openrc_dir = 'dist/agent/etc/init.d'
+directory agent_openrc_dir
+agent_openrc_file = File.join(agent_openrc_dir, 'isc-stork-agent')
+file agent_openrc_file => [agent_openrc_dir, 'etc/isc-stork-agent.initd'] do
+    FileUtils.cp("etc/isc-stork-agent.initd", agent_openrc_file)
+    sh 'chmod', '755', agent_openrc_file
 end
 
 agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
@@ -136,11 +134,8 @@ end
 
 agent_dist_dir = "dist/agent"
 directory agent_dist_dir
-agent_dist_dir_prerequisites = [agent_dist_bin_file, agent_dist_man_file, agent_dist_system_service_file, agent_dist_etc_dir]
-if DISTRO == 'alpine'
-    agent_dist_dir_prerequisites += [agent_openrc_file]
-end
-file agent_dist_dir => agent_dist_dir_prerequisites
+file agent_dist_dir => [agent_dist_bin_file, agent_dist_man_file, agent_dist_system_service_file, agent_dist_etc_dir,
+                        agent_openrc_file]
 
 agent_hooks = FileList["etc/hooks/**/isc-stork-agent.post*", "etc/hooks/**/isc-stork-agent.pre*"]
 
@@ -203,14 +198,12 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
     sh "rm", "-f", server_dist_system_service_file + ".tmp"
 end
 
-if DISTRO == 'alpine'
-    openrc_dir = 'dist/server/etc/init.d'
-    directory openrc_dir
-    server_openrc_file = File.join(openrc_dir, 'isc-stork-server')
-    file server_openrc_file => [openrc_dir, 'etc/stork.initd.in'] do
-        sh 'cp', '-a', 'etc/stork.initd.in', server_openrc_file
-        sh 'chmod', '755', server_openrc_file
-    end
+server_openrc_dir = 'dist/server/etc/init.d'
+directory server_openrc_dir
+server_openrc_file = File.join(server_openrc_dir, 'isc-stork-server')
+file server_openrc_file => [server_openrc_dir, 'etc/isc-stork-server.initd'] do
+    FileUtils.cp("etc/isc-stork-server.initd", server_openrc_file)
+    sh 'chmod', '755', server_openrc_file
 end
 
 server_etc_files = FileList["etc/server.env"]
@@ -247,16 +240,13 @@ end
 
 server_dist_dir_tool_part = [tool_dist_bin_file]
 server_dist_dir_man_part = [tool_dist_man_file, server_dist_man_file]
-server_dist_dir_server_part = [server_dist_bin_file, server_dist_system_service_file, server_dist_etc_dir]
+server_dist_dir_server_part = [server_dist_bin_file, server_dist_system_service_file, server_dist_etc_dir,
+                               server_openrc_file]
 server_dist_dir_webui_part = [server_nginx_example_file, server_grafana_examples_dir, server_www_dir]
 
 server_dist_dir = "dist/server"
 directory server_dist_dir
-server_dist_dir_prerequisites = server_dist_dir_tool_part + server_dist_dir_man_part + server_dist_dir_server_part + server_dist_dir_webui_part
-if DISTRO == 'alpine'
-    server_dist_dir_prerequisites += [server_openrc_file]
-end
-file server_dist_dir => server_dist_dir_prerequisites
+file server_dist_dir => server_dist_dir_tool_part + server_dist_dir_man_part + server_dist_dir_server_part + server_dist_dir_webui_part
 
 server_hooks = FileList["etc/hooks/**/isc-stork-server.post*", "etc/hooks/**/isc-stork-server.pre*"]
 
