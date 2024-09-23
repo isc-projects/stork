@@ -1515,7 +1515,7 @@ values are:
   - ``mutex`` (number of mutexes)
   - ``block`` (number of blocks).
 
-  .. code-block:: shell
+  .. code-block:: console
 
     $ rake unittest:backend:profile TEST=TestAddMachine SCOPE="server/database/model" KIND=mem
 
@@ -1572,8 +1572,16 @@ Monitoring Demo
 
 The same monitoring script has been set up for the demo services. They collect
 the metrics for the Kea, BIND 9, and Stork agent and server services.
+The demo environment must be running while the profiling command is called. You
+can start the demo with:
 
-The collected metrics can be view on demand using the following command:
+.. code-block:: console
+
+    $ rake demo:up
+
+The demo environment gathers some performance statistics in the background
+continuously. The collected metrics can be view on demand using the following
+command:
 
 .. code-block:: console
 
