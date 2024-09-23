@@ -2,8 +2,11 @@ package restservice
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -42,7 +45,65 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 
 // Get information about current ISC software versions.
 func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwVersionsParams) middleware.Responder {
-	return general.NewGetIscSwVersionsOK()
+	appsVersions := models.AppsVersions{}
+
+	// For now, this feature only supports "offline" versions checking.
+	// In the future, "offline path" will be a fallback in case "online path" fails for any reason.
+	onlineData := false
+
+	if !onlineData {
+		// Find the location of the software versions metadata JSON file.
+		dir, err := os.Getwd()
+
+		if err != nil {
+			log.Error(err)
+			msg := "Cannot find the software versions metadata JSON file"
+			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		VersionsJson := fmt.Sprintf("%s/versions.json", dir)
+
+		// Open JSON file.
+		file, err := os.Open(VersionsJson)
+
+		if err != nil {
+			log.Error(err)
+			msg := "Cannot open the software versions metadata JSON file"
+			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		defer file.Close()
+
+		// Read the contents of the file.
+		bytes, err := io.ReadAll(file)
+		if err != nil {
+			log.Error(err)
+			msg := "Cannot read the contents of the software versions metadata JSON file"
+			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+
+		// Parse the JSON content from the input file.
+		err = json.Unmarshal(bytes, &appsVersions)
+		if err != nil {
+			log.Error(err)
+			msg := "Error parsing the contents of the software versions metadata JSON file"
+			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	}
+
+	appsVersions.OnlineData = onlineData
+
+	return general.NewGetIscSwVersionsOK().WithPayload(&appsVersions)
 }
 
 // Convert db machine to rest structure.
