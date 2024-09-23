@@ -1438,25 +1438,25 @@ The Go programming language provides a built-in profiling tool ``pprof`` that
 can be used to profile the performance of the Stork applications. The profiling
 tool can generate the CPU, memory, and blocking profiles.
 
-To profile the Stork application, first run it from the Rakefile task. The
+To profile a Stork application, first run it using a Rakefile task. The
 build system will compile the application with conditionally enabled profiling.
 The commands to run the applications are: ``rake run:server`` and
 ``rake run:agent``.
 
 .. note::
 
-    The profiling is enabled only when Stork is running by one of the above
-    commands. The production binaries don't include any additional tags and
-    they cannot be profiled.
+    Profiling is enabled only when Stork is started using one of the above
+    commands. Production binaries lack tags required for profiling.
 
-After that, the profiler can be attacked to the running application using the
+Next, the profiler can be attached to the running application using the
 following commands: ``rake profile:server`` and ``rake profile:agent``.
-By default, they will collect CPU samples for 30 seconds. Then the Web UI will
+By default, they will collect CPU samples for 30 seconds, and the Web UI will
 be opened with the profiling results.
 
 .. note::
 
-    Especially useful is the "Flame Graph" view available in the "View" menu.
+    The "Flame Graph" view, available in the "View" menu, is especially useful in
+    examining the profiling results.
 
 The profiling commands can be customized using the following environment
 variables:
@@ -1472,7 +1472,7 @@ variables:
   - ``threadcreate`` (number of threads created),
   - ``trace`` (execution trace)
 
-- ``DURATION`` - the duration of the profile collection in seconds.
+- ``DURATION`` - a duration of profiling in seconds.
 
 There are also two exclusive options to analyze deltas between two profiles:
 ``COMPARE`` and ``SUBSTRACT``. Both accept the path to the profile file
@@ -1480,10 +1480,10 @@ generated earlier. The profile file can be downloaded from the Web UI.
 
 .. warning::
 
-    I did not find options to compare or subtract profiles very useful. The
+    We did not find options to compare or subtract profiles very useful. The
     report generated looks very similar to the one generated without providing
     the previous profile file. Additionally, the numeric labels don't look very
-    reliable. Maybe they need some additional tweaks. I recommend using them
+    reliable. Maybe they need some additional tweaks. We recommend using them
     with caution. 
 
 Profiling Unit Tests
@@ -1495,7 +1495,7 @@ can be run using the following command: ``rake unittest:backend:profile``.
 It requires the ``TEST`` environment variable to specify the test to profile.
 It can be an exact name or a regular expression.
 
-Caller needs also to specify the ``SCOPE`` environment variable. It must be set
+A caller also need to specify the ``SCOPE`` environment variable. It must be set
 to the subdirectory where the test is located. E.g., for the
 ``TestGetMachineByAddress`` test located in the
 ``backend/server/database/model/machine_test.go`` file, the ``SCOPE`` should be
@@ -1572,6 +1572,6 @@ The collected metrics can be view on demand using the following command:
 It fetches the log files from the demo services and generates the performance
 charts. The report is opened in the default web browser.
 
-The collected metrics are limited up to 20 MB per container to prevent the
+The collected metrics are limited to 20 MB per container to prevent the
 excessive disk usage. The log files are rotated when the 10 MB limit is reached.
 It is enough to collect the metrics for several hours.

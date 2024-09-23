@@ -319,7 +319,7 @@ namespace :unittest do
         task :profile => [GO, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
             if ENV["TEST"].nil?
                 puts "You must specify the test name pattern to run because "+
-                    "profiling all tests at once is useless due to most calls "+
+                    "profiling all tests at once is useless because most calls "+
                     "are made in the unit test framework itself."
                 puts "Example: rake unittest:backend:profile TEST=^TestFoo$"
                 fail "Environment variable TEST must be specified"

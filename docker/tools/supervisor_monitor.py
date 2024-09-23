@@ -14,7 +14,7 @@ from xmlrpc.client import ServerProxy
 
 class PerformanceMetricsCollector:
     """
-    Class for performing the performance metrics collection.
+    Class for collecting the performance metrics.
 
     The collected samples are stored in the separate lines. The line format is:
     <timestamp><tab><service name><tab><counter name><tab><counter value>

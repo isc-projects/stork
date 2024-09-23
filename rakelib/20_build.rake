@@ -186,11 +186,11 @@ CLEAN.append "webui/.angular"
 # This helper logic was initially implemented as a Rake rule. However, we have
 # rejected this approach because internal details of the Rake rule. When the
 # rule constructs the task, it checks if the file prerequisites exist and fails
-# if they do not. It is done imeditatelly when the given target is accessed by
+# if they do not. It is done immediately when the given target is accessed by
 # `Rake::Task[name]`, not when the task is executed or needed.
 # It is problematic when the rule-based task is ehanced by `add_guard` helper.
 # This helper works on the task object, so the rule is executed at the same
-# time as Rake lists the tasks. It causes all Stork agent file prerequisites
+# time as Rake lists the tasks. It implies that all Stork agent file prerequisites
 # must always exist, even if the task not related to agent is executed.
 # It is problematic in Docker builds where certain images exclude the agent
 # files (e.g., UI builder image).
