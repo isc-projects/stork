@@ -39,6 +39,23 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /iscswversions:
+    get:
+      summary: Get infomation about current ISC Kea, Bind9 and Stork software versions.
+      operationId: getIscSwVersions
+      security: []
+      tags:
+        - General
+      responses:
+        200:
+          description: Metadata for current Kea, Bind9 and Stork software versions.
+          schema:
+            $ref: "#/definitions/AppsVersions"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   $include: users-paths.yaml
   $include: services-paths.yaml
   $include: dhcp-paths.yaml
@@ -80,6 +97,62 @@ definitions:
         type: string
       date:
         type: string
+
+  VersionDetails:
+    type: object
+    required:
+      - version
+      - releaseDate
+    properties: 
+      version:
+        type: string
+      releaseDate:
+        type: string
+      eolDate:
+        type: string
+      esv:
+        type: string
+      status:
+        type: string
+      major:
+        type: integer
+      minor:
+        type: integer
+      range:
+        type: string
+  
+  AppVersionMetadata:
+    type: object
+    required:
+      - latestDev
+    properties: 
+      latestDev:
+        $ref: '#/definitions/VersionDetails'
+      currentStable:
+        type: array
+        items: 
+          $ref: '#/definitions/VersionDetails'
+      latestSecure:
+        $ref: '#/definitions/VersionDetails'
+  
+  AppsVersions:
+    type: object
+    required:
+      - bind9
+      - kea
+      - stork
+      - date
+    properties: 
+      bind9:
+        $ref: '#/definitions/AppVersionMetadata'
+      kea:
+        $ref: '#/definitions/AppVersionMetadata'
+      stork:
+        $ref: '#/definitions/AppVersionMetadata'
+      date:
+        type: string
+      onlineData:
+        type: boolean
 
   ApiError:
     type: object

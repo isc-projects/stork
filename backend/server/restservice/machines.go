@@ -40,6 +40,11 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
+// Get information about current ISC software versions.
+func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwVersionsParams) middleware.Responder {
+	return general.NewGetIscSwVersionsOK()
+}
+
 // Convert db machine to rest structure.
 func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	apps := []*models.App{}
