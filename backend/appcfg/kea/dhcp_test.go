@@ -1169,7 +1169,7 @@ func TestSetDHCPv6OptionData(t *testing.T) {
 			Code:       3,
 			CSVFormat:  true,
 			Data:       "foobar",
-			Space:      "dhcp4",
+			Space:      "dhcp6",
 		},
 	})
 	options := cfg.OptionData.GetValue()
