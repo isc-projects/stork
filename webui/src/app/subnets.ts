@@ -394,7 +394,7 @@ export function hasDifferentSubnetLevelOptions(subnet: Subnet) {
  * @param configs Configs from various daemons.
  * @returns true if there are differences in DHCP options, false otherwise.
  */
-export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]) {
+export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]): boolean {
     return (
         !!(configs.length > 0) &&
         configs

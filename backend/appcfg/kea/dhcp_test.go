@@ -595,7 +595,7 @@ func TestSetDHCPv4Options(t *testing.T) {
 				Code:       3,
 				CSVFormat:  true,
 				Data:       "foobar",
-				Space:      "dhcp6",
+				Space:      "dhcp4",
 			},
 		})
 
