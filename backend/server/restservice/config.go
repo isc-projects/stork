@@ -718,8 +718,18 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 					option,
 				)
 				if err != nil {
-					msg := "Problem with creating Kea representation of the DHCP option"
+					msg := fmt.Sprintf(
+						"Problem with creating Kea representation of the DHCP option (code: %d, space: %s)",
+						option.Code,
+						option.Space,
+					)
 					log.WithError(err).Error(msg)
+
+					// Include the exact error message in the API response.
+					// It is safe because the error contains only the field
+					// parser results and doesn't reveal any internal issues.
+					msg = fmt.Sprintf("%s: %v", msg, err)
+
 					rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 						Message: &msg,
 					})
@@ -748,7 +758,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 		case errors.As(err, &invalidConfigs):
 			// Invalid configs applied.
 			msg := "Problem with applying Kea global parameters because invalid set of configurations have been specified"
-			log.Error(msg)
+			log.WithError(err).Error(msg)
 			rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -766,7 +776,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 	// Send the commands to Kea servers.
 	cctx, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
-		msg := fmt.Sprintf("Problem with committing Kea config %s", err)
+		msg := "Problem with committing Kea config"
 		log.WithError(err).Error(msg)
 		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
