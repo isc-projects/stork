@@ -396,7 +396,7 @@ export function hasDifferentSubnetLevelOptions(subnet: Subnet) {
  */
 export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]): boolean {
     return (
-        !!(configs.length > 0) &&
+        configs.length > 0 &&
         configs
             .map((c) => c.options)
             .slice(1)
