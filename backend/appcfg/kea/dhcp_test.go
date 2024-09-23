@@ -607,7 +607,7 @@ func TestSetDHCPv4Options(t *testing.T) {
 	require.EqualValues(t, 3, option.Code)
 	require.True(t, option.CSVFormat)
 	require.Equal(t, "foobar", option.Data)
-	require.Equal(t, "dhcp6", option.Space)
+	require.Equal(t, "dhcp4", option.Space)
 }
 
 // Test setting nil as DHCPv4 option data.
@@ -1179,7 +1179,7 @@ func TestSetDHCPv6OptionData(t *testing.T) {
 	require.EqualValues(t, 3, options[0].Code)
 	require.True(t, options[0].CSVFormat)
 	require.Equal(t, "foobar", options[0].Data)
-	require.Equal(t, "dhcp4", options[0].Space)
+	require.Equal(t, "dhcp6", options[0].Space)
 
 	cfg.SetDHCPOptions(nil)
 	require.Nil(t, cfg.OptionData.GetValue())
