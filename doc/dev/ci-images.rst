@@ -152,7 +152,7 @@ The image names are the file names of their Dockerfiles.
 
         Introduced in the #1512 ticket to upgrade overall dependencies.
         Upgraded Go to 1.23.1, NodeJS 20, and Protoc to 24.4. Removed the FPM
-        dependencies i.e., make, and tar.
+        dependencies i.e., tar.
 
     - ``redhat-ubi.Dockerfile``:
 

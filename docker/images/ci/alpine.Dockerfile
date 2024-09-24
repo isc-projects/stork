@@ -12,5 +12,5 @@ RUN apk add --no-cache \
     make~4.4 \
     musl-dev~1.2 \
     mandoc~1.14 \
-    gcc~13.2
-
+    gcc~13.2 \
+    binutils-gold~2.41
