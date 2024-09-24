@@ -611,13 +611,8 @@ system_test:
 ### hooks ###
 build_hooks:
   stage: hooks
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      when: always
-    - when: manual
-      allow_failure: true
-  needs:
-    - build_backend
+  when: always
+  needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
@@ -656,11 +651,7 @@ build_hooks_legacy:
 
 unittest_hooks:
   stage: hooks
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      when: always
-    - when: manual
-      allow_failure: true
+  when: always
   needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: normal
@@ -669,11 +660,7 @@ unittest_hooks:
 
 tarball_hooks:
   stage: hooks
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      when: always
-    - when: manual
-      allow_failure: true
+  when: always
   needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: normal
@@ -709,9 +696,7 @@ build_hooks_debs_arm64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:
-    - job: build_hooks
-      artifacts: false
+  needs: []
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.deb ./
@@ -727,9 +712,7 @@ build_hooks_rpms_amd64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:
-    - job: build_hooks
-      artifacts: false
+  needs:  []
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.rpm ./
@@ -745,9 +728,7 @@ build_hooks_rpms_arm64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:
-    - job: build_hooks
-      artifacts: false
+  needs: []
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.rpm ./
@@ -763,9 +744,7 @@ build_hooks_apks_amd64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:
-    - job: build_hooks
-      artifacts: false
+  needs: []
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -781,9 +760,7 @@ build_hooks_apks_arm64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:
-    - job: build_hooks
-      artifacts: false
+  needs: []
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
