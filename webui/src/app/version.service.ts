@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core'
 import { minor, major, sort, coerce, valid, lt, satisfies, gt } from 'semver'
 import { deepCopy } from './utils'
+import { AppsVersions, GeneralService } from './backend'
+import { filter, tap } from 'rxjs/operators'
 
 /**
  * Interface defining fields for an object which describes either Stork, Kea or Bind9 software release.
@@ -69,7 +71,7 @@ export class VersionService {
 
     private _processedData: { [a in App | 'date']: AppVersionMetadata | string }
 
-    private readonly _stableVersion: { [a in App]: string[] }
+    private _stableVersion: { [a in App]: string[] }
 
     // static for now; to be provided from server
     versionMetadata: { [a in App | 'date']: AppVersionMetadata | string } = {
@@ -123,15 +125,44 @@ export class VersionService {
         },
     }
 
-    private readonly _onlineData: boolean
+    asyncMetadata: AppsVersions | undefined
 
-    constructor() {
-        this._stableVersion = { kea: [], bind9: [], stork: [] }
-        this.dataManufactureDate = '2024-09-01'
-        this.processData()
-        this._checkedVersionCache = new Map()
-        // For now force to false.
-        this._onlineData = false
+    dataFetchedTimestamp: Date | undefined
+
+    fetchData() {
+        this.generalService
+            .getIscSwVersions()
+            .pipe(
+                tap(() => console.log('trying getIscSwVersions')),
+                filter(() => !this.asyncMetadata || (this.dataFetchedTimestamp && this.isDataOld()))
+            )
+            .subscribe((data) => {
+                console.log('went through filter and resp rxed')
+                this.asyncMetadata = data
+                this.dataFetchedTimestamp = new Date()
+                this._stableVersion = { kea: [], bind9: [], stork: [] }
+                this.dataManufactureDate = data['date']
+                this._checkedVersionCache = new Map()
+                this._onlineData = data['onlineData'] ?? false
+                this.processData()
+            })
+    }
+
+    isDataOld() {
+        let now = new Date()
+        return this.dataFetchedTimestamp && now.getTime() - this.dataFetchedTimestamp.getTime() < 10000
+    }
+
+    private _onlineData: boolean
+
+    constructor(private generalService: GeneralService) {
+        this.fetchData()
+        // this._stableVersion = { kea: [], bind9: [], stork: [] }
+        // this.dataManufactureDate = '2024-09-01'
+        // this.processData()
+        // this._checkedVersionCache = new Map()
+        // // For now force to false.
+        // this._onlineData = false
     }
 
     /**
@@ -142,8 +173,8 @@ export class VersionService {
      */
     private getVersion(app: App, swType: ReleaseType): string | string[] | null {
         return swType === 'currentStable'
-            ? this._stableVersion[app] || null
-            : this._processedData[app]?.[swType]?.version || null
+            ? this._stableVersion?.[app] || null
+            : this._processedData?.[app]?.[swType]?.version || null
     }
 
     /**
@@ -153,7 +184,7 @@ export class VersionService {
      * @return version details as either single VersionDetails (in case of latestSecure and latestDev) or array of VersionDetails (in case of currentStable)
      */
     getVersionDetails(app: App, swType: ReleaseType): VersionDetails | VersionDetails[] | null {
-        return this._processedData[app]?.[swType] || null
+        return this._processedData?.[app]?.[swType] || null
     }
 
     /**
@@ -161,7 +192,7 @@ export class VersionService {
      * @param app either kea, bind9 or stork app
      */
     private getStableVersions(app: App): string[] | null {
-        return this._stableVersion[app] || null
+        return this._stableVersion?.[app] || null
     }
 
     /**
@@ -180,32 +211,35 @@ export class VersionService {
     }
 
     private processData() {
-        let newData = deepCopy(this.versionMetadata)
-        Object.keys(newData).forEach((app) => {
-            if (app !== 'date') {
-                Object.keys(newData[app]).forEach((swType) => {
-                    switch (swType) {
-                        case 'latestSecure':
-                            newData[app][swType].status = 'Security release'
-                            newData[app][swType].major = major(newData[app][swType].version)
-                            newData[app][swType].minor = minor(newData[app][swType].version)
-                            break
-                        case 'latestDev':
-                            newData[app][swType].status = 'Development'
-                            newData[app][swType].major = major(newData[app][swType].version)
-                            newData[app][swType].minor = minor(newData[app][swType].version)
-                            break
-                        case 'currentStable':
-                            for (let e of newData[app][swType]) {
-                                e.status = 'Current Stable'
-                                e.major = major(e.version)
-                                e.minor = minor(e.version)
-                                e.range = `${e.major}.${e.minor}.x`
-                            }
+        // let newData = deepCopy(this.versionMetadata)
+        let newData = deepCopy(this.asyncMetadata)
+        Object.keys(newData).forEach((key) => {
+            if (key === 'kea' || key === 'bind9' || key === 'stork') {
+                Object.keys(newData[key]).forEach((swType) => {
+                    if (newData[key][swType]) {
+                        switch (swType) {
+                            case 'latestSecure':
+                                newData[key][swType].status = 'Security release'
+                                newData[key][swType].major = major(newData[key][swType].version)
+                                newData[key][swType].minor = minor(newData[key][swType].version)
+                                break
+                            case 'latestDev':
+                                newData[key][swType].status = 'Development'
+                                newData[key][swType].major = major(newData[key][swType].version)
+                                newData[key][swType].minor = minor(newData[key][swType].version)
+                                break
+                            case 'currentStable':
+                                for (let e of newData[key][swType]) {
+                                    e.status = 'Current Stable'
+                                    e.major = major(e.version)
+                                    e.minor = minor(e.version)
+                                    e.range = `${e.major}.${e.minor}.x`
+                                }
 
-                            let versionsText = newData[app][swType].map((ver: VersionDetails) => ver.version)
-                            this._stableVersion[app] = sort(versionsText)
-                            break
+                                let versionsText = newData[key][swType].map((ver: VersionDetails) => ver.version)
+                                this._stableVersion[key] = sort(versionsText)
+                                break
+                        }
                     }
                 })
             }
@@ -219,7 +253,7 @@ export class VersionService {
      * @param app
      */
     checkVersion(version: string, app: App): VersionFeedback | null {
-        let cachedFeedback = this._checkedVersionCache.get(version + app)
+        let cachedFeedback = this._checkedVersionCache?.get(version + app)
         if (cachedFeedback) {
             console.log('cache used')
             return cachedFeedback
