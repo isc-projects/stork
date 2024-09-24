@@ -155,6 +155,9 @@ stages:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - rake prepare:dist
     - rake prepare:deps
+  variables:
+    # CGO is disabled by default in official images from Go 1.23.
+    CGO_ENABLED: 1
 
 .base_build_alpine_arm:
   extends: .base_build_alpine
