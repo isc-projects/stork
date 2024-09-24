@@ -11,6 +11,14 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Precision of the calculated RPS. The value of 100
+// means two fractional digits. The calculated RPS is
+// multiplied by the precision and sent to the UI as
+// an integer. The received value is then divided by
+// the precision to obtain a value with two fractional
+// digits.
+const RpsPrecision = 100
+
 // Periodic Puller that generates RPS interval data.
 type RpsWorker struct {
 	db          *pg.DB
@@ -299,7 +307,9 @@ func (rpsWorker *RpsWorker) updateKeaDaemonRpsStats(daemon *dbmodel.Daemon) erro
 }
 
 // Calculate the RPS for the first row in a set of RpsIntervals.
-func calculateRps(totals []*dbmodel.RpsInterval) int {
+// The calculated RPS is an actual RPS multiplied by RpsPrecision.
+// It allows for displaying fractional RPS in the UI.
+func calculateRps(totals []*dbmodel.RpsInterval) int64 {
 	if len(totals) == 0 {
 		return 0
 	}
@@ -310,13 +320,13 @@ func calculateRps(totals []*dbmodel.RpsInterval) int {
 		return 0
 	}
 
-	// If it's a fraction, return 1 (unless we move to floats)
-	if responses <= duration {
+	// If the RPS is below the precision, let's return the minimal value.
+	if RpsPrecision*responses <= duration {
 		return 1
 	}
 
 	// Return the rate.
-	return (int(responses / duration))
+	return RpsPrecision * responses / duration
 }
 
 // Returns the statistic value and sample time from a given row within a

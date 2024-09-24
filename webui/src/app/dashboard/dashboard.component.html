@@ -322,8 +322,12 @@
                                     }"
                                 ></i>
                             </td>
-                            <td pTooltip="{{ daemonRpsTooltip(d, 1) }}">{{ d.rps1 }}</td>
-                            <td pTooltip="{{ daemonRpsTooltip(d, 2) }}">{{ d.rps2 }}</td>
+                            <!--
+                                Received RPS values must be divided by 100 because they are multipled
+                                by 100 by the server to obtain two digit precision.
+                            -->
+                            <td pTooltip="{{ daemonRpsTooltip(d, 1) }}">{{ d.rps1 / 100 | number: '1.0-2' }}</td>
+                            <td pTooltip="{{ daemonRpsTooltip(d, 2) }}">{{ d.rps2 / 100 | number: '1.0-2' }}</td>
                             <td>
                                 <span *ngIf="d.haEnabled && d.haOverview && d.haOverview.length > 0">
                                     <a routerLink="/apps/kea/{{ d.appId }}">

@@ -328,7 +328,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     daemonRpsTooltip(daemon, interval) {
         const typeStr = daemon.name === 'dhcp4' ? 'ACKs' : 'REPLYs'
         const intervalStr = interval === 1 ? '15 minutes' : '24 hours'
-        return 'Number of ' + typeStr + ' sent by the daemon per second over the last ' + intervalStr
+        return 'Average number of ' + typeStr + ' sent by the daemon per second over the last ' + intervalStr
     }
 
     /**

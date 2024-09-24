@@ -98,6 +98,8 @@ describe('DashboardComponent', () => {
                     monitored: true,
                     name: 'dhcp4',
                     uptime: 3652,
+                    rps1: 152,
+                    rps2: 34,
                 },
             ],
             sharedNetworks4: {
@@ -440,5 +442,20 @@ describe('DashboardComponent', () => {
         const values = cells.map((c) => (c.nativeElement as HTMLElement).textContent.trim())
         expect(values).toContain('[41]')
         expect(values).toContain('')
+    })
+
+    it('should display rps statistics', async () => {
+        await component.refreshDhcpOverview()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        const table = fixture.debugElement.query(By.css('p-table'))
+        expect(table).toBeTruthy()
+
+        const rows = table.queryAll(By.css('tr'))
+        expect(rows.length).toBe(2)
+
+        expect(rows[1].nativeElement.innerText).toContain('1.52')
+        expect(rows[1].nativeElement.innerText).toContain('0.34')
     })
 })
