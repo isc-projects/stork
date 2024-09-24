@@ -11,5 +11,6 @@ RUN apk add --no-cache \
     protoc~24.4 \
     make~4.4 \
     musl-dev~1.2 \
-    mandoc~1.14
+    mandoc~1.14 \
+    gcc~13.2
 
