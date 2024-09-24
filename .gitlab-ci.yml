@@ -41,8 +41,8 @@ default:
 
 # stages order
 stages:
-  - checks
   - build
+  - checks
   - hooks
   - deploy
 
@@ -50,7 +50,7 @@ stages:
 
 # common parts used in build jobs
 .base_build_debian:
-  stage: checks
+  stage: build
   rules:
     - when: always
   tags:
@@ -58,6 +58,7 @@ stages:
     - aws
     - runner-manager
     - amd64
+  needs: []
   cache:
     key: $CI_PROJECT_NAME-debian-$CI_COMMIT_REF_SLUG
     paths:
@@ -91,7 +92,8 @@ stages:
     - aarch64
 
 .base_build_ubi:
-  stage: checks
+  stage: build
+  needs: []
   rules:
     - when: always
   cache:
@@ -131,7 +133,8 @@ stages:
     - aarch64
 
 .base_build_alpine:
-  stage: checks
+  stage: build
+  needs: []
   rules:
     - when: always
   cache:
@@ -171,31 +174,37 @@ stages:
 
 lint_backend:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake lint:backend
 
 lint_changelog:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake lint:changelog
 
 lint_python_pylint:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake lint:python:pylint
 
 lint_python_flake8:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake lint:python:flake8
 
 lint_python_black:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake lint:python:black
 
 unittest_backend:
   extends: .base_build_debian
+  stage: checks
   services:
     - name: postgres:16-alpine
       alias: postgres
@@ -209,11 +218,13 @@ unittest_backend:
 
 lint_ui:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake lint:ui
 
 unittest_ui:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake unittest:ui
 
@@ -246,7 +257,7 @@ build_backend:
     expire_in: 1 hour
 
 build_backend_legacy:
-  stage: checks
+  stage: build
   rules:
     - when: on_success
   tags:
@@ -277,6 +288,7 @@ danger:
     - aws
     - runner-manager
     - amd64
+  needs: []
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
     - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
@@ -289,6 +301,7 @@ danger:
 
 lint_shell:
   extends: .base_build_debian
+  stage: checks
   script:
     - rake lint:shell
 
@@ -314,7 +327,7 @@ tarball:
 
 build_debs_amd64:
   extends: .base_build_debian
-  stage: checks
+  stage: build
   needs:
     # Use the binaries compiled by the legacy image.
     - build_backend_legacy
@@ -329,7 +342,7 @@ build_debs_amd64:
 
 build_debs_arm64:
   extends: .base_build_debian_arm
-  stage: checks
+  stage: build
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -341,7 +354,7 @@ build_debs_arm64:
 
 build_rpms_amd64:
   extends: .base_build_ubi
-  stage: checks
+  stage: build
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -353,7 +366,7 @@ build_rpms_amd64:
 
 build_rpms_arm64:
   extends: .base_build_ubi_arm
-  stage: checks
+  stage: build
   script:
     - rake build:agent_pkg
     - rake build:server_pkg
@@ -386,7 +399,7 @@ build_apks_arm64:
     expire_in: 1 hour
 
 packages:
-  stage: checks
+  stage: build
   rules:
     - when: on_success
   needs:
@@ -411,7 +424,7 @@ install_debs_amd64:
     - aws
     - runner-manager
     - amd64
-  stage: build
+  stage: checks
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
@@ -440,7 +453,7 @@ install_debs_amd64_ubuntu_lts:
     - aws
     - runner-manager
     - amd64
-  stage: build
+  stage: checks
   image: ubuntu:20.04
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
@@ -483,7 +496,7 @@ install_rpms_amd64:
     - aws
     - runner-manager
     - amd64
-  stage: build
+  stage: checks
   variables:
     ARCH: x86_64
   before_script:
@@ -525,7 +538,7 @@ install_apks_amd64:
     - aws
     - runner-manager
     - amd64
-  stage: build
+  stage: checks
   variables:
     ARCH: x86_64
   script:
@@ -572,6 +585,7 @@ system_test:
     - aws
     - runner-manager
     - amd64
+  needs: []
   services:
     - docker:dind
   rules:
