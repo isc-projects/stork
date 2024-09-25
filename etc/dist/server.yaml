@@ -30,7 +30,7 @@ contents:
 - src: dist/server/etc/stork/server.env
   dst: /etc/stork/server.env
   type: config
-- src: dist/server/etc/init.d/isc-stork-server
+- src: dist/server/etc/stork/isc-stork-server.initd
   dst: /etc/init.d/isc-stork-server
 
 overrides:
