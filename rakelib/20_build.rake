@@ -437,7 +437,7 @@ namespace :run do
         UI_MODE - WebUI mode to use - choose: 'production', 'testing', 'none' or unspecify
         DB_TRACE - trace SQL queries - default: false
     "
-    task :server_profiler => [SERVER_BINARY_FILE_WITH_PROFILER, :pre_run_server] do
+    task :server_profiling => [SERVER_BINARY_FILE_WITH_PROFILER, :pre_run_server] do
         sh SERVER_BINARY_FILE_WITH_PROFILER
     end
 
@@ -464,7 +464,7 @@ namespace :run do
     desc "Run Stork Agent (profiler mode)
         PORT - agent port to use - default: 8888
         REGISTER - register in the localhost server - default: false"
-    task :agent_profiler => [AGENT_BINARY_FILE_WITH_PROFILER] do
+    task :agent_profiling => [AGENT_BINARY_FILE_WITH_PROFILER] do
         if ENV["PORT"].nil?
             ENV["PORT"] = "8888"
         end

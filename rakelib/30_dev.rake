@@ -324,7 +324,7 @@ namespace :unittest do
                 puts "Example: rake unittest:backend:profile TEST=^TestFoo$"
                 fail "Environment variable TEST must be specified"
             end
-            
+
             kind = ENV["KIND"] || "cpu"
             if !["cpu", "mem", "mutex", "block"].include? kind
                 fail "Invalid profile kind: #{kind}, must be one of: cpu, mem, mutex, block"
@@ -653,6 +653,15 @@ namespace :profile do
         sh GO, "tool", "pprof", *opts, "-http=:", url
     end
 
+    # Internal task to connect the live profiler to a Go binary.
+    task :go_app_live, [:host, :port] => [GOLIVEPPROF] do |t, args|
+        # Build URL
+        url = "http://#{args.host}:#{args.port}/debug/pprof"
+
+        puts "Profiling live on #{args.host}:#{args.port}..."
+        sh GOLIVEPPROF, url
+    end
+
     desc 'Run profiling on running Stork agent
         PROFILE - profile type - choice: allocs, block, goroutine, heap, mutex, threadcreate, cpu - default: cpu
         DURATION - duration in seconds - default: 30
@@ -662,6 +671,11 @@ namespace :profile do
         Rake::Task["profile:go_app"].invoke("localhost", "6061")
     end
 
+    desc 'Run live profiling on running Stork agent'
+    task :agent_live => [GO] do
+        Rake::Task["profile:go_app_live"].invoke("localhost", "6061")
+    end
+
     desc 'Run profiling on running Stork server
         PROFILE - profile type - choice: allocs, block, goroutine, heap, mutex, threadcreate, cpu - default: cpu
         DURATION - duration in seconds - default: 30
@@ -669,6 +683,11 @@ namespace :profile do
         SUBSTACT - Path to base profile for substraction - optional'
     task :server => [GO] do
         Rake::Task["profile:go_app"].invoke("localhost", "6060")
+    end
+
+    desc 'Run live profiling on running Stork server'
+    task :server_live => [GO] do
+        Rake::Task["profile:go_app_live"].invoke("localhost", "6060")
     end
 end
 

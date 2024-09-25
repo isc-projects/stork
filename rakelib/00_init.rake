@@ -541,6 +541,7 @@ protoc_ver = '28.2'
 protoc_gen_go_ver = 'v1.34.2'
 protoc_gen_go_grpc_ver = 'v1.5.1'
 tparse_ver = 'v0.15.0'
+go_live_pprof_ver = 'v1.0.8'
 govulncheck_ver = 'v1.1.3'
 mockery_ver = 'v2.46.0'
 mockgen_ver = 'v0.4.0'
@@ -940,6 +941,15 @@ file golangcilint => [WGET, GO, TAR, go_tools_dir] do
 end
 GOLANGCILINT = require_manual_install_on(golangcilint, openbsd_system)
 add_version_guard(GOLANGCILINT, golangcilint_ver)
+
+GOLIVEPPROF = File.join(gobin, "live-pprof")
+file GOLIVEPPROF => [GO] do
+    sh GO, "install", "github.com/moderato-app/live-pprof@#{go_live_pprof_ver}"
+    if !File.file?(GOLIVEPPROF)
+        fail
+    end
+end
+add_version_guard(GOLIVEPPROF, go_live_pprof_ver)
 
 shellcheck = File.join(tools_dir, "shellcheck")
 file shellcheck => [WGET, TAR, tools_dir] do
