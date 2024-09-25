@@ -1446,8 +1446,8 @@ tool can generate the CPU, memory, and blocking profiles.
 
 To profile a Stork application, first run it using a Rakefile task. The
 build system will compile the application with conditionally enabled profiling.
-The commands to run the applications are: ``rake run:server`` and
-``rake run:agent``.
+The commands to run the applications are: ``rake run:server_profiling`` and
+``rake run:agent_profiling``.
 
 .. note::
 
@@ -1491,6 +1491,20 @@ generated earlier. The profile file can be downloaded from the Web UI.
     the previous profile file. Additionally, the numeric labels don't look very
     reliable. Maybe they need some additional tweaks. We recommend using them
     with caution. 
+
+Profiling the Execution Live
+----------------------------
+
+Stork has also an option to display the profiling metrics in real time.
+
+First, start the application as described in the previous section.
+
+Next, the profiler can be attached to the running application using the
+following commands: ``rake profile:server_live`` and ``rake profile:agent_live``.
+The page in the default web browser will be opened.
+
+The data on dashboard present CPU and heap usage, allocations (memory usage),
+and active goroutines.
 
 Profiling Unit Tests
 --------------------
