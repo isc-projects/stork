@@ -388,6 +388,24 @@ def perfdhcp_service():
 
 
 @pytest.fixture
+def register_service():
+    """
+    A fixture that allows controlling the register command of the Stork agent.
+
+    Returns
+    -------
+    core.wrappers.Register
+        Register wrapper for the docker-compose service
+    """
+
+    service_name = "register"
+    compose = create_docker_compose()
+    compose.build(service_name)
+    wrapper = wrappers.Register(compose, service_name)
+    return wrapper
+
+
+@pytest.fixture
 def package_service(request):
     """
     A fixture that setup the Stork Server and Stork Agent services installed

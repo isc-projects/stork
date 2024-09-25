@@ -393,6 +393,24 @@ services:
     healthcheck:
       disable: true
 
+  register:
+    platform: linux/amd64
+    hostname: agent-register
+    build:
+      context: .
+      dockerfile: $PWD/docker/images/stork.Dockerfile
+      target: agent
+    ports:
+      - "42188:8080"
+      - "42147:9547"
+    networks:
+      - storknet
+    environment:
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
+      STORK_AGENT_HOST: 172.42.42.100
+    healthcheck:
+      disable: true
+
   packages:
     build:
       context: .
