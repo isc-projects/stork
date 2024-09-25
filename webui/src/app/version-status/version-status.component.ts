@@ -85,20 +85,23 @@ export class VersionStatusComponent implements OnInit {
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        let feedback = this.versionService.checkVersion(this.version, this.app)
-        if (feedback) {
-            this.setSeverity(feedback.severity, feedback.feedback)
-            this.version = coerce(this.version).version
-            this._appName = this.app[0].toUpperCase() + this.app.slice(1)
-            this._appName += this.app === 'stork' ? ' agent' : ''
-        } else {
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error parsing software version',
-                detail: `Provided semver ${this.version} is not valid!`,
-                life: 10000,
-            })
-        }
+        // let feedback = this.versionService.checkVersion(this.version, this.app)
+        this.versionService.checkVersion(this.version, this.app).subscribe((feedback)=> {
+            if (feedback) {
+                this.setSeverity(feedback.severity, feedback.feedback)
+                this.version = coerce(this.version).version
+                this._appName = this.app[0].toUpperCase() + this.app.slice(1)
+                this._appName += this.app === 'stork' ? ' agent' : ''
+            } else {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error parsing software version',
+                    detail: `Provided semver ${this.version} is not valid!`,
+                    life: 10000,
+                })
+            }
+        })
+
     }
 
     /**
