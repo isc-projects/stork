@@ -321,7 +321,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         api_instance = GeneralApi(self._api_client)
         return api_instance.get_version()
 
-    def _read_puller(self, puller_id) -> Puller:
+    def read_puller(self, puller_id) -> Puller:
         """Read the puller state"""
         api_instance = SettingsApi(self._api_client)
         return api_instance.get_puller(id=puller_id)
@@ -330,6 +330,12 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """Read server configuration settings."""
         api_instance = SettingsApi(self._api_client)
         return api_instance.get_settings()
+
+    def get_server_token(self) -> str:
+        """Read server token."""
+        api_instance = ServicesApi(self._api_client)
+        response = api_instance.get_machines_server_token()
+        return response.token
 
     # Update
 
@@ -550,7 +556,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         def worker():
             nonlocal pulling_started_at
 
-            puller = self._read_puller(puller_id)
+            puller = self.read_puller(puller_id)
 
             last_invoked_at = puller.last_invoked_at
             last_finished_at = puller.last_finished_at
