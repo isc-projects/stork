@@ -98,8 +98,8 @@ describe('DashboardComponent', () => {
                     monitored: true,
                     name: 'dhcp4',
                     uptime: 3652,
-                    rps1: 152,
-                    rps2: 34,
+                    rps1: 1.5212,
+                    rps2: 0.3458,
                 },
             ],
             sharedNetworks4: {
@@ -456,6 +456,6 @@ describe('DashboardComponent', () => {
         expect(rows.length).toBe(2)
 
         expect(rows[1].nativeElement.innerText).toContain('1.52')
-        expect(rows[1].nativeElement.innerText).toContain('0.34')
+        expect(rows[1].nativeElement.innerText).toContain('0.35')
     })
 })

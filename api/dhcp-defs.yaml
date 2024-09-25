@@ -630,9 +630,11 @@
       monitored:
         type: boolean
       rps1:
-        type: integer
+        type: number
+        format: float
       rps2:
-        type: integer
+        type: number
+        format: float
       haEnabled:
         type: boolean
       haOverview:

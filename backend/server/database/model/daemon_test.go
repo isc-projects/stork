@@ -1024,3 +1024,76 @@ func TestDeleteKeaDaemonConfigHashes(t *testing.T) {
 	require.Equal(t, "", daemons[0].KeaDaemon.ConfigHash)
 	require.Equal(t, "", daemons[1].KeaDaemon.ConfigHash)
 }
+
+// Test RPS statistics inserted as integers can be later
+// fetched as floats. It tests the data type change in the
+// RPS stats from int to float32.
+func TestGetRpsStatsAsFloats(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	// add app but without machine, error should be raised
+	app := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			NewKeaDaemon(DaemonNameDHCPv4, true),
+		},
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Len(t, app.Daemons, 1)
+	daemon := app.Daemons[0]
+	require.NotZero(t, daemon.ID)
+
+	// This is the statistics structure we used to have for the
+	// RPS. The RPS were stored as int.
+	type testKeaDHCPDaemonStats struct {
+		RPS1 int `pg:"rps1"`
+		RPS2 int `pg:"rps2"`
+	}
+
+	// This structure ties the old RPS formats to the Kea DHCP daemon.
+	type testKeaDHCPDaemon struct {
+		tableName   struct{} `pg:"kea_dhcp_daemon"` //nolint:unused
+		ID          int64    `pg:",pk"`
+		KeaDaemonID int64
+		Stats       testKeaDHCPDaemonStats
+	}
+
+	// Update the Kea daemon with RPS values stored as int.
+	keaDaemon := testKeaDHCPDaemon{
+		ID:          app.Daemons[0].KeaDaemon.KeaDHCPDaemon.ID,
+		KeaDaemonID: app.Daemons[0].KeaDaemon.KeaDHCPDaemon.KeaDaemonID,
+		Stats: testKeaDHCPDaemonStats{
+			RPS1: 1000,
+			RPS2: 2000,
+		},
+	}
+	_, err = db.Model(&keaDaemon).WherePK().Update()
+	require.NoError(t, err)
+
+	// Get the daemon. It uses float32 data types for RPS.
+	// Let's make sure it is fetched without errors and the
+	// values are correctly cast to float32.
+	daemons, err := GetDaemonsByIDs(db, []int64{daemon.ID})
+	require.NoError(t, err)
+	require.Len(t, daemons, 1)
+	daemon = &daemons[0]
+	require.NotNil(t, daemon.KeaDaemon)
+	require.NotNil(t, daemon.KeaDaemon.KeaDHCPDaemon)
+	require.NotNil(t, daemon.KeaDaemon.KeaDHCPDaemon.Stats)
+	require.Equal(t, float32(1000), daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1)
+	require.Equal(t, float32(2000), daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2)
+}

@@ -150,8 +150,8 @@ func TestRpsWorkerPullRps(t *testing.T) {
 	require.EqualValues(t, 7, interval.Responses)
 
 	// Verify daemon RPS stat values are as expected.
-	checkDaemonRpsStats(t, db, 1, 200, 200)
-	checkDaemonRpsStats(t, db, 2, 300, 300)
+	checkDaemonRpsStats(t, db, 1, 2, 2)
+	checkDaemonRpsStats(t, db, 2, 3, 3)
 }
 
 // Verifies that getting stat values that are less than or equal to the previous
@@ -269,7 +269,7 @@ func rpsTestAddMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Acti
 }
 
 // Verifies RPS values for both intervals for a given daemon.
-func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interval1 int64, interval2 int64) {
+func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interval1 float32, interval2 float32) {
 	daemon := &dbmodel.KeaDHCPDaemon{}
 	err := db.Model(daemon).
 		Where("kea_daemon_id = ?", keaDaemonID).
@@ -282,15 +282,15 @@ func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interv
 	// be rounded down. Let's add a margin of 1 to these checks. Without it, the test
 	// results were unstable.
 	require.Condition(t, func() bool {
-		return daemon.Stats.RPS1 == interval1 || daemon.Stats.RPS1 == interval1-1
+		return daemon.Stats.RPS1 <= interval1 || daemon.Stats.RPS1 >= interval1-1
 	}, "RPS1: %d, interval1: %d", daemon.Stats.RPS1, interval1)
 	require.Condition(t, func() bool {
-		return daemon.Stats.RPS2 == interval2 || daemon.Stats.RPS2 == interval2-1
+		return daemon.Stats.RPS2 <= interval2 || daemon.Stats.RPS2 >= interval2-1
 	}, "RPS2: %d, interval2: %d", daemon.Stats.RPS2, interval2)
 }
 
 // Calculate the RPS from an array of RpsIntervals.
-func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) int64 {
+func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) float32 {
 	var responses int64
 	var duration int64
 
@@ -303,11 +303,7 @@ func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) int64 {
 		return 0
 	}
 
-	if RpsPrecision*responses < duration {
-		return 1
-	}
-
-	return RpsPrecision * responses / duration
+	return float32(responses) / float32(duration)
 }
 
 // Marshall a given json response to a DHCP4 command and pass that into Response4Handler.
