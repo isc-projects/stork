@@ -429,14 +429,42 @@ namespace :run do
         UI_MODE - WebUI mode to use - choose: 'production', 'testing', 'none' or unspecify
         DB_TRACE - trace SQL queries - default: false
     "
-    task :server => [SERVER_BINARY_FILE_WITH_PROFILER, :pre_run_server] do
+    task :server => [SERVER_BINARY_FILE, :pre_run_server] do
+        sh SERVER_BINARY_FILE
+    end
+
+    desc "Run Stork Server (profiler mode)
+        UI_MODE - WebUI mode to use - choose: 'production', 'testing', 'none' or unspecify
+        DB_TRACE - trace SQL queries - default: false
+    "
+    task :server_profiler => [SERVER_BINARY_FILE_WITH_PROFILER, :pre_run_server] do
         sh SERVER_BINARY_FILE_WITH_PROFILER
     end
 
     desc "Run Stork Agent (release mode)
-    PORT - agent port to use - default: 8888
-    REGISTER - register in the localhost server - default: false"
-    task :agent => [AGENT_BINARY_FILE_WITH_PROFILER] do
+        PORT - agent port to use - default: 8888
+        REGISTER - register in the localhost server - default: false"
+    task :agent => [AGENT_BINARY_FILE] do
+        if ENV["PORT"].nil?
+            ENV["PORT"] = "8888"
+        end
+
+        opts = ["--port", ENV["PORT"]]
+
+        if ENV["REGISTER"] == "true"
+            opts.append "--host", "localhost"
+            opts.append "--server-url", "http://localhost:8080"
+        else
+            opts.append "--listen-prometheus-only"
+        end
+
+        sh AGENT_BINARY_FILE, *opts
+    end
+
+    desc "Run Stork Agent (profiler mode)
+        PORT - agent port to use - default: 8888
+        REGISTER - register in the localhost server - default: false"
+    task :agent_profiler => [AGENT_BINARY_FILE_WITH_PROFILER] do
         if ENV["PORT"].nil?
             ENV["PORT"] = "8888"
         end
