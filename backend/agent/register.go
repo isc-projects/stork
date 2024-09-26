@@ -52,7 +52,7 @@ func runPingGRPCServer(host string, port int) (func(), error) {
 	addr := net.JoinHostPort(host, fmt.Sprint(port))
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		err = errors.WithMessage(err, "cannot setup the GRPC listener")
+		err = errors.Wrap(err, "cannot setup the GRPC listener")
 		return nil, err
 	}
 
@@ -354,15 +354,13 @@ func pingAgentViaServer(client *HTTPClient, baseSrvURL *url.URL, machineID int64
 // in the server. If server token is empty (in automatic registration or
 // when it is not provided in manual registration) then agent is added to
 // server but requires manual authorization in web UI.
-func Register(serverURL, serverToken, agentHost string, agentPort int, regenCerts bool, retry bool, httpClient *HTTPClient) bool {
+func Register(serverURL, serverToken, agentHost string, agentPort int, regenCerts bool, retry bool, httpClient *HTTPClient) error {
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil {
-		log.WithError(err).Errorf("Cannot parse server URL: %s", serverURL)
-		return false
+		return errors.Wrapf(err, "cannot parse server URL: %s", serverURL)
 	} else if baseSrvURL.String() == "" {
-		log.Error("Server URL is empty")
-		return false
+		return errors.Errorf("server URL is empty")
 	}
 
 	certStore := NewCertStoreDefault()
@@ -370,20 +368,17 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, err := generateCSR(certStore, agentHost, regenCerts)
 	if err != nil {
-		log.WithError(err).Error("Problem generating certs")
-		return false
+		return errors.WithMessage(err, "problem generating certs")
 	}
 
 	agentToken, err := certStore.ReadToken()
 	if err != nil {
-		log.WithError(err).Error("cannot load the agent token")
-		return false
+		return errors.WithMessage(err, "cannot load the agent token")
 	}
 
 	caCertFingerprint, err := certStore.ReadRootCAFingerprint()
 	if err != nil {
-		log.WithError(err).Error("cannot load the CA cert fingerprint")
-		return false
+		return errors.WithMessage(err, "cannot load the CA cert fingerprint")
 	}
 
 	// Use cert fingerprint as agent token.
@@ -404,8 +399,7 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 	// register new machine i.e. current agent
 	reqPayload, err := prepareRegistrationRequestPayload(csrPEM, serverToken, agentToken, agentHost, agentPort, caCertFingerprint)
 	if err != nil {
-		log.Errorln(err.Error())
-		return false
+		return errors.WithMessage(err, "cannot prepare the registration request")
 	}
 	log.Println("Try to register agent in Stork Server")
 	// If the machine is already registered then the ID is returned. If the
@@ -414,8 +408,7 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 	// and should be stored.
 	machineID, serverCACert, agentCert, serverCertFingerprint, err := registerAgentInServer(httpClient, baseSrvURL, reqPayload, retry)
 	if err != nil {
-		log.WithError(err).Error("Problem registering machine")
-		return false
+		return errors.WithMessage(err, "problem registering machine")
 	}
 
 	// store certs
@@ -423,8 +416,7 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 	if serverCACert != nil && agentCert != nil {
 		err = checkAndStoreCerts(certStore, serverCACert, agentCert, serverCertFingerprint)
 		if err != nil {
-			log.WithError(err).Errorf("Problem with certs")
-			return false
+			return errors.WithMessage(err, "problem with certs")
 		}
 	}
 
@@ -432,8 +424,7 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 		// Start the listener to handle the ping request.
 		teardown, err := runPingGRPCServer(agentHost, agentPort)
 		if err != nil {
-			log.WithError(err).Error("cannot run the GRPC server to handle Ping")
-			return false
+			return errors.WithMessage(err, "cannot run the GRPC server to handle Ping")
 		}
 		defer teardown()
 
@@ -449,10 +440,9 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 			}
 		}
 		if err != nil {
-			log.WithError(err).Errorf("Cannot ping machine")
-			return false
+			return errors.WithMessage(err, "cannot ping machine")
 		}
 	}
 
-	return true
+	return nil
 }

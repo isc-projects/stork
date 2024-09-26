@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"os/user"
 	"strconv"
 	"strings"
 	"syscall"
@@ -85,8 +84,8 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 	// Try registering the agent in the server using the agent token.
 	if settings.ServerURL != "" {
-		if !agent.Register(settings.ServerURL, "", settings.Host, settings.Port, false, true, httpClient) {
-			log.Fatalf("Problem with agent registration in Stork Server, exiting")
+		if err := agent.Register(settings.ServerURL, "", settings.Host, settings.Port, false, true, httpClient); err != nil {
+			log.WithError(err).Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
 
@@ -304,22 +303,22 @@ func runRegister(settings *registerSettings) {
 	}
 
 	// Check current user - it should be root or stork-agent.
-	user, err := user.Current()
-	if err != nil {
-		log.Fatalf("Cannot get info about current user: %s", err)
-	}
-	if user.Username != "root" && user.Username != "stork-agent" {
-		log.Fatalf("Agent registration should be run by the user `root` or `stork-agent`")
-	}
+	// user, err := user.Current()
+	// if err != nil {
+	// 	log.Fatalf("Cannot get info about current user: %s", err)
+	// }
+	// if user.Username != "root" && user.Username != "stork-agent" {
+	// 	log.Fatalf("Agent registration should be run by the user `root` or `stork-agent`")
+	// }
 
 	// Run registration.
 	httpClient := agent.NewHTTPClient()
 	httpClient.SetSkipTLSVerification(settings.SkipTLSCertVerification)
 
-	if agent.Register(settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient) {
-		log.Println("Registration completed successfully")
+	if err := agent.Register(settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient); err != nil {
+		log.WithError(err).Fatalf("Registration failed")
 	} else {
-		log.Fatalf("Registration failed")
+		log.Println("Registration completed successfully")
 	}
 }
 
