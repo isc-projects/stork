@@ -116,7 +116,7 @@ end
 
 agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
 if get_pkg_type() == "apk"
-    agent_etc_files.include("etc/isc-stork-agent.initd")
+    agent_etc_files.append("etc/isc-stork-agent.initd")
 end
 agent_dist_etc_dir = "dist/agent/etc/stork"
 file agent_dist_etc_dir => agent_etc_files do
@@ -194,7 +194,7 @@ end
 
 server_etc_files = FileList["etc/server.env"]
 if get_pkg_type() == "apk"
-    server_etc_files.include("etc/isc-stork-server.initd")
+    server_etc_files.append("etc/isc-stork-server.initd")
 end
 server_dist_etc_dir = "dist/server/etc/stork"
 file server_dist_etc_dir => server_etc_files do
