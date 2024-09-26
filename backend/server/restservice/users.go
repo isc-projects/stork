@@ -398,11 +398,12 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	su := &dbmodel.SystemUser{
-		ID:       int(*u.ID),
-		Login:    u.Login,
-		Email:    u.Email,
-		Lastname: u.Lastname,
-		Name:     u.Name,
+		ID:             int(*u.ID),
+		Login:          u.Login,
+		Email:          u.Email,
+		Lastname:       u.Lastname,
+		Name:           u.Name,
+		ChangePassword: false,
 	}
 
 	for _, gid := range u.Groups {

@@ -806,9 +806,10 @@ func TestUpdateUserWithPassword(t *testing.T) {
 
 	// Create new user in the database.
 	su := dbmodel.SystemUser{
-		Email:    "jan@example.org",
-		Lastname: "Kowalski",
-		Name:     "Jan",
+		Email:          "jan@example.org",
+		Lastname:       "Kowalski",
+		Name:           "Jan",
+		ChangePassword: false,
 	}
 	con, err := dbmodel.CreateUserWithPassword(db, &su, "secret")
 	require.False(t, con)
@@ -857,9 +858,10 @@ func TestUpdateUserWithoutPassword(t *testing.T) {
 
 	// Create new user in the database.
 	su := dbmodel.SystemUser{
-		Email:    "jan@example.org",
-		Lastname: "Kowalski",
-		Name:     "Jan",
+		Email:          "jan@example.org",
+		Lastname:       "Kowalski",
+		Name:           "Jan",
+		ChangePassword: false,
 	}
 	con, err := dbmodel.CreateUser(db, &su)
 	require.False(t, con)
@@ -905,9 +907,10 @@ func TestUpdateUserPasswordMissingData(t *testing.T) {
 
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{
-		Email:    "jan@example.org",
-		Lastname: "Kowalski",
-		Name:     "Jan",
+		Email:          "jan@example.org",
+		Lastname:       "Kowalski",
+		Name:           "Jan",
+		ChangePassword: false,
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)

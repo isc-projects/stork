@@ -29,6 +29,7 @@ type SystemUser struct {
 	Name                   string
 	AuthenticationMethodID string `pg:"auth_method"`
 	ExternalID             string
+	ChangePassword         bool `pg:",use_zero"`
 
 	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
 }
