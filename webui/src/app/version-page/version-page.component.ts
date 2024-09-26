@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 import { App, Severity, VersionDetails, VersionService } from '../version.service'
-import { Machine, ServicesService } from '../backend'
+import { AppsVersions, Machine, ServicesService } from '../backend'
 import { deepCopy } from '../utils'
-import {concat, forkJoin} from "rxjs";
+import { concat, forkJoin, Subscription } from 'rxjs'
 
 /**
  *
@@ -12,7 +12,15 @@ import {concat, forkJoin} from "rxjs";
     templateUrl: './version-page.component.html',
     styleUrl: './version-page.component.sass',
 })
-export class VersionPageComponent implements OnInit {
+export class VersionPageComponent implements OnInit, OnDestroy {
+    private _subscriptions = new Subscription()
+    /**
+     * Returns true if version data source is offline json file.
+     */
+    isDataOffline: boolean
+    // () {
+    //     return !this.versionService.isOnlineData()
+    // }
     keaVersions: VersionDetails[] = []
     bind9Versions: VersionDetails[] = []
     storkVersions: VersionDetails[] = []
@@ -34,6 +42,8 @@ export class VersionPageComponent implements OnInit {
     ]
     dataLoading: boolean
 
+    private processedData: { processedData: AppsVersions; stableVersions: { [a in App]: string[] } }
+
     machines: Machine[]
 
     /**
@@ -44,22 +54,66 @@ export class VersionPageComponent implements OnInit {
         private servicesApi: ServicesService
     ) {}
 
+    ngOnDestroy(): void {
+        this._subscriptions.unsubscribe()
+    }
+
     /**
      *
      */
     ngOnInit(): void {
-        this.getDate()
         this.dataLoading = true
-        // prepare kea data
-        forkJoin({
-            currentStable: this.versionService.getVersionDetailsAsync('kea', 'currentStable'),
-            latestDev: this.versionService.getVersionDetailsAsync('kea', 'latestDev')
-        }).subscribe((data)=>{
-            this.keaVersions = data.currentStable ? (data.currentStable as VersionDetails[]) : []
-            if (data.latestDev) {
-                this.keaVersions.push(data.latestDev as VersionDetails)
-            }
-        })
+        this._subscriptions.add(
+            this.versionService.getDataManufactureDateAsync().subscribe((date) => (this.dataDate = date))
+        )
+        this._subscriptions.add(
+            this.versionService.isOnlineData().subscribe((isOnline) => (this.isDataOffline = !isOnline))
+        )
+        this._subscriptions.add(
+            this.versionService.getProcessedData().subscribe((data) => {
+                this.processedData = data
+
+                this.keaVersions = data.processedData?.kea?.currentStable ?? []
+                if (data.processedData?.kea?.latestDev) {
+                    this.keaVersions.push(data.processedData?.kea?.latestDev)
+                }
+            })
+        )
+
+        // this._subscriptions.add(
+        //     forkJoin({
+        //         keaCurrentStable: this.versionService.getVersionDetailsAsync('kea', 'currentStable'),
+        //         keaLatestDev: this.versionService.getVersionDetailsAsync('kea', 'latestDev'),
+        //         bind9CurrentStable: this.versionService.getVersionDetailsAsync('bind9', 'currentStable'),
+        //         bind9LatestDev: this.versionService.getVersionDetailsAsync('bind9', 'latestDev'),
+        //         storkCurrentStable: this.versionService.getVersionDetailsAsync('stork', 'currentStable'),
+        //         storkLatestDev: this.versionService.getVersionDetailsAsync('stork', 'latestDev'),
+        //     }).subscribe((data) => {
+        //         // prepare kea data
+        //         this.keaVersions = data.keaCurrentStable ? (data.keaCurrentStable as VersionDetails[]) : []
+        //         if (data.keaLatestDev) {
+        //             this.keaVersions.push(data.keaLatestDev as VersionDetails)
+        //         }
+        //
+        //         // prepare bind9 data
+        //         this.bind9Versions = data.bind9CurrentStable ? (data.bind9CurrentStable as VersionDetails[]) : []
+        //         if (data.bind9LatestDev) {
+        //             this.bind9Versions.push(data.bind9LatestDev as VersionDetails)
+        //         }
+        //
+        //         // prepare stork data
+        //         this.storkVersions = data.storkCurrentStable ? (data.storkCurrentStable as VersionDetails[]) : []
+        //         if (data.storkLatestDev) {
+        //             this.storkVersions.push(data.storkLatestDev as VersionDetails)
+        //         }
+        //     })
+        // )
+        // this._subscriptions.add()
+        // this._subscriptions.add()
+        // this._subscriptions.add()
+        // this._subscriptions.add()
+        // this._subscriptions.add()
+        // this._subscriptions.add()
 
         // this.versionService.getVersionDetailsAsync('kea', 'currentStable').subscribe(
         //     (details) => {
@@ -72,7 +126,6 @@ export class VersionPageComponent implements OnInit {
         //     }
         // )
 
-
         // prepare bind9 data
         // let bindDetails = deepCopy(this.versionService.getVersionDetails('bind9', 'currentStable'))
         // this.bind9Versions = bindDetails ? (bindDetails as VersionDetails[]) : []
@@ -80,15 +133,15 @@ export class VersionPageComponent implements OnInit {
         // if (bindDetails) {
         //     this.bind9Versions.push(bindDetails as VersionDetails)
         // }
-        forkJoin({
-            currentStable: this.versionService.getVersionDetailsAsync('bind9', 'currentStable'),
-            latestDev: this.versionService.getVersionDetailsAsync('bind9', 'latestDev')
-        }).subscribe((data)=>{
-            this.bind9Versions = data.currentStable ? (data.currentStable as VersionDetails[]) : []
-            if (data.latestDev) {
-                this.bind9Versions.push(data.latestDev as VersionDetails)
-            }
-        })
+        // forkJoin({
+        //     currentStable: this.versionService.getVersionDetailsAsync('bind9', 'currentStable'),
+        //     latestDev: this.versionService.getVersionDetailsAsync('bind9', 'latestDev'),
+        // }).subscribe((data) => {
+        //     this.bind9Versions = data.currentStable ? (data.currentStable as VersionDetails[]) : []
+        //     if (data.latestDev) {
+        //         this.bind9Versions.push(data.latestDev as VersionDetails)
+        //     }
+        // })
 
         // prepare stork data
         // let storkDetails = deepCopy(this.versionService.getVersionDetails('stork', 'currentStable'))
@@ -97,16 +150,15 @@ export class VersionPageComponent implements OnInit {
         // if (storkDetails) {
         //     this.storkVersions.push(storkDetails as VersionDetails)
         // }
-        forkJoin({
-            currentStable: this.versionService.getVersionDetailsAsync('stork', 'currentStable'),
-            latestDev: this.versionService.getVersionDetailsAsync('stork', 'latestDev')
-        }).subscribe((data)=>{
-            this.storkVersions = data.currentStable ? (data.currentStable as VersionDetails[]) : []
-            if (data.latestDev) {
-                this.storkVersions.push(data.latestDev as VersionDetails)
-            }
-        })
-
+        // forkJoin({
+        //     currentStable: this.versionService.getVersionDetailsAsync('stork', 'currentStable'),
+        //     latestDev: this.versionService.getVersionDetailsAsync('stork', 'latestDev'),
+        // }).subscribe((data) => {
+        //     this.storkVersions = data.currentStable ? (data.currentStable as VersionDetails[]) : []
+        //     if (data.latestDev) {
+        //         this.storkVersions.push(data.latestDev as VersionDetails)
+        //     }
+        // })
 
         // this.servicesApi.getMachines(0, 100, undefined, undefined, true)
         this.servicesApi.getMachinesAppsVersions().subscribe((data) => {
@@ -153,22 +205,4 @@ export class VersionPageComponent implements OnInit {
      * Configures the breadcrumbs for the component.
      */
     breadcrumbs = [{ label: 'Monitoring' }, { label: 'Software versions' }]
-
-    /**
-     * Returns true if version data source is offline json file.
-     */
-    get isDataOffline() {
-        return !this.versionService.isOnlineData()
-    }
-
-    /**
-     *
-     */
-    get dataManufactureDate() {
-        return this.dataDate
-    }
-
-    getDate() {
-        this.versionService.getDataManufactureDateAsync().subscribe((date)=>this.dataDate = date)
-    }
 }

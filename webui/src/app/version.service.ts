@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core'
 import { minor, major, sort, coerce, valid, lt, satisfies, gt } from 'semver'
 import { deepCopy } from './utils'
 import { AppsVersions, GeneralService } from './backend'
-import {filter, map, mergeMap, shareReplay, tap} from 'rxjs/operators'
-import {BehaviorSubject, lastValueFrom, Observable, of, ReplaySubject, Subject} from "rxjs";
+import { map, mergeMap, shareReplay, switchMap, take } from 'rxjs/operators'
+import { BehaviorSubject, Observable, of, ReplaySubject } from 'rxjs'
 
 /**
  * Interface defining fields for an object which describes either Stork, Kea or Bind9 software release.
@@ -66,72 +66,73 @@ type ReleaseType = 'latestSecure' | 'currentStable' | 'latestDev'
     providedIn: 'root',
 })
 export class VersionService {
-    dataManufactureDate: string
+    // dataManufactureDate: string
 
     private _checkedVersionCache: Map<string, VersionFeedback>
 
-    private _processedData: { [a in App | 'date']: AppVersionMetadata | string }
+    private _processedData: AppsVersions
+    // { [a in App | 'date']: AppVersionMetadata | string }
 
     private _stableVersion: { [a in App]: string[] }
 
     // static for now; to be provided from server
-    versionMetadata: { [a in App | 'date']: AppVersionMetadata | string } = {
-        date: '2024-09-01',
-        kea: {
-            currentStable: [
-                {
-                    version: '2.6.1',
-                    releaseDate: '2024-07-31',
-                    eolDate: '2026-07-01',
-                },
-                {
-                    version: '2.4.1',
-                    releaseDate: '2023-11-29',
-                    eolDate: '2025-07-01',
-                },
-            ],
-            latestDev: {
-                version: '2.7.2',
-                releaseDate: '2024-08-28',
-            },
-        },
-        stork: {
-            latestDev: {
-                version: '1.18.0',
-                releaseDate: '2024-08-07',
-            },
-            latestSecure: {
-                version: '1.15.1',
-                releaseDate: '2024-03-27',
-            },
-        },
-        bind9: {
-            currentStable: [
-                {
-                    version: '9.18.29',
-                    releaseDate: '2024-08-21',
-                    eolDate: '2026-07-01',
-                    ESV: 'true',
-                },
-                {
-                    version: '9.20.1',
-                    releaseDate: '2024-08-28',
-                    eolDate: '2028-07-01',
-                },
-            ],
-            latestDev: {
-                version: '9.21.0',
-                releaseDate: '2024-08-28',
-            },
-        },
-    }
+    // versionMetadata: { [a in App | 'date']: AppVersionMetadata | string } = {
+    //     date: '2024-09-01',
+    //     kea: {
+    //         currentStable: [
+    //             {
+    //                 version: '2.6.1',
+    //                 releaseDate: '2024-07-31',
+    //                 eolDate: '2026-07-01',
+    //             },
+    //             {
+    //                 version: '2.4.1',
+    //                 releaseDate: '2023-11-29',
+    //                 eolDate: '2025-07-01',
+    //             },
+    //         ],
+    //         latestDev: {
+    //             version: '2.7.2',
+    //             releaseDate: '2024-08-28',
+    //         },
+    //     },
+    //     stork: {
+    //         latestDev: {
+    //             version: '1.18.0',
+    //             releaseDate: '2024-08-07',
+    //         },
+    //         latestSecure: {
+    //             version: '1.15.1',
+    //             releaseDate: '2024-03-27',
+    //         },
+    //     },
+    //     bind9: {
+    //         currentStable: [
+    //             {
+    //                 version: '9.18.29',
+    //                 releaseDate: '2024-08-21',
+    //                 eolDate: '2026-07-01',
+    //                 ESV: 'true',
+    //             },
+    //             {
+    //                 version: '9.20.1',
+    //                 releaseDate: '2024-08-28',
+    //                 eolDate: '2028-07-01',
+    //             },
+    //         ],
+    //         latestDev: {
+    //             version: '9.21.0',
+    //             releaseDate: '2024-08-28',
+    //         },
+    //     },
+    // }
 
     currentDataSubject$ = new BehaviorSubject(undefined)
 
-    dataProcessed$ = new ReplaySubject()
+    dataProcessed$ = new ReplaySubject<string>()
 
     currentData$ = this.currentDataSubject$.pipe(
-        mergeMap(()=>this.generalService.getIscSwVersions()),
+        mergeMap(() => this.generalService.getIscSwVersions()),
         shareReplay(1)
     )
 
@@ -145,20 +146,20 @@ export class VersionService {
 
     fetchData() {
         this.currentData$
-        // this.generalService
-        //     .getIscSwVersions()
-        //     .pipe(
-        //         tap(() => console.log('trying getIscSwVersions')),
-        //         filter(() => !this.asyncMetadata || (this.dataFetchedTimestamp && this.isDataOld()))
-        //     )
+            // this.generalService
+            //     .getIscSwVersions()
+            //     .pipe(
+            //         tap(() => console.log('trying getIscSwVersions')),
+            //         filter(() => !this.asyncMetadata || (this.dataFetchedTimestamp && this.isDataOld()))
+            //     )
             .subscribe((data) => {
-                console.log('went through filter and resp rxed')
+                console.log('new data rxed from backend')
                 // this.asyncMetadata = data
                 this.dataFetchedTimestamp = new Date()
                 this._stableVersion = { kea: [], bind9: [], stork: [] }
-                this.dataManufactureDate = data['date']
+                // this.dataManufactureDate = data['date']
                 this._checkedVersionCache = new Map()
-                this._onlineData = data['onlineData'] ?? false
+                // this._onlineData = data['onlineData'] ?? false
                 this.processData(data)
             })
     }
@@ -206,9 +207,7 @@ export class VersionService {
         // lastValueFrom(this.dataProcessed$).then(()=>{
         //     return of()
         // })
-        return this.dataProcessed$.pipe(
-            mergeMap(()=>of(this._processedData?.[app]?.[swType] || null))
-        )
+        return this.dataProcessed$.pipe(switchMap(() => of(this._processedData?.[app]?.[swType] || null)))
     }
 
     /**
@@ -222,29 +221,27 @@ export class VersionService {
     /**
      * Returns the date (as string) when the versions data was manufactured.
      */
-    getDataManufactureDate(): string {
-        // This will have to be updated in case of "online concept"
-        return this.versionMetadata.date as string
-    }
+    // getDataManufactureDate(): string {
+    //     // This will have to be updated in case of "online concept"
+    //     return this.versionMetadata.date as string
+    // }
 
     /**
      *
      */
     getDataManufactureDateAsync(): Observable<string> {
-        return this.currentData$.pipe(
-            map((data)=>data.date)
-        )
+        return this.currentData$.pipe(map((data) => data.date))
     }
 
     /**
      *
      */
-    isOnlineData(): boolean {
-        return this._onlineData
+    isOnlineData(): Observable<boolean> {
+        return this.currentData$.pipe(map((data) => data.onlineData ?? false))
     }
 
     private processData(data: AppsVersions) {
-        console.log("process data")
+        console.log('process data')
         // let newData = deepCopy(this.versionMetadata)
         // let newData = deepCopy(this.asyncMetadata)
         let newData = deepCopy(data)
@@ -280,7 +277,21 @@ export class VersionService {
             }
         })
         this._processedData = newData
-        this.dataProcessed$.next({})
+        setTimeout(() => {
+            console.log('processed data')
+            this.dataProcessed$.next('data processed ' + Date.now())
+        }, 3000)
+    }
+
+    getProcessedData(): Observable<{ processedData: AppsVersions; stableVersions: { [a in App]: string[] } }> {
+        return this.dataProcessed$.pipe(
+            switchMap(() =>
+                of({
+                    processedData: this._processedData,
+                    stableVersions: this._stableVersion,
+                })
+            )
+        )
     }
 
     /**
@@ -294,51 +305,78 @@ export class VersionService {
             console.log('cache used')
             return of(cachedFeedback)
         }
-        this.dataProcessed$.pipe(mergeMap(() => {
-            let response: VersionFeedback = { severity: Severity.info, feedback: '' }
-            let sanitizedSemver = coerce(version).version
-            let appName = ''
-            if (valid(sanitizedSemver)) {
-                appName = app[0].toUpperCase() + app.slice(1)
-                appName += app === 'stork' ? ' agent' : ''
-                let isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
 
-                // check security releases first
-                let latestSecureVersion = this.getVersion(app, 'latestSecure')
-                if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
-                    response = {
-                        // severity: 'error',
-                        severity: Severity.danger,
-                        feedback: `Security update ${latestSecureVersion} was released for ${appName}. Please update as soon as possible!`,
+        return this.dataProcessed$.pipe(
+            switchMap(() => {
+                console.log('check version inside switchMap')
+
+                let response: VersionFeedback = { severity: Severity.info, feedback: '' }
+                let sanitizedSemver = coerce(version).version
+                let appName = ''
+                if (valid(sanitizedSemver)) {
+                    appName = app[0].toUpperCase() + app.slice(1)
+                    appName += app === 'stork' ? ' agent' : ''
+                    let isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
+
+                    // check security releases first
+                    let latestSecureVersion = this.getVersion(app, 'latestSecure')
+                    if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
+                        response = {
+                            severity: Severity.danger,
+                            feedback: `Security update ${latestSecureVersion} was released for ${appName}. Please update as soon as possible!`,
+                        }
+
+                        this._checkedVersionCache.set(version + app, response)
+                        return of(response)
                     }
 
-                    this._checkedVersionCache.set(version + app, response)
-                    return of(response)
-                }
-
-                // case - stable version
-                let currentStableVersionDetails = this.getVersionDetails(app, 'currentStable')
-                let dataDate = this._processedData?.["date"] || "unknown"
-                if (isDevelopmentVersion === false && currentStableVersionDetails) {
-                    if (Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length >= 1) {
-                        for (let details of currentStableVersionDetails) {
-                            if (satisfies(sanitizedSemver, details.range)) {
-                                if (lt(sanitizedSemver, details.version)) {
-                                    response = {
-                                        // severity: 'warn',
-                                        severity: Severity.info,
-                                        feedback: `Stable ${appName} version update (${details.version}) is available (known as of ${dataDate}).`,
+                    // case - stable version
+                    let currentStableVersionDetails = this.getVersionDetails(app, 'currentStable')
+                    let dataDate = this._processedData?.['date'] || 'unknown'
+                    if (isDevelopmentVersion === false && currentStableVersionDetails) {
+                        if (Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length >= 1) {
+                            for (let details of currentStableVersionDetails) {
+                                if (satisfies(sanitizedSemver, details.range)) {
+                                    if (lt(sanitizedSemver, details.version)) {
+                                        response = {
+                                            severity: Severity.info,
+                                            feedback: `Stable ${appName} version update (${details.version}) is available (known as of ${dataDate}).`,
+                                        }
+                                    } else if (gt(sanitizedSemver, details.version)) {
+                                        response = {
+                                            severity: Severity.secondary,
+                                            feedback: `Current stable ${appName} version (known as of ${dataDate}) is ${details.version}. You are using more recent version ${sanitizedSemver}.`,
+                                        }
+                                    } else {
+                                        response = {
+                                            severity: Severity.success,
+                                            feedback: `${sanitizedSemver} is current ${appName} stable version (known as of ${dataDate}).`,
+                                        }
                                     }
-                                } else if (gt(sanitizedSemver, details.version)) {
+
+                                    this._checkedVersionCache.set(version + app, response)
+                                    return of(response)
+                                }
+                            }
+
+                            // current version not matching currentStable ranges
+                            let stableVersions = this.getStableVersions(app)
+                            if (Array.isArray(stableVersions) && stableVersions.length > 0) {
+                                let versionsText = stableVersions.join(', ')
+                                if (lt(sanitizedSemver, stableVersions[0])) {
+                                    // either semver major or minor are below min(current stable)
                                     response = {
-                                        severity: Severity.secondary,
-                                        feedback: `Current stable ${appName} version (known as of ${dataDate}) is ${details.version}. You are using more recent version ${sanitizedSemver}.`,
+                                        severity: Severity.warning, // TODO: or info ?
+                                        // feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}. Updating to current stable is possible.`,
+                                        feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
                                     }
                                 } else {
+                                    // either semver major or minor are bigger than current stable
                                     response = {
-                                        severity: Severity.success,
-                                        feedback: `${sanitizedSemver} is current ${appName} stable version (known as of ${dataDate}).`,
+                                        severity: Severity.secondary,
+                                        feedback: `${appName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
                                     }
+                                    // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${sanitizedSemver}.`
                                 }
 
                                 this._checkedVersionCache.set(version + app, response)
@@ -346,84 +384,57 @@ export class VersionService {
                             }
                         }
 
-                        // current version not matching currentStable ranges
-                        let stableVersions = this.getStableVersions(app)
-                        if (Array.isArray(stableVersions) && stableVersions.length > 0) {
-                            let versionsText = stableVersions.join(', ')
-                            if (lt(sanitizedSemver, stableVersions[0])) {
-                                // either semver major or minor are below min(current stable)
-                                response = {
-                                    severity: Severity.warning, // TODO: or info ?
-                                    // feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}. Updating to current stable is possible.`,
-                                    feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
-                                }
-                            } else {
-                                // either semver major or minor are bigger than current stable
-                                response = {
-                                    severity: Severity.secondary,
-                                    feedback: `${appName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
-                                }
-                                // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${sanitizedSemver}.`
+                        // wrong json syntax - this shouldn't happen
+                        throw new Error(
+                            'Invalid syntax of the software versions metadata JSON file received from Stork server.'
+                        )
+                    }
+
+                    // case - development version
+                    let latestDevVersion = this.getVersion(app, 'latestDev')
+                    if (isDevelopmentVersion === true && latestDevVersion) {
+                        if (lt(sanitizedSemver, latestDevVersion as string)) {
+                            response = {
+                                // severity: 'warn',
+                                severity: Severity.warning,
+                                feedback: `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
+                                // feedback: `You are using ${appName} development version ${sanitizedSemver}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`,
                             }
-
-                            this._checkedVersionCache.set(version + app, response)
-                            return of(response)
+                        } else if (gt(sanitizedSemver, latestDevVersion as string)) {
+                            response = {
+                                severity: Severity.secondary,
+                                feedback: `Current development ${appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
+                            }
+                        } else {
+                            response = {
+                                severity: Severity.success,
+                                feedback: `${sanitizedSemver} is current ${appName} development version (known as of ${dataDate}).`,
+                            }
                         }
-                    }
 
-                    // wrong json syntax - this shouldn't happen
-                    return null
+                        if (currentStableVersionDetails) {
+                            let extFeedback = [
+                                response.feedback,
+                                // `Please be advised that using development version in production is not recommended! Consider using ${appName} stable release.`,
+                                `Please be advised that using development version in production is not recommended.`,
+                            ].join(' ')
+                            response = {
+                                // severity: 'warn',
+                                severity: Severity.warning,
+                                feedback: extFeedback,
+                            }
+                        }
+
+                        this._checkedVersionCache.set(version + app, response)
+                        return of(response)
+                    }
                 }
 
-                // case - development version
-                let latestDevVersion = this.getVersion(app, 'latestDev')
-                if (isDevelopmentVersion === true && latestDevVersion) {
-                    if (lt(sanitizedSemver, latestDevVersion as string)) {
-                        response = {
-                            // severity: 'warn',
-                            severity: Severity.warning,
-                            feedback: `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
-                            // feedback: `You are using ${appName} development version ${sanitizedSemver}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`,
-                        }
-                    } else if (gt(sanitizedSemver, latestDevVersion as string)) {
-                        response = {
-                            severity: Severity.secondary,
-                            feedback: `Current development ${appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
-                        }
-                    } else {
-                        response = {
-                            severity: Severity.success,
-                            feedback: `${sanitizedSemver} is current ${appName} development version (known as of ${dataDate}).`,
-                        }
-                    }
-
-                    if (currentStableVersionDetails) {
-                        let extFeedback = [
-                            response.feedback,
-                            // `Please be advised that using development version in production is not recommended! Consider using ${appName} stable release.`,
-                            `Please be advised that using development version in production is not recommended.`,
-                        ].join(' ')
-                        response = {
-                            // severity: 'warn',
-                            severity: Severity.warning,
-                            feedback: extFeedback,
-                        }
-                    }
-
-                    this._checkedVersionCache.set(version + app, response)
-                    return of(response)
-                }
-            }
-
-            // fail case
-            return null
-        }))
-        // lastValueFrom(this.dataProcessed$).then(
-        //
-        //
-        // )
-
-
+                // fail case
+                throw new Error(`Couldn't parse valid semver from given ${version} version!`)
+            }),
+            take(1)
+        )
     }
 
     /**
@@ -439,5 +450,19 @@ export class VersionService {
         }
         // Stork versions are all dev for now. To be updated with Stork 2.0.0.
         return true
+    }
+
+    /**
+     * Sanitizes given version string and returns valid semver if it could be parsed.
+     * If valid semver couldn't be found, it returns null.
+     * @param version version string to look for semver
+     */
+    sanitizeSemver(version: string): string | null {
+        let sanitizedSemver = coerce(version)?.version
+        if (sanitizedSemver && valid(sanitizedSemver)) {
+            return sanitizedSemver
+        }
+
+        return null
     }
 }
