@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"os/user"
 	"strconv"
 	"strings"
 	"syscall"
@@ -303,13 +304,13 @@ func runRegister(settings *registerSettings) {
 	}
 
 	// Check current user - it should be root or stork-agent.
-	// user, err := user.Current()
-	// if err != nil {
-	// 	log.Fatalf("Cannot get info about current user: %s", err)
-	// }
-	// if user.Username != "root" && user.Username != "stork-agent" {
-	// 	log.Fatalf("Agent registration should be run by the user `root` or `stork-agent`")
-	// }
+	user, err := user.Current()
+	if err != nil {
+		log.Fatalf("Cannot get info about current user: %s", err)
+	}
+	if user.Username != "root" && user.Username != "stork-agent" {
+		log.Fatalf("Agent registration should be run by the user `root` or `stork-agent`")
+	}
 
 	// Run registration.
 	httpClient := agent.NewHTTPClient()
