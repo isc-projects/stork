@@ -1,7 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core'
-import { coerce } from 'semver'
+import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { App, Severity, VersionService } from '../version.service'
 import { MessageService } from 'primeng/api'
+import { Subscription } from 'rxjs'
 
 /**
  * This component displays feedback information about the used version of either Kea, Bind9, or Stork software.
@@ -14,7 +14,7 @@ import { MessageService } from 'primeng/api'
     templateUrl: './version-status.component.html',
     styleUrl: './version-status.component.sass',
 })
-export class VersionStatusComponent implements OnInit {
+export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
      * Type of software for which the version check is done.
      */
@@ -45,11 +45,6 @@ export class VersionStatusComponent implements OnInit {
     @Input() styleClass: string | undefined
 
     /**
-     * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on app field.
-     */
-    private _appName: string
-
-    /**
      * This holds the information how severe the urge to update the software is.
      * It is used to style the icon or the block message.
      */
@@ -72,6 +67,19 @@ export class VersionStatusComponent implements OnInit {
     protected readonly SeverityEnum = Severity
 
     /**
+     * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on app field.
+     * @private
+     */
+    private _appName: string
+
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     * @private
+     */
+    private _subscriptions = new Subscription()
+
+    /**
      * Class constructor.
      * @param versionService version service used to do software version checking; it returns the feedback about version used
      * @param messageService message service used to display errors
@@ -85,23 +93,47 @@ export class VersionStatusComponent implements OnInit {
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        // let feedback = this.versionService.checkVersion(this.version, this.app)
-        this.versionService.checkVersion(this.version, this.app).subscribe((feedback)=> {
-            if (feedback) {
-                this.setSeverity(feedback.severity, feedback.feedback)
-                this.version = coerce(this.version).version
-                this._appName = this.app[0].toUpperCase() + this.app.slice(1)
-                this._appName += this.app === 'stork' ? ' agent' : ''
-            } else {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error parsing software version',
-                    detail: `Provided semver ${this.version} is not valid!`,
-                    life: 10000,
+        this._appName = this.app[0].toUpperCase() + this.app.slice(1)
+        this._appName += this.app === 'stork' ? ' agent' : ''
+        let sanitizedSemver = this.versionService.sanitizeSemver(this.version)
+        if (sanitizedSemver) {
+            this.version = sanitizedSemver
+            this._subscriptions.add(
+                this.versionService.checkVersion(sanitizedSemver, this.app).subscribe({
+                    next: (feedback) => {
+                        if (feedback) {
+                            this.setSeverity(feedback.severity, feedback.feedback)
+                        }
+                    },
+                    error: (err) => {
+                        console.log(err)
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error checking software version',
+                            detail: `Error occurred while checking ${this.appName} software version ${this.version} : ${err}`,
+                            life: 10000,
+                        })
+                    },
+                    complete: () => {
+                        console.log('complete')
+                    },
                 })
-            }
-        })
+            )
+        } else {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error parsing software version',
+                detail: `Couldn't parse valid semver from given ${this.version} version!`,
+                life: 10000,
+            })
+        }
+    }
 
+    /**
+     * Component lifecycle hook called to perform clean-up when destroying the component.
+     */
+    ngOnDestroy(): void {
+        this._subscriptions.unsubscribe()
     }
 
     /**
