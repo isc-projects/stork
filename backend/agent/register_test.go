@@ -1,9 +1,12 @@
 package agent
 
 import (
+	"context"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,6 +16,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/pki"
+	"isc.org/stork/server/agentcomm"
+	dbmodel "isc.org/stork/server/database/model"
+	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
@@ -33,6 +39,18 @@ func TestRegisterBasic(t *testing.T) {
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
 	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
 
+	// generate the CA and server certs
+	rootKey, rootKeyPEM, rootCert, rootCertPEM, err := pki.GenCAKeyCert(1)
+	require.NoError(t, err)
+	serverCertPEM, serverKeyPEM, err := pki.GenKeyCert(
+		"server", []string{"localhost"}, []net.IP{net.ParseIP("127.0.0.1")},
+		1, rootCert, rootKey, x509.ExtKeyUsageClientAuth,
+	)
+	require.NoError(t, err)
+	serverCert, err := pki.ParseCert(serverCertPEM)
+	require.NoError(t, err)
+	serverCertFingerprint := pki.CalculateFingerprint(serverCert)
+
 	// register arguments
 	serverToken := "serverToken"
 	regenKey := false
@@ -40,6 +58,9 @@ func TestRegisterBasic(t *testing.T) {
 	agentAddr := "127.0.0.1"
 	agentPort, err := testutil.GetFreeLocalTCPPort()
 	require.NoError(t, err)
+
+	fec := &storktestdbmodel.FakeEventCenter{}
+	var agentAPI agentcomm.ConnectedAgents
 
 	// internal http server for testing
 	require.NoError(t, err)
@@ -69,30 +90,44 @@ func TestRegisterBasic(t *testing.T) {
 			agentCSR := []byte(req["agentCSR"].(string))
 			require.NotEmpty(t, agentCSR)
 
-			_, rootKeyPEM, _, rootCertPEM, err := pki.GenCAKeyCert(1)
-			require.NoError(t, err)
 			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
 			require.NoError(t, paramsErr)
 			require.NoError(t, innerErr)
 
 			w.WriteHeader(http.StatusOK)
-			fingerprint := [32]byte{42}
 			resp := map[string]interface{}{
 				"id":                    10,
 				"serverCACert":          string(rootCertPEM),
 				"agentCert":             string(agentCertPEM),
-				"serverCertFingerprint": storkutil.BytesToHex(fingerprint[:]),
+				"serverCertFingerprint": storkutil.BytesToHex(serverCertFingerprint[:]),
 			}
 			json.NewEncoder(w).Encode(resp)
+
+			// Initialize the GRPC API.
+			agentAPI = agentcomm.NewConnectedAgents(
+				&agentcomm.AgentsSettings{}, fec,
+				rootCertPEM, serverCertPEM, serverKeyPEM,
+			)
 		}
 
 		if strings.HasSuffix(r.URL.Path, "/ping") {
+			// The create machine endpoint must be called before ping.
+			require.NotNil(t, agentAPI)
+
 			serverTokenReceived := req["serverToken"].(string)
 			agentToken := req["agentToken"].(string)
 
 			require.NotEmpty(t, agentToken)
 			if serverToken != "" {
 				require.EqualValues(t, serverToken, serverTokenReceived)
+
+				// Send ping request to the agent. There should be a temporary
+				// Ping handler running.
+				err = agentAPI.Ping(context.Background(), &dbmodel.Machine{
+					Address:   agentAddr,
+					AgentPort: int64(agentPort),
+				})
+				require.NoError(t, err)
 			}
 
 			w.WriteHeader(http.StatusOK)
@@ -113,8 +148,7 @@ func TestRegisterBasic(t *testing.T) {
 	// verify the server cert fingerprint is written to the file
 	fingerprintFromFile, err := os.ReadFile(ServerCertFingerprintFile)
 	require.NoError(t, err)
-	expectedFingerprint := [32]byte{42}
-	require.Equal(t, storkutil.BytesToHex(expectedFingerprint[:]), string(fingerprintFromFile))
+	require.Equal(t, storkutil.BytesToHex(serverCertFingerprint[:]), string(fingerprintFromFile))
 
 	// register with agent token
 	serverToken = ""
