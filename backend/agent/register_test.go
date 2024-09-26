@@ -35,10 +35,11 @@ func TestRegisterBasic(t *testing.T) {
 
 	// register arguments
 	serverToken := "serverToken"
-	agentAddr := "1.2.3.4"
-	agentPort := 8080
 	regenKey := false
 	retry := false
+	agentAddr := "127.0.0.1"
+	agentPort, err := testutil.GetFreeLocalTCPPort()
+	require.NoError(t, err)
 
 	// internal http server for testing
 	require.NoError(t, err)
@@ -142,8 +143,9 @@ func TestRegisterBadServer(t *testing.T) {
 
 	// register arguments
 	serverToken := "serverToken"
-	agentAddr := "1.2.3.4"
-	agentPort := 8080
+	agentAddr := "127.0.0.1"
+	agentPort, err := testutil.GetFreeLocalTCPPort()
+	require.NoError(t, err)
 	regenKey := false
 	retry := false
 
@@ -479,8 +481,9 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 
 	// register arguments
 	serverToken := "serverToken"
-	agentAddr := "1.2.3.4"
-	agentPort := 8080
+	agentAddr := "127.0.0.1"
+	agentPort, err := testutil.GetFreeLocalTCPPort()
+	require.NoError(t, err)
 	regenKey := false
 	retry := false
 
@@ -580,8 +583,9 @@ func TestRepeatRegister(t *testing.T) {
 
 	// register arguments
 	serverToken := "serverToken"
-	agentAddr := "1.2.3.4"
-	agentPort := 8080
+	agentAddr := "127.0.0.1"
+	agentPort, err := testutil.GetFreeLocalTCPPort()
+	require.NoError(t, err)
 	regenKey := false
 	retry := false
 

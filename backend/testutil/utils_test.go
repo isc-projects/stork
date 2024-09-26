@@ -225,3 +225,13 @@ func TestCreateOsArgsRestorePoint(t *testing.T) {
 	// Assert
 	require.NotContains(t, os.Args, "foobar")
 }
+
+// Test that the free TCP port is returned properly.
+func TestGetFreeLocalTCPPort(t *testing.T) {
+	// Arrange & Act
+	port, err := GetFreeLocalTCPPort()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotZero(t, port)
+}

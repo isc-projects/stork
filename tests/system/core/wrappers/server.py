@@ -326,12 +326,12 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         api_instance = SettingsApi(self._api_client)
         return api_instance.get_puller(id=puller_id)
 
-    def get_settings(self) -> Settings:
+    def read_settings(self) -> Settings:
         """Read server configuration settings."""
         api_instance = SettingsApi(self._api_client)
         return api_instance.get_settings()
 
-    def get_server_token(self) -> str:
+    def read_server_token(self) -> str:
         """Read server token."""
         api_instance = ServicesApi(self._api_client)
         response = api_instance.get_machines_server_token()

@@ -15,7 +15,7 @@ def test_register_without_server_token(
 
 def test_register_with_server_token(server_service: Server, register_service: Register):
     server_service.log_in_as_admin()
-    server_token = server_service.get_server_token()
+    server_token = server_service.read_server_token()
 
     register_service.register(server_token)
 

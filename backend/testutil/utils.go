@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"io"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -125,4 +126,18 @@ func CreateOsArgsRestorePoint() func() {
 	return func() {
 		os.Args = original
 	}
+}
+
+// Helper function that returns a free TCP port. Returns an error if no ports
+// are available.
+// Source: https://gist.github.com/sevkin/96bdae9274465b2d09191384f86ef39d
+func GetFreeLocalTCPPort() (int, error) {
+	if a, err := net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
+		var l *net.TCPListener
+		if l, err = net.ListenTCP("tcp", a); err == nil {
+			defer l.Close()
+			return l.Addr().(*net.TCPAddr).Port, nil
+		}
+	}
+	return 0, errors.Errorf("none TCP port is available")
 }

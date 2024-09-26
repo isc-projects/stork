@@ -186,7 +186,7 @@ def test_agent_registration_administratively_disabled(
 
     # Disable new machine registration. It should prevent the re-registration
     # of our machine.
-    settings = server_service.get_settings()
+    settings = server_service.read_settings()
     settings.enable_machine_registration = False
     server_service.update_settings(settings)
 
