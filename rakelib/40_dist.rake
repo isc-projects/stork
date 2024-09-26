@@ -114,7 +114,10 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
     sh "rm", "-f", agent_dist_system_service_file + ".tmp"
 end
 
-agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template", "etc/isc-stork-agent.initd"]
+agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
+if get_pkg_type() == "apk"
+    agent_etc_files.include("etc/isc-stork-agent.initd")
+end
 agent_dist_etc_dir = "dist/agent/etc/stork"
 file agent_dist_etc_dir => agent_etc_files do
     sh "mkdir", "-p", agent_dist_etc_dir
@@ -189,7 +192,10 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
     sh "rm", "-f", server_dist_system_service_file + ".tmp"
 end
 
-server_etc_files = FileList["etc/server.env", "etc/isc-stork-server.initd"]
+server_etc_files = FileList["etc/server.env"]
+if get_pkg_type() == "apk"
+    server_etc_files.include("etc/isc-stork-server.initd")
+end
 server_dist_etc_dir = "dist/server/etc/stork"
 file server_dist_etc_dir => server_etc_files do
     sh "mkdir", "-p", server_dist_etc_dir

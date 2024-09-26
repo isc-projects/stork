@@ -33,6 +33,7 @@ contents:
   dst: /etc/stork/agent-credentials.json.template
 - src: dist/agent/etc/stork/isc-stork-agent.initd
   dst: /etc/init.d/isc-stork-agent
+  packager: apk
 
 overrides:
   deb:
