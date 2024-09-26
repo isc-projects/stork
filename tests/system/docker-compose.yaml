@@ -404,7 +404,8 @@ services:
       - "42188:8080"
       - "42147:9547"
     networks:
-      - storknet
+      storknet:
+        ipv4_address: 172.42.42.100
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: 172.42.42.100
