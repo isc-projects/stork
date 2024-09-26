@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 
 import pytest
-from _pytest.assertion import truncate
 
 # The F401 (module imported but unused) and F403 ('from module import *' used; unable to detect undefined names)
 # Flake8 warnings are suppressed. We want to import all fixtures, so people implementing new fixtures according
