@@ -1027,7 +1027,17 @@ the Linux distribution:
 
    $ sudo dnf install isc-stork-agent
 
-Start the agent service:
+Start the interactive registration procedure with the following command:
+
+.. code-block:: console
+
+   $ su stork-agent -s /bin/sh -c 'stork-agent register -u http://stork.example.org:8080'
+
+The last parameter should be the appropriate Stork server URL.
+
+Follow the same registration steps described in :ref:`register-server-token-script`.
+
+Now, start the agent service:
 
 .. code-block:: console
 
@@ -1039,16 +1049,6 @@ To check the status:
 .. code-block:: console
 
    $ sudo systemctl status isc-stork-agent
-
-Start the interactive registration procedure with the following command:
-
-.. code-block:: console
-
-   $ su stork-agent -s /bin/sh -c 'stork-agent register -u http://stork.example.org:8080'
-
-The last parameter should be the appropriate Stork server URL.
-
-Follow the same registration steps described in :ref:`register-server-token-script`.
 
 .. _registration-methods-summary:
 
