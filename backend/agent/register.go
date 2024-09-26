@@ -2,9 +2,11 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -13,8 +15,55 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	agentapi "isc.org/stork/api"
 	storkutil "isc.org/stork/util"
 )
+
+// The GRPC handler used in the registration with the server token to respond
+// to the ping request. It doesn't support other GRPC methods.
+type grpcPingHandler struct {
+	agentapi.UnimplementedAgentServer
+}
+
+// Respond to ping request from the server. It assures the server that the
+// connection from the server to client is established. It is used in server
+// token registration procedure.
+func (grpcPingHandler) Ping(ctx context.Context, in *agentapi.PingReq) (*agentapi.PingRsp, error) {
+	rsp := agentapi.PingRsp{}
+	return &rsp, nil
+}
+
+// Starts the GRPC server to handle the ping request from the Stork server.
+// It doesn't support other operations.
+// Returns the function that must be called to stop the server or an error.
+func runPingGRPCServer(host string, port int) (func(), error) {
+	server, err := newGRPCServerWithTLS()
+	if err != nil {
+		err = errors.WithMessage(err, "cannot setup the GRPC server")
+		return nil, err
+	}
+
+	handler := &grpcPingHandler{}
+
+	// Install gRPC API handlers.
+	agentapi.RegisterAgentServer(server, handler)
+
+	// Prepare listener on configured address.
+	addr := net.JoinHostPort(host, fmt.Sprint(port))
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		err = errors.WithMessage(err, "cannot setup the GRPC listener")
+		return nil, err
+	}
+
+	go func() {
+		if err := server.Serve(listener); err != nil {
+			log.WithError(err).Errorf("failed to serve on: %s", addr)
+		}
+	}()
+
+	return server.GracefulStop, nil
+}
 
 // Generate or regenerate agent key and CSR (Certificate Signing
 // Request). They are generated when they do not exist. They are
@@ -380,7 +429,15 @@ func Register(serverURL, serverToken, agentHost string, agentPort int, regenCert
 	}
 
 	if serverToken != "" {
-		// invoke getting machine state via server
+		// Start the listener to handle the ping request.
+		teardown, err := runPingGRPCServer(agentHost, agentPort)
+		if err != nil {
+			log.WithError(err).Error("cannot run the GRPC server to handle Ping")
+			return false
+		}
+		defer teardown()
+
+		// Invoke getting machine state via server.
 		for i := 1; i < 4; i++ {
 			err = pingAgentViaServer(httpClient, baseSrvURL, machineID, serverToken, agentToken)
 			if err == nil {

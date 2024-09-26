@@ -213,8 +213,7 @@ func (sa *StorkAgent) SetupGRPCServer() error {
 }
 
 // Respond to ping request from the server. It assures the server that
-// the connection from the server to client is established. It is used
-// in server token registration procedure.
+// the connection from the server to client is established.
 func (sa *StorkAgent) Ping(ctx context.Context, in *agentapi.PingReq) (*agentapi.PingRsp, error) {
 	rsp := agentapi.PingRsp{}
 	return &rsp, nil
