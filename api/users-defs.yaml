@@ -22,6 +22,8 @@
         type: array
         items:
           type: integer
+      changePassword:
+        type: boolean
 
   Password:
     type: string

@@ -29,6 +29,7 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 		AuthenticationMethodID: &u.AuthenticationMethodID,
 		ExternalID:             u.ExternalID,
 		Groups:                 []int64{},
+		ChangePassword:         u.ChangePassword,
 	}
 
 	// Append an array of groups.
