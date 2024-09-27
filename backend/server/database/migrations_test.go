@@ -551,3 +551,19 @@ func TestMigration59DeleteUnusedMetricsInterval(t *testing.T) {
 	require.Equal(t, "10", settingBefore.Value)
 	require.Nil(t, settingAfter)
 }
+
+// Test that after migration the default user with a default password is
+// forced to change the password.
+func TestMigration60SetDefaultPasswordToChange(t *testing.T) {
+	// Arrange & Act
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Assert
+	user, err := dbmodel.GetUserByID(db, 1)
+	require.NoError(t, err)
+	require.True(t, user.ChangePassword)
+	ok, err := dbmodel.Authenticate(db, user, "admin")
+	require.NoError(t, err)
+	require.True(t, ok)
+}
