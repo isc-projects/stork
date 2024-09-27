@@ -506,7 +506,7 @@ func isHelpRequest(err error) bool {
 
 // Parses the command line arguments and runs the specific Stork Agent command.
 func runApp(reload bool) error {
-	profilerShutdown := profiler.Start(6061)
+	profilerShutdown := profiler.Start(profiler.AgentProfilerPort)
 	defer profilerShutdown()
 
 	generalSettings, registerSettings, err := parseArgs()

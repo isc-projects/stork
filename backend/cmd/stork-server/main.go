@@ -19,7 +19,7 @@ import (
 // error handler.
 func main() {
 	// Start profiler.
-	profilerShutdown := profiler.Start(6060)
+	profilerShutdown := profiler.Start(profiler.ServerProfilerPort)
 
 	returnCode, err := mainLoop()
 
