@@ -184,7 +184,7 @@ CLEAN.append "webui/.angular"
 # will be compiled with the "profiler" build tag.
 #
 # This helper logic was initially implemented as a Rake rule. However, we have
-# rejected this approach because internal details of the Rake rule. When the
+# rejected this approach because of the internal details of the Rake rule. When the
 # rule constructs the task, it checks if the file prerequisites exist and fails
 # if they do not. It is done immediately when the given target is accessed by
 # `Rake::Task[name]`, not when the task is executed or needed.

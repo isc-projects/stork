@@ -1440,7 +1440,7 @@ tool can generate the CPU, memory, and blocking profiles.
 
 .. note::
 
-    The block profile tracks time spent blocked on synchronization primitives,
+    The blocking profile tracks time spent blocked on synchronization primitives,
     such as sync.Mutex, sync.RWMutex, sync.WaitGroup, sync.Cond, and channel
     send/receive/select.
 
@@ -1594,7 +1594,7 @@ can start the demo with:
     $ rake demo:up
 
 The demo environment gathers some performance statistics in the background
-continuously. The collected metrics can be view on demand using the following
+continuously. The collected metrics can be viewed on demand using the following
 command:
 
 .. code-block:: console
