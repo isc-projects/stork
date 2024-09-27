@@ -30,6 +30,13 @@ export class AuthGuard {
             //     return false;
             // }
 
+            // Check if the user needs to change the password.
+            if (currentUser.changePassword && !state.url.startsWith('/profile/password')) {
+                // Redirect to the change password page.
+                console.log('Redirecting to the change password page')
+                return this.router.createUrlTree(['/profile/password'], { queryParams: { returnUrl: state.url } })
+            }
+
             // authorized so return true
             return true
         }

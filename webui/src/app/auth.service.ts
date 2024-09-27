@@ -119,4 +119,13 @@ export class AuthService {
     getAuthenticationMethods(): Observable<AuthenticationMethod[]> {
         return this.authenticationMethods
     }
+
+    /**
+     * Resets the change password flag for the current user.
+     */
+    resetChangePasswordFlag() {
+        const user: User = { ...this.currentUserValue, changePassword: false }
+        localStorage.setItem('currentUser', JSON.stringify(user))
+        this.currentUserSubject.next(user)
+    }
 }

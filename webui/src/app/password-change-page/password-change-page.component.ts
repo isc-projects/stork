@@ -7,6 +7,7 @@ import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { getErrorMessage } from '../utils'
 import { matchPasswords } from '../users-page/users-page.component'
+import { ActivatedRoute, Router } from '@angular/router'
 
 /**
  * This component allows the logged user to change the password.
@@ -38,7 +39,9 @@ export class PasswordChangePageComponent implements OnInit {
         private formBuilder: UntypedFormBuilder,
         private usersApi: UsersService,
         private msgSrv: MessageService,
-        private auth: AuthService
+        private auth: AuthService,
+        private route: ActivatedRoute,
+        private router: Router
     ) {}
 
     ngOnInit() {
@@ -61,6 +64,13 @@ export class PasswordChangePageComponent implements OnInit {
      */
     get isExternalUser(): boolean {
         return !this.auth.isInternalUser()
+    }
+
+    /**
+     * Indicates if the user is forced to change the password.
+     */
+    get mustChangePassword(): boolean {
+        return this.auth.currentUserValue.changePassword
     }
 
     /**
@@ -95,6 +105,15 @@ export class PasswordChangePageComponent implements OnInit {
                     severity: 'success',
                     summary: 'User password updated',
                 })
+
+                // Reset the change password flag.
+                this.auth.resetChangePasswordFlag()
+
+                // Redirect to the previous page if it was set.
+                const returnUrl = this.route.snapshot.queryParams.returnUrl
+                if (returnUrl) {
+                    this.router.navigateByUrl(returnUrl)
+                }
             },
             (err) => {
                 const msg = getErrorMessage(err)
