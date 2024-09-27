@@ -294,8 +294,8 @@ describe('SharedNetworksTableComponent', () => {
         // Data loading should be in progress.
         expect(component.dataLoading).toBeTrue()
 
+        await fixture.whenStable()
         fixture.detectChanges()
-        await fixture.whenRenderingDone()
 
         // Data loading should be done.
         expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null)
@@ -306,8 +306,8 @@ describe('SharedNetworksTableComponent', () => {
 
     it('should convert shared network statistics to big integers', async () => {
         // Act
+        await fixture.whenStable()
         fixture.detectChanges()
-        await fixture.whenRenderingDone()
 
         // Assert
         expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null)
@@ -325,8 +325,8 @@ describe('SharedNetworksTableComponent', () => {
 
     it('should convert subnet statistics to big integers', async () => {
         // Act
+        await fixture.whenStable()
         fixture.detectChanges()
-        await fixture.whenRenderingDone()
 
         // Assert
         expect(getNetworksSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null)
@@ -342,8 +342,8 @@ describe('SharedNetworksTableComponent', () => {
         // Act
         // Filter by text to get subnet without stats.
         component.updateFilterFromQueryParameters(convertToParamMap({ text: 'frog-no-stats' }))
+        await fixture.whenStable()
         fixture.detectChanges()
-        await fixture.whenRenderingDone()
 
         // Assert
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'frog-no-stats')
@@ -370,10 +370,8 @@ describe('SharedNetworksTableComponent', () => {
     it('should display proper utilization bars', async () => {
         // Filter by text to get shared network with proper data.
         component.updateFilterFromQueryParameters(convertToParamMap({ text: 'cat' }))
-        fixture.detectChanges()
-        await fixture.whenRenderingDone()
-        fixture.detectChanges()
         await fixture.whenStable()
+        fixture.detectChanges()
 
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'cat')
         expect(component.dataCollection.length).toBe(1)
@@ -419,8 +417,8 @@ describe('SharedNetworksTableComponent', () => {
     it('should display error about wrong query params filter', async () => {
         // Filter with query params that have wrong syntax.
         component.updateFilterFromQueryParameters(convertToParamMap({ appId: 'xyz', dhcpVersion: 7 }))
+        await fixture.whenStable()
         fixture.detectChanges()
-        await fixture.whenRenderingDone()
 
         // Check that correct error feedback is displayed.
         const errors = fixture.debugElement.queryAll(By.css('small.p-error'))
@@ -432,8 +430,8 @@ describe('SharedNetworksTableComponent', () => {
 
     it('should filter table records', async () => {
         // Initial data was loaded.
+        await fixture.whenStable()
         fixture.detectChanges()
-        await fixture.whenRenderingDone()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, null)
 
         // Get filter inputs.
@@ -449,8 +447,8 @@ describe('SharedNetworksTableComponent', () => {
         input.dispatchEvent(new Event('input'))
 
         // Verify that the API was called for that filter.
-        fixture.detectChanges()
         await fixture.whenStable()
+        fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'cat')
 
         // Filter by kea app id.
@@ -466,22 +464,22 @@ describe('SharedNetworksTableComponent', () => {
         inputComponent.onInputKeyPress(pressFiveEvent)
 
         // Verify that the API was called for that filter.
-        fixture.detectChanges()
         await fixture.whenStable()
+        fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 5, null, 'cat')
 
         // Filter by DHCP version.
         const dropdownContainer = fixture.debugElement.query(By.css('.p-column-filter .p-dropdown')).nativeElement
         dropdownContainer.click()
-        fixture.detectChanges()
         await fixture.whenStable()
+        fixture.detectChanges()
         const items = fixture.debugElement.query(By.css('.p-dropdown-items'))
         // Click second option.
         items.children[1].children[0].nativeElement.click()
 
         // Verify that the API was called for that filter.
-        fixture.detectChanges()
         await fixture.whenStable()
+        fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 5, 6, 'cat')
     })
 })
