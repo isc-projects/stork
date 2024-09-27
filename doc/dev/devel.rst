@@ -1529,6 +1529,8 @@ values are:
   - ``mutex`` (number of mutexes)
   - ``block`` (number of blocks).
 
+For example:
+
   .. code-block:: console
 
     $ rake unittest:backend:profile TEST=TestAddMachine SCOPE="server/database/model" KIND=mem
