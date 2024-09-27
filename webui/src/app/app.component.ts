@@ -69,12 +69,15 @@ export class AppComponent implements OnInit, OnDestroy {
                 label: 'DHCP',
                 id: 'dhcp',
                 visible: false,
+                // badgeStyleClass: 'error',
+                badge: '0',
                 items: [
                     {
                         label: 'Dashboard',
                         id: 'dashboard',
                         icon: 'fa fa-tachometer-alt',
                         routerLink: '/dashboard',
+                        badge: '1',
                     },
                     {
                         label: 'Leases Search',

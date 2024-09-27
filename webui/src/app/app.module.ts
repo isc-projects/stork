@@ -143,6 +143,7 @@ import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-
 import { PositivePipe } from './pipes/positive.pipe'
 import { VersionStatusComponent } from './version-status/version-status.component'
 import { VersionPageComponent } from './version-page/version-page.component'
+import { BadgeModule } from 'primeng/badge'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -292,6 +293,7 @@ export function cfgFactory() {
         TriStateCheckboxModule,
         AccordionModule,
         TreeTableModule,
+        BadgeModule,
     ],
     providers: [
         {
