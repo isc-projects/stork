@@ -310,7 +310,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     '',
                     [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
                 ],
-                changePassword: [''],
+                changePassword: [true],
             },
             {
                 validators: [matchPasswords('userPassword', 'userPassword2')],

@@ -123,6 +123,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 		Groups:                 groups,
 		AuthenticationMethodID: *params.Credentials.AuthenticationMethodID,
 		ExternalID:             calloutUser.ID,
+		ChangePassword:         false,
 	}
 
 	conflict, err := dbmodel.CreateUser(r.DB, systemUser)
@@ -321,10 +322,11 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	}
 
 	su := &dbmodel.SystemUser{
-		Login:    u.Login,
-		Email:    u.Email,
-		Lastname: u.Lastname,
-		Name:     u.Name,
+		Login:          u.Login,
+		Email:          u.Email,
+		Lastname:       u.Lastname,
+		Name:           u.Name,
+		ChangePassword: u.ChangePassword,
 	}
 
 	for _, gid := range u.Groups {
