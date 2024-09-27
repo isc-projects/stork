@@ -262,5 +262,7 @@
         </div>
     </div>
     <p-progressSpinner *ngIf="!hasStatus && !loadedOnce"></p-progressSpinner>
-    <div *ngIf="!hasStatus && loadedOnce">High Availability is not enabled on this server.</div>
+    <span *ngIf="!hasStatus && loadedOnce" class="font-italic text-sm">
+        High Availability is not enabled on this server.
+    </span>
 </div>

@@ -182,7 +182,7 @@
 
                         <div class="col-12 xl:col-7">
                             <!-- Overview -->
-                            <div style="margin-bottom: 20px" [ngClass]="{ disabled: !daemon.active }">
+                            <div [ngClass]="{ disabled: !daemon.active }">
                                 <h3>Overview</h3>
                                 <div class="grid">
                                     <div class="col-12 lg:col-7">
@@ -249,7 +249,7 @@
                                     (daemon.files && daemon.files.length > 0) ||
                                     (daemon.backends && daemon.backends.length > 0)
                                 "
-                                style="margin-bottom: 20px"
+                                class="mt-4"
                             >
                                 <h3>Data Storage</h3>
                                 <div class="grid">
@@ -285,17 +285,8 @@
                                 </div>
                             </div>
 
-                            <!-- High Availability -->
-                            <div
-                                *ngIf="isDhcpDaemon(daemon)"
-                                style="margin-bottom: 20px"
-                                [ngClass]="{ disabled: !daemon.active }"
-                            >
-                                <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
-                            </div>
-
                             <!-- Loggers -->
-                            <div style="margin-bottom: 20px" class="">
+                            <div class="mt-4">
                                 <h3>Loggers</h3>
                                 <p-table [value]="daemon.logTargets">
                                     <ng-template pTemplate="header">
@@ -329,7 +320,7 @@
                                 </p-table>
                             </div>
 
-                            <div id="config-review-reports-div" [ngClass]="{ disabled: !daemon.active }">
+                            <div id="config-review-reports-div" class="mt-4" [ngClass]="{ disabled: !daemon.active }">
                                 <h3>
                                     Configuration Review Reports
                                     <app-help-tip subject="daemon configuration review section">
@@ -353,6 +344,11 @@
                                     </app-help-tip>
                                 </h3>
                                 <app-config-review-panel [daemonId]="daemon.id"></app-config-review-panel>
+                            </div>
+
+                            <!-- High Availability -->
+                            <div *ngIf="isDhcpDaemon(daemon)" class="mt-4" [ngClass]="{ disabled: !daemon.active }">
+                                <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
                             </div>
                         </div>
 
