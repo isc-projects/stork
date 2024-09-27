@@ -18,7 +18,11 @@ text.each_line do |line|
 end
 STORK_VERSION = stork_version
 
-def get_pkg_type()
+def get_pkg_type(get_all: false)
+    # Determines available package managers.
+    # Params:
+    # +get_all+:: whether to return the array of package managers instead of asserting a single package manager.
+
     # Read environment variable
     if !ENV["PKG_TYPE"].nil?
         return ENV["PKG_TYPE"]
@@ -48,6 +52,10 @@ def get_pkg_type()
         rescue Exception
             # Command not exist
         end
+    end
+
+    if get_all
+        return supported_types
     end
 
     if supported_types.empty?
@@ -115,7 +123,7 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
 end
 
 agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
-if get_pkg_type() == "apk"
+if get_pkg_type(get_all: true).include?("apk")
     agent_etc_files.append("etc/isc-stork-agent.initd")
 end
 agent_dist_etc_dir = "dist/agent/etc/stork"
@@ -193,7 +201,7 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
 end
 
 server_etc_files = FileList["etc/server.env"]
-if get_pkg_type() == "apk"
+if get_pkg_type(get_all: true).include?("apk")
     server_etc_files.append("etc/isc-stork-server.initd")
 end
 server_dist_etc_dir = "dist/server/etc/stork"
