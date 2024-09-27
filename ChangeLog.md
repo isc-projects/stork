@@ -1,3 +1,123 @@
+Stork 1.19.0 released on 2024-10-02.
+
+* 455 [func] marcin
+
+    RPS statistics displayed with two fractional digits precision.
+    (Gitlab #1510)
+
+* 454 [build] andrei
+
+    Stork now installs OpenRC service files on Alpine systems.
+    (Gitlab #1457)
+
+* 453 [build] slawek
+
+    Updated dependencies including the Go 1.23.1, Angular 17.3.12,
+    and several JavaScript, Python and Ruby packages.
+    (Gitlab #1512)
+
+* 452 [bug] slawek
+
+    Fixed a problem with recognizing the wildcard IP address in the inet
+    clause in the BIND9 configuration, preventing the Stork agent from
+    establishing a connection to the named daemon.
+    (Gitlab #1495)
+
+* 451 [func] slawek
+
+    Extended a form for editing global Kea configuration with support
+    for altering the global DHCP options.
+    (Gitlab #1447)
+
+* 450 [bug] slawek
+
+    Fixed the Kea and BIND 9 group names assigned to the user
+    installed with the Stork agent package.
+    (Gitlab #1506)
+
+* 449 [bug] slawek
+
+    Fixed a rare bug that caused a Stork server to crash when the Stork
+    agent was able to detect the BIND 9 process, but it couldn't fetch
+    its configuration due to insufficient rights.
+    (Gitlab #1492)
+
+* 448 [bug] marcin
+
+    Restore missing links to the subnets in Grafana.
+    (Gitlab #1489)
+
+* 447 [bug] marcin
+
+    Corrected command name for fetching DHCPv6 statistics. The wrong
+    command was sent previously causing a failure to fetch this
+    statistics.
+    (Gitlab #1493)
+
+* 446 [func] marcin
+
+    Handle the case in Stork statistics presentation when the number
+    of declined leases is lower than the number of assigned leases.
+    In this case, Stork now estimates the number of leases with
+    uncertain availability, and the number of free leases. These
+    statistics are presented on the pie charts. It also eliminates
+    negative lease statistics that were sometimes presented when the
+    statistics returned by Kea were wrong.
+    (Gitlab #1481)
+
+* 445 [build] tomek
+
+    Fixed a problem with BIND9 containers used in the demo. Some time
+    around Aug 2024, the official BIND9 images switched from Debian
+    to Alpine.
+    (Gitlab #1494)
+
+* 444 [func] marcin
+
+    Implemented a form for editing selected global Kea configuration
+    parameters.
+    (Gitlab #1366)
+
+* 443 [func] slawek
+
+    Added a Kea checker to verify the Kea Lease Commands Hooks Library
+    is loaded in the Kea DHCP daemon.
+    (Gitlab #1456)
+
+* 442 [doc] slawek
+
+    Fixed a link in the docs to the script setting up the CloudSmith
+    repository on Alpine operating systems.
+    (Gitlab #1462)
+
+* 441 [bug] slawek
+
+    Fixed the built-in description of the hook packages. The environment
+    variables were not substituted.
+    (Gitlab #1470)
+
+* 440 [func] piotrek
+
+    Shared networks list view was refactored to be fully responsive.
+    Filtering was reworked. Separate filters are now available
+    in the shared networks table header.
+    (Gitlab #1464)
+
+* 439 [func] marcin
+
+    Server assignments panel moved to the beginning of the
+    subnet and shared network form. It promotes the natural
+    flow of editing the subnets and shared networks because
+    the assignments selection impacts the later parts of the
+    forms.
+    (Gitlab #1438)
+
+* 438 [func] piotrek
+
+    Stork UI was adjusted to be fully responsive. Now, it is
+    usable on portable devices, e.g., smartphones and tablets.
+    (Gitlab #1433)
+
 Stork 1.18.0 released on 2024-08-07.
 
 * 437 [build] slawek
