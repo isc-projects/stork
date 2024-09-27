@@ -18,16 +18,9 @@ text.each_line do |line|
 end
 STORK_VERSION = stork_version
 
-def get_pkg_type(get_all: false)
-    # Determines available package managers.
-    # Params:
-    # +get_all+:: whether to return the array of package managers instead of asserting a single package manager.
 
-    # Read environment variable
-    if !ENV["PKG_TYPE"].nil?
-        return ENV["PKG_TYPE"]
-    end
-
+# Determines available package managers.
+def get_package_manager_types()
     # Mapping between the package type and a command to check if the type is supported.
     supported_type_checks = [
         ["rpm", ["rpm", "-q", "-a"]],
@@ -54,9 +47,19 @@ def get_pkg_type(get_all: false)
         end
     end
 
-    if get_all
-        return supported_types
+    return supported_types
+end
+
+
+# Retrieves the name of the package manager after asserting that it is the only one available on the
+# system.
+def get_package_manager_type()
+    # Read environment variable.
+    if !ENV["PKG_TYPE"].nil?
+        return ENV["PKG_TYPE"]
     end
+
+    supported_types = get_package_manager_types()
 
     if supported_types.empty?
         fail "Unknown package type for current OS."
@@ -66,6 +69,7 @@ def get_pkg_type(get_all: false)
 
     return supported_types[0]
 end
+
 
 pkgs_dir = "dist/pkgs"
 directory pkgs_dir
@@ -123,7 +127,7 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
 end
 
 agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
-if get_pkg_type(get_all: true).include?("apk")
+if get_package_manager_types().include?("apk")
     agent_etc_files.append("etc/isc-stork-agent.initd")
 end
 agent_dist_etc_dir = "dist/agent/etc/stork"
@@ -153,7 +157,7 @@ file AGENT_PACKAGE_STUB_FILE => [NFPM, agent_nfpm_config_file, agent_dist_dir, p
 
     sh NFPM, "package",
         "--config", agent_nfpm_config_file,
-        "--packager", get_pkg_type(),
+        "--packager", get_package_manager_type(),
         "--target", pkgs_dir
 
     sh "touch", AGENT_PACKAGE_STUB_FILE
@@ -201,7 +205,7 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
 end
 
 server_etc_files = FileList["etc/server.env"]
-if get_pkg_type(get_all: true).include?("apk")
+if get_package_manager_types().include?("apk")
     server_etc_files.append("etc/isc-stork-server.initd")
 end
 server_dist_etc_dir = "dist/server/etc/stork"
@@ -258,7 +262,7 @@ file SERVER_PACKAGE_STUB_FILE => [NFPM, server_nfpm_config_file, server_dist_dir
 
     sh NFPM, "package",
         "--config", server_nfpm_config_file,
-        "--packager", get_pkg_type(),
+        "--packager", get_package_manager_type(),
         "--target", pkgs_dir
 
     sh "touch", SERVER_PACKAGE_STUB_FILE
@@ -291,7 +295,7 @@ end
 namespace :utils do
     desc "Check package type of current OS"
     task :print_pkg_type do
-        puts get_pkg_type()
+        puts get_package_manager_type()
     end
 
     desc "Remove the suffix from the last created package"

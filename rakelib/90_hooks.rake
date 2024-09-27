@@ -175,7 +175,7 @@ namespace :hook do
         end
 
         hook_directory = ENV["HOOK_DIR"] || DEFAULT_HOOK_DIRECTORY
-        pkg_type = get_pkg_type()
+        pkg_type = get_package_manager_type()
         arch = get_target_go_arch()
 
         FileList[File.join(hook_directory, "*.so")].each do |hook_path|
