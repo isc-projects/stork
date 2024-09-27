@@ -404,7 +404,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		Email:          u.Email,
 		Lastname:       u.Lastname,
 		Name:           u.Name,
-		ChangePassword: false,
+		ChangePassword: u.ChangePassword,
 	}
 
 	for _, gid := range u.Groups {

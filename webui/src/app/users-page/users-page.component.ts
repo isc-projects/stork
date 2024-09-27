@@ -242,6 +242,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 userGroup: ['', Validators.required],
                 userPassword: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
                 userPassword2: ['', [Validators.minLength(8), Validators.maxLength(this.maxInputLen)]],
+                changePassword: [''],
             },
             {
                 validators: [matchPasswords('userPassword', 'userPassword2')],
@@ -270,6 +271,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             userEmail: this.userTab.user.email,
             userFirst: this.userTab.user.name,
             userLast: this.userTab.user.lastname,
+            changePassword: this.userTab.user.changePassword,
         })
 
         if (this.groups.length > 0 && this.userTab.user.groups && this.userTab.user.groups.length > 0) {
@@ -308,6 +310,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     '',
                     [Validators.required, Validators.minLength(8), Validators.maxLength(this.maxInputLen)],
                 ],
+                changePassword: [''],
             },
             {
                 validators: [matchPasswords('userPassword', 'userPassword2')],
@@ -493,6 +496,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             lastname: this.userForm.controls.userLast.value,
             groups: [this.userForm.controls.userGroup.value.id],
             authenticationMethodId: '',
+            changePassword: this.userForm.controls.changePassword.value,
         }
         const password = this.userForm.controls.userPassword.value
         const account = { user, password }
@@ -530,6 +534,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             lastname: this.userForm.controls.userLast.value,
             groups: [this.userForm.controls.userGroup.value.id],
             authenticationMethodId: '',
+            changePassword: this.userForm.controls.changePassword.value,
         }
         const password = this.userForm.controls.userPassword.value
         const account = { user, password }
