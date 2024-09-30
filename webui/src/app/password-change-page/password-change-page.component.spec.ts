@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { PasswordChangePageComponent } from './password-change-page.component'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, RouterModule } from '@angular/router'
 import { UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms'
 import { UsersService } from '../backend'
 import { MessageService } from 'primeng/api'
@@ -41,7 +41,7 @@ describe('PasswordChangePageComponent', () => {
                 BreadcrumbModule,
                 OverlayPanelModule,
                 MenuModule,
-                RouterTestingModule,
+                RouterModule,
                 ReactiveFormsModule,
                 PasswordModule,
                 MessageModule,

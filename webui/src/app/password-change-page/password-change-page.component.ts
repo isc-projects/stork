@@ -70,7 +70,7 @@ export class PasswordChangePageComponent implements OnInit {
      * Indicates if the user is forced to change the password.
      */
     get mustChangePassword(): boolean {
-        return this.auth.currentUserValue.changePassword
+        return !!this.auth.currentUserValue?.changePassword
     }
 
     /**

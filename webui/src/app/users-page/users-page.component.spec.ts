@@ -2,7 +2,7 @@ import { By } from '@angular/platform-browser'
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, convertToParamMap, ParamMap, RouterModule } from '@angular/router'
-import { UntypedFormBuilder } from '@angular/forms'
+import { FormsModule, UntypedFormBuilder } from '@angular/forms'
 import { ServicesService, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, SharedModule } from 'primeng/api'
@@ -24,6 +24,7 @@ import { TagModule } from 'primeng/tag'
 import { PanelModule } from 'primeng/panel'
 import { DropdownModule } from 'primeng/dropdown'
 import { PasswordModule } from 'primeng/password'
+import { CheckboxModule } from 'primeng/checkbox'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -54,6 +55,8 @@ describe('UsersPageComponent', () => {
                 PanelModule,
                 DropdownModule,
                 PasswordModule,
+                FormsModule,
+                CheckboxModule,
             ],
             declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
             providers: [
@@ -127,6 +130,7 @@ describe('UsersPageComponent', () => {
                 name: 'user_one',
                 email: 'user_one@isc.org',
                 groups: [],
+                changePassword: false,
             },
             {
                 id: 2,
@@ -135,6 +139,7 @@ describe('UsersPageComponent', () => {
                 name: 'user_two',
                 email: 'user_two@isc.org',
                 groups: [],
+                changePassword: true,
             },
         ]
         component.totalUsers = 2
