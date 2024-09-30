@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing'
 import { AuthService } from './auth.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { AuthenticationMethods, User, UsersService } from './backend'
-import { Router } from '@angular/router'
+import { Router, RouterModule } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { from, of } from 'rxjs'
@@ -12,15 +12,8 @@ import { HttpProgressEvent } from '@angular/common/http'
 describe('AuthService', () => {
     beforeEach(() =>
         TestBed.configureTestingModule({
-            providers: [
-                UsersService,
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-                MessageService,
-            ],
-            imports: [HttpClientTestingModule, ProgressSpinnerModule],
+            providers: [UsersService, MessageService],
+            imports: [HttpClientTestingModule, ProgressSpinnerModule, RouterModule],
         })
     )
 
@@ -94,5 +87,32 @@ describe('AuthService', () => {
         expect(spy.calls.count()).toBe(1)
         expect(methods.length).toBe(1)
         expect(methods[0].id).toBe('internal')
+    })
+
+    it('should reset the change password flag in the local storage', () => {
+        // Arrange
+        const service: AuthService = TestBed.inject(AuthService)
+        const userService = TestBed.inject(UsersService)
+        const router = TestBed.inject(Router)
+
+        spyOn(router, 'navigateByUrl').and.resolveTo(true)
+        spyOn(userService, 'createSession').and.returnValue(
+            of({
+                id: 1,
+                changePassword: true,
+            } as User) as any
+        )
+
+        service.login('internal', 'user', 'password', '/')
+        let userFromLocalStorage = JSON.parse(localStorage.getItem('currentUser')) as User
+
+        // Act
+        expect(userFromLocalStorage.changePassword).toBeTrue()
+        service.resetChangePasswordFlag()
+
+        // Assert
+        expect(service.currentUserValue.changePassword).toBeFalse()
+        userFromLocalStorage = JSON.parse(localStorage.getItem('currentUser')) as User
+        expect(userFromLocalStorage.changePassword).toBeFalse()
     })
 })
