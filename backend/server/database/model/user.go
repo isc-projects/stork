@@ -272,7 +272,6 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) error {
 
 		return nil
 	})
-
 	if err != nil {
 		err = pkgerrors.WithMessagef(err, "unable to change the password for user with ID %d", id)
 		return err
