@@ -9,7 +9,7 @@ func init() {
 			ALTER TABLE public.system_user ADD COLUMN change_password BOOLEAN NOT NULL DEFAULT FALSE;
 
 			-- Set the change password flag if admin user has the default password.
-			UPDATE system_user su
+			UPDATE public.system_user su
 			SET change_password = TRUE
 			FROM system_user_password p
 			WHERE su.id = p.id
