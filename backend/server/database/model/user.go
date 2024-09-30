@@ -16,6 +16,9 @@ func init() {
 	orm.RegisterTable((*SystemUserToGroup)(nil))
 }
 
+// Represents the invalid password error.
+var ErrInvalidPassword = errors.New("invalid password")
+
 // The authentication method ID of the internal authentication method (email
 // and password stored in the database).
 const AuthenticationMethodIDInternal string = "internal"
@@ -233,24 +236,48 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 
 // Checks if the old password matches the one in the database and modifies
 // it to the new password if it does.
-func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, error) {
+func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) error {
 	password := SystemUserPassword{
 		ID: id,
 	}
-	ok, err := db.Model(&password).
-		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
-			oldPassword, id).Exists()
+
+	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+		ok, err := db.Model(&password).
+			Where("password_hash = crypt(?, password_hash) AND (id = ?)",
+				oldPassword, id).Exists()
+		if err != nil {
+			err = pkgerrors.Wrap(err, "database operation error while verifying the password")
+			return err
+		} else if !ok {
+			err = pkgerrors.Wrap(ErrInvalidPassword, "the old password does not match the one in the database")
+			return err
+		}
+
+		err = SetPassword(db, id, newPassword)
+		if err != nil {
+			err = pkgerrors.WithMessage(err, "database operation error while trying to change password")
+			return err
+		}
+
+		// Reset the change password flag.
+		_, err = db.Model(&SystemUser{ID: id}).
+			Set("change_password = FALSE").
+			WherePK().
+			Where("change_password = TRUE").
+			Update()
+		if err != nil {
+			err = pkgerrors.Wrapf(err, "database operation error while resetting the change password flag")
+			return err
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "database operation error while trying to change password of user with ID %d", id)
-		return false, err
+		err = pkgerrors.WithMessagef(err, "unable to change the password for user with ID %d", id)
+		return err
 	}
-
-	if !ok {
-		return false, nil
-	}
-
-	err = SetPassword(db, id, newPassword)
-	return true, err
+	return nil
 }
 
 // Finds the user in the database by login or email and verifies that the provided password

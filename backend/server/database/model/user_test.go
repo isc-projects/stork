@@ -150,10 +150,11 @@ func TestCreateUser(t *testing.T) {
 	defer teardown()
 
 	user := &SystemUser{
-		Login:    "foobar",
-		Email:    "foo@bar.org",
-		Lastname: "Bar",
-		Name:     "Foo",
+		Login:          "foobar",
+		Email:          "foo@bar.org",
+		Lastname:       "Bar",
+		Name:           "Foo",
+		ChangePassword: true,
 	}
 
 	// Act
@@ -170,6 +171,7 @@ func TestCreateUser(t *testing.T) {
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
 	require.EqualValues(t, "internal", dbUser.AuthenticationMethodID)
+	require.True(t, dbUser.ChangePassword)
 	// Check if there is no password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID
@@ -204,6 +206,7 @@ func TestCreateUserWithPassword(t *testing.T) {
 	require.EqualValues(t, "Bar", dbUser.Lastname)
 	require.EqualValues(t, "Foo", dbUser.Name)
 	require.EqualValues(t, "internal", dbUser.AuthenticationMethodID)
+	require.False(t, dbUser.ChangePassword)
 	// Check if there is a password entry.
 	password := &SystemUserPassword{}
 	password.ID = dbUser.ID
@@ -420,9 +423,8 @@ func TestChangePassword(t *testing.T) {
 	require.NoError(t, err)
 
 	// Provide invalid current password. The original password should not change.
-	auth, err := ChangePassword(db, user.ID, "invalid", "newpass")
-	require.False(t, auth)
-	require.NoError(t, err)
+	err = ChangePassword(db, user.ID, "invalid", "newpass")
+	require.ErrorIs(t, err, ErrInvalidPassword)
 
 	// Still should authenticate with the current password.
 	authOk, err := Authenticate(db, user, "pass")
@@ -430,14 +432,38 @@ func TestChangePassword(t *testing.T) {
 	require.True(t, authOk)
 
 	// Provide valid password. The original password should be modified.
-	auth, err = ChangePassword(db, user.ID, "pass", "newpass")
-	require.True(t, auth)
+	err = ChangePassword(db, user.ID, "pass", "newpass")
 	require.NoError(t, err)
 
 	// Authenticate with the new password.
 	authOk, err = Authenticate(db, user, "newpass")
 	require.NoError(t, err)
 	require.True(t, authOk)
+}
+
+// Tests that changing password resets the change password flag.
+func TestChangePasswordResetChangeFlag(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user := &SystemUser{
+		Email:          "user@example.com",
+		Lastname:       "Foo",
+		Name:           "Bar",
+		Login:          "foobar",
+		ChangePassword: true,
+	}
+
+	_, _ = CreateUserWithPassword(db, user, "pass")
+
+	// Act
+	err := ChangePassword(db, user.ID, "pass", "newpass")
+
+	// Assert
+	require.NoError(t, err)
+	user, _ = GetUserByID(db, user.ID)
+	require.False(t, user.ChangePassword)
 }
 
 // Tests that all system users can be fetched from the database.

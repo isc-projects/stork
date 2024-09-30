@@ -559,20 +559,13 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	// Try to change the password for the given user id. Including old password
 	// for verification and the new password which will only be set if this
 	// verification is successful.
-	auth, err := dbmodel.ChangePassword(r.DB, id, string(*passwords.Oldpassword),
+	err := dbmodel.ChangePassword(r.DB, id, string(*passwords.Oldpassword),
 		string(*passwords.Newpassword))
 
 	// Error is returned when something went wrong with the database communication
 	// or something similar. The error is not returned when the current password
 	// is not matching.
-	if err != nil {
-		log.WithError(err).Errorf("Failed to update password for user ID %d", id)
-		rspErr := models.APIError{
-			Message: storkutil.Ptr("Database error while trying to update user password"),
-		}
-		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
-		return rsp
-	} else if !auth {
+	if errors.Is(err, dbmodel.ErrInvalidPassword) {
 		log.Infof("Specified invalid current password while trying to update existing password for user ID %d",
 			id)
 
@@ -581,29 +574,13 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 		}
 		rsp := users.NewUpdateUserPasswordDefault(http.StatusBadRequest).WithPayload(&rspErr)
 		return rsp
-	}
-
-	// If user has been forced to change password, reset the flag.
-	user, err := dbmodel.GetUserByID(r.DB, id)
-	if err != nil {
-		log.WithError(err).Errorf("Failed to fetch user with ID %d from the database", id)
+	} else if err != nil {
+		log.WithError(err).Errorf("Failed to update password for user ID %d", id)
 		rspErr := models.APIError{
-			Message: storkutil.Ptr("Database error while trying to fetch user details"),
+			Message: storkutil.Ptr("Database error while trying to update user password"),
 		}
 		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
-	}
-	if user != nil && user.ChangePassword {
-		user.ChangePassword = false
-		_, err = dbmodel.UpdateUser(r.DB, user)
-		if err != nil {
-			log.WithError(err).Errorf("Failed to reset ChangePassword flag for user ID %d", id)
-			rspErr := models.APIError{
-				Message: storkutil.Ptr("Database error while trying to reset change password flag"),
-			}
-			rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
-			return rsp
-		}
 	}
 
 	// Password successfully changed.

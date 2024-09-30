@@ -974,6 +974,41 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 }
 
+// Tests that updating the user password via REST API causes the change
+// password flag to be reset.
+func TestUpdateUserPasswordResetChangePasswordFlag(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	user := &dbmodel.SystemUser{
+		Email:          "jan@example.org",
+		Lastname:       "Kowalski",
+		Name:           "Jan",
+		ChangePassword: true,
+	}
+	con, err := dbmodel.CreateUserWithPassword(db, user, "pass")
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Update user password via the API.
+	params := users.UpdateUserPasswordParams{
+		ID: int64(user.ID),
+		Passwords: &models.PasswordChange{
+			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Oldpassword: storkutil.Ptr(models.Password("pass")),
+		},
+	}
+	rsp := rapi.UpdateUserPassword(ctx, params)
+	require.IsType(t, &users.UpdateUserPasswordOK{}, rsp)
+	user, _ = dbmodel.GetUserByID(db, user.ID)
+	require.False(t, user.ChangePassword)
+}
+
 // Tests that user password can't be updated via REST API if user account doesn't
 // have assigned the password.
 func TestUpdateUserPasswordForPasswordlessUser(t *testing.T) {
@@ -1109,10 +1144,12 @@ func TestGetUser(t *testing.T) {
 
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{
-		Email:    "jd@example.org",
-		Lastname: "Doe",
-		Login:    "johndoe",
-		Name:     "John",
+		Email:          "jd@example.org",
+		Lastname:       "Doe",
+		Login:          "johndoe",
+		Name:           "John",
+		ChangePassword: true,
+		Groups:         []*dbmodel.SystemGroup{{ID: dbmodel.AdminGroupID}},
 	}
 	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
@@ -1132,9 +1169,10 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, user.Login, okRsp.Payload.Login)
 	require.Equal(t, user.Name, okRsp.Payload.Name)
 	require.Equal(t, user.Lastname, okRsp.Payload.Lastname)
+	require.Equal(t, user.ChangePassword, okRsp.Payload.ChangePassword)
 
-	// TODO: check that the new user belongs to a group
-	// require.Len(t, okRsp.Payload.Groups, 1)
+	require.Len(t, okRsp.Payload.Groups, 1)
+	require.EqualValues(t, dbmodel.AdminGroupID, okRsp.Payload.Groups[0])
 }
 
 // Tests that new session can not be created using empty params.
