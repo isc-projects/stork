@@ -18,10 +18,12 @@ import { MenuModule } from 'primeng/menu'
 import { RouterTestingModule } from '@angular/router/testing'
 import { PasswordModule } from 'primeng/password'
 import { MessageModule } from 'primeng/message'
+import { AuthService } from '../auth.service'
 
 describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
     let fixture: ComponentFixture<PasswordChangePageComponent>
+    let authService: AuthService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -54,6 +56,8 @@ describe('PasswordChangePageComponent', () => {
         fixture = TestBed.createComponent(PasswordChangePageComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
+
+        authService = TestBed.inject(AuthService)
     })
 
     it('should create', () => {
@@ -78,5 +82,23 @@ describe('PasswordChangePageComponent', () => {
 
         fixture.detectChanges()
         expect(component.passwordChangeForm.valid).toBeTrue()
+    })
+
+    it('should recognize the password must be changed', () => {
+        spyOnProperty(authService, 'currentUserValue').and.returnValues(
+            {
+                authenticationMethodId: 'internal',
+                id: 1,
+                changePassword: true,
+            },
+            {
+                authenticationMethodId: 'internal',
+                id: 1,
+                changePassword: false,
+            }
+        )
+
+        expect(component.mustChangePassword).toBeTrue()
+        expect(component.mustChangePassword).toBeFalse()
     })
 })
