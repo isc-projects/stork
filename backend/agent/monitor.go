@@ -69,6 +69,8 @@ type appMonitor struct {
 	wg             *sync.WaitGroup
 	commander      storkutil.CommandExecutor
 	processManager ProcessManager
+	// A flag indicating if the monitor has already detected no apps and reported it.
+	isNoAppsReported bool
 
 	apps []App // list of detected apps on the host
 }
@@ -190,11 +192,6 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 			}
 			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
 		}
-	} else if len(oldApps) == 0 {
-		// Agent is starting up but no app to monitor has been detected.
-		// Usually, the agent is installed with at least one monitored app.
-		// The below message is printed for easier troubleshooting.
-		log.Warnf("No Kea nor Bind9 app detected for monitoring; please check if they are running, and Stork can communicate with them.")
 	}
 }
 
@@ -264,7 +261,19 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 	}
 
 	// Check changes in apps and print them.
-	printNewOrUpdatedApps(apps, sm.apps)
+	if len(apps) == 0 && len(sm.apps) == 0 {
+		if !sm.isNoAppsReported {
+			// Agent is starting up but no app to monitor has been detected.
+			// Usually, the agent is installed with at least one monitored app.
+			// The below message is printed for easier troubleshooting.
+			log.Warnf("No Kea nor Bind9 app detected for monitoring; please check if they are running, and Stork can communicate with them.")
+			// Mark this message as reported to avoid printing it continuously.
+			sm.isNoAppsReported = true
+		}
+	} else {
+		printNewOrUpdatedApps(apps, sm.apps)
+		sm.isNoAppsReported = false
+	}
 
 	// Remember detected apps.
 	sm.apps = apps
