@@ -14,21 +14,24 @@
     color: var(--surface-500)
     text-decoration: none
 
-:host ::ng-deep .p-treetable .p-treetable-thead
-    tr th
+:host ::ng-deep .p-datatable-table
+    table-layout: fixed
+
+    .p-datatable-thead tr th
         border-top: 1px solid var(--surface-200)
         border-left: none
         border-right: none
         border-bottom: 1px solid var(--surface-200)
         background: var(--surface-ground)
+        font-weight: normal
 
         &:first-child
             width: 300px
 
-:host ::ng-deep .p-treetable .p-treetable-tbody
+:host ::ng-deep .p-datatable-table .p-datatable-tbody
     tr.relationship-pane
         background: var(--surface-0)
-        color: var(--primary-700)
+        font-weight: 500
     tr td
         border-top: none
         border-left: none

@@ -11,9 +11,10 @@ import { of, throwError } from 'rxjs'
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http'
 import { By } from '@angular/platform-browser'
 import { MessageService } from 'primeng/api'
-import { TreeTableModule } from 'primeng/treetable'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { RouterTestingModule } from '@angular/router/testing'
+import { TableModule } from 'primeng/table'
+import { ButtonModule } from 'primeng/button'
+import { RouterModule } from '@angular/router'
 
 describe('HaStatusComponent', () => {
     let component: HaStatusComponent
@@ -23,13 +24,14 @@ describe('HaStatusComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
+                ButtonModule,
                 HttpClientTestingModule,
                 MessageModule,
                 PanelModule,
                 ProgressSpinnerModule,
-                RouterTestingModule,
+                RouterModule.forRoot([]),
+                TableModule,
                 TooltipModule,
-                TreeTableModule,
             ],
             declarations: [EntityLinkComponent, HaStatusComponent, LocaltimePipe],
             providers: [ServicesService, MessageService],
@@ -234,40 +236,42 @@ describe('HaStatusComponent', () => {
         expect(servicesApi.getAppServicesStatus).toHaveBeenCalled()
         expect(component.setCountdownTimer).toHaveBeenCalled()
 
-        expect(component.status.length).toBe(2)
+        expect(component.status.length).toBe(24)
 
-        expect(component.status[0].expanded).toBeFalse()
-        expect(component.status[0].data).toBeTruthy()
-        expect(component.status[0].data.title).toBe('Relationship #1')
-        expect(component.status[0].data.cells).toBeTruthy()
-        expect(component.status[0].data.cells.length).toBe(2)
-        expect(component.status[0].data.cells[0].appId).toBeFalsy()
-        expect(component.status[0].data.cells[0].appName).toBeFalsy()
-        expect(component.status[0].data.cells[0].iconType).toBeFalsy()
-        expect(component.status[0].data.cells[0].progress).toBeFalsy()
-        expect(component.status[0].data.cells[0].value).toBe('standby')
-        expect(component.status[0].data.cells[1].appId).toBe(234)
-        expect(component.status[0].data.cells[1].appName).toBe('Kea@192.0.2.1:8080')
-        expect(component.status[0].data.cells[1].iconType).toBeFalsy()
-        expect(component.status[0].data.cells[1].progress).toBeFalsy()
-        expect(component.status[0].data.cells[1].value).toBe('primary')
+        for (let i = 0; i < 12; i++) {
+            expect(component.status[i].relationship.name).toBe('Relationship #1')
+            expect(component.status[i].relationship.cells).toBeTruthy()
+            expect(component.status[i].relationship.cells.length).toBe(2)
+            expect(component.status[i].relationship.cells[0].appId).toBeFalsy()
+            expect(component.status[i].relationship.cells[0].appName).toBeFalsy()
+            expect(component.status[i].relationship.cells[0].iconType).toBeFalsy()
+            expect(component.status[i].relationship.cells[0].progress).toBeFalsy()
+            expect(component.status[i].relationship.cells[0].value).toBe('standby')
+            expect(component.status[i].relationship.cells[1].appId).toBe(234)
+            expect(component.status[i].relationship.cells[1].appName).toBe('Kea@192.0.2.1:8080')
+            expect(component.status[i].relationship.cells[1].iconType).toBeFalsy()
+            expect(component.status[i].relationship.cells[1].progress).toBeFalsy()
+            expect(component.status[i].relationship.cells[1].value).toBe('primary')
+        }
 
-        expect(component.status[1].expanded).toBeFalse()
-        expect(component.status[1].data).toBeTruthy()
-        expect(component.status[1].data.title).toBe('Relationship #2')
-        expect(component.status[1].data.cells).toBeTruthy()
-        expect(component.status[1].data.cells.length).toBe(2)
-        expect(component.status[1].data.cells[0].appId).toBeFalsy()
-        expect(component.status[1].data.cells[0].appName).toBeFalsy()
-        expect(component.status[1].data.cells[0].iconType).toBe('error')
-        expect(component.status[1].data.cells[0].progress).toBeFalsy()
-        expect(component.status[1].data.cells[0].value).toBe('standby')
-        expect(component.status[1].data.cells[1].appId).toBe(345)
-        expect(component.status[1].data.cells[1].appName).toBe('Kea@192.0.2.3:8080')
-        expect(component.status[1].data.cells[1].iconType).toBeFalsy()
-        expect(component.status[1].data.cells[1].progress).toBeFalsy()
-        expect(component.status[1].data.cells[1].value).toBe('primary')
+        for (let i = 12; i < 24; i++) {
+            expect(component.status[i].relationship.name).toBe('Relationship #2')
+            expect(component.status[i].relationship.cells).toBeTruthy()
+            expect(component.status[i].relationship.cells.length).toBe(2)
+            expect(component.status[i].relationship.cells.length).toBe(2)
+            expect(component.status[i].relationship.cells[0].appId).toBeFalsy()
+            expect(component.status[i].relationship.cells[0].appName).toBeFalsy()
+            expect(component.status[i].relationship.cells[0].iconType).toBe('error')
+            expect(component.status[i].relationship.cells[0].progress).toBeFalsy()
+            expect(component.status[i].relationship.cells[0].value).toBe('standby')
+            expect(component.status[i].relationship.cells[1].appId).toBe(345)
+            expect(component.status[i].relationship.cells[1].appName).toBe('Kea@192.0.2.3:8080')
+            expect(component.status[i].relationship.cells[1].iconType).toBeFalsy()
+            expect(component.status[i].relationship.cells[1].progress).toBeFalsy()
+            expect(component.status[i].relationship.cells[1].value).toBe('primary')
+        }
 
+        // Verify that each relationship data rows contain expected titles.
         const expectedTitles = [
             'Heartbeat status',
             'Control status',
@@ -282,66 +286,62 @@ describe('HaStatusComponent', () => {
             'Failover progress',
             'Summary',
         ]
-        for (const serverStatus of component.status) {
-            expect(serverStatus.children?.length).toBe(expectedTitles.length)
-            serverStatus.children.forEach((child, index) => {
-                expect(child.data).toBeTruthy()
-                expect(child.data.title).toBe(expectedTitles.at(index))
-                expect(child.data.cells.length).toBe(2)
-            })
-        }
+        component.status.forEach((row, index) => {
+            expect(row.title).toBe(expectedTitles.at(index % 12))
+            expect(row.cells.length).toBe(2)
+        })
 
-        expect(component.status[0].children[0].data.cells[0].value).toBe('ok')
-        expect(component.status[0].children[0].data.cells[1].value).toBe('ok')
-        expect(component.status[0].children[1].data.cells[0].value).toBe('online')
-        expect(component.status[0].children[1].data.cells[1].value).toBe('online')
-        expect(component.status[0].children[2].data.cells[0].value).toBe('hot-standby')
-        expect(component.status[0].children[2].data.cells[1].value).toBe('hot-standby')
-        expect(component.status[0].children[3].data.cells[0].value).toBe('none (standby server)')
-        expect(component.status[0].children[3].data.cells[1].value).toBe('server1')
-        expect(component.status[0].children[4].data.cells[0].value).toBe('2024-02-16 12:01:02')
-        expect(component.status[0].children[4].data.cells[1].value).toBe('2024-02-16 13:54:23')
-        expect(component.status[0].children[5].data.cells[0].value).toBe('just now')
-        expect(component.status[0].children[5].data.cells[1].value).toBe('just now')
-        expect(component.status[0].children[6].data.cells[0].value).toBe('never')
-        expect(component.status[0].children[6].data.cells[1].value).toBe('never')
-        expect(component.status[0].children[7].data.cells[0].value).toBe('n/a')
-        expect(component.status[0].children[7].data.cells[1].value).toBe('n/a')
-        expect(component.status[0].children[8].data.cells[0].value).toBe('n/a')
-        expect(component.status[0].children[8].data.cells[1].value).toBe('n/a')
-        expect(component.status[0].children[9].data.cells[0].value).toBe('n/a')
-        expect(component.status[0].children[9].data.cells[1].value).toBe('n/a')
-        expect(component.status[0].children[10].data.cells[0].value).toBe('n/a')
-        expect(component.status[0].children[10].data.cells[1].value).toBe('n/a')
-        expect(component.status[0].children[11].data.cells[0].value).toBe('Server is responding to no DHCP traffic.')
-        expect(component.status[0].children[11].data.cells[1].value).toBe('Server is responding to all DHCP traffic.')
+        expect(component.status[0].cells[0].value).toBe('ok')
+        expect(component.status[0].cells[1].value).toBe('ok')
+        expect(component.status[1].cells[0].value).toBe('online')
+        expect(component.status[1].cells[1].value).toBe('online')
+        expect(component.status[2].cells[0].value).toBe('hot-standby')
+        expect(component.status[2].cells[1].value).toBe('hot-standby')
+        expect(component.status[3].cells[0].value).toBe('none (standby server)')
+        expect(component.status[3].cells[1].value).toBe('server1')
+        expect(component.status[4].cells[0].value).toBe('2024-02-16 12:01:02')
+        expect(component.status[4].cells[1].value).toBe('2024-02-16 13:54:23')
+        expect(component.status[5].cells[0].value).toBe('just now')
+        expect(component.status[5].cells[1].value).toBe('just now')
+        expect(component.status[6].cells[0].value).toBe('never')
+        expect(component.status[6].cells[1].value).toBe('never')
+        expect(component.status[7].cells[0].value).toBe('n/a')
+        expect(component.status[7].cells[1].value).toBe('n/a')
+        expect(component.status[8].cells[0].value).toBe('n/a')
+        expect(component.status[8].cells[1].value).toBe('n/a')
+        expect(component.status[9].cells[0].value).toBe('n/a')
+        expect(component.status[9].cells[1].value).toBe('n/a')
+        expect(component.status[10].cells[0].value).toBe('n/a')
+        expect(component.status[10].cells[1].value).toBe('n/a')
+        expect(component.status[11].cells[0].value).toBe('Server is responding to no DHCP traffic.')
+        expect(component.status[11].cells[1].value).toBe('Server is responding to all DHCP traffic.')
 
-        expect(component.status[1].children[0].data.cells[0].value).toBe('failed')
-        expect(component.status[1].children[0].data.cells[0].iconType).toBe('error')
-        expect(component.status[1].children[0].data.cells[1].value).toBe('ok')
-        expect(component.status[1].children[1].data.cells[0].value).toBe('online')
-        expect(component.status[1].children[1].data.cells[1].value).toBe('online')
-        expect(component.status[1].children[2].data.cells[0].value).toBe('hot-standby')
-        expect(component.status[1].children[2].data.cells[1].value).toBe('hot-standby')
-        expect(component.status[1].children[3].data.cells[0].value).toBe('none (standby server)')
-        expect(component.status[1].children[3].data.cells[1].value).toBe('server3')
-        expect(component.status[1].children[4].data.cells[0].value).toBe('2024-02-16 12:01:02')
-        expect(component.status[1].children[4].data.cells[1].value).toBe('2024-02-16 13:54:23')
-        expect(component.status[1].children[5].data.cells[0].value).toBe('just now')
-        expect(component.status[1].children[5].data.cells[1].value).toBe('just now')
-        expect(component.status[1].children[6].data.cells[0].value).toBe('2024-02-16 11:11:12')
-        expect(component.status[1].children[6].data.cells[1].value).toBe('never')
-        expect(component.status[1].children[7].data.cells[0].value).toBe('1 of 6')
-        expect(component.status[1].children[7].data.cells[1].value).toBe('n/a')
-        expect(component.status[1].children[8].data.cells[0].value).toBe(5)
-        expect(component.status[1].children[8].data.cells[1].value).toBe('n/a')
-        expect(component.status[1].children[9].data.cells[0].value).toBe(2)
-        expect(component.status[1].children[9].data.cells[1].value).toBe('n/a')
-        expect(component.status[1].children[10].data.cells[0].value).toBeFalsy()
-        expect(component.status[1].children[10].data.cells[0].progress).toBe(16)
-        expect(component.status[1].children[10].data.cells[1].value).toBe('n/a')
-        expect(component.status[1].children[11].data.cells[0].value).toBe('Server has started a failover procedure.')
-        expect(component.status[1].children[11].data.cells[1].value).toBe('Server is responding to all DHCP traffic.')
+        expect(component.status[12].cells[0].value).toBe('failed')
+        expect(component.status[12].cells[0].iconType).toBe('error')
+        expect(component.status[12].cells[1].value).toBe('ok')
+        expect(component.status[13].cells[0].value).toBe('online')
+        expect(component.status[13].cells[1].value).toBe('online')
+        expect(component.status[14].cells[0].value).toBe('hot-standby')
+        expect(component.status[14].cells[1].value).toBe('hot-standby')
+        expect(component.status[15].cells[0].value).toBe('none (standby server)')
+        expect(component.status[15].cells[1].value).toBe('server3')
+        expect(component.status[16].cells[0].value).toBe('2024-02-16 12:01:02')
+        expect(component.status[16].cells[1].value).toBe('2024-02-16 13:54:23')
+        expect(component.status[17].cells[0].value).toBe('just now')
+        expect(component.status[17].cells[1].value).toBe('just now')
+        expect(component.status[18].cells[0].value).toBe('2024-02-16 11:11:12')
+        expect(component.status[18].cells[1].value).toBe('never')
+        expect(component.status[19].cells[0].value).toBe('1 of 6')
+        expect(component.status[19].cells[1].value).toBe('n/a')
+        expect(component.status[20].cells[0].value).toBe(5)
+        expect(component.status[20].cells[1].value).toBe('n/a')
+        expect(component.status[21].cells[0].value).toBe(2)
+        expect(component.status[21].cells[1].value).toBe('n/a')
+        expect(component.status[22].cells[0].value).toBeFalsy()
+        expect(component.status[22].cells[0].progress).toBe(16)
+        expect(component.status[22].cells[1].value).toBe('n/a')
+        expect(component.status[23].cells[0].value).toBe('Server has started a failover procedure.')
+        expect(component.status[23].cells[1].value).toBe('Server is responding to all DHCP traffic.')
     }))
 
     it('should present a passive-backup configuration state', fakeAsync(() => {
@@ -383,32 +383,32 @@ describe('HaStatusComponent', () => {
         expect(servicesApi.getAppServicesStatus).toHaveBeenCalled()
         expect(component.setCountdownTimer).toHaveBeenCalled()
 
-        expect(component.status.length).toBe(1)
+        expect(component.status.length).toBe(5)
 
-        expect(component.status[0].expanded).toBeFalse()
-        expect(component.status[0].data).toBeTruthy()
-        expect(component.status[0].data.title).toBe('Relationship #1')
-        expect(component.status[0].data.cells).toBeTruthy()
-        expect(component.status[0].data.cells.length).toBe(1)
-        expect(component.status[0].data.cells[0].appId).toBeFalsy()
-        expect(component.status[0].data.cells[0].appName).toBeFalsy()
-        expect(component.status[0].data.cells[0].iconType).toBeFalsy()
-        expect(component.status[0].data.cells[0].progress).toBeFalsy()
-        expect(component.status[0].data.cells[0].value).toBe('primary')
-
-        const expectedTitles = ['Control status', 'State', 'Scopes', 'Status time', 'Status age']
-        expect(component.status[0].children?.length).toBe(expectedTitles.length)
-        component.status[0].children.forEach((child, index) => {
-            expect(child.data).toBeTruthy()
-            expect(child.data.title).toBe(expectedTitles.at(index))
-            expect(child.data.cells.length).toBe(1)
+        component.status.forEach((row) => {
+            expect(row.relationship).toBeTruthy()
+            expect(row.relationship.name).toBe('Relationship #1')
+            expect(row.relationship.cells).toBeTruthy()
+            expect(row.relationship.cells.length).toBe(1)
+            expect(row.relationship.cells[0].appId).toBeFalsy()
+            expect(row.relationship.cells[0].appName).toBeFalsy()
+            expect(row.relationship.cells[0].iconType).toBeFalsy()
+            expect(row.relationship.cells[0].progress).toBeFalsy()
+            expect(row.relationship.cells[0].value).toBe('primary')
         })
 
-        expect(component.status[0].children[0].data.cells[0].value).toBe('online')
-        expect(component.status[0].children[1].data.cells[0].value).toBe('passive-backup')
-        expect(component.status[0].children[2].data.cells[0].value).toBe('server1')
-        expect(component.status[0].children[3].data.cells[0].value).toBe('2024-02-16 01:06:57')
-        expect(component.status[0].children[4].data.cells[0].value).toBe('7 seconds ago')
+        const expectedTitles = ['Control status', 'State', 'Scopes', 'Status time', 'Status age']
+
+        component.status.forEach((row, index) => {
+            expect(row.title).toBe(expectedTitles.at(index))
+            expect(row.cells.length).toBe(1)
+        })
+
+        expect(component.status[0].cells[0].value).toBe('online')
+        expect(component.status[1].cells[0].value).toBe('passive-backup')
+        expect(component.status[2].cells[0].value).toBe('server1')
+        expect(component.status[3].cells[0].value).toBe('2024-02-16 01:06:57')
+        expect(component.status[4].cells[0].value).toBe('7 seconds ago')
     }))
 
     it('should not present HA state when the appId is not matching', fakeAsync(() => {

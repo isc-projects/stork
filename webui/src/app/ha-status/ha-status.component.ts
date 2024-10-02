@@ -2,14 +2,14 @@ import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { interval, lastValueFrom, Subscription } from 'rxjs'
 import { ServicesService } from '../backend/api/api'
 import { KeaHAServerStatus, ServiceStatus } from '../backend'
-import { MessageService, TreeNode } from 'primeng/api'
+import { MessageService } from 'primeng/api'
 import { datetimeToLocal, getErrorMessage } from '../utils'
 
 /**
- * An interface representing a tree table cell data.
+ * An interface representing an HA table cell data.
  *
- * The HA relationships are presented in a tree table. This interface
- * describes the contents of each cell in that table.
+ * The HA relationships are presented in a table. This interface
+ * describes the contents of each data cell in that table.
  */
 interface RelationshipNodeCell {
     iconType?: string
@@ -20,21 +20,31 @@ interface RelationshipNodeCell {
 }
 
 /**
- * An interface representing a tree table node.
+ * An interface representing a table row with relationship name.
  *
- * The HA relationships are presented in a tree table. This interface
- * describes the contents of a table row.
+ * The HA relationships are presented in a table. This interface
+ * describes the contents of a row with the relationship name.
  */
-interface RelationshipRow {
-    title: string
+interface RelationshipTableRow {
+    name: string
     styleClass?: string
     cells: RelationshipNodeCell[]
 }
 
 /**
+ * An interface representing relationship data row.
+ */
+interface RelationshipTableDataRow {
+    relationship: RelationshipTableRow
+    title: string
+    styleClass?: string
+    cells?: RelationshipNodeCell[]
+}
+
+/**
  * A callback type used internally in the component.
  *
- * I sets the tree table cell contents.
+ * I sets the HA table cell contents.
  */
 type RelationshipNodeCellFunction = (serverStatus: KeaHAServerStatus) => RelationshipNodeCell
 
@@ -80,7 +90,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * displayed. This status is updated every time a new request is made to
      * the Stork server.
      */
-    status: TreeNode<RelationshipRow>[] = []
+    status: Array<RelationshipTableDataRow> = []
 
     /**
      * Indicates if the status table should contain a column for partner status.
@@ -163,25 +173,26 @@ export class HaStatusComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Convenience function generating a single relationship node in the tree table.
+     * Convenience function generating a single HA table data row.
      *
      * @param servers statuses of the servers in the relationship.
+     * @param relationship relationship associated with this data row.
      * @param title row title (i.e., the text in the first column).
      * @param fn callback function generating each subsequent cell.
-     * @returns A tree table row as a tree node.
+     * @returns A table row holding generated data.
      */
-    private makeChildNode(
+    private makeTableDataRow(
         servers: KeaHAServerStatus[],
+        relationship: RelationshipTableRow,
         title: string,
         fn: RelationshipNodeCellFunction
-    ): TreeNode<RelationshipRow> {
+    ): RelationshipTableDataRow {
         return {
-            data: {
-                title: title,
-                cells: servers.map((s) => {
-                    return fn(s)
-                }),
-            },
+            relationship: relationship,
+            title: title,
+            cells: servers.map((s) => {
+                return fn(s)
+            }),
         }
     }
 
@@ -195,7 +206,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
         lastValueFrom(this.servicesApi.getAppServicesStatus(this.appId))
             .then((data) => {
                 if (data.items) {
-                    let status: TreeNode<RelationshipRow>[] = []
+                    let status: RelationshipTableDataRow[] = []
                     data.items
                         // Exclude the non-matching daemons and the services that have no
                         // local server state. It is ok if they don't have the remote
@@ -206,7 +217,6 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                                 this.getLocalServerStatus(relationship)
                             )
                         })
-                        // Each relationship is a new top-level row in the table.
                         .forEach((relationship, index) => {
                             // Local server status must exist.
                             const servers = [this.getLocalServerStatus(relationship)]
@@ -215,59 +225,60 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                             if (remoteStatus) {
                                 servers.push(remoteStatus)
                             }
-                            // Build the tree table.
-                            let row: TreeNode<RelationshipRow> = {
-                                // If we're refreshing an existing table let's make sure
-                                // it remains expanded if it was before.
-                                expanded: !!this.status?.[index]?.expanded,
-                                data: {
-                                    styleClass: 'relationship-pane',
-                                    title: `Relationship #${index + 1}`,
-                                    cells: servers.map<RelationshipNodeCell>((s, index) => {
-                                        let cell: RelationshipNodeCell = {
-                                            value: s.role,
-                                        }
-                                        // It only makes sense to add an app link if it is a remote
-                                        // server. The local server is currently displayed.
-                                        if (index > 0) {
-                                            cell.appId = s.appId
-                                            cell.appName = `Kea@${s.controlAddress}`
-                                        }
-                                        return cell
-                                    }),
-                                },
-                                // Now the child rows for the particular relationship. The following
-                                // rows are always present.
-                                children: [
-                                    this.makeChildNode(servers, 'Control status', (s) => {
-                                        return {
-                                            iconType: s.inTouch ? 'ok' : 'error',
-                                            value: this.formatControlStatus(s),
-                                        }
-                                    }),
-                                    this.makeChildNode(servers, 'State', (s) => {
-                                        return {
-                                            iconType: this.getStateIconType(s),
-                                            value: this.formatState(s),
-                                        }
-                                    }),
-                                    this.makeChildNode(servers, 'Scopes', (s) => {
-                                        return { value: this.formatScopes(s) }
-                                    }),
-                                    this.makeChildNode(servers, 'Status time', (s) => {
-                                        return { value: datetimeToLocal(s.statusTime) }
-                                    }),
-                                    this.makeChildNode(servers, 'Status age', (s) => {
-                                        return { value: this.formatAge(s.age) }
-                                    }),
-                                ],
+                            // Create a row holding a relationship name and server data. Subsequent rows
+                            // are associated with this structure which groups the data pertaining to the
+                            // relationship together.
+                            let relationshipRow: RelationshipTableRow = {
+                                styleClass: 'relationship-pane',
+                                name: `Relationship #${index + 1}`,
+                                cells: servers.map<RelationshipNodeCell>((s, index) => {
+                                    let cell: RelationshipNodeCell = {
+                                        value: s.role,
+                                    }
+                                    // It only makes sense to add an app link if it is a remote
+                                    // server. The local server is currently displayed.
+                                    if (index > 0) {
+                                        cell.appId = s.appId
+                                        cell.appName = `Kea@${s.controlAddress}`
+                                    }
+                                    return cell
+                                }),
                             }
+                            // Create an array of data rows associated with the current relationship.
+                            let relationshipDataRows: RelationshipTableDataRow[] = []
+
+                            // Begin with the rows that are always present regardless
+                            // of the HA mode.
+                            relationshipDataRows = [
+                                this.makeTableDataRow(servers, relationshipRow, 'Control status', (s) => {
+                                    return {
+                                        iconType: s.inTouch ? 'ok' : 'error',
+                                        value: this.formatControlStatus(s),
+                                    }
+                                }),
+                                this.makeTableDataRow(servers, relationshipRow, 'State', (s) => {
+                                    return {
+                                        iconType: this.getStateIconType(s),
+                                        value: this.formatState(s),
+                                    }
+                                }),
+                                this.makeTableDataRow(servers, relationshipRow, 'Scopes', (s) => {
+                                    return { value: this.formatScopes(s) }
+                                }),
+                                this.makeTableDataRow(servers, relationshipRow, 'Status time', (s) => {
+                                    return { value: datetimeToLocal(s.statusTime) }
+                                }),
+                                this.makeTableDataRow(servers, relationshipRow, 'Status age', (s) => {
+                                    return { value: this.formatAge(s.age) }
+                                }),
+                            ]
+
                             // Other rows are only displayed if this is a hot-standby or
                             // a load-balancing configuration.
                             if (servers.length > 1) {
                                 // The heartbeat status goes first before anything else.
-                                row.children.unshift(
-                                    this.makeChildNode(servers, 'Heartbeat status', (s) => {
+                                relationshipDataRows.unshift(
+                                    this.makeTableDataRow(servers, relationshipRow, 'Heartbeat status', (s) => {
                                         return {
                                             iconType: !s.commInterrupted ? 'ok' : 'error',
                                             value: this.formatHeartbeatStatus(s),
@@ -275,48 +286,44 @@ export class HaStatusComponent implements OnInit, OnDestroy {
                                     })
                                 )
                                 // Other rows are appended at the end.
-                                row.children = row.children.concat([
-                                    this.makeChildNode(servers, 'Last in partner-down', (s) => {
+                                relationshipDataRows = relationshipDataRows.concat([
+                                    this.makeTableDataRow(servers, relationshipRow, 'Last in partner-down', (s) => {
                                         return { value: datetimeToLocal(s.failoverTime) || 'never' }
                                     }),
-                                    this.makeChildNode(servers, 'Unacked clients', (s) => {
+                                    this.makeTableDataRow(servers, relationshipRow, 'Unacked clients', (s) => {
                                         return { value: this.formatUnackedClients(s) }
                                     }),
-                                    this.makeChildNode(servers, 'Connecting clients', (s) => {
+                                    this.makeTableDataRow(servers, relationshipRow, 'Connecting clients', (s) => {
                                         return { value: this.formatFailoverNumber(s, s.connectingClients) }
                                     }),
-                                    this.makeChildNode(servers, 'Analyzed packets', (s) => {
+                                    this.makeTableDataRow(servers, relationshipRow, 'Analyzed packets', (s) => {
                                         return { value: this.formatFailoverNumber(s, s.analyzedPackets) }
                                     }),
-                                    this.makeChildNode(servers, 'Failover progress', (s) => {
+                                    this.makeTableDataRow(servers, relationshipRow, 'Failover progress', (s) => {
                                         let progress = this.calculateServerFailoverProgress(s)
                                         return progress >= 0 ? { progress: progress } : { value: 'n/a' }
                                     }),
                                     {
-                                        data: {
-                                            title: 'Summary',
-                                            cells: [
-                                                { value: this.createSummary(servers[0], servers[1]) },
-                                                { value: this.createSummary(servers[1], servers[0]) },
-                                            ],
-                                        },
+                                        relationship: relationshipRow,
+                                        title: 'Summary',
+                                        cells: [
+                                            { value: this.createSummary(servers[0], servers[1]) },
+                                            { value: this.createSummary(servers[1], servers[0]) },
+                                        ],
                                     },
                                 ])
                             }
                             // Check if we need to show any icons in the relationship top-level row.
-                            row.data.cells.forEach((c, index) => {
-                                // Check if the columns belonging to this relationship contain any
-                                // non-ok icons. If so, we take the first one and display it in the
-                                // relationship top-level row.
-                                c.iconType = row.children?.find((ch) => {
-                                    return ch.data?.cells?.[index].iconType && ch.data?.cells?.[index].iconType !== 'ok'
-                                })?.data.cells[index].iconType
+                            relationshipRow.cells.forEach((r, index) => {
+                                r.iconType = relationshipDataRows.find((ch) => {
+                                    return ch.cells?.[index].iconType && ch.cells?.[index].iconType !== 'ok'
+                                })?.cells[index].iconType
                             })
-                            status.push(row)
+                            status = status.concat(relationshipDataRows)
                         })
                     // Check if we need to add the partner's column. This is the case in the
                     // hot-standby and load-balancing case.
-                    this.hasPartnerColumn = status.some((s) => s.children?.some((c) => c.data?.cells?.length > 1))
+                    this.hasPartnerColumn = status.some((r) => r.cells?.length > 1)
                     this.status = status
                 }
                 this.loadedOnce = true
@@ -539,7 +546,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      *
      * @param serverStatus status of the server for which the summary is returned
      * @param otherServerStatus status of the partner.
-     * @returns Summary text displayed in the tree table for a server.
+     * @returns Summary text displayed in table for a server.
      */
     createSummary(serverStatus, otherServerStatus: KeaHAServerStatus): string {
         if (this.calculateServerFailoverProgress(serverStatus) >= 0) {

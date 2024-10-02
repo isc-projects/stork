@@ -16,10 +16,11 @@ import { toastDecorator } from '../utils-stories'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ToastModule } from 'primeng/toast'
 import { RouterTestingModule } from '@angular/router/testing'
-import { TreeTableModule } from 'primeng/treetable'
 import { TagModule } from 'primeng/tag'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ProgressBarModule } from 'primeng/progressbar'
+import { TableModule } from 'primeng/table'
+import { ButtonModule } from 'primeng/button'
 
 let mockHubAndSpokeStatus: ServicesStatus = {
     items: [
@@ -149,6 +150,7 @@ export default {
         }),
         moduleMetadata({
             imports: [
+                ButtonModule,
                 PanelModule,
                 TooltipModule,
                 MessageModule,
@@ -156,9 +158,9 @@ export default {
                 ProgressBarModule,
                 ProgressSpinnerModule,
                 RouterTestingModule,
+                TableModule,
                 TagModule,
                 ToastModule,
-                TreeTableModule,
             ],
             declarations: [
                 EntityLinkComponent,

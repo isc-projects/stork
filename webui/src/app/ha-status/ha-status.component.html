@@ -1,7 +1,7 @@
 <div>
     <h3>High Availability</h3>
     <div *ngIf="hasStatus" class="mb-4">
-        <p-treeTable [value]="status" [scrollable]="true" [tableStyle]="{ 'min-width': '50rem' }">
+        <p-table [value]="status" rowGroupMode="subheader" groupRowsBy="relationship.name">
             <ng-template pTemplate="header">
                 <tr>
                     <th></th>
@@ -9,19 +9,58 @@
                     <th *ngIf="hasPartnerColumn">Partner</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-                <tr [ttRow]="rowNode" [class]="rowData.styleClass">
+            <ng-template pTemplate="groupheader" let-statusRow let-rowIndex="rowIndex" let-expanded="expanded">
+                <tr pRowGroupHeader class="relationship-pane">
+                    <td>
+                        <div class="flex align-items-center justify-content-between">
+                            <div class="flex align-items-center">
+                                <button
+                                    type="button"
+                                    pButton
+                                    pRipple
+                                    [pRowToggler]="statusRow"
+                                    class="p-button-text p-button-rounded p-button-plain mr-2"
+                                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                                ></button>
+                                <span *ngIf="statusRow.relationship.name">
+                                    {{ statusRow.relationship.name }}
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                    <td *ngFor="let column of statusRow.relationship.cells">
+                        <span *ngIf="column.value !== undefined" class="ha-ok">{{ column.value }}</span>
+                        <span *ngIf="column.appId && column.appName">
+                            at
+                            <app-entity-link
+                                entity="app"
+                                [showEntityName]="false"
+                                [attrs]="{ id: column.appId, type: 'kea', name: column.appName }"
+                            ></app-entity-link>
+                        </span>
+                        <ng-container [ngSwitch]="column.iconType">
+                            <span *ngSwitchCase="'ok'" class="ml-2 pi pi-check icon-ok"></span>
+                            <span *ngSwitchCase="'warn'" class="ml-2 pi pi-exclamation-triangle icon-warn"></span>
+                            <span *ngSwitchCase="'error'" class="ml-2 pi pi-exclamation-circle icon-error"></span>
+                            <span *ngSwitchCase="'pending'" class="ml-2 pi pi-spin pi-spinner icon-pending"></span>
+                        </ng-container>
+                        <p-progressBar
+                            *ngIf="column.hasOwnProperty('progress')"
+                            [value]="column.progress"
+                        ></p-progressBar>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="rowexpansion" let-statusRow>
+                <tr>
                     <td>
                         <div class="flex align-items-center justify-content-between">
                             <div>
-                                <p-treeTableToggler [rowNode]="rowNode"></p-treeTableToggler>
-                                <span *ngIf="rowData.title">
-                                    {{ rowData.title }}
-                                </span>
+                                {{ statusRow.title }}
                             </div>
                             <div>
-                                <ng-container [ngSwitch]="rowData.title">
-                                    <app-help-tip *ngSwitchCase="'Status time'" [subject]="rowData.title | lowercase">
+                                <ng-container [ngSwitch]="statusRow.title">
+                                    <app-help-tip *ngSwitchCase="'Status time'" [subject]="statusRow.title | lowercase">
                                         <p>
                                             This is the time when the server reported its state for the last time. it is
                                             not necessarily the time when the state information was refreshed in the UI.
@@ -31,7 +70,7 @@
                                             over the control channel.
                                         </p>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Status age'" [subject]="rowData.title | lowercase">
+                                    <app-help-tip *ngSwitchCase="'Status age'" [subject]="statusRow.title | lowercase">
                                         <p>
                                             This is the duration between the "Status Time" and now, i.e. it indicates
                                             how long ago the server reported its state. A long duration indicates that
@@ -41,7 +80,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Control status'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                     >
                                         <p>
                                             An <span class="font-bold">online</span> control status indicates that the
@@ -58,7 +97,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Heartbeat status'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                         width="40vw"
                                     >
                                         <p>
@@ -89,7 +128,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'State'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                         width="40vw"
                                     >
                                         <p>The following are the possible server states:</p>
@@ -143,7 +182,7 @@
                                             </li>
                                         </ul>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Scopes'" [subject]="rowData.title | lowercase">
+                                    <app-help-tip *ngSwitchCase="'Scopes'" [subject]="statusRow.title | lowercase">
                                         <p>
                                             This is a list of HA scopes currently being served by this server. If the
                                             server is responding to the DHCP queries as a
@@ -166,7 +205,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Last in partner-down'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                     >
                                         <p>
                                             This is the last time when the server went to the
@@ -177,7 +216,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Unacked clients'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                     >
                                         <p>
                                             This is the number of clients considered unacked by the partner. This value
@@ -190,7 +229,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Connecting clients'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                     >
                                         <p>
                                             This is the total number of clients trying to get new leases from the server
@@ -203,7 +242,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Analyzed packets'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                     >
                                         <p>
                                             This is a total number of packets directed to the server with which the
@@ -216,7 +255,7 @@
                                     </app-help-tip>
                                     <app-help-tip
                                         *ngSwitchCase="'Failover progress'"
-                                        [subject]="rowData.title | lowercase"
+                                        [subject]="statusRow.title | lowercase"
                                     >
                                         <p>
                                             It shows a progress bar for a failover procedure. When it hits 100% the
@@ -226,14 +265,14 @@
                                             relative to the maximum number of unacked clients.
                                         </p>
                                     </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Summary'" [subject]="rowData.title | lowercase">
+                                    <app-help-tip *ngSwitchCase="'Summary'" [subject]="statusRow.title | lowercase">
                                         <p>It is a summary text describing the status of the HA setup.</p>
                                     </app-help-tip>
                                 </ng-container>
                             </div>
                         </div>
                     </td>
-                    <td *ngFor="let column of rowData.cells">
+                    <td *ngFor="let column of statusRow.cells">
                         <span *ngIf="column.value !== undefined" class="ha-ok">{{ column.value }}</span>
                         <span *ngIf="column.appId && column.appName">
                             at
@@ -256,7 +295,7 @@
                     </td>
                 </tr>
             </ng-template>
-        </p-treeTable>
+        </p-table>
         <div class="mt-2">
             <span class="font-italic text-sm">Status refresh in {{ refreshCountdown }} s.</span>
         </div>
