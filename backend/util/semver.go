@@ -3,6 +3,7 @@ package storkutil
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/pkg/errors"
 )
@@ -81,4 +82,50 @@ func ParseSemanticVersionOrLatest(version string) SemanticVersion {
 		return NewSemanticVersion(math.MaxInt, math.MaxInt, math.MaxInt)
 	}
 	return semver
+}
+
+// Represents sort interface of semantic versions to be ordered ascending.
+type BySemverAsc []SemanticVersion
+
+// sort.Interface methods for sorting semantic versions.
+func (semvers BySemverAsc) Len() int {
+	return len(semvers)
+}
+
+func (semvers BySemverAsc) Less(i, j int) bool {
+	return semvers[i].LessThan(semvers[j])
+}
+
+func (semvers BySemverAsc) Swap(i, j int) {
+	semvers[i], semvers[j] = semvers[j], semvers[i]
+}
+
+// Takes an array of strings, tries to parse them as SemanticVersions, sort them
+// in ascending order and return back as strings.
+func SortSemverStringsAsc(semverStrings []string) ([]string, error) {
+	var results []string
+	var semvers []SemanticVersion
+	for _, semverString := range semverStrings {
+		semver, err := ParseSemanticVersion(semverString)
+		if err != nil {
+			return results, errors.Wrap(err, "problem parsing the semantic version")
+		}
+		semvers = append(semvers, semver)
+	}
+	sort.Sort(BySemverAsc(semvers))
+	for _, semver := range semvers {
+		results = append(results, semver.String())
+	}
+	return results, nil
+}
+
+// Desarializes semantic version from JSON string.
+func (v *SemanticVersion) UnmarshalJSON(data []byte) error {
+	var err error
+	fmt.Printf("UnmarshalJSON %s\n", string(data))
+	*v, err = ParseSemanticVersion(string(data))
+	if err != nil {
+		return err
+	}
+	return nil
 }

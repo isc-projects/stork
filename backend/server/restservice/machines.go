@@ -88,9 +88,12 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 			})
 			return rsp
 		}
+		fmt.Println(string(bytes))
 
-		// Parse the JSON content from the input file.
-		err = json.Unmarshal(bytes, &appsVersions)
+		s := OfflineJsonAppsVersions{}
+
+		err = json.Unmarshal(bytes, &s)
+
 		if err != nil {
 			log.Error(err)
 			msg := "Error parsing the contents of the software versions metadata JSON file"
@@ -99,6 +102,93 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 			})
 			return rsp
 		}
+
+		// fmt.Println(s.Kea.CurrentStable[0].Version.String())
+
+		// var f interface{}
+		// err = json.Unmarshal(bytes, &f)
+		// if err != nil {
+		// 	fmt.Printf("error %s", err)
+		// } else {
+		appsVersions = models.AppsVersions{
+			Date:  s.Date,
+			Bind9: AppVersionMetadataToRestAPI(*s.Bind9),
+			Kea:   AppVersionMetadataToRestAPI(*s.Kea),
+			Stork: AppVersionMetadataToRestAPI(*s.Stork),
+		}
+
+		// m := f.(map[string]interface{})
+		// for k, v := range m {
+		// 	if k == "kea" || k == "bind9" || k == "stork" {
+		// 		fmt.Println(k)
+		// 		fmt.Println(v)
+		// 		appDetails := v.(map[string]interface{})
+		// 		for swRel, iv := range appDetails {
+		// 			fmt.Println(swRel)
+		// 			fmt.Println(iv)
+		// 			if swRel == "currentStable" {
+		// 				verDetailsArr := []models.VersionDetails{}
+		// 				verStrings := []string{}
+
+		// 				stables := iv.([]interface{})
+		// 				for ix := range stables {
+		// 					verDetails := models.VersionDetails{}
+		// 					fmt.Println(stables[ix])
+		// 					sm := stables[ix].(map[string]interface{})
+		// 					version := sm["version"].(string)
+		// 					relDate := sm["releaseDate"].(string)
+		// 					fmt.Println(version)
+		// 					verDetails.Version = &version
+		// 					verDetails.ReleaseDate = &relDate
+		// 					if sm["eolDate"] != nil {
+		// 						verDetails.EolDate = sm["eolDate"].(string)
+		// 					}
+		// 					if sm["esv"] != nil {
+		// 						verDetails.Esv = sm["esv"].(string)
+		// 					}
+		// 					semver, err := storkutil.ParseSemanticVersion(version)
+		// 					if err != nil {
+		// 						log.Error(err)
+		// 						msg := fmt.Sprintf("Error parsing the semver %s", version)
+		// 						rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		// 							Message: &msg,
+		// 						})
+		// 						return rsp
+		// 					}
+		// 					verDetails.Major = int64(semver.Major)
+		// 					verDetails.Minor = int64(semver.Minor)
+		// 					verDetails.Range = fmt.Sprintf("%d.%d.x", &verDetails.Major, &verDetails.Minor)
+		// 					verDetails.Status = "Current Stable"
+		// 					verDetailsArr = append(verDetailsArr, verDetails)
+		// 					verStrings = append(verStrings, version)
+		// 				}
+		// 				verStrings, err = storkutil.SortSemverStringsAsc(verStrings)
+		// 				if err == nil {
+		// 					fmt.Println(verStrings)
+		// 					fmt.Println(verDetailsArr)
+		// 				} else {
+		// 					log.Error(err)
+		// 					msg := fmt.Sprintf("Error parsing the semver %s", err)
+		// 					rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		// 						Message: &msg,
+		// 					})
+		// 					return rsp
+		// 				}
+		// 			}
+		// 			// else {
+		// 			// 	sws := iv.(interface{})
+		// 			// 	fmt.Println(sws)
+		// 			// }
+		// 		}
+		// 	}
+		// }
+		// }
+		// test := f.(models.AppsVersions)
+
+		// Parse the JSON content from the input file.
+		// err = json.Unmarshal(bytes, &appsVersions)
+
+		// return general.NewGetIscSwVersionsOK().WithPayload(&test)
 	}
 
 	appsVersions.OnlineData = onlineData

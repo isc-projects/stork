@@ -134,6 +134,10 @@ definitions:
           $ref: '#/definitions/VersionDetails'
       latestSecure:
         $ref: '#/definitions/VersionDetails'
+      sortedStables:
+        type: array
+        items:
+          type: string
   
   AppsVersions:
     type: object
