@@ -1,10 +1,5 @@
 package keaconfig
 
-import (
-	"reflect"
-	"strings"
-)
-
 var _ commonConfigAccessor = (*CtrlAgentConfig)(nil)
 
 // Represents Kea Control Agent's configuration.
@@ -45,13 +40,19 @@ func (cs *ControlSockets) GetConfiguredDaemonNames() (names []string) {
 		return
 	}
 
-	s := reflect.ValueOf(cs).Elem()
-	t := s.Type()
-	for i := 0; i < s.NumField(); i++ {
-		if !s.Field(i).IsNil() {
-			names = append(names, strings.ToLower(t.Field(i).Name))
-		}
+	if cs.D2 != nil {
+		names = append(names, "d2")
 	}
+	if cs.Dhcp4 != nil {
+		names = append(names, "dhcp4")
+	}
+	if cs.Dhcp6 != nil {
+		names = append(names, "dhcp6")
+	}
+	if cs.NetConf != nil {
+		names = append(names, "netconf")
+	}
+
 	return
 }
 
