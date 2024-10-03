@@ -2,7 +2,6 @@ package agent
 
 import (
 	"encoding/json"
-	"io"
 	"testing"
 	"time"
 
@@ -25,7 +24,7 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 				},
 				HTTPClient:        nil,
 				ConfiguredDaemons: []string{"dhcp4", "dhcp6"},
-				ActiveDaemons:     []string{"dhcp4"},
+				ActiveDaemons:     []string{"dhcp4", "dhcp6"},
 			},
 		},
 	}
@@ -65,16 +64,30 @@ func TestPromKeaExporterStart(t *testing.T) {
 		Persist().
 		Reply(200).
 		BodyString(`[{
-			"result":0,
+			"result": 0,
 			"arguments": {
-                    "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
-                    "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
+				"subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
+				"pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
             }
+		}]`)
+
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "subnet4-list",
+			"service":   []string{"dhcp4"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result": 3,
+			"text": "Command not supported"
 		}]`)
 
 	fam := newFakeMonitorWithDefaults()
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -93,24 +106,13 @@ func TestPromKeaExporterStart(t *testing.T) {
 			},
 		)
 		return testutil.ToFloat64(metric) == 13.0
-	}, 10*time.Second, 500*time.Millisecond)
+	}, 100*time.Millisecond, 5*time.Millisecond)
 
 	// check if pkt4-nak-received is 19
 	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
 
-	require.True(t, gock.HasUnmatchedRequest())
-	unmatchedRequests := gock.GetUnmatchedRequests()
-	require.Len(t, unmatchedRequests, 1)
-	unmatchedRequest := unmatchedRequests[0]
-	require.NotNil(t, unmatchedRequest)
-	body, err := io.ReadAll(unmatchedRequest.Body)
-	require.NoError(t, err)
-	var request map[string]interface{}
-	err = json.Unmarshal(body, &request)
-	require.NoError(t, err)
-	require.Contains(t, request, "command")
-	require.EqualValues(t, "subnet4-list", request["command"])
+	require.False(t, gock.HasUnmatchedRequest())
 }
 
 // Test if the Kea JSON get-all-stats response is unmarshal correctly.
@@ -457,21 +459,22 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 
 	// Act
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, false, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, false, fam, httpClient)
 	defer pke.Shutdown()
 	gock.InterceptClient(pke.HTTPClient.client)
 	pke.Start()
-	// wait 1.5 seconds that collecting is invoked at least once
-	time.Sleep(1500 * time.Millisecond)
 
 	// Assert
+	// Wait for collecting.
+	require.Eventually(t, func() bool {
+		metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
+		// Check if pkt4-nak-received has expected value.
+		return testutil.ToFloat64(metric) == 19.0
+	}, 100*time.Millisecond, 5*time.Millisecond)
+
 	require.Nil(t, pke.Adr4StatsMap)
 
-	// check if pkt4-nak-received is 19
-	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
-	require.Equal(t, 19.0, testutil.ToFloat64(metric))
-
-	// Has no unnecessary calls
+	// Has no unnecessary calls.
 	require.False(t, gock.HasUnmatchedRequest())
 }
 
