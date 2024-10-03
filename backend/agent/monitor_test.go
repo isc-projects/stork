@@ -281,6 +281,40 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 	require.Equal(t, AppTypeBind9, am.apps[0].GetBaseApp().Type)
 }
 
+// The monitor periodically searches for the Kea/Bind9 instances. Usually, at
+// least one application should be available. If no monitored app is found,
+// the Stork prints the warning message to indicate that something unexpected
+// happened.
+func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
+	// Arrange
+	// Prepare logger.
+	output := logrus.StandardLogger().Out
+	defer func() {
+		logrus.SetOutput(output)
+	}()
+	var buffer bytes.Buffer
+	logrus.SetOutput(&buffer)
+
+	// Mock Stork agent.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	processManager := NewMockProcessManager(ctrl)
+	processManager.EXPECT().ListProcesses().Return([]Process{}, nil)
+
+	executor := newTestCommandExecutorDefault()
+	am := &appMonitor{processManager: processManager, commander: executor}
+	hm := NewHookManager()
+	httpClient := NewHTTPClient()
+	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
+
+	// Act
+	am.detectApps(sa)
+
+	// Assert
+	require.Contains(t, buffer.String(), "No Kea nor Bind9 app detected for monitoring")
+}
+
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{}
@@ -549,26 +583,6 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 	var oldApps []App
 
 	printNewOrUpdatedApps(newApps, oldApps)
-}
-
-// The monitor periodically searches for the Kea/Bind9 instances. Usually, at
-// least one application should be available. If no monitored app is found,
-// the Stork prints the warning message to indicate that something unexpected
-// happened.
-func TestPrintNewOrUpdatedAppsNoAppDetectedWarning(t *testing.T) {
-	// Arrange
-	output := logrus.StandardLogger().Out
-	defer func() {
-		logrus.SetOutput(output)
-	}()
-	var buffer bytes.Buffer
-	logrus.SetOutput(&buffer)
-
-	// Act
-	printNewOrUpdatedApps([]App{}, []App{})
-
-	// Assert
-	require.Contains(t, buffer.String(), "No Kea nor Bind9 app detected for monitoring")
 }
 
 // Test that the active Kea daemons are recognized properly.
