@@ -101,23 +101,15 @@ func (semvers BySemverAsc) Swap(i, j int) {
 	semvers[i], semvers[j] = semvers[j], semvers[i]
 }
 
-// Takes an array of strings, tries to parse them as SemanticVersions, sort them
-// in ascending order and return back as strings.
-func SortSemverStringsAsc(semverStrings []string) ([]string, error) {
+// Takes an array of SemanticVersions and sorts them
+// in ascending order and returns back as an array of version strings.
+func SortSemversAsc(semvers *[]SemanticVersion) []string {
 	var results []string
-	var semvers []SemanticVersion
-	for _, semverString := range semverStrings {
-		semver, err := ParseSemanticVersion(semverString)
-		if err != nil {
-			return results, errors.Wrap(err, "problem parsing the semantic version")
-		}
-		semvers = append(semvers, semver)
-	}
-	sort.Sort(BySemverAsc(semvers))
-	for _, semver := range semvers {
+	sort.Sort(BySemverAsc(*semvers))
+	for _, semver := range *semvers {
 		results = append(results, semver.String())
 	}
-	return results, nil
+	return results
 }
 
 // Deserializes semantic version from JSON string.

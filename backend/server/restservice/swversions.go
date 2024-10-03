@@ -70,18 +70,15 @@ func VersionDetailsToRestAPI(input ReportVersionDetails) *models.VersionDetails 
 // and an array of strings with stable release semvers sorted in ascending order.
 func StableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, []string) {
 	versionDetailsArr := []*models.VersionDetails{}
-	stablesArr := []string{}
+	stablesArr := []storkutil.SemanticVersion{}
 
 	for _, details := range input {
 		element := VersionDetailsToRestAPI(*details)
-		stablesArr = append(stablesArr, *element.Version)
+		stablesArr = append(stablesArr, details.Version)
 		element.Status = "Current Stable"
 		element.Range = fmt.Sprintf("%d.%d.x", int(element.Major), int(element.Minor))
 		versionDetailsArr = append(versionDetailsArr, element)
 	}
-	stablesArr, err := storkutil.SortSemverStringsAsc(stablesArr)
-	if err != nil {
-		return nil, nil
-	}
-	return versionDetailsArr, stablesArr
+	stablesStringArr := storkutil.SortSemversAsc(&stablesArr)
+	return versionDetailsArr, stablesStringArr
 }
