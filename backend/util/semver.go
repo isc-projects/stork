@@ -1,6 +1,7 @@
 package storkutil
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
@@ -119,11 +120,14 @@ func SortSemverStringsAsc(semverStrings []string) ([]string, error) {
 	return results, nil
 }
 
-// Desarializes semantic version from JSON string.
+// Deserializes semantic version from JSON string.
 func (v *SemanticVersion) UnmarshalJSON(data []byte) error {
-	var err error
-	fmt.Printf("UnmarshalJSON %s\n", string(data))
-	*v, err = ParseSemanticVersion(string(data))
+	var version string
+	err := json.Unmarshal(data, &version)
+	if err != nil {
+		return err
+	}
+	*v, err = ParseSemanticVersion(version)
 	if err != nil {
 		return err
 	}

@@ -7,59 +7,30 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-type OfflineJsonVersionDetails struct {
-
-	// eol date
-	EolDate string `json:"eolDate,omitempty"`
-
-	// esv
-	Esv string `json:"esv,omitempty"`
-
-	// release date
-	// Required: true
-	ReleaseDate *string `json:"releaseDate"`
-
-	// status
-	Status string `json:"status,omitempty"`
-
-	// version
-	// Required: true
-	Version storkutil.SemanticVersion `json:"version"`
+// Structs used to deserialize offline versions.json report.
+type ReportVersionDetails struct {
+	EolDate     string                    `json:"eolDate,omitempty"`
+	Esv         string                    `json:"esv,omitempty"`
+	ReleaseDate *string                   `json:"releaseDate"`
+	Status      string                    `json:"status,omitempty"`
+	Version     storkutil.SemanticVersion `json:"version"`
 }
 
-type OfflineJsonAppVersionMetadata struct {
-
-	// current stable
-	CurrentStable []*OfflineJsonVersionDetails `json:"currentStable,omitempty"`
-
-	// latest dev
-	// Required: true
-	LatestDev *OfflineJsonVersionDetails `json:"latestDev,omitempty"`
-
-	// latest secure
-	LatestSecure *OfflineJsonVersionDetails `json:"latestSecure,omitempty"`
+type ReportAppVersionMetadata struct {
+	CurrentStable []*ReportVersionDetails `json:"currentStable,omitempty"`
+	LatestDev     *ReportVersionDetails   `json:"latestDev,omitempty"`
+	LatestSecure  *ReportVersionDetails   `json:"latestSecure,omitempty"`
 }
 
-type OfflineJsonAppsVersions struct {
-
-	// bind9
-	// Required: true
-	Bind9 *OfflineJsonAppVersionMetadata `json:"bind9"`
-
-	// date
-	// Required: true
-	Date *string `json:"date"`
-
-	// out
-	// Required: true
-	Kea *OfflineJsonAppVersionMetadata `json:"out"`
-
-	// stork
-	// Required: true
-	Stork *OfflineJsonAppVersionMetadata `json:"stork"`
+type ReportAppsVersions struct {
+	Bind9 *ReportAppVersionMetadata `json:"bind9"`
+	Date  *string                   `json:"date"`
+	Kea   *ReportAppVersionMetadata `json:"kea"`
+	Stork *ReportAppVersionMetadata `json:"stork"`
 }
 
-func AppVersionMetadataToRestAPI(input OfflineJsonAppVersionMetadata) *models.AppVersionMetadata {
+// Post processes either Kea, Bind9 or Stork version metadata and returns the data in REST API format.
+func AppVersionMetadataToRestAPI(input ReportAppVersionMetadata) *models.AppVersionMetadata {
 	out := models.AppVersionMetadata{}
 	if input.LatestSecure != nil {
 		out.LatestSecure = VersionDetailsToRestAPI(*input.LatestSecure)
@@ -72,11 +43,11 @@ func AppVersionMetadataToRestAPI(input OfflineJsonAppVersionMetadata) *models.Ap
 	if input.CurrentStable != nil {
 		out.CurrentStable, out.SortedStables = StableSwVersionsToRestAPI(input.CurrentStable)
 	}
-
 	return &out
 }
 
-func VersionDetailsToRestAPI(input OfflineJsonVersionDetails) *models.VersionDetails {
+// Post processes either Kea, Bind9 or Stork software release details and returns the data in REST API format.
+func VersionDetailsToRestAPI(input ReportVersionDetails) *models.VersionDetails {
 	v := input.Version.String()
 	out := models.VersionDetails{
 		Version:     &v,
@@ -93,12 +64,15 @@ func VersionDetailsToRestAPI(input OfflineJsonVersionDetails) *models.VersionDet
 	return &out
 }
 
-func StableSwVersionsToRestAPI(input []*OfflineJsonVersionDetails) ([]*models.VersionDetails, []string) {
+// Post processes either Kea, Bind9 or Stork stable release details and returns the data in REST API format.
+// Takes an array of pointers to ReportVersionDetails for stable realeases.
+// Returns an array of pointers to VersionDetails for stable realeases in REST API format
+// and an array of strings with stable release semvers sorted in ascending order.
+func StableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, []string) {
 	versionDetailsArr := []*models.VersionDetails{}
 	stablesArr := []string{}
 
 	for _, details := range input {
-
 		element := VersionDetailsToRestAPI(*details)
 		stablesArr = append(stablesArr, *element.Version)
 		element.Status = "Current Stable"
@@ -106,10 +80,8 @@ func StableSwVersionsToRestAPI(input []*OfflineJsonVersionDetails) ([]*models.Ve
 		versionDetailsArr = append(versionDetailsArr, element)
 	}
 	stablesArr, err := storkutil.SortSemverStringsAsc(stablesArr)
-
 	if err != nil {
 		return nil, nil
 	}
-
 	return versionDetailsArr, stablesArr
 }
