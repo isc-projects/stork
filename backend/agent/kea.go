@@ -258,7 +258,11 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) *KeaApp {
 	} else {
 		daemons = nil
 		for _, r := range responses {
-			if r.GetError() == nil {
+			if err := r.GetError(); err != nil {
+				log.WithError(err).
+					WithField("daemon", r.GetDaemon()).
+					Errorf("Failed to communicate with Kea daemon")
+			} else {
 				daemons = append(daemons, r.GetDaemon())
 			}
 		}

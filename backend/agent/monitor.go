@@ -260,7 +260,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 	}
 
 	// Check changes in apps and print them.
-	if len(apps) == 0 && len(sm.apps) == 0 {
+	if len(apps) == 0 {
 		if !sm.isNoAppsReported {
 			// Agent is starting up but no app to monitor has been detected.
 			// Usually, the agent is installed with at least one monitored app.
