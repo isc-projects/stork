@@ -58,12 +58,6 @@ func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
 }
 
-// Returns a list of the configured daemons in a given application.
-func (ba *Bind9App) GetConfiguredDaemons() []string {
-	// Bind9 is a single daemon application.
-	return []string{"named"}
-}
-
 // List of BIND 9 executables used during app detection.
 const (
 	namedCheckconfExec = "named-checkconf"

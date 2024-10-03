@@ -43,7 +43,6 @@ type BaseApp struct {
 type App interface {
 	GetBaseApp() *BaseApp
 	DetectAllowedLogs() ([]string, error)
-	GetConfiguredDaemons() []string
 }
 
 // Currently supported types are: "kea" and "bind9".
