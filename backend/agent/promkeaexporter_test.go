@@ -83,21 +83,20 @@ func TestPromKeaExporterStart(t *testing.T) {
 	pke.Start()
 	require.NotNil(t, pke.Ticker)
 
-	// wait 1.5 seconds that collecting is invoked at least once
-	time.Sleep(1500 * time.Millisecond)
-
-	// check if assigned-addresses is 13
-	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
-		prometheus.Labels{
-			"subnet":    "7",
-			"subnet_id": "7",
-			"prefix":    "",
-		},
-	)
-	require.Equal(t, 13.0, testutil.ToFloat64(metric))
+	// wait for collecting is invoked at least once
+	require.Eventually(t, func() bool {
+		metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+			prometheus.Labels{
+				"subnet":    "7",
+				"subnet_id": "7",
+				"prefix":    "",
+			},
+		)
+		return testutil.ToFloat64(metric) == 13.0
+	}, 10*time.Second, 500*time.Millisecond)
 
 	// check if pkt4-nak-received is 19
-	metric, _ = pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
+	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
 
 	require.True(t, gock.HasUnmatchedRequest())
