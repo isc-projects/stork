@@ -221,7 +221,7 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *Config {
 	return cfg
 }
 
-// Test that Kea DHCPv4 configuration is recognised and parsed.
+// Test that Kea DHCPv4 configuration is recognized and parsed.
 func TestDecodeDHCPv4(t *testing.T) {
 	var config Config
 	err := json.Unmarshal(testutil.AllKeysDHCPv4JSON, &config)
@@ -235,7 +235,7 @@ func TestDecodeDHCPv4(t *testing.T) {
 	require.JSONEq(t, string(testutil.AllKeysDHCPv4JSON), string(marshalled))
 }
 
-// Test that Kea DHCPv6 configuration is recognised and parsed.
+// Test that Kea DHCPv6 configuration is recognized and parsed.
 func TestDecodeDHCPv6(t *testing.T) {
 	var config Config
 	err := json.Unmarshal(testutil.AllKeysDHCPv6JSON, &config)

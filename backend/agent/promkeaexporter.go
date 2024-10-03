@@ -871,17 +871,24 @@ func (pke *PromKeaExporter) collectStats() error {
 		keaApp := app.(*KeaApp)
 		keaAppsCount++
 
-		// Collect the list of the configured DHCP daemons in a given app to
+		// Count the configured daemons.
+		for _, daemon := range keaApp.GetConfiguredDaemons() {
+			if daemon == "dhcp4" {
+				configuredDHCP4DaemonsCount++
+			} else if daemon == "dhcp6" {
+				configuredDHCP6DaemonsCount++
+			}
+		}
+
+		// Collect the list of the active DHCP daemons in a given app to
 		// avoid sending requests to non-existing daemons.
 		var services []string
-		for _, daemon := range keaApp.GetConfiguredDaemons() {
+		for _, daemon := range keaApp.GetActiveDaemons() {
 			// Select services (daemons) that support the get-statistics-all
 			// command.
 			if daemon == "dhcp4" {
-				configuredDHCP4DaemonsCount++
 				services = append(services, daemon)
 			} else if daemon == "dhcp6" {
-				configuredDHCP6DaemonsCount++
 				services = append(services, daemon)
 			}
 		}

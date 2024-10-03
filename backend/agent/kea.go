@@ -18,6 +18,7 @@ import (
 type KeaApp struct {
 	BaseApp
 	HTTPClient        *HTTPClient // to communicate with Kea Control Agent
+	ActiveDaemons     []string
 	ConfiguredDaemons []string
 }
 
@@ -135,21 +136,9 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	// Allow the log files used by the CA.
 	paths := collectKeaAllowedLogs(&responses[0])
 
-	// Arguments should be returned in response to the config-get command.
-	rawConfig := responses[0].Arguments
-	if rawConfig == nil {
-		return nil, errors.Errorf("empty arguments received from Kea CA in response to config-get command sent to %s:%d", ap.Address, ap.Port)
-	}
-	// The returned configuration has unexpected structure.
-	config := keaconfig.NewConfigFromMap(rawConfig)
-	if config == nil {
-		return nil, errors.Errorf("unable to parse the config received from Kea CA in response to config-get command sent to %s:%d", ap.Address, ap.Port)
-	}
-
-	// Control Agent should be configured to forward commands to some
-	// daemons behind it.
-	sockets := config.GetControlSockets()
-	daemonNames := sockets.GetConfiguredDaemonNames()
+	// Send the command only to the active daemons from all daemons configured
+	// in the CA.
+	daemonNames := ka.GetActiveDaemons()
 
 	// Apparently, it isn't configured to forward commands to the daemons behind it.
 	if len(daemonNames) == 0 {
@@ -180,6 +169,11 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	return paths, nil
 }
 
+// Returns a list of the active daemons in a given application.
+func (ka *KeaApp) GetActiveDaemons() []string {
+	return ka.ActiveDaemons
+}
+
 // Returns a list of the configured daemons in a given application.
 func (ka *KeaApp) GetConfiguredDaemons() []string {
 	return ka.ConfiguredDaemons
@@ -202,7 +196,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 	return config, err
 }
 
-func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
+func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) *KeaApp {
 	if len(match) < 3 {
 		log.Warnf("Problem parsing Kea cmdline: %s", match[0])
 		return nil
@@ -227,6 +221,9 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 		return nil
 	}
 
+	// Configured daemons
+	daemons := config.GetControlSockets().GetConfiguredDaemonNames()
+
 	// Address
 	address, _ := config.GetHTTPHost()
 
@@ -243,9 +240,31 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 			Type:         AppTypeKea,
 			AccessPoints: accessPoints,
 		},
-		HTTPClient:        httpClient,
-		ConfiguredDaemons: config.GetControlSockets().GetConfiguredDaemonNames(),
+		HTTPClient: httpClient,
+		// Initially, all daemons are considered active.
+		ActiveDaemons: daemons,
 	}
+
+	// Detect active daemons.
+	// Send the version-get command to each daemon to check if it is running.
+	command := keactrl.NewCommandBase(keactrl.VersionGet, daemons...)
+	responses := keactrl.ResponseList{}
+	err = keaApp.sendCommand(command, &responses)
+	// Empty list. It now contains only the daemons that are running.
+	daemons = nil
+	if err != nil {
+		// The Kea CA seems to be down, so we cannot detect the active daemons.
+		log.WithError(err).Error("Failed to send command to Kea Control Agent")
+	} else {
+		daemons = nil
+		for _, r := range responses {
+			if r.GetError() == nil {
+				daemons = append(daemons, r.GetDaemon())
+			}
+		}
+	}
+
+	keaApp.ActiveDaemons = daemons
 
 	return keaApp
 }

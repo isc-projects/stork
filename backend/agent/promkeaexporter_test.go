@@ -25,6 +25,7 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 				},
 				HTTPClient:        nil,
 				ConfiguredDaemons: []string{"dhcp4", "dhcp6"},
+				ActiveDaemons:     []string{"dhcp4"},
 			},
 		},
 	}
@@ -560,6 +561,7 @@ func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
 		HTTPClient: nil,
 		// Reduced list of the configured daemons.
 		ConfiguredDaemons: []string{"dhcp6"},
+		ActiveDaemons:     []string{"dhcp6"},
 	})
 
 	httpClient := NewHTTPClient()

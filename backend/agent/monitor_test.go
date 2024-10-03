@@ -430,6 +430,14 @@ func TestDetectKeaApp(t *testing.T) {
 		app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
 		checkApp(app)
 	})
+
+	t.Run("active daemons", func(t *testing.T) {
+		t.Fail()
+	})
+
+	t.Run("active and inactive daemons", func(t *testing.T) {
+		t.Fail()
+	})
 }
 
 func TestGetAccessPoint(t *testing.T) {
@@ -563,8 +571,8 @@ func TestPrintNewOrUpdatedAppsNoAppDetectedWarning(t *testing.T) {
 	require.Contains(t, buffer.String(), "No Kea nor Bind9 app detected for monitoring")
 }
 
-// Test that the configured Kea daemons are recognized properly.
-func TestDetectConfiguredDaemons(t *testing.T) {
+// Test that the active Kea daemons are recognized properly.
+func TestDetectActiveDaemons(t *testing.T) {
 	// Arrange
 	configPath, clean := makeKeaConfFile()
 	defer clean()
@@ -574,17 +582,22 @@ func TestDetectConfiguredDaemons(t *testing.T) {
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
 	configuredDaemons := app.GetConfiguredDaemons()
+	activeDaemons := app.GetActiveDaemons()
 
 	// Assert
 	require.Len(t, configuredDaemons, 3)
 	require.Contains(t, configuredDaemons, "dhcp4")
 	require.Contains(t, configuredDaemons, "dhcp6")
 	require.Contains(t, configuredDaemons, "d2")
+
+	require.Len(t, activeDaemons, 2)
+	require.Contains(t, activeDaemons, "dhcp4")
+	require.Contains(t, activeDaemons, "dhcp6")
 }
 
-// Test that the configured Kea daemons are recognized properly even if a single
+// Test that the active Kea daemons are recognized properly even if a single
 // daemon is provided.
-func TestDetectConfiguredSingleDaemon(t *testing.T) {
+func TestDetectActiveSingleDaemon(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -601,8 +614,11 @@ func TestDetectConfiguredSingleDaemon(t *testing.T) {
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
 	configuredDaemons := app.GetConfiguredDaemons()
+	activeDaemons := app.GetActiveDaemons()
 
 	// Assert
 	require.Len(t, configuredDaemons, 1)
 	require.Contains(t, configuredDaemons, "dhcp4")
+	require.Len(t, activeDaemons, 1)
+	require.Contains(t, activeDaemons, "dhcp4")
 }
