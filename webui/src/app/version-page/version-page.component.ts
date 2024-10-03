@@ -165,7 +165,8 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                 // todo: forkJoin or other operator instead inner subscribe?
                 this.servicesApi.getMachinesAppsVersions().subscribe({
                     next: (data) => {
-                        data.items.map((m) => {
+                        data.items.map((machine) => {
+                            let m = machine as Machine & { versionCheckSeverity: Severity }
                             m.versionCheckSeverity = Severity.success
                             // TODO: daemons version match check
                             m.versionCheckSeverity = Math.min(
