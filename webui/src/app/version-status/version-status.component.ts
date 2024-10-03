@@ -1,7 +1,9 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { App, Severity, VersionService } from '../version.service'
 import { MessageService } from 'primeng/api'
-import { Subscription } from 'rxjs'
+import { first, Subscription } from 'rxjs'
+import { getErrorMessage } from '../utils'
+import { map } from 'rxjs/operators'
 
 /**
  * This component displays feedback information about the used version of either Kea, Bind9, or Stork software.
@@ -99,25 +101,32 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         if (sanitizedSemver) {
             this.version = sanitizedSemver
             this._subscriptions.add(
-                this.versionService.checkVersion(sanitizedSemver, this.app).subscribe({
-                    next: (feedback) => {
-                        if (feedback) {
-                            this.setSeverity(feedback.severity, feedback.feedback)
-                        }
-                    },
-                    error: (err) => {
-                        console.log(err)
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Error checking software version',
-                            detail: `Error occurred while checking ${this.appName} software version ${this.version} : ${err}`,
-                            life: 10000,
-                        })
-                    },
-                    complete: () => {
-                        console.log('complete')
-                    },
-                })
+                this.versionService
+                    .getCurrentData()
+                    .pipe(
+                        map((data) => {
+                            return this.versionService.getSoftwareVersionFeedback(sanitizedSemver, this.app, data)
+                        }),
+                        // Use first() operator to unsubscribe after receiving first data.
+                        // This is to avoid too many subscriptions for larger Stork deployments.
+                        first()
+                    )
+                    .subscribe({
+                        next: (feedback) => {
+                            if (feedback) {
+                                this.setSeverity(feedback.severity, feedback.feedback)
+                            }
+                        },
+                        error: (err) => {
+                            let msg = getErrorMessage(err)
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Error fetching software versions data',
+                                detail: 'Error when fetching software versions data: ' + msg,
+                                life: 10000,
+                            })
+                        },
+                    })
             )
         } else {
             this.messageService.add({

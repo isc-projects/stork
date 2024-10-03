@@ -1,32 +1,8 @@
 import { Injectable } from '@angular/core'
-import { minor, major, sort, coerce, valid, lt, satisfies, gt } from 'semver'
-import { deepCopy } from './utils'
+import { minor, coerce, valid, lt, satisfies, gt } from 'semver'
 import { AppsVersions, GeneralService } from './backend'
-import { map, mergeMap, shareReplay, switchMap, take } from 'rxjs/operators'
-import { BehaviorSubject, Observable, of, ReplaySubject } from 'rxjs'
-
-/**
- * Interface defining fields for an object which describes either Stork, Kea or Bind9 software release.
- */
-export interface VersionDetails {
-    version: string
-    releaseDate: string
-    eolDate?: string
-    ESV?: string
-    status?: string
-    major?: number
-    minor?: number
-    range?: string
-}
-
-/**
- * Interface defining fields for an object which describes all possible types for either Stork, Kea or Bind9 software release.
- */
-export interface AppVersionMetadata {
-    currentStable?: VersionDetails[]
-    latestDev: VersionDetails
-    latestSecure?: VersionDetails
-}
+import { map, mergeMap, shareReplay } from 'rxjs/operators'
+import { BehaviorSubject, Observable } from 'rxjs'
 
 /**
  * Interface defining fields for an object which is returned after assessment of software version is done for particular App.
@@ -66,274 +42,122 @@ type ReleaseType = 'latestSecure' | 'currentStable' | 'latestDev'
     providedIn: 'root',
 })
 export class VersionService {
-    // dataManufactureDate: string
-
+    /**
+     * A map for caching returning feedback for queried app and version.
+     * The key of the map is the concatenated version and app, e.g. "2.6.1kea" or "1.18.0stork".
+     * @private
+     */
     private _checkedVersionCache: Map<string, VersionFeedback>
 
-    private _processedData: AppsVersions
-    // { [a in App | 'date']: AppVersionMetadata | string }
-
-    private _stableVersion: { [a in App]: string[] }
-
-    // static for now; to be provided from server
-    // versionMetadata: { [a in App | 'date']: AppVersionMetadata | string } = {
-    //     date: '2024-09-01',
-    //     kea: {
-    //         currentStable: [
-    //             {
-    //                 version: '2.6.1',
-    //                 releaseDate: '2024-07-31',
-    //                 eolDate: '2026-07-01',
-    //             },
-    //             {
-    //                 version: '2.4.1',
-    //                 releaseDate: '2023-11-29',
-    //                 eolDate: '2025-07-01',
-    //             },
-    //         ],
-    //         latestDev: {
-    //             version: '2.7.2',
-    //             releaseDate: '2024-08-28',
-    //         },
-    //     },
-    //     stork: {
-    //         latestDev: {
-    //             version: '1.18.0',
-    //             releaseDate: '2024-08-07',
-    //         },
-    //         latestSecure: {
-    //             version: '1.15.1',
-    //             releaseDate: '2024-03-27',
-    //         },
-    //     },
-    //     bind9: {
-    //         currentStable: [
-    //             {
-    //                 version: '9.18.29',
-    //                 releaseDate: '2024-08-21',
-    //                 eolDate: '2026-07-01',
-    //                 ESV: 'true',
-    //             },
-    //             {
-    //                 version: '9.20.1',
-    //                 releaseDate: '2024-08-28',
-    //                 eolDate: '2028-07-01',
-    //             },
-    //         ],
-    //         latestDev: {
-    //             version: '9.21.0',
-    //             releaseDate: '2024-08-28',
-    //         },
-    //     },
-    // }
-
+    /**
+     * RxJS BehaviorSubject used to trigger current software versions data refresh from the backend.
+     * @private
+     */
     private _currentDataSubject$ = new BehaviorSubject(undefined)
 
-    dataProcessed$ = new ReplaySubject<string>()
+    /**
+     * Stores information how many milliseconds after the data was last fetched from the backend,
+     * the data is still considered up-to-date.
+     * @private
+     */
+    private _dataOutdatedThreshold = 24 * 60 * 60 * 1000
 
+    /**
+     * An Observable which emits current software versions data retrieved from the backend.
+     * It acts like a cache, because every observer that subscribes to it, receives replayed response
+     * from the backend. This is to prevent backend overload with recurring queries.
+     * New data from the backend may be fetched using _currentDataSubject$.next().
+     */
     currentData$ = this._currentDataSubject$.pipe(
-        mergeMap(() => this.generalService.getIscSwVersions()),
+        mergeMap(() => {
+            this.dataFetchedTimestamp = new Date()
+            console.log('fetching new data with generalService.getIscSwVersions()', this.dataFetchedTimestamp)
+            return this.generalService.getIscSwVersions()
+        }),
         shareReplay(1)
     )
 
+    /**
+     * Stores timestamp when the current software versions data was last fetched.
+     */
+    dataFetchedTimestamp: Date | undefined
+
+    /**
+     * Service constructor.
+     * @param generalService service used to query the backend for current software versions data
+     */
+    constructor(private generalService: GeneralService) {
+        this._checkedVersionCache = new Map()
+    }
+
+    /**
+     * Returns current software versions data Observable.
+     */
+    getCurrentData(): Observable<AppsVersions> {
+        return this.currentData$
+    }
+
+    /**
+     * Forces retrieval of current software versions data from the backend.
+     * Clears the _checkedVersionCache.
+     */
     refreshData() {
+        this._checkedVersionCache = new Map()
         this._currentDataSubject$.next({})
     }
 
-    asyncMetadata: AppsVersions | undefined
-
-    dataFetchedTimestamp: Date | undefined
-
-    fetchData() {
-        this.currentData$.subscribe((data) => {
-            console.log('new data rxed from backend')
-            // this.asyncMetadata = data
-            this.dataFetchedTimestamp = new Date()
-            this._stableVersion = { kea: [], bind9: [], stork: [] }
-            // this.dataManufactureDate = data['date']
-            this._checkedVersionCache = new Map()
-            // this._onlineData = data['onlineData'] ?? false
-            this.processData(data)
-        })
-    }
-
-    isDataOld() {
-        let now = new Date()
-        return this.dataFetchedTimestamp && now.getTime() - this.dataFetchedTimestamp.getTime() < 10000
-    }
-
-    private _onlineData: boolean
-
-    constructor(private generalService: GeneralService) {
-        this.fetchData()
-        // this._stableVersion = { kea: [], bind9: [], stork: [] }
-        // this.dataManufactureDate = '2024-09-01'
-        // this.processData()
-        // this._checkedVersionCache = new Map()
-        // // For now force to false.
-        // this._onlineData = false
+    /**
+     * Returns whether cached data retrieved from the backend is outdated.
+     * This is used to regularly query the backend for current software versions data.
+     */
+    isDataOutdated() {
+        return (
+            this.dataFetchedTimestamp && Date.now() - this.dataFetchedTimestamp.getTime() < this._dataOutdatedThreshold
+        )
     }
 
     /**
-     * Returns software version for given app and type.
-     * @param app app for which the version lookup is done; accepted values: 'kea' | 'bind9' | 'stork'
-     * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
-     * @return version as either string (in case of latestSecure and latestDev) or array of strings (in case of currentStable)
+     * Returns an Observable of current manufacture date of the software versions data that was provided by the backend.
      */
-    private getVersion(app: App, swType: ReleaseType): string | string[] | null {
-        return swType === 'currentStable'
-            ? this._stableVersion?.[app] || null
-            : this._processedData?.[app]?.[swType]?.version || null
-    }
-
-    /**
-     * Returns software version details for given app and type.
-     * @param app app for which the version lookup is done; accepted values: 'kea' | 'bind9' | 'stork'
-     * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
-     * @return version details as either single VersionDetails (in case of latestSecure and latestDev) or array of VersionDetails (in case of currentStable)
-     */
-    getVersionDetails(app: App, swType: ReleaseType): VersionDetails | VersionDetails[] | null {
-        return this._processedData?.[app]?.[swType] || null
-    }
-
-    getVersionDetailsAsync(app: App, swType: ReleaseType): Observable<VersionDetails | VersionDetails[]> {
-        // lastValueFrom(this.dataProcessed$).then(()=>{
-        //     return of()
-        // })
-        return this.dataProcessed$.pipe(switchMap(() => of(this._processedData?.[app]?.[swType] || null)))
-    }
-
-    /**
-     * Returns sorted current stable semver versions as an array of strings for given app.
-     * @param app either kea, bind9 or stork app
-     */
-    private getStableVersions(app: App): string[] | null {
-        return this._stableVersion?.[app] || null
-    }
-
-    /**
-     * Returns the date (as string) when the versions data was manufactured.
-     */
-    // getDataManufactureDate(): string {
-    //     // This will have to be updated in case of "online concept"
-    //     return this.versionMetadata.date as string
-    // }
-
-    /**
-     *
-     */
-    getDataManufactureDateAsync(): Observable<string> {
+    getDataManufactureDate(): Observable<string> {
         return this.currentData$.pipe(map((data) => data.date))
     }
 
     /**
-     *
+     * Returns an Observable of the boolean stating whether current software versions data provided by the backend
+     * origins from online sources (e.g. ISC GitLab REST api) or from offline data stored in versions.json file.
      */
     isOnlineData(): Observable<boolean> {
         return this.currentData$.pipe(map((data) => !!data.onlineData))
     }
 
-    private processData(data: AppsVersions) {
-        console.log('process data')
-        // let newData = deepCopy(this.versionMetadata)
-        // let newData = deepCopy(this.asyncMetadata)
-        let newData = deepCopy(data)
-        Object.keys(newData).forEach((key) => {
-            if (key === 'kea' || key === 'bind9' || key === 'stork') {
-                Object.keys(newData[key]).forEach((swType) => {
-                    if (newData[key][swType]) {
-                        switch (swType) {
-                            case 'latestSecure':
-                                newData[key][swType].status = 'Security release'
-                                newData[key][swType].major = major(newData[key][swType].version)
-                                newData[key][swType].minor = minor(newData[key][swType].version)
-                                break
-                            case 'latestDev':
-                                newData[key][swType].status = 'Development'
-                                newData[key][swType].major = major(newData[key][swType].version)
-                                newData[key][swType].minor = minor(newData[key][swType].version)
-                                break
-                            case 'currentStable':
-                                for (let e of newData[key][swType]) {
-                                    e.status = 'Current Stable'
-                                    e.major = major(e.version)
-                                    e.minor = minor(e.version)
-                                    e.range = `${e.major}.${e.minor}.x`
-                                }
-
-                                let versionsText = newData[key][swType].map((ver: VersionDetails) => ver.version)
-                                this._stableVersion[key] = sort(versionsText)
-                                break
-                        }
-                    }
-                })
-            }
-        })
-        this._processedData = newData
-        setTimeout(() => {
-            console.log('processed data')
-            this.dataProcessed$.next('data processed ' + Date.now())
-        }, 1000)
-    }
-
-    getProcessedData(): Observable<{ processedData: AppsVersions; stableVersions: { [a in App]: string[] } }> {
-        return this.dataProcessed$.pipe(
-            switchMap(() =>
-                of({
-                    processedData: this._processedData,
-                    stableVersions: this._stableVersion,
-                })
-            )
-        )
-    }
-
     /**
-     *
-     * @param version
-     * @param app
+     * Makes an assessment whether provided app (Kea, Bind9 or Stork Agent) version is up-to-date
+     * and returns the feedback information with the severity of the urge to update the software and
+     * a message containing details of the assessment.
+     * @param version string version that must contain a parsable semver
+     * @param app either kea, bind9 or stork
+     * @param data input data used to make the assessment
      */
-    checkVersion(version: string, app: App): Observable<VersionFeedback> {
-        let cachedFeedback = this._checkedVersionCache?.get(version + app)
-        if (cachedFeedback) {
-            console.log('cache used')
-            return of(cachedFeedback)
-        }
-
-        return this.dataProcessed$.pipe(
-            switchMap(() => {
-                console.log('check version inside switchMap')
-                return of(this.checkVersionSync(version, app))
-            }),
-            take(1)
-        )
-    }
-
-    /**
-     *
-     * @param version
-     * @param app
-     */
-    checkVersionSync(version: string, app: App): VersionFeedback {
+    getSoftwareVersionFeedback(version: string, app: App, data: AppsVersions): VersionFeedback {
         let cachedFeedback = this._checkedVersionCache?.get(version + app)
         if (cachedFeedback) {
             console.log('cache used')
             return cachedFeedback
         }
 
-        // return this.dataProcessed$.pipe(
-        //     switchMap(() => {
-        console.log('check version inside checkVersionSync')
+        console.log('getSoftwareVersionFeedback no cache found')
 
         let response: VersionFeedback = { severity: Severity.info, feedback: '' }
-        let sanitizedSemver = coerce(version).version
+        let sanitizedSemver = this.sanitizeSemver(version)
         let appName = ''
-        if (valid(sanitizedSemver)) {
+        if (sanitizedSemver) {
             appName = app[0].toUpperCase() + app.slice(1)
             appName += app === 'stork' ? ' agent' : ''
             let isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
 
             // check security releases first
-            let latestSecureVersion = this.getVersion(app, 'latestSecure')
+            let latestSecureVersion = this.getVersion(app, 'latestSecure', data)
             if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
                 response = {
                     severity: Severity.danger,
@@ -345,8 +169,8 @@ export class VersionService {
             }
 
             // case - stable version
-            let currentStableVersionDetails = this.getVersionDetails(app, 'currentStable')
-            let dataDate = this._processedData?.['date'] || 'unknown'
+            let currentStableVersionDetails = data?.[app]?.currentStable || null
+            let dataDate = data?.date || 'unknown'
             if (isDevelopmentVersion === false && currentStableVersionDetails) {
                 if (Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length >= 1) {
                     for (let details of currentStableVersionDetails) {
@@ -374,7 +198,7 @@ export class VersionService {
                     }
 
                     // current version not matching currentStable ranges
-                    let stableVersions = this.getStableVersions(app)
+                    let stableVersions = data?.[app].sortedStables || null
                     if (Array.isArray(stableVersions) && stableVersions.length > 0) {
                         let versionsText = stableVersions.join(', ')
                         if (lt(sanitizedSemver, stableVersions[0])) {
@@ -405,7 +229,7 @@ export class VersionService {
             }
 
             // case - development version
-            let latestDevVersion = this.getVersion(app, 'latestDev')
+            let latestDevVersion = this.getVersion(app, 'latestDev', data)
             if (isDevelopmentVersion === true && latestDevVersion) {
                 if (lt(sanitizedSemver, latestDevVersion as string)) {
                     response = {
@@ -449,9 +273,24 @@ export class VersionService {
     }
 
     /**
-     *
-     * @param version
-     * @param app
+     * Sanitizes given version string and returns valid semver if it could be parsed.
+     * If valid semver couldn't be found, it returns null.
+     * @param version version string to look for semver
+     */
+    sanitizeSemver(version: string): string | null {
+        let sanitizedSemver = coerce(version)?.version
+        if (sanitizedSemver && valid(sanitizedSemver)) {
+            return sanitizedSemver
+        }
+
+        return null
+    }
+
+    /**
+     * Returns true if provided app version is a development release.
+     * For stable release, false is returned.
+     * @param version app version
+     * @param app either kea, bind9 or stork
      * @private
      */
     private isDevelopmentVersion(version: string, app: App) {
@@ -464,16 +303,13 @@ export class VersionService {
     }
 
     /**
-     * Sanitizes given version string and returns valid semver if it could be parsed.
-     * If valid semver couldn't be found, it returns null.
-     * @param version version string to look for semver
+     * Returns software version for given app and type.
+     * @param app app for which the version lookup is done; accepted values: 'kea' | 'bind9' | 'stork'
+     * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
+     * @param data
+     * @return version as either string (in case of latestSecure and latestDev) or array of strings (in case of currentStable)
      */
-    sanitizeSemver(version: string): string | null {
-        let sanitizedSemver = coerce(version)?.version
-        if (sanitizedSemver && valid(sanitizedSemver)) {
-            return sanitizedSemver
-        }
-
-        return null
+    private getVersion(app: App, swType: ReleaseType, data: AppsVersions): string | string[] | null {
+        return swType === 'currentStable' ? data?.[app]?.sortedStables || null : data?.[app]?.[swType]?.version || null
     }
 }
