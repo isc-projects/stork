@@ -242,7 +242,8 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) *KeaApp {
 		},
 		HTTPClient: httpClient,
 		// Initially, all daemons are considered active.
-		ActiveDaemons: daemons,
+		ActiveDaemons:     daemons,
+		ConfiguredDaemons: daemons,
 	}
 
 	// Detect active daemons.

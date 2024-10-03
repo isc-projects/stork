@@ -182,7 +182,8 @@ func TestKeaAllowedLogs(t *testing.T) {
 			Type:         AppTypeKea,
 			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, true),
 		},
-		HTTPClient: httpClient,
+		HTTPClient:    httpClient,
+		ActiveDaemons: []string{"dhcp4", "dhcp6"},
 	}
 	paths, err := ka.DetectAllowedLogs()
 	require.NoError(t, err)
@@ -291,7 +292,8 @@ func TestKeaAllowedLogsOutputOptionsWithDash(t *testing.T) {
 			Type:         AppTypeKea,
 			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, true),
 		},
-		HTTPClient: httpClient,
+		HTTPClient:    httpClient,
+		ActiveDaemons: []string{"dhcp4", "dhcp6"},
 	}
 	paths, err := ka.DetectAllowedLogs()
 	require.NoError(t, err)

@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
+	"gopkg.in/h2non/gock.v1"
 
 	"isc.org/stork/testutil"
 )
@@ -423,7 +424,7 @@ func makeKeaConfFileWithInclude() (string, func()) {
 }
 
 func TestDetectKeaApp(t *testing.T) {
-	checkApp := func(app App) {
+	checkApp := func(app *KeaApp) {
 		require.NotNil(t, app)
 		require.Equal(t, AppTypeKea, app.GetBaseApp().Type)
 		require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -432,6 +433,7 @@ func TestDetectKeaApp(t *testing.T) {
 		require.Equal(t, "localhost", ctrlPoint.Address)
 		require.EqualValues(t, 45634, ctrlPoint.Port)
 		require.Empty(t, ctrlPoint.Key)
+		require.Len(t, app.ConfiguredDaemons, 3)
 	}
 
 	httpClient := NewHTTPClient()
@@ -448,6 +450,7 @@ func TestDetectKeaApp(t *testing.T) {
 		cwd, file := path.Split(tmpFilePath)
 		app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
 		checkApp(app)
+		require.Empty(t, app.ActiveDaemons)
 	})
 
 	t.Run("config file with include statement", func(t *testing.T) {
@@ -466,11 +469,59 @@ func TestDetectKeaApp(t *testing.T) {
 	})
 
 	t.Run("active daemons", func(t *testing.T) {
-		t.Fail()
+		httpClient := NewHTTPClient()
+		gock.InterceptClient(httpClient.client)
+
+		defer gock.Off()
+		gock.New("http://localhost:45634/").
+			JSON(map[string]interface{}{
+				"command": "version-get",
+				"service": []string{"d2", "dhcp4", "dhcp6"},
+			}).
+			Post("/").
+			Persist().
+			Reply(200).
+			BodyString(`[
+				{ "result": 0 }, 
+				{ "result": 0 },
+				{ "result": 0 }
+			]`)
+
+		tmpFilePath, clean := makeKeaConfFile()
+		defer clean()
+
+		// check kea app detection
+		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		checkApp(app)
+		require.Len(t, app.ActiveDaemons, 3)
 	})
 
 	t.Run("active and inactive daemons", func(t *testing.T) {
-		t.Fail()
+		httpClient := NewHTTPClient()
+		gock.InterceptClient(httpClient.client)
+
+		defer gock.Off()
+		gock.New("http://localhost:45634/").
+			JSON(map[string]interface{}{
+				"command": "version-get",
+				"service": []string{"d2", "dhcp4", "dhcp6"},
+			}).
+			Post("/").
+			Persist().
+			Reply(200).
+			BodyString(`[
+				{ "result": 1 }, 
+				{ "result": 0 },
+				{ "result": 1 }
+			]`)
+
+		tmpFilePath, clean := makeKeaConfFile()
+		defer clean()
+
+		// check kea app detection
+		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		checkApp(app)
+		require.Len(t, app.ActiveDaemons, 1)
 	})
 }
 
@@ -588,10 +639,31 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 // Test that the active Kea daemons are recognized properly.
 func TestDetectActiveDaemons(t *testing.T) {
 	// Arrange
+	httpClient := NewHTTPClient()
+	gock.InterceptClient(httpClient.client)
+
+	defer gock.Off()
+	gock.New("http://localhost:45634/").
+		JSON(map[string]interface{}{
+			"command": "version-get",
+			"service": []string{"d2", "dhcp4", "dhcp6"},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result": 1,
+			"arguments": {}
+		}, {
+			"result": 0,
+			"arguments": {}
+		}, {
+			"result": 0,
+			"arguments": {}
+		}]`)
+
 	configPath, clean := makeKeaConfFile()
 	defer clean()
-
-	httpClient := NewHTTPClient()
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
@@ -613,17 +685,33 @@ func TestDetectActiveDaemons(t *testing.T) {
 // daemon is provided.
 func TestDetectActiveSingleDaemon(t *testing.T) {
 	// Arrange
+	httpClient := NewHTTPClient()
+	gock.InterceptClient(httpClient.client)
+
+	defer gock.Off()
+	gock.New("http://localhost:45634/").
+		JSON(map[string]interface{}{
+			"command": "version-get",
+			"service": []string{"dhcp4"},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result": 0,
+			"arguments": {}
+		}]`)
+
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
 	configPath, _ := sb.Write("config", `{ "Control-agent": {
+		"http-host": "localhost",
 		"http-port": 45634,
 		"control-sockets": {
 			"dhcp4": { }
 		}
 	} }`)
-
-	httpClient := NewHTTPClient()
 
 	// Act
 	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
