@@ -11,6 +11,7 @@ import { SettingService } from './setting.service'
 import { ServerDataService } from './server-data.service'
 import { Settings, User } from './backend'
 import { ThemeService } from './theme.service'
+import { VersionService } from './version.service'
 
 @Component({
     selector: 'app-root',
@@ -45,7 +46,8 @@ export class AppComponent implements OnInit, OnDestroy {
         private auth: AuthService,
         private loadingService: LoadingService,
         private settingSvc: SettingService,
-        private themeService: ThemeService
+        private themeService: ThemeService,
+        private versionService: VersionService
     ) {
         this.initMenus()
 
@@ -254,6 +256,7 @@ export class AppComponent implements OnInit, OnDestroy {
             this.generalApi.getVersion().subscribe((data) => {
                 this.storkVersion = data.version
                 this.storkBuildDate = data.date
+                this.versionService.setStorkServerVersion(data.version)
             })
         )
 
