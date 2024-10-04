@@ -1,0 +1,20 @@
+:host ::ng-deep .p-messages
+  .p-message
+    // Disable top margin to decrease the gap between message containers.
+    margin-top: 0
+
+  // Apply flex-wrap to .p-message-wrapper container for better
+  // messages visibility - the icon and short summary should fit in first line.
+  // Message details will wrap to new line.
+  .p-message-wrapper
+    flex-wrap: wrap
+    gap: 0.5rem
+
+  .p-message-detail
+    // flex-basis set to 100% makes .p-message-detail div always wrap to new line
+    flex-basis: 100%
+    // .p-message-detail div will be wrapped to new line,
+    // so left margin is not needed.
+    margin-left: 0
+
+

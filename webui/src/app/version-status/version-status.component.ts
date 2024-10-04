@@ -1,6 +1,6 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
-import { App, Severity, VersionService } from '../version.service'
-import { MessageService } from 'primeng/api'
+import { App, Severity, VersionFeedback, VersionService } from '../version.service'
+import { Message, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { map } from 'rxjs/operators'
@@ -58,15 +58,14 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     iconClasses = {}
 
     /**
-     * Feedback message displayed either in the tooltip or in the block message.
+     * An array of feedback messages displayed either in the tooltip or in the block message.
      */
-    feedback: string
+    feedbackMessages: string[] = []
 
     /**
-     * Severity enumeration field used by template.
-     * @protected
+     * Holds PrimeNG Message value for the block message.
      */
-    protected readonly SeverityEnum = Severity
+    messages: Message[] | undefined
 
     /**
      * Full name of the app. This is either 'Kea', 'Bind9' or 'Stork agent'. This is computed based on app field.
@@ -114,7 +113,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                     .subscribe({
                         next: (feedback) => {
                             if (feedback) {
-                                this.setSeverity(feedback.severity, feedback.feedback)
+                                this.setSeverity(feedback)
                             }
                         },
                         error: (err) => {
@@ -153,39 +152,33 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Holds the information about PrimeNG classes that should be used to style properly block message
-     * based on the severity.
-     */
-    get mappedSeverityClass() {
-        return [
-            this.severity === Severity.warning
-                ? 'p-inline-message-warn'
-                : this.severity === Severity.danger
-                  ? 'p-inline-message-error'
-                  : this.severity === Severity.secondary
-                    ? 'p-message p-message-secondary m-0'
-                    : '',
-            this.styleClass,
-        ].join(' ')
-    }
-
-    /**
-     * Sets the severity and the feedback message. Icon classes are set based on the severity.
-     * @param severity severity to be set
-     * @param feedback feedback message to be set
+     * Sets the severity and the feedback messages. Icon classes are set based on the severity.
+     * @param feedback feedback severity and message to be set
      * @private
      */
-    private setSeverity(severity: Severity, feedback: string) {
-        this.severity = severity
-        this.feedback = feedback
-        switch (severity) {
+    private setSeverity(feedback: VersionFeedback) {
+        this.severity = feedback.severity
+        this.feedbackMessages = feedback.messages ?? []
+        let m: Message = {
+            severity: Severity[feedback.severity],
+            summary: this.appName,
+            detail: feedback.messages.join('<br><br>'),
+        }
+
+        if (feedback.severity === Severity.secondary) {
+            m.icon = 'pi-info-circle'
+        }
+
+        this.messages = [m]
+
+        switch (feedback.severity) {
             case Severity.success:
                 this.iconClasses = { 'text-green-500': true, 'pi-check': true }
                 break
-            case Severity.warning:
+            case Severity.warn:
                 this.iconClasses = { 'text-orange-400': true, 'pi-exclamation-triangle': true }
                 break
-            case Severity.danger:
+            case Severity.error:
                 this.iconClasses = { 'text-red-500': true, 'pi-exclamation-circle': false, 'pi-times': true }
                 break
             case Severity.info:
