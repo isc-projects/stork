@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"math/rand"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -250,4 +252,50 @@ func TestRunHookInspectFile(t *testing.T) {
 	}
 
 	main()
+}
+
+// Test that the custom welcome message can be deployed in the specific
+// location and later undeployed.
+func TestRunDeployStaticView(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Create the input file.
+	filepath, err := sb.Write("input.html", "<p>Welcome to Stork!</p>")
+	require.NoError(t, err)
+
+	// Create the output directory for the static content. It is relative
+	// to the sandbox path.
+	outFilepath, err := sb.JoinDir("assets/static-page-content")
+	require.NoError(t, err)
+
+	// Deploy the welcome message using the created input file and the
+	// output directory. The output directory is set to sandbox location.
+	defer testutil.CreateOsArgsRestorePoint()()
+	os.Args = []string{
+		"stork-tool", "deploy-login-page-welcome",
+		"-i", filepath,
+		"-d", sb.BasePath,
+	}
+	main()
+
+	// Make sure that the welcome message was copied.
+	_, err = os.Stat(path.Join(outFilepath, "login-screen-welcome.html"))
+	require.NoError(t, err)
+
+	// Make sure that the file has expected contents.
+	data, err := os.ReadFile(filepath)
+	require.NoError(t, err)
+	require.EqualValues(t, "<p>Welcome to Stork!</p>", data)
+
+	// Try to undeploy the welcome file.
+	os.Args = []string{
+		"stork-tool", "undeploy-login-page-welcome",
+		"-d", sb.BasePath,
+	}
+	main()
+
+	// It should no longer exist.
+	_, err = os.Stat(path.Join(outFilepath, "login-screen-welcome.html"))
+	require.ErrorIs(t, err, fs.ErrNotExist)
 }

@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
+	"path"
 	"reflect"
 	"strconv"
 
@@ -226,6 +230,112 @@ func runHookInspect(settings *cli.Context) error {
 	}
 }
 
+// Deploy specified static file view into assets/static-page-content.
+func runStaticViewDeploy(settings *cli.Context, outFilename string) error {
+	// Basic checks on the input file.
+	inFilename := settings.String("file")
+	if _, err := os.Stat(inFilename); err != nil {
+		switch {
+		case errors.Is(err, fs.ErrNotExist):
+			// This is a frequent error returned when user specified wrong
+			// input filename. Let's handle this error to produce our own
+			// error message.
+			return errors.Errorf("input file '%s' does not exist", inFilename)
+		default:
+			// Other errors are more rare and it is overkill to handle of them.
+			// Let's rely on the stat() function error message with the stack
+			// trace appended.
+			return errors.WithStack(err)
+		}
+	}
+	// Get the directory where our file is to be copied.
+	outDirectory, err := getOrLocateStaticPageContentDir(settings)
+	if err != nil {
+		return err
+	}
+	// Create the destination path by concatenating the output directory
+	// and the file name specified as the function arguments.
+	outFilename = path.Join(outDirectory, outFilename)
+
+	// Open the input file name for reading.
+	inFile, err := os.Open(inFilename)
+	if err != nil {
+		return errors.Wrapf(err, "failed to open input file '%s'", inFilename)
+	}
+	defer inFile.Close()
+	reader := bufio.NewReader(inFile)
+
+	// Open the output file for writing.
+	outFile, err := os.OpenFile(outFilename, os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return errors.Wrapf(err, "failed to open output file '%s'", outFilename)
+	}
+	defer outFile.Close()
+	writer := bufio.NewWriter(outFile)
+
+	// Copy the file.
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		return errors.Wrapf(err, "failed to copy file '%s' to '%s'", inFilename, outFilename)
+	}
+	return nil
+}
+
+// Undeploy specified static file view from assets/static-page-content.
+func runStaticViewUndeploy(settings *cli.Context, filename string) error {
+	// Get the directory where our file is to be copied.
+	directory, err := getOrLocateStaticPageContentDir(settings)
+	if err != nil {
+		return err
+	}
+	// Get the target path by concatenating the directory and the file name
+	// specified as the function argument.
+	filename = path.Join(directory, filename)
+
+	err = os.Remove(filename)
+	return errors.Wrapf(err, "failed to remove file '%s'", filename)
+}
+
+// Reads the location of the static files from the settings and returns
+// the path to assets/static-page-content relative to this path. If the
+// path is not specified it tries to locate the static-page-content path
+// relative to the stork-tool binary name.
+func getOrLocateStaticPageContentDir(settings *cli.Context) (string, error) {
+	// Get the directory where our file is to be copied.
+	directory := settings.String("rest-static-files-dir")
+	if directory == "" {
+		// The directory hasn't been specified. Let's try to locate that directory
+		// relative to the stork-tool binary location.
+		executable, err := os.Executable()
+		if err != nil {
+			return "", errors.New("unable to locate static files directory; please use -d option to specify its location")
+		}
+		// Remove the binary name and the containing directory name.
+		// Append the relative location of the static files.
+		directory = path.Join(path.Dir(executable), "..", "/share/stork/www/assets/static-page-content/")
+		if _, err := os.Stat(directory); err != nil {
+			return "", errors.New("unable to locate destination directory; please use -d option to specify the correct path")
+		}
+		return directory, nil
+	}
+	// If the directory has been specified, let's check if it exists.
+	// Also, check if the subdirectory where we store assets exists.
+	for i, dir := range []string{directory, path.Join(directory, "/assets/static-page-content/")} {
+		if _, err := os.Stat(dir); err != nil {
+			switch {
+			case errors.Is(err, fs.ErrNotExist):
+				return "", errors.Errorf("directory '%s' does not exist", dir)
+			default:
+				return "", errors.WithStack(err)
+			}
+		}
+		if i > 0 {
+			directory = dir
+		}
+	}
+	return directory, nil
+}
+
 // Parse the general flag definitions into the objects compatible with the CLI library.
 func parseFlagDefinitions(flagDefinitions []*dbops.CLIFlagDefinition) ([]cli.Flag, error) {
 	var flags []cli.Flag
@@ -350,6 +460,31 @@ func setupApp() *cli.App {
 		},
 	}
 
+	loginScreenWelcomeDeployFlags := []cli.Flag{
+		&cli.StringFlag{
+			Name:     "file",
+			Usage:    "HTML source file with a custom welcome message",
+			Required: true,
+			Aliases:  []string{"i"},
+			EnvVars:  []string{"STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE"},
+		},
+		&cli.StringFlag{
+			Name:    "rest-static-files-dir",
+			Usage:   "The directory with static files for the UI; if not provided the tool will try to use default locations",
+			Aliases: []string{"d"},
+			EnvVars: []string{"STORK_TOOL_REST_STATIC_FILES_DIR"},
+		},
+	}
+
+	loginScreenWelcomeUndeployFlags := []cli.Flag{
+		&cli.StringFlag{
+			Name:    "rest-static-files-dir",
+			Usage:   "The directory with static files for the UI; if not provided the tool will try to use default locations",
+			Aliases: []string{"d"},
+			EnvVars: []string{"STORK_TOOL_REST_STATIC_FILES_DIR"},
+		},
+	}
+
 	cli.HelpFlag = &cli.BoolFlag{
 		Name:    "help",
 		Aliases: []string{"h"},
@@ -365,7 +500,7 @@ func setupApp() *cli.App {
 	app := &cli.App{
 		Name:  "Stork Tool",
 		Usage: "A tool for managing Stork Server.",
-		Description: `The tool operates in three areas:
+		Description: `The tool operates in four areas:
 
    - Certificate Management - it allows for exporting Stork Server keys, certificates,
      and tokens that are used to secure communication between the Stork Server
@@ -375,7 +510,10 @@ func setupApp() *cli.App {
      and a user that can access this database with a generated password;
 
    - Database Migration - it allows for performing database schema migrations,
-     overwriting the db schema version and getting its current value.`,
+     overwriting the db schema version and getting its current value;
+
+   - Static Views Deployment - it allows for setting custom content in selected
+     Stork views (e.g., custom welcome message on the login page).`,
 		Version:  stork.Version,
 		HelpName: "stork-tool",
 		Flags: []cli.Flag{
@@ -511,6 +649,29 @@ func setupApp() *cli.App {
 				Description: "",
 				Flags:       hookInspectFlags,
 				Action:      runHookInspect,
+			},
+			// STATIC VIEWS DEPLOYMENT
+			{
+				Name:        "deploy-login-page-welcome",
+				Usage:       "Deploy custom welcome message in the login page",
+				UsageText:   "stork-tool deploy-login-page-welcome [-i filename] [-d directory]",
+				Description: ``,
+				Flags:       loginScreenWelcomeDeployFlags,
+				Category:    "Static Views Deployment",
+				Action: func(c *cli.Context) error {
+					return runStaticViewDeploy(c, "login-screen-welcome.html")
+				},
+			},
+			{
+				Name:        "undeploy-login-page-welcome",
+				Usage:       "Undeploy custom welcome message from the login page",
+				UsageText:   "stork-tool undeploy-login-page-welcome [-d directory]",
+				Description: ``,
+				Flags:       loginScreenWelcomeUndeployFlags,
+				Category:    "Static Views Deployment",
+				Action: func(c *cli.Context) error {
+					return runStaticViewUndeploy(c, "login-screen-welcome.html")
+				},
 			},
 		},
 	}
