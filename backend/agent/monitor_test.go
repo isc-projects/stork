@@ -551,6 +551,13 @@ func TestGetAccessPoint(t *testing.T) {
 }
 
 func TestPrintNewOrUpdatedApps(t *testing.T) {
+	output := logrus.StandardLogger().Out
+	defer func() {
+		logrus.SetOutput(output)
+	}()
+	var buffer bytes.Buffer
+	logrus.SetOutput(&buffer)
+
 	bind9App := &Bind9App{
 		BaseApp: BaseApp{
 			Type: AppTypeBind9,
@@ -591,6 +598,12 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 	var oldApps []App
 
 	printNewOrUpdatedApps(newApps, oldApps)
+
+	require.Contains(t, buffer.String(), "New or updated apps detected:")
+	require.Contains(t, buffer.String(),
+		"bind9: control: http://127.0.0.53:5353/ (auth key: found), statistics: http://127.0.0.80:80/",
+	)
+	require.Contains(t, buffer.String(), "kea: control: http://localhost:45634/")
 }
 
 // Test that the active Kea daemons are recognized properly.

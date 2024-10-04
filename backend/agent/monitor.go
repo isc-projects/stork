@@ -214,11 +214,17 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 			var acPts []string
 			for _, acPt := range app.GetBaseApp().AccessPoints {
 				url := storkutil.HostWithPortURL(acPt.Address, acPt.Port, acPt.UseSecureProtocol)
-				authKeyFoundStr := "not found"
-				if acPt.Key != "" {
-					authKeyFoundStr = "found"
+				s := fmt.Sprintf("%s: %s", acPt.Type, url)
+
+				// The key attribute is only relevant for BIND 9 control access point.
+				if app.GetBaseApp().Type == AppTypeBind9 && acPt.Type == AccessPointControl {
+					authKeyFoundStr := "not found"
+					if acPt.Key != "" {
+						authKeyFoundStr = "found"
+					}
+					s += fmt.Sprintf(" (auth key: %s)", authKeyFoundStr)
 				}
-				s := fmt.Sprintf("%s: %s (auth key: %s)", acPt.Type, url, authKeyFoundStr)
+
 				acPts = append(acPts, s)
 			}
 			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
