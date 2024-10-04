@@ -460,7 +460,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	rootPrefix := ""
 	// Absolute path from the actual root or chroot.
 	bind9ConfPath := ""
-	bind9ConfSource := ""
 
 	// Look for the chroot directory.
 	chrootPathPattern := regexp.MustCompile(`-t\s+(\S+)`)
@@ -481,7 +480,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	log.Debug("Looking for BIND 9 config file in -c parameter of a running process.")
 	if m != nil {
 		bind9ConfPath = m[1]
-		bind9ConfSource = "-c parameter of a running process"
 		// If path to config is not absolute then join it with CWD of named.
 		if !path.IsAbs(bind9ConfPath) {
 			bind9ConfPath = path.Join(cwd, bind9ConfPath)
@@ -501,7 +499,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			case executor.IsFileExist(explicitConfigPath):
 				// Trim the root prefix.
 				bind9ConfPath = explicitConfigPath[len(rootPrefix):]
-				bind9ConfSource = "the explicit path from settings"
 			default:
 				log.Errorf("File explicitly specified in settings (%s) not found or unreadable.", explicitConfigPath)
 			}
@@ -531,7 +528,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			return nil
 		}
 		bind9ConfPath = parseNamedDefaultPath(out)
-		bind9ConfSource = "output of `named -V`"
 	}
 
 	// STEP 4: If we still don't have anything, let's look at typical locations.
@@ -544,7 +540,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			log.Debugf("Looking for BIND 9 config file in %s", fullPath)
 			if executor.IsFileExist(fullPath) {
 				bind9ConfPath = f
-				bind9ConfSource = "typical locations"
 				break
 			}
 		}
@@ -556,7 +551,6 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		return nil
 	}
 	prefixedBind9ConfPath := path.Join(rootPrefix, bind9ConfPath)
-	log.Infof("Found BIND 9 config file in %s based on %s.", prefixedBind9ConfPath, bind9ConfSource)
 
 	// run named-checkconf on main config file and get preprocessed content of whole config
 	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec, executor)
