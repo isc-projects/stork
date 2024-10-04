@@ -37,6 +37,59 @@ type BaseApp struct {
 	AccessPoints []AccessPoint
 }
 
+// Returns an access point of a given type. If the access point is not found,
+// it returns nil.
+func (ba *BaseApp) GetAccessPoint(accessPointType string) *AccessPoint {
+	for _, ap := range ba.AccessPoints {
+		if ap.Type == accessPointType {
+			return &ap
+		}
+	}
+	return nil
+}
+
+// Checks if two applications have the same type.
+func (ba *BaseApp) HasEqualType(other *BaseApp) bool {
+	return ba.Type == other.Type
+}
+
+// Checks if two applications have the same access points. It checks the
+// location (address and port) as well as the access point configuration.
+func (ba *BaseApp) HasEqualAccessPoints(other *BaseApp) bool {
+	if len(ba.AccessPoints) != len(other.AccessPoints) {
+		return false
+	}
+
+	for _, thisAccessPoint := range ba.AccessPoints {
+		otherAccessPoint := other.GetAccessPoint(thisAccessPoint.Type)
+		if otherAccessPoint == nil {
+			return false
+		}
+		if thisAccessPoint.Address != otherAccessPoint.Address {
+			return false
+		}
+		if thisAccessPoint.Port != otherAccessPoint.Port {
+			return false
+		}
+		if thisAccessPoint.UseSecureProtocol != otherAccessPoint.UseSecureProtocol {
+			return false
+		}
+		if thisAccessPoint.Key != otherAccessPoint.Key {
+			return false
+		}
+	}
+	return true
+}
+
+// Checks if two applications are the same. It checks the type and access
+// points including their configuration.
+func (ba *BaseApp) IsEqual(other *BaseApp) bool {
+	if !ba.HasEqualType(other) {
+		return false
+	}
+	return ba.HasEqualAccessPoints(other)
+}
+
 // Specific App like KeaApp or Bind9App have to implement
 // this interface. The methods should be implemented
 // in a specific way in given concrete App.
@@ -145,31 +198,10 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 		found := false
 		for _, ao := range oldApps {
 			appOld := ao.GetBaseApp()
-			if appOld.Type != appNew.Type {
-				continue
+			if appNew.IsEqual(appOld) {
+				found = true
+				break
 			}
-			if len(appNew.AccessPoints) != len(appOld.AccessPoints) {
-				continue
-			}
-			for idx, acPtNew := range appNew.AccessPoints {
-				acPtOld := appOld.AccessPoints[idx]
-				if acPtNew.Type != acPtOld.Type {
-					continue
-				}
-				if acPtNew.Address != acPtOld.Address {
-					continue
-				}
-				if acPtNew.Port != acPtOld.Port {
-					continue
-				}
-				if acPtNew.UseSecureProtocol != acPtOld.UseSecureProtocol {
-					continue
-				}
-				if acPtNew.Key != acPtOld.Key {
-					continue
-				}
-			}
-			found = true
 		}
 		if !found {
 			newUpdatedApps = append(newUpdatedApps, an)
@@ -228,14 +260,33 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 		}
 
 		if procName == keaProcName {
-			// detect kea
+			// Detect Kea.
 			m := keaPattern.FindStringSubmatch(cmdline)
 			if m != nil {
-				keaApp := detectKeaApp(m, cwd, storkAgent.KeaHTTPClient)
-				if keaApp != nil {
-					keaApp.GetBaseApp().Pid = p.GetPid()
-					apps = append(apps, keaApp)
+				// Detect the app.
+				keaApp, err := detectKeaApp(m, cwd, storkAgent.KeaHTTPClient)
+				if err != nil {
+					log.WithError(err).Warn("Failed to detect Kea app")
+					continue
 				}
+
+				// Look for the previously detected application.
+				var recentlyActiveDaemons []string
+				for _, app := range sm.apps {
+					if keaApp.GetBaseApp().IsEqual(app.GetBaseApp()) {
+						recentlyActiveDaemons = app.(*KeaApp).ActiveDaemons
+						break
+					}
+				}
+
+				// Detect the active daemons.
+				keaApp.ActiveDaemons, err = detectKeaActiveDaemons(keaApp, recentlyActiveDaemons)
+				if err != nil {
+					log.WithError(err).Warn("Failed to detect active Kea daemons")
+				}
+
+				keaApp.GetBaseApp().Pid = p.GetPid()
+				apps = append(apps, keaApp)
 			}
 			continue
 		}

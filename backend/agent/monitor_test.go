@@ -443,6 +443,7 @@ func TestDetectKeaApp(t *testing.T) {
 		require.EqualValues(t, 45634, ctrlPoint.Port)
 		require.Empty(t, ctrlPoint.Key)
 		require.Len(t, app.ConfiguredDaemons, 3)
+		require.Nil(t, app.ActiveDaemons)
 	}
 
 	httpClient := NewHTTPClient()
@@ -452,14 +453,15 @@ func TestDetectKeaApp(t *testing.T) {
 		defer clean()
 
 		// check kea app detection
-		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		require.NoError(t, err)
 		checkApp(app)
 
 		// check kea app detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
-		app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		require.NoError(t, err)
 		checkApp(app)
-		require.Empty(t, app.ActiveDaemons)
 	})
 
 	t.Run("config file with include statement", func(t *testing.T) {
@@ -468,69 +470,15 @@ func TestDetectKeaApp(t *testing.T) {
 		defer clean()
 
 		// check kea app detection
-		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		require.NoError(t, err)
 		checkApp(app)
 
 		// check kea app detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
-		app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		require.NoError(t, err)
 		checkApp(app)
-	})
-
-	t.Run("active daemons", func(t *testing.T) {
-		httpClient := NewHTTPClient()
-		gock.InterceptClient(httpClient.client)
-
-		defer gock.Off()
-		gock.New("http://localhost:45634/").
-			JSON(map[string]interface{}{
-				"command": "version-get",
-				"service": []string{"d2", "dhcp4", "dhcp6"},
-			}).
-			Post("/").
-			Persist().
-			Reply(200).
-			BodyString(`[
-				{ "result": 0 }, 
-				{ "result": 0 },
-				{ "result": 0 }
-			]`)
-
-		tmpFilePath, clean := makeKeaConfFile()
-		defer clean()
-
-		// check kea app detection
-		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
-		checkApp(app)
-		require.Len(t, app.ActiveDaemons, 3)
-	})
-
-	t.Run("active and inactive daemons", func(t *testing.T) {
-		httpClient := NewHTTPClient()
-		gock.InterceptClient(httpClient.client)
-
-		defer gock.Off()
-		gock.New("http://localhost:45634/").
-			JSON(map[string]interface{}{
-				"command": "version-get",
-				"service": []string{"d2", "dhcp4", "dhcp6"},
-			}).
-			Post("/").
-			Persist().
-			Reply(200).
-			BodyString(`[
-				{ "result": 1 }, 
-				{ "result": 0 },
-				{ "result": 1 }
-			]`)
-
-		tmpFilePath, clean := makeKeaConfFile()
-		defer clean()
-
-		// check kea app detection
-		app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
-		checkApp(app)
-		require.Len(t, app.ActiveDaemons, 1)
 	})
 }
 
@@ -648,6 +596,13 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 // Test that the active Kea daemons are recognized properly.
 func TestDetectActiveDaemons(t *testing.T) {
 	// Arrange
+	output := logrus.StandardLogger().Out
+	defer func() {
+		logrus.SetOutput(output)
+	}()
+	var buffer bytes.Buffer
+	logrus.SetOutput(&buffer)
+
 	httpClient := NewHTTPClient()
 	gock.InterceptClient(httpClient.client)
 
@@ -662,6 +617,7 @@ func TestDetectActiveDaemons(t *testing.T) {
 		Reply(200).
 		BodyString(`[{
 			"result": 1,
+			"text": "Detection error occurred",
 			"arguments": {}
 		}, {
 			"result": 0,
@@ -671,65 +627,212 @@ func TestDetectActiveDaemons(t *testing.T) {
 			"arguments": {}
 		}]`)
 
-	configPath, clean := makeKeaConfFile()
-	defer clean()
+	app := &KeaApp{
+		ConfiguredDaemons: []string{"d2", "dhcp4", "dhcp6"},
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
+		},
+		HTTPClient: httpClient,
+	}
 
-	// Act
-	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
-	configuredDaemons := app.GetConfiguredDaemons()
-	activeDaemons := app.GetActiveDaemons()
+	t.Run("first detection", func(t *testing.T) {
+		buffer.Reset()
 
-	// Assert
-	require.Len(t, configuredDaemons, 3)
-	require.Contains(t, configuredDaemons, "dhcp4")
-	require.Contains(t, configuredDaemons, "dhcp6")
-	require.Contains(t, configuredDaemons, "d2")
+		// Act
+		activeDaemons, err := detectKeaActiveDaemons(app, nil)
 
-	require.Len(t, activeDaemons, 2)
-	require.Contains(t, activeDaemons, "dhcp4")
-	require.Contains(t, activeDaemons, "dhcp6")
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, activeDaemons, 2)
+		require.Contains(t, activeDaemons, "dhcp4")
+		require.Contains(t, activeDaemons, "dhcp6")
+		require.Contains(t, buffer.String(), "Detection error occurred")
+	})
+
+	t.Run("previous detection doesn't find any active daemons", func(t *testing.T) {
+		buffer.Reset()
+
+		// Act
+		activeDaemons, err := detectKeaActiveDaemons(app, []string{})
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, activeDaemons, 2)
+		require.Contains(t, activeDaemons, "dhcp4")
+		require.Contains(t, activeDaemons, "dhcp6")
+		require.NotContains(t, buffer.String(), "Detection error occurred")
+	})
+
+	t.Run("following detection, D2 is still inactive", func(t *testing.T) {
+		buffer.Reset()
+
+		// Act
+		activeDaemons, err := detectKeaActiveDaemons(app, []string{"dhcp4"})
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, activeDaemons, 2)
+		require.Contains(t, activeDaemons, "dhcp4")
+		require.Contains(t, activeDaemons, "dhcp6")
+		require.NotContains(t, buffer.String(), "Detection error occurred")
+	})
+
+	t.Run("following detection, D2 switch to the inactive state", func(t *testing.T) {
+		buffer.Reset()
+
+		// Act
+		activeDaemons, err := detectKeaActiveDaemons(app, []string{"d2", "dhcp4"})
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, activeDaemons, 2)
+		require.Contains(t, activeDaemons, "dhcp4")
+		require.Contains(t, activeDaemons, "dhcp6")
+		require.Contains(t, buffer.String(), "Detection error occurred")
+	})
+
+	t.Run("previous detection finds all active daemons", func(t *testing.T) {
+		buffer.Reset()
+
+		//	Act
+		activeDaemons, err := detectKeaActiveDaemons(app, []string{"dhcp4", "dhcp6"})
+
+		//	Assert
+		require.NoError(t, err)
+		require.Len(t, activeDaemons, 2)
+		require.Contains(t, activeDaemons, "dhcp4")
+		require.Contains(t, activeDaemons, "dhcp6")
+		require.NotContains(t, buffer.String(), "Detection error occurred")
+	})
 }
 
-// Test that the active Kea daemons are recognized properly even if a single
-// daemon is provided.
-func TestDetectActiveSingleDaemon(t *testing.T) {
+// Test that the access point can be retrieved from the type.
+func TestBaseAppGetAccessPoint(t *testing.T) {
 	// Arrange
-	httpClient := NewHTTPClient()
-	gock.InterceptClient(httpClient.client)
+	app := BaseApp{
+		AccessPoints: makeAccessPoint(AccessPointControl, "", "", 0, false),
+	}
 
-	defer gock.Off()
-	gock.New("http://localhost:45634/").
-		JSON(map[string]interface{}{
-			"command": "version-get",
-			"service": []string{"dhcp4"},
-		}).
-		Post("/").
-		Persist().
-		Reply(200).
-		BodyString(`[{
-			"result": 0,
-			"arguments": {}
-		}]`)
+	// Act & Assert
+	// Known access point.
+	require.NotNil(t, app.GetAccessPoint(AccessPointControl))
+	// Unknown access point.
+	require.Nil(t, app.GetAccessPoint(AccessPointStatistics))
+}
 
-	sb := testutil.NewSandbox()
-	defer sb.Close()
+// Test that the applications can be compared by their types.
+func TestBaseAppHasEqualType(t *testing.T) {
+	// Arrange
+	appKea1 := &BaseApp{Type: AppTypeKea}
+	appKea2 := &BaseApp{Type: AppTypeKea}
+	appBind := &BaseApp{Type: AppTypeBind9}
 
-	configPath, _ := sb.Write("config", `{ "Control-agent": {
-		"http-host": "localhost",
-		"http-port": 45634,
-		"control-sockets": {
-			"dhcp4": { }
-		}
-	} }`)
+	// Act & Assert
+	require.True(t, appKea1.HasEqualType(appKea2))
+	require.True(t, appKea2.HasEqualType(appKea1))
+	require.False(t, appKea1.HasEqualType(appBind))
+	require.False(t, appBind.HasEqualType(appKea2))
+}
 
-	// Act
-	app := detectKeaApp([]string{"", "", configPath}, "", httpClient)
-	configuredDaemons := app.GetConfiguredDaemons()
-	activeDaemons := app.GetActiveDaemons()
+// Test that the applications can be compared by their access points.
+func TestBaseAppHasEqualAccessPoints(t *testing.T) {
+	// Arrange
+	app1 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+		},
+	}
+	app2 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+		},
+	}
+	app3 := &BaseApp{
+		Type: AppTypeBind9,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+		},
+	}
+	app4 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{
+				Type: AccessPointControl, Address: "localhost", Port: 1235,
+				UseSecureProtocol: true, Key: "key",
+			},
+		},
+	}
+	app5 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+			{Type: AccessPointStatistics, Address: "localhost", Port: 1235},
+		},
+	}
 
-	// Assert
-	require.Len(t, configuredDaemons, 1)
-	require.Contains(t, configuredDaemons, "dhcp4")
-	require.Len(t, activeDaemons, 1)
-	require.Contains(t, activeDaemons, "dhcp4")
+	// Act & Assert
+	// Same app types and access points.
+	require.True(t, app1.HasEqualAccessPoints(app2))
+	// Different app types but the same access points.
+	require.True(t, app1.HasEqualAccessPoints(app3))
+	// Same app types, and the same access point location but different
+	// configuration.
+	require.False(t, app1.HasEqualAccessPoints(app4))
+	// The second app has the same app type and includes the access points from
+	// the first app but it has an additional access point.
+	require.False(t, app1.HasEqualAccessPoints(app5))
+}
+
+// Test that the applications can be compared by their overall content.
+func TestBaseAppEqual(t *testing.T) {
+	// Arrange
+	app1 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+		},
+	}
+	app2 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+		},
+	}
+	app3 := &BaseApp{
+		Type: AppTypeBind9,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+		},
+	}
+	app4 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{
+				Type: AccessPointControl, Address: "localhost", Port: 1235,
+				UseSecureProtocol: true, Key: "key",
+			},
+		},
+	}
+	app5 := &BaseApp{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{Type: AccessPointControl, Address: "localhost", Port: 1234},
+			{Type: AccessPointStatistics, Address: "localhost", Port: 1235},
+		},
+	}
+
+	// Act & Assert
+	// Same app types and access points.
+	require.True(t, app1.IsEqual(app2))
+	// Different app types but the same access points.
+	require.False(t, app1.IsEqual(app3))
+	// Same app types, and the same access point location but different
+	// configuration.
+	require.False(t, app1.IsEqual(app4))
+	// The second app has the same app type and includes the access points from
+	// the first app but it has an additional access point.
+	require.False(t, app1.IsEqual(app5))
 }

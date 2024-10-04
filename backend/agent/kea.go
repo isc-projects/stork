@@ -17,7 +17,10 @@ import (
 // It holds common and Kea specific runtime information.
 type KeaApp struct {
 	BaseApp
-	HTTPClient        *HTTPClient // to communicate with Kea Control Agent
+	HTTPClient *HTTPClient // to communicate with Kea Control Agent
+	// Active daemons are those which are running and can be communicated with.
+	// Nil value means that the active daemons have not been detected yet.
+	// An empty list means that no daemons are running.
 	ActiveDaemons     []string
 	ConfiguredDaemons []string
 }
@@ -196,10 +199,9 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 	return config, err
 }
 
-func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) *KeaApp {
+func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) (*KeaApp, error) {
 	if len(match) < 3 {
-		log.Warnf("Problem parsing Kea cmdline: %s", match[0])
-		return nil
+		return nil, errors.Errorf("problem parsing Kea cmdline: %s", match[0])
 	}
 	keaConfPath := match[2]
 
@@ -210,19 +212,14 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) *KeaApp {
 
 	config, err := readKeaConfig(keaConfPath)
 	if err != nil {
-		log.WithError(err).Error("Invalid Kea Control Agent config")
-		return nil
+		return nil, errors.WithMessage(err, "invalid Kea Control Agent config")
 	}
 
 	// Port
 	port, ok := config.GetHTTPPort()
 	if !ok || port == 0 {
-		log.Warn("Cannot parse the port")
-		return nil
+		return nil, errors.Errorf("cannot parse the port")
 	}
-
-	// Configured daemons
-	daemons := config.GetControlSockets().GetConfiguredDaemonNames()
 
 	// Address
 	address, _ := config.GetHTTPHost()
@@ -241,35 +238,54 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) *KeaApp {
 			AccessPoints: accessPoints,
 		},
 		HTTPClient: httpClient,
-		// Initially, all daemons are considered active.
-		ActiveDaemons:     daemons,
-		ConfiguredDaemons: daemons,
+		// Set active daemons to nil, because we do not know them yet.
+		ActiveDaemons:     nil,
+		ConfiguredDaemons: config.GetControlSockets().GetConfiguredDaemonNames(),
 	}
+	return keaApp, nil
+}
 
+// Detects the active Kea daemons by sending the version-get command to each daemon.
+// The non-nil list of active daemons is returned.
+// Returns an error if the Kea CA is down but it doesn't throw an error if Kea
+// daemons are down. In the latter case, the error is logged but only if the
+// daemon was not already detected as inactive.
+func detectKeaActiveDaemons(keaApp *KeaApp, previousActiveDaemons []string) (daemons []string, err error) {
 	// Detect active daemons.
 	// Send the version-get command to each daemon to check if it is running.
-	command := keactrl.NewCommandBase(keactrl.VersionGet, daemons...)
+	command := keactrl.NewCommandBase(keactrl.VersionGet, keaApp.ConfiguredDaemons...)
 	responses := keactrl.ResponseList{}
 	err = keaApp.sendCommand(command, &responses)
 	// Empty list. It now contains only the daemons that are running.
-	daemons = nil
 	if err != nil {
 		// The Kea CA seems to be down, so we cannot detect the active daemons.
-		log.WithError(err).Error("Failed to send command to Kea Control Agent")
-	} else {
-		daemons = nil
-		for _, r := range responses {
-			if err := r.GetError(); err != nil {
+		return nil, errors.WithMessage(err, "failed to send command to Kea Control Agent")
+	}
+
+	// Return non-nil list of active daemons to indicate that the detection was performed.
+	daemons = []string{}
+	for _, r := range responses {
+		if err := r.GetError(); err != nil {
+			// If it is a first detection, the daemon is newly inactive.
+			// Otherwise, it depends on the previous state.
+			isNewlyInactive := previousActiveDaemons == nil
+			for _, ad := range previousActiveDaemons {
+				if ad == r.GetDaemon() {
+					// Daemon was previously active.
+					isNewlyInactive = true
+					break
+				}
+			}
+
+			if isNewlyInactive {
 				log.WithError(err).
 					WithField("daemon", r.GetDaemon()).
 					Errorf("Failed to communicate with Kea daemon")
-			} else {
-				daemons = append(daemons, r.GetDaemon())
 			}
+		} else {
+			daemons = append(daemons, r.GetDaemon())
 		}
 	}
 
-	keaApp.ActiveDaemons = daemons
-
-	return keaApp
+	return daemons, nil
 }
