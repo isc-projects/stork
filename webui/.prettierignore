@@ -13,6 +13,7 @@ src/app/backend/*
 dist
 src/assets/arm
 src/assets/pkgs
+src/assets/static-page-content
 .angular
 documentation.json
 src/app/*.ts.template

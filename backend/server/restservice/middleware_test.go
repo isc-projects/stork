@@ -35,7 +35,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
 	resp.Body.Close()
-	require.EqualValues(t, 404, resp.StatusCode)
+	require.EqualValues(t, http.StatusNotFound, resp.StatusCode)
 	require.False(t, apiRequestReceived)
 
 	// let request some API URL, it should be forwarded to apiHandler
@@ -50,6 +50,15 @@ func TestFileServerMiddleware(t *testing.T) {
 	apiRequestReceived = false
 	handler.ServeHTTP(w, req)
 	require.True(t, apiRequestReceived)
+
+	// request non-existing static content file
+	req = httptest.NewRequest("GET", "http://localhost/assets/static-page-content/xyz.abc", nil)
+	w = httptest.NewRecorder()
+	apiRequestReceived = false
+	handler.ServeHTTP(w, req)
+	resp = w.Result()
+	resp.Body.Close()
+	require.EqualValues(t, http.StatusNoContent, resp.StatusCode)
 }
 
 // Check if InnerMiddleware works.

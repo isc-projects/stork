@@ -136,8 +136,16 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 			}
 			resourcePath := path.Join(staticFilesDir, path.Clean(urlPath))
 			if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
-				// If file does not exist then return content of index.html.
-				http.ServeFile(w, r, path.Join(staticFilesDir, "index.html"))
+				// The static-page-content subdirectory contains optional files that
+				// can hold html to be embedded in different components. It is not an
+				// error if these files do not exist. We return HTTP NoContent status
+				// to indicate that the requested file does not exist.
+				if strings.HasPrefix(urlPath, "/assets/static-page-content") {
+					w.WriteHeader(http.StatusNoContent)
+				} else {
+					// If file does not exist then return content of index.html.
+					http.ServeFile(w, r, path.Join(staticFilesDir, "index.html"))
+				}
 			} else {
 				// If file exists then serve it.
 				http.FileServer(http.Dir(staticFilesDir)).ServeHTTP(w, r)

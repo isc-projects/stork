@@ -1,0 +1,17 @@
+<h3>
+    Welcome to Stork!
+</h3>
+<p>
+    This template file can be used as a starting point to provide a custom
+    content for the welcome message in the Stork login screen.
+</p>
+<p>
+    It may be used, for example, to provide contact information to the system
+    administrators.
+</p>
+<p>
+    Rename this file to <b>login-screen-welcome.html</b> to deploy the custom
+    welcome message after it has been created. Optionally create a symbolic
+    link in the static-page-content folder to a file that exists elsewhere on
+    the disk.
+</p>

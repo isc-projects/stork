@@ -147,6 +147,14 @@ $layout-breakpoint: 640px
         // Keep ratio.
         object-fit: contain
 
+.login-screen__welcome
+    // Add top spacing.
+    margin-top: 5vh
+    // Fit the content in case of a short welcome.
+    width: fit-content
+    // Do not extend beyond the 80% of the screen width.
+    max-width: 80%
+
 .login-screen__footer
     // Center horizontally and align to the bottom.
     margin: auto 0 5px 0

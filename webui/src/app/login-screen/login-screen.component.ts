@@ -5,7 +5,24 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { GeneralService } from '../backend/api/api'
 import { AuthenticationMethod } from '../backend/model/authenticationMethod'
 import { AuthService } from '../auth.service'
+import { HttpClient } from '@angular/common/http'
+import { lastValueFrom } from 'rxjs'
 
+/**
+ * A component presenting a Stork log in screen.
+ *
+ * In the simplest form, this component contains a user and password
+ * input boxes to log in to the system. However, since Stork can support
+ * different authentication methods via hooks, it can also display a
+ * customized log in view, depending on the selected method.
+ *
+ * The log in screen can also be customized for the specific deployments
+ * using as static login-screen-welcome.html file. This file can be optionally
+ * created and stored in the Stork server's assets/static-page-content/
+ * folder. It typically holds the contact information to the system
+ * administrators and basic instructions how to obtain access to the system.
+ * Read more about it in the Stork ARM.
+ */
 @Component({
     selector: 'app-login-screen',
     templateUrl: './login-screen.component.html',
@@ -37,12 +54,20 @@ export class LoginScreenComponent implements OnInit {
      */
     authenticationMethod: AuthenticationMethod
 
+    /**
+     * Welcome message fetched.
+     *
+     * It is fetched from the assets/static-page-content/login-screen-welcome.html
+     */
+    welcomeMessage: string = null
+
     constructor(
         protected api: GeneralService,
         private auth: AuthService,
         private route: ActivatedRoute,
         private router: Router,
-        private formBuilder: UntypedFormBuilder
+        private formBuilder: UntypedFormBuilder,
+        public http: HttpClient
     ) {}
 
     /**
@@ -66,10 +91,22 @@ export class LoginScreenComponent implements OnInit {
             secret: ['', Validators.required],
         })
 
+        // Check if the welcome message has been configured for the
+        // login screen.
+        lastValueFrom(this.http.get('assets/static-page-content/login-screen-welcome.html', { responseType: 'text' }))
+            .then((data) => {
+                // The welcome messages should be brief. Let's avoid bloated
+                // welcome messages.
+                if (data.length < 2048) {
+                    this.welcomeMessage = data
+                }
+            })
+            .catch((error) => {
+                console.log(error)
+            })
+
         // Fetch version.
-        this.api
-            .getVersion()
-            .toPromise()
+        lastValueFrom(this.api.getVersion())
             .then((data) => {
                 this.version = data.version
             })
@@ -78,14 +115,11 @@ export class LoginScreenComponent implements OnInit {
             })
 
         // Fetch authentication methods.
-        this.auth
-            .getAuthenticationMethods()
-            .toPromise()
-            .then((methods) => {
-                this.authenticationMethods = methods
-                this.authenticationMethod = methods[0]
-                this.loginForm.controls.authenticationMethod.setValue(this.authenticationMethod)
-            })
+        lastValueFrom(this.auth.getAuthenticationMethods()).then((methods) => {
+            this.authenticationMethods = methods
+            this.authenticationMethod = methods[0]
+            this.loginForm.controls.authenticationMethod.setValue(this.authenticationMethod)
+        })
     }
 
     /**
