@@ -1,8 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { App, Severity, VersionService } from '../version.service'
 import { AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
-import { deepCopy } from '../utils'
-import { Subscription } from 'rxjs'
+import { deepCopy, getErrorMessage } from '../utils'
+import { of, Subscription, tap } from 'rxjs'
+import { catchError, concatMap } from 'rxjs/operators'
+import { MessageService } from 'primeng/api'
 
 /**
  * This component displays current known released versions of ISC Kea, Bind9 and Stork.
@@ -58,8 +60,8 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * "summary of ISC software versions detected by Stork" table.
      */
     severityMap: Severity[] = [
-        Severity.danger,
-        Severity.warning,
+        Severity.error,
+        Severity.warn,
         Severity.info,
         Severity.success, // SeverityEnum.secondary is mapped to SeverityEnum.success
         Severity.success,
@@ -106,10 +108,12 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * Class constructor.
      * @param versionService used to retrieve current software versions data
      * @param servicesApi used to retrieve authorized machines data
+     * @param messageService used to display error messages
      */
     constructor(
         private versionService: VersionService,
-        private servicesApi: ServicesService
+        private servicesApi: ServicesService,
+        private messageService: MessageService
     ) {}
 
     /**
@@ -126,85 +130,149 @@ export class VersionPageComponent implements OnInit, OnDestroy {
         this.summaryDataLoading = true
         this.swVersionsDataLoading = true
         this._subscriptions.add(
-            this.versionService.getDataManufactureDate().subscribe((date) => {
-                this.dataDate = date
-                this.subheaderMap = [
-                    'Security updates were found for ISC software used on those machines!',
-                    'Those machines use ISC software version that require your attention. Software updates are available.',
-                    'ISC software updates are available for those machines.',
-                    '',
-                    `Those machines use up-to-date ISC software (known as of ${this.dataDate})`,
-                ]
+            this.versionService.getDataManufactureDate().subscribe({
+                next: (date) => {
+                    this.dataDate = date
+                    this.subheaderMap = [
+                        'Security updates were found for ISC software used on those machines!',
+                        'Those machines use ISC software version that require your attention. Software updates are available.',
+                        'ISC software updates are available for those machines.',
+                        '',
+                        `Those machines use up-to-date ISC software (known as of ${this.dataDate})`,
+                    ]
+                },
+                error: (err) => {
+                    console.error('err1', err)
+                    let msg = getErrorMessage(err)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error retrieving software versions data',
+                        detail: 'Error occurred when retrieving software versions data: ' + msg,
+                        life: 10000,
+                    })
+                },
+                complete: () => console.log('complete1'),
             })
         )
         this._subscriptions.add(
-            this.versionService.isOnlineData().subscribe((isOnline) => (this.isDataOffline = !isOnline))
+            this.versionService.isOnlineData().subscribe({
+                next: (isOnline) => (this.isDataOffline = !isOnline),
+                error: (err) => {
+                    console.error('err2', err)
+                    let msg = getErrorMessage(err)
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error retrieving software versions data',
+                        detail: 'Error occurred when retrieving software versions data: ' + msg,
+                        life: 10000,
+                    })
+                },
+                complete: () => console.log('complete2'),
+            })
         )
         this._subscriptions.add(
-            this.versionService.getCurrentData().subscribe((data) => {
-                this._processedData = data
+            this.versionService
+                .getCurrentData()
+                .pipe(
+                    concatMap((data) => {
+                        this._processedData = data
+                        this.keaVersions = deepCopy(data?.kea?.currentStable ?? [])
+                        if (data?.kea?.latestDev) {
+                            this.keaVersions.push(data.kea?.latestDev)
+                        }
 
-                this.keaVersions = deepCopy(data?.kea?.currentStable ?? [])
-                if (data?.kea?.latestDev) {
-                    this.keaVersions.push(data.kea?.latestDev)
-                }
+                        this.bind9Versions = deepCopy(data.bind9?.currentStable ?? [])
+                        if (data.bind9?.latestDev) {
+                            this.bind9Versions.push(data.bind9?.latestDev)
+                        }
 
-                this.bind9Versions = deepCopy(data.bind9?.currentStable ?? [])
-                if (data.bind9?.latestDev) {
-                    this.bind9Versions.push(data.bind9?.latestDev)
-                }
+                        this.storkVersions = deepCopy(data.stork?.currentStable ?? [])
+                        if (data.stork?.latestDev) {
+                            this.storkVersions.push(data.stork?.latestDev)
+                        }
 
-                this.storkVersions = deepCopy(data.stork?.currentStable ?? [])
-                if (data.stork?.latestDev) {
-                    this.storkVersions.push(data.stork?.latestDev)
-                }
-
-                this.swVersionsDataLoading = false
-
-                this.counters = [0, 0, 0, 0, 0]
-                // todo: forkJoin or other operator instead inner subscribe?
-                this.servicesApi.getMachinesAppsVersions().subscribe({
+                        this.swVersionsDataLoading = false
+                        this.counters = [0, 0, 0, 0, 0]
+                        return this.servicesApi.getMachinesAppsVersions().pipe(
+                            // tap(() => {
+                            //     throw new Error('err from tap')
+                            // }),
+                            catchError((err) => {
+                                console.error('err3', err)
+                                let msg = getErrorMessage(err)
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Error retrieving software versions data',
+                                    detail: 'Error occurred when retrieving software versions data: ' + msg,
+                                    life: 10000,
+                                })
+                                this.swVersionsDataLoading = false
+                                return of({ items: [] })
+                            })
+                        )
+                    })
+                )
+                .subscribe({
                     next: (data) => {
                         data.items.map((machine) => {
                             let m = machine as Machine & { versionCheckSeverity: Severity }
                             m.versionCheckSeverity = Severity.success
-                            // TODO: daemons version match check
-                            m.versionCheckSeverity = Math.min(
-                                this.severityMap[
-                                    this.versionService.getSoftwareVersionFeedback(
-                                        m.agentVersion,
-                                        'stork',
-                                        this._processedData
-                                    )?.severity ?? Severity.success
-                                ],
-                                m.versionCheckSeverity
-                            )
-                            m.apps.forEach((a) => {
-                                // shelve begin
-                                if (a.type === 'kea') {
-                                    a.version = this.keaVers[this.kI++ % this.keaVers.length]
-                                }
-                                // shelve end
-
+                            try {
                                 m.versionCheckSeverity = Math.min(
                                     this.severityMap[
                                         this.versionService.getSoftwareVersionFeedback(
-                                            a.version,
-                                            a.type as App,
+                                            m.agentVersion,
+                                            'stork',
                                             this._processedData
                                         )?.severity ?? Severity.success
                                     ],
                                     m.versionCheckSeverity
                                 )
-                            })
+                                m.apps.forEach((a) => {
+                                    m.versionCheckSeverity = Math.min(
+                                        this.severityMap[
+                                            this.versionService.getSoftwareVersionFeedback(
+                                                a.version,
+                                                a.type as App,
+                                                this._processedData
+                                            )?.severity ?? Severity.success
+                                        ],
+                                        m.versionCheckSeverity
+                                    )
+                                })
+                            } catch (err) {
+                                console.error('err4', err)
+                                let msg = getErrorMessage(err)
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Error retrieving software versions data',
+                                    detail: 'Error occurred when retrieving software versions data: ' + msg,
+                                    life: 10000,
+                                })
+                            }
+
+                            // TODO: daemons version match check
+
                             this.counters[m.versionCheckSeverity]++
                             return m
                         })
                         this.machines = data.items
                         this.summaryDataLoading = false
                     },
+                    error: (err) => {
+                        console.error('err5', err)
+                        let msg = getErrorMessage(err)
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error retrieving software versions data',
+                            detail: 'Error occurred when retrieving software versions data: ' + msg,
+                            life: 10000,
+                        })
+                        this.swVersionsDataLoading = false
+                        this.summaryDataLoading = false
+                    },
+                    complete: () => console.log('complete3'),
                 })
-            })
         )
     }
 

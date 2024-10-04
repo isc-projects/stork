@@ -203,33 +203,38 @@
             <ng-template pTemplate="groupheader" let-m let-rowIndex="rowIndex" let-expanded="expanded">
                 <tr>
                     <td colspan="5" class="row-toggle">
-                        <button
-                            type="button"
-                            pButton
-                            pRipple
-                            [pRowToggler]="m"
-                            class="p-button-text p-button-rounded p-button-plain mr-2 flex-none"
-                            [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                        ></button>
-                        <p-badge
-                            [value]="counters[m.versionCheckSeverity]"
-                            [severity]="Severity[m.versionCheckSeverity]"
-                            styleClass="mr-1 my-2"
-                        ></p-badge>
-                        <p-message
-                            [severity]="Severity[m.versionCheckSeverity]"
-                            [text]="subheaderMap[m.versionCheckSeverity]"
-                            [styleClass]="
-                                [
-                                    m.versionCheckSeverity === Severity.warning
-                                        ? 'p-inline-message-warn'
-                                        : m.versionCheckSeverity === Severity.danger
-                                          ? 'p-inline-message-error'
-                                          : '',
-                                    'max-w-30rem'
-                                ].join(' ')
-                            "
-                        ></p-message>
+                        <div class="flex align-items-center">
+                            <button
+                                type="button"
+                                pButton
+                                pRipple
+                                [pRowToggler]="m"
+                                class="p-button-text p-button-rounded p-button-plain mr-2 flex-none"
+                                [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                            ></button>
+                            <p-badge
+                                [value]="counters[m.versionCheckSeverity]"
+                                [severity]="
+                                    m.versionCheckSeverity === Severity.warn
+                                        ? 'warning'
+                                        : m.versionCheckSeverity === Severity.error
+                                          ? 'danger'
+                                          : Severity[m.versionCheckSeverity]
+                                "
+                                styleClass="flex-none mr-2"
+                            ></p-badge>
+                            <p-messages
+                                [value]="[
+                                    {
+                                        severity: Severity[m.versionCheckSeverity],
+                                        summary: subheaderMap[m.versionCheckSeverity]
+                                    }
+                                ]"
+                                [closable]="false"
+                                [enableService]="false"
+                                styleClass="max-w-30rem"
+                            ></p-messages>
+                        </div>
                     </td>
                 </tr>
             </ng-template>
@@ -250,13 +255,13 @@
                     </td>
                     <td>
                         <span class="p-column-title">Summary</span>
-                        <ng-container *ngFor="let a of m.apps; let i = index"
+                        <ng-container *ngFor="let a of m.apps"
                             ><app-version-status
                                 [app]="a.type"
                                 [version]="a.version"
                                 [showAppName]="true"
                                 [inline]="false"
-                                [styleClass]="[i > 0 ? 'mt-1' : '', 'max-w-50rem'].join(' ')"
+                                styleClass="max-w-50rem"
                             ></app-version-status
                         ></ng-container>
                         <app-version-status
@@ -264,7 +269,7 @@
                             [version]="m.agentVersion"
                             [showAppName]="true"
                             [inline]="false"
-                            styleClass="mt-1 max-w-50rem"
+                            styleClass="max-w-50rem"
                         ></app-version-status>
                     </td>
                 </tr>

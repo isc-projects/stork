@@ -108,6 +108,7 @@ export class VersionService {
      * Clears the _checkedVersionCache.
      */
     refreshData() {
+        // todo: convert to observable to catch errors
         this._checkedVersionCache = new Map()
         this._currentDataSubject$.next({})
     }
