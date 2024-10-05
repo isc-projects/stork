@@ -11,7 +11,7 @@ import { SettingService } from './setting.service'
 import { ServerDataService } from './server-data.service'
 import { Settings, User } from './backend'
 import { ThemeService } from './theme.service'
-import { VersionService } from './version.service'
+import { Severity, VersionService } from './version.service'
 
 @Component({
     selector: 'app-root',
@@ -39,6 +39,12 @@ export class AppComponent implements OnInit, OnDestroy {
      */
     subscriptions: Subscription = new Subscription()
 
+    // displaySwVersionBadge = false
+    // swVersionBadgeSeverity = Severity.success
+    swBadge$: Observable<[boolean, Severity]>
+    private displaySwVersionBadge: boolean = false
+    private swVersionBadgeSeverity: Severity
+
     constructor(
         private router: Router,
         private serverData: ServerDataService,
@@ -54,6 +60,8 @@ export class AppComponent implements OnInit, OnDestroy {
         this.breadcrumbItems = [{ label: 'Categories' }]
 
         this.loadingInProgress = this.loadingService.getState()
+
+        this.swBadge$ = this.versionService.getWarningFound()
     }
 
     initMenus() {
@@ -261,6 +269,15 @@ export class AppComponent implements OnInit, OnDestroy {
         )
 
         this.subscriptions.add(
+            this.versionService.getWarningFound().subscribe((data) => {
+                console.log('rxed', data)
+                this.displaySwVersionBadge = data[0]
+                this.swVersionBadgeSeverity = data[1]
+                this.userMenuItems = [...this.userMenuItems]
+            })
+        )
+
+        this.subscriptions.add(
             this.auth.currentUser.subscribe((x) => {
                 this.currentUser = x
                 const menuItem = this.getMenuItem('Users')
@@ -361,5 +378,13 @@ export class AppComponent implements OnInit, OnDestroy {
      */
     setInitialTheme(): void {
         this.themeService.setInitialTheme()
+    }
+
+    get swVersionBadgeClass() {
+        return !this.displaySwVersionBadge
+            ? 'badge-hidden'
+            : this.swVersionBadgeSeverity === Severity.error
+              ? 'p-badge-danger'
+              : 'p-badge-warning'
     }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt } from 'semver'
 import { AppsVersions, GeneralService } from './backend'
-import { map, mergeMap, shareReplay } from 'rxjs/operators'
+import { delay, distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable } from 'rxjs'
 
 /**
@@ -69,6 +69,12 @@ export class VersionService {
     private _storkServerVersion: string = undefined
 
     /**
+     * RxJS Subject to emit next when a machine with severity warning or error was found.
+     * @private
+     */
+    private _warningFound$ = new BehaviorSubject<[boolean, Severity]>([false, Severity.success])
+
+    /**
      * An Observable which emits current software versions data retrieved from the backend.
      * It acts like a cache, because every observer that subscribes to it, receives replayed response
      * from the backend. This is to prevent backend overload with recurring queries.
@@ -110,6 +116,7 @@ export class VersionService {
     refreshData() {
         // todo: convert to observable to catch errors
         this._checkedVersionCache = new Map()
+        this._warningFound$.next([false, Severity.success])
         this._currentDataSubject$.next({})
     }
 
@@ -151,6 +158,7 @@ export class VersionService {
         let cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
             console.log('cache used')
+            this.checkSeverity(cachedFeedback)
             return cachedFeedback
         }
 
@@ -175,6 +183,7 @@ export class VersionService {
                 }
 
                 this._checkedVersionCache.set(cacheKey, response)
+                this.checkSeverity(response)
                 return response
             }
 
@@ -190,6 +199,7 @@ export class VersionService {
 
                     response = this.getStorkFeedback(app, sanitizedSemver, response)
                     this._checkedVersionCache.set(cacheKey, response)
+                    this.checkSeverity(response)
                     return response
                 }
 
@@ -222,6 +232,7 @@ export class VersionService {
                             response = this.getStorkFeedback(app, sanitizedSemver, response)
 
                             this._checkedVersionCache.set(cacheKey, response)
+                            this.checkSeverity(response)
                             return response
                         }
                     }
@@ -253,6 +264,7 @@ export class VersionService {
                         response = this.getStorkFeedback(app, sanitizedSemver, response)
 
                         this._checkedVersionCache.set(cacheKey, response)
+                        this.checkSeverity(response)
                         return response
                     }
                 }
@@ -301,6 +313,7 @@ export class VersionService {
                 response = this.getStorkFeedback(app, sanitizedSemver, response)
 
                 this._checkedVersionCache.set(cacheKey, response)
+                this.checkSeverity(response)
                 return response
             }
 
@@ -331,6 +344,16 @@ export class VersionService {
      */
     setStorkServerVersion(version: string) {
         this._storkServerVersion = version
+    }
+
+    /**
+     *
+     */
+    getWarningFound(): Observable<[boolean, Severity]> {
+        return this._warningFound$.pipe(
+            distinctUntilChanged((prev, curr) => prev[0] === curr[0] && prev[1] <= curr[1]),
+            delay(1000)
+        )
     }
 
     /**
@@ -379,5 +402,11 @@ export class VersionService {
         }
 
         return currentResponse
+    }
+
+    private checkSeverity(currentResponse: VersionFeedback): void {
+        if (currentResponse.severity <= Severity.warn) {
+            this._warningFound$.next([true, currentResponse.severity])
+        }
     }
 }
