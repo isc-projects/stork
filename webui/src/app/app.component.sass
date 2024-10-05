@@ -90,12 +90,18 @@
       display: none
 
   .p-splitbutton
-    &.p-badge-warning .p-badge
-      background-color: var(--orange-500)
-    &.p-badge-danger .p-badge
-      background-color: var(--red-500)
+    &.p-badge-warning
+      .p-badge:not(.p-menuitem), .p-menuitem-content:has(.p-menuitem-badges)
+        background-color: var(--orange-500)
+        color: var(--primary-color-text)
+    &.p-badge-danger
+      .p-badge, .p-menuitem-content:has(.p-menuitem-badges)
+        background-color: var(--red-500)
+        color: var(--primary-color-text)
     &.badge-hidden .p-badge
       display: none
+    .p-menuitem-link:has(.p-menuitem-badges)
+      color: inherit
 
 
 // logo styling

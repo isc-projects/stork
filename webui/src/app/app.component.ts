@@ -41,7 +41,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // displaySwVersionBadge = false
     // swVersionBadgeSeverity = Severity.success
-    swBadge$: Observable<[boolean, Severity]>
+    // swBadge$: Observable<[boolean, Severity]>
     private displaySwVersionBadge: boolean = false
     private swVersionBadgeSeverity: Severity
 
@@ -61,7 +61,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
         this.loadingInProgress = this.loadingService.getState()
 
-        this.swBadge$ = this.versionService.getWarningFound()
+        // this.swBadge$ = this.versionService.getWarningFound()
     }
 
     initMenus() {
@@ -273,7 +273,21 @@ export class AppComponent implements OnInit, OnDestroy {
                 console.log('rxed', data)
                 this.displaySwVersionBadge = data[0]
                 this.swVersionBadgeSeverity = data[1]
-                this.userMenuItems = [...this.userMenuItems]
+                if (this.displaySwVersionBadge) {
+                    let i = this.getMenuItem('Software versions')
+                    i.badge = ' '
+                    i.badgeStyleClass = 'p-badge p-badge-dot ml-1 mb-2 ' + this.swVersionBadgeClass
+                    i = this.getMenuItem('Monitoring')
+                    i.badge = ' '
+                    i.badgeStyleClass = 'p-badge p-badge-dot ml-1 mb-2 ' + this.swVersionBadgeClass
+                } else {
+                    let i = this.getMenuItem('Software versions')
+                    i.badge = undefined
+                    i = this.getMenuItem('Monitoring')
+                    i.badge = undefined
+                }
+
+                this.menuItems = [...this.menuItems]
             })
         )
 
@@ -381,9 +395,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     get swVersionBadgeClass() {
-        return !this.displaySwVersionBadge
-            ? 'badge-hidden'
-            : this.swVersionBadgeSeverity === Severity.error
+        return this.swVersionBadgeSeverity === Severity.error
               ? 'p-badge-danger'
               : 'p-badge-warning'
     }
