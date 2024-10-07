@@ -80,7 +80,7 @@ SQL commands directly using the ``psql`` program.
 
 The :ref:`inspecting-keys-and-certificates` section describes how to use the tool for TLS
 certificates management. The :ref:`configuring-deployment-specific-views` section describes how to setup custom
-welcome message in the login screen.
+welcome message on the login page.
 
 Further sections describe different methods for installing the Stork Server from packages.
 See: :ref:`install-server-deb` and :ref:`install-server-rpm`. The ``stork-tool`` program
@@ -1576,7 +1576,7 @@ how it can be configured.
 Login Page Welcome Message
 --------------------------
 
-A custom welcome message can be displayed in the login page. Typically, it is used to provide
+A custom welcome message can be displayed on the login page. Typically, it is used to provide
 contact information to a server administrator to request access credentials. The welcome
 message should be wrritten to a file using basic HTML format. For example:
 

@@ -653,7 +653,7 @@ func setupApp() *cli.App {
 			// STATIC VIEWS DEPLOYMENT
 			{
 				Name:        "deploy-login-page-welcome",
-				Usage:       "Deploy custom welcome message in the login page",
+				Usage:       "Deploy custom welcome message on the login page",
 				UsageText:   "stork-tool deploy-login-page-welcome [-i filename] [-d directory]",
 				Description: ``,
 				Flags:       loginScreenWelcomeDeployFlags,
