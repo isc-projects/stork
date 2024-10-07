@@ -39,10 +39,16 @@ export class AppComponent implements OnInit, OnDestroy {
      */
     subscriptions: Subscription = new Subscription()
 
-    // displaySwVersionBadge = false
-    // swVersionBadgeSeverity = Severity.success
-    // swBadge$: Observable<[boolean, Severity]>
+    /**
+     * Flag stating whether to display badge for some menu items to drag user's attention about ISC software versions.
+     * @private
+     */
     private displaySwVersionBadge: boolean = false
+
+    /**
+     * Severity for the badge for some menu items to drag user's attention about ISC software versions.
+     * @private
+     */
     private swVersionBadgeSeverity: Severity
 
     constructor(
@@ -60,8 +66,6 @@ export class AppComponent implements OnInit, OnDestroy {
         this.breadcrumbItems = [{ label: 'Categories' }]
 
         this.loadingInProgress = this.loadingService.getState()
-
-        // this.swBadge$ = this.versionService.getWarningFound()
     }
 
     initMenus() {
@@ -269,25 +273,11 @@ export class AppComponent implements OnInit, OnDestroy {
         )
 
         this.subscriptions.add(
-            this.versionService.getWarningFound().subscribe((data) => {
+            this.versionService.getVersionAlert().subscribe((data) => {
                 console.log('rxed', data)
-                this.displaySwVersionBadge = data[0]
-                this.swVersionBadgeSeverity = data[1]
-                if (this.displaySwVersionBadge) {
-                    let i = this.getMenuItem('Software versions')
-                    i.badge = ' '
-                    i.badgeStyleClass = 'p-badge p-badge-dot ml-1 mb-2 ' + this.swVersionBadgeClass
-                    i = this.getMenuItem('Monitoring')
-                    i.badge = ' '
-                    i.badgeStyleClass = 'p-badge p-badge-dot ml-1 mb-2 ' + this.swVersionBadgeClass
-                } else {
-                    let i = this.getMenuItem('Software versions')
-                    i.badge = undefined
-                    i = this.getMenuItem('Monitoring')
-                    i.badge = undefined
-                }
-
-                this.menuItems = [...this.menuItems]
+                this.displaySwVersionBadge = data.detected
+                this.swVersionBadgeSeverity = data.severity
+                this.setMenuItemBadges()
             })
         )
 
@@ -394,9 +384,32 @@ export class AppComponent implements OnInit, OnDestroy {
         this.themeService.setInitialTheme()
     }
 
+    /**
+     * Returns appropriate class to style the badge basing on the severity.
+     */
     get swVersionBadgeClass() {
-        return this.swVersionBadgeSeverity === Severity.error
-              ? 'p-badge-danger'
-              : 'p-badge-warning'
+        return this.swVersionBadgeSeverity === Severity.error ? 'p-badge-danger' : 'p-badge-warning'
+    }
+
+    /**
+     * Enables or disable badges for some top menubar menu items and styles them appropriately.
+     */
+    setMenuItemBadges() {
+        if (this.displaySwVersionBadge) {
+            let item = this.getMenuItem('Software versions')
+            item.badge = ' '
+            item.badgeStyleClass = 'p-badge p-badge-dot ml-1 mb-2 ' + this.swVersionBadgeClass
+
+            item = this.getMenuItem('Monitoring')
+            item.badge = ' '
+            item.badgeStyleClass = 'p-badge p-badge-dot ml-1 mb-2 ' + this.swVersionBadgeClass
+        } else {
+            let i = this.getMenuItem('Software versions')
+            i.badge = undefined
+            i = this.getMenuItem('Monitoring')
+            i.badge = undefined
+        }
+
+        this.menuItems = [...this.menuItems]
     }
 }

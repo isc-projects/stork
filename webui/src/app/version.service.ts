@@ -1,15 +1,26 @@
 import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt } from 'semver'
 import { AppsVersions, GeneralService } from './backend'
-import { delay, distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
+import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable } from 'rxjs'
 
 /**
- * Interface defining fields for an object which is returned after assessment of software version is done for particular App.
+ * Interface defining fields for an object which is returned after
+ * assessment of software version is done for particular App.
  */
 export interface VersionFeedback {
     severity: Severity
     messages: string[]
+}
+
+/**
+ * Interface defining software version alert.
+ * Whether user should be notified about ('detected' flag),
+ * and if so, what is the severity.
+ */
+export interface VersionAlert {
+    detected: boolean
+    severity: Severity
 }
 
 /**
@@ -72,7 +83,7 @@ export class VersionService {
      * RxJS Subject to emit next when a machine with severity warning or error was found.
      * @private
      */
-    private _warningFound$ = new BehaviorSubject<[boolean, Severity]>([false, Severity.success])
+    private _versionAlert$ = new BehaviorSubject<VersionAlert>({ detected: false, severity: Severity.success })
 
     /**
      * An Observable which emits current software versions data retrieved from the backend.
@@ -104,6 +115,7 @@ export class VersionService {
 
     /**
      * Returns current software versions data Observable.
+     * @return AppsVersions RxJS Observable
      */
     getCurrentData(): Observable<AppsVersions> {
         return this.currentData$
@@ -111,18 +123,19 @@ export class VersionService {
 
     /**
      * Forces retrieval of current software versions data from the backend.
-     * Clears the _checkedVersionCache.
+     * Clears the _checkedVersionCache and disables previous _versionAlert$.
      */
     refreshData() {
         // todo: convert to observable to catch errors
         this._checkedVersionCache = new Map()
-        this._warningFound$.next([false, Severity.success])
+        this._versionAlert$.next({ detected: false, severity: Severity.success })
         this._currentDataSubject$.next({})
     }
 
     /**
      * Returns whether cached data retrieved from the backend is outdated.
      * This is used to regularly query the backend for current software versions data.
+     * @return true if data is outdated; false otherwise
      */
     isDataOutdated() {
         return (
@@ -132,6 +145,7 @@ export class VersionService {
 
     /**
      * Returns an Observable of current manufacture date of the software versions data that was provided by the backend.
+     * @return data manufacture date as string RxJS Observable
      */
     getDataManufactureDate(): Observable<string> {
         return this.currentData$.pipe(map((data) => data.date))
@@ -140,6 +154,7 @@ export class VersionService {
     /**
      * Returns an Observable of the boolean stating whether current software versions data provided by the backend
      * origins from online sources (e.g. ISC GitLab REST api) or from offline data stored in versions.json file.
+     * @return true if data comes from online fetching; false otherwise
      */
     isOnlineData(): Observable<boolean> {
         return this.currentData$.pipe(map((data) => !!data.onlineData))
@@ -152,13 +167,14 @@ export class VersionService {
      * @param version string version that must contain a parsable semver
      * @param app either kea, bind9 or stork
      * @param data input data used to make the assessment
+     * @return assessment result as a VersionFeedback object; it contains severity and messages to be displayed to the user
      */
     getSoftwareVersionFeedback(version: string, app: App, data: AppsVersions): VersionFeedback {
         let cacheKey = version + app
         let cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
             console.log('cache used')
-            this.checkSeverity(cachedFeedback)
+            this.detectHigherSeverity(cachedFeedback)
             return cachedFeedback
         }
 
@@ -182,9 +198,7 @@ export class VersionService {
                     ],
                 }
 
-                this._checkedVersionCache.set(cacheKey, response)
-                this.checkSeverity(response)
-                return response
+                return this.setCacheAndReturnResponse(cacheKey, response)
             }
 
             // case - stable version
@@ -194,13 +208,13 @@ export class VersionService {
                 if (!currentStableVersionDetails) {
                     response = {
                         severity: Severity.secondary,
-                        messages: [`${appName} ${sanitizedSemver} stable version is not known yet as of ${dataDate}.`],
+                        messages: [
+                            `As of ${dataDate}, the ${appName} ${sanitizedSemver} stable version is not known yet.`,
+                        ],
                     }
 
                     response = this.getStorkFeedback(app, sanitizedSemver, response)
-                    this._checkedVersionCache.set(cacheKey, response)
-                    this.checkSeverity(response)
-                    return response
+                    return this.setCacheAndReturnResponse(cacheKey, response)
                 }
 
                 if (Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length >= 1) {
@@ -230,10 +244,7 @@ export class VersionService {
                             }
 
                             response = this.getStorkFeedback(app, sanitizedSemver, response)
-
-                            this._checkedVersionCache.set(cacheKey, response)
-                            this.checkSeverity(response)
-                            return response
+                            return this.setCacheAndReturnResponse(cacheKey, response)
                         }
                     }
 
@@ -262,10 +273,7 @@ export class VersionService {
                         }
 
                         response = this.getStorkFeedback(app, sanitizedSemver, response)
-
-                        this._checkedVersionCache.set(cacheKey, response)
-                        this.checkSeverity(response)
-                        return response
+                        return this.setCacheAndReturnResponse(cacheKey, response)
                     }
                 }
 
@@ -280,7 +288,6 @@ export class VersionService {
             if (isDevelopmentVersion === true && latestDevVersion) {
                 if (lt(sanitizedSemver, latestDevVersion as string)) {
                     response = {
-                        // severity: 'warn',
                         severity: Severity.warn,
                         messages: [
                             `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
@@ -311,10 +318,7 @@ export class VersionService {
                 }
 
                 response = this.getStorkFeedback(app, sanitizedSemver, response)
-
-                this._checkedVersionCache.set(cacheKey, response)
-                this.checkSeverity(response)
-                return response
+                return this.setCacheAndReturnResponse(cacheKey, response)
             }
 
             throw new Error(`Couldn't asses the software version for ${appName} ${version}!`)
@@ -328,6 +332,7 @@ export class VersionService {
      * Sanitizes given version string and returns valid semver if it could be parsed.
      * If valid semver couldn't be found, it returns null.
      * @param version version string to look for semver
+     * @return sanitized semver or null in case semver was not parsed
      */
     sanitizeSemver(version: string): string | null {
         let sanitizedSemver = coerce(version)?.version
@@ -347,12 +352,15 @@ export class VersionService {
     }
 
     /**
-     *
+     * Returns an observable of VersionAlert.
+     * The observable will emit next alert only if:
+     * 'VersionAlert.detected' of the _versionAlert$ subject changes
+     * or the _versionAlert$ subject reports higher severity than was reported before.
+     * @return VersionAlert RxJS Observable
      */
-    getWarningFound(): Observable<[boolean, Severity]> {
-        return this._warningFound$.pipe(
-            distinctUntilChanged((prev, curr) => prev[0] === curr[0] && prev[1] <= curr[1]),
-            delay(1000)
+    getVersionAlert(): Observable<VersionAlert> {
+        return this._versionAlert$.pipe(
+            distinctUntilChanged((prev, curr) => prev.detected === curr.detected && prev.severity <= curr.severity)
         )
     }
 
@@ -361,6 +369,7 @@ export class VersionService {
      * For stable release, false is returned.
      * @param version app version
      * @param app either kea, bind9 or stork
+     * @return true if provided app version is a development release; false otherwise
      * @private
      */
     private isDevelopmentVersion(version: string, app: App) {
@@ -378,6 +387,7 @@ export class VersionService {
      * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
      * @param data
      * @return version as either string (in case of latestSecure and latestDev) or array of strings (in case of currentStable)
+     * @private
      */
     private getVersion(app: App, swType: ReleaseType, data: AppsVersions): string | string[] | null {
         return swType === 'currentStable' ? data?.[app]?.sortedStables || null : data?.[app]?.[swType]?.version || null
@@ -391,6 +401,7 @@ export class VersionService {
      * @param version software version to be checked
      * @param currentResponse current VersionFeedback response
      * @return Modified currentResponse in case of mismatch. In case mismatch was not found, currentResponse returned is not modified.
+     * @private
      */
     private getStorkFeedback(app: App, version: string, currentResponse: VersionFeedback): VersionFeedback {
         if (app === 'stork' && this._storkServerVersion && this._storkServerVersion !== version) {
@@ -404,9 +415,29 @@ export class VersionService {
         return currentResponse
     }
 
-    private checkSeverity(currentResponse: VersionFeedback): void {
+    /**
+     * Detects if given VersionFeedback response has severity that the user should be notified of.
+     * @param currentResponse current VersionFeedback response
+     * @private
+     */
+    private detectHigherSeverity(currentResponse: VersionFeedback): void {
         if (currentResponse.severity <= Severity.warn) {
-            this._warningFound$.next([true, currentResponse.severity])
+            this._versionAlert$.next({ detected: true, severity: currentResponse.severity })
         }
+    }
+
+    /**
+     * Helper function calling repeatable code:
+     * 1. sets _checkedVersionCache for given cacheKey
+     * 2. calls detectHigherSeverity(response) for given response
+     * 3. returns the response
+     * @param cacheKey _checkedVersionCache map key
+     * @param response VersionFeedback response
+     * @private
+     */
+    private setCacheAndReturnResponse(cacheKey: string, response: VersionFeedback) {
+        this._checkedVersionCache.set(cacheKey, response)
+        this.detectHigherSeverity(response)
+        return response
     }
 }

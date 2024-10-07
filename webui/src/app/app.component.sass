@@ -77,32 +77,16 @@
   100%
     stroke: #fff
 
-:host ::ng-deep
-  // set nice look of stork version tooltip
-  .p-tooltip.stork-version-tooltip
-    // fix position and look of stork version tooltip
-    left: 44px !important
-    // make it wider
-    max-width: 600px
+// set nice look of stork version tooltip
+:host ::ng-deep .p-tooltip.stork-version-tooltip
+  // fix position and look of stork version tooltip
+  left: 44px !important
+  // make it wider
+  max-width: 600px
 
-    .p-tooltip-arrow
-      // hide arrow
-      display: none
-
-  .p-splitbutton
-    &.p-badge-warning
-      .p-badge:not(.p-menuitem), .p-menuitem-content:has(.p-menuitem-badges)
-        background-color: var(--orange-500)
-        color: var(--primary-color-text)
-    &.p-badge-danger
-      .p-badge, .p-menuitem-content:has(.p-menuitem-badges)
-        background-color: var(--red-500)
-        color: var(--primary-color-text)
-    &.badge-hidden .p-badge
-      display: none
-    .p-menuitem-link:has(.p-menuitem-badges)
-      color: inherit
-
+  .p-tooltip-arrow
+    // hide arrow
+    display: none
 
 // logo styling
 .logo
