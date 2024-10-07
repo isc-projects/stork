@@ -251,7 +251,9 @@
                     </td>
                     <td>
                         <span class="p-column-title">App(s) Version</span>
-                        <ng-container *ngFor="let a of m.apps">{{ a.type | titlecase }} {{ a.version }} </ng-container>
+                        <ng-container *ngFor="let a of m.apps; let i = index"
+                            ><br *ngIf="i > 0" />{{ a.type | titlecase }} {{ a.version }}</ng-container
+                        >
                     </td>
                     <td>
                         <span class="p-column-title">Summary</span>

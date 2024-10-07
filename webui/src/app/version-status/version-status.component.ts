@@ -161,7 +161,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         this.feedbackMessages = feedback.messages ?? []
         let m: Message = {
             severity: Severity[feedback.severity],
-            summary: this.appName,
+            summary: `${this.appName} ${this.version}`,
             detail: feedback.messages.join('<br><br>'),
         }
 
