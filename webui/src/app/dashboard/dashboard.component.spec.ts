@@ -238,7 +238,7 @@ describe('DashboardComponent', () => {
 
         fixture.detectChanges()
         const grafanaIcons = fixture.debugElement.queryAll(By.css('i.pi-chart-line'))
-        expect(grafanaIcons?.length).toBe(1)
+        expect(grafanaIcons?.length).toBe(2)
     }))
 
     it('should indicate that HA is not enabled', () => {

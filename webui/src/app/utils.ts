@@ -119,15 +119,21 @@ export function humanCount(count: string | bigint | number) {
  * Build URL to Grafana dashboard
  */
 export function getGrafanaUrl(grafanaBaseUrl: string, name: string, subnet?: string, instance?: string): string {
+    if (!grafanaBaseUrl.endsWith('/')) {
+        grafanaBaseUrl += '/'
+    }
+
     let url = null
     if (name === 'dhcp4') {
         if (instance) {
             instance += ':9547'
         }
-        if (!grafanaBaseUrl.endsWith('/')) {
-            grafanaBaseUrl += '/'
-        }
         url = new URL('./d/hRf18FvWz/', grafanaBaseUrl)
+    } else if (name === 'dhcp6') {
+        if (instance) {
+            instance += ':9547'
+        }
+        url = new URL('./d/AQPHKJUGz/', grafanaBaseUrl)
     } else {
         return ''
     }

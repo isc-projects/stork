@@ -258,10 +258,16 @@
             </td>
             <td *ngIf="grafanaUrl">
                 <a
-                    [href]="getGrafanaUrl('dhcp4', sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
+                    [href]="
+                        getGrafanaUrl(
+                            sn.subnet?.includes('.') ? 'dhcp4' : 'dhcp6',
+                            sn.localSubnets[0].id,
+                            sn.localSubnets[0].machineHostname
+                        )
+                    "
                     [title]="getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
                     target="blank"
-                    *ngIf="sn.localSubnets?.[0] && sn.subnet?.includes('.')"
+                    *ngIf="sn.localSubnets?.[0]"
                 >
                     <i class="pi pi-chart-line text-2xl"></i>
                 </a>

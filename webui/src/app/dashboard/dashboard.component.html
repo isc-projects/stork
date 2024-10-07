@@ -198,6 +198,24 @@
                                         class="pi pi-exclamation-circle text-2xl text-red-500 vertical-align-middle"
                                     ></i>
                                 </td>
+                                <td *ngIf="grafanaUrl">
+                                    <a
+                                        *ngIf="sn.localSubnets?.[0]"
+                                        [href]="
+                                            getGrafanaUrl(
+                                                'dhcp6',
+                                                sn.localSubnets[0].id,
+                                                sn.localSubnets[0].machineHostname
+                                            )
+                                        "
+                                        [title]="
+                                            getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)
+                                        "
+                                        target="blank"
+                                    >
+                                        <i class="pi pi-chart-line text-2xl vertical-align-middle"></i>
+                                    </a>
+                                </td>
                             </tr>
 
                             <tr>
