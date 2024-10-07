@@ -274,7 +274,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
         this.subscriptions.add(
             this.versionService.getVersionAlert().subscribe((data) => {
-                console.log('rxed', data)
                 this.displaySwVersionBadge = data.detected
                 this.swVersionBadgeSeverity = data.severity
                 this.setMenuItemBadges()

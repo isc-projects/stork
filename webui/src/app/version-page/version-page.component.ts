@@ -94,6 +94,11 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     swVersionsDataLoading: boolean
 
     /**
+     * Keeps information whether there has been error when fetching data from backend.
+     */
+    errorOccurred = false
+
+    /**
      * Keeps current software versions data received from version service.
      * @private
      */
@@ -127,8 +132,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        this.summaryDataLoading = true
-        this.swVersionsDataLoading = true
         this._subscriptions.add(
             this.versionService.getDataManufactureDate().subscribe({
                 next: (date) => {
@@ -142,7 +145,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                     ]
                 },
                 error: (err) => {
-                    console.error('err1', err)
                     let msg = getErrorMessage(err)
                     this.messageService.add({
                         severity: 'error',
@@ -151,14 +153,12 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         life: 10000,
                     })
                 },
-                complete: () => console.log('complete1'),
             })
         )
         this._subscriptions.add(
             this.versionService.isOnlineData().subscribe({
                 next: (isOnline) => (this.isDataOffline = !isOnline),
                 error: (err) => {
-                    console.error('err2', err)
                     let msg = getErrorMessage(err)
                     this.messageService.add({
                         severity: 'error',
@@ -167,38 +167,41 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         life: 10000,
                     })
                 },
-                complete: () => console.log('complete2'),
             })
         )
         this._subscriptions.add(
             this.versionService
                 .getCurrentData()
                 .pipe(
+                    tap(() => {
+                        this.swVersionsDataLoading = true
+                    }),
                     concatMap((data) => {
-                        this._processedData = data
-                        this.keaVersions = deepCopy(data?.kea?.currentStable ?? [])
-                        if (data?.kea?.latestDev) {
-                            this.keaVersions.push(data.kea?.latestDev)
-                        }
+                        if (data) {
+                            this._processedData = data
+                            this.keaVersions = deepCopy(data?.kea?.currentStable ?? [])
+                            if (data?.kea?.latestDev) {
+                                this.keaVersions.push(data.kea?.latestDev)
+                            }
 
-                        this.bind9Versions = deepCopy(data.bind9?.currentStable ?? [])
-                        if (data.bind9?.latestDev) {
-                            this.bind9Versions.push(data.bind9?.latestDev)
-                        }
+                            this.bind9Versions = deepCopy(data?.bind9?.currentStable ?? [])
+                            if (data.bind9?.latestDev) {
+                                this.bind9Versions.push(data?.bind9?.latestDev)
+                            }
 
-                        this.storkVersions = deepCopy(data.stork?.currentStable ?? [])
-                        if (data.stork?.latestDev) {
-                            this.storkVersions.push(data.stork?.latestDev)
+                            this.storkVersions = deepCopy(data.stork?.currentStable ?? [])
+                            if (data.stork?.latestDev) {
+                                this.storkVersions.push(data.stork?.latestDev)
+                            }
                         }
 
                         this.swVersionsDataLoading = false
-                        this.counters = [0, 0, 0, 0, 0]
                         return this.servicesApi.getMachinesAppsVersions().pipe(
-                            // tap(() => {
-                            //     throw new Error('err from tap')
-                            // }),
+                            tap(() => {
+                                this.summaryDataLoading = true
+                                this.counters = [0, 0, 0, 0, 0]
+                            }),
                             catchError((err) => {
-                                console.error('err3', err)
                                 let msg = getErrorMessage(err)
                                 this.messageService.add({
                                     severity: 'error',
@@ -206,7 +209,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     detail: 'Error occurred when retrieving software versions data: ' + msg,
                                     life: 10000,
                                 })
-                                this.swVersionsDataLoading = false
+                                this.summaryDataLoading = false
                                 return of({ items: [] })
                             })
                         )
@@ -241,7 +244,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     )
                                 })
                             } catch (err) {
-                                console.error('err4', err)
                                 let msg = getErrorMessage(err)
                                 this.messageService.add({
                                     severity: 'error',
@@ -250,8 +252,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     life: 10000,
                                 })
                             }
-
-                            // TODO: daemons version match check
+                            // TODO: daemons version match check - done on backend?
 
                             this.counters[m.versionCheckSeverity]++
                             return m
@@ -260,7 +261,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         this.summaryDataLoading = false
                     },
                     error: (err) => {
-                        console.error('err5', err)
                         let msg = getErrorMessage(err)
                         this.messageService.add({
                             severity: 'error',
@@ -268,10 +268,10 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             detail: 'Error occurred when retrieving software versions data: ' + msg,
                             life: 10000,
                         })
+                        this.machines = []
                         this.swVersionsDataLoading = false
-                        this.summaryDataLoading = false
+                        this.errorOccurred = true
                     },
-                    complete: () => console.log('complete3'),
                 })
         )
     }
@@ -280,8 +280,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * Triggers software versions data refresh - new data will be sent from the backend via version service.
      */
     refreshVersions() {
-        this.swVersionsDataLoading = true
-        this.summaryDataLoading = true
         this.versionService.refreshData()
     }
 }

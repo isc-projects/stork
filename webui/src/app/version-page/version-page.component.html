@@ -17,7 +17,20 @@
                 dataDate
             }}. To see up-to-date information, please visit the <a href='https://www.isc.org'>ISC webpage</a>."
         ></p-message>
+        <p-messages
+            *ngIf="errorOccurred"
+            [value]="[
+                {
+                    summary: 'Error while fetching data!',
+                    severity: 'error',
+                    detail: 'Error occurred while retrieving software versions data from Stork server!'
+                }
+            ]"
+            styleClass="max-w-50rem"
+            [enableService]="false"
+        ></p-messages>
         <p-button
+            *ngIf="!errorOccurred"
             styleClass="flex-none"
             label="Refresh Versions"
             icon="pi pi-refresh"
@@ -76,6 +89,11 @@
                     </td>
                 </tr>
             </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="6">No data retrieved from Stork server.</td>
+                </tr>
+            </ng-template>
         </p-table>
     </p-panel>
     <p-panel header="Bind 9 current releases" styleClass="mt-3">
@@ -126,6 +144,11 @@
                     </td>
                 </tr>
             </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="6">No data retrieved from Stork server.</td>
+                </tr>
+            </ng-template>
         </p-table>
     </p-panel>
     <p-panel header="Stork current releases" styleClass="mt-3">
@@ -172,6 +195,11 @@
                     </td>
                 </tr>
             </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="6">No data retrieved from Stork server.</td>
+                </tr>
+            </ng-template>
         </p-table>
     </p-panel>
 
@@ -192,10 +220,10 @@
             >
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 8rem">Hostname</th>
-                    <th style="width: 10rem">Location</th>
-                    <th style="width: 4.5rem">Agent Version</th>
-                    <th class="w-4rem">App(s) Version</th>
+                    <th>Hostname</th>
+                    <th>Location</th>
+                    <th>Agent Version</th>
+                    <th>App(s) Version</th>
                     <th>Summary</th>
                 </tr>
             </ng-template>
@@ -274,6 +302,11 @@
                             styleClass="max-w-50rem"
                         ></app-version-status>
                     </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="5">No data retrieved from Stork server.</td>
                 </tr>
             </ng-template>
         </p-table>
