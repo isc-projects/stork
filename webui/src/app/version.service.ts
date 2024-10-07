@@ -71,7 +71,7 @@ export class VersionService {
      * the data is still considered up-to-date.
      * @private
      */
-    private _dataOutdatedThreshold = 24 * 60 * 60 * 1000
+    private _dataOutdatedThreshold = 24 * 60 * 60 * 1000 // consider data out-of-date after 24 hours
 
     /**
      * Keeps track of Stork server version.
@@ -118,6 +118,10 @@ export class VersionService {
      * @return AppsVersions RxJS Observable
      */
     getCurrentData(): Observable<AppsVersions> {
+        if (this.isDataOutdated()) {
+            console.log('data out of date')
+            this.refreshData()
+        }
         return this.currentData$
     }
 
@@ -139,7 +143,7 @@ export class VersionService {
      */
     isDataOutdated() {
         return (
-            this.dataFetchedTimestamp && Date.now() - this.dataFetchedTimestamp.getTime() < this._dataOutdatedThreshold
+            this.dataFetchedTimestamp && Date.now() - this.dataFetchedTimestamp.getTime() > this._dataOutdatedThreshold
         )
     }
 
