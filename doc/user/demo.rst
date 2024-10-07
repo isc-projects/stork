@@ -236,3 +236,15 @@ Prometheus and loads dashboards from the Stork repository, in the
 Grafana folder.
 
 The Grafana web page can be found at: http://localhost:3000/ .
+
+Login Page Welcome Message
+--------------------------
+
+:ref:`configuring-deployment-specific-views` section describes how to setup
+custom welcome message in the login screen. These instructions can be adopted
+to deploy to the welcome message in the Stork server demo container, but the
+copied HTML file is automatically removed from the container when the demo is
+restarted. Therefore, a better approach is to create the ``login-page-welcome.html``
+file in the Stork source tree (i.e., ``webui/src/assets/static-page-content/login-page-welcome.html``).
+This file will be automatically copied to the Stork server container when the
+demo is started.

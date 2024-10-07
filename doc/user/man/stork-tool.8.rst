@@ -21,7 +21,7 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-``stork-tool`` provides three features:
+``stork-tool`` provides four features:
 
 - Certificate management - it allows the Stork server to export keys, certificates
   and tokens that are used to secure communication between Stork server
@@ -34,6 +34,9 @@ Description
   overwriting the database schema version and getting its current value.
   There is normally no need to use this, as the Stork server always runs
   the migration scripts on startup.
+
+- Static views deployment - it allows for setting custom content in selected
+  Stork views (e.g., custom welcome message on the login page).
 
 Certificate Management
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -258,6 +261,30 @@ To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. Use ``CLICOLOR_FORCE`` to
 enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
 ``false`` to disable colorization even if the TTY is attached.
+
+Static Views Deployment
+~~~~~~~~~~~~~~~~~~~~~~~
+
+To set custom welcome message on the login screen first create a short HTML
+file with the message contents. Next, deploy the file using the
+``deploy-login-page-welcome`` command with the following options:
+
+``-i|--file=``
+   HTML source file with a custom welcome message. ``[$STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE]``
+
+``-d|--rest-static-files-dir=``
+   The directory with static files for the UI; if not provided the tool will try to use default locations. ``[$STORK_TOOL_REST_STATIC_FILES_DIR]``
+
+To remove the welcome message use ``undeploy-login-page-welcome`` command
+with the following option:
+
+``-d|--rest-static-files-dir=``
+   The directory with static files for the UI; if not provided the tool will try to use default locations. ``[$STORK_TOOL_REST_STATIC_FILES_DIR]``
+
+In a typical installation there is no need to specify the directory with
+the UI static files. ``stork-tool``  assumes the directory relative to its
+location. For example, if the ``stork-tool`` is installed in the ``/usr/bin``,
+it assumes that the directory is ``/usr/share/stork/www``.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~

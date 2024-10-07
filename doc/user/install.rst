@@ -79,7 +79,8 @@ conveniently used to create a new database and its credentials without a need to
 SQL commands directly using the ``psql`` program.
 
 The :ref:`inspecting-keys-and-certificates` section describes how to use the tool for TLS
-certificates management.
+certificates management. The :ref:`configuring-deployment-specific-views` section describes how to setup custom
+welcome message in the login screen.
 
 Further sections describe different methods for installing the Stork Server from packages.
 See: :ref:`install-server-deb` and :ref:`install-server-rpm`. The ``stork-tool`` program
@@ -1563,3 +1564,65 @@ where received data is null or there is a timeout, etc.
 The defined alerts are considered an integral part of a dashboard. This may be a factor in a deployment
 configuration, e.g. the dashboard can be tweaked to specific needs and then deployed to multiple
 sites.
+
+.. _configuring-deployment-specific-views:
+
+Configuring Deployment Specific Views
+=====================================
+
+Selected UI pages can be customized with deployment-specific information. This section describes
+how it can be configured.
+
+Login Page Welcome Message
+--------------------------
+
+A custom welcome message can be displayed in the login page. Typically, it is used to provide
+contact information to a server administrator to request access credentials. The welcome
+message should be wrritten to a file using basic HTML format. For example:
+
+.. code-block:: html
+
+   <h3>Welcome to Stork!</h3>
+   <p>
+      If you are not familiar with the system please first consult
+      <a href="https://stork.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer"></a>.
+   </p>
+   <p>
+      Please contact <a href="mailto:someone@example.com">System Administrator</a> to request
+      service access.
+   </p>
+
+This file must be copied to the Stork UI assets directory which is a part of the Stork
+server installation tree. Suppose the Stork server is installed in the ``/usr``
+directory. The welcome message should be saved as ``/usr/share/stork/www/assets/static-page-content/login-screen-welcome.html``.
+Alternatively, a symbolic link can be created. For example:
+
+.. code-block:: console
+
+   $ ln -s ./welcome.html /usr/share/stork/www/assets/static-page-content/login-screen-welcome.html
+
+Remove or unlink the file to remove the custom welcome message.
+
+Deploying and undeploying the welcome message file is also possible using the
+``stork-tool``. To deploy, run:
+
+.. code-block:: console
+
+   $ stork-tool deploy-login-page-welcome -i ./welcome.html
+
+To undeploy:
+
+.. code-block:: console
+
+   $ stork-tool undeploy-login-page-welcome
+
+The optional ``--rest-static-files-dir`` parameter can be used with both commands to specify
+the location of the static UI files directory. For example:
+
+.. code-block:: console
+
+   $ stork-tool undeploy-login-page-welcome --rest-static-files-dir /usr/share/stork/www/
+
+.. warning::
+
+   The deployed HTML file length must not exceed 2048 characters.
