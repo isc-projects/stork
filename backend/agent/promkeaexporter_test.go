@@ -1,6 +1,7 @@
 package agent
 
 import (
+	_ "embed"
 	"encoding/json"
 	"testing"
 	"time"
@@ -111,6 +112,59 @@ func TestPromKeaExporterStart(t *testing.T) {
 	// check if pkt4-nak-received is 19
 	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
+
+	require.False(t, gock.HasUnmatchedRequest())
+}
+
+// The Kea statistic-get-all response fetched from the Kea DHCPv6 demo container.
+//
+//go:embed testdata/kea-dhcp6-statistic-get-all-rsp.json
+var kea6ResponseFromDemo []byte
+
+// Check starting PromKeaExporter and collecting stats using the real Kea
+// response.
+func TestPromKeaExporterStartDemoResponse(t *testing.T) {
+	defer gock.Off()
+	gock.CleanUnmatchedRequest()
+	defer gock.CleanUnmatchedRequest()
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp6"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(string(kea6ResponseFromDemo))
+
+	fam := newFakeMonitorWithDefaults()
+	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
+
+	httpClient := NewHTTPClient()
+	pke := NewPromKeaExporter("foo", 1234, 5*time.Millisecond, true, fam, httpClient)
+	defer pke.Shutdown()
+
+	gock.InterceptClient(pke.HTTPClient.client)
+
+	// start exporter
+	pke.Start()
+	require.NotNil(t, pke.Ticker)
+
+	require.Eventually(t, func() bool {
+		// check if assigned-addresses is 13
+		metric, _ := pke.Adr6StatsMap["total-nas"].GetMetricWith(
+			prometheus.Labels{
+				"subnet":    "6",
+				"subnet_id": "6",
+				"prefix":    "",
+			},
+		)
+		return testutil.ToFloat64(metric) == 36893488147419103000
+	}, 1*time.Second, 10*time.Millisecond)
+
+	metric, _ := pke.PktStatsMap["pkt6-reply-sent"].Stat.GetMetricWith(prometheus.Labels{"operation": "reply"})
+	require.Equal(t, 4489.0, testutil.ToFloat64(metric))
 
 	require.False(t, gock.HasUnmatchedRequest())
 }

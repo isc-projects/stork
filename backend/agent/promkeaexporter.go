@@ -136,7 +136,7 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 
 	// Retrieve values of mixed-type arrays.
 	// Unpack the complex structure to simpler form.
-	for daemonIdx, item := range obj {
+	for _, item := range obj {
 		// Indicates the situation when the daemon is active but the statistics
 		// endpoint doesn't return the data.
 		areStatisticsUnavailable := false
@@ -153,8 +153,16 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 			return err
 		}
 
-		// daemon 0 is dhcp4, 1 is dhcp6
-		isDhcp4 := daemonIdx == 0
+		// Kea Control Agent may be configured to manage DHCPv4, DHCPv6, or both.
+		// The order depends on the request sent to the Kea CA.
+		isDhcp4 := true
+		for statName, _ := range *item.Arguments {
+			if strings.HasPrefix(statName, "pkt6") || strings.HasPrefix(statName, "v6-") {
+				isDhcp4 = false
+				break
+			}
+		}
+
 		var statMap map[string]GetAllStatisticResponseItemValue
 		if isDhcp4 {
 			r.Dhcp4 = make(map[string]GetAllStatisticResponseItemValue)
