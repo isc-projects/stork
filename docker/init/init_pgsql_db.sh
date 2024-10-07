@@ -12,6 +12,7 @@ done
 
 echo "CREATE USER"
 
+set +e
 create_user_query="CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
@@ -20,6 +21,7 @@ psql \
     -c "${create_user_query}"
 
 echo "Checking if the database exists"
+set -e
 
 exist_query="\c ${DB_NAME}"
 set +e
