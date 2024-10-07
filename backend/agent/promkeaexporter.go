@@ -156,7 +156,7 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		// Kea Control Agent may be configured to manage DHCPv4, DHCPv6, or both.
 		// The order depends on the request sent to the Kea CA.
 		isDhcp4 := true
-		for statName, _ := range *item.Arguments {
+		for statName := range *item.Arguments {
 			if strings.HasPrefix(statName, "pkt6") || strings.HasPrefix(statName, "v6-") {
 				isDhcp4 = false
 				break

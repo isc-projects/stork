@@ -103,7 +103,7 @@ describe('SubnetsTableComponent', () => {
                     subnet: '2001:db8:1::/64',
                     localSubnets: [
                         {
-                            id: 2,
+                            id: 3,
                             machineHostname: 'foo',
                         },
                     ],
@@ -120,7 +120,19 @@ describe('SubnetsTableComponent', () => {
         tick()
         fixture.detectChanges()
 
-        const grafanaIcons = fixture.debugElement.queryAll(By.css('.pi-chart-line'))
+        const grafanaIcons = fixture.debugElement.queryAll(By.css('a .pi-chart-line'))
         expect(grafanaIcons?.length).toBe(3)
+
+        for (let grafanaIcon of grafanaIcons) {
+            const parent = grafanaIcon.nativeElement.parentElement
+            expect(parent.tagName).toBe('A')
+            const href = parent.getAttribute('href')
+            const title = parent.getAttribute('title')
+            if (title.includes('subnet 3')) {
+                expect(href).toContain('AQPHKJUGz')
+            } else {
+                expect(href).toContain('hRf18FvWz')
+            }
+        }
     }))
 })
