@@ -313,6 +313,9 @@
         type: array
         items:
           $ref: '#/definitions/KeaDaemon'
+      mismatchingDaemons:
+        description: Set to true when mismatching Kea daemons versions were detected.
+        type: boolean
 
   Bind9Daemon:
     type: object
