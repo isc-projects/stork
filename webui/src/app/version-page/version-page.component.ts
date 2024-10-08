@@ -29,11 +29,11 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * the "summary of ISC software versions detected by Stork" table.
      */
     private _groupHeaderMap: string[] = [
-        'Security updates were found for ISC software used on those machines!',
-        'Those machines use ISC software version that require your attention. Software updates are available.',
-        'ISC software updates are available for those machines.',
+        'Security updates were found for ISC software used on these machines!',
+        'These machines use ISC software version that require your attention. Software updates are available.',
+        'ISC software updates are available for these machines.',
         '',
-        `Those machines use up-to-date ISC software`,
+        `These machines use up-to-date ISC software`,
     ]
 
     /**
@@ -111,6 +111,13 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     isOfflineData$: Observable<boolean>
 
     /**
+     * An Observable of a boolean provided by the version service that is true when software version alert is active.
+     * The alert means that severity warning or higher was detected as part of the ISC software versions assessment.
+     * It may be dismissed.
+     */
+    showAlert$: Observable<boolean>
+
+    /**
      * An array of Machines in the "summary of ISC software versions detected by Stork" table.
      */
     machines: Machine[]
@@ -140,6 +147,11 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.dataDate$ = this.versionService.getDataManufactureDate()
         this.isOfflineData$ = this.versionService.isOnlineData().pipe(map((b) => !b))
+        this.showAlert$ = this.versionService.getVersionAlert().pipe(
+            map((a) => {
+                return a.detected
+            })
+        )
         this._subscriptions.add(
             this.versionService
                 .getCurrentData()
@@ -209,9 +221,12 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     ],
                                     m.versionCheckSeverity
                                 )
+                                // daemons version match check
+                                if (a.details.mismatchingDaemons) {
+                                    console.warn('mismatching kea daemons')
+                                    m.versionCheckSeverity = Severity.error
+                                }
                             })
-
-                            // TODO: daemons version match check - done on backend?
                             this.counters[m.versionCheckSeverity]++
                             return m
                         })
@@ -248,6 +263,13 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Contacts with version service to dismiss the Version alert.
+     */
+    dismissAlert() {
+        this.versionService.dismissVersionAlert()
+    }
+
+    /**
      * Gets a value displayed as groupHeader texts in
      * the "summary of ISC software versions detected by Stork" table.
      * @param severity severity for which the message is returned
@@ -255,7 +277,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      */
     getGroupHeaderMessage(severity: Severity, dataDate: string) {
         if (severity === Severity.success) {
-            return `Those machines use up-to-date ISC software (known as of ${dataDate})`
+            return `These machines use up-to-date ISC software (known as of ${dataDate})`
         }
 
         return this._groupHeaderMap[severity]

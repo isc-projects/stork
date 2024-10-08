@@ -369,6 +369,14 @@ export class VersionService {
     }
 
     /**
+     * Dismisses the _versionAlert$ by setting 'detected' flag to false and completing the RxJS subject.
+     */
+    dismissVersionAlert() {
+        this._versionAlert$.next({ detected: false, severity: Severity.success })
+        this._versionAlert$.complete()
+    }
+
+    /**
      * Returns true if provided app version is a development release.
      * For stable release, false is returned.
      * @param version app version

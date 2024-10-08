@@ -9,7 +9,21 @@
 <div class="max-w-100rem">
     <div class="flex flex-wrap gap-2 justify-content-between mb-3">
         <p-messages
-            styleClass="max-w-50rem"
+            styleClass="max-w-50rem header-message"
+            *ngIf="showAlert$ | async"
+            [escape]="false"
+            [enableService]="false"
+            (onClose)="dismissAlert()"
+            [value]="[
+                {
+                    summary: 'Action required',
+                    severity: 'warn',
+                    detail: 'Stork has detected ISC software version in use that requires your attention. Please review below Summary table.'
+                }
+            ]"
+        ></p-messages>
+        <p-messages
+            styleClass="max-w-50rem header-message"
             *ngIf="isOfflineData$ | async"
             [escape]="false"
             [enableService]="false"
@@ -33,7 +47,7 @@
                     detail: 'Error occurred while retrieving software versions data from Stork server!'
                 }
             ]"
-            styleClass="max-w-50rem"
+            styleClass="max-w-50rem header-message"
             [enableService]="false"
         ></p-messages>
         <p-button
@@ -45,7 +59,135 @@
         ></p-button>
     </div>
     <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
-    <p-panel header="Kea current releases">
+    <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
+        <p-table
+            [value]="machines"
+            styleClass="p-datatable-striped"
+            responsiveLayout="stack"
+            [breakpoint]="'48rem'"
+            id="summary-table"
+            rowGroupMode="subheader"
+            groupRowsBy="versionCheckSeverity"
+            sortField="versionCheckSeverity"
+            sortMode="single"
+            [tableStyle]="{ 'min-width': '15rem' }"
+            [loading]="summaryDataLoading"
+        >
+            >
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Hostname</th>
+                    <th>Location</th>
+                    <th>Agent Version</th>
+                    <th>App(s) Version</th>
+                    <th>Summary</th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="groupheader" let-m let-expanded="expanded">
+                <tr>
+                    <td colspan="5" class="row-toggle">
+                        <div class="flex align-items-center">
+                            <button
+                                type="button"
+                                pButton
+                                pRipple
+                                [pRowToggler]="m"
+                                class="p-button-text p-button-rounded p-button-plain mr-2 flex-none"
+                                [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                            ></button>
+                            <p-badge
+                                [value]="counters[m.versionCheckSeverity]"
+                                [severity]="
+                                    m.versionCheckSeverity === Severity.warn
+                                        ? 'warning'
+                                        : m.versionCheckSeverity === Severity.error
+                                          ? 'danger'
+                                          : Severity[m.versionCheckSeverity]
+                                "
+                                styleClass="flex-none mr-2"
+                            ></p-badge>
+                            <p-messages
+                                [value]="[
+                                    {
+                                        severity: Severity[m.versionCheckSeverity],
+                                        summary: getGroupHeaderMessage(m.versionCheckSeverity, dataDate$ | async)
+                                    }
+                                ]"
+                                [closable]="false"
+                                [enableService]="false"
+                                styleClass="max-w-30rem"
+                            ></p-messages>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="rowexpansion" let-m>
+                <tr>
+                    <td>
+                        <span class="p-column-title">Hostname</span>
+                        <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
+                    </td>
+                    <td><span class="p-column-title">Location</span>{{ m.address }}:{{ m.agentPort }}</td>
+                    <td>
+                        <span class="p-column-title">Agent Version</span>
+                        {{ m.agentVersion }}
+                    </td>
+                    <td>
+                        <span class="p-column-title">App(s) Version</span>
+                        <ng-container *ngFor="let a of m.apps; let i = index"
+                            ><br *ngIf="i > 0" />{{ a.type | titlecase }} {{ a.version }}</ng-container
+                        >
+                    </td>
+                    <td>
+                        <span class="p-column-title">Summary</span>
+                        <ng-container *ngFor="let a of m.apps">
+                            <ng-container *ngIf="a.details?.mismatchingDaemons">
+                                <p-messages
+                                    [value]="[
+                                        {
+                                            summary: 'Kea daemons versions mismatch!',
+                                            severity: 'error',
+                                            detail:
+                                                'Kea <a href=\'/apps/kea/' +
+                                                a.id +
+                                                '\'>' +
+                                                a.name +
+                                                '</a> daemons use mismatching versions! All daemons should have the same version!'
+                                        }
+                                    ]"
+                                    styleClass="max-w-50rem"
+                                    [enableService]="false"
+                                    [closable]="false"
+                                    [escape]="false"
+                                ></p-messages>
+                            </ng-container>
+                            <app-version-status
+                                [app]="a.type"
+                                [version]="a.version"
+                                [showAppName]="true"
+                                [inline]="false"
+                                styleClass="max-w-50rem"
+                            ></app-version-status
+                        ></ng-container>
+                        <app-version-status
+                            app="stork"
+                            [version]="m.agentVersion"
+                            [showAppName]="true"
+                            [inline]="false"
+                            styleClass="max-w-50rem"
+                        ></app-version-status>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="5">No data retrieved from Stork server.</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-panel>
+    <p-panel header="Kea current releases" styleClass="mt-3">
         <p-table [value]="keaVersions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
             <ng-template pTemplate="header">
                 <tr>
@@ -205,115 +347,6 @@
             <ng-template pTemplate="emptymessage">
                 <tr>
                     <td colspan="6">No data retrieved from Stork server.</td>
-                </tr>
-            </ng-template>
-        </p-table>
-    </p-panel>
-
-    <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
-        <p-table
-            [value]="machines"
-            styleClass="p-datatable-striped"
-            responsiveLayout="stack"
-            [breakpoint]="'48rem'"
-            id="summary-table"
-            rowGroupMode="subheader"
-            groupRowsBy="versionCheckSeverity"
-            sortField="versionCheckSeverity"
-            sortMode="single"
-            [tableStyle]="{ 'min-width': '15rem' }"
-            [loading]="summaryDataLoading"
-        >
-            >
-            <ng-template pTemplate="header">
-                <tr>
-                    <th>Hostname</th>
-                    <th>Location</th>
-                    <th>Agent Version</th>
-                    <th>App(s) Version</th>
-                    <th>Summary</th>
-                </tr>
-            </ng-template>
-
-            <ng-template pTemplate="groupheader" let-m let-rowIndex="rowIndex" let-expanded="expanded">
-                <tr>
-                    <td colspan="5" class="row-toggle">
-                        <div class="flex align-items-center">
-                            <button
-                                type="button"
-                                pButton
-                                pRipple
-                                [pRowToggler]="m"
-                                class="p-button-text p-button-rounded p-button-plain mr-2 flex-none"
-                                [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                            ></button>
-                            <p-badge
-                                [value]="counters[m.versionCheckSeverity]"
-                                [severity]="
-                                    m.versionCheckSeverity === Severity.warn
-                                        ? 'warning'
-                                        : m.versionCheckSeverity === Severity.error
-                                          ? 'danger'
-                                          : Severity[m.versionCheckSeverity]
-                                "
-                                styleClass="flex-none mr-2"
-                            ></p-badge>
-                            <p-messages
-                                [value]="[
-                                    {
-                                        severity: Severity[m.versionCheckSeverity],
-                                        summary: getGroupHeaderMessage(m.versionCheckSeverity, dataDate$ | async)
-                                    }
-                                ]"
-                                [closable]="false"
-                                [enableService]="false"
-                                styleClass="max-w-30rem"
-                            ></p-messages>
-                        </div>
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="rowexpansion" let-m>
-                <tr>
-                    <td>
-                        <span class="p-column-title">Hostname</span>
-                        <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
-                    </td>
-                    <td><span class="p-column-title">Location</span>{{ m.address }}:{{ m.agentPort }}</td>
-                    <td>
-                        <span class="p-column-title">Agent Version</span>
-                        {{ m.agentVersion }}
-                    </td>
-                    <td>
-                        <span class="p-column-title">App(s) Version</span>
-                        <ng-container *ngFor="let a of m.apps; let i = index"
-                            ><br *ngIf="i > 0" />{{ a.type | titlecase }} {{ a.version }}</ng-container
-                        >
-                    </td>
-                    <td>
-                        <span class="p-column-title">Summary</span>
-                        <ng-container *ngFor="let a of m.apps"
-                            ><app-version-status
-                                [app]="a.type"
-                                [version]="a.version"
-                                [showAppName]="true"
-                                [inline]="false"
-                                styleClass="max-w-50rem"
-                            ></app-version-status
-                        ></ng-container>
-                        <app-version-status
-                            app="stork"
-                            [version]="m.agentVersion"
-                            [showAppName]="true"
-                            [inline]="false"
-                            styleClass="max-w-50rem"
-                        ></app-version-status>
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="emptymessage">
-                <tr>
-                    <td colspan="5">No data retrieved from Stork server.</td>
                 </tr>
             </ng-template>
         </p-table>
