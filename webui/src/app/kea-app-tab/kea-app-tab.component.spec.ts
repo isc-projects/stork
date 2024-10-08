@@ -38,6 +38,7 @@ import { ServerSentEventsService, ServerSentEventsTestingService } from '../serv
 import { DividerModule } from 'primeng/divider'
 import { TagModule } from 'primeng/tag'
 import { EventTextComponent } from '../event-text/event-text.component'
+import { VersionStatusComponent } from '../version-status/version-status.component'
 
 class Details {
     daemons: any = [
@@ -150,6 +151,7 @@ describe('KeaAppTabComponent', () => {
                 HelpTipComponent,
                 AppOverviewComponent,
                 EventTextComponent,
+                VersionStatusComponent,
             ],
         }).compileComponents()
     }))

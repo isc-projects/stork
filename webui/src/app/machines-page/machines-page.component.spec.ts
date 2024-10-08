@@ -26,6 +26,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import anything = jasmine.anything
 import { MessagesModule } from 'primeng/messages'
 import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
+import { VersionStatusComponent } from '../version-status/version-status.component'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -70,6 +71,7 @@ describe('MachinesPageComponent', () => {
                 BreadcrumbsComponent,
                 HelpTipComponent,
                 AppDaemonsStatusComponent,
+                VersionStatusComponent,
             ],
         }).compileComponents()
 

@@ -24,6 +24,7 @@ import { SurroundPipe } from '../pipes/surround.pipe'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { SettingService } from '../setting.service'
+import { VersionStatusComponent } from '../version-status/version-status.component'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -53,6 +54,7 @@ describe('DashboardComponent', () => {
                 HumanCountPipe,
                 SurroundPipe,
                 EntityLinkComponent,
+                VersionStatusComponent,
             ],
             providers: [
                 ServicesService,

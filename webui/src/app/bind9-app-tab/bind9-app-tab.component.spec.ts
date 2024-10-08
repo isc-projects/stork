@@ -26,6 +26,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { DataViewModule } from 'primeng/dataview'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { TableModule } from 'primeng/table'
+import { VersionStatusComponent } from '../version-status/version-status.component'
 
 class Daemon {
     name = 'named'
@@ -87,6 +88,7 @@ describe('Bind9AppTabComponent', () => {
                 AppOverviewComponent,
                 EventsPanelComponent,
                 EventTextComponent,
+                VersionStatusComponent,
             ],
         }).compileComponents()
     }))
