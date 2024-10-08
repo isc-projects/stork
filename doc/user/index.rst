@@ -36,4 +36,5 @@ for Stork, can be found on ISC's `Stork project homepage
    :name: appendices
    :maxdepth: 1
 
+   glossary
    manpages
