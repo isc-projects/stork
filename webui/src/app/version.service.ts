@@ -172,6 +172,7 @@ export class VersionService {
      * @param app either kea, bind9 or stork
      * @param data input data used to make the assessment
      * @return assessment result as a VersionFeedback object; it contains severity and messages to be displayed to the user
+     * @throws Error when the assessment fails for any reason
      */
     getSoftwareVersionFeedback(version: string, app: App, data: AppsVersions): VersionFeedback {
         let cacheKey = version + app

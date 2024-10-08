@@ -3,7 +3,7 @@ import { App, Severity, VersionService } from '../version.service'
 import { AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
 import { deepCopy, getErrorMessage } from '../utils'
 import { of, Subscription, tap } from 'rxjs'
-import { catchError, concatMap } from 'rxjs/operators'
+import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
 
 /**
@@ -213,50 +213,42 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 return of({ items: [] })
                             })
                         )
-                    })
-                )
-                .subscribe({
-                    next: (data) => {
-                        data.items.map((machine) => {
-                            let m = machine as Machine & { versionCheckSeverity: Severity }
+                    }),
+                    map((data) => {
+                        data.items.map((m: Machine & { versionCheckSeverity: Severity }) => {
                             m.versionCheckSeverity = Severity.success
-                            try {
+                            m.versionCheckSeverity = Math.min(
+                                this.severityMap[
+                                    this.versionService.getSoftwareVersionFeedback(
+                                        m.agentVersion,
+                                        'stork',
+                                        this._processedData
+                                    )?.severity ?? Severity.success
+                                ],
+                                m.versionCheckSeverity
+                            )
+                            m.apps.forEach((a) => {
                                 m.versionCheckSeverity = Math.min(
                                     this.severityMap[
                                         this.versionService.getSoftwareVersionFeedback(
-                                            m.agentVersion,
-                                            'stork',
+                                            a.version,
+                                            a.type as App,
                                             this._processedData
                                         )?.severity ?? Severity.success
                                     ],
                                     m.versionCheckSeverity
                                 )
-                                m.apps.forEach((a) => {
-                                    m.versionCheckSeverity = Math.min(
-                                        this.severityMap[
-                                            this.versionService.getSoftwareVersionFeedback(
-                                                a.version,
-                                                a.type as App,
-                                                this._processedData
-                                            )?.severity ?? Severity.success
-                                        ],
-                                        m.versionCheckSeverity
-                                    )
-                                })
-                            } catch (err) {
-                                let msg = getErrorMessage(err)
-                                this.messageService.add({
-                                    severity: 'error',
-                                    summary: 'Error retrieving software versions data',
-                                    detail: 'Error occurred when retrieving software versions data: ' + msg,
-                                    life: 10000,
-                                })
-                            }
-                            // TODO: daemons version match check - done on backend?
+                            })
 
+                            // TODO: daemons version match check - done on backend?
                             this.counters[m.versionCheckSeverity]++
                             return m
                         })
+                        return data
+                    })
+                )
+                .subscribe({
+                    next: (data) => {
                         this.machines = data.items
                         this.summaryDataLoading = false
                     },
@@ -270,6 +262,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         })
                         this.machines = []
                         this.swVersionsDataLoading = false
+                        this.summaryDataLoading = false
                         this.errorOccurred = true
                     },
                 })
