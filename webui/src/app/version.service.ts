@@ -130,7 +130,6 @@ export class VersionService {
      * Clears the _checkedVersionCache and disables previous _versionAlert$.
      */
     refreshData() {
-        // todo: convert to observable to catch errors
         this._checkedVersionCache = new Map()
         this._versionAlert$.next({ detected: false, severity: Severity.success })
         this._currentDataSubject$.next({})

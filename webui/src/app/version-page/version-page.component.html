@@ -8,15 +8,22 @@
 </app-breadcrumbs>
 <div class="max-w-100rem">
     <div class="flex flex-wrap gap-2 justify-content-between mb-3">
-        <p-message
+        <p-messages
             styleClass="max-w-50rem"
-            *ngIf="isDataOffline"
-            severity="info"
+            *ngIf="isOfflineData$ | async"
             [escape]="false"
-            text="Below information about ISC software versions relies on a data that was generated on {{
-                dataDate
-            }}. To see up-to-date information, please visit the <a href='https://www.isc.org'>ISC webpage</a>."
-        ></p-message>
+            [enableService]="false"
+            [value]="[
+                {
+                    summary: 'Note',
+                    severity: 'info',
+                    detail:
+                        'Below information about ISC software versions relies on a data that was generated on ' +
+                        (dataDate$ | async) +
+                        '. To see up-to-date information, please visit the <a href=\'https:\/\/www.isc.org\'>ISC webpage</a>.'
+                }
+            ]"
+        ></p-messages>
         <p-messages
             *ngIf="errorOccurred"
             [value]="[
@@ -255,7 +262,7 @@
                                 [value]="[
                                     {
                                         severity: Severity[m.versionCheckSeverity],
-                                        summary: subheaderMap[m.versionCheckSeverity]
+                                        summary: getGroupHeaderMessage(m.versionCheckSeverity, dataDate$ | async)
                                     }
                                 ]"
                                 [closable]="false"

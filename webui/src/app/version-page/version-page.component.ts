@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core'
 import { App, Severity, VersionService } from '../version.service'
 import { AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
 import { deepCopy, getErrorMessage } from '../utils'
-import { of, Subscription, tap } from 'rxjs'
+import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
 
@@ -25,14 +25,21 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     private _subscriptions = new Subscription()
 
     /**
+     * An array mapping Severity enum to values displayed as groupHeaders texts in
+     * the "summary of ISC software versions detected by Stork" table.
+     */
+    private _groupHeaderMap: string[] = [
+        'Security updates were found for ISC software used on those machines!',
+        'Those machines use ISC software version that require your attention. Software updates are available.',
+        'ISC software updates are available for those machines.',
+        '',
+        `Those machines use up-to-date ISC software`,
+    ]
+
+    /**
      * Configures the breadcrumbs for the component.
      */
     breadcrumbs = [{ label: 'Monitoring' }, { label: 'Software versions' }]
-
-    /**
-     * Keeps true if version data source is the offline json file.
-     */
-    isDataOffline: boolean
 
     /**
      * An array of version details of current Kea releases.
@@ -73,17 +80,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     counters = [0, 0, 0, 0, 0]
 
     /**
-     * Current manufacture date of the software versions data that was provided by the version service.
-     */
-    dataDate: string = 'unknown'
-
-    /**
-     * An array mapping Severity enum to values displayed as groupheaders texts in
-     * the "summary of ISC software versions detected by Stork" table.
-     */
-    subheaderMap: string[] = []
-
-    /**
      * Keeps information whether "summary of ISC software versions detected by Stork" table's data is loading.
      */
     summaryDataLoading: boolean
@@ -103,6 +99,16 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * @private
      */
     private _processedData: AppsVersions
+
+    /**
+     * An Observable of current manufacture date of the software versions data that was provided by the version service.
+     */
+    dataDate$: Observable<string>
+
+    /**
+     * An Observable of a boolean provided by the version service that is true if version data source is the offline json file.
+     */
+    isOfflineData$: Observable<boolean>
 
     /**
      * An array of Machines in the "summary of ISC software versions detected by Stork" table.
@@ -132,43 +138,8 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        this._subscriptions.add(
-            this.versionService.getDataManufactureDate().subscribe({
-                next: (date) => {
-                    this.dataDate = date
-                    this.subheaderMap = [
-                        'Security updates were found for ISC software used on those machines!',
-                        'Those machines use ISC software version that require your attention. Software updates are available.',
-                        'ISC software updates are available for those machines.',
-                        '',
-                        `Those machines use up-to-date ISC software (known as of ${this.dataDate})`,
-                    ]
-                },
-                error: (err) => {
-                    let msg = getErrorMessage(err)
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error retrieving software versions data',
-                        detail: 'Error occurred when retrieving software versions data: ' + msg,
-                        life: 10000,
-                    })
-                },
-            })
-        )
-        this._subscriptions.add(
-            this.versionService.isOnlineData().subscribe({
-                next: (isOnline) => (this.isDataOffline = !isOnline),
-                error: (err) => {
-                    let msg = getErrorMessage(err)
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error retrieving software versions data',
-                        detail: 'Error occurred when retrieving software versions data: ' + msg,
-                        life: 10000,
-                    })
-                },
-            })
-        )
+        this.dataDate$ = this.versionService.getDataManufactureDate()
+        this.isOfflineData$ = this.versionService.isOnlineData().pipe(map((b) => !b))
         this._subscriptions.add(
             this.versionService
                 .getCurrentData()
@@ -274,5 +245,19 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      */
     refreshVersions() {
         this.versionService.refreshData()
+    }
+
+    /**
+     * Gets a value displayed as groupHeader texts in
+     * the "summary of ISC software versions detected by Stork" table.
+     * @param severity severity for which the message is returned
+     * @param dataDate data manufacture date
+     */
+    getGroupHeaderMessage(severity: Severity, dataDate: string) {
+        if (severity === Severity.success) {
+            return `Those machines use up-to-date ISC software (known as of ${dataDate})`
+        }
+
+        return this._groupHeaderMap[severity]
     }
 }
