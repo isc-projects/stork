@@ -15,29 +15,31 @@
     text-decoration: none
 
 :host ::ng-deep .p-datatable-table
-    table-layout: fixed
+    .p-datatable-thead tr
+        th
+            border-top: 1px solid var(--surface-200)
+            border-left: none
+            border-right: none
+            border-bottom: 1px solid var(--surface-200)
+            background: var(--surface-ground)
+            font-weight: normal
 
-    .p-datatable-thead tr th
-        border-top: 1px solid var(--surface-200)
-        border-left: none
-        border-right: none
-        border-bottom: 1px solid var(--surface-200)
-        background: var(--surface-ground)
-        font-weight: normal
+            &:first-child
+                width: 25%
+                border-right: 1px solid var(--surface-200)
+            &:not(:first-child):not(:last-child)
+                min-width: 25%
 
-        &:first-child
-            width: 300px
 
-:host ::ng-deep .p-datatable-table .p-datatable-tbody
-    tr.relationship-pane
-        background: var(--surface-0)
-        font-weight: 500
-    tr td
-        border-top: none
-        border-left: none
-        border-right: none
-        border-bottom: 1px solid var(--surface-200)
+    .p-datatable-tbody tr
+        .relationship-pane
+            background: var(--surface-0)
+            font-weight: 500
+        td
+            border-top: none
+            border-left: none
+            border-right: none
+            border-bottom: 1px solid var(--surface-200)
 
-        &:first-child
-            width: 300px
-            border-right: 1px solid var(--surface-200)
+            &:first-child
+                border-right: 1px solid var(--surface-200)
