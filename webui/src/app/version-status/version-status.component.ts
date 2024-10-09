@@ -20,7 +20,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
      * Type of software for which the version check is done.
      */
-    @Input({ required: true }) app: AppType
+    @Input({ required: true }) app!: AppType
 
     /**
      * Version of the software for which the check is done. This must contain parsable semver.

@@ -29,11 +29,11 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * the "summary of ISC software versions detected by Stork" table.
      */
     private _groupHeaderMap: string[] = [
-        'Security updates were found for ISC software used on these machines!', // todo: update this (version mismatch case etc.)
+        'Some issues were detected for ISC software used on these machines (security updates available, versions mismatch)!',
         'These machines use ISC software version that require your attention. Software updates are available.',
         'ISC software updates are available for these machines.',
         '',
-        `These machines use up-to-date ISC software`,
+        'These machines use up-to-date ISC software',
     ]
 
     /**

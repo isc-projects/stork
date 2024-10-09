@@ -18,8 +18,8 @@
                 {
                     summary: 'Action required',
                     severity: 'warn',
-                    detail: 'Stork has detected ISC software version in use that requires your attention. Please review below Summary table.'
-                }
+                    detail: 'Stork has detected ISC software version in use that requires your attention. Please review below Summary table.',
+                },
             ]"
         ></p-messages>
         <p-messages
@@ -34,8 +34,8 @@
                     detail:
                         'Below information about ISC software versions relies on a data that was generated on ' +
                         (dataDate$ | async) +
-                        '. To see up-to-date information, please visit the <a href=\'https:\/\/www.isc.org\'>ISC webpage</a>.'
-                }
+                        '. To see up-to-date information, please visit the <a href=\'https:\/\/www.isc.org\'>ISC webpage</a>.',
+                },
             ]"
         ></p-messages>
         <p-messages
@@ -44,8 +44,8 @@
                 {
                     summary: 'Error while fetching data!',
                     severity: 'error',
-                    detail: 'Error occurred while retrieving software versions data from Stork server!'
-                }
+                    detail: 'Error occurred while retrieving software versions data from Stork server!',
+                },
             ]"
             styleClass="max-w-50rem header-message"
             [enableService]="false"
@@ -111,8 +111,8 @@
                                 [value]="[
                                     {
                                         severity: Severity[m.versionCheckSeverity],
-                                        summary: getGroupHeaderMessage(m.versionCheckSeverity, dataDate$ | async)
-                                    }
+                                        summary: getGroupHeaderMessage(m.versionCheckSeverity, dataDate$ | async),
+                                    },
                                 ]"
                                 [closable]="false"
                                 [enableService]="false"
@@ -155,8 +155,8 @@
                                                 a.name +
                                                 '</a> daemons use mismatching versions:<br>' +
                                                 (getDaemonsVersions(a) | uppercase) +
-                                                '.<br>All daemons should have the same version!'
-                                        }
+                                                '.<br>All daemons should have the same version!',
+                                        },
                                     ]"
                                     styleClass="max-w-50rem"
                                     [enableService]="false"
@@ -262,7 +262,7 @@
             <ng-template pTemplate="body" let-v>
                 <tr>
                     <td>{{ v.version }}</td>
-                    <td>{{ v.status }}<ng-container *ngIf="v.ESV">, ESV</ng-container></td>
+                    <td>{{ v.status }}<ng-container *ngIf="v.esv">, ESV</ng-container></td>
                     <td>
                         Bind {{ v.major + '.' + v.minor }} ARM (<a
                             href="https://bind9.readthedocs.io/en/v{{ v.version }}/"
