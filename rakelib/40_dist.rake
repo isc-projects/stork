@@ -204,7 +204,7 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
     sh "rm", "-f", server_dist_system_service_file + ".tmp"
 end
 
-server_etc_files = FileList["etc/server.env"]
+server_etc_files = FileList["etc/server.env", "etc/versions.json"]
 if get_package_manager_types().include?("apk")
     server_etc_files.append("etc/isc-stork-server.initd")
 end

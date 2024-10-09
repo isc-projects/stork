@@ -33,6 +33,9 @@ contents:
 - src: dist/server/etc/stork/isc-stork-server.initd
   dst: /etc/init.d/isc-stork-server
   packager: apk
+- src: dist/server/etc/stork/versions.json
+  dst: /etc/stork/versions.json
+  type: config
 
 overrides:
   deb:
