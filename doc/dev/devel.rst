@@ -4,13 +4,6 @@
 Developer's Guide
 *****************
 
-.. note::
-
-   ISC acknowledges that users and developers have different needs, so
-   the user and developer documents should eventually be
-   separated. However, since the project is still in its early stages,
-   this section is kept in the Stork ARM for convenience.
-
 Rakefile
 ========
 
@@ -137,8 +130,8 @@ Updating dependencies
 ---------------------
 
 There are useful rake tasks for updating dependencies: `update:ui_deps`,
-`update:python`, `update:backend_deps`, `update:ruby`. More may be added in the
-future. Please check `rake -T`.
+`update:python_requirements`, `update:backend_deps`, `update:ruby_gemfiles`,
+`update:angular`. More may be added in the future. Please check `rake -T`.
 
 Installing Git Hooks
 --------------------
@@ -235,7 +228,7 @@ state, use the following command:
 RESTful API
 ===========
 
-The primary user of the RESTful API is the Stork UI in a web browser. The
+The primary client of the RESTful API is the Stork UI in a web browser. The
 definition of the RESTful API is located in the ``api`` folder and is
 described in Swagger 2.0 format.
 
@@ -246,7 +239,7 @@ comprise a tag group:
 * \*-defs.yaml - contains entity definitions
 
 All these files are combined by the ``yamlinc`` tool into a single
-Swagger file, ``swagger.yaml``, which then generates code
+Swagger file, ``swagger.yaml``, which then generates the code
 for:
 
 * the UI fronted by swagger-codegen
@@ -493,7 +486,7 @@ Dependencies
 System tests require:
 
 - Linux or macOS operating system (Windows and BSD were not tested)
-- Python >= 3.18
+- Python3
 - Rake (as a launcher)
 - Docker
 - `docker compose (V2) <https://docs.docker.com/compose/compose-v2/>`_ or docker-compose (V1) >= 1.28
@@ -534,7 +527,7 @@ and configuration files. Next, it calls ``pytest``, a Python testing framework
 used in Stork for executing the system tests.
 
 Some test cases use the premium Kea hooks. They are disabled by default. To
-enable them, specify the valid CloudSmith access token in the
+enable them, specify the valid `cloudsmith.io <https://cloudsmith.io>`_ access token in the
 CS_REPO_ACCESS_TOKEN variable.
 
 .. code-block:: console
@@ -856,64 +849,12 @@ execution first. Then, attach the Golang debugger to the server.
 System Test Commands
 --------------------
 
-The following commands run the system tests and help with troubleshooting:
-
-.. table:: Rake tasks for system testing
-    :class: longtable
-    :widths: 26 74
-
-    +---------------------------------+----------------------------------------------+
-    | Rake Tasks                      | Description                                  |
-    +=================================+==============================================+
-    | ``rake systemtest``             | Runs the system tests. Use TEST variable to  |
-    |                                 | run a selected test.                         |
-    +---------------------------------+----------------------------------------------+
-    | ``rake systemtest:build``       | Build the system test containers.            |
-    +---------------------------------+----------------------------------------------+
-    | ``rake systemtest:down``        | Stops all system test containers and removes |
-    |                                 | them. It also removes all networks, and      |
-    |                                 | volumes.                                     |
-    +---------------------------------+----------------------------------------------+
-    | ``rake systemtest:list``        | Lists the test cases.                        |
-    +---------------------------------+----------------------------------------------+
-    | ``rake systemtest:logs``        | Displays the container logs. Use the SERVICE |
-    |                                 | variable to get the logs only for a specific |
-    |                                 | service.                                     |
-    +---------------------------------+----------------------------------------------+
-    | ``rake systemtest:perfdhcp``    | Low-level access to the perfdhcp command in  |
-    |                                 | a container. The Rake-style arguments can be |
-    |                                 | specified to control ``perfdhcp``, e.g.:     |
-    |                                 | ``rake systemtest:perfdhcp[-6,-l,eth1]``.    |
-    +---------------------------------+----------------------------------------------+
-    | ``rake systemtest:sh``          | Low-level access to the docker-compose with  |
-    |                                 | all necessary parameters. Use Rake-style     |
-    |                                 | arguments, e.g. ``rake systemtest:sh[ps]``   |
-    +---------------------------------+----------------------------------------------+
-    | ``rake systemtest:shell``       | Attaches to a shell in a container with      |
-    |                                 | provided name by SERVICE variable.           |
-    +---------------------------------+----------------------------------------------+
-    | ``rake gen:systemtest:swagger`` | Generates the system test OpenAPI client.    |
-    +---------------------------------+----------------------------------------------+
-    | ``rake gen:systemtest:configs`` | Generates the configs used by system tests.  |
-    +---------------------------------+----------------------------------------------+
-
-Running Tests Alpine Linux
---------------------------
-
-Running system tests on Alpine Linux requires additional setup steps.
-Alpine uses ``libc-musl`` instead of ``libc``, which causes issues with
-the `npm` dependency in Stork build scripts. Installing ``nodejs``
-manually using the package manager solves this problem:
+To show a list of available commands for running and troubleshooing the
+system test type:
 
 .. code-block:: console
 
-   $ apk add --no-cache nodejs
-
-and set the ``USE_SYSTEM_NODEJS`` environment variable to ``true``:
-
-.. code-block:: console
-
-   $ rake demo:up USE_SYSTEM_NODEJS=true
+    rake -T systemtest
 
 
 .. _docker_containers_for_development:
@@ -1089,7 +1030,7 @@ Packaging
 =========
 
 There are scripts for packaging the binary form of Stork. There are
-two supported formats: RPM and deb.
+three supported formats: RPM, deb and apk.
 
 The package type is selected based on the OS that executes the command.
 Use the ``utils:print_pkg_type`` to get the package type supported by your OS.
@@ -1490,7 +1431,7 @@ generated earlier. The profile file can be downloaded from the Web UI.
     report generated looks very similar to the one generated without providing
     the previous profile file. Additionally, the numeric labels don't look very
     reliable. Maybe they need some additional tweaks. We recommend using them
-    with caution. 
+    with caution.
 
 Profiling the Execution Live
 ----------------------------
