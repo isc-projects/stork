@@ -1,6 +1,7 @@
 package storkutil_test
 
 import (
+	"encoding/json"
 	"math"
 	"testing"
 
@@ -224,4 +225,71 @@ func TestParseSemanticVersionOrLatest(t *testing.T) {
 	require.Equal(t, math.MaxInt, semver.Major)
 	require.Equal(t, math.MaxInt, semver.Minor)
 	require.Equal(t, math.MaxInt, semver.Patch)
+}
+
+// Test that SortSemversAsc works correctly.
+func TestSortSemverAsc(t *testing.T) {
+	// Arrange
+	unsorted := []storkutil.SemanticVersion{
+		storkutil.NewSemanticVersion(3, 2, 3),
+		storkutil.NewSemanticVersion(1, 2, 3),
+		storkutil.NewSemanticVersion(2, 3, 1),
+		storkutil.NewSemanticVersion(1, 2, 3),
+	}
+	expected := []string{
+		"1.2.3",
+		"1.2.3",
+		"2.3.1",
+		"3.2.3",
+	}
+
+	// Act
+	result := storkutil.SortSemversAsc(&unsorted)
+
+	// Assert
+	for idx := range result {
+		require.Equal(t, expected[idx], result[idx])
+	}
+}
+
+// Test that unmarshalling JSON with incorrect semver returns error.
+func TestUnmarshalJSONError(t *testing.T) {
+	// Arrange
+	type TestJSON struct {
+		Version storkutil.SemanticVersion
+	}
+	var unmarshalled TestJSON
+	wrongJSON := `{
+		"version": "foobar"
+	}`
+
+	// Act
+	err := json.Unmarshal([]byte(wrongJSON), &unmarshalled)
+
+	// Assert
+	require.Error(t, err)
+	require.Zero(t, unmarshalled.Version.Major)
+	require.Zero(t, unmarshalled.Version.Minor)
+	require.Zero(t, unmarshalled.Version.Patch)
+}
+
+// Test that unmarshalling JSON with correct semver works fine.
+func TestUnmarshalJSON(t *testing.T) {
+	// Arrange
+	type TestJSON struct {
+		Version storkutil.SemanticVersion
+	}
+	var unmarshalled TestJSON
+	wrongJSON := `{
+		"version": "1.2.3"
+	}`
+
+	// Act
+	err := json.Unmarshal([]byte(wrongJSON), &unmarshalled)
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, 1, unmarshalled.Version.Major)
+	require.Equal(t, 2, unmarshalled.Version.Minor)
+	require.Equal(t, 3, unmarshalled.Version.Patch)
 }
