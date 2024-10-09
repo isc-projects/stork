@@ -53,19 +53,25 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 
 	if !onlineData {
 		// Find the location of the software versions metadata JSON file.
-		dir, err := os.Getwd()
-		if err != nil {
-			log.Error(err)
+		var jsonFile string
+		for _, f := range getPotentialVersionsJSONLocations() {
+			_, err := os.Stat(f)
+			if err == nil {
+				jsonFile = f
+				break
+			}
+		}
+		if jsonFile == "" {
 			msg := "Cannot find the software versions metadata JSON file"
+			log.Error(msg)
 			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		}
-		VersionsJSON := fmt.Sprintf("%s/versions.json", dir)
 
 		// Open JSON file.
-		file, err := os.Open(VersionsJSON)
+		file, err := os.Open(jsonFile)
 		if err != nil {
 			log.Error(err)
 			msg := "Cannot open the software versions metadata JSON file"

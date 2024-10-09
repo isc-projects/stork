@@ -28,6 +28,18 @@ type ReportAppsVersions struct {
 	Stork *ReportAppVersionMetadata `json:"stork"`
 }
 
+// VersionsJSON is a path to a JSON file with offline software versions metadata.
+// It needs to be modified by tests so it has to be global variable.
+var VersionsJSON = "/etc/stork/versions.json" //nolint:gochecknoglobals
+
+// Get potential locations of versions.json.
+func getPotentialVersionsJSONLocations() []string {
+	return []string{
+		VersionsJSON,
+		"etc/versions.json",
+	}
+}
+
 // Post processes either Kea, Bind9 or Stork version metadata and returns the data in REST API format.
 func AppVersionMetadataToRestAPI(input ReportAppVersionMetadata) *models.AppVersionMetadata {
 	out := models.AppVersionMetadata{}

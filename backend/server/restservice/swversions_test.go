@@ -159,3 +159,12 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	require.Equal(t, "9.18.30", bind.SortedStables[0])
 	require.Equal(t, "9.20.2", bind.SortedStables[1])
 }
+
+// Check if TestGetPotentialVersionsJSONLocations returns paths.
+func TestGetPotentialVersionsJSONLocations(t *testing.T) {
+	// Arrange & Act
+	paths := getPotentialVersionsJSONLocations()
+
+	// Assert
+	require.Greater(t, len(paths), 1)
+}

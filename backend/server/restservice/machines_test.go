@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"path"
 	"regexp"
 	"sort"
 	"testing"
@@ -3112,4 +3113,137 @@ func TestGetAccessPointKey(t *testing.T) {
 	okRsp, ok := rsp.(*services.GetAccessPointKeyOK)
 	require.True(t, ok)
 	require.EqualValues(t, "secret", okRsp.Payload)
+}
+
+func RememberVersionsJSONPath() func() {
+	originalPath := VersionsJSON
+
+	return func() {
+		VersionsJSON = originalPath
+	}
+}
+
+func TestGetIscSwVersionsNoVersionsJSONError(t *testing.T) {
+	// Arrange
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	VersionsJSON = path.Join(sb.BasePath, "not-exists.json")
+
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Act
+	rsp := rapi.GetIscSwVersions(ctx, general.GetIscSwVersionsParams{})
+
+	// Assert
+	defaultRsp, ok := rsp.(*general.GetIscSwVersionsDefault)
+	require.True(t, ok)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+}
+
+func TestGetIscSwVersionsTruncatedVersionsJSONError(t *testing.T) {
+	// Arrange
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	content := `{
+  	"date": "2024-10-03`
+	VersionsJSON, _ = sb.Write("versions.json", content)
+
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Act
+	rsp := rapi.GetIscSwVersions(ctx, general.GetIscSwVersionsParams{})
+
+	// Assert
+	defaultRsp, ok := rsp.(*general.GetIscSwVersionsDefault)
+	require.True(t, ok)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+}
+
+func TestGetIscSwVersions(t *testing.T) {
+	// Arrange
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	content := `{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      },
+      {
+        "version": "2.4.1",
+        "releaseDate": "2023-11-29",
+        "eolDate": "2025-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": {
+      "version": "1.15.1",
+      "releaseDate": "2024-03-27"
+    }
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      },
+      {
+        "version": "9.20.2",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2028-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`
+	VersionsJSON, _ = sb.Write("versions.json", content)
+
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Act
+	rsp := rapi.GetIscSwVersions(ctx, general.GetIscSwVersionsParams{})
+
+	// Assert
+	okRsp, ok := rsp.(*general.GetIscSwVersionsOK)
+	require.True(t, ok)
+	require.Equal(t, "2024-10-03", *okRsp.Payload.Date)
+	require.Empty(t, okRsp.Payload.OnlineData)
 }
