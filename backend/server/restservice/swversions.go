@@ -12,7 +12,6 @@ type ReportVersionDetails struct {
 	EolDate     string                    `json:"eolDate,omitempty"`
 	Esv         string                    `json:"esv,omitempty"`
 	ReleaseDate *string                   `json:"releaseDate"`
-	Status      string                    `json:"status,omitempty"`
 	Version     storkutil.SemanticVersion `json:"version"`
 }
 
@@ -34,7 +33,7 @@ func AppVersionMetadataToRestAPI(input ReportAppVersionMetadata) *models.AppVers
 	out := models.AppVersionMetadata{}
 	if input.LatestSecure != nil {
 		out.LatestSecure = VersionDetailsToRestAPI(*input.LatestSecure)
-		out.LatestSecure.Status = "Current Stable"
+		out.LatestSecure.Status = "Security update"
 	}
 	if input.LatestDev != nil {
 		out.LatestDev = VersionDetailsToRestAPI(*input.LatestDev)

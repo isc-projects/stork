@@ -62,10 +62,10 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 			})
 			return rsp
 		}
-		VersionsJson := fmt.Sprintf("%s/versions.json", dir)
+		VersionsJSON := fmt.Sprintf("%s/versions.json", dir)
 
 		// Open JSON file.
-		file, err := os.Open(VersionsJson)
+		file, err := os.Open(VersionsJSON)
 		if err != nil {
 			log.Error(err)
 			msg := "Cannot open the software versions metadata JSON file"
