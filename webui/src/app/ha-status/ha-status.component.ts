@@ -548,7 +548,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * @param otherServerStatus status of the partner.
      * @returns Summary text displayed in table for a server.
      */
-    createSummary(serverStatus, otherServerStatus: KeaHAServerStatus): string {
+    createSummary(serverStatus: KeaHAServerStatus, otherServerStatus: KeaHAServerStatus): string {
         if (this.calculateServerFailoverProgress(serverStatus) >= 0) {
             return 'Server has started a failover procedure.'
         }
