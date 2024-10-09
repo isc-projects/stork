@@ -69,4 +69,14 @@ describe('PasswordChangePageComponent', () => {
         expect(breadcrumbsComponent.items[0].label).toEqual('User Profile')
         expect(breadcrumbsComponent.items[1].label).toEqual('Password Change')
     })
+
+    it('should permit spaces in the password', () => {
+        component.ngOnInit()
+        component.passwordChangeForm.get('oldPassword').setValue('admin')
+        component.passwordChangeForm.get('newPassword').setValue('password with spaces works well')
+        component.passwordChangeForm.get('confirmPassword').setValue('password with spaces works well')
+
+        fixture.detectChanges()
+        expect(component.passwordChangeForm.valid).toBeTrue()
+    })
 })

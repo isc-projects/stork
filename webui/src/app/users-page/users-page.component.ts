@@ -6,7 +6,7 @@ import { ConfirmationService, MenuItem, MessageService, SelectItem } from 'prime
 import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { UsersService } from '../backend/api/api'
-import { Subscription } from 'rxjs'
+import { lastValueFrom, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { User } from '../backend'
 
@@ -106,7 +106,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * It allows uppercase and lowercase letters A-Z,
      * numbers 0-9 and all special characters.
      */
-    passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?]+$/
+    passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]+$/
 
     // ToDo: Strict typing
     private groups: any[] = []
@@ -360,9 +360,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned and the filter text.
      */
     loadUsers(event) {
-        this.usersApi
-            .getUsers(event.first, event.rows, event.filters.text?.[0]?.value)
-            .toPromise()
+        lastValueFrom(this.usersApi.getUsers(event.first, event.rows, event.filters.text?.[0]?.value))
             .then((data) => {
                 this.users = data.items ?? []
                 this.totalUsers = data.total ?? 0
@@ -471,12 +469,9 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     // We have no information about the user, so let's try to fetch it
                     // from the server.
                     // ToDo: Non-catches promise
-                    this.usersApi
-                        .getUser(userId)
-                        .toPromise()
-                        .then((data) => {
-                            this.addUserTab(UserTabType.User, data)
-                        })
+                    lastValueFrom(this.usersApi.getUser(userId)).then((data) => {
+                        this.addUserTab(UserTabType.User, data)
+                    })
                 }
             })
         )
@@ -500,9 +495,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         }
         const password = this.userForm.controls.userPassword.value
         const account = { user, password }
-        this.usersApi
-            .createUser(account)
-            .toPromise()
+        lastValueFrom(this.usersApi.createUser(account))
             .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
@@ -539,9 +532,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         }
         const password = this.userForm.controls.userPassword.value
         const account = { user, password }
-        this.usersApi
-            .updateUser(account)
-            .toPromise()
+        lastValueFrom(this.usersApi.updateUser(account))
             .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
@@ -582,9 +573,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * deleted.
      */
     deleteUser() {
-        this.usersApi
-            .deleteUser(this.userTab.user.id)
-            .toPromise()
+        lastValueFrom(this.usersApi.deleteUser(this.userTab.user.id))
             .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',

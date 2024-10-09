@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, convertToParamMap, ParamMap, RouterModule } from '@angular/router'
 import { UntypedFormBuilder } from '@angular/forms'
@@ -15,13 +15,15 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { RouterTestingModule } from '@angular/router/testing'
 import { ReactiveFormsModule } from '@angular/forms'
 import { AuthService } from '../auth.service'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { MockParamMap } from '../utils'
 import { TagModule } from 'primeng/tag'
+import { PanelModule } from 'primeng/panel'
+import { DropdownModule } from 'primeng/dropdown'
+import { PasswordModule } from 'primeng/password'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -45,7 +47,13 @@ describe('UsersPageComponent', () => {
                 ConfirmDialogModule,
                 SharedModule,
                 TagModule,
-                RouterTestingModule.withRoutes([{ path: 'users/1', component: UsersPageComponent }]),
+                RouterModule.forRoot([
+                    { path: 'users/1', component: UsersPageComponent },
+                    { path: 'users/new', component: UsersPageComponent },
+                ]),
+                PanelModule,
+                DropdownModule,
+                PasswordModule,
             ],
             declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
             providers: [
@@ -159,4 +167,30 @@ describe('UsersPageComponent', () => {
         // Check that the deleteUser function has been called
         expect(usersApi.deleteUser).toHaveBeenCalled()
     })
+
+    it('should allow spaces in the password', fakeAsync(() => {
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        // Open the new user tab.
+        paramMapValue.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+
+        // Initially the form should be invalid because it is empty.
+        expect(component.userForm).toBeTruthy()
+        expect(component.userForm.valid).toBeFalse()
+
+        // Set valid data including a password containing spaces.
+        component.userForm.get('userLogin').setValue('frank')
+        component.userForm.get('userFirst').setValue('Frank')
+        component.userForm.get('userLast').setValue('Smith')
+        component.userForm.get('userGroup').setValue(1)
+        component.userForm.get('userPassword').setValue('password with spaces is cool')
+        component.userForm.get('userPassword2').setValue('password with spaces is cool')
+        fixture.detectChanges()
+
+        // The form should be validated ok.
+        expect(component.userForm.valid).toBeTrue()
+    }))
 })
