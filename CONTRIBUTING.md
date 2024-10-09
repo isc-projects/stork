@@ -31,8 +31,8 @@ is a great place to ask your questions.
 
 OK, so you have written a patch? Great! Before you submit it, make sure that your code
 compiles. This may seem obvious, but there's more to it. You have surely checked that it compiles on
-your system, but Stork is portable software. Besides Ubuntu 18.04, it is compiled and used on
-FreeBSD. Will your code compile and work there? What about endianness? It is likely that you used a
+your system, but Stork is portable software. Besides different Linux flavors, it is compiled on FreeBSD.
+Will your code compile and work there? What about endianness? It is likely that you used a
 regular x86 architecture machine to write your patch, but the software is expected to run on many
 other architectures.
 
@@ -45,13 +45,13 @@ you to fix it before re-submitting.
 
 ## Running Unit-Tests
 
-One of the ground rules in Stork development is that every piece of code has to be tested. Stork is
-still early in its development, but we want to get to the position that
-[Kea](https://gitlab.isc.org/isc-projects/kea) is in now (with tons of unit and system tests run on
-many platforms automatically). We hope to have an extensive set of unit-tests for every non-trivial
-function or method. Even if you are fixing something small, like a single line, you are
-encouraged to write unit-tests for that change. That is even more true for new code: if you write a
-new function, method, or class, you definitely should write unit-tests for it.
+One of the ground rules in Stork development is that every piece of code has to be properly tested.
+Stork unit-tests cover all non-trivial functions and methods. Even if you are fixing something
+small, like a single line of code, you should write unit-tests verifying the correctness of your
+change. This is also very important for any new code. If you write a new function, method, or class,
+you definitely must write unit-tests for it. There are two kinds of unit-tests in Stork: backend tests
+(written in Golang) and UI unit-tests (written in Typescript). Depending on the scope of your changes,
+you will have to write the backend unit-tests, UI unit-tests or both.
 
 To ensure that everything is tested, ISC uses a development method called [Test Driven Development
 (TDD)](https://en.wikipedia.org/wiki/Test-driven_development). In TDD, a feature is developed
