@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { App, Severity, VersionService } from '../version.service'
-import { AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
+import { AppType, Severity, VersionService } from '../version.service'
+import { App as BackendApp, AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
 import { deepCopy, getErrorMessage } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
@@ -29,7 +29,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * the "summary of ISC software versions detected by Stork" table.
      */
     private _groupHeaderMap: string[] = [
-        'Security updates were found for ISC software used on these machines!',
+        'Security updates were found for ISC software used on these machines!', // todo: update this (version mismatch case etc.)
         'These machines use ISC software version that require your attention. Software updates are available.',
         'ISC software updates are available for these machines.',
         '',
@@ -215,7 +215,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     this.severityMap[
                                         this.versionService.getSoftwareVersionFeedback(
                                             a.version,
-                                            a.type as App,
+                                            a.type as AppType,
                                             this._processedData
                                         )?.severity ?? Severity.success
                                     ],
@@ -281,5 +281,18 @@ export class VersionPageComponent implements OnInit, OnDestroy {
         }
 
         return this._groupHeaderMap[severity]
+    }
+
+    /**
+     * Returns concatenated list of Kea daemons versions for given Kea app.
+     * @param a Kea app
+     */
+    getDaemonsVersions(a: BackendApp): string {
+        let daemons: string[] = []
+        for (let d of a.details?.daemons) {
+            daemons.push(`${d.name} ${d.version}`)
+        }
+
+        return daemons.join(', ')
     }
 }

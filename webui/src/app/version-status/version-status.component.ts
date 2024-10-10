@@ -1,5 +1,5 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
-import { App, Severity, VersionFeedback, VersionService } from '../version.service'
+import { AppType, Severity, VersionFeedback, VersionService } from '../version.service'
 import { Message, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
@@ -20,7 +20,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     /**
      * Type of software for which the version check is done.
      */
-    @Input({ required: true }) app: App
+    @Input({ required: true }) app: AppType
 
     /**
      * Version of the software for which the check is done. This must contain parsable semver.

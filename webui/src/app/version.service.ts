@@ -26,7 +26,7 @@ export interface VersionAlert {
 /**
  * Type for all possible ISC apps that have monitored software versions.
  */
-export type App = 'kea' | 'bind9' | 'stork'
+export type AppType = 'kea' | 'bind9' | 'stork'
 
 /**
  * Severity assigned after assessment of software version is done.
@@ -173,7 +173,7 @@ export class VersionService {
      * @return assessment result as a VersionFeedback object; it contains severity and messages to be displayed to the user
      * @throws Error when the assessment fails for any reason
      */
-    getSoftwareVersionFeedback(version: string, app: App, data: AppsVersions): VersionFeedback {
+    getSoftwareVersionFeedback(version: string, app: AppType, data: AppsVersions): VersionFeedback {
         let cacheKey = version + app
         let cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
@@ -384,7 +384,7 @@ export class VersionService {
      * @return true if provided app version is a development release; false otherwise
      * @private
      */
-    private isDevelopmentVersion(version: string, app: App) {
+    private isDevelopmentVersion(version: string, app: AppType) {
         // Stork versions are all dev until 2.0.0.
         if (app === 'stork' && lt(version, '2.0.0')) {
             return true
@@ -401,7 +401,7 @@ export class VersionService {
      * @return version as either string (in case of latestSecure and latestDev) or array of strings (in case of currentStable)
      * @private
      */
-    private getVersion(app: App, swType: ReleaseType, data: AppsVersions): string | string[] | null {
+    private getVersion(app: AppType, swType: ReleaseType, data: AppsVersions): string | string[] | null {
         return swType === 'currentStable' ? data?.[app]?.sortedStables || null : data?.[app]?.[swType]?.version || null
     }
 
@@ -415,7 +415,7 @@ export class VersionService {
      * @return Modified currentResponse in case of mismatch. In case mismatch was not found, currentResponse returned is not modified.
      * @private
      */
-    private getStorkFeedback(app: App, version: string, currentResponse: VersionFeedback): VersionFeedback {
+    private getStorkFeedback(app: AppType, version: string, currentResponse: VersionFeedback): VersionFeedback {
         if (app === 'stork' && this._storkServerVersion && this._storkServerVersion !== version) {
             let addMsg = `Stork server ${this._storkServerVersion} and Stork agent ${version} versions do not match! Please install matching versions!`
             return {

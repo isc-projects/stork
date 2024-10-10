@@ -153,7 +153,9 @@
                                                 a.id +
                                                 '\'>' +
                                                 a.name +
-                                                '</a> daemons use mismatching versions! All daemons should have the same version!'
+                                                '</a> daemons use mismatching versions:<br>' +
+                                                (getDaemonsVersions(a) | uppercase) +
+                                                '.<br>All daemons should have the same version!'
                                         }
                                     ]"
                                     styleClass="max-w-50rem"
