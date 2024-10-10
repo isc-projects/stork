@@ -3115,6 +3115,8 @@ func TestGetAccessPointKey(t *testing.T) {
 	require.EqualValues(t, "secret", okRsp.Payload)
 }
 
+// Helper function to store and defer restore
+// original path of versions.json file.
 func RememberVersionsJSONPath() func() {
 	originalPath := VersionsJSON
 
@@ -3123,6 +3125,8 @@ func RememberVersionsJSONPath() func() {
 	}
 }
 
+// Test that the HTTP 500 Internal Server Error status is returned
+// if the versions.json file doesn't exist.
 func TestGetIscSwVersionsNoVersionsJSONError(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()
@@ -3147,6 +3151,8 @@ func TestGetIscSwVersionsNoVersionsJSONError(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 }
 
+// Test that the HTTP 500 Internal Server Error status is returned
+// if the versions.json file content is truncated.
 func TestGetIscSwVersionsTruncatedVersionsJSONError(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()
@@ -3173,6 +3179,8 @@ func TestGetIscSwVersionsTruncatedVersionsJSONError(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 }
 
+// Test that information about current ISC software versions is returned
+// via the API.
 func TestGetIscSwVersions(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()
@@ -3246,6 +3254,16 @@ func TestGetIscSwVersions(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "2024-10-03", *okRsp.Payload.Date)
 	require.Empty(t, okRsp.Payload.OnlineData)
+	require.NotNil(t, okRsp.Payload.Bind9)
+	require.NotNil(t, okRsp.Payload.Kea)
+	require.NotNil(t, okRsp.Payload.Stork)
+	require.Equal(t, "2.7.3", *okRsp.Payload.Kea.LatestDev.Version)
+	require.Equal(t, int64(2), okRsp.Payload.Kea.LatestDev.Major)
+	require.Equal(t, int64(7), okRsp.Payload.Kea.LatestDev.Minor)
+	require.Equal(t, "2.4.1", okRsp.Payload.Kea.SortedStables[0])
+	require.Equal(t, "2.6.1", okRsp.Payload.Kea.SortedStables[1])
+	require.Equal(t, "1.19.0", *okRsp.Payload.Stork.LatestDev.Version)
+	require.Equal(t, "9.21.1", *okRsp.Payload.Bind9.LatestDev.Version)
 }
 
 // Test that a list of all authorized machines' ids and apps versions is returned
