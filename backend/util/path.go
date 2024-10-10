@@ -35,3 +35,14 @@ func ListFilePaths(directory string, sortByPath bool) ([]string, error) {
 
 	return files, nil
 }
+
+// Iterates over the specified paths and returns the first path that
+// exists. If none of them exists, it returns a default path.
+func GetFirstExistingPathOrDefault(defaultPath string, paths ...string) string {
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil || !errors.Is(err, os.ErrNotExist) {
+			return path
+		}
+	}
+	return defaultPath
+}

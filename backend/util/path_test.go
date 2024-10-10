@@ -80,3 +80,41 @@ func TestListFilePathsSort(t *testing.T) {
 		require.LessOrEqual(t, paths[i-1], paths[i])
 	}
 }
+
+// Test that first directory is returned if all directories exist.
+func TestGetFirstExistingPathOrDefaultFirstDirectory(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	dir0, err := sandbox.Join("dir0")
+	require.NoError(t, err)
+	dir1, err := sandbox.Join("dir1")
+	require.NoError(t, err)
+	dir2, err := sandbox.Join("dir2")
+	require.NoError(t, err)
+	require.Equal(t, dir0, GetFirstExistingPathOrDefault("default", dir0, dir1, dir2))
+}
+
+// Test that second directory is returned if first directory does not exist.
+func TestGetFirstExistingPathOrDefaultSecondDirectory(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	dir1, err := sandbox.Join("dir1")
+	require.NoError(t, err)
+	dir2, err := sandbox.Join("dir2")
+	require.NoError(t, err)
+	require.Equal(t, dir1, GetFirstExistingPathOrDefault("default", "non-existing", dir1, dir2))
+}
+
+// Test that third directory is returned if first two directories do not exist.
+func TestGetFirstExistingPathOrDefaultThirdDirectory(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	dir2, err := sandbox.Join("dir2")
+	require.NoError(t, err)
+	require.Equal(t, dir2, GetFirstExistingPathOrDefault("default", "non-existing", "another-non-existing", dir2))
+}
+
+// Test that the default directory is returned when no directories exist.
+func TestGetFirstExistingPathOrDefaultDefaultDirectory(t *testing.T) {
+	require.Equal(t, "default", GetFirstExistingPathOrDefault("default", "non-existing", "another-non-existing", "yet-another-non-existing"))
+}
