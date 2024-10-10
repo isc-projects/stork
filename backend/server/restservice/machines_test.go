@@ -3247,3 +3247,141 @@ func TestGetIscSwVersions(t *testing.T) {
 	require.Equal(t, "2024-10-03", *okRsp.Payload.Date)
 	require.Empty(t, okRsp.Payload.OnlineData)
 }
+
+// Test that a list of all authorized machines' ids and apps versions is returned
+// via the API.
+func TestGetMachinesAppsVersions(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add machines.
+	machine1 := &dbmodel.Machine{
+		Address:    "machine1.example.org",
+		AgentPort:  8080,
+		Authorized: true,
+		State: dbmodel.MachineState{
+			AgentVersion: "9.8.7",
+		},
+	}
+	err := dbmodel.AddMachine(db, machine1)
+	require.NoError(t, err)
+
+	// Add Kea app with software versions.
+	app1 := &dbmodel.App{
+		// ID:        0,
+		MachineID: machine1.ID,
+		Type:      dbmodel.AppTypeKea,
+		Active:    true,
+		Name:      "fancy-app",
+		Meta: dbmodel.AppMeta{
+			Version: "3.2.1",
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:      "dhcp4",
+				Active:    true,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+				Version:   "3.2.2",
+			},
+			{
+				Name:      "dhcp6",
+				Active:    true,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+				Version:   "3.2.1",
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app1)
+	require.NoError(t, err)
+
+	machine2 := &dbmodel.Machine{
+		Address:    "machine2.example.org",
+		AgentPort:  8080,
+		Authorized: true,
+		State: dbmodel.MachineState{
+			AgentVersion: "8.7.6",
+		},
+	}
+	err = dbmodel.AddMachine(db, machine2)
+	require.NoError(t, err)
+
+	// Add Kea app with software versions.
+	app2 := &dbmodel.App{
+		MachineID: machine2.ID,
+		Type:      dbmodel.AppTypeKea,
+		Active:    true,
+		Name:      "fancy-app-two",
+		Meta: dbmodel.AppMeta{
+			Version: "1.2.1",
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:      "dhcp4",
+				Active:    true,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+				Version:   "1.2.1",
+			},
+			{
+				Name:      "dhcp6",
+				Active:    true,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+				Version:   "1.2.1",
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app2)
+	require.NoError(t, err)
+
+	machine3 := &dbmodel.Machine{
+		Address:    "machine3.example.org",
+		AgentPort:  8080,
+		Authorized: false,
+	}
+	err = dbmodel.AddMachine(db, machine3)
+	require.NoError(t, err)
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := services.GetMachinesAppsVersionsParams{}
+
+	// Act
+	rsp := rapi.GetMachinesAppsVersions(ctx, params)
+	machines := rsp.(*services.GetMachinesAppsVersionsOK).Payload
+	require.EqualValues(t, machines.Total, 2)
+
+	// Ensure that the returned machines are in a coherent order.
+	sort.Slice(machines.Items, func(i, j int) bool {
+		return machines.Items[i].ID < machines.Items[j].ID
+	})
+
+	// Assert
+	// Validate the returned data.
+	require.Equal(t, int64(2), machines.Total)
+	require.Equal(t, machine1.ID, machines.Items[0].ID)
+	require.NotNil(t, machines.Items[0].Address)
+	require.Equal(t, machine1.Address, *machines.Items[0].Address)
+	require.Equal(t, machine2.ID, machines.Items[1].ID)
+	require.NotNil(t, machines.Items[1].Address)
+	require.Equal(t, machine2.Address, *machines.Items[1].Address)
+	require.NotNil(t, machines.Items[0].Apps)
+	require.NotNil(t, machines.Items[1].Apps)
+	require.Equal(t, "3.2.1", machines.Items[0].Apps[0].Version)
+	require.Equal(t, "9.8.7", machines.Items[0].AgentVersion)
+	require.Equal(t, "3.2.2", machines.Items[0].Apps[0].Details.Daemons[0].Version)
+	require.Equal(t, "3.2.1", machines.Items[0].Apps[0].Details.Daemons[1].Version)
+	require.True(t, machines.Items[0].Apps[0].Details.Daemons[0].Active)
+	require.True(t, machines.Items[0].Apps[0].Details.MismatchingDaemons)
+	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Version)
+	require.Equal(t, "8.7.6", machines.Items[1].AgentVersion)
+	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Details.Daemons[0].Version)
+	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Details.Daemons[1].Version)
+	require.True(t, machines.Items[1].Apps[0].Details.Daemons[0].Active)
+	require.False(t, machines.Items[1].Apps[0].Details.MismatchingDaemons)
+}

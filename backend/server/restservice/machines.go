@@ -157,15 +157,16 @@ func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	return &m
 }
 
-// Convert db machine to flattened rest structure.
-func (r *RestAPI) machineFlattenedToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
+// Convert db machine to minimalistic rest structure covering software versions used.
+func (r *RestAPI) machineSwVersionsToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	apps := []*models.App{}
 	for _, app := range dbMachine.Apps {
-		a := r.appToRestAPI(app)
+		a := r.appSwVersionsToRestAPI(app)
 		apps = append(apps, a)
 	}
 
-	// Return only minimal information about the machine but provide full information about Apps.
+	// Return only minimal information about the machine and add software versions
+	// data for the Apps.
 	m := models.Machine{
 		ID:           dbMachine.ID,
 		Address:      &dbMachine.Address,
@@ -308,7 +309,7 @@ func (r *RestAPI) GetMachinesAppsVersions(ctx context.Context, params services.G
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot get machines apps versions from the database"
-		rsp := services.NewGetMachinesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		rsp := services.NewGetMachinesAppsVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -318,7 +319,7 @@ func (r *RestAPI) GetMachinesAppsVersions(ctx context.Context, params services.G
 		Total: int64(len(dbMachines)),
 	}
 	for i := range dbMachines {
-		machine := r.machineFlattenedToRestAPI(dbMachines[i])
+		machine := r.machineSwVersionsToRestAPI(dbMachines[i])
 		machines.Items = append(machines.Items, machine)
 	}
 
@@ -1195,6 +1196,54 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	return app
 }
 
+// Converts db App structure to minimalistic REST API format covering software versions used.
+func (r *RestAPI) appSwVersionsToRestAPI(dbApp *dbmodel.App) *models.App {
+	baseApp := baseAppToRestAPI(dbApp)
+	app := &models.App{
+		ID:      baseApp.ID,
+		Name:    baseApp.Name,
+		Type:    baseApp.Type,
+		Version: baseApp.Version,
+	}
+
+	if dbApp.Type == dbmodel.AppTypeKea {
+		keaDaemons := []*models.KeaDaemon{}
+		versionCheck := []string{}
+		for _, d := range dbApp.Daemons {
+			dmn := keaDaemonSwVersionsToRestAPI(d)
+			if dmn.Active && len(dmn.Version) > 0 {
+				versionCheck = append(versionCheck, dmn.Version)
+			}
+			keaDaemons = append(keaDaemons, dmn)
+		}
+		mismatchFound := false
+		if len(versionCheck) > 1 {
+			for i := range versionCheck {
+				if i == 0 {
+					continue
+				}
+				if versionCheck[i-1] != versionCheck[i] {
+					mismatchFound = true
+					break
+				}
+			}
+		}
+
+		app.Details = struct {
+			models.AppKea
+			models.AppBind9
+		}{
+			models.AppKea{
+				Daemons:            keaDaemons,
+				MismatchingDaemons: mismatchFound,
+			},
+			models.AppBind9{},
+		}
+	}
+
+	return app
+}
+
 // Converts KeaDaemon structure to REST API format.
 func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 	daemon := &models.KeaDaemon{
@@ -1238,6 +1287,18 @@ func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 	if dbDaemon.KeaDaemon != nil && dbDaemon.KeaDaemon.Config != nil {
 		daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config.Config)
 	}
+	return daemon
+}
+
+// Converts KeaDaemon structure to minimalistic REST API format covering software versions used.
+func keaDaemonSwVersionsToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
+	daemon := &models.KeaDaemon{
+		ID:      dbDaemon.ID,
+		Name:    dbDaemon.Name,
+		Active:  dbDaemon.Active,
+		Version: dbDaemon.Version,
+	}
+
 	return daemon
 }
 
