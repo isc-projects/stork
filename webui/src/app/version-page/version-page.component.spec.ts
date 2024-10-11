@@ -289,7 +289,7 @@ describe('VersionPageComponent', () => {
         let app = fakeMachinesResponse.items.filter((m) => m.address === 'agent-kea')[0].apps[0]
 
         // Act & Assert
-        expect(component.getDaemonsVersions(app)).toBe('dhcp4 2.7.2, ca 2.7.2')
+        expect(component.getDaemonsVersions(app)).toEqual('dhcp4 2.7.2, ca 2.7.2')
     })
 
     it('should display offline data info message', () => {
@@ -304,5 +304,105 @@ describe('VersionPageComponent', () => {
         expect(de.nativeElement.innerText).toContain(
             'Below information about ISC software versions relies on a data that was generated on 2024-10-03.'
         )
+    })
+
+    it('should display summary table', () => {
+        // Arrange & Act & Assert
+        expect(component.machines.length).toEqual(4)
+
+        // There should be 4 tables.
+        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        expect(tablesDe.length).toEqual(4)
+        let summaryTableDe = tablesDe[0]
+
+        // There should be 4 group headers, one per error, warn, info and success severity.
+        expect(summaryTableDe.queryAll(By.css('tbody tr')).length).toEqual(4)
+        expect(component.counters).toEqual([1, 1, 1, 0, 1])
+        let groupHeaderMessagesDe = summaryTableDe.queryAll(By.css('.p-message'))
+        expect(groupHeaderMessagesDe.length).toEqual(4)
+        expect(Object.keys(groupHeaderMessagesDe[0].classes)).toContain('p-message-error')
+        expect(Object.keys(groupHeaderMessagesDe[1].classes)).toContain('p-message-warn')
+        expect(Object.keys(groupHeaderMessagesDe[2].classes)).toContain('p-message-info')
+        expect(Object.keys(groupHeaderMessagesDe[3].classes)).toContain('p-message-success')
+    })
+
+    it('should display kea releases table', () => {
+        // Arrange & Act & Assert
+        expect(component.machines.length).toEqual(4)
+
+        // There should be 4 tables.
+        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        expect(tablesDe.length).toEqual(4)
+        let keaTable = tablesDe[1]
+
+        // There should be 2 rows for stable releases and 1 for development.
+        expect(keaTable.queryAll(By.css('tbody tr')).length).toEqual(3)
+        expect(keaTable.nativeElement.innerText).toContain('Current Stable')
+        expect(keaTable.nativeElement.innerText).toContain('Development')
+        expect(keaTable.nativeElement.innerText).toContain('Kea ARM')
+        expect(keaTable.nativeElement.innerText).toContain('Release Notes')
+    })
+
+    it('should display Bind9 releases table', () => {
+        // Arrange & Act & Assert
+        expect(component.machines.length).toEqual(4)
+
+        // There should be 4 tables.
+        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        expect(tablesDe.length).toEqual(4)
+        let bindTable = tablesDe[2]
+
+        // There should be 2 rows for stable releases and 1 for development.
+        expect(bindTable.queryAll(By.css('tbody tr')).length).toEqual(3)
+        expect(bindTable.nativeElement.innerText).toContain('Current Stable')
+        expect(bindTable.nativeElement.innerText).toContain('Development')
+        expect(bindTable.nativeElement.innerText).toContain('Bind 9.20 ARM')
+        expect(bindTable.nativeElement.innerText).toContain('Release Notes')
+    })
+
+    it('should display stork releases table', () => {
+        // Arrange & Act & Assert
+        expect(component.machines.length).toEqual(4)
+
+        // There should be 4 tables.
+        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        expect(tablesDe.length).toEqual(4)
+        let storkTable = tablesDe[3]
+
+        // There is 1 row for development release.
+        expect(storkTable.queryAll(By.css('tbody tr')).length).toEqual(1)
+        expect(storkTable.nativeElement.innerText).toContain('Development')
+        expect(storkTable.nativeElement.innerText).toContain('Stork ARM')
+        expect(storkTable.nativeElement.innerText).toContain('Release Notes')
+    })
+
+    it('should display version alert dismiss message', () => {
+        // Arrange & Act & Assert
+        let de = fixture.debugElement.query(By.css('.p-messages.header-message .p-message-warn'))
+        expect(de).toBeTruthy()
+        expect(de.nativeElement.innerText).toContain('Action required')
+
+        // There is a button to dismiss the alert.
+        let btn = de.query(By.css('button'))
+        expect(btn).toBeTruthy()
+        spyOn(versionService, 'dismissVersionAlert').and.callThrough()
+        btn.triggerEventHandler('click')
+        expect(versionService.dismissVersionAlert).toHaveBeenCalledTimes(1)
+    })
+
+    it('should display button to refresh data', () => {
+        // Arrange & Act & Assert
+
+        // There is a button to refresh the data.
+        let de = fixture.debugElement.query(By.css('p-button[label="Refresh Versions"]'))
+        expect(de).toBeTruthy()
+        expect(de.nativeElement.innerText).toContain('Refresh Versions')
+
+        let btn = de.query(By.css('button'))
+        expect(btn).toBeTruthy()
+        spyOn(versionService, 'refreshData').and.callThrough()
+        btn.triggerEventHandler('click')
+        fixture.detectChanges()
+        expect(versionService.refreshData).toHaveBeenCalledTimes(1)
     })
 })
