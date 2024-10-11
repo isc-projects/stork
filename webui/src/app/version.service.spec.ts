@@ -379,4 +379,127 @@ describe('VersionService', () => {
             service.getSoftwareVersionFeedback('a.b.c', 'kea', fakeResponse)
         }).toThrowError("Couldn't parse valid semver from given a.b.c version!")
     })
+
+    it('should throw error for version check for incorrect AppVersions data', () => {
+        // Arrange
+        let data: AppsVersions = {
+            date: 'abc',
+            bind9: null,
+            kea: null,
+            stork: null,
+        }
+        // Act
+        // Assert
+        expect(() => {
+            service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
+        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+    })
+
+    it('should throw error for version check for incomplete AppVersions data', () => {
+        // Arrange
+        let data: AppsVersions = {
+            date: 'abc',
+            bind9: null,
+            kea: {
+                currentStable: [
+                    {
+                        eolDate: '2026-07-01',
+                        major: 2,
+                        minor: 6,
+                        range: '2.6.x',
+                        releaseDate: '2024-07-31',
+                        status: 'Current Stable',
+                        version: '2.6.1',
+                    },
+                    {
+                        eolDate: '2025-07-01',
+                        major: 2,
+                        minor: 4,
+                        range: '2.4.x',
+                        releaseDate: '2023-11-29',
+                        status: 'Current Stable',
+                        version: '2.4.1',
+                    },
+                ],
+                latestDev: { major: 2, minor: 7, releaseDate: '2024-09-25', status: 'Development', version: '2.7.3' },
+                sortedStables: null, // sortedStables missing
+            },
+            stork: null,
+        }
+        // Act
+        // Assert
+        expect(() => {
+            service.getSoftwareVersionFeedback('4.0.0', 'kea', data)
+        }).toThrowError('Invalid syntax of the software versions metadata JSON file received from Stork server.')
+    })
+
+    it('should return software version feedback for stork agent vs server mismatch', () => {
+        // Arrange
+        let storkCheck: VersionFeedback
+        service.setStorkServerVersion('1.19.0')
+
+        // Act
+        storkCheck = service.getSoftwareVersionFeedback('1.18.0', 'stork', fakeResponse)
+
+        // Assert
+        expect(storkCheck).toBeTruthy()
+        expect(storkCheck.severity).toBe(Severity.warn)
+        expect(storkCheck.messages.length).toBe(2)
+        expect(storkCheck.messages[0]).toMatch(new RegExp(/Development .+ version update \(\d+.\d+.\d+\) is available/))
+        expect(storkCheck.messages[1]).toMatch(
+            new RegExp(/Stork server \d+.\d+.\d+ and Stork agent \d+.\d+.\d+ versions do not match/)
+        )
+    })
+
+    it('should emit version alert when there was warning or error severity detected', () => {
+        // Arrange
+        let resp: VersionAlert
+        // Act
+        service.getVersionAlert().subscribe((d) => (resp = d))
+        // Assert
+        expect(resp).toBeTruthy()
+        expect(resp.detected).toBeFalse()
+        expect(resp.severity).toBe(Severity.success)
+        service.getSoftwareVersionFeedback('2.7.0', 'kea', fakeResponse)
+        expect(resp.detected).toBeTrue()
+        expect(resp.severity).toBe(Severity.warn)
+        service.getSoftwareVersionFeedback('1.14.0', 'stork', fakeResponse)
+        expect(resp.detected).toBeTrue()
+        expect(resp.severity).toBe(Severity.error)
+    })
+
+    it('should dismiss version alert', () => {
+        // Arrange
+        let resp: VersionAlert
+        let resp2: VersionAlert
+
+        // Act
+        service.getVersionAlert().subscribe((d) => (resp = d))
+        expect(resp).toBeTruthy()
+        expect(resp.detected).toBeFalse()
+        expect(resp.severity).toBe(Severity.success)
+        service.getSoftwareVersionFeedback('2.7.0', 'kea', fakeResponse)
+        expect(resp.detected).toBeTrue()
+        expect(resp.severity).toBe(Severity.warn)
+        // success severity expected
+        let f = service.getSoftwareVersionFeedback('2.4.1', 'kea', fakeResponse)
+        expect(f.severity).toBe(Severity.success)
+        // however this shouldn't change the alert severity
+        expect(resp.detected).toBeTrue()
+        expect(resp.severity).toBe(Severity.warn)
+
+        service.dismissVersionAlert()
+
+        // Assert
+        expect(resp.detected).toBeFalse()
+        expect(resp.severity).toBe(Severity.success)
+        // Second observer should not receive anything after the alert has been dismissed.
+        service.getVersionAlert().subscribe((d) => (resp2 = d))
+        expect(resp2).toBeUndefined()
+        // Detecting warning severity after the alert was dismissed should not enable the alert again.
+        service.getSoftwareVersionFeedback('2.7.0', 'kea', fakeResponse)
+        expect(resp.detected).toBeFalse()
+        expect(resp.severity).toBe(Severity.success)
+        expect(resp2).toBeUndefined()
+    })
 })
