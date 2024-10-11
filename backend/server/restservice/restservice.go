@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -412,23 +412,15 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 // Serve the API.
 func (r *RestAPI) Serve() (err error) {
 	if r.Settings.StaticFilesDir == "" {
-		// Specify the search paths. The first one is the path valid for the
-		// dev code executed with rake run:server.
-		searchPaths := []string{"./webui/dist/stork", "/usr/share/stork/www"}
-		// The development path is the default.
-		defaultPath := searchPaths[0]
-		// There is another possibility for the search path (i.e., when Stork
-		// is installed in a custom location). We can reverse engineer this
-		// path from the current binary location.
+		searchPaths := []string{}
+		// The typical installation path is the default.
+		defaultPath := "/usr/share/stork/www"
 		if executable, err := os.Executable(); err == nil {
-			// If the current executable location was found we can now assume
-			// that the static files are under ../share/stork/www/.
-			searchPath := path.Join(path.Dir(executable), "..", "/share/stork/www")
-			if searchPath != searchPaths[1] {
-				// Only insert this search path if it is different than the
-				// common production path. It would be a waste of time to
-				// check the same path twice.
-				searchPaths = slices.Insert(searchPaths, 1, searchPath)
+			// If we know the executable path we can try to search other typical
+			// locations relative to the executable path.
+			if executable, err = filepath.EvalSymlinks(executable); err == nil {
+				searchPaths = append(searchPaths, path.Join(path.Dir(executable), "..", "..", "..", "/webui/dist/stork"))
+				searchPaths = append(searchPaths, path.Join(path.Dir(executable), "..", "/share/stork/www"))
 			}
 		}
 		r.Settings.StaticFilesDir = storkutil.GetFirstExistingPathOrDefault(defaultPath, searchPaths...)
