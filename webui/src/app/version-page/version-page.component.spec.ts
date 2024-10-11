@@ -29,6 +29,8 @@ describe('VersionPageComponent', () => {
     let isOnlineDataSpy: jasmine.Spy<any>
     let getVersionAlertSpy: jasmine.Spy<any>
     let getMachinesAppsVersionsSpy: jasmine.Spy<any>
+    let messageService: MessageService
+    let messageAddSpy: jasmine.Spy<any>
     let fakeResponse = {
         bind9: {
             currentStable: [
@@ -266,26 +268,49 @@ describe('VersionPageComponent', () => {
         fixture = TestBed.createComponent(VersionPageComponent)
         versionService = TestBed.inject(VersionService)
         servicesApi = TestBed.inject(ServicesService)
+        messageService = TestBed.inject(MessageService)
         component = fixture.componentInstance
         getCurrentDataSpy = spyOn(versionService, 'getCurrentData')
-        getCurrentDataSpy.and.returnValue(of(fakeResponse))
         getDataManufactureDateSpy = spyOn(versionService, 'getDataManufactureDate').and.returnValue(of('2024-10-03'))
         isOnlineDataSpy = spyOn(versionService, 'isOnlineData').and.returnValue(of(false))
         getVersionAlertSpy = spyOn(versionService, 'getVersionAlert')
         getVersionAlertSpy.and.returnValue(of({ severity: Severity.error, detected: true } as VersionAlert))
-        getMachinesAppsVersionsSpy = spyOn(servicesApi, 'getMachinesAppsVersions').and.returnValue(
-            of(fakeMachinesResponse as any)
-        )
-
-        fixture.detectChanges()
+        getMachinesAppsVersionsSpy = spyOn(servicesApi, 'getMachinesAppsVersions')
+        messageAddSpy = spyOn(messageService, 'add').and.callThrough()
     })
 
+    /**
+     * Helper function setting mocks of normal version service responses.
+     */
+    function apisWorkingFine() {
+        getCurrentDataSpy.and.returnValue(of(fakeResponse))
+        getMachinesAppsVersionsSpy.and.returnValue(of(fakeMachinesResponse as any))
+        fixture.detectChanges()
+    }
+
+    /**
+     * Helper function setting mocks of malfunctioning version service responses.
+     */
+    function apisThrowingErrors(first = true) {
+        if (first) {
+            getCurrentDataSpy.and.throwError('version service error1')
+            getMachinesAppsVersionsSpy.and.returnValue(of(fakeMachinesResponse as any))
+        } else {
+            getCurrentDataSpy.and.returnValue(of(fakeResponse))
+            getMachinesAppsVersionsSpy.and.throwError('version service error2')
+        }
+
+        fixture.detectChanges()
+    }
+
     it('should create', () => {
+        apisWorkingFine()
         expect(component).toBeTruthy()
     })
 
     it('should get daemons versions', () => {
         // Arrange
+        apisWorkingFine()
         let app = fakeMachinesResponse.items.filter((m) => m.address === 'agent-kea')[0].apps[0]
 
         // Act & Assert
@@ -294,6 +319,7 @@ describe('VersionPageComponent', () => {
 
     it('should display offline data info message', () => {
         // Arrange & Act & Assert
+        apisWorkingFine()
         expect(getDataManufactureDateSpy).toHaveBeenCalledTimes(1)
         expect(isOnlineDataSpy).toHaveBeenCalledTimes(1)
         expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
@@ -308,6 +334,7 @@ describe('VersionPageComponent', () => {
 
     it('should display summary table', () => {
         // Arrange & Act & Assert
+        apisWorkingFine()
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
@@ -328,6 +355,7 @@ describe('VersionPageComponent', () => {
 
     it('should display kea releases table', () => {
         // Arrange & Act & Assert
+        apisWorkingFine()
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
@@ -345,6 +373,7 @@ describe('VersionPageComponent', () => {
 
     it('should display Bind9 releases table', () => {
         // Arrange & Act & Assert
+        apisWorkingFine()
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
@@ -362,6 +391,7 @@ describe('VersionPageComponent', () => {
 
     it('should display stork releases table', () => {
         // Arrange & Act & Assert
+        apisWorkingFine()
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
@@ -378,6 +408,7 @@ describe('VersionPageComponent', () => {
 
     it('should display version alert dismiss message', () => {
         // Arrange & Act & Assert
+        apisWorkingFine()
         let de = fixture.debugElement.query(By.css('.p-messages.header-message .p-message-warn'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Action required')
@@ -392,6 +423,7 @@ describe('VersionPageComponent', () => {
 
     it('should display button to refresh data', () => {
         // Arrange & Act & Assert
+        apisWorkingFine()
 
         // There is a button to refresh the data.
         let de = fixture.debugElement.query(By.css('p-button[label="Refresh Versions"]'))
@@ -404,5 +436,27 @@ describe('VersionPageComponent', () => {
         btn.triggerEventHandler('click')
         fixture.detectChanges()
         expect(versionService.refreshData).toHaveBeenCalledTimes(1)
+    })
+
+    it('should display error when failed to get current data from version service ', () => {
+        // Arrange & Act & Assert
+        expect(() => {
+            apisThrowingErrors(true)
+        }).toThrowError('version service error1')
+        expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
+        expect(getMachinesAppsVersionsSpy).toHaveBeenCalledTimes(0)
+    })
+
+    it('should display error when failed to get machines data from service api', () => {
+        // Arrange & Act & Assert
+        apisThrowingErrors(false)
+        expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
+        expect(getMachinesAppsVersionsSpy).toHaveBeenCalledTimes(1)
+        expect(messageAddSpy).toHaveBeenCalledOnceWith({
+            severity: 'error',
+            summary: 'Error retrieving software versions data',
+            detail: 'Error occurred when retrieving software versions data: version service error2',
+            life: 10000,
+        })
     })
 })
