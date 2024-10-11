@@ -289,8 +289,10 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      */
     getDaemonsVersions(a: BackendApp): string {
         let daemons: string[] = []
-        for (let d of a.details?.daemons) {
-            daemons.push(`${d.name} ${d.version}`)
+        for (let d of a.details?.daemons ?? []) {
+            if (d.name && d.version) {
+                daemons.push(`${d.name} ${d.version}`)
+            }
         }
 
         return daemons.join(', ')
