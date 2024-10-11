@@ -23,16 +23,19 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-The ``stork-agent`` is a small tool that operates on systems
-that are running BIND 9 or Kea services. The Stork server connects to
-the Stork agent and uses it to monitor services remotely.
+The ``stork-agent`` is a tool that operates on systems that are running BIND 9
+or Kea services. The Stork server connects to the Stork agent and uses it to
+monitor services remotely.
 
 Arguments
 ~~~~~~~~~
 
-Stork does not use an explicit configuration file. Instead, its behavior can be controlled with
-command-line switches and/or variables. The Stork agent takes the following command-line switches.
-Equivalent environment variables are listed in square brackets, where applicable.
+Stork agent's behavior can be controlled with command-line switches and/or
+environment variables. The environment variables can be set before running
+the agent or they can be loaded from a file using the ``--use-env-file``
+and ``--env-file`` flags. ``stork-agent`` takes the following arguments
+(equivalent environment variables are listed in square brackets,
+where applicable)
 
 ``--listen-stork-only``
    Instructs ``stork-agent`` to listen for commands from the Stork server, but not for Prometheus requests. ``[$STORK_AGENT_LISTEN_STORK_ONLY]``

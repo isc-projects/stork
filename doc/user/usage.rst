@@ -56,13 +56,15 @@ boxes, and must meet the password requirements specified in the
 previous section. When all entered data is valid, the ``Save`` button
 is activated to change the password.
 
-Configuration Settings
-======================
+Runtime Configuration Settings
+==============================
 
-It is possible to control some of the Stork configuration settings from
-the web interface. Click on the ``Configuration`` menu and choose ``Settings``.
-There are three classes of settings available: ``Security``, ``Intervals`` and
-``Grafana & Prometheus``.
+Stork server is started with the command-line switches and/or environment
+variables controlling some of its behavior. However, the server also exposes
+other configuration options only available at runtime from the web UI.
+To access these options, select ``Configuration`` from the menu and choose
+``Settings``. There are three classes of settings available: ``Security``,
+``Intervals`` and ``Grafana & Prometheus``.
 
 ``Security`` settings currently contain only one option, controlling whether
 or not the machines registration REST API endpoint is enabled. New machines

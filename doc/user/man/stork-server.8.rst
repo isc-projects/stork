@@ -27,7 +27,14 @@ every Stork deployment, there should be exactly one Stork server.
 Arguments
 ~~~~~~~~~
 
-``stork-server`` takes the following arguments (equivalent environment variables are listed in square brackets, where applicable):
+Stork server's behavior is controlled with command-line switches and/or
+environment variables. The environment variables can be set before running the
+server or they can be loaded from a file using the ``--use-env-file`` and
+``--env-file`` flags. Note that some parts of the server configuration can only
+be controlled from the web UI, after the server has been started.
+
+``stork-server`` takes the following arguments (equivalent environment
+variables are listed in square brackets, where applicable):
 
 ``-h|--help``
    Returns the list of available parameters.
