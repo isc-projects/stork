@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing'
 
-import { Severity, VersionAlert, VersionService } from './version.service'
+import { Severity, VersionAlert, VersionFeedback, VersionService } from './version.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { AppsVersions, GeneralService } from './backend'
 import { of } from 'rxjs'
@@ -234,5 +234,149 @@ describe('VersionService', () => {
         expect(resp).toBeTruthy()
         expect(resp.detected).toBeFalse()
         expect(resp.severity).toBe(Severity.success)
+    })
+
+    it('should return software version feedback for update available', () => {
+        // Arrange
+        let securityUpdateFound: VersionFeedback
+        let stableUpdateFound: VersionFeedback
+        let devUpdateFound: VersionFeedback
+
+        // Act
+        securityUpdateFound = service.getSoftwareVersionFeedback('1.14.0', 'stork', fakeResponse)
+        stableUpdateFound = service.getSoftwareVersionFeedback('9.18.10', 'bind9', fakeResponse)
+        devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'kea', fakeResponse)
+
+        // Assert
+        expect(securityUpdateFound).toBeTruthy()
+        expect(stableUpdateFound).toBeTruthy()
+        expect(devUpdateFound).toBeTruthy()
+        expect(securityUpdateFound.severity).toBe(Severity.error)
+        expect(stableUpdateFound.severity).toBe(Severity.info)
+        expect(devUpdateFound.severity).toBe(Severity.warn)
+        expect(securityUpdateFound.messages.length).toBeGreaterThan(0)
+        expect(stableUpdateFound.messages.length).toBeGreaterThan(0)
+        expect(devUpdateFound.messages.length).toBeGreaterThan(1)
+        expect(securityUpdateFound.messages[0]).toMatch(new RegExp(/Security update \d+.\d+.\d+ was released/))
+        expect(stableUpdateFound.messages[0]).toMatch(
+            new RegExp(/Stable .+ version update \(\d+.\d+.\d+\) is available/)
+        )
+        expect(devUpdateFound.messages[0]).toMatch(
+            new RegExp(/Development .+ version update \(\d+.\d+.\d+\) is available/)
+        )
+        expect(devUpdateFound.messages[1]).toMatch(
+            'Please be advised that using development version in production is not recommended'
+        )
+    })
+
+    it('should return software version feedback for current version used', () => {
+        // Arrange
+        let devNoStableCheck: VersionFeedback
+        let stableCheck: VersionFeedback
+        let devCheck: VersionFeedback
+
+        // Act
+        devNoStableCheck = service.getSoftwareVersionFeedback('1.19.0', 'stork', fakeResponse)
+        stableCheck = service.getSoftwareVersionFeedback('9.20.2', 'bind9', fakeResponse)
+        devCheck = service.getSoftwareVersionFeedback('2.7.3', 'kea', fakeResponse)
+
+        // Assert
+        expect(devNoStableCheck).toBeTruthy()
+        expect(stableCheck).toBeTruthy()
+        expect(devCheck).toBeTruthy()
+        expect(devNoStableCheck.severity).toBe(Severity.success)
+        expect(stableCheck.severity).toBe(Severity.success)
+        expect(devCheck.severity).toBe(Severity.warn)
+        expect(devNoStableCheck.messages.length).toBe(1)
+        expect(stableCheck.messages.length).toBe(1)
+        expect(devCheck.messages.length).toBeGreaterThan(1)
+        expect(devNoStableCheck.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ development version/))
+        expect(stableCheck.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ stable version/))
+        expect(devCheck.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ development version/))
+        expect(devCheck.messages[1]).toMatch(
+            'Please be advised that using development version in production is not recommended'
+        )
+    })
+
+    it('should return software version feedback for more recent version used', () => {
+        // Arrange
+        let devNoStableCheck: VersionFeedback
+        let stableCheck: VersionFeedback
+        let devCheck: VersionFeedback
+
+        // Act
+        devNoStableCheck = service.getSoftwareVersionFeedback('1.19.5', 'stork', fakeResponse)
+        stableCheck = service.getSoftwareVersionFeedback('9.20.22', 'bind9', fakeResponse)
+        devCheck = service.getSoftwareVersionFeedback('2.9.3', 'kea', fakeResponse)
+
+        // Assert
+        expect(devNoStableCheck).toBeTruthy()
+        expect(stableCheck).toBeTruthy()
+        expect(devCheck).toBeTruthy()
+        expect(devNoStableCheck.severity).toBe(Severity.secondary)
+        expect(stableCheck.severity).toBe(Severity.secondary)
+        expect(devCheck.severity).toBe(Severity.warn)
+        expect(devNoStableCheck.messages.length).toBe(1)
+        expect(stableCheck.messages.length).toBe(1)
+        expect(devCheck.messages.length).toBeGreaterThan(1)
+        expect(devNoStableCheck.messages[0]).toMatch('You are using more recent version')
+        expect(stableCheck.messages[0]).toMatch('You are using more recent version')
+        expect(devCheck.messages[0]).toMatch('You are using more recent version')
+        expect(devCheck.messages[1]).toMatch(
+            'Please be advised that using development version in production is not recommended'
+        )
+    })
+
+    it('should return software version feedback for not known stable', () => {
+        // Arrange
+        let stableCheck: VersionFeedback
+
+        // Act
+        stableCheck = service.getSoftwareVersionFeedback('2.0.0', 'stork', fakeResponse)
+
+        // Assert
+        expect(stableCheck).toBeTruthy()
+        expect(stableCheck.severity).toBe(Severity.secondary)
+        expect(stableCheck.messages.length).toBe(1)
+        expect(stableCheck.messages[0]).toMatch(new RegExp(/the .+ \d+.\d+.\d+ stable version is not known yet/))
+    })
+
+    it('should return software version feedback for newer stable not matching known ranges', () => {
+        // Arrange
+        let stableCheck: VersionFeedback
+
+        // Act
+        stableCheck = service.getSoftwareVersionFeedback('4.0.0', 'kea', fakeResponse)
+
+        // Assert
+        expect(stableCheck).toBeTruthy()
+        expect(stableCheck.severity).toBe(Severity.secondary)
+        expect(stableCheck.messages.length).toBe(1)
+        expect(stableCheck.messages[0]).toMatch(
+            new RegExp(/version \d+.\d+.\d+ is more recent than current stable version/)
+        )
+    })
+
+    it('should return software version feedback for older stable not matching known ranges', () => {
+        // Arrange
+        let stableCheck: VersionFeedback
+
+        // Act
+        stableCheck = service.getSoftwareVersionFeedback('1.0.0', 'kea', fakeResponse)
+
+        // Assert
+        expect(stableCheck).toBeTruthy()
+        expect(stableCheck.severity).toBe(Severity.warn)
+        expect(stableCheck.messages.length).toBe(1)
+        expect(stableCheck.messages[0]).toMatch(new RegExp(/version \d+.\d+.\d+ is older than current stable version/))
+    })
+
+    it('should throw error for version check for incorrect semver', () => {
+        // Arrange
+        // Act
+        // Assert
+        expect(() => {
+            service.getSoftwareVersionFeedback('a.b.c', 'kea', fakeResponse)
+        }).toThrowError("Couldn't parse valid semver from given a.b.c version!")
     })
 })
