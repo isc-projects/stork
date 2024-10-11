@@ -94,7 +94,6 @@ export class VersionService {
     currentData$ = this._currentDataSubject$.pipe(
         mergeMap(() => {
             this.dataFetchedTimestamp = new Date()
-            console.log('fetching new data with generalService.getIscSwVersions()', this.dataFetchedTimestamp)
             return this.generalService.getIscSwVersions()
         }),
         shareReplay(1)
@@ -119,7 +118,6 @@ export class VersionService {
      */
     getCurrentData(): Observable<AppsVersions> {
         if (this.isDataOutdated()) {
-            console.log('data out of date')
             this.refreshData()
         }
         return this.currentData$
@@ -177,12 +175,9 @@ export class VersionService {
         let cacheKey = version + app
         let cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
-            console.log('cache used')
             this.detectHigherSeverity(cachedFeedback)
             return cachedFeedback
         }
-
-        console.log('getSoftwareVersionFeedback no cache found')
 
         let response: VersionFeedback = { severity: Severity.success, messages: [] }
         let sanitizedSemver = this.sanitizeSemver(version)
@@ -259,8 +254,7 @@ export class VersionService {
                         if (lt(sanitizedSemver, stableVersions[0])) {
                             // either semver major or minor are below min(current stable)
                             response = {
-                                severity: Severity.warn, // TODO: or info ?
-                                // feedback: `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}. Updating to current stable is possible.`,
+                                severity: Severity.warn,
                                 messages: [
                                     `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
                                 ],
@@ -273,7 +267,6 @@ export class VersionService {
                                     `${appName} version ${sanitizedSemver} is more recent than current stable version/s ${versionsText} (known as of ${dataDate}).`,
                                 ],
                             }
-                            // this.feedback = `Current stable ${this.appName} version as of ${this.extendedMetadata.date} is/are ${versionsText}. You are using more recent version ${sanitizedSemver}.`
                         }
 
                         response = this.getStorkFeedback(app, sanitizedSemver, response)
@@ -296,7 +289,6 @@ export class VersionService {
                         messages: [
                             `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
                         ],
-                        // feedback: `You are using ${appName} development version ${sanitizedSemver}. Current development version (known as of ${dataDate}) is ${latestDevVersion}. Please consider updating.`,
                     }
                 } else if (gt(sanitizedSemver, latestDevVersion as string)) {
                     response = {

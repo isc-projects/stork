@@ -223,7 +223,6 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 )
                                 // daemons version match check
                                 if (a.details.mismatchingDaemons) {
-                                    console.warn('mismatching kea daemons')
                                     m.versionCheckSeverity = Severity.error
                                 }
                             })
