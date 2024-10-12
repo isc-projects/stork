@@ -649,62 +649,77 @@ first column for the selected lease.
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When viewing the details of the Kea application for which High
-Availability (HA) is enabled (via the ``libdhcp_ha.so`` hook library), the
-High Availability live status is presented and periodically refreshed
-for the DHCPv4 and/or DHCPv6 daemon configured as primary or
-secondary/standby server. The status is not displayed for the server
-configured as an HA backup. See the `High Availability section in the
+Kea High Availability (HA) status can be observed on the page with the
+Kea application details for the DHCPv4 or DHCPv6 daemons having
+the ``libdhcp_ha`` hook library loaded. This information is
+periodically refreshed according to the configured interval of the
+Kea status puller (see ``Configuration`` -> ``Settings``).
+
+Kea HA supports advanced resillience configurations with one central
+server (hub) connected to multiple servers providing DHCP service in
+different network segments (spokes). This configuration model is described
+in the `Hub and Spoke Configuration section in the Kea ARM
+<https://kea.readthedocs.io/en/latest/arm/hooks.html#hub-and-spoke-configuration>`_.
+Internally, Kea maintains a separate state machine for each connection between
+the hub and one of the servers. We call this state machine a ``relationship``. The
+hub has many relationships. Each spoke has a single relationship with the hub.
+Stork presents HA status for each relationship separately (e.g., ``Relationship #1``,
+``Relationship #2`` etc.). Note that each relationship may be in a different state.
+For example: a hub may be in the ``partner-down`` state for the ``Relationship #1``
+and in the ``hot-standby`` state for ``Relationship #2``. The hub relationship
+states depend on the availability of the respective spoke servers.
+
+See the `High Availability section in the
 Kea ARM
-<https://kea.readthedocs.io/en/latest/arm/hooks.html#ha-high-availability>`_
+<https://kea.readthedocs.io/en/latest/arm/hooks.html#libdhcp-ha-so-high-availability-outage-resilience-for-kea-servers>`_
 for details about the roles of the servers within the HA setup.
 
-The following picture shows a typical High Availability status view
-displayed in the Stork UI.
+Expand selected relationship by clicking an arrow button on the left to
+see the relationship status details. The following picture shows a typical
+High Availability status view for a relationship.
 
 .. figure:: ./static/kea-ha-status.png
    :alt: High Availability status example
 
-The **local** server is the DHCP server (daemon) belonging to the
-application for which the status is displayed; the **remote** server is
-its active HA partner. The remote server belongs to a different
-application running on a different machine; this machine may or
-may not be monitored by Stork. The statuses of both the local and the
-remote servers are fetched by sending the `status-get
+
+``This Server`` is a DHCP server (daemon) belonging to the application
+for which the status is currently displayed; the ``Partner`` is its
+active HA partner belonging to the same relationship. The partner belongs
+to a different Kea instance running on a different machine; this machine may or
+may not be monitored by Stork. The statuses of both servers are fetched by sending
+the `status-get
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_
-command to the Kea server whose details are displayed (the local
-server). In the load-balancing and hot-standby modes, the local server
+command to the Kea server whose details are displayed (``this server``).
+In the load-balancing and hot-standby modes, the server
 periodically checks the status of its partner by sending it the
 ``ha-heartbeat`` command. Therefore, this information is not
 always up-to-date; its age depends on the heartbeat command interval
-(typically 10 seconds). The status of the remote server returned by Stork includes the
-age of the data displayed.
+(by default 10 seconds). The status of the partner returned by
+Stork includes the age of the displayed status information.
 
-The Stork status information contains the role, state, and scopes served by
-each HA partner. In the usual HA case, both servers are in
+The Stork status information contains the role, state, and scopes
+served by each server. In the typical case, both servers are in
 load-balancing state, which means that both are serving DHCP
-clients. If the remote server crashes, the
-local server transitions to the ``partner-down state``, which will be
-reflected in this view. If the local server crashes, this will
-manifest itself as a communication problem between Stork and the
-server.
+clients. If the ``partner`` crashes, ``this server`` transitions to
+the ``partner-down`` state , which will be indicated in this view.
+If ``this server`` crashes, it will manifest as a communication
+problem between Stork and the server.
 
-As of the Stork 0.8.0 release, the High Availability view also
-contains information about the heartbeat status between the two
-servers and information about failover progress.
-
-The failover progress information is only presented when one of the
-active servers has been unable to communicate with the partner via
-refthe heartbeat exchange for a time exceeding the ``max-heartbeat-delay``
-threshold. If the server is configured to monitor the DHCP traffic
-directed to the partner, to verify that the partner is not responding
-to this traffic before transitioning to the ``partner-down`` state, the
-number of "unacked" clients (clients which failed
-to get a lease), connecting clients (all clients currently trying
-to get a lease from the partner), and analyzed
-packets are displayed. The system administrator may use this information
-to diagnose why the failover transition has not taken place or when
-such a transition is likely to happen.
+The High Availability view also contains the information about the
+heartbeat status between the two servers and information about
+failover progress. The failover progress information is only
+presented when one of the active servers has been unable to
+communicate with the partner via the heartbeat exchange for a
+time exceeding the ``max-heartbeat-delay`` threshold. If the
+server is configured to monitor the DHCP traffic directed to the
+partner, to verify that the partner is not responding to this
+traffic before transitioning to the ``partner-down`` state, the
+number of ``unacked`` clients (clients which failed to get a lease),
+connecting clients (all clients currently trying to get a lease from
+the partner), and analyzed packets are displayed. The system
+administrator may use this information to diagnose why the failover
+transition has not taken place or when such a transition is likely to
+happen.
 
 More about the High Availability status information provided by Kea can
 be found in the `Kea ARM
