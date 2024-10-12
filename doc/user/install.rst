@@ -49,7 +49,13 @@ Stork uses the ``status-get`` command to communicate with Kea.
 Stork requires the premium Host Commands (``host_cmds``) hook library to be loaded by the Kea instance to retrieve host
 reservations stored in an external database. Stork works without the Host Commands hook library, but is not able to display
 host reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
-libraries.
+libraries. Managing (adding, updating, deleting) host reservations requires the ``host_cmds`` to be loaded on all
+Kea instances where these host reservations belong.
+
+Stork requires the premium Subnet Commands (``subnet_cmds``) hook library to be loaded by the Kea instances
+to manage the subnets and shared networks. Stork can fetch and present subnets and shared networks without this
+hook library but is unable to add, update or delete a subnet or shared network if the ``subnet_cmds``
+hook library is not loaded on all Kea instances where this subnet or shared network belongs.
 
 Stork requires the open source Statistics Commands (``stat_cmds``) hook library to be loaded by the Kea instance to retrieve lease
 statistics. Stork works without the Stat Commands hook library, but is not able to show pool utilization and other
