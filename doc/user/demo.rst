@@ -14,6 +14,7 @@ Stork services. It contains:
 - Stork Agent with Kea DHCPv6
 - Stork Agent with Kea HA-1 (high availability server 1)
 - Stork Agent with Kea HA-2 (high availability server 2)
+- Stork Agent with Kea HA-3 (high availability server 3)
 - Stork Agent with Kea Using Many Subnets
 - Stork Agent with BIND 9
 - Stork Agent with BIND 9-2
@@ -21,21 +22,37 @@ Stork services. It contains:
 - PostgreSQL database
 - Prometheus & Grafana
 
-These services allow observation of many Stork features.
+The demo setup can optionally launch additional containers:
+
+- Stork Agent with Kea Premium Features-1
+- Stork Agent with Kea Premium Features-2
+
+In the sections below it is explained how to start the demo setup
+and how to launch the containers with the premium Kea features (hooks).
+They are required for hosts, subnets and shared networks management.
+
+ISC hosts a public Stork demo available at https://demo.stork.isc.org. This demo
+instance can be freely used to start playing with Stork. It contains Kea instances
+with the premium features, so it can be used to try hosts, subnets and shared
+networks management with Stork.
+
+.. note::
+
+   The demo setup at https://demo.stork.isc.org is restarted every full hour.
+   All changes in the demo over last hour (e.g., machines authorization,
+   Kea configuration changes, Stork settings changes) are lost and the defaults
+   are restored. It may take several minutes to restart the demo, causing its
+   unavailability around the full hour.
 
 Requirements
 ------------
 
 Running the Stork demo requires the same dependencies as building
 Stork, which are described in the :ref:`installation_sources` chapter.
-
-Besides the standard dependencies, the Stork demo requires:
-
-- Docker
-- Docker Compose
-
-For details, please see the Stork wiki at
-https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environment
+Besides these dependencies, the demo requires
+`Docker Compose <https://docs.docker.com/compose/>`_. See the `Development Evironment
+<https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environment>`_
+on Stork Wiki for more details.
 
 Setup Steps
 -----------
@@ -51,7 +68,8 @@ password is necessary. It then prepares Docker images and starts them.
 Once the build process finishes, the Stork UI is available at
 http://localhost:8080/. Use any browser to connect.
 
-The ``stork-demo.sh`` script can be used to start the demo without the Ruby toolkit:
+Alternatively, the ``stork-demo.sh`` script can be used to start the demo without
+the Ruby toolkit:
 
 .. code-block:: console
 
@@ -64,7 +82,7 @@ It is possible to run the demo with premium features enabled in the Kea
 apps; it requires the demo to be started with an access token for the Kea premium
 repositories. Access tokens are provided to ISC's paid support customers and
 format-specific setup instructions can be found on
-https://cloudsmith.io/~isc/repos/kea-2-4-prv/setup/#tab-formats-deb. ISC paid support
+https://cloudsmith.io/~isc/repos/kea-2-6-prv/setup/#tab-formats-deb. ISC paid support
 customers should feel free to open a ticket for assistance if needed.
 
 .. code-block:: console
@@ -180,15 +198,8 @@ Initialization
 
 ``stork-server`` requires some initial information:
 
-#. Go to http://localhost:8080/machines/all
-#. Add new machines (leave the default port):
-
-   #. agent-kea
-   #. agent-kea6
-   #. agent-kea-ha1
-   #. agent-kea-ha2
-   #. agent-bind9
-   #. agent-bind9-2
+#. Go to http://localhost:8080/machines/unauthorized.
+#. Authorize the machines by clicking ``Action -> Authorize`` for the selected machines.
 
 Stork Environment Simulator
 ---------------------------
