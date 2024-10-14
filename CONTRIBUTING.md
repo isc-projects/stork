@@ -31,10 +31,10 @@ is a great place to ask your questions.
 
 OK, so you have written a patch? Great! Before you submit it, make sure that your code
 compiles. This may seem obvious, but there's more to it. You have surely checked that it compiles on
-your system, but Stork is portable software. Besides different Linux flavors, it is compiled on FreeBSD.
-Will your code compile and work there? What about endianness? It is likely that you used a
-regular x86 architecture machine to write your patch, but the software is expected to run on many
-other architectures.
+your system, but Stork is portable software. It is compiled on several operating systems besides
+popular Linux flavors (see [Compatible Systems](https://stork.readthedocs.io/en/latest/install.html#compatible-systems)). Will your code compile and work on them? What about endianness?
+It is likely that you used a regular x86 architecture machine to write your patch, but the
+software is expected to run on many other architectures.
 
 Does your patch conform to the
 [Stork coding guidelines](https://gitlab.isc.org/isc-projects/stork/wikis/processes/coding-guidelines)?
@@ -51,7 +51,7 @@ small, like a single line of code, you should write unit-tests verifying the cor
 change. This is also very important for any new code. If you write a new function, method, or class,
 you definitely must write unit-tests for it. There are two kinds of unit-tests in Stork: backend tests
 (written in Golang) and UI unit-tests (written in Typescript). Depending on the scope of your changes,
-you will have to write the backend unit-tests, UI unit-tests or both.
+you will have to write the backend unit-tests, UI unit-tests, or both.
 
 To ensure that everything is tested, ISC uses a development method called [Test Driven Development
 (TDD)](https://en.wikipedia.org/wiki/Test-driven_development). In TDD, a feature is developed
