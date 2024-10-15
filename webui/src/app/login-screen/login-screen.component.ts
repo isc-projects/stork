@@ -97,7 +97,7 @@ export class LoginScreenComponent implements OnInit {
             .then((data) => {
                 // The welcome messages should be brief. Let's avoid bloated
                 // welcome messages.
-                if (data.length < 2048) {
+                if (data?.length < 2048) {
                     this.welcomeMessage = data
                 }
             })
