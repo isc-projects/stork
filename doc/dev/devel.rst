@@ -131,7 +131,12 @@ Updating dependencies
 
 There are useful rake tasks for updating dependencies: `update:ui_deps`,
 `update:python_requirements`, `update:backend_deps`, `update:ruby_gemfiles`,
-`update:angular`. More may be added in the future. Please check `rake -T`.
+`update:angular`. More may be added in the future. For a full list of available
+update tasks please use the command:
+
+.. code-block:: console
+
+    $ rake -T update
 
 Installing Git Hooks
 --------------------
@@ -854,7 +859,7 @@ system test type:
 
 .. code-block:: console
 
-    rake -T systemtest
+    $ rake -T systemtest
 
 
 .. _docker_containers_for_development:
