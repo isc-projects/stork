@@ -349,7 +349,7 @@
                                     inputStyleClass="user-input"
                                     styleClass="password-component"
                                     [pattern]="passwordPattern"
-                                    title="Must only contain letters, digits, or special characters and must be at least 8 characters long."
+                                    title="Must only contain letters, digits, special or whitespace characters and must be at least 8 characters long."
                                     [toggleMask]="true"
                                 ></p-password>
                             </div>
@@ -359,7 +359,7 @@
                                     [text]="
                                         buildFeedbackMessage(
                                             'userPassword',
-                                            'Password must only contain letters, digits, or special characters.'
+                                            'Password must only contain letters, digits, special or whitespace characters.'
                                         )
                                     "
                                 ></p-message>
@@ -374,7 +374,7 @@
                                     inputId="userPassword2"
                                     inputStyleClass="user-input"
                                     styleClass="password-component"
-                                    title="Must only contain letters, digits, or special characters and must be at least 8 characters long."
+                                    title="Must only contain letters, digits, special or whitespace characters and must be at least 8 characters long."
                                     [toggleMask]="true"
                                 ></p-password>
                             </div>
