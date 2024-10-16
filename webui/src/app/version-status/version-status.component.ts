@@ -94,7 +94,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * Component lifecycle hook called upon initialization.
      */
     ngOnInit(): void {
-        this._appName = this.app[0].toUpperCase() + this.app.slice(1)
+        this._appName = this.app === 'bind9' ? this.app.toUpperCase() : this.app[0].toUpperCase() + this.app.slice(1)
         this._appName += this.app === 'stork' ? ' agent' : ''
         let sanitizedSemver = this.versionService.sanitizeSemver(this.version)
         if (sanitizedSemver) {

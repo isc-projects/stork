@@ -136,7 +136,8 @@
                     <td>
                         <span class="p-column-title">App(s) Version</span>
                         <ng-container *ngFor="let a of m.apps; let i = index"
-                            ><br *ngIf="i > 0" />{{ a.type | titlecase }} {{ a.version }}</ng-container
+                            ><br *ngIf="i > 0" />{{ a.type === 'bind9' ? '' : (a.type | titlecase) }}
+                            {{ a.version }}</ng-container
                         >
                     </td>
                     <td>
@@ -247,7 +248,7 @@
             </ng-template>
         </p-table>
     </p-panel>
-    <p-panel header="Bind 9 current releases" styleClass="mt-3">
+    <p-panel header="BIND 9 current releases" styleClass="mt-3">
         <p-table [value]="bind9Versions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
             <ng-template pTemplate="header">
                 <tr>
@@ -264,7 +265,7 @@
                     <td>{{ v.version }}</td>
                     <td>{{ v.status }}<ng-container *ngIf="v.esv">, ESV</ng-container></td>
                     <td>
-                        Bind {{ v.major + '.' + v.minor }} ARM (<a
+                        BIND {{ v.major + '.' + v.minor }} ARM (<a
                             href="https://bind9.readthedocs.io/en/v{{ v.version }}/"
                             target="_blank"
                             >HTML</a

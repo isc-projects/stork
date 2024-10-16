@@ -183,7 +183,7 @@ export class VersionService {
         let sanitizedSemver = this.sanitizeSemver(version)
         let appName = ''
         if (sanitizedSemver) {
-            appName = app[0].toUpperCase() + app.slice(1)
+            appName = app === 'bind9' ? app.toUpperCase() : app[0].toUpperCase() + app.slice(1)
             appName += app === 'stork' ? ' agent' : ''
             let isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
 
