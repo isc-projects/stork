@@ -395,7 +395,7 @@ func (r *RestAPI) commonCreateOrUpdateSharedNetworkSubmit(ctx context.Context, t
 	// Apply the shared network information (create Kea commands).
 	cctx, err = applyFunc(cctx, sharedNetwork)
 	if err != nil {
-		msg := "Problem with applying shared network information"
+		msg := fmt.Sprintf("Problem with applying shared network information: %s", err)
 		log.WithError(err).Error(msg)
 		return http.StatusInternalServerError, 0, msg
 	}

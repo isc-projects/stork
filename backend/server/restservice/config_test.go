@@ -2235,7 +2235,9 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 	require.NotNil(t, daemon)
 
 	// Create fake agents receiving commands.
-	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		mockStatusError("config-set", cmdResponses)
+	}, nil)
 	require.NotNil(t, fa)
 
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
@@ -2292,6 +2294,7 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "No configs for update have been specified", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with non-matching transaction ID.
@@ -2316,6 +2319,7 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Transaction expired for the Kea configs update", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with no configurations. It simulates a failure in
@@ -2332,6 +2336,7 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "No configs for update have been specified", *defaultRsp.Payload.Message)
 	})
 
 	t.Run("invalid DHCP option", func(t *testing.T) {
@@ -2367,6 +2372,29 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Problem with flattening DHCP options: no values in the option field",
+			*defaultRsp.Payload.Message)
+	})
+
+	t.Run("commit failure", func(t *testing.T) {
+		params := dhcp.UpdateKeaGlobalParametersSubmitParams{
+			ID: transactionID,
+			Request: &models.UpdateKeaDaemonsGlobalParametersSubmitRequest{
+				Configs: []*models.KeaDaemonConfigurableGlobalParameters{
+					{
+						DaemonID:      daemon.GetID(),
+						DaemonName:    dbmodel.DaemonNameDHCPv4,
+						PartialConfig: &models.KeaConfigurableGlobalParameters{},
+					},
+				},
+			},
+		}
+		rsp := rapi.UpdateKeaGlobalParametersSubmit(ctx, params)
+		require.IsType(t, &dhcp.UpdateKeaGlobalParametersSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.UpdateKeaGlobalParametersSubmitDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Equal(t, fmt.Sprintf("Problem with committing Kea config: config-set command to %s failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", app.GetName()),
+			*defaultRsp.Payload.Message)
 	})
 }
 

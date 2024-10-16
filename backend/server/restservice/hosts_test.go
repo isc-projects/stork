@@ -718,6 +718,7 @@ func TestCreateHostBeginNoServers(t *testing.T) {
 	require.IsType(t, &dhcp.CreateHostBeginDefault{}, rsp)
 	defaultRsp := rsp.(*dhcp.CreateHostBeginDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Unable to begin transaction for adding new host because there are no Kea servers with host_cmds hooks library available", *defaultRsp.Payload.Message)
 }
 
 // Test error cases for submitting new host reservation.
@@ -783,6 +784,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Host information not specified", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with non-matching transaction ID.
@@ -804,6 +806,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Transaction for host reservation expired", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with a host that is not associated with any daemons.
@@ -820,6 +823,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
 		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+		require.Equal(t, "Problem with applying host information: applied host is not associated with any daemon", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with a local host that has a data source other than
@@ -845,6 +849,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Error parsing specified host reservation: unsupported host data source 'foobar'", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with valid ID and host but expect the agent to
@@ -866,6 +871,7 @@ func TestCreateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Equal(t, "Problem with committing host information: reservation-add command to dhcp-server0 failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", *defaultRsp.Payload.Message)
 	})
 }
 
@@ -999,6 +1005,7 @@ func TestCreateHostDeleteError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateHostDeleteDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostDeleteDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Transaction for deleting the host reservation expired", *defaultRsp.Payload.Message)
 	})
 }
 
@@ -1254,6 +1261,7 @@ func TestUpdateHostBeginNonExistingHostID(t *testing.T) {
 	require.IsType(t, &dhcp.UpdateHostBeginDefault{}, rsp)
 	defaultRsp := rsp.(*dhcp.UpdateHostBeginDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "Unable to edit the host reservation with ID 1024 because it cannot be found", *defaultRsp.Payload.Message)
 }
 
 // Test error cases for submitting host reservation update.
@@ -1321,6 +1329,7 @@ func TestUpdateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Host information not specified", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with non-matching transaction ID.
@@ -1348,6 +1357,7 @@ func TestUpdateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Transaction for host reservation expired", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with a host that is not associated with any daemons.
@@ -1357,6 +1367,7 @@ func TestUpdateHostSubmitError(t *testing.T) {
 		params := dhcp.UpdateHostSubmitParams{
 			ID: transactionID,
 			Host: &models.Host{
+				ID: 1024,
 				HostIdentifiers: []*models.HostIdentifier{
 					{
 						IDType:     "hw-address",
@@ -1370,6 +1381,7 @@ func TestUpdateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
 		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+		require.Equal(t, "Problem with applying host information: applied host 1024 is not associated with any daemon", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with valid ID and host but expect the agent to
@@ -1397,6 +1409,7 @@ func TestUpdateHostSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.UpdateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.UpdateHostSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Equal(t, "Problem with committing host information: reservation-del command to dhcp-server0 failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", *defaultRsp.Payload.Message)
 	})
 }
 
@@ -1472,6 +1485,7 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 	require.IsType(t, &dhcp.UpdateHostBeginDefault{}, rsp)
 	defaultRsp := rsp.(*dhcp.UpdateHostBeginDefault)
 	require.Equal(t, http.StatusLocked, getStatusCode(*defaultRsp))
+	require.Equal(t, "Unable to edit the host reservation with ID 1 because it may be currently edited by another user", *defaultRsp.Payload.Message)
 
 	// Cancel the transaction.
 	params2 := dhcp.UpdateHostDeleteParams{
@@ -1611,6 +1625,7 @@ func TestDeleteHostError(t *testing.T) {
 		require.IsType(t, &dhcp.DeleteHostDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Cannot find host reservation with ID 19809865", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with valid ID but expect the agent to return an
@@ -1624,6 +1639,7 @@ func TestDeleteHostError(t *testing.T) {
 		require.IsType(t, &dhcp.DeleteHostDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.DeleteHostDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Equal(t, "Problem with deleting host reservation: reservation-del command to dhcp-server0 failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", *defaultRsp.Payload.Message)
 	})
 }
 

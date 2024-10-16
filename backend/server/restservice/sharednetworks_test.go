@@ -2,6 +2,7 @@ package restservice
 
 import (
 	context "context"
+	"fmt"
 	http "net/http"
 	"testing"
 
@@ -1120,10 +1121,10 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err := server1.GetKea()
+	app1, err := server1.GetKea()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitAppIntoDB(db, app1, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
@@ -1131,10 +1132,10 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 	err = server2.Configure(serverConfig)
 	require.NoError(t, err)
 
-	app, err = server2.GetKea()
+	app2, err := server2.GetKea()
 	require.NoError(t, err)
 
-	err = kea.CommitAppIntoDB(db, app, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	err = kea.CommitAppIntoDB(db, app2, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
 	require.NoError(t, err)
 
 	dbapps, err := dbmodel.GetAllApps(db, true)
@@ -1146,7 +1147,9 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 	require.Len(t, sharedNetworks, 1)
 
 	// Create fake agents receiving commands.
-	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		mockStatusError("network4-add", cmdResponses)
+	}, nil)
 	require.NotNil(t, fa)
 
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
@@ -1201,6 +1204,7 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
 		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Shared network information not specified", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with non-matching transaction ID.
@@ -1224,6 +1228,7 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Transaction expired for the shared network update", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with a shared network that is not associated with
@@ -1242,6 +1247,7 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
 		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+		require.Equal(t, "Problem with applying shared network information: applied shared network foo is not associated with any daemon", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with valid ID and shared network but expect the
@@ -1251,8 +1257,9 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 		params := dhcp.CreateSharedNetworkSubmitParams{
 			ID: transactionID,
 			SharedNetwork: &models.SharedNetwork{
-				ID:   0,
-				Name: "foo",
+				ID:       0,
+				Name:     "foo",
+				Universe: 4,
 				LocalSharedNetworks: []*models.LocalSharedNetwork{
 					{
 						DaemonID: dbapps[0].Daemons[0].ID,
@@ -1267,6 +1274,7 @@ func TestCreateSharedNetwork4BeginSubmitError(t *testing.T) {
 		require.IsType(t, &dhcp.CreateSharedNetworkSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateSharedNetworkSubmitDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Equal(t, fmt.Sprintf("Problem with committing shared network information: network4-add command to %s failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", app1.GetName()), *defaultRsp.Payload.Message)
 	})
 }
 
@@ -2257,6 +2265,7 @@ func TestUpdateSharedNetworkBeginCancel(t *testing.T) {
 	require.IsType(t, &dhcp.UpdateSharedNetworkBeginDefault{}, rsp)
 	defaultRsp := rsp.(*dhcp.UpdateSharedNetworkBeginDefault)
 	require.Equal(t, http.StatusLocked, getStatusCode(*defaultRsp))
+	require.Equal(t, fmt.Sprintf("Unable to edit the shared network with ID %d because it may be currently edited by another user", sharedNetworks[0].ID), *defaultRsp.Payload.Message)
 
 	// Cancel the transaction.
 	params2 := dhcp.UpdateSharedNetworkDeleteParams{
@@ -2487,6 +2496,7 @@ func TestDeleteSharedNetworkError(t *testing.T) {
 		require.IsType(t, &dhcp.DeleteSharedNetworkDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.DeleteSharedNetworkDefault)
 		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Cannot find a shared network with ID 19809865", *defaultRsp.Payload.Message)
 	})
 
 	// Submit transaction with valid ID but expect the agent to return an
@@ -2500,5 +2510,6 @@ func TestDeleteSharedNetworkError(t *testing.T) {
 		require.IsType(t, &dhcp.DeleteSharedNetworkDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.DeleteSharedNetworkDefault)
 		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+		require.Equal(t, fmt.Sprintf("Problem with deleting a shared network: network4-del command to %s failed: error status (1) returned by Kea dhcp4 daemon with text: 'unable to communicate with the daemon'", app.GetName()), *defaultRsp.Payload.Message)
 	})
 }

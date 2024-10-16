@@ -702,7 +702,7 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 
 			options, err := r.flattenDHCPOptions("", partialConfig.Options, 0)
 			if err != nil {
-				msg := "Problem with flattening DHCP options"
+				msg := fmt.Sprintf("Problem with flattening DHCP options: %s", err)
 				log.WithError(err).Error(msg)
 				rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 					Message: &msg,
@@ -776,9 +776,9 @@ func (r *RestAPI) UpdateKeaGlobalParametersSubmit(ctx context.Context, params dh
 	// Send the commands to Kea servers.
 	cctx, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
-		msg := "Problem with committing Kea config"
+		msg := fmt.Sprintf("Problem with committing Kea config: %s", err)
 		log.WithError(err).Error(msg)
-		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		rsp := dhcp.NewUpdateKeaGlobalParametersSubmitDefault(http.StatusConflict).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp

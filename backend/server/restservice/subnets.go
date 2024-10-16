@@ -635,7 +635,7 @@ func (r *RestAPI) commonCreateOrUpdateSubnetSubmit(ctx context.Context, transact
 	// Apply the subnet information (create Kea commands).
 	cctx, err = applyFunc(cctx, subnet)
 	if err != nil {
-		msg := "Problem with applying subnet information"
+		msg := fmt.Sprintf("Problem with applying subnet information: %s", err)
 		log.WithError(err).Error(msg)
 		return http.StatusInternalServerError, 0, msg
 	}

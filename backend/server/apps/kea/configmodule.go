@@ -305,15 +305,15 @@ func (module *ConfigModule) BeginHostAdd(ctx context.Context) (context.Context, 
 // to Kea upon commit.
 func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
 	if len(host.LocalHosts) == 0 {
-		return ctx, errors.Errorf("applied host %d is not associated with any daemon", host.ID)
+		return ctx, errors.New("applied host is not associated with any daemon")
 	}
 	var commands []ConfigCommand
 	for _, lh := range host.LocalHosts {
 		if lh.Daemon == nil {
-			return ctx, errors.Errorf("applied host %d is associated with nil daemon", host.ID)
+			return ctx, errors.New("applied host is associated with nil daemon")
 		}
 		if lh.Daemon.App == nil {
-			return ctx, errors.Errorf("applied host %d is associated with nil app", host.ID)
+			return ctx, errors.New("applied host is associated with nil app")
 		}
 		// Convert the host information to Kea reservation.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
@@ -666,7 +666,7 @@ func (module *ConfigModule) BeginSharedNetworkAdd(ctx context.Context) (context.
 // Applies new shared network. It prepares necessary commands to be sent to Kea upon commit.
 func (module *ConfigModule) ApplySharedNetworkAdd(ctx context.Context, sharedNetwork *dbmodel.SharedNetwork) (context.Context, error) {
 	if len(sharedNetwork.LocalSharedNetworks) == 0 {
-		return ctx, errors.Errorf("applied shared network %d is not associated with any daemon", sharedNetwork.ID)
+		return ctx, errors.Errorf("applied shared network %s is not associated with any daemon", sharedNetwork.Name)
 	}
 	// Retrieve existing shared network from the context. We need it for sending
 	// the network4-del or network6-del commands.
@@ -819,7 +819,7 @@ func (module *ConfigModule) BeginSharedNetworkUpdate(ctx context.Context, shared
 // upon commit.
 func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, sharedNetwork *dbmodel.SharedNetwork) (context.Context, error) {
 	if len(sharedNetwork.LocalSharedNetworks) == 0 {
-		return ctx, errors.Errorf("applied shared network %d is not associated with any daemon", sharedNetwork.ID)
+		return ctx, errors.Errorf("applied shared network %s is not associated with any daemon", sharedNetwork.Name)
 	}
 	// Retrieve existing shared network from the context. We need it for sending
 	// the network4-del or network6-del commands.
@@ -836,10 +836,10 @@ func (module *ConfigModule) ApplySharedNetworkUpdate(ctx context.Context, shared
 	// Update the shared network instances.
 	for _, lsn := range sharedNetwork.LocalSharedNetworks {
 		if lsn.Daemon == nil {
-			return ctx, errors.Errorf("applied shared network %d is associated with nil daemon", sharedNetwork.ID)
+			return ctx, errors.Errorf("applied shared network %s is associated with nil daemon", sharedNetwork.Name)
 		}
 		if lsn.Daemon.App == nil {
-			return ctx, errors.Errorf("applied shared network %d is associated with nil app", sharedNetwork.ID)
+			return ctx, errors.Errorf("applied shared network %s is associated with nil app", sharedNetwork.Name)
 		}
 		// Convert the updated shared network information to Kea shared network.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
@@ -1048,7 +1048,7 @@ func (module *ConfigModule) BeginSubnetAdd(ctx context.Context) (context.Context
 // Applies new subnet. It prepares necessary commands to be sent to Kea upon commit.
 func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
 	if len(subnet.LocalSubnets) == 0 {
-		return ctx, errors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
+		return ctx, errors.Errorf("applied subnet %s is not associated with any daemon", subnet.Prefix)
 	}
 	// Get the highest local subnet ID from the database.
 	localSubnetID, err := dbmodel.GetMaxLocalSubnetID(module.manager.GetDB())
@@ -1070,10 +1070,10 @@ func (module *ConfigModule) ApplySubnetAdd(ctx context.Context, subnet *dbmodel.
 	// Update the subnet instances.
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon == nil {
-			return ctx, errors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %s is associated with nil daemon", subnet.Prefix)
 		}
 		if ls.Daemon.App == nil {
-			return ctx, errors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %s is associated with nil app", subnet.Prefix)
 		}
 		// Convert the updated subnet information to Kea subnet.
 		lookup := module.manager.GetDHCPOptionDefinitionLookup()
@@ -1228,7 +1228,7 @@ func (module *ConfigModule) BeginSubnetUpdate(ctx context.Context, subnetID int6
 // Applies updated subnet. It prepares necessary commands to be sent to Kea upon commit.
 func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmodel.Subnet) (context.Context, error) {
 	if len(subnet.LocalSubnets) == 0 {
-		return ctx, errors.Errorf("applied subnet %d is not associated with any daemon", subnet.ID)
+		return ctx, errors.Errorf("applied subnet %s is not associated with any daemon", subnet.Prefix)
 	}
 	// Retrieve existing subnet from the context. We may need it for sending
 	// the subnet4-del or subnet6-del commands.
@@ -1256,10 +1256,10 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	// Update the subnet instances.
 	for _, ls := range subnet.LocalSubnets {
 		if ls.Daemon == nil {
-			return ctx, errors.Errorf("applied subnet %d is associated with nil daemon", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %s is associated with nil daemon", subnet.Prefix)
 		}
 		if ls.Daemon.App == nil {
-			return ctx, errors.Errorf("applied subnet %d is associated with nil app", subnet.ID)
+			return ctx, errors.Errorf("applied subnet %s is associated with nil app", subnet.Prefix)
 		}
 		// Check if this is a new association.
 		existingAssociation := false

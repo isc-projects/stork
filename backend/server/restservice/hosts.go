@@ -383,7 +383,7 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 	// Convert host information from REST API to database format.
 	host, err := r.convertToHost(restHost)
 	if err != nil {
-		msg := "Error parsing specified host reservation"
+		msg := fmt.Sprintf("Error parsing specified host reservation: %s", err)
 		log.WithError(err).Error(msg)
 		return http.StatusBadRequest, msg
 	}
@@ -402,7 +402,7 @@ func (r *RestAPI) commonCreateOrUpdateHostSubmit(ctx context.Context, transactio
 	// Apply the host information (create Kea commands).
 	cctx, err = applyFunc(cctx, host)
 	if err != nil {
-		msg := "Problem with applying host information"
+		msg := fmt.Sprintf("Problem with applying host information: %s", err)
 		log.WithError(err).Error(msg)
 		return http.StatusInternalServerError, msg
 	}
