@@ -35,3 +35,8 @@
       // When the component is repeated one below another, the margins are too big.
       margin-top: 0.25rem
       margin-bottom: 0.25rem
+
+    // Make consecutive header messages having vertically aligned summary and detail parts.
+    // This is achieved by disabling flex-shrink and setting flex-basis for message summary.
+    .p-message-summary
+      flex: 0 0 5rem
