@@ -394,7 +394,9 @@ export class VersionService {
      * @private
      */
     private getVersion(app: AppType, swType: ReleaseType, data: AppsVersions): string | string[] | null {
-        return swType === 'currentStable' ? data?.[app]?.sortedStableVersions || null : data?.[app]?.[swType]?.version || null
+        return swType === 'currentStable'
+            ? data?.[app]?.sortedStableVersions || null
+            : data?.[app]?.[swType]?.version || null
     }
 
     /**
