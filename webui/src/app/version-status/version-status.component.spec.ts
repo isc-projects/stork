@@ -127,7 +127,7 @@ describe('VersionStatusComponent', () => {
         fixture.componentRef.setInput('app', 'bind9')
         component.ngOnInit()
         fixture.detectChanges()
-        expect(component.appName).toBe('Bind9')
+        expect(component.appName).toBe('BIND9')
     })
 
     it('should get current versions data', () => {

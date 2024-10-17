@@ -371,7 +371,7 @@ describe('VersionPageComponent', () => {
         expect(keaTable.nativeElement.innerText).toContain('Release Notes')
     })
 
-    it('should display Bind9 releases table', () => {
+    it('should display BIND9 releases table', () => {
         // Arrange & Act & Assert
         apisWorkingFine()
         expect(component.machines.length).toEqual(4)
@@ -385,7 +385,7 @@ describe('VersionPageComponent', () => {
         expect(bindTable.queryAll(By.css('tbody tr')).length).toEqual(3)
         expect(bindTable.nativeElement.innerText).toContain('Current Stable')
         expect(bindTable.nativeElement.innerText).toContain('Development')
-        expect(bindTable.nativeElement.innerText).toContain('Bind 9.20 ARM')
+        expect(bindTable.nativeElement.innerText).toContain('BIND 9.20 ARM')
         expect(bindTable.nativeElement.innerText).toContain('Release Notes')
     })
 
