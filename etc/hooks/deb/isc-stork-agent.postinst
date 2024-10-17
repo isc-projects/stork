@@ -14,9 +14,7 @@ setup_user () {
 
     # Add stork-agent user.
     if ! getent passwd stork-agent > /dev/null; then
-        adduser --quiet --system --group --home $home_dir \
-                --no-create-home --disabled-password --disabled-login \
-                --gecos "Stork Agent User" stork-agent >/dev/null
+        useradd --system --home-dir "${home_dir}" stork-agent >/dev/null
     fi
 
     # Add stork-agent user to bind so it can read its config files.

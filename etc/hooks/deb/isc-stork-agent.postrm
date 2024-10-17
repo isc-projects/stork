@@ -3,7 +3,7 @@
 set -eu
 
 after_remove () {
-    deluser --system stork-agent >/dev/null || /bin/true
+    userdel stork-agent >/dev/null || /bin/true
 }
 
 

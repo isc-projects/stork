@@ -5,9 +5,7 @@ set -eu
 setup_user () {
     # Sets up the stork-server user and its home directory.
     if ! getent passwd stork-server > /dev/null; then
-        adduser --quiet --system --group --home /var/lib/stork-server \
-            --no-create-home --disabled-password --disabled-login \
-            --gecos "Stork Server User" stork-server >/dev/null
+        useradd --system --base-dir /var/lib/ stork-server >/dev/null
     fi
 }
 
