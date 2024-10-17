@@ -3127,7 +3127,7 @@ func RememberVersionsJSONPath() func() {
 
 // Test that the HTTP 500 Internal Server Error status is returned
 // if the versions.json file doesn't exist.
-func TestGetIscSwVersionsNoVersionsJSONError(t *testing.T) {
+func TestGetISCSoftwareVersionsNoVersionsJSONError(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()
 	defer restoreJSONPath()
@@ -3143,17 +3143,17 @@ func TestGetIscSwVersionsNoVersionsJSONError(t *testing.T) {
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 
 	// Act
-	rsp := rapi.GetIscSwVersions(ctx, general.GetIscSwVersionsParams{})
+	rsp := rapi.GetISCSoftwareVersions(ctx, general.GetISCSoftwareVersionsParams{})
 
 	// Assert
-	defaultRsp, ok := rsp.(*general.GetIscSwVersionsDefault)
+	defaultRsp, ok := rsp.(*general.GetISCSoftwareVersionsDefault)
 	require.True(t, ok)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 }
 
 // Test that the HTTP 500 Internal Server Error status is returned
 // if the versions.json file content is truncated.
-func TestGetIscSwVersionsTruncatedVersionsJSONError(t *testing.T) {
+func TestGetISCSoftwareVersionsTruncatedVersionsJSONError(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()
 	defer restoreJSONPath()
@@ -3171,17 +3171,17 @@ func TestGetIscSwVersionsTruncatedVersionsJSONError(t *testing.T) {
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 
 	// Act
-	rsp := rapi.GetIscSwVersions(ctx, general.GetIscSwVersionsParams{})
+	rsp := rapi.GetISCSoftwareVersions(ctx, general.GetISCSoftwareVersionsParams{})
 
 	// Assert
-	defaultRsp, ok := rsp.(*general.GetIscSwVersionsDefault)
+	defaultRsp, ok := rsp.(*general.GetISCSoftwareVersionsDefault)
 	require.True(t, ok)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 }
 
 // Test that information about current ISC software versions is returned
 // via the API.
-func TestGetIscSwVersions(t *testing.T) {
+func TestGetISCSoftwareVersions(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()
 	defer restoreJSONPath()
@@ -3247,10 +3247,10 @@ func TestGetIscSwVersions(t *testing.T) {
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 
 	// Act
-	rsp := rapi.GetIscSwVersions(ctx, general.GetIscSwVersionsParams{})
+	rsp := rapi.GetISCSoftwareVersions(ctx, general.GetISCSoftwareVersionsParams{})
 
 	// Assert
-	okRsp, ok := rsp.(*general.GetIscSwVersionsOK)
+	okRsp, ok := rsp.(*general.GetISCSoftwareVersionsOK)
 	require.True(t, ok)
 	require.Equal(t, "2024-10-03", *okRsp.Payload.Date)
 	require.Empty(t, okRsp.Payload.OnlineData)

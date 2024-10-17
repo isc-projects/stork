@@ -41,14 +41,19 @@ paths:
 
   /isc-sw-versions:
     get:
-      summary: Get information about current ISC Kea, Bind9 and Stork software versions.
-      operationId: getIscSwVersions
+      summary: Get information about ISC Kea, Bind9 and Stork software versions.
+      description: >-
+        Returns detailed metadata for latest releases of
+        ISC Kea, BIND9 and Stork software. This is to provide
+        up-to-date ISC software releases so that it could be
+        compared with currently used releases.
+      operationId: getISCSoftwareVersions
       security: []
       tags:
         - General
       responses:
         200:
-          description: Metadata for current Kea, Bind9 and Stork software versions.
+          description: Metadata for latest Kea, Bind9 and Stork software versions.
           schema:
             $ref: "#/definitions/AppsVersions"
         default:

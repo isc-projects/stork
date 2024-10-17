@@ -94,7 +94,7 @@ export class VersionService {
     currentData$ = this._currentDataSubject$.pipe(
         mergeMap(() => {
             this.dataFetchedTimestamp = new Date()
-            return this.generalService.getIscSwVersions()
+            return this.generalService.getISCSoftwareVersions()
         }),
         shareReplay(1)
     )

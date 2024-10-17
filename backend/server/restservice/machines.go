@@ -44,7 +44,7 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 }
 
 // Get information about current ISC software versions.
-func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwVersionsParams) middleware.Responder {
+func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.GetISCSoftwareVersionsParams) middleware.Responder {
 	appsVersions := models.AppsVersions{}
 
 	// For now, this feature only supports "offline" versions checking.
@@ -64,7 +64,7 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 		if jsonFile == "" {
 			msg := "Cannot find the software versions metadata JSON file"
 			log.Error(msg)
-			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -75,7 +75,7 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 		if err != nil {
 			log.Error(err)
 			msg := "Cannot open the software versions metadata JSON file"
-			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -87,7 +87,7 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 		if err != nil {
 			log.Error(err)
 			msg := "Cannot read the contents of the software versions metadata JSON file"
-			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -99,7 +99,7 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 		if err != nil {
 			log.Error(err)
 			msg := "Error parsing the contents of the software versions metadata JSON file"
-			rsp := general.NewGetIscSwVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -116,7 +116,7 @@ func (r *RestAPI) GetIscSwVersions(ctx context.Context, params general.GetIscSwV
 
 	appsVersions.OnlineData = onlineData
 
-	return general.NewGetIscSwVersionsOK().WithPayload(&appsVersions)
+	return general.NewGetISCSoftwareVersionsOK().WithPayload(&appsVersions)
 }
 
 // Convert db machine to rest structure.
