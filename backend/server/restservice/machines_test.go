@@ -3260,8 +3260,8 @@ func TestGetISCSoftwareVersions(t *testing.T) {
 	require.Equal(t, "2.7.3", *okRsp.Payload.Kea.LatestDev.Version)
 	require.Equal(t, int64(2), okRsp.Payload.Kea.LatestDev.Major)
 	require.Equal(t, int64(7), okRsp.Payload.Kea.LatestDev.Minor)
-	require.Equal(t, "2.4.1", okRsp.Payload.Kea.SortedStables[0])
-	require.Equal(t, "2.6.1", okRsp.Payload.Kea.SortedStables[1])
+	require.Equal(t, "2.4.1", okRsp.Payload.Kea.SortedStableVersions[0])
+	require.Equal(t, "2.6.1", okRsp.Payload.Kea.SortedStableVersions[1])
 	require.Equal(t, "1.19.0", *okRsp.Payload.Stork.LatestDev.Version)
 	require.Equal(t, "9.21.1", *okRsp.Payload.Bind9.LatestDev.Version)
 }

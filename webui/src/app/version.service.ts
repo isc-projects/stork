@@ -248,7 +248,7 @@ export class VersionService {
                     }
 
                     // current version not matching currentStable ranges
-                    let stableVersions = data?.[app].sortedStables || null
+                    let stableVersions = data?.[app].sortedStableVersions || null
                     if (Array.isArray(stableVersions) && stableVersions.length > 0) {
                         let versionsText = stableVersions.join(', ')
                         if (lt(sanitizedSemver, stableVersions[0])) {
@@ -394,7 +394,7 @@ export class VersionService {
      * @private
      */
     private getVersion(app: AppType, swType: ReleaseType, data: AppsVersions): string | string[] | null {
-        return swType === 'currentStable' ? data?.[app]?.sortedStables || null : data?.[app]?.[swType]?.version || null
+        return swType === 'currentStable' ? data?.[app]?.sortedStableVersions || null : data?.[app]?.[swType]?.version || null
     }
 
     /**

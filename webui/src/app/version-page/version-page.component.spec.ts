@@ -55,7 +55,7 @@ describe('VersionPageComponent', () => {
                 },
             ],
             latestDev: { major: 9, minor: 21, releaseDate: '2024-09-18', status: 'Development', version: '9.21.1' },
-            sortedStables: ['9.18.30', '9.20.2'],
+            sortedStableVersions: ['9.18.30', '9.20.2'],
         },
         date: '2024-10-03',
         kea: {
@@ -80,7 +80,7 @@ describe('VersionPageComponent', () => {
                 },
             ],
             latestDev: { major: 2, minor: 7, releaseDate: '2024-09-25', status: 'Development', version: '2.7.3' },
-            sortedStables: ['2.4.1', '2.6.1'],
+            sortedStableVersions: ['2.4.1', '2.6.1'],
         },
         stork: {
             currentStable: null,
@@ -92,7 +92,7 @@ describe('VersionPageComponent', () => {
                 status: 'Security update',
                 version: '1.15.1',
             },
-            sortedStables: null,
+            sortedStableVersions: null,
         },
     }
     let fakeMachinesResponse = {

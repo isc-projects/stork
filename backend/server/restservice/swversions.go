@@ -52,7 +52,7 @@ func AppVersionMetadataToRestAPI(input ReportAppVersionMetadata) *models.AppVers
 		out.LatestDev.Status = "Development"
 	}
 	if input.CurrentStable != nil {
-		out.CurrentStable, out.SortedStables = StableSwVersionsToRestAPI(input.CurrentStable)
+		out.CurrentStable, out.SortedStableVersions = StableSwVersionsToRestAPI(input.CurrentStable)
 	}
 	return &out
 }

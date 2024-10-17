@@ -142,9 +142,9 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	require.Equal(t, "Current Stable", kea.CurrentStable[1].Status)
 	require.Equal(t, "Development", kea.LatestDev.Status)
 	require.Empty(t, kea.LatestSecure)
-	require.Len(t, kea.SortedStables, 2)
-	require.Equal(t, "2.6.1", kea.SortedStables[0])
-	require.Equal(t, "9.20.2", kea.SortedStables[1])
+	require.Len(t, kea.SortedStableVersions, 2)
+	require.Equal(t, "2.6.1", kea.SortedStableVersions[0])
+	require.Equal(t, "9.20.2", kea.SortedStableVersions[1])
 
 	require.Empty(t, stork.CurrentStable)
 	require.Equal(t, "Development", stork.LatestDev.Status)
@@ -155,9 +155,9 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	require.Equal(t, "Current Stable", bind.CurrentStable[1].Status)
 	require.Equal(t, "Development", bind.LatestDev.Status)
 	require.Empty(t, bind.LatestSecure)
-	require.Len(t, bind.SortedStables, 2)
-	require.Equal(t, "9.18.30", bind.SortedStables[0])
-	require.Equal(t, "9.20.2", bind.SortedStables[1])
+	require.Len(t, bind.SortedStableVersions, 2)
+	require.Equal(t, "9.18.30", bind.SortedStableVersions[0])
+	require.Equal(t, "9.20.2", bind.SortedStableVersions[1])
 }
 
 // Check if TestGetPotentialVersionsJSONLocations returns paths.

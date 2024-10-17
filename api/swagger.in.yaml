@@ -139,7 +139,7 @@ definitions:
           $ref: '#/definitions/VersionDetails'
       latestSecure:
         $ref: '#/definitions/VersionDetails'
-      sortedStables:
+      sortedStableVersions:
         type: array
         items:
           type: string
