@@ -61,7 +61,7 @@ func getExampleData() ReportAppsVersions {
 	}
 }
 
-// Test that VersionDetailsToRestAPI works fine.
+// Test that versionDetailsToRestAPI works fine.
 func TestVersionDetailsToRestAPI(t *testing.T) {
 	// Arrange
 	relDate := "2024-11-23"
@@ -79,8 +79,8 @@ func TestVersionDetailsToRestAPI(t *testing.T) {
 	}
 
 	// Act
-	resultOne := VersionDetailsToRestAPI(exampleOne)
-	resultTwo := VersionDetailsToRestAPI(exampleTwo)
+	resultOne := versionDetailsToRestAPI(exampleOne)
+	resultTwo := versionDetailsToRestAPI(exampleTwo)
 
 	// Assert
 	require.Equal(t, "1.2.3", *resultOne.Version)
@@ -102,7 +102,7 @@ func TestVersionDetailsToRestAPI(t *testing.T) {
 	require.Empty(t, resultTwo.Status)
 }
 
-// Test that StableSwVersionsToRestAPI works fine.
+// Test that stableSwVersionsToRestAPI works fine.
 func TestStableSwVersionsToRestAPI(t *testing.T) {
 	// Arrange
 	testData := getExampleData()
@@ -116,7 +116,7 @@ func TestStableSwVersionsToRestAPI(t *testing.T) {
 	}
 
 	// Act
-	versionDetailsArr, stablesStringArr := StableSwVersionsToRestAPI(testData.Bind9.CurrentStable)
+	versionDetailsArr, stablesStringArr := stableSwVersionsToRestAPI(testData.Bind9.CurrentStable)
 
 	// Assert
 	for idx := range stablesStringArr {
@@ -126,15 +126,15 @@ func TestStableSwVersionsToRestAPI(t *testing.T) {
 	}
 }
 
-// Test that AppVersionMetadataToRestAPI works fine.
+// Test that appVersionMetadataToRestAPI works fine.
 func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	// Arrange
 	testData := getExampleData()
 
 	// Act
-	kea := AppVersionMetadataToRestAPI(*testData.Kea)
-	stork := AppVersionMetadataToRestAPI(*testData.Stork)
-	bind := AppVersionMetadataToRestAPI(*testData.Bind9)
+	kea := appVersionMetadataToRestAPI(*testData.Kea)
+	stork := appVersionMetadataToRestAPI(*testData.Stork)
+	bind := appVersionMetadataToRestAPI(*testData.Bind9)
 
 	// Assert
 	require.Len(t, kea.CurrentStable, 2)

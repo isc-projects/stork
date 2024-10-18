@@ -108,9 +108,9 @@ func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.Get
 		// Prepare REST API response.
 		appsVersions = models.AppsVersions{
 			Date:  s.Date,
-			Bind9: AppVersionMetadataToRestAPI(*s.Bind9),
-			Kea:   AppVersionMetadataToRestAPI(*s.Kea),
-			Stork: AppVersionMetadataToRestAPI(*s.Stork),
+			Bind9: appVersionMetadataToRestAPI(*s.Bind9),
+			Kea:   appVersionMetadataToRestAPI(*s.Kea),
+			Stork: appVersionMetadataToRestAPI(*s.Stork),
 		}
 	}
 

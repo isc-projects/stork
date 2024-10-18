@@ -41,24 +41,24 @@ func getPotentialVersionsJSONLocations() []string {
 }
 
 // Post processes either Kea, Bind9 or Stork version metadata and returns the data in REST API format.
-func AppVersionMetadataToRestAPI(input ReportAppVersionMetadata) *models.AppVersionMetadata {
+func appVersionMetadataToRestAPI(input ReportAppVersionMetadata) *models.AppVersionMetadata {
 	out := models.AppVersionMetadata{}
 	if input.LatestSecure != nil {
-		out.LatestSecure = VersionDetailsToRestAPI(*input.LatestSecure)
+		out.LatestSecure = versionDetailsToRestAPI(*input.LatestSecure)
 		out.LatestSecure.Status = "Security update"
 	}
 	if input.LatestDev != nil {
-		out.LatestDev = VersionDetailsToRestAPI(*input.LatestDev)
+		out.LatestDev = versionDetailsToRestAPI(*input.LatestDev)
 		out.LatestDev.Status = "Development"
 	}
 	if input.CurrentStable != nil {
-		out.CurrentStable, out.SortedStableVersions = StableSwVersionsToRestAPI(input.CurrentStable)
+		out.CurrentStable, out.SortedStableVersions = stableSwVersionsToRestAPI(input.CurrentStable)
 	}
 	return &out
 }
 
 // Post processes either Kea, Bind9 or Stork software release details and returns the data in REST API format.
-func VersionDetailsToRestAPI(input ReportVersionDetails) *models.VersionDetails {
+func versionDetailsToRestAPI(input ReportVersionDetails) *models.VersionDetails {
 	v := input.Version.String()
 	out := models.VersionDetails{
 		Version:     &v,
@@ -79,12 +79,12 @@ func VersionDetailsToRestAPI(input ReportVersionDetails) *models.VersionDetails 
 // Takes an array of pointers to ReportVersionDetails for stable realeases.
 // Returns an array of pointers to VersionDetails for stable realeases in REST API format
 // and an array of strings with stable release semvers sorted in ascending order.
-func StableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, []string) {
+func stableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, []string) {
 	versionDetailsArr := []*models.VersionDetails{}
 	stablesArr := []storkutil.SemanticVersion{}
 
 	for _, details := range input {
-		element := VersionDetailsToRestAPI(*details)
+		element := versionDetailsToRestAPI(*details)
 		stablesArr = append(stablesArr, details.Version)
 		element.Status = "Current Stable"
 		element.Range = fmt.Sprintf("%d.%d.x", int(element.Major), int(element.Minor))
