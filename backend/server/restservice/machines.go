@@ -52,7 +52,7 @@ func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.Get
 	onlineData := false
 
 	if !onlineData {
-		// Find the location of the software versions metadata JSON file.
+		// Find the location of the JSON file with software versions metadata.
 		var jsonFile string
 		for _, f := range getPotentialVersionsJSONLocations() {
 			_, err := os.Stat(f)
@@ -62,7 +62,7 @@ func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.Get
 			}
 		}
 		if jsonFile == "" {
-			msg := "Cannot find the software versions metadata JSON file"
+			msg := "Cannot find the JSON file with software versions metadata"
 			log.Error(msg)
 			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
@@ -74,7 +74,7 @@ func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.Get
 		file, err := os.Open(jsonFile)
 		if err != nil {
 			log.Error(err)
-			msg := "Cannot open the software versions metadata JSON file"
+			msg := "Cannot open the JSON file with software versions metadata"
 			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -86,7 +86,7 @@ func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.Get
 		bytes, err := io.ReadAll(file)
 		if err != nil {
 			log.Error(err)
-			msg := "Cannot read the contents of the software versions metadata JSON file"
+			msg := "Cannot read the contents of the JSON file with software versions metadata"
 			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -98,7 +98,7 @@ func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.Get
 		err = json.Unmarshal(bytes, &s)
 		if err != nil {
 			log.Error(err)
-			msg := "Error parsing the contents of the software versions metadata JSON file"
+			msg := "Error parsing the contents of the JSON file with software versions metadata"
 			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
