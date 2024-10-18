@@ -1083,30 +1083,14 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			keaStats = agentStats.GetStats().GetKeaCommErrorStats(app.ID)
 		}
 		keaDaemons := []*models.KeaDaemon{}
-		versionCheck := []string{}
 		for _, d := range dbApp.Daemons {
 			dmn := keaDaemonToRestAPI(d)
 			dmn.AgentCommErrors = agentErrors
-			if dmn.Active && len(dmn.Version) > 0 {
-				versionCheck = append(versionCheck, dmn.Version)
-			}
 			if keaStats != nil {
 				dmn.CaCommErrors = keaStats.GetErrorCount(agentcomm.KeaDaemonCA)
 				dmn.DaemonCommErrors = keaStats.GetErrorCount(agentcomm.GetKeaDaemonTypeFromName(d.Name))
 			}
 			keaDaemons = append(keaDaemons, dmn)
-		}
-		mismatchFound := false
-		if len(versionCheck) > 1 {
-			for i := range versionCheck {
-				if i == 0 {
-					continue
-				}
-				if versionCheck[i-1] != versionCheck[i] {
-					mismatchFound = true
-					break
-				}
-			}
 		}
 
 		app.Details = struct {
@@ -1114,9 +1098,8 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			models.AppBind9
 		}{
 			models.AppKea{
-				ExtendedVersion:    dbApp.Meta.ExtendedVersion,
-				Daemons:            keaDaemons,
-				MismatchingDaemons: mismatchFound,
+				ExtendedVersion: dbApp.Meta.ExtendedVersion,
+				Daemons:         keaDaemons,
 			},
 			models.AppBind9{},
 		}
@@ -1208,25 +1191,9 @@ func (r *RestAPI) appSwVersionsToRestAPI(dbApp *dbmodel.App) *models.App {
 
 	if dbApp.Type == dbmodel.AppTypeKea {
 		keaDaemons := []*models.KeaDaemon{}
-		versionCheck := []string{}
 		for _, d := range dbApp.Daemons {
 			dmn := keaDaemonSwVersionsToRestAPI(d)
-			if dmn.Active && len(dmn.Version) > 0 {
-				versionCheck = append(versionCheck, dmn.Version)
-			}
 			keaDaemons = append(keaDaemons, dmn)
-		}
-		mismatchFound := false
-		if len(versionCheck) > 1 {
-			for i := range versionCheck {
-				if i == 0 {
-					continue
-				}
-				if versionCheck[i-1] != versionCheck[i] {
-					mismatchFound = true
-					break
-				}
-			}
 		}
 
 		app.Details = struct {
@@ -1234,8 +1201,7 @@ func (r *RestAPI) appSwVersionsToRestAPI(dbApp *dbmodel.App) *models.App {
 			models.AppBind9
 		}{
 			models.AppKea{
-				Daemons:            keaDaemons,
-				MismatchingDaemons: mismatchFound,
+				Daemons: keaDaemons,
 			},
 			models.AppBind9{},
 		}

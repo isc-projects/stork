@@ -313,14 +313,6 @@
         type: array
         items:
           $ref: '#/definitions/KeaDaemon'
-      mismatchingDaemons:
-        description: >-
-          Set to true when mismatching Kea daemons versions were
-          detected. Example: Kea DHCP4 daemon version found - 2.6.1.
-          Kea DHCP6 daemon version found - 2.6.0. In this case this
-          flag will be set to true.
-
-        type: boolean
 
   Bind9Daemon:
     type: object

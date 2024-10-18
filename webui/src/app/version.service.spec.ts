@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing'
 
 import { Severity, VersionAlert, VersionFeedback, VersionService } from './version.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { AppsVersions, GeneralService } from './backend'
+import { App, AppsVersions, GeneralService } from './backend'
 import { of } from 'rxjs'
 
 describe('VersionService', () => {
@@ -501,5 +501,70 @@ describe('VersionService', () => {
         expect(resp.detected).toBeFalse()
         expect(resp.severity).toBe(Severity.success)
         expect(resp2).toBeUndefined()
+    })
+
+    it('should detect mismatching kea daemons', () => {
+        // Arrange & Act & Assert
+        // Test some cases with incomplete data.
+        expect(service.areKeaDaemonsVersionsMismatching(null)).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching(undefined)).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching({})).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching({ type: 'bind9' } as App)).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea' } as App)).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea', details: {} } as App)).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea', details: { daemons: null } } as App)).toBeFalsy()
+        expect(service.areKeaDaemonsVersionsMismatching({ type: 'kea', details: { daemons: [] } } as App)).toBeFalsy()
+        expect(
+            service.areKeaDaemonsVersionsMismatching({
+                type: 'kea',
+                details: { daemons: [{ id: 1 }, { id: 2 }] },
+            } as App)
+        ).toBeFalsy()
+        expect(
+            service.areKeaDaemonsVersionsMismatching({
+                type: 'kea',
+                details: { daemons: [{ id: 1 }, { id: 2, version: '2.6.1' }] },
+            } as App)
+        ).toBeFalsy()
+        // Test valid data.
+        expect(
+            service.areKeaDaemonsVersionsMismatching({
+                type: 'kea',
+                details: {
+                    daemons: [
+                        { id: 1, version: '2.6.1' },
+                        { id: 2, version: '2.6.1' },
+                    ],
+                },
+            } as App)
+        ).toBeFalsy()
+        expect(
+            service.areKeaDaemonsVersionsMismatching({
+                type: 'kea',
+                details: {
+                    daemons: [{ id: 1 }, { id: 2, version: '2.6.1' }, { id: 3, version: '2.6.1' }],
+                },
+            } as App)
+        ).toBeFalsy()
+        expect(
+            service.areKeaDaemonsVersionsMismatching({
+                type: 'kea',
+                details: {
+                    daemons: [
+                        { id: 1, version: '2.6.1' },
+                        { id: 2, version: '2.6.1' },
+                        { id: 3, version: '2.6.0' },
+                    ],
+                },
+            } as App)
+        ).toBeTrue()
+        expect(
+            service.areKeaDaemonsVersionsMismatching({
+                type: 'kea',
+                details: {
+                    daemons: [{ id: 1 }, { id: 2, version: '2.6.1' }, { id: 3, version: '2.6.0' }],
+                },
+            } as App)
+        ).toBeTrue()
     })
 })

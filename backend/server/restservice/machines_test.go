@@ -3395,11 +3395,9 @@ func TestGetMachinesAppsVersions(t *testing.T) {
 	require.Equal(t, "3.2.2", machines.Items[0].Apps[0].Details.Daemons[0].Version)
 	require.Equal(t, "3.2.1", machines.Items[0].Apps[0].Details.Daemons[1].Version)
 	require.True(t, machines.Items[0].Apps[0].Details.Daemons[0].Active)
-	require.True(t, machines.Items[0].Apps[0].Details.MismatchingDaemons)
 	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Version)
 	require.Equal(t, "8.7.6", machines.Items[1].AgentVersion)
 	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Details.Daemons[0].Version)
 	require.Equal(t, "1.2.1", machines.Items[1].Apps[0].Details.Daemons[1].Version)
 	require.True(t, machines.Items[1].Apps[0].Details.Daemons[0].Active)
-	require.False(t, machines.Items[1].Apps[0].Details.MismatchingDaemons)
 }

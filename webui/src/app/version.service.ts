@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt } from 'semver'
-import { AppsVersions, GeneralService } from './backend'
+import { App, AppsVersions, GeneralService } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable } from 'rxjs'
 
@@ -369,6 +369,22 @@ export class VersionService {
     }
 
     /**
+     * Checks whether all daemons for provided Kea app have the exact version.
+     * @param app Kea app to be checked
+     * @return true if any daemon version mismatch is found; falsy (may also return undefined) if all Kea daemons have the same version or when provided app wasn't the Kea app
+     */
+    areKeaDaemonsVersionsMismatching(app: App): boolean {
+        if (app?.type === 'kea') {
+            let daemons = app.details?.daemons?.filter((daemon) => daemon.version)
+            return daemons?.slice(1)?.some((daemon) => {
+                return daemon.version !== daemons?.[0]?.version
+            })
+        }
+
+        return false
+    }
+
+    /**
      * Returns true if provided app version is a development release.
      * For stable release, false is returned.
      * @param version app version
@@ -381,6 +397,7 @@ export class VersionService {
         if (app === 'stork' && lt(version, '2.0.0')) {
             return true
         }
+
         const minorVersion = minor(version)
         return minorVersion % 2 === 1
     }

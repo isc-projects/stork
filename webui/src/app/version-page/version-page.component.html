@@ -143,7 +143,7 @@
                     <td>
                         <span class="p-column-title">Summary</span>
                         <ng-container *ngFor="let a of m.apps">
-                            <ng-container *ngIf="a.details?.mismatchingDaemons">
+                            <ng-container *ngIf="a.mismatchingDaemons">
                                 <p-messages
                                     [value]="[
                                         {

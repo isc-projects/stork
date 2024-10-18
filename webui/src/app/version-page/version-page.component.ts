@@ -210,7 +210,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 ],
                                 m.versionCheckSeverity
                             )
-                            m.apps.forEach((a) => {
+                            m.apps.forEach((a: BackendApp & { mismatchingDaemons: boolean }) => {
                                 m.versionCheckSeverity = Math.min(
                                     this.severityMap[
                                         this.versionService.getSoftwareVersionFeedback(
@@ -222,8 +222,9 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                     m.versionCheckSeverity
                                 )
                                 // daemons version match check
-                                if (a.details.mismatchingDaemons) {
+                                if (this.versionService.areKeaDaemonsVersionsMismatching(a)) {
                                     m.versionCheckSeverity = Severity.error
+                                    a.mismatchingDaemons = true
                                 }
                             })
                             this.counters[m.versionCheckSeverity]++
