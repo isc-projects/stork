@@ -30,12 +30,12 @@ and the Stork agent (``stork-agent``).
 
 The Stork server is installed on a stand-alone machine. It connects to
 any agents, typically running on other machines, and indirectly (via those agents)
-interacts with the Kea DHCP and BIND 9 services. It provides an integrated,
-centralized front end for these services. Only one Stork server is deployed
+interacts with the Kea DHCP and BIND 9 apps. It provides an integrated,
+centralized front end for these apps. Only one Stork server is deployed
 in a network.
 
 The Stork agent is installed along with Kea DHCP and/or BIND 9 and
-interacts directly with those services. There may be many
+interacts directly with those apps. There may be many
 agents deployed in a network, one per machine. The following figure shows
 connections between Stork components, Kea and BIND 9. It also shows different
 kind of databases in a typical deployment.
@@ -46,7 +46,7 @@ kind of databases in a typical deployment.
 
 
 The presented example includes 3 physical machines, each running a Stork agent
-instance, and Kea and/or BIND 9 services. The leftmost machine includes a Kea
+instance, and Kea and/or BIND 9 apps. The leftmost machine includes a Kea
 server connected to a database. It is typically one of the database systems
 natively supported by Kea (MySQL or PostgreSQL). Kea uses the database
 to store three types of information:
@@ -73,6 +73,12 @@ schema than Kea database and stores the information required for the Stork
 server operation. This database is typically installed on the same physical
 machine as the Stork server but may also be remote.
 
+.. note::
+
+  Unlike Kea, Stork server has no concept of replaceable database backends.
+  It is integrated only with PostgreSQL. In particular, using MySQL as a
+  Stork server database is not supported.
+
 Stork server pulls the configuration information from the respective
 Kea servers when they are first connected to the Stork server via agents,
 saves pulled information in its local database and exposes to
@@ -86,8 +92,8 @@ updates applied directly to the Kea servers (outside of Stork).
 
   The future goal is to make Kea servers fully configurable from Stork. It
   already supports configuring the most frequently changing parameters
-  (e.g., host reservations, subnets, selected global parameters). However,
-  some configuration capabilities are still unavailable. It implies that the
+  (e.g., host reservations, subnets, shared networks and selected global parameters).
+  However, some configuration capabilities are still unavailable. It implies that the
   administrators may sometimes need to apply configuration updates directly to the
   Kea servers, and these servers are the source of the configuration truth to
   Stork which periodically pulls this information. Nevertheless, we highly recommend
@@ -96,3 +102,13 @@ updates applied directly to the Kea servers (outside of Stork).
   modifying configuration of the same Kea server. Direct configuration updates
   bypass this mechanism resulting in a risk of configuration conflicts.
 
+
+Stork uses ``config-set`` and ``config-write`` Kea commands to save changes related
+to global parameters and options, subnets and shared networks. For this to work, Kea
+needs to have write access to its configuration. This is a security decision made
+by a Kea administrator. Some deployments might choose to restrict write access.
+In such cases, Stork will not be able to push configuration changes to Kea.
+
+The host reservations management mechanism does not modify configuration on
+disk. It stores host reservations in the database instead. Therefore the note above
+does not apply to hosts management.

@@ -77,6 +77,11 @@ Glossary
    |                       | The puller interval is configurable, allowing for specifying   |
    |                       | different data refresh intervals for different data types.     |
    +-----------------------+----------------------------------------------------------------+
+   | service               | One of the functions provided by one or more monitored apps.   |
+   |                       | For example: Kea provides a DHCP service to the DHCP clients.  |
+   |                       | BIND 9 app provides DNS service. Multiple Kea servers can      |
+   |                       | provide High Availability service to the DHCP clients.         |
+   +-----------------------+----------------------------------------------------------------+
    | shared network        | A group of subnets sharing configuration parameters and        |
    |                       | constituting a single address space from which clients         |
    |                       | in the same network segment can be allocated a DHCP lease.     |
@@ -117,6 +122,6 @@ Glossary
    +-----------------------+----------------------------------------------------------------+
    | unauthorized machine  | A machine running Stork agent that requested registration in   |
    |                       | the Stork server, and this request has not been yet approved   |
-   |                       | by the system administrator in the Stork UI. The machine       |
+   |                       | by the system administrator in the Stork UI. The machine is    |
    |                       | unauthorized until the request is approved.                    |
    +-----------------------+----------------------------------------------------------------+
