@@ -51,67 +51,69 @@ func (r *RestAPI) GetISCSoftwareVersions(ctx context.Context, params general.Get
 	// In the future, "offline path" will be a fallback in case "online path" fails for any reason.
 	onlineData := false
 
-	if !onlineData {
-		// Find the location of the JSON file with software versions metadata.
-		var jsonFile string
-		for _, f := range getPotentialVersionsJSONLocations() {
-			_, err := os.Stat(f)
-			if err == nil {
-				jsonFile = f
-				break
-			}
-		}
-		if jsonFile == "" {
-			msg := "Cannot find the JSON file with software versions metadata"
-			log.Error(msg)
-			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
+	if onlineData {
+		return general.NewGetISCSoftwareVersionsOK().WithPayload(&appsVersions)
+	}
 
-		// Open JSON file.
-		file, err := os.Open(jsonFile)
-		if err != nil {
-			log.Error(err)
-			msg := "Cannot open the JSON file with software versions metadata"
-			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
+	// Find the location of the JSON file with software versions metadata.
+	var jsonFile string
+	for _, f := range getPotentialVersionsJSONLocations() {
+		_, err := os.Stat(f)
+		if err == nil {
+			jsonFile = f
+			break
 		}
-		defer file.Close()
+	}
+	if jsonFile == "" {
+		msg := "Cannot find the JSON file with software versions metadata"
+		log.Error(msg)
+		rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 
-		// Read the contents of the file.
-		bytes, err := io.ReadAll(file)
-		if err != nil {
-			log.Error(err)
-			msg := "Cannot read the contents of the JSON file with software versions metadata"
-			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
+	// Open JSON file.
+	file, err := os.Open(jsonFile)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot open the JSON file with software versions metadata"
+		rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	defer file.Close()
 
-		// Unmarshal the JSON to custom struct.
-		s := ReportAppsVersions{}
-		err = json.Unmarshal(bytes, &s)
-		if err != nil {
-			log.Error(err)
-			msg := "Error parsing the contents of the JSON file with software versions metadata"
-			rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
+	// Read the contents of the file.
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Error(err)
+		msg := "Cannot read the contents of the JSON file with software versions metadata"
+		rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 
-		// Prepare REST API response.
-		appsVersions = models.AppsVersions{
-			Date:  s.Date,
-			Bind9: appVersionMetadataToRestAPI(*s.Bind9),
-			Kea:   appVersionMetadataToRestAPI(*s.Kea),
-			Stork: appVersionMetadataToRestAPI(*s.Stork),
-		}
+	// Unmarshal the JSON to custom struct.
+	s := ReportAppsVersions{}
+	err = json.Unmarshal(bytes, &s)
+	if err != nil {
+		log.Error(err)
+		msg := "Error parsing the contents of the JSON file with software versions metadata"
+		rsp := general.NewGetISCSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// Prepare REST API response.
+	appsVersions = models.AppsVersions{
+		Date:  s.Date,
+		Bind9: appVersionMetadataToRestAPI(*s.Bind9),
+		Kea:   appVersionMetadataToRestAPI(*s.Kea),
+		Stork: appVersionMetadataToRestAPI(*s.Stork),
 	}
 
 	appsVersions.OnlineData = onlineData

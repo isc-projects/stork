@@ -376,9 +376,7 @@ export class VersionService {
     areKeaDaemonsVersionsMismatching(app: App): boolean {
         if (app?.type === 'kea') {
             let daemons = app.details?.daemons?.filter((daemon) => daemon.version)
-            return daemons?.slice(1)?.some((daemon) => {
-                return daemon.version !== daemons?.[0]?.version
-            })
+            return daemons?.slice(1)?.some((daemon) => daemon.version !== daemons?.[0]?.version)
         }
 
         return false

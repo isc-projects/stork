@@ -89,14 +89,19 @@ func ParseSemanticVersionOrLatest(version string) SemanticVersion {
 type BySemverAsc []SemanticVersion
 
 // sort.Interface methods for sorting semantic versions.
+
+// Returns length of an array of SemanticVersions to be sorted.
 func (semvers BySemverAsc) Len() int {
 	return len(semvers)
 }
 
+// Comparing function. Returns true if i-th semver value in the array of SemanticVersions to be sorted
+// is lower than j-th semver value in the same array.
 func (semvers BySemverAsc) Less(i, j int) bool {
 	return semvers[i].LessThan(semvers[j])
 }
 
+// Function swapping i-th and j-th elements in the array of SemanticVersions to be sorted.
 func (semvers BySemverAsc) Swap(i, j int) {
 	semvers[i], semvers[j] = semvers[j], semvers[i]
 }

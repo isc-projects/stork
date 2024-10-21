@@ -198,7 +198,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         )
                     }),
                     map((data) => {
-                        data.items.map((m: Machine & { versionCheckSeverity: Severity }) => {
+                        data.items?.map((m: Machine & { versionCheckSeverity: Severity }) => {
                             m.versionCheckSeverity = Severity.success
                             m.versionCheckSeverity = Math.min(
                                 this.severityMap[
@@ -235,7 +235,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                 )
                 .subscribe({
                     next: (data) => {
-                        this.machines = data.items
+                        this.machines = data.items ?? []
                         this.summaryDataLoading = false
                     },
                     error: (err) => {

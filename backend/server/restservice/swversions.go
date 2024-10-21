@@ -8,6 +8,9 @@ import (
 )
 
 // Structs used to deserialize offline versions.json report.
+
+// This struct represents details about either stable, development or security software realease.
+// ReleaseDate and Version are mandatory.
 type ReportVersionDetails struct {
 	EolDate     string                    `json:"eolDate,omitempty"`
 	Esv         string                    `json:"esv,omitempty"`
@@ -15,12 +18,14 @@ type ReportVersionDetails struct {
 	Version     storkutil.SemanticVersion `json:"version"`
 }
 
+// This struct gathers different types of releases and contains details for each type.
 type ReportAppVersionMetadata struct {
 	CurrentStable []*ReportVersionDetails `json:"currentStable,omitempty"`
 	LatestDev     *ReportVersionDetails   `json:"latestDev,omitempty"`
 	LatestSecure  *ReportVersionDetails   `json:"latestSecure,omitempty"`
 }
 
+// This is top level struct representing all metadata for ISC Kea, BIND9 and Stork latest software releases.
 type ReportAppsVersions struct {
 	Bind9 *ReportAppVersionMetadata `json:"bind9"`
 	Date  *string                   `json:"date"`
@@ -35,8 +40,8 @@ var VersionsJSON = "/etc/stork/versions.json" //nolint:gochecknoglobals
 // Get potential locations of versions.json.
 func getPotentialVersionsJSONLocations() []string {
 	return []string{
-		VersionsJSON,
-		"etc/versions.json",
+		VersionsJSON,        // this is default location of the file in case Stork is installed from packages - most common use case
+		"etc/versions.json", // this is added in case Stork is built and ran from sources - typical for Stork development
 	}
 }
 
