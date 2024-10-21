@@ -325,7 +325,7 @@ describe('VersionPageComponent', () => {
         expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
         expect(getMachinesAppsVersionsSpy).toHaveBeenCalledTimes(1)
 
-        let de = fixture.debugElement.query(By.css('.p-messages.header-message .p-message-info'))
+        let de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-info'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain(
             'Below information about ISC software versions relies on a data that was generated on 2024-10-03.'
@@ -409,7 +409,7 @@ describe('VersionPageComponent', () => {
     it('should display version alert dismiss message', () => {
         // Arrange & Act & Assert
         apisWorkingFine()
-        let de = fixture.debugElement.query(By.css('.p-messages.header-message .p-message-warn'))
+        let de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-warn'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Action required')
 
