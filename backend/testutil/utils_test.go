@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
 	"testing"
@@ -234,4 +235,9 @@ func TestGetFreeLocalTCPPort(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.NotZero(t, port)
+	// Check that the port is not in use.
+	addr := net.JoinHostPort("localhost", fmt.Sprint(port))
+	listener, err := net.Listen("tcp", addr)
+	require.NoError(t, err)
+	listener.Close()
 }
