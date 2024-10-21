@@ -1,8 +1,8 @@
 import { By } from '@angular/platform-browser'
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
-import { UsersPageComponent } from './users-page.component'
+import { differentPasswords, UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, convertToParamMap, ParamMap, RouterModule } from '@angular/router'
-import { FormsModule, UntypedFormBuilder } from '@angular/forms'
+import { FormControl, FormGroup, FormsModule, UntypedFormBuilder } from '@angular/forms'
 import { ServicesService, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, SharedModule } from 'primeng/api'
@@ -198,4 +198,24 @@ describe('UsersPageComponent', () => {
         // The form should be validated ok.
         expect(component.userForm.valid).toBeTrue()
     }))
+
+    it('should verify if the passwords are the same', () => {
+        const formGroup = new FormGroup({
+            oldPassword: new FormControl('password'),
+            newPassword: new FormControl('password'),
+        })
+
+        const validator = differentPasswords('oldPassword', 'newPassword')
+        expect(validator(formGroup)).toEqual({ samePasswords: true })
+    })
+
+    it('should verify if the passwords are not the same', () => {
+        const formGroup = new FormGroup({
+            oldPassword: new FormControl('password'),
+            newPassword: new FormControl('another-password'),
+        })
+
+        const validator = differentPasswords('oldPassword', 'newPassword')
+        expect(validator(formGroup)).toBeNull()
+    })
 })

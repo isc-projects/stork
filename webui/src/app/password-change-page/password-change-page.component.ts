@@ -6,7 +6,7 @@ import { MessageService } from 'primeng/api'
 import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { getErrorMessage } from '../utils'
-import { matchPasswords } from '../users-page/users-page.component'
+import { differentPasswords, matchPasswords } from '../users-page/users-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
 
 /**
@@ -54,7 +54,12 @@ export class PasswordChangePageComponent implements OnInit {
                 ],
                 confirmPassword: ['', [Validators.required, Validators.maxLength(this.maxInputLen)]],
             },
-            { validators: [matchPasswords('newPassword', 'confirmPassword')] }
+            {
+                validators: [
+                    matchPasswords('newPassword', 'confirmPassword'),
+                    differentPasswords('oldPassword', 'newPassword'),
+                ],
+            }
         )
     }
 
@@ -136,7 +141,8 @@ export class PasswordChangePageComponent implements OnInit {
     isFeedbackNeeded(name: string, comparePasswords = false): boolean {
         return (
             (this.passwordChangeForm.get(name).invalid ||
-                (comparePasswords && this.passwordChangeForm.errors?.['mismatchedPasswords'])) &&
+                (comparePasswords && this.passwordChangeForm.errors?.['mismatchedPasswords']) ||
+                (comparePasswords && this.passwordChangeForm.errors?.['samePasswords'])) &&
             (this.passwordChangeForm.get(name).dirty || this.passwordChangeForm.get(name).touched)
         )
     }
@@ -169,6 +175,10 @@ export class PasswordChangePageComponent implements OnInit {
 
         if (comparePasswords && this.passwordChangeForm.errors?.['mismatchedPasswords']) {
             errors.push('Passwords must match.')
+        }
+
+        if (comparePasswords && this.passwordChangeForm.errors?.['samePasswords']) {
+            errors.push('New password must be different from the current password.')
         }
 
         return errors.join(' ')

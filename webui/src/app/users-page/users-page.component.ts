@@ -86,6 +86,31 @@ export function matchPasswords(passwordKey: string, confirmPasswordKey: string) 
                 mismatchedPasswords: true,
             }
         }
+        return null
+    }
+}
+
+/**
+ * Form validator verifying if the confirmed password is different from the
+ * previous password.
+ *
+ * @param oldPasswordKey Name of the key under which the old password value can
+ *                       be found in the form.
+ * @param newPasswordKey Name of the key under which the new password value can
+ *                       be found in the form.
+ * @returns The validator function comparing the passwords.
+ */
+export function differentPasswords(oldPasswordKey: string, newPasswordKey: string) {
+    return (group: UntypedFormGroup): { [key: string]: any } => {
+        const oldPassword = group.get(oldPasswordKey)
+        const newPassword = group.get(newPasswordKey)
+
+        if (oldPassword?.value === newPassword?.value) {
+            return {
+                samePasswords: true,
+            }
+        }
+        return null
     }
 }
 
