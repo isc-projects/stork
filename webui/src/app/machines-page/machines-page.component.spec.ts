@@ -597,6 +597,7 @@ describe('MachinesPageComponent', () => {
                                     },
                                 ],
                             },
+                            version: '2.2.0',
                         },
                         {
                             id: 2,
@@ -609,8 +610,10 @@ describe('MachinesPageComponent', () => {
                                     name: 'named',
                                 },
                             },
+                            version: '9.18.30',
                         },
                     ],
+                    agentVersion: '1.19.0',
                 },
             ],
             total: 1,
@@ -628,6 +631,11 @@ describe('MachinesPageComponent', () => {
         expect(textContent).toContain('DHCPv4')
         expect(textContent).toContain('CA')
         expect(textContent).toContain('named')
+
+        // One VersionStatus for Stork agent + one for Kea + one for BIND9.
+        let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
+        expect(versionStatus).toBeTruthy()
+        expect(versionStatus.length).toEqual(3)
     })
 
     it('should display a warning about disabled registration', fakeAsync(() => {
