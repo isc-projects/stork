@@ -122,7 +122,7 @@ func (v *SemanticVersion) UnmarshalJSON(data []byte) error {
 	var version string
 	err := json.Unmarshal(data, &version)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "problem deserializing semantic version from JSON")
 	}
 	*v, err = ParseSemanticVersion(version)
 	if err != nil {
