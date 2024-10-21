@@ -6,50 +6,52 @@
         </p>
     </div>
 </app-breadcrumbs>
-<div class="max-w-100rem">
+<div>
     <div class="flex flex-wrap gap-2 justify-content-between mb-3">
-        <p-messages
-            styleClass="max-w-50rem header-message"
-            *ngIf="showAlert$ | async"
-            [escape]="false"
-            [enableService]="false"
-            (onClose)="dismissAlert()"
-            [value]="[
-                {
-                    summary: 'Action required',
-                    severity: 'warn',
-                    detail: 'Stork has detected ISC software version in use that requires your attention. Please review below Summary table.',
-                },
-            ]"
-        ></p-messages>
-        <p-messages
-            styleClass="max-w-50rem header-message"
-            *ngIf="isOfflineData$ | async"
-            [escape]="false"
-            [enableService]="false"
-            [value]="[
-                {
-                    summary: 'Note',
-                    severity: 'info',
-                    detail:
-                        'Below information about ISC software versions relies on a data that was generated on ' +
-                        (dataDate$ | async) +
-                        '. To see up-to-date information, please visit the <a href=\'https:\/\/www.isc.org\'>ISC webpage</a>.',
-                },
-            ]"
-        ></p-messages>
-        <p-messages
-            *ngIf="errorOccurred"
-            [value]="[
-                {
-                    summary: 'Error while fetching data!',
-                    severity: 'error',
-                    detail: 'Error occurred while retrieving software versions data from Stork server!',
-                },
-            ]"
-            styleClass="max-w-50rem header-message"
-            [enableService]="false"
-        ></p-messages>
+        <div class="max-w-50rem header-message">
+            <p-messages
+                styleClass="mb-2"
+                *ngIf="showAlert$ | async"
+                [escape]="false"
+                [enableService]="false"
+                (onClose)="dismissAlert()"
+                [value]="[
+                    {
+                        summary: 'Action required',
+                        severity: 'warn',
+                        detail: 'Stork has detected ISC software version in use that requires your attention. Please review below Summary table.',
+                    },
+                ]"
+            ></p-messages>
+            <p-messages
+                styleClass="mb-2"
+                *ngIf="isOfflineData$ | async"
+                [escape]="false"
+                [enableService]="false"
+                [value]="[
+                    {
+                        summary: 'Note',
+                        severity: 'info',
+                        detail:
+                            'Below information about ISC software versions relies on a data that was generated on ' +
+                            (dataDate$ | async) +
+                            '. To see up-to-date information, please visit the <a href=\'https:\/\/www.isc.org\'>ISC webpage</a>.',
+                    },
+                ]"
+            ></p-messages>
+            <p-messages
+                styleClass="mb-2"
+                *ngIf="errorOccurred"
+                [value]="[
+                    {
+                        summary: 'Error while fetching data!',
+                        severity: 'error',
+                        detail: 'Error occurred while retrieving software versions data from Stork server!',
+                    },
+                ]"
+                [enableService]="false"
+            ></p-messages>
+        </div>
         <p-button
             *ngIf="!errorOccurred"
             styleClass="flex-none"
@@ -76,10 +78,10 @@
             >
             <ng-template pTemplate="header">
                 <tr>
-                    <th>Hostname</th>
-                    <th>Location</th>
-                    <th>Agent Version</th>
-                    <th>App(s) Version</th>
+                    <th class="w-6rem lg:w-10rem">Hostname</th>
+                    <th class="w-6rem lg:w-10rem">Location</th>
+                    <th class="w-6rem lg:w-10rem">Agent Version</th>
+                    <th class="w-6rem lg:w-10rem">App(s) Version</th>
                     <th>Summary</th>
                 </tr>
             </ng-template>
@@ -194,11 +196,11 @@
         <p-table [value]="keaVersions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>Version</th>
-                    <th>Status</th>
-                    <th>Documentation</th>
-                    <th>Release date</th>
-                    <th>EoL Date</th>
+                    <th class="xl:w-10rem">Version</th>
+                    <th class="xl:w-18rem">Status</th>
+                    <th class="xl:w-18rem">Documentation</th>
+                    <th class="xl:w-18rem">Release date</th>
+                    <th class="xl:w-14rem">EoL Date</th>
                     <th>Download</th>
                 </tr>
             </ng-template>
@@ -252,11 +254,11 @@
         <p-table [value]="bind9Versions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>Version</th>
-                    <th>Status</th>
-                    <th>Documentation</th>
-                    <th>Release date</th>
-                    <th>EoL Date</th>
+                    <th class="xl:w-10rem">Version</th>
+                    <th class="xl:w-18rem">Status</th>
+                    <th class="xl:w-18rem">Documentation</th>
+                    <th class="xl:w-18rem">Release date</th>
+                    <th class="xl:w-14rem">EoL Date</th>
                     <th>Download</th>
                 </tr>
             </ng-template>
@@ -307,11 +309,11 @@
         <p-table [value]="storkVersions" styleClass="p-datatable-striped" [loading]="swVersionsDataLoading">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>Version</th>
-                    <th>Status</th>
-                    <th>Documentation</th>
-                    <th>Release date</th>
-                    <th>EoL Date</th>
+                    <th class="xl:w-10rem">Version</th>
+                    <th class="xl:w-18rem">Status</th>
+                    <th class="xl:w-18rem">Documentation</th>
+                    <th class="xl:w-18rem">Release date</th>
+                    <th class="xl:w-14rem">EoL Date</th>
                     <th>Download</th>
                 </tr>
             </ng-template>
