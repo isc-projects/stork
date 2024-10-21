@@ -156,6 +156,138 @@ func TestRegisterBasic(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Check if registration fails with an expected error when the agent port is
+// already in use.
+func TestRegisterBusyPort(t *testing.T) {
+	// prepare temp dir for cert files
+	tmpDir, err := os.MkdirTemp("", "reg")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// redefined consts with paths to cert files
+	restoreCerts := RememberPaths()
+	defer restoreCerts()
+	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
+	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
+	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
+	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
+
+	// generate the CA and server certs
+	rootKey, rootKeyPEM, rootCert, rootCertPEM, err := pki.GenCAKeyCert(1)
+	require.NoError(t, err)
+	serverCertPEM, serverKeyPEM, err := pki.GenKeyCert(
+		"server", []string{"localhost"}, []net.IP{net.ParseIP("127.0.0.1")},
+		1, rootCert, rootKey, x509.ExtKeyUsageClientAuth,
+	)
+	require.NoError(t, err)
+	serverCert, err := pki.ParseCert(serverCertPEM)
+	require.NoError(t, err)
+	serverCertFingerprint := pki.CalculateFingerprint(serverCert)
+
+	// register arguments
+	serverToken := "serverToken"
+	regenKey := false
+	retry := false
+	agentAddr := "127.0.0.1"
+	agentPort, err := testutil.GetFreeLocalTCPPort()
+	require.NoError(t, err)
+
+	fec := &storktestdbmodel.FakeEventCenter{}
+	var agentAPI agentcomm.ConnectedAgents
+
+	// Start a listener on the agent port.
+	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", agentAddr, agentPort))
+	require.NoError(t, err)
+	defer ln.Close()
+
+	// internal http server for testing
+	require.NoError(t, err)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("URL: %v\n", r.URL.Path)
+
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		fmt.Printf("BODY: %v\n", string(body))
+		var req map[string]interface{}
+		err = json.Unmarshal(body, &req)
+		require.NoError(t, err)
+
+		if r.URL.Path == "/api/machines" {
+			require.EqualValues(t, req["address"].(string), agentAddr)
+			require.EqualValues(t, int(req["agentPort"].(float64)), agentPort)
+			serverTokenReceived := req["serverToken"].(string)
+			agentToken := req["agentToken"].(string)
+			caCertFingerprint := req["caCertFingerprint"].(string)
+
+			require.NotEmpty(t, agentToken)
+			require.NotEmpty(t, caCertFingerprint)
+			if serverToken != "" {
+				require.EqualValues(t, serverToken, serverTokenReceived)
+			}
+
+			agentCSR := []byte(req["agentCSR"].(string))
+			require.NotEmpty(t, agentCSR)
+
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			require.NoError(t, paramsErr)
+			require.NoError(t, innerErr)
+
+			w.WriteHeader(http.StatusOK)
+			resp := map[string]interface{}{
+				"id":                    10,
+				"serverCACert":          string(rootCertPEM),
+				"agentCert":             string(agentCertPEM),
+				"serverCertFingerprint": storkutil.BytesToHex(serverCertFingerprint[:]),
+			}
+			json.NewEncoder(w).Encode(resp)
+
+			// Initialize the GRPC API.
+			agentAPI = agentcomm.NewConnectedAgents(
+				&agentcomm.AgentsSettings{}, fec,
+				rootCertPEM, serverCertPEM, serverKeyPEM,
+			)
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/ping") {
+			// The create machine endpoint must be called before ping.
+			require.NotNil(t, agentAPI)
+
+			serverTokenReceived := req["serverToken"].(string)
+			agentToken := req["agentToken"].(string)
+
+			require.NotEmpty(t, agentToken)
+			if serverToken != "" {
+				require.EqualValues(t, serverToken, serverTokenReceived)
+
+				// Send ping request to the agent. There should be a temporary
+				// Ping handler running.
+				err = agentAPI.Ping(context.Background(), &dbmodel.Machine{
+					Address:   agentAddr,
+					AgentPort: int64(agentPort),
+				})
+				require.NoError(t, err)
+			}
+
+			w.WriteHeader(http.StatusOK)
+			resp := map[string]interface{}{
+				"id": 10,
+			}
+			json.NewEncoder(w).Encode(resp)
+		}
+	}))
+	defer ts.Close()
+
+	serverURL := ts.URL
+
+	// register with server token
+	err = Register(serverURL, serverToken, agentAddr, agentPort, regenKey, retry, NewHTTPClient())
+	require.ErrorContains(t,
+		err,
+		fmt.Sprintf("Stork agent detected a program bound to port %d", agentPort),
+	)
+}
+
 // Check if registration works when server returns bad response.
 func TestRegisterBadServer(t *testing.T) {
 	// prepare temp dir for cert files

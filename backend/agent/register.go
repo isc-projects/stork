@@ -15,6 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 	agentapi "isc.org/stork/api"
 	storkutil "isc.org/stork/util"
 )
@@ -52,7 +53,18 @@ func runPingGRPCServer(host string, port int) (func(), error) {
 	addr := net.JoinHostPort(host, fmt.Sprint(port))
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		err = errors.Wrap(err, "cannot setup the GRPC listener")
+		if errors.Is(err, unix.EADDRINUSE) {
+			err = errors.Wrapf(err,
+				"agent registration using the server token requires that the "+
+					"existing Stork agent instances are stopped; Stork agent "+
+					"detected a program bound to port %d; if it is a Stork agent "+
+					"instance, please shut it down before attempting the "+
+					"re-registration; if it is a different program, please "+
+					"configure the Stork agent to use an available port", port)
+		} else {
+			err = errors.Wrap(err, "cannot setup the GRPC listener")
+		}
+
 		return nil, err
 	}
 
