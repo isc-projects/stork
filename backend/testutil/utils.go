@@ -128,8 +128,8 @@ func CreateOsArgsRestorePoint() func() {
 	}
 }
 
-// Helper function that returns a free TCP port. Returns an error if no ports
-// are available.
+// Helper function that returns a free TCP port on localhost. Returns an error
+// if no ports are available.
 // Source: https://gist.github.com/sevkin/96bdae9274465b2d09191384f86ef39d
 func GetFreeLocalTCPPort() (int, error) {
 	if a, err := net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
