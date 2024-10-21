@@ -1014,6 +1014,15 @@ This section describes how to install an agent from the Cloudsmith repository an
 perform the agent's registration using a server token. It is an alternative to
 the procedure described in :ref:`register-server-token-script`.
 
+.. note::
+
+   The Stork agent verifies the server can establish a connection with the
+   agent using the address and port specified in the registration process while
+   the server token is provided. To do it, the agent port must be free. It
+   means that the agent must not be running in the background. If the agent
+   is running (e.g., as a service), it must be stopped before the registration
+   process starts.
+
 The Stork agent installation steps are similar to the Stork server
 installation steps described in :ref:`install-server-deb` and
 :ref:`install-server-rpm`. Use one of the following commands, depending on
