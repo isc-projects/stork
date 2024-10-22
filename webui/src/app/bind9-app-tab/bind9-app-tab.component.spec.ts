@@ -10,7 +10,7 @@ import { MockLocationStrategy } from '@angular/common/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 
-import { ServicesService, UsersService } from '../backend'
+import { AppsVersions, ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { DialogModule } from 'primeng/dialog'
@@ -27,9 +27,11 @@ import { DataViewModule } from 'primeng/dataview'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { TableModule } from 'primeng/table'
 import { VersionStatusComponent } from '../version-status/version-status.component'
+import { Severity, VersionService } from '../version.service'
 
 class Daemon {
     name = 'named'
+    version = '9.18.30'
 }
 
 class Details {
@@ -57,8 +59,15 @@ describe('Bind9AppTabComponent', () => {
     let fixture: ComponentFixture<Bind9AppTabComponent>
     let servicesApi: ServicesService
     let serverData: ServerDataService
+    let versionServiceStub: Partial<VersionService>
 
     beforeEach(waitForAsync(() => {
+        versionServiceStub = {
+            sanitizeSemver: () => '9.18.30',
+            getCurrentData: () => of({} as AppsVersions),
+            getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
+        }
+
         TestBed.configureTestingModule({
             providers: [
                 UsersService,
@@ -66,6 +75,7 @@ describe('Bind9AppTabComponent', () => {
                 MessageService,
                 MockLocationStrategy,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+                { provide: VersionService, useValue: versionServiceStub },
             ],
             imports: [
                 HttpClientTestingModule,
@@ -98,6 +108,7 @@ describe('Bind9AppTabComponent', () => {
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         serverData = fixture.debugElement.injector.get(ServerDataService)
+        fixture.debugElement.injector.get(VersionService)
         const appTab = new AppTab()
         component.refreshedAppTab = of(appTab)
         component.appTab = appTab
@@ -181,4 +192,16 @@ describe('Bind9AppTabComponent', () => {
         const eventsPanel = fixture.debugElement.query(By.css('app-events-panel'))
         expect(eventsPanel).toBeTruthy()
     }))
+
+    it('should display version status component', () => {
+        // One VersionStatus BIND9.
+        let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
+        expect(versionStatus).toBeTruthy()
+        expect(versionStatus.length).toEqual(1)
+        // Stubbed success icon for BIND 9.18.30 is expected.
+        expect(versionStatus[0].properties.outerHTML).toContain('9.18.30')
+        expect(versionStatus[0].properties.outerHTML).toContain('bind9')
+        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
+    })
 })

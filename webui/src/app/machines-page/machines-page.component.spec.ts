@@ -9,7 +9,7 @@ import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
 import { MachinesPageComponent } from './machines-page.component'
-import { ServicesService, SettingsService, UsersService } from '../backend'
+import { AppsVersions, ServicesService, SettingsService, UsersService } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
@@ -27,6 +27,7 @@ import anything = jasmine.anything
 import { MessagesModule } from 'primeng/messages'
 import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
 import { VersionStatusComponent } from '../version-status/version-status.component'
+import { Severity, VersionService } from '../version.service'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -36,10 +37,22 @@ describe('MachinesPageComponent', () => {
     let settingsService: SettingsService
     let router: Router
     let route: ActivatedRoute
+    let versionServiceStub: Partial<VersionService>
 
     beforeEach(fakeAsync(() => {
+        versionServiceStub = {
+            sanitizeSemver: () => '1.2.3',
+            getCurrentData: () => of({} as AppsVersions),
+            getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
+        }
+
         TestBed.configureTestingModule({
-            providers: [MessageService, ServicesService, UsersService],
+            providers: [
+                MessageService,
+                ServicesService,
+                UsersService,
+                { provide: VersionService, useValue: versionServiceStub },
+            ],
             imports: [
                 HttpClientTestingModule,
                 RouterModule.forRoot([
@@ -82,6 +95,7 @@ describe('MachinesPageComponent', () => {
         settingsService = fixture.debugElement.injector.get(SettingsService)
         router = fixture.debugElement.injector.get(Router)
         route = fixture.debugElement.injector.get(ActivatedRoute)
+        fixture.debugElement.injector.get(VersionService)
 
         fixture.detectChanges()
         tick()
@@ -636,6 +650,24 @@ describe('MachinesPageComponent', () => {
         let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
         expect(versionStatus).toBeTruthy()
         expect(versionStatus.length).toEqual(3)
+
+        // Check if versions and apps match.
+        expect(versionStatus[0].properties.outerHTML).toContain('1.19.0')
+        expect(versionStatus[0].properties.outerHTML).toContain('stork')
+
+        expect(versionStatus[1].properties.outerHTML).toContain('2.2.0')
+        expect(versionStatus[1].properties.outerHTML).toContain('kea')
+
+        expect(versionStatus[2].properties.outerHTML).toContain('9.18.30')
+        expect(versionStatus[2].properties.outerHTML).toContain('bind9')
+
+        // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub
+        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
+        expect(versionStatus[1].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[1].properties.outerHTML).toContain('test feedback')
+        expect(versionStatus[2].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[2].properties.outerHTML).toContain('test feedback')
     })
 
     it('should display a warning about disabled registration', fakeAsync(() => {

@@ -3,7 +3,15 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { DashboardComponent } from './dashboard.component'
 import { PanelModule } from 'primeng/panel'
 import { ButtonModule } from 'primeng/button'
-import { ServicesService, DHCPService, SettingsService, UsersService, DhcpOverview, AppsStats } from '../backend'
+import {
+    AppsStats,
+    AppsVersions,
+    DhcpOverview,
+    DHCPService,
+    ServicesService,
+    SettingsService,
+    UsersService,
+} from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { LocationStrategy, PathLocationStrategy } from '@angular/common'
@@ -25,6 +33,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { SettingService } from '../setting.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
+import { Severity, VersionService } from '../version.service'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -32,8 +41,15 @@ describe('DashboardComponent', () => {
     let dhcpService: DHCPService
     let dataService: ServerDataService
     let settingService: SettingService
+    let versionServiceStub: Partial<VersionService>
 
     beforeEach(waitForAsync(() => {
+        versionServiceStub = {
+            sanitizeSemver: () => '2.0.0',
+            getCurrentData: () => of({} as AppsVersions),
+            getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
+        }
+
         TestBed.configureTestingModule({
             imports: [
                 NoopAnimationsModule,
@@ -65,12 +81,14 @@ describe('DashboardComponent', () => {
                 SettingsService,
                 { provide: LocationStrategy, useClass: PathLocationStrategy },
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+                { provide: VersionService, useValue: versionServiceStub },
             ],
         })
 
         dhcpService = TestBed.inject(DHCPService)
         dataService = TestBed.inject(ServerDataService)
         settingService = TestBed.inject(SettingService)
+        TestBed.inject(VersionService)
     }))
 
     beforeEach(() => {
@@ -459,5 +477,21 @@ describe('DashboardComponent', () => {
 
         expect(rows[1].nativeElement.innerText).toContain('1.52')
         expect(rows[1].nativeElement.innerText).toContain('0.35')
+    })
+
+    it('should display version status component', async () => {
+        await component.refreshDhcpOverview()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        // One VersionStatus for Kea dhcp4 daemon.
+        let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
+        expect(versionStatus).toBeTruthy()
+        expect(versionStatus.length).toEqual(1)
+        // Stubbed success icon for kea 2.0.0 is expected.
+        expect(versionStatus[0].properties.outerHTML).toContain('2.0.0')
+        expect(versionStatus[0].properties.outerHTML).toContain('kea')
+        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
     })
 })

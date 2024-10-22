@@ -15,7 +15,7 @@ import { MockLocationStrategy } from '@angular/common/testing'
 import { By } from '@angular/platform-browser'
 import { BehaviorSubject, of, throwError } from 'rxjs'
 
-import { DHCPService, ServicesService, UsersService } from '../backend'
+import { AppsVersions, DHCPService, ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { InputSwitchModule } from 'primeng/inputswitch'
@@ -39,6 +39,7 @@ import { DividerModule } from 'primeng/divider'
 import { TagModule } from 'primeng/tag'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { VersionStatusComponent } from '../version-status/version-status.component'
+import { Severity, VersionService } from '../version.service'
 
 class Details {
     daemons: any = [
@@ -106,8 +107,15 @@ describe('KeaAppTabComponent', () => {
     let servicesApi: ServicesService
     let serverData: ServerDataService
     let route: ActivatedRoute
+    let versionServiceStub: Partial<VersionService>
 
     beforeEach(waitForAsync(() => {
+        versionServiceStub = {
+            sanitizeSemver: () => '1.9.4',
+            getCurrentData: () => of({} as AppsVersions),
+            getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
+        }
+
         TestBed.configureTestingModule({
             providers: [
                 UsersService,
@@ -116,6 +124,7 @@ describe('KeaAppTabComponent', () => {
                 MessageService,
                 MockLocationStrategy,
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+                { provide: VersionService, useValue: versionServiceStub },
             ],
             imports: [
                 RouterTestingModule,
@@ -162,6 +171,7 @@ describe('KeaAppTabComponent', () => {
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         serverData = fixture.debugElement.injector.get(ServerDataService)
         route = fixture.debugElement.injector.get(ActivatedRoute)
+        fixture.debugElement.injector.get(VersionService)
         const appTab = new AppTab()
         component.refreshedAppTab = new BehaviorSubject(appTab)
         component.appTab = appTab
@@ -394,5 +404,17 @@ describe('KeaAppTabComponent', () => {
         expect(component.isDhcpDaemon({ name: 'd2' })).toBeFalse()
         expect(component.isDhcpDaemon({ name: 'netconf' })).toBeFalse()
         expect(component.isDhcpDaemon({ name: 'foobar' })).toBeFalse()
+    })
+
+    it('should display version status component', () => {
+        // One VersionStatus for Kea.
+        let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
+        expect(versionStatus).toBeTruthy()
+        expect(versionStatus.length).toEqual(1)
+        // Stubbed success icon for kea 1.9.4 is expected.
+        expect(versionStatus[0].properties.outerHTML).toContain('1.9.4')
+        expect(versionStatus[0].properties.outerHTML).toContain('kea')
+        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
     })
 })
