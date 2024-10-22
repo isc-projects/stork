@@ -141,7 +141,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 
 	// Send the command only to the active daemons from all daemons configured
 	// in the CA.
-	daemonNames := ka.GetActiveDaemons()
+	daemonNames := ka.ActiveDaemons
 
 	// Apparently, it isn't configured to forward commands to the daemons behind it.
 	if len(daemonNames) == 0 {
@@ -170,16 +170,6 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	}
 
 	return paths, nil
-}
-
-// Returns a list of the active daemons in a given application.
-func (ka *KeaApp) GetActiveDaemons() []string {
-	return ka.ActiveDaemons
-}
-
-// Returns a list of the configured daemons in a given application.
-func (ka *KeaApp) GetConfiguredDaemons() []string {
-	return ka.ConfiguredDaemons
 }
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
