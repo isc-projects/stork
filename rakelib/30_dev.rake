@@ -119,6 +119,8 @@ namespace :unittest do
             opts += ["ChromeNoSandboxHeadless"]
         end
 
+        opts += ["--reporters", "junit"]
+
         Dir.chdir('webui') do
             sh NPX, "ng", "test", *opts
         end

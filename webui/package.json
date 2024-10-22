@@ -74,6 +74,7 @@
         "karma-coverage-istanbul-reporter": "3.0.3",
         "karma-jasmine": "5.1.0",
         "karma-jasmine-html-reporter": "2.1.0",
+        "karma-junit-reporter": "2.0.1",
         "karma-spec-reporter": "0.0.36",
         "prettier": "3.3.3",
         "storybook-addon-mock": "^5.0.0",
