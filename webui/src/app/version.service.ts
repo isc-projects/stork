@@ -203,7 +203,7 @@ export class VersionService {
             // case - stable version
             let currentStableVersionDetails = data?.[app]?.currentStable || null
             let dataDate = data?.date || 'unknown'
-            if (isDevelopmentVersion === false) {
+            if (!isDevelopmentVersion) {
                 if (!currentStableVersionDetails) {
                     response = {
                         severity: Severity.secondary,
@@ -282,7 +282,7 @@ export class VersionService {
 
             // case - development version
             let latestDevVersion = this.getVersion(app, 'latestDev', data)
-            if (isDevelopmentVersion === true && latestDevVersion) {
+            if (isDevelopmentVersion && latestDevVersion) {
                 if (lt(sanitizedSemver, latestDevVersion as string)) {
                     response = {
                         severity: Severity.warn,
