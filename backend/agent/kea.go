@@ -246,7 +246,6 @@ func detectKeaActiveDaemons(keaApp *KeaApp, previousActiveDaemons []string) (dae
 	command := keactrl.NewCommandBase(keactrl.VersionGet, keaApp.ConfiguredDaemons...)
 	responses := keactrl.ResponseList{}
 	err = keaApp.sendCommand(command, &responses)
-	// Empty list. It now contains only the daemons that are running.
 	if err != nil {
 		// The Kea CA seems to be down, so we cannot detect the active daemons.
 		return nil, errors.WithMessage(err, "failed to send command to Kea Control Agent")
