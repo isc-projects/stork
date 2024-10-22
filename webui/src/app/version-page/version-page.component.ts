@@ -10,6 +10,9 @@ import { MessageService } from 'primeng/api'
  * This component displays current known released versions of ISC Kea, Bind9 and Stork.
  * There is also a table with summary of ISC software versions detected by Stork
  * among authorized machines.
+ * For now, the source of all versions data used by this component is an offline JSON file,
+ * which is valid for the day of Stork release. In the future, an online data source will be the
+ * primary one, and the offline will be a fallback option.
  */
 @Component({
     selector: 'app-version-page',
@@ -143,6 +146,10 @@ export class VersionPageComponent implements OnInit, OnDestroy {
 
     /**
      * Component lifecycle hook called upon initialization.
+     * All the data that this component presents in tables, is fetched here from the VersionService.
+     * The service gets the data from Stork server. For now, the data source is an offline JSON file,
+     * which is valid for the day of Stork release. In the future, an online data source will be the
+     * primary one, and the offline will be a fallback option.
      */
     ngOnInit(): void {
         this.dataDate$ = this.versionService.getDataManufactureDate()
@@ -159,6 +166,10 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                     tap(() => {
                         this.swVersionsDataLoading = true
                     }),
+                    // We need to first wait for the data from the getCurrentData() observable.
+                    // Whenever new data is emitted by the getCurrentData(), the summary table needs to be refreshed,
+                    // and for that getMachinesAppsVersions() api must be called right after.
+                    // To keep the order of source and inner observable, let's use concatMap operator.
                     concatMap((data) => {
                         if (data) {
                             this._processedData = data
@@ -184,6 +195,9 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 this.summaryDataLoading = true
                                 this.counters = [0, 0, 0, 0, 0]
                             }),
+                            // We don't want to complete the source getCurrentData() observable when error occurs for
+                            // the inner getMachinesAppsVersions() observable, so let's catch the inner observable
+                            // error here and gracefully return empty machines array.
                             catchError((err) => {
                                 let msg = getErrorMessage(err)
                                 this.messageService.add({
