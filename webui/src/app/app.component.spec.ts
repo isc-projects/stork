@@ -6,7 +6,7 @@ import { MenubarModule } from 'primeng/menubar'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ToastModule } from 'primeng/toast'
-import { GeneralService, UsersService, SettingsService, ServicesService, Settings } from './backend'
+import { GeneralService, ServicesService, Settings, SettingsService, UsersService } from './backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { GlobalSearchComponent } from './global-search/global-search.component'
@@ -21,6 +21,8 @@ import { SettingService } from './setting.service'
 import { of } from 'rxjs'
 import { AuthService } from './auth.service'
 import { ServerDataService } from './server-data.service'
+import { Severity, VersionAlert, VersionService } from './version.service'
+import { By } from '@angular/platform-browser'
 
 describe('AppComponent', () => {
     let component: AppComponent
@@ -29,11 +31,16 @@ describe('AppComponent', () => {
     let userService: UsersService
     let settingService: SettingService
     let serverDataService: ServerDataService
+    let versionServiceStub: Partial<VersionService>
 
     beforeEach(waitForAsync(() => {
+        versionServiceStub = {
+            getVersionAlert: () => of({ severity: Severity.error, detected: true } as VersionAlert),
+        }
+
         TestBed.configureTestingModule({
             imports: [
-                RouterTestingModule.withRoutes([{ path: 'apps/bind9/all', component: AppComponent }]),
+                RouterTestingModule.withRoutes([{ path: 'abc', component: AppComponent }]),
                 TooltipModule,
                 MenubarModule,
                 SplitButtonModule,
@@ -54,12 +61,14 @@ describe('AppComponent', () => {
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 ServicesService,
                 SettingsService,
+                { provide: VersionService, useValue: versionServiceStub },
             ],
         }).compileComponents()
         authService = TestBed.inject(AuthService)
         userService = TestBed.inject(UsersService)
         settingService = TestBed.inject(SettingService)
         serverDataService = TestBed.inject(ServerDataService)
+        TestBed.inject(VersionService)
     }))
 
     beforeEach(() => {
@@ -162,4 +171,21 @@ describe('AppComponent', () => {
         expect(menuItem).toBeTruthy()
         expect(menuItem.visible).toBeTrue()
     }))
+
+    it('should display version alert when detected', () => {
+        fixture.detectChanges()
+        let badges = fixture.debugElement.queryAll(By.css('.p-badge'))
+        expect(badges).toBeTruthy()
+        expect(badges.length).toBeGreaterThan(0)
+        expect(badges.length).toEqual(2)
+
+        // Check if error severity badge is shown in top bar menu.
+        expect(badges[0].classes.hasOwnProperty('p-menuitem-badge')).toBeTrue()
+        expect(badges[0].classes.hasOwnProperty('p-badge-dot')).toBeTrue()
+        expect(badges[0].classes.hasOwnProperty('p-badge-danger')).toBeTrue()
+
+        expect(badges[1].classes.hasOwnProperty('p-menuitem-badge')).toBeTrue()
+        expect(badges[1].classes.hasOwnProperty('p-badge-dot')).toBeTrue()
+        expect(badges[1].classes.hasOwnProperty('p-badge-danger')).toBeTrue()
+    })
 })

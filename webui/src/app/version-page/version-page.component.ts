@@ -271,7 +271,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
 
     /**
      * Triggers software versions data refresh.
-     * 
+     *
      * New data will be sent from the backend via version service.
      */
     refreshVersions() {

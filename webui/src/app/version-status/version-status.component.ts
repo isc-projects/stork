@@ -91,7 +91,12 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     ) {}
 
     /**
-     * Component lifecycle hook called upon initialization.
+     * Component lifecycle hook called upon initialization. It sets the component's look and the feedback
+     * it presents based on the data received from injected service.
+     * All the data about current Kea, BIND9 and Stork releases is fetched here from the VersionService.
+     * The service gets the data from Stork server. For now, the data source is an offline JSON file,
+     * which is valid for the day of Stork release. In the future, an online data source will be the
+     * primary one, and the offline will be a fallback option.
      */
     ngOnInit(): void {
         this._appName = this.app === 'bind9' ? this.app.toUpperCase() : this.app[0].toUpperCase() + this.app.slice(1)
