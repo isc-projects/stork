@@ -369,9 +369,10 @@ export class VersionService {
     }
 
     /**
-     * Checks whether all daemons for provided Kea app have the exact version.
+     * Checks whether all daemons for provided Kea app have the exact same version.
      * @param app Kea app to be checked
-     * @return true if any daemon version mismatch is found; falsy (may also return undefined) if all Kea daemons have the same version or when provided app wasn't the Kea app
+     * @return true if any daemon version mismatch is found; falsy (may also return undefined) otherwise
+     * (in case all Kea daemons have the same version or when provided app wasn't the Kea app, or it couldn't be determined)
      */
     areKeaDaemonsVersionsMismatching(app: App): boolean {
         if (app?.type === 'kea') {
