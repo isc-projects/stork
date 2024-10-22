@@ -135,10 +135,10 @@ export class LoginScreenComponent implements OnInit {
     }
 
     /**
-     * Shorthand to get the login form controls.
+     * Shorthand to get the login form values.
      */
     get f() {
-        return this.loginForm.controls
+        return this.loginForm.value
     }
 
     /**
@@ -147,7 +147,7 @@ export class LoginScreenComponent implements OnInit {
     signIn() {
         Object.keys(this.loginForm.controls).forEach((k) => this.loginForm.get(k).markAsDirty())
         if (this.loginForm.valid) {
-            this.auth.login(this.authenticationMethod.id, this.f.identifier.value, this.f.secret.value, this.returnUrl)
+            this.auth.login(this.f?.authenticationMethod?.id, this.f?.identifier, this.f?.secret, this.returnUrl)
         }
     }
 
