@@ -84,10 +84,7 @@ func (ba *BaseApp) HasEqualAccessPoints(other *BaseApp) bool {
 // Checks if two applications are the same. It checks the type and access
 // points including their configuration.
 func (ba *BaseApp) IsEqual(other *BaseApp) bool {
-	if !ba.HasEqualType(other) {
-		return false
-	}
-	return ba.HasEqualAccessPoints(other)
+	return ba.HasEqualType(other) && ba.HasEqualAccessPoints(other)
 }
 
 // Specific App like KeaApp or Bind9App have to implement
