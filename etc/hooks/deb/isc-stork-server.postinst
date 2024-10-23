@@ -5,7 +5,7 @@ set -eu
 setup_user () {
     # Sets up the stork-server user and its home directory.
     if ! getent passwd stork-server > /dev/null; then
-        useradd --system --base-dir /var/lib/ stork-server >/dev/null
+        useradd --system --base-dir /var/lib stork-server >/dev/null
     fi
 }
 

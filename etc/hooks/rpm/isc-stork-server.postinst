@@ -5,7 +5,7 @@ set -eu
 after_install () {
     # Add stork-server user if does not exist.
     if ! getent passwd stork-server > /dev/null; then
-        useradd --system --base-dir /var/lib/ stork-server
+        useradd --system --base-dir /var/lib stork-server
     fi
 }
 
