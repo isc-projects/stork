@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
 	"isc.org/stork/server/database/maintenance"
 	dbmodel "isc.org/stork/server/database/model"
@@ -591,7 +592,12 @@ func TestMigration55LocalHostInDatabaseAndConfig(t *testing.T) {
 		}
 	}`)
 	require.NoError(t, err)
-	err = server.DetectReferences()
+
+	fec := &storktestdbmodel.FakeEventCenter{}
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	app, _ := server.GetKea()
+
+	err = kea.CommitAppIntoDB(db, app, fec, nil, lookup)
 	require.NoError(t, err)
 
 	// Add a database host reservations.

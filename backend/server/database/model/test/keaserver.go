@@ -2,9 +2,7 @@ package dbmodeltest
 
 import (
 	"github.com/go-pg/pg/v10"
-	"isc.org/stork/server/apps/kea"
 	dbmodel "isc.org/stork/server/database/model"
-	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 )
 
 // A wrapper for a Kea daemon.
@@ -50,19 +48,6 @@ func (server *KeaServer) Configure(config string) error {
 		return err
 	}
 	return dbmodel.UpdateDaemon(server.kea.machine.db, d)
-}
-
-// Detects the referenced objects i.e., subnets, shared networks, and hosts.
-func (server *KeaServer) DetectReferences() error {
-	app, err := server.GetKea()
-	if err != nil {
-		return err
-	}
-
-	fec := &storktestdbmodel.FakeEventCenter{}
-	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
-
-	return kea.CommitAppIntoDB(server.kea.machine.db, app, fec, nil, lookup)
 }
 
 // Returns a machine the Kea server belongs to.
