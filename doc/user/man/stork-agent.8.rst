@@ -24,8 +24,9 @@ Description
 ~~~~~~~~~~~
 
 The ``stork-agent`` is a tool that operates on systems that are running BIND 9
-or Kea services. The Stork server connects to the Stork agent and uses it to
-monitor services remotely.
+or Kea services. The Stork typically server connects to the Stork agent and uses it to
+monitor services remotely, but can also act as a stand-alone statistics exporter to
+Prometheus.
 
 Arguments
 ~~~~~~~~~
