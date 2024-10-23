@@ -896,7 +896,7 @@ Creating Subnets
 Stork can configure new subnets in the Kea instances with the ``subnet_cmds``
 hook library loaded. Navigate to ``DHCP -> Subnets`` to display the subnets list. Click
 the ``New Subnet`` button. The opened form initially contains only an input box where
-subnet prefix must be specified. It can be an IPv4 (e.g., ``10.0.0.0/8``) or
+subnet prefix must be specified. It can be an IPv4 (e.g., ``192.0.2.0/24``) or
 IPv6 prefix (e.g., ``2001:db8:1::/64``). Click the ``Proceed`` button to expand the
 form where the remaining subnet configuration can be entered.
 
