@@ -20,19 +20,6 @@ func init() {
 		return err
 	}, func(d migrations.DB) error {
 		_, err := d.Exec(`
-			-- Drop the local host entries where the same host is defined in
-			-- multiple data sources.
-			DELETE FROM local_host lh
-			USING (
-				SELECT host_id, daemon_id
-				FROM local_host
-				GROUP BY host_id, daemon_id
-				HAVING COUNT(*) > 1
-			) d
-			WHERE lh.host_id = d.host_id
-				AND lh.daemon_id = d.daemon_id
-				AND lh.data_source = 'config';
-
 			ALTER TABLE local_host DROP CONSTRAINT local_host_pkey;
 			ALTER TABLE local_host
 				ADD CONSTRAINT local_host_pkey
