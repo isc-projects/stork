@@ -13,6 +13,7 @@ import (
 	dbops "isc.org/stork/server/database"
 	"isc.org/stork/server/database/maintenance"
 	dbmodel "isc.org/stork/server/database/model"
+	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
 	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 )
@@ -566,4 +567,52 @@ func TestMigration60SetDefaultPasswordToChange(t *testing.T) {
 	ok, err := dbmodel.Authenticate(db, user, "admin")
 	require.NoError(t, err)
 	require.True(t, ok)
+}
+
+// Test that the 55 migration passes if the local host is defined both in the
+// database and the configuration file.
+func TestMigration55LocalHostInDatabaseAndConfig(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	dbmodel.InitializeSettings(db, 0)
+
+	// Prepare a configuration.
+	environment, _ := dbmodeltest.NewKea(db)
+	server, _ := environment.NewKeaDHCPv4Server()
+	err := server.Configure(`{
+		"Dhcp4": {
+			"reservations": [
+				{
+					"ip-address": "192.0.2.204",
+					"hostname": "foo.example.org"
+				}
+			]
+		}
+	}`)
+	require.NoError(t, err)
+	err = server.DetectReferences()
+	require.NoError(t, err)
+
+	// Add a database host reservations.
+	hosts, _ := dbmodel.GetAllHosts(db, 0)
+	for _, host := range hosts {
+		var newLocalHosts []dbmodel.LocalHost
+		for _, oldLocalHost := range host.LocalHosts {
+			newLocalHost := oldLocalHost
+			newLocalHost.ID = 0
+			newLocalHost.DataSource = dbmodel.HostDataSourceAPI
+			newLocalHosts = append(newLocalHosts, newLocalHost)
+		}
+
+		host.LocalHosts = append(host.LocalHosts, newLocalHosts...)
+		err = dbmodel.UpdateHost(db, &host)
+		require.NoError(t, err)
+	}
+
+	// Act
+	_, _, err = dbops.Migrate(db, "reset")
+
+	// Assert
+	require.NoError(t, err)
 }
