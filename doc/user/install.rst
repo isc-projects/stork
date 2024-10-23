@@ -1016,12 +1016,11 @@ the procedure described in :ref:`register-server-token-script`.
 
 .. note::
 
-   The Stork agent verifies the server can establish a connection with the
-   agent using the address and port specified in the registration process while
-   the server token is provided. To do it, the agent port must be free. It
-   means that the agent must not be running in the background. If the agent
-   is running (e.g., as a service), it must be stopped before the registration
-   process starts.
+   During the registration with the server token, the Stork agent verifies
+   the server can establish a connection with it using the specified address
+   and port. This agent port must be free. It means the agent must not run
+   in the background (e.g., as a systemd service). If the agent is running,
+   it must be stopped before running the registration commands below.
 
 The Stork agent installation steps are similar to the Stork server
 installation steps described in :ref:`install-server-deb` and
