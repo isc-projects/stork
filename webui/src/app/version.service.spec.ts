@@ -81,7 +81,7 @@ describe('VersionService', () => {
         })
         service = TestBed.inject(VersionService)
         generalService = TestBed.inject(GeneralService)
-        getSwVersionsSpy = spyOn(generalService, 'getISCSoftwareVersions')
+        getSwVersionsSpy = spyOn(generalService, 'getSoftwareVersions')
         getSwVersionsSpy.and.returnValue(of(fakeResponse))
     })
 
@@ -111,7 +111,7 @@ describe('VersionService', () => {
             .unsubscribe()
 
         // Assert
-        // Check if cache works, getISCSoftwareVersions API should be only called once.
+        // Check if cache works, getSoftwareVersions API should be only called once.
         expect(getSwVersionsSpy).toHaveBeenCalledTimes(1)
         expect(res1).toBeTruthy()
         expect(res2).toBeTruthy()
@@ -162,7 +162,7 @@ describe('VersionService', () => {
             .unsubscribe()
 
         // Assert
-        // Check if isDataOutdated() works, getISCSoftwareVersions API should be called again when
+        // Check if isDataOutdated() works, getSoftwareVersions API should be called again when
         // second observer subscribes. For third observer cache works because cached data is still valid.
         expect(getSwVersionsSpy).toHaveBeenCalledTimes(2)
         expect(res1).toBeTruthy()

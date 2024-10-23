@@ -39,7 +39,7 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
-  /isc-sw-versions:
+  /software-versions:
     get:
       summary: Get information about ISC Kea, BIND9 and Stork software versions.
       description: >-
@@ -47,7 +47,7 @@ paths:
         ISC Kea, BIND9 and Stork software. This is to provide
         up-to-date ISC software releases so that it could be
         compared with currently used releases.
-      operationId: getISCSoftwareVersions
+      operationId: getSoftwareVersions
       security: []
       tags:
         - General
