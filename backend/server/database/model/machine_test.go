@@ -1014,3 +1014,84 @@ func TestMachineTag(t *testing.T) {
 	require.EqualValues(t, 1234, machine.GetAgentPort())
 	require.Equal(t, "cool.example.org", machine.GetHostname())
 }
+
+// Check if getting all machines simplified works.
+func TestGetAllMachinesSimplified(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add 20 machines
+	for i := 1; i <= 20; i++ {
+		m := &Machine{
+			Address:   "localhost",
+			AgentPort: 8080 + int64(i),
+			Error:     "some error",
+			State: MachineState{
+				Hostname: "aaaa",
+				Cpus:     4,
+			},
+			Authorized: i%2 == 0,
+		}
+		err := AddMachine(db, m)
+		require.NoError(t, err)
+
+		a := &App{
+			MachineID: m.ID,
+			Type:      AppTypeKea,
+			AccessPoints: []*AccessPoint{
+				{
+					MachineID: m.ID,
+					Type:      "control",
+					Address:   "localhost",
+					Port:      1234,
+					Key:       "",
+				},
+			},
+			Daemons: []*Daemon{
+				{
+					Name:   "dhcp4",
+					Active: true,
+				},
+			},
+		}
+		_, err = AddApp(db, a)
+		require.NoError(t, err)
+
+		cr := &ConfigReview{
+			ConfigHash: "1234",
+			Signature:  "2345",
+			DaemonID:   a.Daemons[0].ID,
+		}
+		err = AddConfigReview(db, cr)
+		require.NoError(t, err)
+	}
+
+	// get all machines should return 20 machines
+	machines, err := GetAllMachinesSimplified(db, nil)
+	require.NoError(t, err)
+	require.Len(t, machines, 20)
+	require.EqualValues(t, "localhost", machines[0].Address)
+	require.EqualValues(t, "localhost", machines[19].Address)
+	require.EqualValues(t, "some error", machines[0].Error)
+	require.EqualValues(t, "some error", machines[19].Error)
+	require.EqualValues(t, 4, machines[0].State.Cpus)
+	require.EqualValues(t, 4, machines[19].State.Cpus)
+	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
+
+	// Ensure that we fetched apps and daemons but no config reviews.
+	require.Len(t, machines[0].Apps, 1)
+	require.Len(t, machines[0].Apps[0].Daemons, 1)
+	require.Nil(t, machines[0].Apps[0].Daemons[0].ConfigReview)
+
+	// get only unauthorized machines
+	authorized := false
+	machines, err = GetAllMachinesSimplified(db, &authorized)
+	require.NoError(t, err)
+	require.Len(t, machines, 10)
+
+	// and now only authorized machines
+	authorized = true
+	machines, err = GetAllMachinesSimplified(db, &authorized)
+	require.NoError(t, err)
+	require.Len(t, machines, 10)
+}

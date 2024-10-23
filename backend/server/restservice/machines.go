@@ -307,7 +307,7 @@ func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetM
 // Returns a list of all authorized machines' ids and apps versions.
 func (r *RestAPI) GetMachinesAppsVersions(ctx context.Context, params services.GetMachinesAppsVersionsParams) middleware.Responder {
 	authorized := true
-	dbMachines, err := dbmodel.GetAllMachines(r.DB, &authorized)
+	dbMachines, err := dbmodel.GetAllMachinesSimplified(r.DB, &authorized)
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot get machines apps versions from the database"
