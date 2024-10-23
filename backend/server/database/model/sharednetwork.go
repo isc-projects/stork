@@ -35,6 +35,26 @@ type SharedNetwork struct {
 	StatsCollectedAt time.Time
 }
 
+// Identifier of the relations between the machine and other tables.
+type SharedNetworkRelation string
+
+const (
+	SharedNetworkRelationNetworks            = "LocalSharedNetworks"
+	SharedNetworkRelationNetworkDaemon       = "LocalSharedNetworks.Daemon"
+	SharedNetworkRelationNetworkKeaDaemon    = "LocalSharedNetworks.Daemon.KeaDaemon"
+	SharedNetworkRelationNetworkApp          = "LocalSharedNetworks.Daemon.App"
+	SharedNetworkRelationNetworkAccessPoints = "LocalSharedNetworks.Daemon.App.AccessPoints"
+	SharedNetworkRelationNetworkMachine      = "LocalSharedNetworks.Daemon.App.Machine"
+	SharedNetworkRelationSubnets             = "Subnets.LocalSubnets"
+	SharedNetworkRelationAddressPools        = "Subnets.LocalSubnets.AddressPools"
+	SharedNetworkRelationPrefixPools         = "Subnets.LocalSubnets.PrefixPools"
+	SharedNetworkRelationSubnetDaemon        = "Subnets.LocalSubnets.Daemon"
+	SharedNetworkRelationSubnetKeaDaemon     = "Subnets.LocalSubnets.Daemon.KeaDaemon"
+	SharedNetworkRelationSubnetApp           = "Subnets.LocalSubnets.Daemon.App"
+	SharedNetworkRelationSubnetAccessPoints  = "Subnets.LocalSubnets.Daemon.App.AccessPoints"
+	SharedNetworkRelationSubnetMachine       = "Subnets.LocalSubnets.Daemon.App.Machine"
+)
+
 // This structure holds shared network information retrieved from an app.
 // Multiple DHCP servers may be configured to serve leases in the same
 // shared network. For the same shared network configured in the different
@@ -271,22 +291,26 @@ func GetAllSharedNetworks(dbi dbops.DBI, family int) ([]SharedNetwork, error) {
 	return networks, err
 }
 
-// Fetches a shared network with the subnets it contains.
-func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, err error) {
+// Fetches a shared network with the given relations.
+func GetSharedNetworkWithRelations(dbi dbops.DBI, networkID int64, relations ...SharedNetworkRelation) (network *SharedNetwork, err error) {
 	network = &SharedNetwork{}
-	err = dbi.Model(network).
-		Relation("LocalSharedNetworks.Daemon.KeaDaemon").
-		Relation("LocalSharedNetworks.Daemon.App.AccessPoints").
-		Relation("LocalSharedNetworks.Daemon.App.Machine").
-		Relation("Subnets.LocalSubnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
-			return q.Order("address_pool.id ASC"), nil
-		}).
-		Relation("Subnets.LocalSubnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
-			return q.Order("prefix_pool.id ASC"), nil
-		}).
-		Relation("Subnets.LocalSubnets.Daemon.KeaDaemon").
-		Relation("Subnets.LocalSubnets.Daemon.App.AccessPoints").
-		Relation("Subnets.LocalSubnets.Daemon.App.Machine").
+	model := dbi.Model(network)
+
+	for _, relation := range relations {
+		if relation == SharedNetworkRelationAddressPools {
+			model = model.Relation(string(relation), func(q *orm.Query) (*orm.Query, error) {
+				return q.Order("address_pool.id ASC"), nil
+			})
+		} else if relation == SharedNetworkRelationPrefixPools {
+			model = model.Relation(string(relation), func(q *orm.Query) (*orm.Query, error) {
+				return q.Order("prefix_pool.id ASC"), nil
+			})
+		} else {
+			model = model.Relation(string(relation))
+		}
+	}
+
+	err = model.
 		Where("shared_network.id = ?", networkID).
 		Select()
 	if err != nil {
@@ -297,6 +321,19 @@ func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, e
 		return nil, err
 	}
 	return network, err
+}
+
+// Fetches a shared network with the subnets it contains.
+func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, err error) {
+	return GetSharedNetworkWithRelations(dbi, networkID,
+		SharedNetworkRelationNetworkKeaDaemon,
+		SharedNetworkRelationNetworkAccessPoints,
+		SharedNetworkRelationNetworkMachine,
+		SharedNetworkRelationAddressPools,
+		SharedNetworkRelationPrefixPools,
+		SharedNetworkRelationSubnetKeaDaemon,
+		SharedNetworkRelationSubnetAccessPoints,
+		SharedNetworkRelationSubnetMachine)
 }
 
 // Fetches a collection of shared networks from the database. The

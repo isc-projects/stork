@@ -498,7 +498,7 @@ func hideSensitiveData(obj *map[string]any) {
 
 // Merges raw configuration into current configuration.
 func (c *Config) Merge(source RawConfigAccessor) error {
-	// Get source and destrination raw configurations. The merge is performed
+	// Get source and destination raw configurations. The merge is performed
 	// at the raw configuration levels.
 	destConfig, _ := c.GetRawConfig()
 	sourceConfig, err := source.GetRawConfig()
@@ -887,7 +887,7 @@ func (c *SettableConfig) SetELPReclaimTimerWaitTime(reclaimTimerWaitTime *int64)
 }
 
 // Sets the maximum number of expired lease-processing cycles which didn't
-// result in full cleanup of the exired leases from the lease database,
+// result in full cleanup of the expired leases from the lease database,
 // after which a warning message is issued.
 func (c *SettableConfig) SetELPUnwarnedReclaimCycles(unwarnedReclaimCycles *int64) error {
 	return c.setDHCPParameter(func(modifier dhcpConfigModifier) {
