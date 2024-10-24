@@ -294,28 +294,14 @@ build_backend_legacy_amd64:
       - backend/cmd/stork-tool/stork-tool
 
 build_backend_legacy_arm64:
-  stage: build
-  rules:
-    - when: on_success
+  extends: build_backend_legacy_amd64
   tags:
     - linux
     - aws
     - runner-manager
     - aarch64
-  # Use image based on Debian 11. It is required to build the binaries with
-  # the older GLIBC version.
-  image: ruby:3.3.5-bullseye
   needs:
     - build_backend_arm64
-  script:
-    - rake rebuild:backend SUPPRESS_PREREQUISITES=true
-  artifacts:
-    name: "backend"
-    expire_in: 1 week
-    paths:
-      - backend/cmd/stork-agent/stork-agent
-      - backend/cmd/stork-server/stork-server
-      - backend/cmd/stork-tool/stork-tool
   variables:
     ARCH: arm64
 
