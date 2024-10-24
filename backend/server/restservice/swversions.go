@@ -40,14 +40,6 @@ type ReportAppsVersions struct {
 // It needs to be modified by tests so it has to be global variable.
 var VersionsJSON = "/etc/stork/versions.json" //nolint:gochecknoglobals
 
-// Get potential locations of versions.json.
-func getPotentialVersionsJSONLocations() []string {
-	return []string{
-		VersionsJSON,        // this is default location of the file in case Stork is installed from packages - most common use case
-		"etc/versions.json", // this is added in case Stork is built and ran from sources - typical for Stork development
-	}
-}
-
 // Post processes either Kea, Bind9 or Stork version metadata and returns the data in REST API format.
 // It returns an error when problem occurs when parsing dates.
 func appVersionMetadataToRestAPI(input ReportAppVersionMetadata) (*models.AppVersionMetadata, error) {

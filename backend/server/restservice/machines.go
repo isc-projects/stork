@@ -56,22 +56,11 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	}
 
 	// Find the location of the JSON file with software versions metadata.
-	var jsonFile string
-	for _, f := range getPotentialVersionsJSONLocations() {
-		_, err := os.Stat(f)
-		if err == nil {
-			jsonFile = f
-			break
-		}
+	searchPaths := []string{
+		VersionsJSON,        // this is default location of the file in case Stork is installed from packages - most common use case
+		"etc/versions.json", // this is added in case Stork is built and ran from sources - typical for Stork development
 	}
-	if jsonFile == "" {
-		msg := "Cannot find the JSON file with software versions metadata"
-		log.Error(msg)
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
+	jsonFile := storkutil.GetFirstExistingPathOrDefault(VersionsJSON, searchPaths...)
 
 	// Open JSON file.
 	file, err := os.Open(jsonFile)
