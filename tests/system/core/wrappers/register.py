@@ -20,7 +20,8 @@ class Register:
         compose : DockerCompose
             The compose controller object
         service_name : str
-            The name of the Perfdhcp docker-compose service.
+            The name of the docker-compose service that has the entrypoint set
+            to the Stork agent "register" command.
         """
         self._compose = compose
         self._service_name = service_name
