@@ -3252,7 +3252,7 @@ func TestGetSoftwareVersions(t *testing.T) {
 	// Assert
 	okRsp, ok := rsp.(*general.GetSoftwareVersionsOK)
 	require.True(t, ok)
-	require.Equal(t, "2024-10-03", *okRsp.Payload.Date)
+	require.Equal(t, "2024-10-03", okRsp.Payload.Date.String())
 	require.Empty(t, okRsp.Payload.OnlineData)
 	require.NotNil(t, okRsp.Payload.Bind9)
 	require.NotNil(t, okRsp.Payload.Kea)

@@ -86,22 +86,52 @@ func TestVersionDetailsToRestAPI(t *testing.T) {
 	require.NoError(t, err1)
 	require.NoError(t, err2)
 	require.Equal(t, "1.2.3", *resultOne.Version)
-	require.Equal(t, relDate, *resultOne.ReleaseDate)
+	require.Equal(t, relDate, resultOne.ReleaseDate.String())
 	require.Equal(t, int64(1), resultOne.Major)
 	require.Equal(t, int64(2), resultOne.Minor)
-	require.Equal(t, eolDate, resultOne.EolDate)
+	require.Equal(t, eolDate, resultOne.EolDate.String())
 	require.Equal(t, esv, resultOne.Esv)
 	require.Empty(t, resultOne.Range)
 	require.Empty(t, resultOne.Status)
 
 	require.Equal(t, "3.2.1", *resultTwo.Version)
-	require.Equal(t, relDate, *resultTwo.ReleaseDate)
+	require.Equal(t, relDate, resultTwo.ReleaseDate.String())
 	require.Equal(t, int64(3), resultTwo.Major)
 	require.Equal(t, int64(2), resultTwo.Minor)
 	require.Empty(t, resultTwo.EolDate)
 	require.Empty(t, resultTwo.Esv)
 	require.Empty(t, resultTwo.Range)
 	require.Empty(t, resultTwo.Status)
+}
+
+// Test that versionDetailsToRestAPI returns error when date can't be parsed.
+func TestVersionDetailsToRestAPIError(t *testing.T) {
+	// Arrange & Act
+	relDate := "2024-10-23"
+	eolDate := "foobar"
+	esv := "true"
+	exampleOne := ReportVersionDetails{
+		Version:     storkutil.NewSemanticVersion(1, 2, 3),
+		ReleaseDate: &relDate,
+		EolDate:     eolDate,
+		Esv:         esv,
+	}
+	resultOne, err1 := versionDetailsToRestAPI(exampleOne)
+	relDate = "bad date"
+	eolDate = "2026-12-31"
+	exampleTwo := ReportVersionDetails{
+		Version:     storkutil.NewSemanticVersion(3, 2, 1),
+		ReleaseDate: &relDate,
+	}
+	resultTwo, err2 := versionDetailsToRestAPI(exampleTwo)
+
+	// Assert
+	require.Error(t, err1)
+	require.Error(t, err2)
+	require.ErrorContains(t, err1, "failed to parse EoL date")
+	require.ErrorContains(t, err2, "failed to parse release date")
+	require.Nil(t, resultOne)
+	require.Nil(t, resultTwo)
 }
 
 // Test that stableSwVersionsToRestAPI works fine.
