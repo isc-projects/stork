@@ -31,6 +31,9 @@ In the sections below it is explained how to start the demo setup
 and how to launch the containers with the premium Kea features (hooks).
 They are required for hosts, subnets and shared networks management.
 
+The demo starting instructions and its features are also described on the
+`ISC Gitlab Wiki <https://gitlab.isc.org/isc-projects/stork/-/wikis/Demo>`_.
+
 ISC hosts a public Stork demo available at https://demo.stork.isc.org. This demo
 instance can be freely used to start playing with Stork. It contains Kea instances
 with the premium features, so it can be used to try hosts, subnets and shared
