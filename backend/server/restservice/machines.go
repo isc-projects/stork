@@ -99,21 +99,56 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	// Unmarshal the JSON to custom struct.
 	s := ReportAppsVersions{}
 	err = json.Unmarshal(bytes, &s)
+	errMsg := "Error parsing the contents of the JSON file with software versions metadata"
 	if err != nil {
 		log.Error(err)
-		msg := "Error parsing the contents of the JSON file with software versions metadata"
 		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
+			Message: &errMsg,
 		})
 		return rsp
 	}
 
+	bind9, err := appVersionMetadataToRestAPI(*s.Bind9)
+	if err != nil {
+		log.Error(err)
+		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &errMsg,
+		})
+		return rsp
+	}
+	kea, err := appVersionMetadataToRestAPI(*s.Kea)
+	if err != nil {
+		log.Error(err)
+		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &errMsg,
+		})
+		return rsp
+	}
+	stork, err := appVersionMetadataToRestAPI(*s.Stork)
+	if err != nil {
+		log.Error(err)
+		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &errMsg,
+		})
+		return rsp
+	}
+
+	parsedTime, err := time.Parse("2006-01-02", *s.Date)
+	if err != nil {
+		log.Error(err)
+		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &errMsg,
+		})
+		return rsp
+	}
+	dataDate := strfmt.Date(parsedTime)
+
 	// Prepare REST API response.
 	appsVersions = models.AppsVersions{
-		Date:  s.Date,
-		Bind9: appVersionMetadataToRestAPI(*s.Bind9),
-		Kea:   appVersionMetadataToRestAPI(*s.Kea),
-		Stork: appVersionMetadataToRestAPI(*s.Stork),
+		Date:  &dataDate,
+		Bind9: bind9,
+		Kea:   kea,
+		Stork: stork,
 	}
 
 	appsVersions.OnlineData = onlineData

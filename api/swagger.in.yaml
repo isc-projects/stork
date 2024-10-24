@@ -113,8 +113,11 @@ definitions:
         type: string
       releaseDate:
         type: string
+        format: date
       eolDate:
         type: string
+        format: date
+        x-nullable: true
       esv:
         type: string
       status:
@@ -160,6 +163,7 @@ definitions:
         $ref: '#/definitions/AppVersionMetadata'
       date:
         type: string
+        format: date
       onlineData:
         type: boolean
 

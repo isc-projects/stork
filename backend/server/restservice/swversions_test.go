@@ -79,10 +79,12 @@ func TestVersionDetailsToRestAPI(t *testing.T) {
 	}
 
 	// Act
-	resultOne := versionDetailsToRestAPI(exampleOne)
-	resultTwo := versionDetailsToRestAPI(exampleTwo)
+	resultOne, err1 := versionDetailsToRestAPI(exampleOne)
+	resultTwo, err2 := versionDetailsToRestAPI(exampleTwo)
 
 	// Assert
+	require.NoError(t, err1)
+	require.NoError(t, err2)
 	require.Equal(t, "1.2.3", *resultOne.Version)
 	require.Equal(t, relDate, *resultOne.ReleaseDate)
 	require.Equal(t, int64(1), resultOne.Major)
@@ -116,9 +118,10 @@ func TestStableSwVersionsToRestAPI(t *testing.T) {
 	}
 
 	// Act
-	versionDetailsArr, stablesStringArr := stableSwVersionsToRestAPI(testData.Bind9.CurrentStable)
+	versionDetailsArr, stablesStringArr, err := stableSwVersionsToRestAPI(testData.Bind9.CurrentStable)
 
 	// Assert
+	require.NoError(t, err)
 	for idx := range stablesStringArr {
 		require.Equal(t, expectedStablesStrings[idx], stablesStringArr[idx])
 		require.Equal(t, expectedRanges[idx], versionDetailsArr[idx].Range)
@@ -132,11 +135,14 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	testData := getExampleData()
 
 	// Act
-	kea := appVersionMetadataToRestAPI(*testData.Kea)
-	stork := appVersionMetadataToRestAPI(*testData.Stork)
-	bind := appVersionMetadataToRestAPI(*testData.Bind9)
+	kea, err1 := appVersionMetadataToRestAPI(*testData.Kea)
+	stork, err2 := appVersionMetadataToRestAPI(*testData.Stork)
+	bind, err3 := appVersionMetadataToRestAPI(*testData.Bind9)
 
 	// Assert
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	require.NoError(t, err3)
 	require.Len(t, kea.CurrentStable, 2)
 	require.Equal(t, "Current Stable", kea.CurrentStable[0].Status)
 	require.Equal(t, "Current Stable", kea.CurrentStable[1].Status)

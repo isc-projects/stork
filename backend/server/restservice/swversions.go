@@ -2,7 +2,10 @@ package restservice
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/pkg/errors"
 	"isc.org/stork/server/gen/models"
 	storkutil "isc.org/stork/util"
 )
@@ -46,55 +49,84 @@ func getPotentialVersionsJSONLocations() []string {
 }
 
 // Post processes either Kea, Bind9 or Stork version metadata and returns the data in REST API format.
-func appVersionMetadataToRestAPI(input ReportAppVersionMetadata) *models.AppVersionMetadata {
+// It returns an error when problem occurs when parsing dates.
+func appVersionMetadataToRestAPI(input ReportAppVersionMetadata) (*models.AppVersionMetadata, error) {
 	out := models.AppVersionMetadata{}
 	if input.LatestSecure != nil {
-		out.LatestSecure = versionDetailsToRestAPI(*input.LatestSecure)
-		out.LatestSecure.Status = "Security update"
+		if v, err := versionDetailsToRestAPI(*input.LatestSecure); err == nil {
+			out.LatestSecure = v
+			out.LatestSecure.Status = "Security update"
+		} else {
+			return nil, err
+		}
 	}
 	if input.LatestDev != nil {
-		out.LatestDev = versionDetailsToRestAPI(*input.LatestDev)
-		out.LatestDev.Status = "Development"
+		if v, err := versionDetailsToRestAPI(*input.LatestDev); err == nil {
+			out.LatestDev = v
+			out.LatestDev.Status = "Development"
+		} else {
+			return nil, err
+		}
 	}
 	if input.CurrentStable != nil {
-		out.CurrentStable, out.SortedStableVersions = stableSwVersionsToRestAPI(input.CurrentStable)
+		if v, stables, err := stableSwVersionsToRestAPI(input.CurrentStable); err == nil {
+			out.CurrentStable, out.SortedStableVersions = v, stables
+		} else {
+			return nil, err
+		}
 	}
-	return &out
+	return &out, nil
 }
 
 // Post processes either Kea, Bind9 or Stork software release details and returns the data in REST API format.
-func versionDetailsToRestAPI(input ReportVersionDetails) *models.VersionDetails {
+// It returns an error when problem occurs when parsing dates.
+func versionDetailsToRestAPI(input ReportVersionDetails) (*models.VersionDetails, error) {
 	v := input.Version.String()
+	relDate := strfmt.Date{}
+	if parsedTime, err := time.Parse("2006-01-02", *input.ReleaseDate); err == nil {
+		relDate = strfmt.Date(parsedTime)
+	} else {
+		return nil, errors.Wrapf(err, "failed to parse release date from string %s", *input.ReleaseDate)
+	}
 	out := models.VersionDetails{
 		Version:     &v,
-		ReleaseDate: input.ReleaseDate,
+		ReleaseDate: &relDate,
 		Major:       int64(input.Version.Major),
 		Minor:       int64(input.Version.Minor),
 	}
 	if len(input.EolDate) > 0 {
-		out.EolDate = input.EolDate
+		if parsedTime, err := time.Parse("2006-01-02", input.EolDate); err == nil {
+			eol := strfmt.Date(parsedTime)
+			out.EolDate = &eol
+		} else {
+			return nil, errors.Wrapf(err, "failed to parse EoL date from string %s", input.EolDate)
+		}
 	}
 	if len(input.Esv) > 0 {
 		out.Esv = input.Esv
 	}
-	return &out
+	return &out, nil
 }
 
 // Post processes either Kea, Bind9 or Stork stable release details and returns the data in REST API format.
-// Takes an array of pointers to ReportVersionDetails for stable realeases.
-// Returns an array of pointers to VersionDetails for stable realeases in REST API format
+// Takes an array of pointers to ReportVersionDetails for stable releases.
+// Returns an array of pointers to VersionDetails for stable releases in REST API format
 // and an array of strings with stable release semvers sorted in ascending order.
-func stableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, []string) {
+// It returns an error when problem occurs when parsing dates.
+func stableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, []string, error) {
 	versionDetailsArr := []*models.VersionDetails{}
 	stablesArr := []storkutil.SemanticVersion{}
 
 	for _, details := range input {
-		element := versionDetailsToRestAPI(*details)
-		stablesArr = append(stablesArr, details.Version)
-		element.Status = "Current Stable"
-		element.Range = fmt.Sprintf("%d.%d.x", int(element.Major), int(element.Minor))
-		versionDetailsArr = append(versionDetailsArr, element)
+		if v, err := versionDetailsToRestAPI(*details); err == nil {
+			stablesArr = append(stablesArr, details.Version)
+			v.Status = "Current Stable"
+			v.Range = fmt.Sprintf("%d.%d.x", int(v.Major), int(v.Minor))
+			versionDetailsArr = append(versionDetailsArr, v)
+		} else {
+			return nil, nil, err
+		}
 	}
 	stablesStringArr := storkutil.SortSemversAsc(&stablesArr)
-	return versionDetailsArr, stablesStringArr
+	return versionDetailsArr, stablesStringArr, nil
 }
