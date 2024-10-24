@@ -332,4 +332,7 @@ the deletion. It will remove the shared network from all Kea instances holding t
 shared network. Deleting a shared network requires that the Kea servers holding the
 shared network run the ``subnet_cmds`` hook library.
 
-Deleting a shared network also deletes all subnets it includes.
+Deleting a shared network also deletes all subnets it includes. If you intend to
+preserve the subnets from the deleted shared network, click on each subnet
+belonging to it, edit the subnet, clear the shared network selection in the
+``Subnet`` panel, and save the subnet changes. Next, delete the empty shared network.
