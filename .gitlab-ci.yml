@@ -251,7 +251,7 @@ build_doc:
     paths:
       - doc/build/
 
-build_backend:
+build_backend_amd64:
   extends: .base_build_debian
   script:
     - rake build:backend
@@ -259,7 +259,14 @@ build_backend:
     untracked: true
     expire_in: 1 hour
 
-build_backend_legacy:
+build_backend_arm64:
+  extends: build_backend_amd64
+  tags:
+    - aarch64
+  variables:
+    ARCH: arm64
+
+build_backend_legacy_amd64:
   stage: build
   rules:
     - when: on_success
@@ -268,11 +275,11 @@ build_backend_legacy:
     - aws
     - runner-manager
     - amd64
-  # Use image based on Ubuntu 20.04. It is required to build the binaries with
+  # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
-  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
+  image: ruby:3.3.5-bullseye
   needs:
-    - build_backend
+    - build_backend_amd64
   script:
     - rake rebuild:backend SUPPRESS_PREREQUISITES=true
   artifacts:
@@ -282,6 +289,13 @@ build_backend_legacy:
       - backend/cmd/stork-agent/stork-agent
       - backend/cmd/stork-server/stork-server
       - backend/cmd/stork-tool/stork-tool
+
+build_backend_legacy_arm64:
+  extends: build_backend_legacy_amd64
+  tags:
+    - aarch64
+  variables:
+    ARCH: arm64
 
 danger:
   extends: .base_build_debian
@@ -333,7 +347,7 @@ build_debs_amd64:
   stage: build
   needs:
     # Use the binaries compiled by the legacy image.
-    - build_backend_legacy
+    - build_backend_legacy_amd64
   script:
     - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
     - rake build:server_pkg SUPPRESS_PREREQUISITES=true
