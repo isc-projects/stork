@@ -366,9 +366,12 @@ build_debs_amd64:
 build_debs_arm64:
   extends: .base_build_debian_arm
   stage: build
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_arm64
   script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/pkgs/*.deb ./
   artifacts:
     paths:
@@ -378,9 +381,12 @@ build_debs_arm64:
 build_rpms_amd64:
   extends: .base_build_ubi
   stage: build
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_amd64
   script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/pkgs/*.rpm ./
   artifacts:
     paths:
@@ -390,9 +396,12 @@ build_rpms_amd64:
 build_rpms_arm64:
   extends: .base_build_ubi_arm
   stage: build
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_backend_legacy_arm64
   script:
-    - rake build:agent_pkg
-    - rake build:server_pkg
+    - rake build:agent_pkg SUPPRESS_PREREQUISITES=true
+    - rake build:server_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/pkgs/*.rpm ./
   artifacts:
     paths:
