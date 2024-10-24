@@ -147,7 +147,7 @@ export class LoginScreenComponent implements OnInit {
     signIn() {
         Object.keys(this.loginForm.controls).forEach((k) => this.loginForm.get(k).markAsDirty())
         if (this.loginForm.valid) {
-            this.auth.login(this.f?.authenticationMethod?.id, this.f?.identifier, this.f?.secret, this.returnUrl)
+            this.auth.login(this.f.authenticationMethod.id, this.f.identifier, this.f.secret, this.returnUrl)
         }
     }
 
