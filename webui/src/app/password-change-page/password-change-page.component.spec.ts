@@ -18,6 +18,7 @@ import { MenuModule } from 'primeng/menu'
 import { PasswordModule } from 'primeng/password'
 import { MessageModule } from 'primeng/message'
 import { AuthService } from '../auth.service'
+import { DialogModule } from 'primeng/dialog'
 
 describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
@@ -46,6 +47,7 @@ describe('PasswordChangePageComponent', () => {
                 ReactiveFormsModule,
                 PasswordModule,
                 MessageModule,
+                DialogModule,
             ],
             declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
         }).compileComponents()
