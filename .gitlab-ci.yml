@@ -262,6 +262,9 @@ build_backend_amd64:
 build_backend_arm64:
   extends: build_backend_amd64
   tags:
+    - linux
+    - aws
+    - runner-manager
     - aarch64
   variables:
     ARCH: arm64
@@ -293,6 +296,9 @@ build_backend_legacy_amd64:
 build_backend_legacy_arm64:
   extends: build_backend_legacy_amd64
   tags:
+    - linux
+    - aws
+    - runner-manager
     - aarch64
   variables:
     ARCH: arm64
