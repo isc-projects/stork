@@ -26,6 +26,7 @@ for Stork, can be found on ISC's `Stork project homepage
    overview
    install
    usage
+   managing-kea
    troubleshooting
    backend-api
    demo
