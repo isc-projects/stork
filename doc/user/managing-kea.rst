@@ -254,6 +254,14 @@ removed from the shared network in the Kea servers. If another shared network
 is selected instead, the subnet will be first removed from the existing shared
 network and then added to the newly selected shared network.
 
+You can delete a pool from a subnet. However, it is important to understand the
+implications. While the pool itself is removed from the configuration instantly,
+the leases allocated in this pool are not. Kea maintains these leases in the lease
+database and the clients continue using the leases until the leases expire or
+until the clients attempt to renew them. The renewing clients will be refused to
+extend the leases belonging to the deleted pools and allocated new leases from
+the existing pools.
+
 Finally, the form for updating a subnet contains the ``Revert Changes`` button that
 allows for dropping all changes to the subnet configuration since the form was
 opened.
