@@ -146,6 +146,11 @@ definitions:
         type: array
         items:
           type: string
+
+  VersionsDataSource:
+    type: string
+    enum: &VERSIONSDATASOURCE
+      - "offline"
   
   AppsVersions:
     type: object
@@ -164,8 +169,8 @@ definitions:
       date:
         type: string
         format: date
-      onlineData:
-        type: boolean
+      dataSource:
+        enum: *VERSIONSDATASOURCE
 
   ApiError:
     type: object

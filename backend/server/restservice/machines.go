@@ -151,7 +151,7 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 		Stork: stork,
 	}
 
-	appsVersions.OnlineData = onlineData
+	appsVersions.DataSource = "offline"
 
 	return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
 }

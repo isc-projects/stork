@@ -9,7 +9,7 @@ describe('VersionService', () => {
     let service: VersionService
     let generalService: GeneralService
     let getSwVersionsSpy: jasmine.Spy<any>
-    let fakeResponse = {
+    let fakeResponse: AppsVersions = {
         bind9: {
             currentStable: [
                 {
@@ -35,6 +35,7 @@ describe('VersionService', () => {
             latestDev: { major: 9, minor: 21, releaseDate: '2024-09-18', status: 'Development', version: '9.21.1' },
             sortedStableVersions: ['9.18.30', '9.20.2'],
         },
+        dataSource: 'offline',
         date: '2024-10-03',
         kea: {
             currentStable: [
@@ -116,9 +117,9 @@ describe('VersionService', () => {
         expect(res1).toBeTruthy()
         expect(res2).toBeTruthy()
         expect(res3).toBeTruthy()
-        expect(res1).toEqual(fakeResponse)
-        expect(res2).toEqual(fakeResponse)
-        expect(res3).toEqual(fakeResponse)
+        expect(JSON.stringify(res1)).toEqual(JSON.stringify(fakeResponse))
+        expect(JSON.stringify(res2)).toEqual(JSON.stringify(fakeResponse))
+        expect(JSON.stringify(res3)).toEqual(JSON.stringify(fakeResponse))
     })
 
     it('should query api when data refresh is forced', () => {
@@ -135,7 +136,7 @@ describe('VersionService', () => {
         // Assert
         expect(getSwVersionsSpy).toHaveBeenCalledTimes(2)
         expect(response).toBeTruthy()
-        expect(response).toEqual(fakeResponse)
+        expect(JSON.stringify(response)).toEqual(JSON.stringify(fakeResponse))
     })
 
     it('should refresh outdated data', () => {
@@ -168,9 +169,9 @@ describe('VersionService', () => {
         expect(res1).toBeTruthy()
         expect(res2).toBeTruthy()
         expect(res3).toBeTruthy()
-        expect(res1).toEqual(fakeResponse)
-        expect(res2).toEqual(fakeResponse)
-        expect(res3).toEqual(fakeResponse)
+        expect(JSON.stringify(res1)).toEqual(JSON.stringify(fakeResponse))
+        expect(JSON.stringify(res2)).toEqual(JSON.stringify(fakeResponse))
+        expect(JSON.stringify(res3)).toEqual(JSON.stringify(fakeResponse))
     })
 
     it('should return data manufacture date', () => {
@@ -191,18 +192,18 @@ describe('VersionService', () => {
 
     it('should return online data flag', () => {
         // Arrange
-        let response: boolean
+        let response: string
 
         // Act
         service
-            .isOnlineData()
+            .getDataSource()
             .subscribe((d) => (response = d))
             .unsubscribe()
 
         // Assert
         expect(getSwVersionsSpy).toHaveBeenCalledTimes(1)
-        expect(response).not.toBeNull()
-        expect(response).toBeFalse()
+        expect(response).toBeTruthy()
+        expect(response).toEqual(AppsVersions.DataSourceEnum.Offline)
     })
 
     it('should sanitize semver', () => {

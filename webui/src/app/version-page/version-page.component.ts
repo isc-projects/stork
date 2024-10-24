@@ -153,7 +153,9 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      */
     ngOnInit(): void {
         this.dataDate$ = this.versionService.getDataManufactureDate()
-        this.isOfflineData$ = this.versionService.isOnlineData().pipe(map((b) => !b))
+        this.isOfflineData$ = this.versionService
+            .getDataSource()
+            .pipe(map((b) => b === AppsVersions.DataSourceEnum.Offline))
         this.showAlert$ = this.versionService.getVersionAlert().pipe(
             map((a) => {
                 return a.detected

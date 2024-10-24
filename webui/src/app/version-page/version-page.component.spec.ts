@@ -14,7 +14,7 @@ import { ButtonModule } from 'primeng/button'
 import { RouterModule } from '@angular/router'
 import { Severity, VersionAlert, VersionService } from '../version.service'
 import { of } from 'rxjs'
-import { ServicesService } from '../backend'
+import { AppsVersions, ServicesService } from '../backend'
 import { MessagesModule } from 'primeng/messages'
 import { BadgeModule } from 'primeng/badge'
 import { By } from '@angular/platform-browser'
@@ -26,7 +26,7 @@ describe('VersionPageComponent', () => {
     let servicesApi: ServicesService
     let getCurrentDataSpy: jasmine.Spy<any>
     let getDataManufactureDateSpy: jasmine.Spy<any>
-    let isOnlineDataSpy: jasmine.Spy<any>
+    let getDataSourceSpy: jasmine.Spy<any>
     let getVersionAlertSpy: jasmine.Spy<any>
     let getMachinesAppsVersionsSpy: jasmine.Spy<any>
     let messageService: MessageService
@@ -272,7 +272,9 @@ describe('VersionPageComponent', () => {
         component = fixture.componentInstance
         getCurrentDataSpy = spyOn(versionService, 'getCurrentData')
         getDataManufactureDateSpy = spyOn(versionService, 'getDataManufactureDate').and.returnValue(of('2024-10-03'))
-        isOnlineDataSpy = spyOn(versionService, 'isOnlineData').and.returnValue(of(false))
+        getDataSourceSpy = spyOn(versionService, 'getDataSource').and.returnValue(
+            of(AppsVersions.DataSourceEnum.Offline)
+        )
         getVersionAlertSpy = spyOn(versionService, 'getVersionAlert')
         getVersionAlertSpy.and.returnValue(of({ severity: Severity.error, detected: true } as VersionAlert))
         getMachinesAppsVersionsSpy = spyOn(servicesApi, 'getMachinesAppsVersions')
@@ -321,7 +323,7 @@ describe('VersionPageComponent', () => {
         // Arrange & Act & Assert
         apisWorkingFine()
         expect(getDataManufactureDateSpy).toHaveBeenCalledTimes(1)
-        expect(isOnlineDataSpy).toHaveBeenCalledTimes(1)
+        expect(getDataSourceSpy).toHaveBeenCalledTimes(1)
         expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
         expect(getMachinesAppsVersionsSpy).toHaveBeenCalledTimes(1)
 

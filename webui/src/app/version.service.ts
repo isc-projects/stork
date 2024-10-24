@@ -153,12 +153,12 @@ export class VersionService {
     }
 
     /**
-     * Returns an Observable of the boolean stating whether current software versions data provided by the backend
+     * Returns an Observable of the versions data source stating whether current data provided by the backend
      * origins from online sources (e.g. ISC GitLab REST api) or from offline data stored in versions.json file.
-     * @return true if data comes from online fetching; false otherwise
+     * @return DataSourceEnum Observable
      */
-    isOnlineData(): Observable<boolean> {
-        return this.currentData$.pipe(map((data) => !!data.onlineData))
+    getDataSource(): Observable<AppsVersions.DataSourceEnum> {
+        return this.currentData$.pipe(map((data) => data.dataSource))
     }
 
     /**
