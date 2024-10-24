@@ -113,6 +113,7 @@ describe('AddressPoolFormComponent', () => {
                 appId: 1,
                 appType: 'kea',
                 name: 'first/dhcp4',
+                version: '3.0.0',
                 label: 'first/dhcp4',
             },
             {
@@ -120,6 +121,7 @@ describe('AddressPoolFormComponent', () => {
                 appId: 2,
                 appType: 'kea',
                 name: 'second/dhcp4',
+                version: '3.0.0',
                 label: 'second/dhcp4',
             },
             {
@@ -127,6 +129,7 @@ describe('AddressPoolFormComponent', () => {
                 appId: 3,
                 appType: 'kea',
                 name: 'third/dhcp4',
+                version: '3.0.0',
                 label: 'third/dhcp4',
             },
         ]

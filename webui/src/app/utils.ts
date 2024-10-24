@@ -1,5 +1,6 @@
 import * as moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
+import { gt, lt, valid } from 'semver'
 import { Bind9Daemon, KeaDaemon } from './backend'
 
 /**
@@ -642,4 +643,23 @@ export function daemonNameToFriendlyName(daemonName: string): string {
         default:
             return daemonName
     }
+}
+
+/**
+ * Given an array of semantic versions returns the earliest and the latest
+ * version from the array.
+ *
+ * It excludes invalid versions.
+ *
+ * @param versions semantic versions in no particular order.
+ * @returns The earliest and the latest version, or null if there are no valid versions.
+ */
+export function getVersionRange(versions: string[]): [string, string] | null {
+    const validVersions = versions.filter((v) => valid(v))
+    if (validVersions.length > 0) {
+        const min = validVersions.reduce((prev, curr) => (!prev || lt(curr, prev) ? curr : prev))
+        const max = validVersions.reduce((prev, curr) => (!prev || gt(curr, prev) ? curr : prev))
+        return [min, max]
+    }
+    return null
 }

@@ -8,7 +8,7 @@ import {
 import { GenericFormService } from '../forms/generic-form.service'
 import { MessageService } from 'primeng/api'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
-import { deepCopy, getErrorMessage, getSeverityByIndex } from '../utils'
+import { deepCopy, getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { UntypedFormArray, Validators } from '@angular/forms'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
@@ -136,12 +136,14 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         if (this.sharedNetworkId && (response as UpdateSharedNetworkBeginResponse)?.sharedNetwork) {
             // Initialize the shared network form controls.
             this.state.group = this.subnetSetFormService.convertSharedNetworkToForm(
+                getVersionRange(response.daemons.map((d) => d.version)),
                 (response as UpdateSharedNetworkBeginResponse)?.sharedNetwork,
                 this.state.existingSharedNetworkNames
             )
         } else {
             this.state.group = this.subnetSetFormService.createDefaultSharedNetworkForm(
                 this.state.ipType,
+                getVersionRange(response.daemons.map((d) => d.version)),
                 this.state.existingSharedNetworkNames
             )
         }
@@ -247,7 +249,10 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
             this.state.group.setControl('options', this.subnetSetFormService.createDefaultOptionsForm())
             this.state.group.setControl(
                 'parameters',
-                this.subnetSetFormService.createDefaultKeaSharedNetworkParametersForm(this.state.ipType)
+                this.subnetSetFormService.createDefaultKeaSharedNetworkParametersForm(
+                    this.state.ipType,
+                    getVersionRange(this.state.savedSharedNetworkBeginData?.daemons.map((d) => d.version))
+                )
             )
             this.state.group
                 .get('name')
@@ -302,8 +307,18 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
         let sharedNetwork: SharedNetwork
 
         try {
+            const filteredDaemons = this.state.group.get('selectedDaemons').value.map((id) => {
+                return {
+                    id: id,
+                    version: this.state.filteredDaemons?.find((d) => d.id === id)?.version,
+                }
+            })
             // Convert the shared network data from. It currently excludes subnets.
-            sharedNetwork = this.subnetSetFormService.convertFormToSharedNetwork(this.state.ipType, this.state.group)
+            sharedNetwork = this.subnetSetFormService.convertFormToSharedNetwork(
+                filteredDaemons,
+                this.state.ipType,
+                this.state.group
+            )
             sharedNetwork.subnets = []
             if (this.sharedNetworkId) {
                 sharedNetwork.subnets =

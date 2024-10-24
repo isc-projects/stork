@@ -44,6 +44,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 3,
@@ -51,6 +52,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 2,
@@ -58,6 +60,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.4.0',
         },
         {
             id: 4,
@@ -65,6 +68,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.7.0',
         },
         {
             id: 5,
@@ -72,6 +76,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'third',
             },
+            version: '2.7.0',
         },
     ],
     sharedNetworks4: [
@@ -223,6 +228,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 3,
@@ -230,6 +236,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 2,
@@ -237,6 +244,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.4.0',
         },
         {
             id: 4,
@@ -244,6 +252,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.7.0',
         },
         {
             id: 5,
@@ -251,6 +260,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'third',
             },
+            version: '2.7.0',
         },
     ],
     sharedNetworks4: [
@@ -398,6 +408,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 3,
@@ -405,6 +416,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 2,
@@ -412,6 +424,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.5.0',
         },
         {
             id: 4,
@@ -419,6 +432,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.7.0',
         },
         {
             id: 5,
@@ -426,6 +440,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'third',
             },
+            version: '2.7.0',
         },
     ],
     sharedNetworks4: [],

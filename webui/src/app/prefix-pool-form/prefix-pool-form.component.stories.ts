@@ -119,6 +119,7 @@ export const PrefixPool: Story = {
                 appId: 1,
                 appType: 'kea',
                 name: 'first/dhcp6',
+                version: '2.7.0',
                 label: 'first/dhcp6',
             },
             {
@@ -126,6 +127,7 @@ export const PrefixPool: Story = {
                 appId: 2,
                 appType: 'kea',
                 name: 'second/dhcp6',
+                version: '2.7.0',
                 label: 'second/dhcp6',
             },
         ],

@@ -290,6 +290,8 @@
         type: integer
       daemonName:
         type: string
+      daemonVersion:
+        type: string
       appId:
         type: integer
       appName:

@@ -42,6 +42,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                 appId: 1,
                 appName: 'kea@agent1',
                 appType: 'kea',
+                daemonVersion: '3.0.0',
                 config: {
                     Dhcp4: {
                         allocator: 'iterative',
@@ -301,7 +302,6 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                         allocator: 'iterative',
                         authoritative: false,
                         ddnsConflictResolutionMode: 'check-with-dhcid',
-                        ddnsUseConflictResolution: true,
                         ddnsGeneratedPrefix: 'myhost',
                         ddnsOverrideClientUpdate: false,
                         ddnsOverrideNoUpdate: false,

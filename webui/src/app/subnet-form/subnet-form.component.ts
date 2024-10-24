@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core'
 import { CreateSubnetBeginResponse, DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
-import { getErrorMessage, getSeverityByIndex } from '../utils'
+import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
 import { FormArray, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import {
@@ -17,6 +17,7 @@ import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
+import { lastValueFrom } from 'rxjs'
 
 /**
  * A component providing a form for editing and adding a subnet.
@@ -154,6 +155,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 appId: d.app.id,
                 appType: d.app.type,
                 name: d.name,
+                version: d.version,
                 label: `${d.app.name}/${d.name}`,
             })
         }
@@ -175,7 +177,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             // Determine whether it is an IPv6 or IPv4 subnet.
             this.state.dhcpv6 = response.subnet.subnet?.includes(':')
             // Initialize the subnet form controls.
-            this.initializeSubnet(response.subnet)
+            this.initializeSubnet(response)
         }
         // After the form has been initialized we need to filter out the daemons
         // that can be selected by a user for our subnet.
@@ -189,10 +191,11 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      *
      * @param subnet subnet data received from the server.
      */
-    private initializeSubnet(subnet: Subnet): void {
+    private initializeSubnet(response: UpdateSubnetBeginResponse): void {
         this.state.group = this.subnetSetFormService.convertSubnetToForm(
             this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4,
-            subnet
+            getVersionRange(response.daemons.map((d) => d.version)),
+            response.subnet
         )
     }
 
@@ -201,12 +204,13 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * a subnet.
      */
     private createSubnetBegin(): void {
-        this.dhcpApi
-            .createSubnetBegin()
-            .toPromise()
+        lastValueFrom(this.dhcpApi.createSubnetBegin())
             .then((data) => {
                 this.state.savedSubnetBeginData = data
-                this.state.group = this.subnetSetFormService.createDefaultSubnetForm(data.subnets || [])
+                this.state.group = this.subnetSetFormService.createDefaultSubnetForm(
+                    getVersionRange(data.daemons.map((d) => d.version)),
+                    data.subnets || []
+                )
                 this.initializeState(data)
             })
             .catch((err) => {
@@ -302,7 +306,10 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     onSubnetProceed(): void {
         this.state.group.get('subnet').disable()
-        this.state.group = this.subnetSetFormService.createDefaultSubnetForm(this.state.group.get('subnet').value)
+        this.state.group = this.subnetSetFormService.createDefaultSubnetForm(
+            getVersionRange(this.state.savedSubnetBeginData.daemons.map((d) => d.version)),
+            this.state.group.get('subnet').value
+        )
         this.initializeState(this.state.savedSubnetBeginData)
         this.state.wizard = false
     }
@@ -488,7 +495,13 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     onSubmit(): void {
         let subnet: Subnet
         try {
-            subnet = this.subnetSetFormService.convertFormToSubnet(this.state.group)
+            const filteredDaemons = this.state.group.get('selectedDaemons').value.map((id) => {
+                return {
+                    id: id,
+                    version: this.state.filteredDaemons?.find((d) => d.id === id)?.version,
+                }
+            })
+            subnet = this.subnetSetFormService.convertFormToSubnet(filteredDaemons, this.state.group)
             if (subnet.sharedNetworkId) {
                 subnet.sharedNetwork = this.state.selectableSharedNetworks?.find(
                     (sn) => subnet.sharedNetworkId === sn.id
@@ -503,7 +516,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             })
             return
         }
-
         if (this.subnetId) {
             // Updating an existing subnet.
             const savedBeginData = this.state.savedSubnetBeginData as UpdateSubnetBeginResponse
@@ -585,7 +597,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         this.state.group.setControl(
             'parameters',
             this.subnetSetFormService.createDefaultKeaSubnetParametersForm(
-                this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4
+                this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4,
+                getVersionRange(this.state.savedSubnetBeginData.daemons.map((d) => d.version))
             )
         )
     }

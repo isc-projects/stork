@@ -134,6 +134,7 @@ export const AddressPool4: Story = {
                 appId: 1,
                 appType: 'kea',
                 name: 'first/dhcp4',
+                version: '2.7.0',
                 label: 'first/dhcp4',
             },
             {
@@ -141,6 +142,7 @@ export const AddressPool4: Story = {
                 appId: 2,
                 appType: 'kea',
                 name: 'second/dhcp4',
+                version: '2.7.0',
                 label: 'second/dhcp4',
             },
         ],
@@ -190,6 +192,7 @@ export const AddressPool6: Story = {
                 appId: 1,
                 appType: 'kea',
                 name: 'first/dhcp6',
+                version: '2.7.0',
                 label: 'first/dhcp6',
             },
             {
@@ -197,6 +200,7 @@ export const AddressPool6: Story = {
                 appId: 2,
                 appType: 'kea',
                 name: 'second/dhcp6',
+                version: '2.7.0',
                 label: 'second/dhcp6',
             },
         ],

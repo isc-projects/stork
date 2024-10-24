@@ -1624,6 +1624,8 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 	require.NoError(t, err)
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
+	err = server1.SetVersion("3.0.0")
+	require.NoError(t, err)
 
 	app1, err := server1.GetKea()
 	require.NoError(t, err)
@@ -1634,6 +1636,8 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 	server2, err := dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
 	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+	err = server2.SetVersion("3.0.0")
 	require.NoError(t, err)
 
 	app2, err := server2.GetKea()
@@ -1695,8 +1699,10 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 	require.Len(t, contents.Configs, 2)
 	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
 	require.Equal(t, dbmodel.DaemonNameDHCPv4, contents.Configs[0].DaemonName)
+	require.Equal(t, "3.0.0", contents.Configs[0].DaemonVersion)
 	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
 	require.Equal(t, dbmodel.DaemonNameDHCPv4, contents.Configs[1].DaemonName)
+	require.Equal(t, "3.0.0", contents.Configs[1].DaemonVersion)
 
 	// Submit transaction.
 
@@ -1900,6 +1906,8 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 	require.NoError(t, err)
 	err = server1.Configure(serverConfig)
 	require.NoError(t, err)
+	err = server1.SetVersion("3.0.0")
+	require.NoError(t, err)
 
 	app1, err := server1.GetKea()
 	require.NoError(t, err)
@@ -1910,6 +1918,8 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 	server2, err := dbmodeltest.NewKeaDHCPv6Server(db)
 	require.NoError(t, err)
 	err = server2.Configure(serverConfig)
+	require.NoError(t, err)
+	err = server2.SetVersion("3.0.0")
 	require.NoError(t, err)
 
 	app2, err := server2.GetKea()
@@ -1971,8 +1981,10 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 	require.Len(t, contents.Configs, 2)
 	require.EqualValues(t, daemons[0].GetID(), contents.Configs[0].DaemonID)
 	require.Equal(t, dbmodel.DaemonNameDHCPv6, contents.Configs[0].DaemonName)
+	require.Equal(t, "3.0.0", contents.Configs[0].DaemonVersion)
 	require.EqualValues(t, daemons[1].GetID(), contents.Configs[1].DaemonID)
 	require.Equal(t, dbmodel.DaemonNameDHCPv6, contents.Configs[1].DaemonName)
+	require.Equal(t, "3.0.0", contents.Configs[0].DaemonVersion)
 
 	// Submit transaction.
 

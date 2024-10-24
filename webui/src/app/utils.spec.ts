@@ -14,6 +14,7 @@ import {
     deepCopy,
     daemonNameToFriendlyName,
     unhyphen,
+    getVersionRange,
 } from './utils'
 
 describe('utils', () => {
@@ -398,5 +399,14 @@ describe('utils', () => {
         expect(daemonNameToFriendlyName('dhcp6')).toBe('DHCPv6')
         expect(daemonNameToFriendlyName('netconf')).toBe('NETCONF')
         expect(daemonNameToFriendlyName('named')).toBe('named')
+    })
+
+    it('should return valid version range', () => {
+        expect(getVersionRange(['1.2.3', '0.0.1', '2.4.1', '1.1.1'])).toEqual(['0.0.1', '2.4.1'])
+        expect(getVersionRange(['1.1.1', '1.1.1'])).toEqual(['1.1.1', '1.1.1'])
+        expect(getVersionRange(['2.3.2'])).toEqual(['2.3.2', '2.3.2'])
+        expect(getVersionRange(['2.3.2', null, '3.3.0'])).toEqual(['2.3.2', '3.3.0'])
+        expect(getVersionRange(['10', '3.3.0'])).toEqual(['3.3.0', '3.3.0'])
+        expect(getVersionRange([])).toBeFalsy()
     })
 })

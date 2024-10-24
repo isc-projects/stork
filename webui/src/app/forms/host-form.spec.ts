@@ -20,6 +20,7 @@ describe('HostForm', () => {
                 appId: 1,
                 appType: 'kea',
                 name: 'dhcp4',
+                version: '3.0.0',
                 label: 'server1',
             },
             {
@@ -27,6 +28,7 @@ describe('HostForm', () => {
                 appId: 3,
                 appType: 'bind9',
                 name: 'named',
+                version: '3.0.0',
                 label: 'server2',
             },
         ]
@@ -55,6 +57,7 @@ describe('HostForm', () => {
                 appId: 1,
                 appType: 'kea',
                 name: 'dhcp4',
+                version: '3.0.0',
                 label: 'server1',
             },
             {
@@ -62,6 +65,7 @@ describe('HostForm', () => {
                 appId: 1,
                 appType: 'kea',
                 name: 'dhcp6',
+                version: '3.0.0',
                 label: 'server2',
             },
             {
@@ -69,6 +73,7 @@ describe('HostForm', () => {
                 appId: 2,
                 appType: 'kea',
                 name: 'dhcp4',
+                version: '3.0.0',
                 label: 'server3',
             },
             {
@@ -76,6 +81,7 @@ describe('HostForm', () => {
                 appId: 2,
                 appType: 'kea',
                 name: 'dhcp6',
+                version: '3.0.0',
                 label: 'server4',
             },
         ]

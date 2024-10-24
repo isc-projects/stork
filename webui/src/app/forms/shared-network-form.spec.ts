@@ -33,6 +33,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'one',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 3,
@@ -42,6 +43,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'three',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 2,
@@ -51,6 +53,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'two',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 4,
@@ -60,6 +63,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'four',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 5,
@@ -69,6 +73,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'five',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
             ],
             sharedNetworks4: ['floor1', 'floor2', 'floor3'],
@@ -110,17 +115,46 @@ describe('SharedNetworkFormState', () => {
         expect(state.existingSharedNetworkNames).toEqual(['floor1', 'floor2', 'floor3'])
 
         // Filtered daemons.
-        expect(state.filteredDaemons).toContain({ id: 1, appId: 1, appType: 'kea', name: 'dhcp4', label: 'one/dhcp4' })
+        expect(state.filteredDaemons).toContain({
+            id: 1,
+            appId: 1,
+            appType: 'kea',
+            name: 'dhcp4',
+            version: '3.0.0',
+            label: 'one/dhcp4',
+        })
         expect(state.filteredDaemons).toContain({
             id: 3,
             appId: 3,
             appType: 'kea',
             name: 'dhcp6',
+            version: '3.0.0',
             label: 'three/dhcp6',
         })
-        expect(state.filteredDaemons).toContain({ id: 2, appId: 2, appType: 'kea', name: 'dhcp4', label: 'two/dhcp4' })
-        expect(state.filteredDaemons).toContain({ id: 4, appId: 4, appType: 'kea', name: 'dhcp6', label: 'four/dhcp6' })
-        expect(state.filteredDaemons).toContain({ id: 5, appId: 5, appType: 'kea', name: 'dhcp6', label: 'five/dhcp6' })
+        expect(state.filteredDaemons).toContain({
+            id: 2,
+            appId: 2,
+            appType: 'kea',
+            name: 'dhcp4',
+            version: '3.0.0',
+            label: 'two/dhcp4',
+        })
+        expect(state.filteredDaemons).toContain({
+            id: 4,
+            appId: 4,
+            appType: 'kea',
+            name: 'dhcp6',
+            version: '3.0.0',
+            label: 'four/dhcp6',
+        })
+        expect(state.filteredDaemons).toContain({
+            id: 5,
+            appId: 5,
+            appType: 'kea',
+            name: 'dhcp6',
+            version: '3.0.0',
+            label: 'five/dhcp6',
+        })
 
         // Form group.
         expect(state.group).toBeFalsy()
@@ -169,6 +203,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'one',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 3,
@@ -178,6 +213,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'three',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 2,
@@ -187,6 +223,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'two',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 4,
@@ -196,6 +233,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'four',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
                 {
                     id: 5,
@@ -205,6 +243,7 @@ describe('SharedNetworkFormState', () => {
                         name: 'five',
                         type: 'kea',
                     },
+                    version: '3.0.0',
                 },
             ],
             sharedNetworks4: ['floor1', 'floor2', 'floor3'],
@@ -227,17 +266,46 @@ describe('SharedNetworkFormState', () => {
         expect(state.existingSharedNetworkNames).toEqual(['ground1', 'ground2'])
 
         // Filtered daemons.
-        expect(state.filteredDaemons).toContain({ id: 1, appId: 1, appType: 'kea', name: 'dhcp4', label: 'one/dhcp4' })
+        expect(state.filteredDaemons).toContain({
+            id: 1,
+            appId: 1,
+            appType: 'kea',
+            name: 'dhcp4',
+            version: '3.0.0',
+            label: 'one/dhcp4',
+        })
         expect(state.filteredDaemons).toContain({
             id: 3,
             appId: 3,
             appType: 'kea',
             name: 'dhcp6',
+            version: '3.0.0',
             label: 'three/dhcp6',
         })
-        expect(state.filteredDaemons).toContain({ id: 2, appId: 2, appType: 'kea', name: 'dhcp4', label: 'two/dhcp4' })
-        expect(state.filteredDaemons).toContain({ id: 4, appId: 4, appType: 'kea', name: 'dhcp6', label: 'four/dhcp6' })
-        expect(state.filteredDaemons).toContain({ id: 5, appId: 5, appType: 'kea', name: 'dhcp6', label: 'five/dhcp6' })
+        expect(state.filteredDaemons).toContain({
+            id: 2,
+            appId: 2,
+            appType: 'kea',
+            name: 'dhcp4',
+            version: '3.0.0',
+            label: 'two/dhcp4',
+        })
+        expect(state.filteredDaemons).toContain({
+            id: 4,
+            appId: 4,
+            appType: 'kea',
+            name: 'dhcp6',
+            version: '3.0.0',
+            label: 'four/dhcp6',
+        })
+        expect(state.filteredDaemons).toContain({
+            id: 5,
+            appId: 5,
+            appType: 'kea',
+            name: 'dhcp6',
+            version: '3.0.0',
+            label: 'five/dhcp6',
+        })
 
         // Form group.
         expect(state.group).toBeFalsy()
@@ -290,9 +358,24 @@ describe('SharedNetworkFormState', () => {
             appId: 3,
             appType: 'kea',
             name: 'dhcp6',
+            version: '3.0.0',
             label: 'three/dhcp6',
         })
-        expect(state.filteredDaemons).toContain({ id: 4, appId: 4, appType: 'kea', name: 'dhcp6', label: 'four/dhcp6' })
-        expect(state.filteredDaemons).toContain({ id: 5, appId: 5, appType: 'kea', name: 'dhcp6', label: 'five/dhcp6' })
+        expect(state.filteredDaemons).toContain({
+            id: 4,
+            appId: 4,
+            appType: 'kea',
+            name: 'dhcp6',
+            version: '3.0.0',
+            label: 'four/dhcp6',
+        })
+        expect(state.filteredDaemons).toContain({
+            id: 5,
+            appId: 5,
+            appType: 'kea',
+            name: 'dhcp6',
+            version: '3.0.0',
+            label: 'five/dhcp6',
+        })
     })
 })

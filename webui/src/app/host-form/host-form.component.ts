@@ -465,6 +465,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 appId: d.app.id,
                 appType: 'kea',
                 name: d.name,
+                version: d.name,
                 label: `${d.app.name}/${d.name}`,
             }
             daemons.push(daemon)

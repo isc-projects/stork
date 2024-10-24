@@ -50,6 +50,16 @@ func (server *KeaServer) Configure(config string) error {
 	return dbmodel.UpdateDaemon(server.kea.machine.db, d)
 }
 
+// Sets an arbitrary Kea server version.
+func (server *KeaServer) SetVersion(version string) error {
+	d, err := dbmodel.GetDaemonByID(server.kea.machine.db, server.ID)
+	if err != nil {
+		return err
+	}
+	d.Version = version
+	return dbmodel.UpdateDaemon(server.kea.machine.db, d)
+}
+
 // Returns a machine the Kea server belongs to.
 func (server *KeaServer) GetMachine() (*dbmodel.Machine, error) {
 	return server.kea.GetMachine()

@@ -5,7 +5,7 @@ import {
     UpdateKeaDaemonsGlobalParametersSubmitRequest,
 } from '../backend'
 import { lastValueFrom } from 'rxjs'
-import { getErrorMessage, getSeverityByIndex } from '../utils'
+import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
 import { KeaGlobalConfigurationForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { FormGroup, UntypedFormArray } from '@angular/forms'
@@ -84,7 +84,13 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
     onSubmit(): void {
         const request: UpdateKeaDaemonsGlobalParametersSubmitRequest = {
             configs: this.subnetSetFormService
-                .convertFormToKeaGlobalParameters(this.formGroup, this.isIPv6 ? IPType.IPv6 : IPType.IPv4)
+                .convertFormToKeaGlobalParameters(
+                    this.response.configs.map((c) => {
+                        return { id: c.daemonId, version: c.daemonVersion }
+                    }),
+                    this.formGroup,
+                    this.isIPv6 ? IPType.IPv6 : IPType.IPv4
+                )
                 .map((params) => {
                     return {
                         daemonId: this.daemonId,
@@ -176,7 +182,10 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
         )
             .then((data: UpdateKeaDaemonsGlobalParametersBeginResponse) => {
                 this.response = data
-                this.formGroup = this.subnetSetFormService.convertKeaGlobalConfigurationToForm(this.response.configs)
+                this.formGroup = this.subnetSetFormService.convertKeaGlobalConfigurationToForm(
+                    getVersionRange(data.configs.map((c) => c.daemonVersion)),
+                    this.response.configs
+                )
                 this.initError = null
             })
             .catch((err) => {

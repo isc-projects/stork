@@ -44,6 +44,7 @@ let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 3,
@@ -51,6 +52,7 @@ let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 2,
@@ -58,6 +60,7 @@ let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.4.0',
         },
         {
             id: 4,
@@ -65,6 +68,7 @@ let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.7.0',
         },
         {
             id: 5,
@@ -72,6 +76,7 @@ let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
             app: {
                 name: 'third',
             },
+            version: '2.7.0',
         },
     ],
     sharedNetworks4: ['floor1', 'floor2', 'floor3', 'stanza'],
@@ -147,6 +152,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 3,
@@ -154,6 +160,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 2,
@@ -161,6 +168,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.4.0',
         },
         {
             id: 4,
@@ -168,6 +176,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.7.0',
         },
         {
             id: 5,
@@ -175,6 +184,7 @@ let mockUpdateSharedNetwork4BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'third',
             },
+            version: '2.7.0',
         },
     ],
     sharedNetworks4: ['floor1', 'floor2', 'floor3', 'stanza'],
@@ -250,6 +260,7 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 3,
@@ -257,6 +268,7 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'first',
             },
+            version: '2.7.0',
         },
         {
             id: 2,
@@ -264,6 +276,7 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.7.0',
         },
         {
             id: 4,
@@ -271,6 +284,7 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'second',
             },
+            version: '2.7.0',
         },
         {
             id: 5,
@@ -278,6 +292,7 @@ let mockUpdateSharedNetwork6BeginData: UpdateSharedNetworkBeginResponse = {
             app: {
                 name: 'third',
             },
+            version: '2.7.0',
         },
     ],
     sharedNetworks4: [],

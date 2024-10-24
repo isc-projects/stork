@@ -8,6 +8,7 @@ import {
     KeaSubnetParametersForm,
     OptionsForm,
     SubnetSetFormService,
+    VersionedDaemon,
 } from './subnet-set-form.service'
 import {
     KeaConfigPoolParameters,
@@ -391,7 +392,7 @@ describe('SubnetSetFormService', () => {
         }
         const formArray = service.convertAddressPoolsToForm(subnet)
 
-        let pools = service.convertFormToAddressPools(subnet.localSubnets[0], formArray)
+        let pools = service.convertFormToAddressPools([], subnet.localSubnets[0], formArray)
         expect(pools.length).toBe(3)
         expect(pools[0].pool).toBe('192.0.2.1-192.0.2.10')
         expect(pools[0].keaConfigPoolParameters).toBeTruthy()
@@ -430,7 +431,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.3')
 
-        pools = service.convertFormToAddressPools(subnet.localSubnets[1], formArray)
+        pools = service.convertFormToAddressPools([], subnet.localSubnets[1], formArray)
         expect(pools.length).toBe(2)
         expect(pools[0].pool).toBe('192.0.2.1-192.0.2.10')
         expect(pools[0].keaConfigPoolParameters).toBeTruthy()
@@ -782,7 +783,7 @@ describe('SubnetSetFormService', () => {
         }
         const formArray = service.convertPrefixPoolsToForm(subnet)
 
-        let pools = service.convertFormToPrefixPools(subnet.localSubnets[0], formArray)
+        let pools = service.convertFormToPrefixPools([], subnet.localSubnets[0], formArray)
         expect(pools.length).toBe(3)
         expect(pools[0].prefix).toBe('3000::/16')
         expect(pools[0].delegatedLength).toBe(112)
@@ -827,7 +828,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[2].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('2001:db8:1::3')
         expect(pools[2].keaConfigPoolParameters.poolID).toBe(70)
 
-        pools = service.convertFormToPrefixPools(subnet.localSubnets[1], formArray)
+        pools = service.convertFormToPrefixPools([], subnet.localSubnets[1], formArray)
         expect(pools.length).toBe(2)
         expect(pools[0].prefix).toBe('3000::/16')
         expect(pools[0].delegatedLength).toBe(112)
@@ -983,7 +984,7 @@ describe('SubnetSetFormService', () => {
                 },
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, null, 'subnet', parameters)
         let fg = form.get('cacheThreshold') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('number')
@@ -1482,7 +1483,7 @@ describe('SubnetSetFormService', () => {
                 fourOverSixSubnet: '2001:db8:1::/64',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'shared-network', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, null, 'shared-network', parameters)
         let fg = form.get('clientClass') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('string')
@@ -1517,7 +1518,7 @@ describe('SubnetSetFormService', () => {
                 serverHostname: 'foo.example.org.',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv6, 'subnet', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv6, null, 'subnet', parameters)
         let fg = form.get('fourOverSixInterface') as SharedParameterFormGroup<any>
         expect(fg).toBeFalsy()
 
@@ -1600,7 +1601,7 @@ describe('SubnetSetFormService', () => {
                 ddnsGeneratedPrefix: '-invalid.prefix',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, null, 'subnet', parameters)
         let fg = form.get('ddnsGeneratedPrefix') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1612,7 +1613,7 @@ describe('SubnetSetFormService', () => {
                 ddnsQualifyingSuffix: '123',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, null, 'subnet', parameters)
         let fg = form.get('ddnsQualifyingSuffix') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1624,7 +1625,7 @@ describe('SubnetSetFormService', () => {
                 fourOverSixSubnet: '2001:db8:1::',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, null, 'subnet', parameters)
         let fg = form.get('fourOverSixSubnet') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1636,7 +1637,7 @@ describe('SubnetSetFormService', () => {
                 nextServer: '1.1.2.',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, null, 'subnet', parameters)
         let fg = form.get('nextServer') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
@@ -1648,14 +1649,14 @@ describe('SubnetSetFormService', () => {
                 serverHostname: 'abc..foo',
             },
         ]
-        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, 'subnet', parameters)
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, null, 'subnet', parameters)
         let fg = form.get('serverHostname') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.valid).toBeFalse()
     })
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
-        let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv4)
+        let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv4, null)
         expect(Object.keys(form.controls).length).toBe(36)
 
         for (const key of Object.keys(form.controls)) {
@@ -1667,7 +1668,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default Kea parameters for for an IPv6 shared network', () => {
-        let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv6)
+        let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv6, null)
         expect(Object.keys(form.controls).length).toBe(37)
 
         for (const key of Object.keys(form.controls)) {
@@ -1679,7 +1680,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
-        let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4)
+        let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4, null)
         expect(Object.keys(form.controls).length).toBe(39)
 
         for (const key of Object.keys(form.controls)) {
@@ -1691,7 +1692,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default Kea parameters form for an IPv6 subnet', () => {
-        let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6)
+        let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6, null)
         expect(Object.keys(form.controls).length).toBe(37)
 
         for (const key of Object.keys(form.controls)) {
@@ -1703,7 +1704,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default subnet form for no particular subnet', () => {
-        let form = service.createDefaultSubnetForm([])
+        let form = service.createDefaultSubnetForm(null, [])
         expect(form.get('subnet')?.value).toBeFalsy()
         expect(form.get('subnet')?.disabled).toBeFalse()
         expect(form.get('sharedNetwork')).toBeTruthy()
@@ -1723,7 +1724,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default subnet form for specific subnet', () => {
-        let form = service.createDefaultSubnetForm('192.0.2.0/24')
+        let form = service.createDefaultSubnetForm(null, '192.0.2.0/24')
         expect(form.get('subnet')?.value).toBe('192.0.2.0/24')
         expect(form.get('subnet')?.disabled).toBeTrue()
         expect(form.get('sharedNetwork')).toBeTruthy()
@@ -1785,7 +1786,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formGroup = service.convertSubnetToForm(IPType.IPv4, subnet)
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, null, subnet)
         expect(formGroup.get('subnet')?.value).toBe('192.0.2.0/24')
         expect(formGroup.get('subnet')?.disabled).toBeTrue()
 
@@ -1826,6 +1827,75 @@ describe('SubnetSetFormService', () => {
         const selectedDaemons = formGroup.get('selectedDaemons') as FormControl<number[]>
         expect(selectedDaemons?.value).toEqual([1])
         expect(selectedDaemons?.disabled).toBeTrue()
+    })
+
+    it('should only include subnet-level ddns-use-conflict-resolution when all Kea versions are earlier than 2.5.0', () => {
+        const subnet: Subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetworkId: 1,
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            ddnsUseConflictResolution: true,
+                            ddnsConflictResolutionMode: 'check-with-dhcid',
+                        },
+                    },
+                },
+            ],
+        }
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, ['2.0.0', '2.1.2'], subnet)
+
+        const parameters = formGroup.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        expect(parameters.get('ddnsUseConflictResolution')).toBeTruthy()
+        expect(parameters.get('ddnsConflictResolutionMode')).toBeFalsy()
+    })
+
+    it('should only include subnet-level ddns-conflict-resolution-mode when all Kea versions are 2.5.0 or later', () => {
+        const subnet: Subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetworkId: 1,
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            ddnsUseConflictResolution: true,
+                            ddnsConflictResolutionMode: 'check-with-dhcid',
+                        },
+                    },
+                },
+            ],
+        }
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, ['2.5.0', '3.1.2'], subnet)
+
+        const parameters = formGroup.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        expect(parameters.get('ddnsConflictResolutionMode')).toBeTruthy()
+        expect(parameters.get('ddnsUseConflictResolution')).toBeFalsy()
+    })
+
+    it('should include subnet-level ddns-conflict-resolution-mode and ddns-conflict-resolution-mode', () => {
+        const subnet: Subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetworkId: 1,
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            ddnsUseConflictResolution: true,
+                            ddnsConflictResolutionMode: 'check-with-dhcid',
+                        },
+                    },
+                },
+            ],
+        }
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, ['2.2.0', '3.1.2'], subnet)
+
+        const parameters = formGroup.get('parameters') as FormGroup<KeaSubnetParametersForm>
+        expect(parameters.get('ddnsConflictResolutionMode')).toBeTruthy()
+        expect(parameters.get('ddnsUseConflictResolution')).toBeTruthy()
     })
 
     it('should convert IPv6 subnet data to a form', () => {
@@ -1933,7 +2003,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formGroup = service.convertSubnetToForm(IPType.IPv6, subnet)
+        const formGroup = service.convertSubnetToForm(IPType.IPv6, null, subnet)
         expect(formGroup.get('subnet')?.value).toBe('2001:db8:1::/64')
         expect(formGroup.get('subnet')?.disabled).toBeTrue()
 
@@ -2013,7 +2083,7 @@ describe('SubnetSetFormService', () => {
         const subnet: Subnet = {
             subnet: '192.0.2.0/24',
         }
-        const formGroup = service.convertSubnetToForm(IPType.IPv4, subnet)
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, null, subnet)
         expect(formGroup.get('subnet')?.value).toBe('192.0.2.0/24')
 
         const options = formGroup.get('options.data') as UntypedFormArray
@@ -2028,7 +2098,18 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should convert a form to Kea parameters', () => {
+        const daemons = [
+            {
+                id: 1,
+                version: '2.3.4',
+            },
+            {
+                id: 2,
+                version: '2.5.0',
+            },
+        ]
         const params = service.convertFormToKeaSubnetParameters(
+            daemons,
             new FormGroup<KeaSubnetParametersForm>({
                 cacheThreshold: new SharedParameterFormGroup<number>(
                     {
@@ -2036,6 +2117,7 @@ describe('SubnetSetFormService', () => {
                         min: 0,
                         max: 1,
                         fractionDigits: 2,
+                        versionLowerBound: '2.4.0',
                     },
                     [new FormControl<number>(0.5), new FormControl<number>(0.5)]
                 ),
@@ -2043,12 +2125,14 @@ describe('SubnetSetFormService', () => {
                     {
                         type: 'string',
                         values: ['iterative', 'random', 'flq'],
+                        versionLowerBound: '2.2.0',
                     },
                     [new FormControl<string>('flq'), new FormControl<string>('random')]
                 ),
                 authoritative: new SharedParameterFormGroup<boolean>(
                     {
                         type: 'boolean',
+                        versionUpperBound: '2.5.0',
                     },
                     [new FormControl<boolean>(true), new FormControl<boolean>(false), new FormControl<boolean>(false)]
                 ),
@@ -2061,14 +2145,14 @@ describe('SubnetSetFormService', () => {
             })
         )
         expect(params.length).toBe(3)
-        expect(params[0].cacheThreshold).toBe(0.5)
+        expect(params[0].cacheThreshold).toBeFalsy()
         expect(params[0].allocator).toBe('flq')
         expect(params[0].authoritative).toBeTrue()
         expect(params[0].relay).toBeTruthy()
         expect(params[0].relay.ipAddresses).toEqual(['192.0.2.1', '192.0.2.2'])
         expect(params[1].cacheThreshold).toBe(0.5)
         expect(params[1].allocator).toBe('random')
-        expect(params[1].authoritative).toBeFalse()
+        expect(params[1].authoritative).toBeFalsy()
         expect(params[1].relay).toBeTruthy()
         expect(params[1].relay.ipAddresses).toEqual(['192.0.2.2'])
         expect(params[2].cacheThreshold).toBeFalsy()
@@ -2115,9 +2199,19 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formGroup = service.convertSubnetToForm(IPType.IPv4, subnet0)
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, null, subnet0)
 
-        const subnet1 = service.convertFormToSubnet(formGroup)
+        const daemons: VersionedDaemon[] = [
+            {
+                id: 1,
+                version: '2.2.3',
+            },
+            {
+                id: 2,
+                version: null,
+            },
+        ]
+        const subnet1 = service.convertFormToSubnet(daemons, formGroup)
 
         expect(subnet1.subnet).toBe('192.0.2.0/24')
         expect(subnet1.sharedNetworkId).toBe(1)
@@ -2201,7 +2295,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formGroup = service.convertSubnetToForm(IPType.IPv4, subnet0)
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, null, subnet0)
 
         // Both servers have the same options so the options are locked by default.
         // Let's now modify the second option instance while they are locked. The
@@ -2209,7 +2303,17 @@ describe('SubnetSetFormService', () => {
         // option for each server.
         formGroup.get('options.data.1.0.optionFields.0.control')?.setValue('10.1.1.1')
 
-        const subnet1 = service.convertFormToSubnet(formGroup)
+        const daemons: VersionedDaemon[] = [
+            {
+                id: 1,
+                version: '2.2.3',
+            },
+            {
+                id: 2,
+                version: null,
+            },
+        ]
+        const subnet1 = service.convertFormToSubnet(daemons, formGroup)
         expect(subnet1.localSubnets.length).toBe(2)
         expect(subnet1.localSubnets[1].keaConfigSubnetParameters?.subnetLevelParameters?.options?.length).toBe(1)
         expect(subnet1.localSubnets[1].keaConfigSubnetParameters.subnetLevelParameters.options[0].fields.length).toBe(1)
@@ -2219,6 +2323,72 @@ describe('SubnetSetFormService', () => {
         expect(
             subnet1.localSubnets[1].keaConfigSubnetParameters.subnetLevelParameters.options[0].fields[0].values[0]
         ).toBe('192.0.2.1')
+    })
+
+    it('should filter out unsupported parameters during form to subnet conversion', () => {
+        // The ddns-use-conflict-resolution was deprecated and replaced with
+        // the ddns-conflict-resolution-mode in Kea 2.5.0. Let's create the subnet
+        // that carries both of these parameters. The converted subnet should
+        // exclude unsupported parameters for specific versions.
+        const subnet0: Subnet = {
+            subnet: '192.0.2.0/24',
+            sharedNetworkId: 1,
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            ddnsUseConflictResolution: true,
+                            ddnsConflictResolutionMode: 'check-with-dhcid',
+                        },
+                    },
+                },
+                {
+                    daemonId: 2,
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            ddnsUseConflictResolution: true,
+                            ddnsConflictResolutionMode: 'check-with-dhcid',
+                        },
+                    },
+                },
+            ],
+        }
+        // Use a wide range of Kea versions in the subnet to form conversion to
+        // ensure both parameters are included in the resulting form.
+        const formGroup = service.convertSubnetToForm(IPType.IPv4, ['1.0.0', '3.0.0'], subnet0)
+
+        // Specify two daemons. The first one has version 2.3.2 which only supports
+        // the ddns-use-conflict-resolution. The latter is 2.5.0 which supports
+        // ddns-conflict-resolution-mode.
+        const daemons: VersionedDaemon[] = [
+            {
+                id: 1,
+                version: '2.3.2',
+            },
+            {
+                id: 2,
+                version: '2.5.0',
+            },
+        ]
+        const subnet1 = service.convertFormToSubnet(daemons, formGroup)
+
+        expect(subnet1.subnet).toBe('192.0.2.0/24')
+        expect(subnet1.sharedNetworkId).toBe(1)
+        expect(subnet1.localSubnets.length).toBe(2)
+
+        expect(
+            subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.ddnsUseConflictResolution
+        ).toBe(true)
+        expect(
+            subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.ddnsConflictResolutionMode
+        ).toBeFalsy()
+        expect(
+            subnet1.localSubnets[1].keaConfigSubnetParameters?.subnetLevelParameters?.ddnsUseConflictResolution
+        ).toBeFalsy()
+        expect(
+            subnet1.localSubnets[1].keaConfigSubnetParameters?.subnetLevelParameters?.ddnsConflictResolutionMode
+        ).toBe('check-with-dhcid')
     })
 
     it('should convert a form to shared network', () => {
@@ -2260,9 +2430,9 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formGroup = service.convertSharedNetworkToForm(sharedNetwork0, [])
+        const formGroup = service.convertSharedNetworkToForm(['1.1.1', '3.3.3'], sharedNetwork0, [])
 
-        const sharedNetwork1 = service.convertFormToSharedNetwork(IPType.IPv4, formGroup)
+        const sharedNetwork1 = service.convertFormToSharedNetwork([], IPType.IPv4, formGroup)
 
         expect(sharedNetwork1.name).toBe('stanza')
         expect(sharedNetwork1.localSharedNetworks.length).toBe(2)
@@ -2310,8 +2480,75 @@ describe('SubnetSetFormService', () => {
         ).toBe(0)
     })
 
+    it('should filter out unsupported parameters during form to shared network conversion', () => {
+        // The ddns-use-conflict-resolution was deprecated and replaced with
+        // the ddns-conflict-resolution-mode in Kea 2.5.0. Let's create the shared network
+        // that carries both of these parameters. The converted shared network should
+        // exclude unsupported parameters for specific versions.
+        const sharedNetwork0: SharedNetwork = {
+            name: 'stanza',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            ddnsUseConflictResolution: true,
+                            ddnsConflictResolutionMode: 'check-with-dhcid',
+                        },
+                    },
+                },
+                {
+                    daemonId: 2,
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            ddnsUseConflictResolution: true,
+                            ddnsConflictResolutionMode: 'check-with-dhcid',
+                        },
+                    },
+                },
+            ],
+        }
+
+        // Use a wide range of Kea versions in the shared network to form conversion to
+        // ensure both parameters are included in the resulting form.
+        const formGroup = service.convertSharedNetworkToForm(['1.1.1', '3.3.3'], sharedNetwork0, [])
+
+        // Specify two daemons. The first one has version 2.3.2 which only supports
+        // the ddns-use-conflict-resolution. The latter is 2.5.0 which supports
+        // ddns-conflict-resolution-mode.
+        const daemons: VersionedDaemon[] = [
+            {
+                id: 1,
+                version: '2.3.2',
+            },
+            {
+                id: 2,
+                version: '2.5.0',
+            },
+        ]
+
+        const sharedNetwork1 = service.convertFormToSharedNetwork(daemons, IPType.IPv4, formGroup)
+
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.ddnsUseConflictResolution
+        ).toBe(true)
+        expect(
+            sharedNetwork1.localSharedNetworks[0].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.ddnsConflictResolutionMode
+        ).toBeFalsy()
+        expect(
+            sharedNetwork1.localSharedNetworks[1].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.ddnsUseConflictResolution
+        ).toBeFalsy()
+        expect(
+            sharedNetwork1.localSharedNetworks[1].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters
+                ?.ddnsConflictResolutionMode
+        ).toBe('check-with-dhcid')
+    })
+
     it('should create a default IPv4 shared network form', () => {
-        const fg = service.createDefaultSharedNetworkForm(IPType.IPv4, ['foo'])
+        const fg = service.createDefaultSharedNetworkForm(IPType.IPv4, null, ['foo'])
         expect(fg).toBeTruthy()
 
         // shared network name
@@ -2332,7 +2569,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default IPv6 shared network form', () => {
-        const fg = service.createDefaultSharedNetworkForm(IPType.IPv6, ['foo'])
+        const fg = service.createDefaultSharedNetworkForm(IPType.IPv6, null, ['foo'])
         expect(fg).toBeTruthy()
 
         // shared network name
@@ -2405,7 +2642,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formGroup = service.convertSharedNetworkToForm(sharedNetwork0, [])
+        const formGroup = service.convertSharedNetworkToForm(null, sharedNetwork0, [])
 
         // Both servers have the same options so the options are locked by default.
         // Let's now modify the second option instance while they are locked. The
@@ -2413,7 +2650,7 @@ describe('SubnetSetFormService', () => {
         // option for each server.
         formGroup.get('options.data.1.0.optionFields.0.control')?.setValue('10.1.1.1')
 
-        const subnet1 = service.convertFormToSharedNetwork(IPType.IPv4, formGroup)
+        const subnet1 = service.convertFormToSharedNetwork(null, IPType.IPv4, formGroup)
         expect(subnet1.localSharedNetworks.length).toBe(2)
         expect(
             subnet1.localSharedNetworks[1].keaConfigSharedNetworkParameters?.sharedNetworkLevelParameters?.options
@@ -2512,7 +2749,7 @@ describe('SubnetSetFormService', () => {
                 'reservations-out-of-pool': false,
             },
         ]
-        const formGroup = service.convertKeaGlobalParametersToForm('Dhcp4', configs)
+        const formGroup = service.convertKeaGlobalParametersToForm(null, 'Dhcp4', configs)
         expect(formGroup.get('allocator.unlocked')?.value).toBeFalse()
         expect((formGroup.get('allocator.values') as UntypedFormArray).length).toBe(2)
         expect(formGroup.get('allocator.values.0')?.value).toBe('iterative')
@@ -2640,6 +2877,54 @@ describe('SubnetSetFormService', () => {
         expect(formGroup.get('pdAllocator')).toBeFalsy()
     })
 
+    it('should only include ddns-use-conflict-resolution when all Kea versions are earlier than 2.5.0', () => {
+        const configs: KeaRawConfig[] = [
+            {
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+            },
+            {
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+            },
+        ]
+        const formGroup = service.convertKeaGlobalParametersToForm(['2.0.1', '2.2.2'], 'Dhcp4', configs)
+        expect(formGroup.get('ddnsUseConflictResolution')).toBeTruthy()
+        expect(formGroup.get('ddnsConflictResolutionMode')).toBeFalsy()
+    })
+
+    it('should only include ddns-conflict-resolution-mode when all Kea versions are 2.5.0 or later', () => {
+        const configs: KeaRawConfig[] = [
+            {
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+            },
+            {
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+            },
+        ]
+        const formGroup = service.convertKeaGlobalParametersToForm(['2.5.0', '3.1.1'], 'Dhcp4', configs)
+        expect(formGroup.get('ddnsUseConflictResolution')).toBeFalsy()
+        expect(formGroup.get('ddnsConflictResolutionMode')).toBeTruthy()
+    })
+
+    it('should include ddns-conflict-resolution-mode and ddns-conflict-resolution-mode', () => {
+        const configs: KeaRawConfig[] = [
+            {
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+            },
+            {
+                'ddns-conflict-resolution-mode': 'check-with-dhcid',
+                'ddns-use-conflict-resolution': true,
+            },
+        ]
+        const formGroup = service.convertKeaGlobalParametersToForm(['2.2.0', '3.1.1'], 'Dhcp4', configs)
+        expect(formGroup.get('ddnsUseConflictResolution')).toBeTruthy()
+        expect(formGroup.get('ddnsConflictResolutionMode')).toBeTruthy()
+    })
+
     it('should convert DHCPv6 global parameters to form', () => {
         const configs: KeaRawConfig[] = [
             {
@@ -2647,7 +2932,7 @@ describe('SubnetSetFormService', () => {
                 'pd-allocator': 'flq',
             },
         ]
-        const formGroup = service.convertKeaGlobalParametersToForm('Dhcp6', configs)
+        const formGroup = service.convertKeaGlobalParametersToForm(null, 'Dhcp6', configs)
         expect(formGroup.get('allocator.unlocked')?.value).toBeFalse()
         expect((formGroup.get('allocator.values') as UntypedFormArray).length).toBe(1)
         expect(formGroup.get('allocator.values.0')?.value).toBe('iterative')
@@ -2684,7 +2969,7 @@ describe('SubnetSetFormService', () => {
             },
         ]
 
-        const form = service.convertKeaGlobalConfigurationToForm(configs)
+        const form = service.convertKeaGlobalConfigurationToForm(null, configs)
 
         expect(form).toBeDefined()
 
@@ -2750,7 +3035,7 @@ describe('SubnetSetFormService', () => {
             },
         ]
 
-        const form = service.convertKeaGlobalConfigurationToForm(configs)
+        const form = service.convertKeaGlobalConfigurationToForm(null, configs)
 
         expect(form).toBeDefined()
 
@@ -2796,13 +3081,14 @@ describe('SubnetSetFormService', () => {
             },
         ]
 
-        const form = service.convertKeaGlobalConfigurationToForm(configs)
+        const form = service.convertKeaGlobalConfigurationToForm(null, configs)
 
         expect(form).toBeNull()
     })
 
     it('should convert a form to Kea parameters', () => {
         const params = service.convertFormToKeaSubnetParameters(
+            [],
             new FormGroup<KeaGlobalParametersForm>({
                 cacheThreshold: new SharedParameterFormGroup<number>(
                     {
@@ -2838,6 +3124,45 @@ describe('SubnetSetFormService', () => {
         expect(params[2].cacheThreshold).toBeFalsy()
         expect(params[2].allocator).toBeFalsy()
         expect(params[2].authoritative).toBeFalse()
+    })
+
+    it('should filter out unsupported parameters during form to global parameters conversion', () => {
+        // Specify two daemons. The first one has version 2.2.0 which only supports
+        // the ddns-use-conflict-resolution. The latter is 3.0.0 which supports
+        // ddns-conflict-resolution-mode.
+        const daemons: VersionedDaemon[] = [
+            {
+                id: 1,
+                version: '2.2.0',
+            },
+            {
+                id: 2,
+                version: '3.0.0',
+            },
+        ]
+        const params = service.convertFormToKeaSubnetParameters(
+            daemons,
+            new FormGroup<KeaGlobalParametersForm>({
+                ddnsUseConflictResolution: new SharedParameterFormGroup<boolean>(
+                    {
+                        type: 'boolean',
+                        versionUpperBound: '2.5.0',
+                    },
+                    [new FormControl(true), new FormControl(false)]
+                ),
+                ddnsConflictResolutionMode: new SharedParameterFormGroup<string>(
+                    {
+                        type: 'string',
+                        versionLowerBound: '2.5.0',
+                    },
+                    [new FormControl<string>('check-with-dhcid'), new FormControl<string>('check-with-dhcid')]
+                ),
+            })
+        )
+        console.info(params)
+        expect(params.length).toBe(2)
+        expect(params[0].ddnsUseConflictResolution).toBe(true)
+        expect(params[0].ddnsConflictResolutionMode).toBeFalsy()
     })
 
     it('should convert a form to the global Kea configuration', () => {
@@ -2889,7 +3214,7 @@ describe('SubnetSetFormService', () => {
             }),
         })
 
-        const configs = service.convertFormToKeaGlobalParameters(form, IPType.IPv4)
+        const configs = service.convertFormToKeaGlobalParameters(null, form, IPType.IPv4)
         expect(configs).toBeDefined()
         expect(configs.length).toBe(2)
 

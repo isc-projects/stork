@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core'
 import {
-    AbstractControl,
     FormArray,
     FormControl,
     FormGroup,
@@ -9,6 +8,7 @@ import {
     UntypedFormGroup,
     Validators,
 } from '@angular/forms'
+import { gte, lt, valid } from 'semver'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
 import {
     DelegatedPrefixPool,
@@ -324,6 +324,18 @@ export interface KeaGlobalConfigurationForm {
 }
 
 /**
+ * An interface for retrieving a version of a daemon.
+ *
+ * It is used in the form conversion functions where some of the
+ * parameters must be excluded when the daemons do not meet version
+ * requirements for the selected parameters.
+ */
+export interface VersionedDaemon {
+    id: number
+    version: string
+}
+
+/**
  * Raw Kea configuration type.
  *
  * It is an alias for a raw configuration returned by the Kea server
@@ -369,25 +381,38 @@ export class SubnetSetFormService {
      *
      * @typeParam FormType a type of the form holding the parameters.
      * @typeParam ParamsType a type of the parameter set returned by this function.
+     * @param daemons an array of daemons including their software versions.
      * @param form a form group holding the parameters set by the {@link SharedParametersForm}
      * component.
      * @returns An array of the parameter sets.
      */
     private convertFormToKeaParameters<
-        FormType extends { [K in keyof FormType]: AbstractControl<any, any> },
+        FormType extends { [K in keyof FormType]: SharedParameterFormGroup<any, any> },
         ParamsType extends { [K in keyof ParamsType]: ParamsType[K] },
-    >(form: FormGroup<FormType>): ParamsType[] {
+    >(daemons: VersionedDaemon[], form: FormGroup<FormType>): ParamsType[] {
         const params: ParamsType[] = []
         // Iterate over all parameters.
         for (let key in form.controls) {
             const unlocked = form.get(key).get('unlocked')?.value
             // Get the values of the parameter for different servers.
             const values = form.get(key).get('values') as UntypedFormArray
+            const data = (form.controls[key] as SharedParameterFormGroup<any, any>)?.data
             // For each server-specific value of the parameter.
             for (let i = 0; i < values?.length; i++) {
                 // If we haven't added the parameter set for the current index let's add one.
                 if (params.length <= i) {
                     params.push({} as ParamsType)
+                }
+                // Some of the configured parameters may not be applicable to certain Kea
+                // server versions. We need to compare the daemon versions with the upper
+                // and lower bound versions potentailly set for each parameter.
+                if (
+                    valid(daemons?.[i]?.version) &&
+                    ((valid(data?.versionLowerBound) && lt(daemons[i].version, data.versionLowerBound)) ||
+                        (valid(data?.versionUpperBound) && gte(daemons[i].version, data.versionUpperBound)))
+                ) {
+                    // The parameter is not supported by the current daemon version.
+                    continue
                 }
                 // If the parameter is unlocked, there should be a value dedicated
                 // for each server. Otherwise, we add the first (common) value.
@@ -510,12 +535,15 @@ export class SubnetSetFormService {
      * the subnet parameters. It comprises the metadata describing each parameter.
      *
      * @param ipType subnet universe (IPv4 or IPv6).
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param level level in the configuration hierarchy.
      * @param parameters Kea-specific subnet parameters.
      * @returns Created form group instance.
      */
     convertKeaSubnetParametersToForm(
         ipType: IPType,
+        keaVersionRange: [string, string],
         level: 'subnet' | 'shared-network',
         parameters: KeaConfigSubnetDerivedParameters[]
     ): FormGroup<KeaSubnetParametersForm> {
@@ -592,24 +620,6 @@ export class SubnetSetFormService {
                     type: 'boolean',
                 },
                 parameters.map((params) => new FormControl<boolean>(params.ddnsUpdateOnRenew))
-            ),
-            ddnsUseConflictResolution: new SharedParameterFormGroup<boolean>(
-                {
-                    type: 'boolean',
-                },
-                parameters.map((params) => new FormControl<boolean>(params.ddnsUseConflictResolution))
-            ),
-            ddnsConflictResolutionMode: new SharedParameterFormGroup<string>(
-                {
-                    type: 'string',
-                    values: [
-                        'check-with-dhcid',
-                        'no-check-with-dhcid',
-                        'check-exists-with-dhcid',
-                        'no-check-without-dhcid',
-                    ],
-                },
-                parameters.map((params) => new FormControl<string>(params.ddnsConflictResolutionMode))
             ),
             hostnameCharReplacement: new SharedParameterFormGroup<string>(
                 {
@@ -744,6 +754,30 @@ export class SubnetSetFormService {
                 )
             ),
         }
+        if (!keaVersionRange || lt(keaVersionRange[0], '2.5.0')) {
+            form.ddnsUseConflictResolution = new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                    versionUpperBound: !keaVersionRange || gte(keaVersionRange[1], '2.5.0') ? '2.5.0' : undefined,
+                },
+                parameters.map((params) => new FormControl<boolean>(params.ddnsUseConflictResolution))
+            )
+        }
+        if (!keaVersionRange || gte(keaVersionRange[1], '2.5.0')) {
+            form.ddnsConflictResolutionMode = new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: [
+                        'check-with-dhcid',
+                        'no-check-with-dhcid',
+                        'check-exists-with-dhcid',
+                        'no-check-without-dhcid',
+                    ],
+                    versionLowerBound: !keaVersionRange || lt(keaVersionRange[0], '2.5.0') ? '2.5.0' : undefined,
+                },
+                parameters.map((params) => new FormControl<string>(params.ddnsConflictResolutionMode))
+            )
+        }
         // DHCPv4 parameters.
         switch (ipType) {
             case IPType.IPv4:
@@ -840,14 +874,18 @@ export class SubnetSetFormService {
      * Converts a form holding DHCP parameters to a set of parameters assignable
      * to a subnet instance.
      *
+     * @param daemons an array of daemons comprising their software versions.
      * @param form a form holding DHCP parameters for a subnet.
      * @returns An array of parameter sets for different servers.
      */
-    convertFormToKeaSubnetParameters(form: FormGroup<KeaSubnetParametersForm>): KeaConfigSubnetDerivedParameters[] {
+    convertFormToKeaSubnetParameters(
+        daemons: VersionedDaemon[],
+        form: FormGroup<KeaSubnetParametersForm>
+    ): KeaConfigSubnetDerivedParameters[] {
         const convertedParameters = this.convertFormToKeaParameters<
             KeaSubnetParametersForm,
             KeaConfigSubnetDerivedParameters
-        >(form)
+        >(daemons, form)
         for (let parameters of convertedParameters) {
             if ('relayAddresses' in parameters) {
                 parameters.relay = {
@@ -863,22 +901,26 @@ export class SubnetSetFormService {
      * Creates a default parameters form for an empty subnet.
 
      * @param ipType shared network universe (IPv4 or IPv6).
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @returns A default form group for a shared network.
      */
-    createDefaultKeaSharedNetworkParametersForm(ipType: IPType): UntypedFormGroup {
+    createDefaultKeaSharedNetworkParametersForm(ipType: IPType, keaVersionRange: [string, string]): UntypedFormGroup {
         let parameters: KeaConfigSubnetDerivedParameters[] = [{}]
-        return this.convertKeaSubnetParametersToForm(ipType, 'shared-network', parameters)
+        return this.convertKeaSubnetParametersToForm(ipType, keaVersionRange, 'shared-network', parameters)
     }
 
     /**
      * Creates a default parameters form for an empty subnet.
      *
      * @param ipType subnet universe (IPv4 or IPv6).
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @returns A default form group for a subnet.
      */
-    createDefaultKeaSubnetParametersForm(ipType: IPType): UntypedFormGroup {
+    createDefaultKeaSubnetParametersForm(ipType: IPType, keaVersionRange: [string, string]): UntypedFormGroup {
         let parameters: KeaConfigSubnetDerivedParameters[] = [{}]
-        return this.convertKeaSubnetParametersToForm(ipType, 'subnet', parameters)
+        return this.convertKeaSubnetParametersToForm(ipType, keaVersionRange, 'subnet', parameters)
     }
 
     /**
@@ -946,12 +988,17 @@ export class SubnetSetFormService {
     /**
      * Converts a form holding pool data to a pool instance.
      *
+     * @param daemons an array of daemons including their software data.
      * @param localData an interface pointing to a local subnet, pool or shared
      * network for which the data should be converted.
      * @param form form a form comprising pool data.
      * @returns A pool instance converted from the form.
      */
-    convertFormToAddressPools(localData: LocalDaemonData, form: FormArray<FormGroup<AddressPoolForm>>): Pool[] {
+    convertFormToAddressPools(
+        daemons: VersionedDaemon[],
+        localData: LocalDaemonData,
+        form: FormArray<FormGroup<AddressPoolForm>>
+    ): Pool[] {
         const pools: Pool[] = []
         for (let poolCtrl of form.controls) {
             const selectedDaemons = poolCtrl.get('selectedDaemons')?.value
@@ -960,7 +1007,10 @@ export class SubnetSetFormService {
                 continue
             }
             const range = `${poolCtrl.get('range.start').value}-${poolCtrl.get('range.end').value}`
-            const params = this.convertFormToKeaParameters(poolCtrl.get('parameters') as FormGroup<AddressPoolForm>)
+            const params = this.convertFormToKeaParameters(
+                daemons.filter((d) => d.id in selectedDaemons),
+                poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>
+            )
             const options = poolCtrl.get('options') as UntypedFormGroup
             const pool: Pool = {
                 pool: range,
@@ -1051,12 +1101,14 @@ export class SubnetSetFormService {
     /**
      * Converts a form holding delegated prefix pool data to a pool instance.
      *
+     * @param daemons an array of daemons including their software versions.
      * @param localData an interface pointing to a local subnet, pool or shared
      * network for which the data should be converted.
      * @param form form a form comprising pool data.
      * @returns A pool instance converted from the form.
      */
     convertFormToPrefixPools(
+        daemons: VersionedDaemon[],
         localData: LocalDaemonData,
         form: FormArray<FormGroup<PrefixPoolForm>>
     ): DelegatedPrefixPool[] {
@@ -1068,7 +1120,10 @@ export class SubnetSetFormService {
                 continue
             }
             const prefix = poolCtrl.get('prefixes.prefix').value
-            const params = this.convertFormToKeaParameters(poolCtrl.get('parameters') as FormGroup<PrefixPoolForm>)
+            const params = this.convertFormToKeaParameters(
+                daemons.filter((d) => d.id in selectedDaemons),
+                poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>
+            )
             const options = poolCtrl.get('options') as UntypedFormGroup
             const pool: DelegatedPrefixPool = {
                 prefix: prefix || null,
@@ -1095,10 +1150,12 @@ export class SubnetSetFormService {
      * Converts subnet data to a form.
      *
      * @param ipType universe (i.e., IPv4 or IPv6 subnet)
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param subnet subnet data.
      * @returns A form created for a subnet.
      */
-    convertSubnetToForm(ipType: IPType, subnet: Subnet): FormGroup<SubnetForm> {
+    convertSubnetToForm(ipType: IPType, keaVersionRange: [string, string], subnet: Subnet): FormGroup<SubnetForm> {
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: subnet.subnet, disabled: true }),
             sharedNetwork: new FormControl(subnet.sharedNetworkId),
@@ -1106,6 +1163,7 @@ export class SubnetSetFormService {
             prefixPools: this.convertPrefixPoolsToForm(subnet),
             parameters: this.convertKeaSubnetParametersToForm(
                 ipType,
+                keaVersionRange,
                 'subnet',
                 subnet.localSubnets?.map((ls) => ls.keaConfigSubnetParameters.subnetLevelParameters) || []
             ),
@@ -1134,12 +1192,14 @@ export class SubnetSetFormService {
     /**
      * Converts shared network data to a form.
      *
-     * @param ipType universe (i.e., IPv4 or IPv6 shared network)
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param sharedNetwork shared network data.
      * @param sharedNetworkNames list of names of the existing shared networks.
      * @returns A form created for a shared network.
      */
     convertSharedNetworkToForm(
+        keaVersionRange: [string, string],
         sharedNetwork: SharedNetwork,
         sharedNetworkNames: string[]
     ): FormGroup<SharedNetworkForm> {
@@ -1150,6 +1210,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.convertKeaSubnetParametersToForm(
                 sharedNetwork.universe,
+                keaVersionRange,
                 'shared-network',
                 sharedNetwork.localSharedNetworks?.map(
                     (lsn) => lsn.keaConfigSharedNetworkParameters.sharedNetworkLevelParameters
@@ -1178,13 +1239,19 @@ export class SubnetSetFormService {
      * Creates a default form for a shared network.
      *
      * @param ipType a shared network universe (IPv4 or IPv6).
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param sharedNetworks existing shared networks' names.
      * @returns A default form group for a shared network.
      */
-    createDefaultSharedNetworkForm(ipType: IPType, sharedNetworks: string[]): FormGroup<SharedNetworkForm> {
+    createDefaultSharedNetworkForm(
+        ipType: IPType,
+        keaVersionRange: [string, string],
+        sharedNetworks: string[]
+    ): FormGroup<SharedNetworkForm> {
         let formGroup = new FormGroup<SharedNetworkForm>({
             name: new FormControl('', [Validators.required, StorkValidators.valueInList(sharedNetworks)]),
-            parameters: this.createDefaultKeaSharedNetworkParametersForm(ipType),
+            parameters: this.createDefaultKeaSharedNetworkParametersForm(ipType, keaVersionRange),
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl<number[]>([], Validators.required),
         })
@@ -1199,11 +1266,13 @@ export class SubnetSetFormService {
      * depends on the exact subnet value. If the subnet is not specified, the subnet
      * control remains enabled.
      *
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param subnets an array of existing subnets that are compared with the subnet
      * in the form for overlaps, or a specified subnet.
      * @returns A default form group for a subnet.
      */
-    createDefaultSubnetForm(subnets: string[] | string): FormGroup<SubnetForm> {
+    createDefaultSubnetForm(keaVersionRange: [string, string], subnets: string[] | string): FormGroup<SubnetForm> {
         const isArray = Array.isArray(subnets)
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: isArray ? null : subnets, disabled: !isArray }, [
@@ -1214,7 +1283,7 @@ export class SubnetSetFormService {
             sharedNetwork: new FormControl(null),
             pools: new FormArray<FormGroup<AddressPoolForm>>([], StorkValidators.ipRangeOverlaps),
             prefixPools: new FormArray<FormGroup<PrefixPoolForm>>([], StorkValidators.ipv6PrefixOverlaps),
-            parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4),
+            parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4, keaVersionRange),
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl<number[]>([], Validators.required),
         })
@@ -1226,10 +1295,11 @@ export class SubnetSetFormService {
      *
      * It currently only converts the simple DHCP parameters and options.
      *
+     * @param daemons an array of daemons comprising their software versions.
      * @param form a form comprising subnet data.
      * @returns A subnet instance converted from the form.
      */
-    convertFormToSubnet(form: FormGroup<SubnetForm>): Subnet {
+    convertFormToSubnet(daemons: VersionedDaemon[], form: FormGroup<SubnetForm>): Subnet {
         let subnet: Subnet = {
             subnet: form.get('subnet')?.value,
             sharedNetworkId: form.get('sharedNetwork')?.value,
@@ -1243,6 +1313,7 @@ export class SubnetSetFormService {
         }
         // Convert the simple DHCP parameters and options.
         const params = this.convertFormToKeaSubnetParameters(
+            daemons,
             form.get('parameters') as FormGroup<KeaSubnetParametersForm>
         )
         const options = form.get('options') as UntypedFormGroup
@@ -1256,10 +1327,12 @@ export class SubnetSetFormService {
                 }
             }
             subnet.localSubnets[i].pools = this.convertFormToAddressPools(
+                daemons,
                 subnet.localSubnets[i],
                 form.get('pools') as FormArray<FormGroup<AddressPoolForm>>
             )
             subnet.localSubnets[i].prefixDelegationPools = this.convertFormToPrefixPools(
+                daemons,
                 subnet.localSubnets[i],
                 form.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
             )
@@ -1278,11 +1351,16 @@ export class SubnetSetFormService {
     /**
      * Converts a form holding shared network data to a shared network instance.
      *
+     * @param daemons an array of daemons including their software versions.
      * @param ipType universe (i.e., IPv4 or IPv6 shared network)
      * @param form a form comprising subnet data.
      * @returns A subnet instance converted from the form.
      */
-    convertFormToSharedNetwork(ipType: IPType, form: FormGroup<SharedNetworkForm>): SharedNetwork {
+    convertFormToSharedNetwork(
+        daemons: VersionedDaemon[],
+        ipType: IPType,
+        form: FormGroup<SharedNetworkForm>
+    ): SharedNetwork {
         let sharedNetwork: SharedNetwork = {
             name: form.get('name')?.value,
             universe: ipType === IPType.IPv6 ? 6 : 4,
@@ -1296,6 +1374,7 @@ export class SubnetSetFormService {
         }
         // Convert the simple DHCP parameters and options.
         const params = this.convertFormToKeaSubnetParameters(
+            daemons,
             form.get('parameters') as FormGroup<KeaSubnetParametersForm>
         )
         const options = form.get('options') as UntypedFormGroup
@@ -1329,11 +1408,15 @@ export class SubnetSetFormService {
      * the global Kea parameters. It comprises the metadata describing each
      * parameter.
      *
-     * @param ipType universe (IPv4 or IPv6).
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
+     * @param topLevelKey: top level key in the Kea configuration, used to determine
+     *        the confgured server type.
      * @param configs Kea-specific global parameters parameters.
      * @returns Created form group instance.
      */
     convertKeaGlobalParametersToForm(
+        keaVersionRange: [string, string],
         topLevelKey: 'Dhcp4' | 'Dhcp6',
         configs: KeaRawConfig[]
     ): FormGroup<KeaGlobalParametersForm> {
@@ -1392,24 +1475,6 @@ export class SubnetSetFormService {
                     type: 'boolean',
                 },
                 configs.map((params) => new FormControl<boolean>(params['ddns-update-on-renew']))
-            ),
-            ddnsUseConflictResolution: new SharedParameterFormGroup<boolean>(
-                {
-                    type: 'boolean',
-                },
-                configs.map((params) => new FormControl<boolean>(params['ddns-use-conflict-resolution']))
-            ),
-            ddnsConflictResolutionMode: new SharedParameterFormGroup<string>(
-                {
-                    type: 'string',
-                    values: [
-                        'check-with-dhcid',
-                        'no-check-with-dhcid',
-                        'check-exists-with-dhcid',
-                        'no-check-without-dhcid',
-                    ],
-                },
-                configs.map((params) => new FormControl<string>(params['ddns-conflict-resolution-mode']))
             ),
             dhcpDdnsEnableUpdates: new SharedParameterFormGroup<boolean>(
                 {
@@ -1562,6 +1627,30 @@ export class SubnetSetFormService {
                 configs.map((params) => new FormControl<string>(params['allocator']))
             ),
         }
+        if (!keaVersionRange || lt(keaVersionRange[0], '2.5.0')) {
+            form.ddnsUseConflictResolution = new SharedParameterFormGroup<boolean>(
+                {
+                    type: 'boolean',
+                    versionUpperBound: !keaVersionRange || gte(keaVersionRange[1], '2.5.0') ? '2.5.0' : undefined,
+                },
+                configs.map((params) => new FormControl<boolean>(params['ddns-use-conflict-resolution']))
+            )
+        }
+        if (!keaVersionRange || gte(keaVersionRange[1], '2.5.0')) {
+            form.ddnsConflictResolutionMode = new SharedParameterFormGroup<string>(
+                {
+                    type: 'string',
+                    values: [
+                        'check-with-dhcid',
+                        'no-check-with-dhcid',
+                        'check-exists-with-dhcid',
+                        'no-check-without-dhcid',
+                    ],
+                    versionLowerBound: !keaVersionRange || lt(keaVersionRange[0], '2.5.0') ? '2.5.0' : undefined,
+                },
+                configs.map((params) => new FormControl<string>(params['ddns-conflict-resolution-mode']))
+            )
+        }
         switch (topLevelKey) {
             // DHCPv4 parameters.
             case 'Dhcp4':
@@ -1593,11 +1682,15 @@ export class SubnetSetFormService {
      * the global Kea configuration. It comprises the metadata describing each
      * parameter.
      *
-     * @param ipType universe (IPv4 or IPv6).
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param parameters Kea-specific global parameters parameters.
      * @returns Created form group instance.
      */
-    convertKeaGlobalConfigurationToForm(configs: KeaDaemonConfig[]): FormGroup<KeaGlobalConfigurationForm> {
+    convertKeaGlobalConfigurationToForm(
+        keaVersionRange: [string, string],
+        configs: KeaDaemonConfig[]
+    ): FormGroup<KeaGlobalConfigurationForm> {
         if (!configs?.length) {
             return null
         }
@@ -1615,7 +1708,7 @@ export class SubnetSetFormService {
         }
         const innerConfigs = configs.map((config) => config.config[topLevelKeys[0]])
         const formGroup = new FormGroup<KeaGlobalConfigurationForm>({
-            parameters: this.convertKeaGlobalParametersToForm(topLevelKeys[0], innerConfigs),
+            parameters: this.convertKeaGlobalParametersToForm(keaVersionRange, topLevelKeys[0], innerConfigs),
             options: new FormGroup({
                 unlocked: new FormControl(hasDifferentGlobalLevelOptions(configs)),
                 data: new UntypedFormArray(
@@ -1635,11 +1728,12 @@ export class SubnetSetFormService {
      * Converts a form holding global configuration data to an API instance.
      *
      * It currently only converts the simple DHCP parameters and options.
-     *
+     * @param daemons an array of daemons including their software versions.
      * @param form A form comprising global configuration data.
      * @returns A configuration instance converted from the form.
      */
     convertFormToKeaGlobalParameters(
+        daemons: VersionedDaemon[],
         form: FormGroup<KeaGlobalConfigurationForm>,
         ipType: IPType
     ): KeaConfigurableGlobalParameters[] {
@@ -1648,7 +1742,7 @@ export class SubnetSetFormService {
         const convertedParameters = this.convertFormToKeaParameters<
             KeaGlobalParametersForm,
             KeaConfigurableGlobalParameters
-        >(parametersForm)
+        >(daemons, parametersForm)
 
         const options = form.get('options') as UntypedFormGroup
         for (let i = 0; i < convertedParameters.length; i++) {

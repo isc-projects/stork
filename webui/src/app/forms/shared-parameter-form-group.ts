@@ -36,22 +36,70 @@ type Unarray<T> = T extends Array<infer U> ? U : T
 /**
  * A shared parameter descriptor in the form group.
  *
- * It provides the metadata for each shared parameter describing its
- * type, selectable values, min and max value, fractional digits and
- * a validation error text.
- *
  * @typeParam type of the parameter values.
  */
 interface EditableParameterSpec<T> {
+    /**
+     * Parameter type used to select appropriate control type.
+     */
     type: string
+
+    /**
+     * A set of values valid for the parameter.
+     */
     values?: Unarray<T>[]
+
+    /**
+     * Indicates if the parameter carries an array of values.
+     */
     isArray?: boolean
+
+    /**
+     * Minimum allowed number value.
+     */
     min?: number
+
+    /**
+     * Maximum allowed number value.
+     */
     max?: number
+
+    /**
+     * A number of fractional digits for the value.
+     */
     fractionDigits?: number
+
+    /**
+     * An error text to be displayed when the specified value in the
+     * form is invalid.
+     */
     invalidText?: string
+
+    /**
+     * Indicates if the value is mandatory.
+     */
     required?: boolean
+
+    /**
+     * A value to be set when the control in the form is cleared.
+     */
     clearValue?: T
+
+    /**
+     * An earliest daemon version supporting this parameter.
+     *
+     * The parameter is not configurable for the Kea versions earlier than
+     * indicated by this field.
+     */
+    versionLowerBound?: string
+
+    /**
+     * The first daemon version that no longer supports this parameter.
+     *
+     * The parameter is not configurable for the Kea versions equal or later
+     * than indicated by this field.
+     */
+    versionUpperBound?: string
 }
 
 /**

@@ -28,6 +28,11 @@ export interface SelectableDaemon {
     name: string
 
     /**
+     * Daemon software version.
+     */
+    version: string
+
+    /**
      * Daemon label presented in the multi-select list.
      */
     label: string
