@@ -180,6 +180,7 @@ describe('UsersPageComponent', () => {
 
         // Open the new user tab.
         paramMapValue.next(convertToParamMap({ id: 'new' }))
+        tick()
         fixture.detectChanges()
 
         // Initially the form should be invalid because it is empty.
@@ -193,6 +194,7 @@ describe('UsersPageComponent', () => {
         component.userForm.get('userGroup').setValue(1)
         component.userForm.get('userPassword').setValue('password with spaces is cool')
         component.userForm.get('userPassword2').setValue('password with spaces is cool')
+        tick()
         fixture.detectChanges()
 
         // The form should be validated ok.
