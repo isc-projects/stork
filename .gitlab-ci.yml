@@ -659,7 +659,8 @@ system_test:
     when: always
 
 ### hooks ###
-build_hooks:
+build_hooks_amd64:
+  extends: .base_build_debian
   stage: hooks
   when: always
   needs: []
@@ -671,7 +672,17 @@ build_hooks:
     untracked: true
     expire_in: 1 hour
 
-build_hooks_legacy:
+build_hooks_arm64:
+  extends: build_hooks_amd64
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - aarch64
+  variables:
+    ARCH: arm64
+
+build_hooks_legacy_amd64:
   stage: hooks
   rules:
     - when: on_success
@@ -680,11 +691,11 @@ build_hooks_legacy:
     - aws
     - runner-manager
     - amd64
-  # Use image based on Ubuntu 20.04. It is required to build the binaries with
+  # Use image based on Debian 11. It is required to build the binaries with
   # the older GLIBC version.
-  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:1
+  image: ruby:3.3.5-bullseye
   needs:
-    - build_hooks
+    - build_hooks_amd64
   # The submodules are not included in the artifacts even if the `untracked`
   # option is set. It is a bug in GitLab: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2457
   # We clone the fresh copy of the submodules. As long as our hooks need only
@@ -698,6 +709,18 @@ build_hooks_legacy:
     paths:
       - hooks/*.so
     expire_in: 1 hour
+
+build_hooks_legacy_arm64:
+  extends: build_hooks_legacy_amd64
+  tags:
+    - linux
+    - aws
+    - runner-manager
+    - aarch64
+  needs:
+    - build_hooks_arm64
+  variables:
+    ARCH: arm64
 
 unittest_hooks:
   stage: hooks
@@ -730,7 +753,7 @@ build_hooks_debs_amd64:
     - when: on_success
   needs:
     # Use the binaries compiled by the legacy image.
-    - build_hooks_legacy
+    - build_hooks_legacy_amd64
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
@@ -746,9 +769,11 @@ build_hooks_debs_arm64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs: []
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_hooks_legacy_arm64
   script:
-    - rake hook:build_pkg
+    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
   artifacts:
     paths:
@@ -762,9 +787,11 @@ build_hooks_rpms_amd64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs:  []
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_hooks_legacy_amd64
   script:
-    - rake hook:build_pkg
+    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.rpm ./
   artifacts:
     paths:
@@ -778,9 +805,11 @@ build_hooks_rpms_arm64:
     GIT_SUBMODULE_STRATEGY: normal
   rules:
     - when: on_success
-  needs: []
+  needs:
+    # Use the binaries compiled by the legacy image.
+    - build_hooks_legacy_arm64
   script:
-    - rake hook:build_pkg
+    - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.rpm ./
   artifacts:
     paths:
