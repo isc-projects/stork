@@ -761,7 +761,7 @@ func GetSubnetPrefixes(dbi dbops.DBI) ([]string, error) {
 // in a transaction. Internally, the association is made via the local_subnet
 // table which holds the information about the subnet from the given daemon
 // perspective, local subnet id, statistics etc.
-func addDaemonToSubnet(tx *pg.Tx, subnet *Subnet, daemon *Daemon) error {
+func addDaemonToSubnet(dbi dbops.DBI, subnet *Subnet, daemon *Daemon) error {
 	localSubnetID := int64(0)
 	// If the prefix is available we should try to match the subnet prefix
 	// with the app's configuration and retrieve the local subnet id from
@@ -777,7 +777,7 @@ func addDaemonToSubnet(tx *pg.Tx, subnet *Subnet, daemon *Daemon) error {
 	// Try to insert. If such association already exists we could maybe do
 	// nothing, but we do update instead to force setting the new value
 	// of the local_subnet_id if it has changed.
-	_, err := tx.Model(&localSubnet).
+	_, err := dbi.Model(&localSubnet).
 		Column("subnet_id").
 		Column("daemon_id").
 		Column("local_subnet_id").

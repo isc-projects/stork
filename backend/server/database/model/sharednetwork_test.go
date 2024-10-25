@@ -178,23 +178,161 @@ func TestPopulateSharedNetworkDaemons(t *testing.T) {
 }
 
 // Tests that the shared network can be added and retrieved.
-func TestAddSharedNetwork(t *testing.T) {
+func TestAddAndGetSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+
+	machine := &Machine{Address: "127.0.0.1", AgentPort: 8080}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &App{
+		Type: AppTypeKea,
+		Daemons: []*Daemon{{
+			Name: DaemonNameDHCPv4,
+			KeaDaemon: &KeaDaemon{
+				ConfigHash: "hash",
+			},
+		}},
+		MachineID: machine.ID,
+	}
+	daemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	daemon := daemons[0]
 
 	network := SharedNetwork{
 		Name:   "funny name",
 		Family: 6,
+		Subnets: []Subnet{{
+			Prefix: "2001:db8::/32",
+		}},
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: daemon.ID,
+			},
+		},
 	}
-	err := AddSharedNetwork(db, &network)
+
+	err = AddSharedNetwork(db, &network)
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
+
+	err = AddDaemonToSubnet(db, &network.Subnets[0], daemon)
+	require.NoError(t, err)
+
+	subnet, err := GetSubnet(db, network.Subnets[0].ID)
+	require.NoError(t, err)
+
+	err = AddAddressPool(db, &AddressPool{
+		LowerBound:    "2001:db8::1",
+		UpperBound:    "2001:db8::10",
+		LocalSubnetID: subnet.LocalSubnets[0].ID,
+	})
+	require.NoError(t, err)
+
+	err = AddPrefixPool(db, &PrefixPool{
+		Prefix:        "2001:db8:1::/96",
+		DelegatedLen:  120,
+		LocalSubnetID: subnet.LocalSubnets[0].ID,
+	})
+
+	err = AddLocalSharedNetworks(db, &network)
+	require.NoError(t, err)
 
 	returned, err := GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, network.Name, returned.Name)
 	require.NotZero(t, returned.CreatedAt)
+
+	// Check the relations.
+	require.NotEmpty(t, returned.LocalSharedNetworks)
+	require.NotEmpty(t, returned.LocalSharedNetworks[0].Daemon)
+	require.NotEmpty(t, returned.LocalSharedNetworks[0].Daemon.KeaDaemon)
+	require.NotEmpty(t, returned.Subnets)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets[0].Daemon)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets[0].Daemon.KeaDaemon)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets[0].AddressPools)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets[0].PrefixPools)
+}
+
+// Tests that the caller can specify list of shared network relations.
+func TestGetSharedNetworkWithRelations(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{Address: "127.0.0.1", AgentPort: 8080}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &App{
+		Type: AppTypeKea,
+		Daemons: []*Daemon{{
+			Name: DaemonNameDHCPv4,
+			KeaDaemon: &KeaDaemon{
+				ConfigHash: "hash",
+			},
+		}},
+		MachineID: machine.ID,
+	}
+	daemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	daemon := daemons[0]
+
+	network := SharedNetwork{
+		Name:   "funny name",
+		Family: 6,
+		Subnets: []Subnet{{
+			Prefix: "2001:db8::/32",
+		}},
+		LocalSharedNetworks: []*LocalSharedNetwork{
+			{
+				DaemonID: daemon.ID,
+			},
+		},
+	}
+
+	err = AddSharedNetwork(db, &network)
+	require.NoError(t, err)
+	require.NotZero(t, network.ID)
+
+	err = AddDaemonToSubnet(db, &network.Subnets[0], daemon)
+	require.NoError(t, err)
+
+	subnet, err := GetSubnet(db, network.Subnets[0].ID)
+	require.NoError(t, err)
+
+	err = AddAddressPool(db, &AddressPool{
+		LowerBound:    "2001:db8::1",
+		UpperBound:    "2001:db8::10",
+		LocalSubnetID: subnet.LocalSubnets[0].ID,
+	})
+	require.NoError(t, err)
+
+	err = AddPrefixPool(db, &PrefixPool{
+		Prefix:        "2001:db8:1::/96",
+		DelegatedLen:  120,
+		LocalSubnetID: subnet.LocalSubnets[0].ID,
+	})
+
+	err = AddLocalSharedNetworks(db, &network)
+	require.NoError(t, err)
+
+	returned, err := GetSharedNetworkWithRelations(db, network.ID,
+		SharedNetworkRelationAddressPools, SharedNetworkRelationPrefixPools)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.Equal(t, network.Name, returned.Name)
+	require.NotZero(t, returned.CreatedAt)
+
+	// Check the references.
+	require.Empty(t, returned.LocalSharedNetworks)
+	require.NotEmpty(t, returned.Subnets)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets)
+	require.Empty(t, returned.Subnets[0].LocalSubnets[0].Daemon)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets[0].AddressPools)
+	require.NotEmpty(t, returned.Subnets[0].LocalSubnets[0].PrefixPools)
 }
 
 // Test that a shared network with subnets and pools can be added and
