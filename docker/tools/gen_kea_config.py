@@ -11,6 +11,36 @@ import sys
 import json
 import copy
 import random
+import itertools
+
+
+def ipv4_address_generator(number_of_addresses, begin="1.0.0.0", mask=32):
+    """
+    Generates a sequence of IPv4 addresses.
+
+    Parameters
+    ----------
+    number_of_addresses : int
+        Number of addresses to generate.
+    begin : str, optional
+        A first address to generate, by default "1.0.0.0"
+    mask : int, optional
+        An address mask, the part outside mask is preserved, by default 32
+    """
+
+    def increment(address):
+        address_binary = int(
+            "".join(f"{int(octet):08b}" for octet in address.split(".")), 2
+        )
+        address_binary += 1 << (32 - mask)
+        return ".".join(
+            str(int(address_binary >> (24 - i * 8) & 0xFF)) for i in range(4)
+        )
+
+    address = begin
+    for _ in range(number_of_addresses):
+        yield address
+        address = increment(address)
 
 
 class ParseKwargs(argparse.Action):
@@ -257,6 +287,7 @@ KEA_BASE_CONFIG = {
             {"library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_stat_cmds.so"},
         ],
         "subnet4": [],
+        "shared-networks": [],
         "loggers": [
             {
                 "name": "kea-dhcp4",
@@ -332,9 +363,7 @@ def create_mac_selector():
     return mac_selector
 
 
-def generate_reservations(
-    version, reservation_range, mac_selector, address_modifier=1, subnet=""
-):
+def generate_reservations(version, number_of_reservations, mac_selector, subnet=""):
     """
     Generates the host reservations' part of configuration.
 
@@ -342,40 +371,37 @@ def generate_reservations(
     ----------
     version: int, 4 or 6
         IP family
-    reservation_range: int
+    number_of_reservations: int
         The number of reservations to generate. Min: 0, max: 254.
     mac_selector: generator[str]
         Generator of the MAC addresses.
-    address_modifier:
-        The fixed octet included in all reserved addresses. Min: 0, max 255.
     subnet: str
-        The two first octets of the subnet IP.
+        The three first octets of the subnet IP.
     """
-    if reservation_range == 0:
+    if number_of_reservations == 0:
         return {}
 
     # this is for usage outside generate_v4/6_subnet e.g. global
     if subnet == "" and version == 4:
-        subnet = "11.0"  # default value for all tests
+        subnet = "11.0.0"  # default value for all tests
     elif subnet == "" and version == 6:
         subnet = "2001:db8"  # default value for all tests
 
     reservations = []
-    for i in range(1, reservation_range + 1):
+    for i in range(1, number_of_reservations + 1):
         if version == 4:
             single_reservation = {
                 "hostname": f"reserved-hostname-{subnet}-{i}",
-                # "option-data": [random.choice(optiondata4)],
                 "hw-address": mac_selector(),
-                "ip-address": f"{subnet}.{address_modifier}.{i}",
+                "ip-address": f"{subnet}.{i}",
             }
 
             reservations.append(single_reservation)
         elif version == 6:
             single_reservation = {
-                "hostname": f"reserved-hostname-{subnet}:{address_modifier}-{i}",
+                "hostname": f"reserved-hostname-{subnet}-{i}",
                 "hw-address": mac_selector(),
-                "ip-addresses": [f"{subnet}:{address_modifier}::{hex(i)[2:]}"],
+                "ip-addresses": [f"{subnet}::{hex(i)[2:]}"],
             }
 
             reservations.append(single_reservation)
@@ -392,9 +418,8 @@ def get_option(ip_version, number_of_options=1):
     return {"option-data": random.sample(optiondata6, number_of_options)}
 
 
-def generate_v4_subnet(
-    range_of_outer_scope,
-    range_of_inner_scope,
+def generate_v4_subnets(
+    subnet_generator,
     mac_selector,
     reservation_count=0,
     subnet_id_start=1,
@@ -405,11 +430,9 @@ def generate_v4_subnet(
 
     Parameters
     ----------
-    range_of_outer_scope: int
-        Number of generated group of addresses. The group is a first octet of
-        IP address. Min: 0, max: 254.
-    range_of_inner_scope: int
-        Number of generated addresses in each group. Min: 0, max: 254.
+    subnet_generator
+        A generator of subnets. It is expected that the generated subnets have
+        a mask of 24 and end with 0.
     mac_selector: generator
         Generator of MAC addresses.
     reservation_count: int
@@ -423,35 +446,36 @@ def generate_v4_subnet(
     subnet_id = subnet_id_start
 
     # TODO move to binary generator
-    config = {"subnet4": []}
-    netmask = 8 if range_of_inner_scope == 0 else 16
-    for outer_scope in range(1, range_of_outer_scope + 1):
-        for inner_scope in range(0, range_of_inner_scope + 1):
-            subnet = {
-                "pools": [
-                    {
-                        "pool": f"{outer_scope}.{inner_scope}.0.4-{outer_scope}.{inner_scope if netmask == 16 else 255}.255.254"
-                    }
-                ],
-                "subnet": f"{outer_scope}.{inner_scope}.0.0/{netmask}",
-                "option-data": random.choices(optiondata4, k=6),
-                "client-class": "class-00-00",
-                "relay": {"ip-addresses": ["172.100.0.200"]},
-                "id": subnet_id,
-            }
-            subnet.update(kwargs)
-            subnet.update(
-                generate_reservations(
-                    4,
-                    reservation_count,
-                    mac_selector,
-                    address_modifier=inner_scope,
-                    subnet=f"{outer_scope}.{inner_scope}",
-                )
+    subnets = []
+    for subnet_address in subnet_generator:
+        subnet_prefix = f"{subnet_address}/24"
+        pool_start = f"{subnet_address[:-2]}.{reservation_count + 1}"
+        pool_end = f"{subnet_address[:-2]}.254"
+
+        subnet = {
+            "pools": [
+                {
+                    "pool": f"{pool_start}-{pool_end}",
+                }
+            ],
+            "subnet": subnet_prefix,
+            "option-data": random.choices(optiondata4, k=6),
+            "client-class": "class-00-00",
+            "relay": {"ip-addresses": ["172.100.0.200"]},
+            "id": subnet_id,
+        }
+        subnet.update(kwargs)
+        subnet.update(
+            generate_reservations(
+                4,
+                reservation_count,
+                mac_selector,
+                subnet=subnet_address[:-2],
             )
-            config["subnet4"].append(subnet)
-            subnet_id += 1
-    return config
+        )
+        subnets.append(subnet)
+        subnet_id += 1
+    return subnets
 
 
 def cmd():
@@ -506,22 +530,19 @@ def cmd():
         default=0,
         help="Seed used to initialize PRNG, defaults to system time",
     )
+    parser.add_argument(
+        "-n",
+        "--shared-networks",
+        type=int,
+        default=0,
+        help="Number of shared networks",
+    )
 
     args = parser.parse_args()
 
     # If user specified a seed value, use it. If not, pass None to the seed(), so
     # system clock will be used.
-    s = args.seed or None
-    random.seed(s)
-
-    number_of_subnets = args.n
-
-    if number_of_subnets // 256 > 0:
-        inner = 255
-        outer = number_of_subnets // 256
-    else:
-        inner = 0
-        outer = number_of_subnets
+    random.seed(args.seed or None)
 
     conf = copy.deepcopy(KEA_BASE_CONFIG)
 
@@ -531,13 +552,43 @@ def cmd():
         conf["Dhcp4"]["interfaces-config"]["interfaces"] = args.interface
 
     mac_selector = create_mac_selector()
-    new_subnets = generate_v4_subnet(
-        outer, inner, mac_selector, args.reservations, args.start_id, **args.kwargs
-    )
-    conf["Dhcp4"].update(new_subnets)
 
-    conf_json = json.dumps(conf)
-    args.output.write(conf_json)
+    number_of_subnets = args.n
+    number_of_shared_networks = args.shared_networks
+
+    subnet_generator = ipv4_address_generator(number_of_subnets, mask=24)
+
+    if number_of_shared_networks == 0:
+        new_subnets = generate_v4_subnets(
+            subnet_generator,
+            mac_selector,
+            args.reservations,
+            args.start_id,
+            **args.kwargs,
+        )
+        conf["Dhcp4"]["subnet4"] = new_subnets
+    else:
+        shared_networks = []
+        subnet_id = args.start_id
+        subnets_per_shared_network = number_of_subnets // number_of_shared_networks
+        for i in range(number_of_shared_networks):
+            subnets = generate_v4_subnets(
+                itertools.islice(subnet_generator, subnets_per_shared_network),
+                mac_selector,
+                args.reservations,
+                subnet_id,
+                **args.kwargs,
+            )
+
+            shared_network = {
+                "name": f"shared-network-{i}",
+                "subnet4": subnets,
+            }
+            shared_networks.append(shared_network)
+            subnet_id += subnets_per_shared_network
+        conf["Dhcp4"]["shared-networks"] = shared_networks
+
+    args.output.write(json.dumps(conf))
 
 
 if __name__ == "__main__":

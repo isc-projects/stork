@@ -83,7 +83,7 @@ kea_many_subnets_dir = "tests/system/config/kea-many-subnets"
 directory kea_many_subnets_dir
 kea_many_subnets_config_file = File.join(kea_many_subnets_dir, "kea-dhcp4.conf")
 file kea_many_subnets_config_file => [PYTHON, kea_many_subnets_dir] do
-    sh PYTHON, "docker/tools/gen_kea_config.py", "7000",
+    sh PYTHON, "docker/tools/gen_kea_config.py", "-n", "4400", "13000",
         "-o", kea_many_subnets_config_file,
         "--interface", "eth1"
 end

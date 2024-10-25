@@ -152,6 +152,34 @@ services:
     volumes:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
+  agent-kea-many-subnets2:
+    extends: agent-kea-many-subnets
+    hostname: agent-kea2
+    ports: !override
+      - 8080
+      - "42548:9547"
+    environment:
+      STORK_AGENT_HOST: 172.42.42.101
+    networks:
+      storknet:
+        ipv4_address: 172.42.42.101
+        priority: 1000
+      subnet_00:
+        ipv4_address: 172.100.42.101
+        priority: 500
+      subnet_01:
+        ipv4_address: 172.101.42.101
+        priority: 400
+      subnet_02:
+        ipv4_address: 172.102.42.101
+        priority: 300
+      subnet6_00:
+        ipv6_address: 3000:db8:1:42::101
+        priority: 500
+      subnet6_01:
+        ipv6_address: 3001:db8:1:42::101
+        priority: 400
+
   agent-kea6:
     extends: agent-kea
     networks:
