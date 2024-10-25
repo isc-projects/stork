@@ -75,7 +75,7 @@ root/
 tests/system/.env/
 test-results/
 __pycache__/
-tests/system/config/kea-many-subnets/kea-dhcp4.conf
+tests/system/config/kea-many-subnets/*.conf
 tests/system/config/kea/kea-leases4.csv
 tests/system/config/kea/kea-leases6.csv
 tests/system/config/kea-ha2/kea-leases4.csv

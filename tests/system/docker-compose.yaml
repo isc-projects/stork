@@ -152,8 +152,13 @@ services:
     volumes:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
-  agent-kea-many-subnets2:
-    extends: agent-kea-many-subnets
+  agent-kea-many-subnets-and-shared-networks-1:
+    extends: agent-kea
+    volumes:
+      - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4-sn4400-s13000.conf:/etc/kea/kea-dhcp4.conf
+
+  agent-kea-many-subnets-and-shared-networks-2:
+    extends: agent-kea-many-subnets-and-shared-networks-1
     hostname: agent-kea2
     ports: !override
       - 8080

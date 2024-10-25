@@ -29,7 +29,7 @@ def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
 
 
 @pytest.mark.skip(reason="The test is disabled because it consumes too much resources.")
-@ha_pair_parametrize("agent-kea-many-subnets", "agent-kea-many-subnets2")
+@ha_pair_parametrize("agent-kea-many-subnets-and-shared-networks-1", "agent-kea-many-subnets-and-shared-networks-2")
 def test_two_same_big_configurations_at_time(
     server_service: Server, ha_pair_service: Tuple[Kea, Kea]
 ):
