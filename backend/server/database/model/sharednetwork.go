@@ -297,15 +297,16 @@ func GetSharedNetworkWithRelations(dbi dbops.DBI, networkID int64, relations ...
 	model := dbi.Model(network)
 
 	for _, relation := range relations {
-		if relation == SharedNetworkRelationAddressPools {
+		switch relation {
+		case SharedNetworkRelationAddressPools:
 			model = model.Relation(string(relation), func(q *orm.Query) (*orm.Query, error) {
 				return q.Order("address_pool.id ASC"), nil
 			})
-		} else if relation == SharedNetworkRelationPrefixPools {
+		case SharedNetworkRelationPrefixPools:
 			model = model.Relation(string(relation), func(q *orm.Query) (*orm.Query, error) {
 				return q.Order("prefix_pool.id ASC"), nil
 			})
-		} else {
+		default:
 			model = model.Relation(string(relation))
 		}
 	}
