@@ -112,3 +112,63 @@ In such cases, Stork will not be able to push configuration changes to Kea.
 The host reservations management mechanism does not modify configuration on
 disk. It stores host reservations in the database instead. Therefore the note above
 does not apply to hosts management.
+
+Features
+========
+
+Stork agent provides the following features:
+
+- Forwarding commands from the Stork server to the Kea DHCP and BIND 9 applications
+- Passing the Kea statistics to the Prometheus server
+
+  Requires the ``stat_cmds`` hook loaded in Kea. Optionally, the ``subnets_cmds`` hook
+  can be loaded to provide additional labels.
+
+- Passing the BIND 9 statistics to the Prometheus server
+
+Stork server provides the following features:
+
+- Monitoring a status of Kea DHCP, Kea Control Agent, and Kea DHCP-DDNS services
+- Monitoring a status of BIND 9 services.
+- Monitoring a status of the machine where Kea or BIND 9 is running
+- Viewing an overview of the machine where Kea or BIND 9 is running (resource usage, operating system details)
+- Browsing Kea logs
+- Adding, editing, and deleting subnets
+
+  Requires the ``subnet_cmds`` hook loaded in Kea.
+
+- Viewing shared networks
+- Adding, editing, and deleting shared networks
+
+  Requires the ``subnets_cmds`` hook loaded in Kea.
+
+- Viewing host reservations
+
+  Browsing host reservations from the host database requires the ``host_cmds`` hook loaded in Kea.
+
+- Viewing global parameters
+- Viewing global DHCP options
+- Viewing the High-Availability status
+
+  Requires the HA hook loaded and configured in Kea.
+
+- Viewing database backends, loaded hooks and other Kea configuration parameters
+- Viewing a whole Kea configuration in a JSON format
+- Reviewing the Kea configuration and suggesting tweaks and improvements
+
+- Searching for leases
+
+  Requires the ``lease_cmds`` hook loaded in Kea.
+
+- Viewing leases related to a particular host reservation
+
+  Requires the ``lease_cmds`` and ``host_cmds`` hooks loaded in Kea.
+
+- Viewing statistics of the subnet and shared network usage
+
+  Requires the ``stat_cmds`` hook loaded in Kea.
+
+- Viewing a basic information about the BIND 9 instances
+- Viewing the RNDC keys
+- Viewing statistics of the BIND 9 utilization
+- Viewing the maintenance events 
