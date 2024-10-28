@@ -235,6 +235,7 @@ func TestAddAndGetSharedNetwork(t *testing.T) {
 		DelegatedLen:  120,
 		LocalSubnetID: subnet.LocalSubnets[0].ID,
 	})
+	require.NoError(t, err)
 
 	err = AddLocalSharedNetworks(db, &network)
 	require.NoError(t, err)
@@ -315,6 +316,7 @@ func TestGetSharedNetworkWithRelations(t *testing.T) {
 		DelegatedLen:  120,
 		LocalSubnetID: subnet.LocalSubnets[0].ID,
 	})
+	require.NoError(t, err)
 
 	err = AddLocalSharedNetworks(db, &network)
 	require.NoError(t, err)
