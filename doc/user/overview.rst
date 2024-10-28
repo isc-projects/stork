@@ -143,6 +143,12 @@ The commands allow the Stork server to obtain the status of the Kea and BIND 9
 services, to view the logs and statistics, and to manage the configuration of
 the Kea DHCP servers.
 
+To execute the commands, the Kea Control Agent must be running, the Kea DHCP
+daemons must have the control sockets enabled, and the Stork agent must have
+the necessary permissions to access the Kea CA RestAPI and to read Kea CA
+configuration file.
+The BIND 9 ``named`` daemon must have the control channel enabled.
+
 Preprocessing the Kea and BIND 9 statistics for the Prometheus server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -152,7 +158,7 @@ understood by the Prometheus server. The agents acts as a Prometheus exporter
 and waits for the Prometheus server to scrape the statistics.
 
 To fetch the statistics, Kea DHCP daemon must be configured to load the
-``stat_cmds`` hook. The hook is responsible for sharing the statistics through
+``stats_cmds`` hook. The hook is responsible for sharing the statistics through
 the Kea REST API. Optionally, the ``subnets_cmds`` hook can be loaded to
 provide additional labels for the metrics exported to Prometheus.
 
@@ -165,11 +171,44 @@ can limit the exported statistics in the agent configuration file.
 Stork server
 ------------
 
-- Monitoring a status of Kea DHCP, Kea Control Agent, and Kea DHCP-DDNS services
-- Monitoring a status of BIND 9 services.
-- Monitoring a status of the machine where Kea or BIND 9 is running
-- Viewing an overview of the machine where Kea or BIND 9 is running (resource usage, operating system details)
-- Browsing Kea logs
+Stork server is a component that provides a web-based user interface for
+monitoring and managing Kea DHCP and BIND 9 services.
+
+Monitoring status of services
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Stork server monitors continuously the status of the Kea DHCP daemons,
+Kea Control Agent, Kea DHCP-DDNS and BIND 9 services and provides a dashboard
+to show the current state.
+
+The status is monitored on two levels. The first level is the status of the
+machine where Kea or BIND 9 is running. The user can see if the connection to
+the agent is established, and additional information about the machine, such as
+the operating system, CPU and memory usage.
+The second level is the status of the Kea DHCP and BIND 9 daemons. The user can
+inspect if the processes are running, and if they are not, the user can see the
+reason for the failure.
+
+The Stork server keeps the events log, which contains history of the status
+changes of the Kea and BIND 9 services.
+
+Browsing the logs
+~~~~~~~~~~~~~~~~~
+
+The Stork server provides a way to browse the logs of the Kea DHCP and BIND 9
+services.
+
+The logs are fetched directly from the filesystem, so the logs can be read
+even if the Kea or BIND 9 services are down.
+
+The Stork server can read only the data logged into a file. It cannot read
+the logs from the syslog or standard output. The Stork agent must have the
+necessary permissions to access the log files.
+
+Viewing the DHCP data
+~~~~~~~~~~~~~~~~~~~~~
+
+
 - Adding, editing, and deleting subnets
 
   Requires the ``subnet_cmds`` hook loaded in Kea.
