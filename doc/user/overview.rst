@@ -116,17 +116,54 @@ does not apply to hosts management.
 Features
 ========
 
-Stork agent provides the following features:
+Stork agent
+-----------
 
-- Forwarding commands from the Stork server to the Kea DHCP and BIND 9 applications
-- Passing the Kea statistics to the Prometheus server
+Stork agent is a component installed on the same machine as Kea DHCP and/or
+BIND 9. It is responsible for monitoring their processes and accessing their
+configuration files. The agent receives commands from the Stork server and
+executes them on the Kea DHCP and BIND 9 applications. The agent also collects
+statistics from Kea and BIND 9 and forwards them to the Prometheus server.
 
-  Requires the ``stat_cmds`` hook loaded in Kea. Optionally, the ``subnets_cmds`` hook
-  can be loaded to provide additional labels.
+The Stork agent can be run in a stand-alone mode, without listening for
+commands from the Stork server. In this mode, it only collects statistics.
 
-- Passing the BIND 9 statistics to the Prometheus server
+Forwarding commands from the Stork server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Stork server provides the following features:
+The server exchanges the data with the Kea and BIND 9 instances by sending
+commands to the Stork agent. The agent then executes these commands through
+Kea REST API or BIND 9 RNDC control channel.
+
+The connection between the Stork server and the agent is established over the
+GRPC protocol and is secured with TLS. The TLS certificates are self-managed
+by the Stork server and obtained by the agent during the registration process.
+
+The commands allow the Stork server to obtain the status of the Kea and BIND 9
+services, to view the logs and statistics, and to manage the configuration of
+the Kea DHCP servers.
+
+Preprocessing the Kea and BIND 9 statistics for the Prometheus server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The BIND 9 and Kea DHCP servers provide statistics in their own custom formats.
+The Stork agent preprocesses these statistics and converts them into a format
+understood by the Prometheus server. The agents acts as a Prometheus exporter
+and waits for the Prometheus server to scrape the statistics.
+
+To fetch the statistics, Kea DHCP daemon must be configured to load the
+``stat_cmds`` hook. The hook is responsible for sharing the statistics through
+the Kea REST API. Optionally, the ``subnets_cmds`` hook can be loaded to
+provide additional labels for the metrics exported to Prometheus.
+
+The BIND 9 daemon must have a properly configured statistics channel to enable
+this feature.
+
+The Stork agent exports only a subset of the available statistics. The user
+can limit the exported statistics in the agent configuration file.
+
+Stork server
+------------
 
 - Monitoring a status of Kea DHCP, Kea Control Agent, and Kea DHCP-DDNS services
 - Monitoring a status of BIND 9 services.
