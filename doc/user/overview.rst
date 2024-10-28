@@ -208,29 +208,106 @@ necessary permissions to access the log files.
 Viewing the DHCP data
 ~~~~~~~~~~~~~~~~~~~~~
 
+The Stork server has a extensive capabilities to display the DHCP details. It
+aggregates the data from all connected Kea servers and presents it in a
+comprehensive form. It allows the user to browse all details of all networks in
+a single place even if they are spread across multiple Kea servers.
 
-- Adding, editing, and deleting subnets
+The Stork server has dedicated pages for viewing the following data:
 
-  Requires the ``subnet_cmds`` hook loaded in Kea.
+- Viewing subnets
+
+  The user can see all subnets defined in the Kea servers. The user can see
+  the subnet details, such as the subnet ID, subnet prefix, related DHCP
+  options, and subnet pools.
+  The user can also see the statistics of the subnet usage.
+  If the particular subnet is defined in multiple Kea servers, it is displayed
+  only once, with a list of server names where it is defined.
 
 - Viewing shared networks
-- Adding, editing, and deleting shared networks
 
-  Requires the ``subnets_cmds`` hook loaded in Kea.
+  The user can see all shared networks defined in the Kea servers. The user
+  can see the shared network details, such as the shared network ID, and shared
+  network name. The server displays the list of subnets belonging to the shared
+  network. The user can see the overall utilization of the shared network and
+  the utilization of the subnets belonging to the shared network.
 
 - Viewing host reservations
 
-  Browsing host reservations from the host database requires the ``host_cmds`` hook loaded in Kea.
+  The user can see all host reservations defined in the Kea servers. The user
+  can see the host reservation details, such as host identifiers, DHCP options,
+  and reserved hostname and IP addresses.
 
-- Viewing global parameters
-- Viewing global DHCP options
+  The server can fetch the host reservations from the host database if the
+  ``host_cmds`` hook is loaded in Kea.
+
+- Viewing global parameters and DHCP options
+
+  The user can see the global parameters and DHCP options defined in the Kea
+  servers.
+
 - Viewing the High-Availability status
 
-  Requires the HA hook loaded and configured in Kea.
+  The user can see the status of the High-Availability configured across the
+  Kea servers. The UI presents the detailed information about each HA peer.
+  In case of a failure, the user can observe the reason for the failure and
+  how the non-failed server is handling the situation.
 
-- Viewing database backends, loaded hooks and other Kea configuration parameters
-- Viewing a whole Kea configuration in a JSON format
-- Reviewing the Kea configuration and suggesting tweaks and improvements
+  The Stork server gracefully supports the hub-and-spoke feature.
+
+- Viewing the DHCP daemon details
+
+  The user can see the details of the Kea DHCP daemons. The UI displays the
+  daemon version, the database backends, the loaded hooks, and the whole
+  configuration in a JSON format.
+
+Modifying the DHCP data
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The Stork server is capable of modifying the Kea DHCP configuration. It is
+altered through calling the Kea hooks or by editing the JSON configuration on
+the Stork server side and sending it back to the Kea server.
+
+The following operations are supported:
+
+- Adding, editing, and deleting subnets
+
+  The user can add, edit, and delete subnets in the Kea servers. The user can
+  change the subnet details, such as the subnet prefix, related DHCP options,
+  and subnet pools.
+
+  The ``subnet_cmds`` hook must be loaded in Kea to support this feature.
+
+- Adding, editing, and deleting shared networks
+
+  The user can add, edit, and delete shared networks in the Kea servers. The
+  user can change the shared network details, such as the shared network name, 
+  the list of subnets belonging to the shared network and the DHCP options.
+
+  The ``subnets_cmds`` hook must be loaded in Kea to support this feature.
+
+- Adding, editing, and deleting host reservations
+
+  The user can add, edit, and delete host reservations in the Kea servers. The
+  user can change the host reservation details, such as host identifiers, DHCP
+  options, and reserved hostname and IP addresses.
+
+  The ``host_cmds`` hook must be loaded in Kea to support this feature.
+
+- Editing global parameters and DHCP options
+
+  The user can edit the global parameters and DHCP options in the Kea servers.
+
+Reviewing the Kea configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The server provides a way to analyze the Kea DHCP configuration and suggest
+tweaks and improvements. This solution allows to detect potential issues,
+performance bottlenecks, and fields for optimization. It proposes also the
+hooks that can be loaded to enable more Stork features.
+
+
+
 
 - Searching for leases
 
