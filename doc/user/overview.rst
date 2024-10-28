@@ -306,22 +306,28 @@ tweaks and improvements. This solution allows to detect potential issues,
 performance bottlenecks, and fields for optimization. It proposes also the
 hooks that can be loaded to enable more Stork features.
 
+Searching for leases
+~~~~~~~~~~~~~~~~~~~~
 
+The Stork server provides a search engine to find the DHCP leases. The user
+can search for the leases by the IP address, MAC address, hostname, DUID, or
+client identifier. They can also search for all declined leases.
 
+This feature requires the ``lease_cmds`` hook loaded in Kea.
 
-- Searching for leases
+Stork server also displays a list of the leases related to a particular host
+reservation.
 
-  Requires the ``lease_cmds`` hook loaded in Kea.
+Monitoring the BIND 9 service
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Viewing leases related to a particular host reservation
+The Stork server has a limited capabilities to monitor the BIND 9 service.
+It can display the status of the BIND 9 service, the version of the BIND 9
+daemon, and the details of the configured control and statistics channels.
+The UI displays also the RNDC keys if set and the basic statistics.
 
-  Requires the ``lease_cmds`` and ``host_cmds`` hooks loaded in Kea.
+The BIND 9 instance must be configured with the control channel to enable the
+monitoring. Additionally, the Stork agent must have the necessary permissions
+to access the ``named`` daemon configuration and to execute the RNDC commands.
 
-- Viewing statistics of the subnet and shared network usage
-
-  Requires the ``stat_cmds`` hook loaded in Kea.
-
-- Viewing a basic information about the BIND 9 instances
-- Viewing the RNDC keys
-- Viewing statistics of the BIND 9 utilization
-- Viewing the maintenance events 
+The statistics channel must be configured to enable the statistics fetching.
