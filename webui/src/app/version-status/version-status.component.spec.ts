@@ -220,4 +220,17 @@ describe('VersionStatusComponent', () => {
         let messagesDiv = fixture.nativeElement.querySelector('div.p-messages')
         expect(messagesDiv).toBeTruthy()
     })
+
+    it('should not display feedback when version undefined', () => {
+        // Arrange
+        fixture.componentRef.setInput('version', undefined)
+        fixture.componentRef.setInput('app', 'kea')
+        fixture.detectChanges()
+
+        // Act & Assert
+        // No feedback messages are expected.
+        expect(component.feedbackMessages.length).toEqual(0)
+        // No error message should be emitted.
+        expect(messageAddSpy).toHaveBeenCalledTimes(0)
+    })
 })

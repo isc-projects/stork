@@ -101,6 +101,12 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this._appName = this.app === 'bind9' ? this.app.toUpperCase() : this.app[0].toUpperCase() + this.app.slice(1)
         this._appName += this.app === 'stork' ? ' agent' : ''
+        if (!this.version) {
+            // Version is a mandatory input. In case it is falsy (undefined, null, empty string),
+            // simply return. No feedback will be displayed.
+            return
+        }
+
         let sanitizedSemver = this.versionService.sanitizeSemver(this.version)
         if (sanitizedSemver) {
             this.version = sanitizedSemver
