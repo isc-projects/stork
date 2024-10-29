@@ -256,6 +256,27 @@ read and write database operations.
    REST API operation last. They are more suitable if you want to secure the Stork API against Denial-of-Service attacks
    that involve sending massive, long-processing requests to the web service to exhaust its resources.
 
+Security considerations
+=======================
+
+Stork has been designed with security in mind. The following sections describe the security features and best practices
+for securing the Stork installation.
+
+The Stork environment is composed from several services, i.e., Stork server, Stork agent(s), Kea Control Agent, Kea
+DHCP daemons, Kea D2 daemon, BIND 9 daemon, PostgreSQL database, Prometheus. Each service has its own security
+considerations. The following sections describe on how Stork can be secured.
+
+Security of connection between Stork server and agents
+------------------------------------------------------
+
+The Stork agent is a component installed along with the Kea Control Agent on the monitored machine. The agent listens
+for connections from the Stork server. The server uses the agent to collect data from the monitored machine and to
+execute commands on it. Therefore the connection between the server and the agent must be secure.
+
+The Stork has a built-in solution for securing the communication on this channel using the Transport Layer Security
+(TLS) protocol. It is self-managed and does not require any additional configuration. The server acts as a Certificate
+Authority (CA) and generates the root certificate and the private key. They are stored in the server's database. The
+
 .. _install-pkgs:
 
 Installing From Packages
