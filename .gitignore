@@ -26,9 +26,12 @@
 # generated documentation
 /doc/build
 
-# output from backend unit tests coverage
+# output from backend unit tests
 /backend/coverage.out
 /backend/junit.xml
+
+# output from UI unit tests
+/webui/junit.xml
 
 # ctags
 TAGS
