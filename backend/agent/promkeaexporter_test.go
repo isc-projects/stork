@@ -32,11 +32,29 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 	return fam
 }
 
+// Fake app monitor that returns some predefined list of apps with with only
+// DHCPv4 daemon configured and active.
+func newFakeMonitorWithDefaultsDHCPv4Only() *FakeAppMonitor {
+	fam := newFakeMonitorWithDefaults()
+	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp4"}
+	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp4"}
+	return fam
+}
+
+// Fake app monitor that returns some predefined list of apps with with only
+// DHCPv6 daemon configured and active.
+func newFakeMonitorWithDefaultsDHCPv6Only() *FakeAppMonitor {
+	fam := newFakeMonitorWithDefaults()
+	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
+	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp6"}
+	return fam
+}
+
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 42, 24*time.Second, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 42, 24*time.Millisecond, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPClient)
@@ -44,7 +62,7 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 
 	require.Equal(t, "foo", pke.Host)
 	require.Equal(t, 42, pke.Port)
-	require.Equal(t, 24*time.Second, pke.Interval)
+	require.Equal(t, 24*time.Millisecond, pke.Interval)
 	require.Len(t, pke.PktStatsMap, 31)
 	require.Len(t, pke.Adr4StatsMap, 6)
 	require.Len(t, pke.Adr6StatsMap, 9)
@@ -58,7 +76,7 @@ func TestPromKeaExporterStart(t *testing.T) {
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
 			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4", "dhcp6"},
+			"service":   []string{"dhcp4"},
 			"arguments": map[string]string{},
 		}).
 		Post("/").
@@ -86,7 +104,8 @@ func TestPromKeaExporterStart(t *testing.T) {
 			"text": "Command not supported"
 		}]`)
 
-	fam := newFakeMonitorWithDefaults()
+	fam := newFakeMonitorWithDefaultsDHCPv4Only()
+
 	httpClient := NewHTTPClient()
 	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
 	defer pke.Shutdown()
@@ -152,9 +171,7 @@ func TestPromKeaExporterStartDemoResponse(t *testing.T) {
 			"text": "Command not supported"
 		}]`)
 
-	fam := newFakeMonitorWithDefaults()
-	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
-	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp6"}
+	fam := newFakeMonitorWithDefaultsDHCPv6Only()
 
 	httpClient := NewHTTPClient()
 	pke := NewPromKeaExporter("foo", 1234, 5*time.Millisecond, true, fam, httpClient)
@@ -232,12 +249,12 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.NotNil(t, response.Dhcp4)
-	require.Nil(t, response.Dhcp6)
-	require.Len(t, response.Dhcp4, 26)
-	require.EqualValues(t, 200, response.Dhcp4["subnet[1].total-addresses"].Value)
-	require.NotNil(t, response.Dhcp4["reclaimed-leases"].Timestamp)
-	require.EqualValues(t, "2021-10-14 10:44:18.687243", *response.Dhcp4["reclaimed-leases"].Timestamp)
+	require.Len(t, response, 2)
+	require.Len(t, response[0], 26)
+	require.Nil(t, response[1])
+	require.EqualValues(t, 200, response[0]["subnet[1].total-addresses"].Value)
+	require.NotNil(t, response[0]["reclaimed-leases"].Timestamp)
+	require.EqualValues(t, "2021-10-14 10:44:18.687243", *response[0]["reclaimed-leases"].Timestamp)
 }
 
 // Test if the Kea JSON subnet4-list or subnet6-list response in unmarshal correctly.
@@ -320,7 +337,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 					"cumulative-assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
 	                "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
 	                "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
-	            }}]`)
+	            }}, { "result": 1, "text": "server is likely to be offline" }]`)
 
 	gock.New("http://0.1.2.3:1234/").
 		Post("/").
@@ -342,12 +359,12 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 					}
 				]
 			}
-		}]`)
+		}, { "result": 1, "text": "server is likely to be offline" }]`)
 
 	fam := newFakeMonitorWithDefaults()
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -365,7 +382,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 		)
 
 		return testutil.ToFloat64(metric) == 13.0
-	}, 10*time.Second, 500*time.Millisecond)
+	}, 100*time.Millisecond, 5*time.Millisecond)
 
 	require.NotZero(t, testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]))
 }
@@ -513,7 +530,7 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
 			"command":   "statistic-get-all",
-			"service":   []string{"dhcp4", "dhcp6"},
+			"service":   []string{"dhcp4"},
 			"arguments": map[string]string{},
 		}).
 		Post("/").
@@ -524,7 +541,7 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
                     "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
                 }}]`)
 
-	fam := newFakeMonitorWithDefaults()
+	fam := newFakeMonitorWithDefaultsDHCPv4Only()
 
 	// Act
 	httpClient := NewHTTPClient()
@@ -551,6 +568,7 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 func TestCollectingGlobalStatistics(t *testing.T) {
 	// Arrange
 	defer gock.Off()
+	gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		Post("/").
 		JSON(map[string]interface{}{
@@ -576,7 +594,7 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -586,7 +604,7 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 	// Wait for collecting.
 	require.Eventually(t, func() bool {
 		return testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]) > 0
-	}, 2*time.Second, 500*time.Millisecond)
+	}, 100*time.Millisecond, 5*time.Millisecond)
 
 	require.Equal(t, 13.0, testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]))
 	require.Equal(t, 14.0, testutil.ToFloat64(pke.Global4StatMap["declined-addresses"]))
@@ -636,7 +654,7 @@ func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
 	})
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
@@ -670,12 +688,12 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 			"arguments": {
 				"foo": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
             }
-		}]`)
+		}, { "result": 1, "text": "server is likely to be offline" }]`)
 
 	fam := newFakeMonitorWithDefaults()
 
 	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Second, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)

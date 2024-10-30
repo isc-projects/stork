@@ -92,10 +92,9 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 }
 
 // JSON get-all-statistic response returned from Kea CA.
-type GetAllStatisticsResponse struct {
-	Dhcp4 map[string]GetAllStatisticResponseItemValue
-	Dhcp6 map[string]GetAllStatisticResponseItemValue
-}
+// There is a response entry for each service. The order of entries is the
+// same as the order of services in the request.
+type GetAllStatisticsResponse []map[string]GetAllStatisticResponseItemValue
 
 // JSON get-all-statistic single value response returned from Kea CA.
 type GetAllStatisticResponseItemValue struct {
@@ -134,9 +133,13 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		return errors.Errorf("cannot parse response from Kea")
 	}
 
+	// Prepare the result. It is filled with nils to indicate that the daemon
+	// is not responding.
+	statMaps := make([]map[string]GetAllStatisticResponseItemValue, len(obj))
+
 	// Retrieve values of mixed-type arrays.
 	// Unpack the complex structure to simpler form.
-	for _, item := range obj {
+	for i, item := range obj {
 		// Indicates the situation when the daemon is active but the statistics
 		// endpoint doesn't return the data.
 		areStatisticsUnavailable := false
@@ -153,24 +156,8 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 			return err
 		}
 
-		// Kea Control Agent may be configured to manage DHCPv4, DHCPv6, or both.
-		// The order depends on the request sent to the Kea CA.
-		isDhcp4 := true
-		for statName := range *item.Arguments {
-			if strings.HasPrefix(statName, "pkt6") || strings.HasPrefix(statName, "v6-") {
-				isDhcp4 = false
-				break
-			}
-		}
-
-		var statMap map[string]GetAllStatisticResponseItemValue
-		if isDhcp4 {
-			r.Dhcp4 = make(map[string]GetAllStatisticResponseItemValue)
-			statMap = r.Dhcp4
-		} else {
-			r.Dhcp6 = make(map[string]GetAllStatisticResponseItemValue)
-			statMap = r.Dhcp6
-		}
+		statMap := make(map[string]GetAllStatisticResponseItemValue)
+		statMaps[i] = statMap
 
 		if areStatisticsUnavailable {
 			// The empty but not-nil stat map indicates that the daemon is
@@ -216,6 +203,8 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 			statMap[statName] = item
 		}
 	}
+
+	*r = statMaps
 	return nil
 }
 
@@ -871,6 +860,11 @@ func (pke *PromKeaExporter) collectStats() error {
 	configuredDHCP4DaemonsCount := 0
 	configuredDHCP6DaemonsCount := 0
 
+	const (
+		dhcp4 = "dhcp4"
+		dhcp6 = "dhcp6"
+	)
+
 	for _, app := range apps {
 		// Ignore non-kea apps.
 		if app.GetBaseApp().Type != AppTypeKea {
@@ -881,9 +875,9 @@ func (pke *PromKeaExporter) collectStats() error {
 
 		// Count the configured daemons.
 		for _, daemon := range keaApp.ConfiguredDaemons {
-			if daemon == "dhcp4" {
+			if daemon == dhcp4 {
 				configuredDHCP4DaemonsCount++
-			} else if daemon == "dhcp6" {
+			} else if daemon == dhcp6 {
 				configuredDHCP6DaemonsCount++
 			}
 		}
@@ -894,9 +888,9 @@ func (pke *PromKeaExporter) collectStats() error {
 		for _, daemon := range keaApp.ActiveDaemons {
 			// Select services (daemons) that support the get-statistics-all
 			// command.
-			if daemon == "dhcp4" {
+			if daemon == dhcp4 {
 				services = append(services, daemon)
-			} else if daemon == "dhcp6" {
+			} else if daemon == dhcp6 {
 				services = append(services, daemon)
 			}
 		}
@@ -943,6 +937,15 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 
+		// The number of responses should match the number of services.
+		if len(response) != len(services) {
+			err = errors.Errorf("number of responses (%d) does not match the number of services (%d)", len(response), len(services))
+			lastErr = err
+			log.WithError(err).
+				Error("Unexpected number of responses from Kea")
+			continue
+		}
+
 		// Prepare subnet prefix lookup
 		subnetPrefixLookup := newLazySubnetPrefixLookup(pke, ctrl)
 
@@ -950,15 +953,18 @@ func (pke *PromKeaExporter) collectStats() error {
 		// and store collected stats in Prometheus structures.
 		// Fetching also DHCP subnet prefixes. It may fail if Kea doesn't support
 		// required commands.
-		if response.Dhcp4 != nil {
-			activeDHCP4DaemonsCount++
-			subnetPrefixLookup.setFamily(4)
-			pke.setDaemonStats(&pke.Adr4StatsMap, pke.Global4StatMap, response.Dhcp4, pke.ignoredStats, subnetPrefixLookup)
-		}
-		if response.Dhcp6 != nil {
-			activeDHCP6DaemonsCount++
-			subnetPrefixLookup.setFamily(6)
-			pke.setDaemonStats(&pke.Adr6StatsMap, pke.Global6StatMap, response.Dhcp6, pke.ignoredStats, subnetPrefixLookup)
+		for i, service := range services {
+			serviceResponse := response[i]
+
+			if service == dhcp4 {
+				activeDHCP4DaemonsCount++
+				subnetPrefixLookup.setFamily(4)
+				pke.setDaemonStats(&pke.Adr4StatsMap, pke.Global4StatMap, serviceResponse, pke.ignoredStats, subnetPrefixLookup)
+			} else if service == dhcp6 {
+				activeDHCP6DaemonsCount++
+				subnetPrefixLookup.setFamily(6)
+				pke.setDaemonStats(&pke.Adr6StatsMap, pke.Global6StatMap, serviceResponse, pke.ignoredStats, subnetPrefixLookup)
+			}
 		}
 	}
 
