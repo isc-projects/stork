@@ -803,3 +803,61 @@ to be filtered by:
 - application type (Kea, BIND 9)
 - daemon type (DHCPv4, DHCPv6, ``named``, etc.)
 - the user who caused given event (available only to users in the ``super-admin`` group).
+
+Software Versions Page
+======================
+
+The Software Versions page may be found under ``Monitoring -> Software versions`` menu.
+This page provides various information about ISC Kea, Stork and BIND 9 software versions.
+It consists of two main parts described below.
+
+Summary of ISC software versions detected by Stork
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``Summary`` table contains information about ISC software used on your authorized machines.
+It checks whether the software is up-to-date or if there are any software updates available.
+It also can check if the machine's Stork agent version matches the Stork server version.
+
+.. note::
+
+  ISC encourages using the matching versions for the Stork server and all Stork agents. E.g.,
+  when Stork server version is ``2.0.0``, all Stork agents versions should be also ``2.0.0``.
+
+It will also check if all Kea servers use matching Kea daemon versions per server.
+
+.. note::
+
+  ISC encourages that in case your Kea server has more than one daemon active, e.g., ``DHCPv4``,
+  ``DHCPv6``, and ``DDNS`` daemons are all active, they should all originate from the very same release,
+  i.e., they have the same version.
+
+Based on the many software version checks performed, Stork tries to estimate the severity for each machine.
+The summary table groups the machines by severity and sorts them in descending order.
+ISC advises reviewing the summary for machines with ``Error`` and ``Warning`` severity.
+
+Kea, BIND 9 and Stork current releases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These tables show the currently available versions of ISC Kea, BIND9, and Stork software that may be used
+in your Stork deployment. They contain links to the software documentation and release notes. There are
+release dates and ``EoL Date`` for stable releases. Links to packages and tarballs downloads are also provided.
+
+The tables may present different types of releases described with the following terms:
+
+- **Development** - These releases introduce new and updated features and may not be backward-compatible with their
+  immediate predecessor. Development versions are suitable for those interested in experimenting with and providing
+  feedback to ISC but are not recommended for production use.
+- **Stable** - These versions are fully supported and meant for production use.
+- **ESV** - BIND 9 Extended Support version - suitable for those needing long-term stability.
+- **EoL date** - the release will no longer be supported after that date.
+
+.. note::
+
+    For details about ISC's Software Support Policy and Versioning, please refer to the
+    `KB article <https://kb.isc.org/docs/aa-00896>`_.
+
+Data source
+~~~~~~~~~~~
+
+Inline component
+~~~~~~~~~~~~~~~~
