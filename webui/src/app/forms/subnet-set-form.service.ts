@@ -1008,7 +1008,7 @@ export class SubnetSetFormService {
             }
             const range = `${poolCtrl.get('range.start').value}-${poolCtrl.get('range.end').value}`
             const params = this.convertFormToKeaParameters(
-                daemons.filter((d) => d.id in selectedDaemons),
+                daemons.filter((d) => selectedDaemons.includes(d.id)),
                 poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>
             )
             const options = poolCtrl.get('options') as UntypedFormGroup
@@ -1121,7 +1121,7 @@ export class SubnetSetFormService {
             }
             const prefix = poolCtrl.get('prefixes.prefix').value
             const params = this.convertFormToKeaParameters(
-                daemons.filter((d) => d.id in selectedDaemons),
+                daemons.filter((d) => selectedDaemons.includes(d.id)),
                 poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>
             )
             const options = poolCtrl.get('options') as UntypedFormGroup
