@@ -28,6 +28,7 @@
 
 # output from backend unit tests coverage
 /backend/coverage.out
+/backend/junit.xml
 
 # ctags
 TAGS

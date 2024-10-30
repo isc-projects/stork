@@ -133,7 +133,7 @@ namespace :unittest do
         VERBOSE - Print results for successful cases - default: false
         See "db:migrate" task for the database-related parameters
     '
-    task :backend => [GO, TPARSE, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
+    task :backend => [GO, TPARSE, GO_JUNIT_REPORT, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
         scope = ENV["SCOPE"] || "./..."
         benchmark = ENV["BENCHMARK"] || "false"
         short = ENV["SHORT"] || "false"
@@ -175,6 +175,7 @@ namespace :unittest do
         Dir.chdir('backend') do
             Open3.pipeline(
                 [GO, "test", "-json", *opts, "-race", scope],
+                [GO_JUNIT_REPORT, "-iocopy", "-out", "./junit.xml"],
                 [TPARSE, "-progress", *tparse_otps]
             )
 

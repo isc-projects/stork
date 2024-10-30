@@ -541,6 +541,7 @@ protoc_ver = '28.2'
 protoc_gen_go_ver = 'v1.34.2'
 protoc_gen_go_grpc_ver = 'v1.5.1'
 tparse_ver = 'v0.15.0'
+go_junit_report_ver = 'v2.1.0'
 go_live_pprof_ver = 'v1.0.8'
 govulncheck_ver = 'v1.1.3'
 mockery_ver = 'v2.46.0'
@@ -974,6 +975,13 @@ file TPARSE => [GO] do
     sh TPARSE, "--version"
 end
 add_version_guard(TPARSE, tparse_ver)
+
+GO_JUNIT_REPORT = "#{gobin}/go-junit-report"
+file GO_JUNIT_REPORT => [GO] do
+    sh GO, "install", "github.com/jstemmer/go-junit-report/v2@#{go_junit_report_ver}"
+    sh GO_JUNIT_REPORT, "--version"
+end
+add_version_guard(GO_JUNIT_REPORT, go_junit_report_ver)
 
 MOCKERY = File.join(gobin, "mockery")
 file MOCKERY => [GO] do
