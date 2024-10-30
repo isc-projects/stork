@@ -256,117 +256,6 @@ read and write database operations.
    REST API operation last. They are more suitable if you want to secure the Stork API against Denial-of-Service attacks
    that involve sending massive, long-processing requests to the web service to exhaust its resources.
 
-Security considerations
-=======================
-
-Stork has been designed with security in mind. The following sections describe the security features and best practices
-for securing the Stork installation.
-
-The Stork environment is composed from several services, i.e., Stork server, Stork agent(s), Kea Control Agent, Kea
-DHCP daemons, Kea D2 daemon, BIND 9 daemon, PostgreSQL database, Prometheus. Each service has its own security
-considerations. The following sections describe on how Stork can be secured.
-
-Security of the Stork server process
-------------------------------------
-
-It is recommended to run the Stork server as a non-privileged, dedicated user. The server must only have read privileges
-to its configuration files, the static files WWW directory and the hook directory. If the authentication hook is loaded,
-it needs to have write access to the authentication icon directory (the ``assets/authentication-methods`` subdirectory
-in the static files directory) where the icons are unpacked.
-
-The server is shipped with a systemD service file, so it can be easily managed by the systemD. It is recommended to
-enable the systemD service to start the server automatically after the system reboot, to restart the server in case
-of the crash, and to manage the server's logs.
-
-The server logs should not contain any sensitive information but they may expose the activity of the users. It is
-recommended to store the logs in the dedicated directory with the restricted access.
-
-The server administrator must ensure that the server is up-to-date. We releases the new versions of the Stork server
-regularly to fix the bugs and security vulnerabilities. If a serious vulnerability is discovered, the we may release the
-security patches. We offer our customers the support services that include quick pre-announcement of the security
-patches.
-
-Security of the Stork agent process
------------------------------------
-
-The Stork agent is a component installed along with the Kea Control Agent or BIND 9 on the monitored machine.
-The agent automatically detects the application it is monitoring. It causes that the agent may have access to the to its
-configuration files and process details.
-
-It is recommended to run the Stork agent as a dedicated user. The agent's configuration files, especially the file with
-the authentication credentials (``agent-credentials.json``, if used), must be protected against unauthorized access.
-
-The agent is shipped with a systemD service file, so it can be easily managed by the systemD. It is recommended to
-enable the systemD service to start the server automatically after the system reboot, to restart the agent in case
-of the crash, and to manage the server's logs.
-
-Security of the connection between Stork agent and Kea Control Agent
---------------------------------------------------------------------
-
-To monitor Kea, the Kea Control Agent must be running and the all monitored Kea daemons (DHCPv4, DHCPv6, D2) must
-be configured to use the Kea Control Agent (they must have the ``control-socket`` specified). The Kea CA must listen on
-the localhost.
-
-Kea Control Agent supports Basic Auth to authenticate the clients of its REST API - the control channel used by the
-Stork agent. This solution may be enabled to protect the Kea CA from unauthorized access. If it is enabled, the Stork
-agent must be configured with the username and password to authenticate itself to the Kea CA. It is recommended to limit
-the access to this file only to the Stork agent user.
-
-The agent must have read access to the Kea CA configuration file, must be able to read the process list on the monitored
-machine, and must be able to read the command line arguments and current working directory of the Kea CA process.
-
-Security of connection between Stork server and agents
-------------------------------------------------------
-
-The Stork agent is a component installed along with the Kea Control Agent on the monitored machine. The agent listens
-for connections from the Stork server. The server uses the agent to collect data from the monitored machine and to
-execute commands on it. Therefore the connection between the server and the agent must be secure.
-
-The Stork has a built-in solution for securing the communication on this channel using the Transport Layer Security
-(TLS) protocol. It is self-managed and does not require any additional configuration. The server acts as a Certificate
-Authority (CA) and generates the root certificate and the private key. They are stored in the server's database.
-
-The server generates a certificate and a private key for each agent during the agent registration process. The agent
-uses the certificate and the private key to authenticate itself to the server.
-
-The server doesn't trust the agent's certificate by default. The server operator must approve the agent registration
-request in the Stork web UI. The server administrator must compare the token displayed in the UI with the token displayed
-in the agent's logs. If the tokens match, the administrator can approve the registration request. It is a one-time
-operation that protect against the man-in-the-middle attacks.
-
-This mechanism can be by-passed by using an additional server token for the agent registration. The server token is a
-secret available only to the administrator on the server UI. It may be provide to the agent during the agent registration
-process. The agents registered with this token are automatically approved by the server.
-The server token is a secret and must be protected. It is recommended to use it only in the secure environments. If it
-is compromised, the administrator can revoke it in the server UI.
-
-The agent saves the server's certificate fingerprint in the filesystem. The agent uses the fingerprint to verify the
-server's certificate during the connection and rejects the connection if the fingerprints do not match.
-
-Security of connection between Stork server and user's web browser
-------------------------------------------------------------------
-
-The Stork server provides a web UI for the server's administration. By default the server listens on the HTTP protocol.
-However, the HTTP protocol is not secure and the communication between the server and the user's web browser can be
-intercepted by the attacker. It is recommended to secure the communication between the server and the user's web browser
-using the HTTPS protocol.
-
-The server operator must provide the server's TLS certificate, the private key to the server's configuration, and the CA
-certificate. This certificates must be signed by the trusted CA.
-
-The access to the server's web UI and the REST API is protected by the user's credentials. By default, the server
-manages the users' accounts internally. It requires strong passwords and stores them in the database using the bcrypt
-algorithm. The server operator can configure the server to use the external authentication service, e.g., LDAP to manage
-the users centrally.
-
-The Stork server provides a way to force password change for the user in case of the password compromise.
-
-Some administrators may want to limit the access to the server's web UI to the specific IP addresses. The server doesn't
-provide such capabilities. However, it may be achieved by using the reverse proxy server, e.g., Nginx or Apache.
-
-Security of connection between Stork server and the PostgreSQL database
------------------------------------------------------------------------
-
 .. _install-pkgs:
 
 Installing From Packages
@@ -478,6 +367,8 @@ Then, install the Stork server package:
 .. code-block:: console
 
    $ apk add isc-stork-server
+
+.. _server-setup:
 
 Setup
 ~~~~~
@@ -646,6 +537,7 @@ full configuration.
 
    </VirtualHost>
 
+.. _securing-the-database-connection:
 
 Securing the Database Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -702,6 +594,8 @@ script provided by the Stork server, which downloads the agent packages
 embedded in the server package. The preferred installation method depends on
 the selected agent registration type. Supported registration methods are
 described in :ref:`secure-server-agent`.
+
+.. _agent-configuration-settings:
 
 Agent Configuration Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -855,6 +749,8 @@ The applicability of the two methods is described in
 
 The installation and registration processes using each method are described
 in the subsequent sections.
+
+.. _securing-connections-between-agent-and-kea-ca:
 
 Securing Connections Between ``stork-agent`` and the Kea Control Agent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1511,6 +1407,118 @@ It is not recommended to compile Stork for 32-bit architectures as it may cause 
 overflows. Stork was never designed to operate on non-posix platforms, so Windows is not
 and will not be supported. Compiling Stork components for Windows is discouraged because Golang's standard library
 may suppress some errors related to the file operations on the NTFS filesystem.
+
+Security checklist for the Stork configuration
+==============================================
+
+The following list provides a set of recommendations to secure the Stork server and agent installations. The list is not
+exhaustive and should be adjusted to the specific deployment requirements.
+
+Stork server
+------------
+
+The Stork server configuration is described in details in the :ref:`server-setup` section.
+
+- Run Stork server as a non-privileged, dedicated user.
+- Limit the Stork server user rights only to the necessary directories and files.
+
+   - ``/etc/stork/server.env`` - the configuration file (read only)
+   - ``/etc/stork/versions.json`` - the EOL versions file (read only)
+   - ``/share/stork/www`` - the static web files (read only)
+   - ``/share/stork/www/index.html`` - the main web page (write and read)
+   - ``/share/stork/www/assets/authentication-methods`` - the authentication icons (write and read)
+
+- (Optional) Setup the Stork server as a systemd service to start the server automatically after the system reboot, to
+  restart the server in case of the crash, and to manage the server's logs.
+- (Advanced) Run the Stork server behind a reverse proxy to protect the server from direct access from the Internet, to
+  enable more extensive logging, or restrict access to the server from specific IP addresses.
+- Setup TLS/SSL certificate for the web UI and REST API.
+
+If the metrics endpoint is enabled:
+
+- Ensure the ``/metrics`` endpoint is not accessible from the Internet and allowed only for the Prometheus server. It
+  may be achieved by setting up the firewall rules or using the reverse proxy.
+
+During the Stork server operation:
+
+- Verify the agent token fingerprints before authorizing the agent registration.
+- Disable the agent registration in settings if you don't expect new agents to register.
+- Force users to change their passwords if you suspect they have been compromised.
+
+Stork agent
+-----------
+
+See the :ref:`agent-configuration-settings` section for the Stork agent configuration details.
+
+- Run Stork agent as a dedicated user.
+- Limit the Stork agent user rights only to the necessary directories and files. No one except the Stork agent user and
+  administrator should have access to the agent's data directory.
+
+  - ``/etc/stork/agent.env`` - the configuration file (read only)
+  - ``/etc/stork/agent-credentials.json`` - the agent credentials file (read only)
+  - ``/var/lib/stork`` - the agent's data directory (write and read)
+  - the system process details (i.e., the current working directory, the command line arguments).
+
+- The Stork agent must have rights to read the system process list.
+- (Optional) Setup the Stork agent as a systemd service to start the server automatically after the system reboot, to
+  restart the server in case of the crash, and to manage the server's logs.
+
+If the Stork agent acts as a Prometheus exporter:
+
+- Ensure the connection between the Stork agent and Prometheus is secure and cannot be intercepted. These two services
+  exchange data over the network on unsecure protocol (HTTP).
+
+Monitoring Kea
+~~~~~~~~~~~~~~
+
+For more details on monitoring Kea with Stork, see article in the
+:ref:`securing-connections-between-agent-and-kea-ca` section.
+
+- The Stork agent must have rights to read:
+
+   - the Kea configuration files (e.g., ``/etc/kea/kea-ctrl-agent.conf``)
+   - the Kea logs (e.g., ``/var/log/kea/kea-dhcp4.log``)
+
+- Kea Control Agent must have configured control sockets for each monitored Kea daemon (``control-sockets`` property).
+   See the `Kea Administrator Reference Manual <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_ for
+   an example configuration.
+- All monitored Kea daemons must have the ``control-socket`` property set in the configuration file. Look for the
+  reference in the `Kea Administrator Reference Manual <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_.
+
+If Kea Control Agent listens on non-localhost interfaces, it is recommended to:
+
+- Configure the Basic Auth in Kea CA. Set the credentials for Stork agent in its credentials file (``/etc/stork/agent-credentials.json``).
+- Configure the Kea REST API to be served over TLS by setting the ``trust-anchor``, ``cert-file``, and ``key-file`` properties.
+
+Monitoring BIND 9
+~~~~~~~~~~~~~~~~~
+
+- The Stork agent must have rights to:
+
+   - read the BIND 9 configuration files (e.g., ``/etc/bind/named.conf``) and its references (e.g., ``/etc/bind/rndc.key``)
+   - read the BIND 9 logs (e.g., ``/var/log/named/named.log``)
+   - execute the ``rndc`` and ``named-checkconf`` commands
+
+If BIND 9 listens on non-localhost interfaces, it is recommended to:
+
+- Secure the its control channel by setting the RNDC key.
+
+PostgreSQL
+----------
+
+Check the :ref:`securing-the-database-connection` section for details on how to configure the database.
+
+- Create a dedicated user for the Stork server. Use the strong password for the user.
+- Create a dedicated database for the Stork server
+- Schedule regular backups of the database.
+- (Advanced) Use a separate user to perform the database migrations and run the Stork server. The application user should
+  have only the rights to perform queries (SELECT, INSERT, UPDATE, DELETE) on the database tables without the rights to
+  create or drop tables. This approach requires to manually update the database schema before starting the Stork server
+  using the Stork tool.
+
+If the database is not installed on the same machine as the Stork server:
+
+- Configure SSL/TLS for the database connection.
 
 Integration With Prometheus and Grafana
 =======================================
