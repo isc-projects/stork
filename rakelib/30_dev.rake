@@ -173,11 +173,16 @@ namespace :unittest do
         end
 
         Dir.chdir('backend') do
-            Open3.pipeline(
+            statuses = Open3.pipeline(
                 [GO, "test", "-json", *opts, "-race", scope],
                 [GO_JUNIT_REPORT, "-iocopy", "-out", "./junit.xml"],
                 [TPARSE, "-progress", *tparse_otps]
             )
+            status = statuses[0]
+
+            if !status.success?
+                fail "Unit tests failed with status #{status.exitstatus}"
+            end
 
             if with_cov_tests
                 out, _ = Open3.capture2 GO, "tool", "cover", "-func=coverage.out"
