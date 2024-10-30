@@ -138,8 +138,23 @@ func TestPromKeaExporterStartDemoResponse(t *testing.T) {
 		Reply(200).
 		BodyString(string(kea6ResponseFromDemo))
 
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "subnet6-list",
+			"service":   []string{"dhcp6"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result": 3,
+			"text": "Command not supported"
+		}]`)
+
 	fam := newFakeMonitorWithDefaults()
 	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
+	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp6"}
 
 	httpClient := NewHTTPClient()
 	pke := NewPromKeaExporter("foo", 1234, 5*time.Millisecond, true, fam, httpClient)
