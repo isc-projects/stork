@@ -35,7 +35,7 @@ type SharedNetwork struct {
 	StatsCollectedAt time.Time
 }
 
-// Identifier of the relations between the machine and other tables.
+// Identifier of the relations between a shared network and other tables.
 type SharedNetworkRelation string
 
 const (
