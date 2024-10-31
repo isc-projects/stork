@@ -321,8 +321,11 @@ func TestGetSharedNetworkWithRelations(t *testing.T) {
 	err = AddLocalSharedNetworks(db, &network)
 	require.NoError(t, err)
 
-	returned, err := GetSharedNetworkWithRelations(db, network.ID,
-		SharedNetworkRelationAddressPools, SharedNetworkRelationPrefixPools)
+	returned, err := GetSharedNetworkWithRelations(
+		db, network.ID,
+		SharedNetworkRelationSubnetsAddressPools,
+		SharedNetworkRelationSubnetsPrefixPools,
+	)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, network.Name, returned.Name)

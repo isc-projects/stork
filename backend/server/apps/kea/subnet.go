@@ -22,8 +22,8 @@ func sharedNetworkExists(dbi dbops.DBI, network *dbmodel.SharedNetwork, existing
 			// Get the subnets included in this shared network.
 			dbNetwork, err := dbmodel.GetSharedNetworkWithRelations(
 				dbi, existing.ID,
-				dbmodel.SharedNetworkRelationAddressPools,
-				dbmodel.SharedNetworkRelationPrefixPools,
+				dbmodel.SharedNetworkRelationSubnetsAddressPools,
+				dbmodel.SharedNetworkRelationSubnetsPrefixPools,
 			)
 			if err != nil {
 				return nil, err
