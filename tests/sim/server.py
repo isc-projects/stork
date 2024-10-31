@@ -48,7 +48,7 @@ def get_bind9_applications():
     response = session.get(url)
     data = response.json()
 
-    if data is None or data.get("items"):
+    if data is None or data.get("items") is None:
         return {"items": [], "total": 0}
     return data
 
