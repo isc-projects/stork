@@ -113,42 +113,6 @@ The host reservations management mechanism does not modify configuration on
 disk. It stores host reservations in the database instead. Therefore the note above
 does not apply to hosts management.
 
-Features
-========
-
-Stork agent
------------
-
-Stork agent is a component installed on the same machine as Kea DHCP and/or
-BIND 9. It is responsible for monitoring their processes and accessing their
-configuration files. The agent receives commands from the Stork server and
-executes them on the Kea DHCP and BIND 9 applications. The agent also collects
-statistics from Kea and BIND 9 and forwards them to the Prometheus server.
-
-The Stork agent can be run in a stand-alone mode, without listening for
-commands from the Stork server. In this mode, it only collects statistics.
-
-Forwarding commands from the Stork server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The server exchanges the data with the Kea and BIND 9 instances by sending
-commands to the Stork agent. The agent then executes these commands through
-Kea REST API or BIND 9 RNDC control channel.
-
-The connection between the Stork server and the agent is established over the
-GRPC protocol and is secured with TLS. The TLS certificates are self-managed
-by the Stork server and obtained by the agent during the registration process.
-
-The commands allow the Stork server to obtain the status of the Kea and BIND 9
-services, to view the logs and statistics, and to manage the configuration of
-the Kea DHCP servers.
-
-To execute the commands, the Kea Control Agent must be running, the Kea DHCP
-daemons must have the control sockets enabled, and the Stork agent must have
-the necessary permissions to access the Kea CA RestAPI and to read Kea CA
-configuration file.
-The BIND 9 ``named`` daemon must have the control channel enabled.
-
 Preprocessing the Kea and BIND 9 statistics for the Prometheus server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -169,12 +133,6 @@ The Stork agent exports only a subset of the available statistics. The user
 can limit the exported statistics in the agent configuration file.
 
 Introduced in Stork 0.5.0 (Kea) and Stork 0.6.0 (BIND 9).
-
-Stork server
-------------
-
-Stork server is a component that provides a web-based user interface for
-monitoring and managing Kea DHCP and BIND 9 services.
 
 Monitoring status of services
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -219,30 +177,35 @@ The Stork server has dedicated pages for viewing the following data:
 
 - Viewing subnets
 
-  The user can see all subnets defined in the Kea servers. The user can see
+  The user can see all subnets defined in the Kea servers. The user can view
   the subnet details, such as the subnet ID, subnet prefix, related DHCP
   options, and subnet pools.
 
-  The user can also see the statistics of the subnet usage.
-  If the particular subnet is defined in multiple Kea servers, it is displayed
-  only once, with a list of server names where it is defined.
+  The user can also see the statistics of the subnet usage. They are presented
+  only if the ``stats_cmds`` hook is loaded in a particular Kea server.
+
+  If the particular subnet is specified in multiple Kea servers, it is
+  displayed only once, with a list of server names where it is defined.
 
   Introduced in Stork 0.4.0.
 
 - Viewing shared networks
 
   The user can see all shared networks defined in the Kea servers. The user
-  can see the shared network details, such as the shared network ID, and shared
+  can view the shared network details, such as the shared network ID, and shared
   network name. The server displays the list of subnets belonging to the shared
   network. The user can see the overall utilization of the shared network and
   the utilization of the subnets belonging to the shared network.
+
+  The utilization data and other statistics are presented only if the
+  ``stats_cmds`` hook is loaded in a particular Kea server.
 
   Introduced in Stork 0.5.0.
 
 - Viewing host reservations
 
   The user can see all host reservations defined in the Kea servers. The user
-  can see the host reservation details, such as host identifiers, DHCP options,
+  can view the host reservation details, such as host identifiers, DHCP options,
   and reserved hostname and IP addresses.
 
   The server can fetch the host reservations from the host database if the
@@ -264,7 +227,7 @@ The Stork server has dedicated pages for viewing the following data:
   In case of a failure, the user can observe the reason for the failure and
   how the non-failed server is handling the situation.
 
-  The Stork server gracefully supports the hub-and-spoke feature.
+  The Stork server gracefully supports the hub-and-spoke Kea feature.
 
   Introduced in Stork 0.3.0.
 
