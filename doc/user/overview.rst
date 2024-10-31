@@ -340,6 +340,8 @@ There is a diagram of all Stork components and services that it interacts with:
    :align: center
    :alt: Stork security diagram
 
+   Connections and protocols between Stork components and services
+
 The Stork server is the central component of the Stork environment. It serves the Web UI and REST API over the HTTP
 protocol (connections no. 1, 4, and 8 on the diagram). The administrator may secure it by providing a trusted
 SSL/TLS certificate. It is recommended especially when the Stork server is exposed to the public network.
