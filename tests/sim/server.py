@@ -35,7 +35,7 @@ def get_subnets():
     response = session.get(url)
     data = response.json()
 
-    if data is None or "items" not in data or data["items"] is None:
+    if data is None or data.get("items") is None:
         return {"items": [], "total": 0}
     return data
 
@@ -48,7 +48,7 @@ def get_bind9_applications():
     response = session.get(url)
     data = response.json()
 
-    if data is None or "items" not in data or data["items"] is None:
+    if data is None or data.get("items"):
         return {"items": [], "total": 0}
     return data
 
@@ -60,6 +60,6 @@ def get_machines():
     url = f"{STORK_SERVER_URL}/api/machines?start=0&limit=100"
     response = session.get(url)
     machines = response.json()
-    if machines is None or "items" not in machines or machines["items"] is None:
+    if machines is None or machines.get("items") is None:
         return {"items": [], "total": 0}
     return machines
