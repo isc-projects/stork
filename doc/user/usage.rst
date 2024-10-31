@@ -876,5 +876,10 @@ different sources:
    releases. The BIND 9 team usually issues stable releases every month. To be sure about the latest releases,
    ISC advises checking the `download page <https://isc.org/download>`_ regularly.
 
-Inline component
-~~~~~~~~~~~~~~~~
+Version Status icon
+~~~~~~~~~~~~~~~~~~~
+
+There are many places in the Stork UI where either Kea, BIND 9, or Stork agent version is displayed, e.g.,
+``Services -> Machines`` list, ``Services -> Kea Apps`` list, etc. Next to the displayed software version,
+there is an icon with feedback about the version. Hovering the mouse over the icon displays a tooltip with
+full feedback about the version. Clicking on the icon leads to the ``Software Versions`` page.
