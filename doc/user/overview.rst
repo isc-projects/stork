@@ -240,7 +240,7 @@ The Stork server has dedicated pages for viewing the following data:
   Introduced in Stork 0.3.0.
 
 Managing the DHCP configuration
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Stork server is capable of modifying the Kea DHCP configuration. It is
 altered through calling the Kea hooks or by editing the JSON configuration on
