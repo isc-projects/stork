@@ -46,6 +46,19 @@ def open_file(path)
     system program, path
 end
 
+# Executes a set of commands in a pipeline and then checks the exit codes. It
+# fails if any of the commands failed.
+# Accepts an array of commands to execute. Each command is an array of strings.
+def checked_pipeline(*commands)
+    statuses = Open3.pipeline(*commands)
+    commands.each_with_index do |command, index|
+        status = statuses[index]
+        if !status.success?
+            fail "Command '#{command.join(' ')}' failed with status #{status.exitstatus}"
+        end
+    end
+end
+
 #############
 ### Tasks ###
 #############
@@ -173,16 +186,11 @@ namespace :unittest do
         end
 
         Dir.chdir('backend') do
-            statuses = Open3.pipeline(
+            checked_pipeline(
                 [GO, "test", "-json", *opts, "-race", scope],
                 [GO_JUNIT_REPORT, "-iocopy", "-out", "./junit.xml"],
                 [TPARSE, "-progress", *tparse_otps]
             )
-            status = statuses[0]
-
-            if !status.success?
-                fail "Unit tests failed with status #{status.exitstatus}"
-            end
 
             if with_cov_tests
                 out, _ = Open3.capture2 GO, "tool", "cover", "-func=coverage.out"
