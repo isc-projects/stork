@@ -840,7 +840,7 @@ Kea, BIND 9 and Stork current releases
 
 These tables show the currently available versions of ISC Kea, BIND 9, and Stork software that may be used
 in your Stork deployment. They contain links to the software documentation and release notes. There are
-release dates and ``EoL Date`` for stable releases. Links to packages and tarballs downloads are also provided.
+release dates and ``EoL Date`` (End of Life date) for stable releases. Links to packages and tarballs downloads are also provided.
 
 The tables may present different types of releases described with the following terms:
 
@@ -863,7 +863,7 @@ The data with up-to-date ISC software releases that the Software Versions page i
 different sources:
 
 - **Offline JSON file** - This data is updated with every Stork release. The further from the release date you are,
-  the more outdated this data may become. ISC advises regularly checking the `download page <https://isc.org/download>`_
+  the more outdated this data will be. ISC advises regularly checking the `download page <https://isc.org/download>`_
   for up-to-date information. Please note that the date this data was generated is displayed in the top
   notification message. The date is also displayed in messages in the ``Summary`` column of
   the ``Summary of ISC software versions detected by Stork`` table.
