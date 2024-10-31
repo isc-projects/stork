@@ -39,20 +39,20 @@ type SharedNetwork struct {
 type SharedNetworkRelation string
 
 const (
-	SharedNetworkRelationNetworks            SharedNetworkRelation = "LocalSharedNetworks"
-	SharedNetworkRelationNetworkDaemon       SharedNetworkRelation = "LocalSharedNetworks.Daemon"
-	SharedNetworkRelationNetworkKeaDaemon    SharedNetworkRelation = "LocalSharedNetworks.Daemon.KeaDaemon"
-	SharedNetworkRelationNetworkApp          SharedNetworkRelation = "LocalSharedNetworks.Daemon.App"
-	SharedNetworkRelationNetworkAccessPoints SharedNetworkRelation = "LocalSharedNetworks.Daemon.App.AccessPoints"
-	SharedNetworkRelationNetworkMachine      SharedNetworkRelation = "LocalSharedNetworks.Daemon.App.Machine"
-	SharedNetworkRelationSubnets             SharedNetworkRelation = "Subnets.LocalSubnets"
-	SharedNetworkRelationAddressPools        SharedNetworkRelation = "Subnets.LocalSubnets.AddressPools"
-	SharedNetworkRelationPrefixPools         SharedNetworkRelation = "Subnets.LocalSubnets.PrefixPools"
-	SharedNetworkRelationSubnetDaemon        SharedNetworkRelation = "Subnets.LocalSubnets.Daemon"
-	SharedNetworkRelationSubnetKeaDaemon     SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.KeaDaemon"
-	SharedNetworkRelationSubnetApp           SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App"
-	SharedNetworkRelationSubnetAccessPoints  SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App.AccessPoints"
-	SharedNetworkRelationSubnetMachine       SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App.Machine"
+	SharedNetworkRelationLocalSharedNetworks            SharedNetworkRelation = "LocalSharedNetworks"
+	SharedNetworkRelationLocalSharedNetworkDaemon       SharedNetworkRelation = "LocalSharedNetworks.Daemon"
+	SharedNetworkRelationLocalSharedNetworkKeaDaemon    SharedNetworkRelation = "LocalSharedNetworks.Daemon.KeaDaemon"
+	SharedNetworkRelationLocalSharedNetworkApp          SharedNetworkRelation = "LocalSharedNetworks.Daemon.App"
+	SharedNetworkRelationLocalSharedNetworkAccessPoints SharedNetworkRelation = "LocalSharedNetworks.Daemon.App.AccessPoints"
+	SharedNetworkRelationLocalSharedNetworkMachine      SharedNetworkRelation = "LocalSharedNetworks.Daemon.App.Machine"
+	SharedNetworkRelationLocalSubnets                   SharedNetworkRelation = "Subnets.LocalSubnets"
+	SharedNetworkRelationAddressPools                   SharedNetworkRelation = "Subnets.LocalSubnets.AddressPools"
+	SharedNetworkRelationPrefixPools                    SharedNetworkRelation = "Subnets.LocalSubnets.PrefixPools"
+	SharedNetworkRelationSubnetDaemon                   SharedNetworkRelation = "Subnets.LocalSubnets.Daemon"
+	SharedNetworkRelationSubnetKeaDaemon                SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.KeaDaemon"
+	SharedNetworkRelationSubnetApp                      SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App"
+	SharedNetworkRelationSubnetAccessPoints             SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App.AccessPoints"
+	SharedNetworkRelationSubnetMachine                  SharedNetworkRelation = "Subnets.LocalSubnets.Daemon.App.Machine"
 )
 
 // This structure holds shared network information retrieved from an app.
@@ -327,9 +327,9 @@ func GetSharedNetworkWithRelations(dbi dbops.DBI, networkID int64, relations ...
 // Fetches a shared network with the subnets it contains.
 func GetSharedNetwork(dbi dbops.DBI, networkID int64) (network *SharedNetwork, err error) {
 	return GetSharedNetworkWithRelations(dbi, networkID,
-		SharedNetworkRelationNetworkKeaDaemon,
-		SharedNetworkRelationNetworkAccessPoints,
-		SharedNetworkRelationNetworkMachine,
+		SharedNetworkRelationLocalSharedNetworkKeaDaemon,
+		SharedNetworkRelationLocalSharedNetworkAccessPoints,
+		SharedNetworkRelationLocalSharedNetworkMachine,
 		SharedNetworkRelationAddressPools,
 		SharedNetworkRelationPrefixPools,
 		SharedNetworkRelationSubnetKeaDaemon,
