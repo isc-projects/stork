@@ -31,9 +31,9 @@ def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
 @pytest.mark.skip(
     reason="""The test reproduces a use case described in #1552.
 Stork consumed all available memory. After the fix, the memory usage is on the
-standard level but the CPU usage is still very high. It causes the test takes
-as much time that it exceeds the default database timeouts and may froze the
-host system. It is disabled due to it and because this test doesn't check any
+standard level but the CPU usage is still very high. It causes the test to take
+so much time that it exceeds the default database timeouts and may freeze the
+host system. It is disabled for this reason and because it doesn't check any
 particular feature. Additionally, it is prone to the problem with too long
 loading big Kea configuration. But it is still useful to run it manually to
 reproduce the situation when the Stork server overuses the CPU resources."""
