@@ -26,6 +26,7 @@ along with other documents for Stork, can be found on ISC's `Stork project homep
    troubleshooting
    backend-api
    demo
+   devguide
 
 
 .. toctree::
