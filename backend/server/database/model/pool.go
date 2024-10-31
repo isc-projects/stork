@@ -190,7 +190,7 @@ func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
 
 // Adds prefix pool to the database.
 func AddPrefixPool(db *dbops.PgDB, pool *PrefixPool) error {
-	if pool.LocalSubnet.ID == 0 && pool.LocalSubnet == nil {
+	if pool.LocalSubnetID == 0 && pool.LocalSubnet == nil {
 		err := errors.Errorf("local subnet must be specified when adding new prefix pool %s into the database",
 			pool.Prefix)
 		return err
