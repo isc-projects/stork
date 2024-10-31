@@ -323,3 +323,56 @@ to access the ``named`` daemon configuration and to execute the RNDC commands.
 The statistics channel must be configured to enable the statistics export to Prometheus.
 
 Introduced in Stork 0.3.0.
+
+Security design
+===============
+
+Stork has been designed with security in mind. The following section describes
+the security design and the security features implemented in Stork.
+
+The Stork environment is composed from several services, i.e., Stork server, Stork agent(s), Kea Control Agent, Kea
+DHCP daemons, Kea D2 daemon, BIND 9 daemon, PostgreSQL database, Prometheus. Each service has its own security
+considerations.
+
+There is a diagram of all Stork components and services that it interacts with:
+
+.. figure:: ./static/ecosystem-protocols.drawio.png
+   :align: center
+   :alt: Stork security diagram
+
+The Stork server is the central component of the Stork environment. It serves the Web UI and REST API over the HTTP
+protocol (connections no. 1, 4, and 8 on the diagram). The administrator may secure it by providing a trusted
+SSL/TLS certificate. It is recommended especially when the Stork server is exposed to the public network.
+The Stork server may share some statistics with the Prometheus monitoring system. It is strongly recommended to limit
+access to the metrics endpoint to the Prometheus server only. Stork server has no a built-in mechanism to do it but it
+may be achieved by using a reverse proxy like Nginx or Apache. See the :ref:`server-setup` section for more details.
+
+The Stork server requires a PostgreSQL database to store its data. The connection to the database is may be established
+over the local socket or over the HTTP protocol (connection no. 10 on the diagram). The first option is more secure,
+as it does not expose the database traffic to the network but it requires the database to be installed on the same
+machine as the Stork server. The second option allows the database to be installed on a different machine, but it is
+recommended to secure the connection with SSL/TLS. The Stork server supports a mutual TLS authentication with the
+database that should ensure the highest level of security. In any case, Stork server should use a dedicated database
+user with the minimum required permissions and no one else should have access to the database. The database should be
+regularly backed up. See the :ref:`securing-the-database-connection` for more details.
+
+The Stork server communicates with the Stork agents over the GRPC protocol (connection no. 5 on the diagram). The Stork
+has a built-in solution for securing the communication on this channel using the Transport Layer Security (TLS)
+protocol. It is a mutual TLS authentication that ensures that the server and the agent are who they claim to be.
+It is self-managed and does not require any additional configuration. The server acts as a Certificate Authority (CA)
+and generates the root certificate and the private key. They are stored in the server's database. The server generates
+a certificate and a private key for each agent during the agent registration process. The agent uses the certificate and
+the private key to authenticate itself to the server. The server doesn't trust the agent's certificate by default. The
+server administrator must approve the agent registration request in the Stork web UI. The server administrator must
+compare the token displayed in the UI with the token displayed in the agent's logs. If the tokens match, the
+administrator can approve the registration request. It is a one-time operation that protect against the
+man-in-the-middle attacks.
+This mechanism can be by-passed by using an additional server token for the agent registration. The server token is a
+secret available only to the administrator on the server UI. It may be provide to the agent during the agent registration
+process. The agents registered with this token are automatically approved by the server.
+The server token is a secret and must be protected. It is recommended to use it only in the secure environments. If it
+is compromised, the administrator can revoke it in the server UI. See the :ref:`secure-server-agent` for more details.
+
+
+
+
