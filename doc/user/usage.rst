@@ -807,7 +807,7 @@ to be filtered by:
 Software Versions Page
 ======================
 
-The Software Versions page may be found under ``Monitoring -> Software versions`` menu.
+The Software Versions page may be found under the ``Monitoring -> Software versions`` menu.
 This page provides various information about ISC Kea, Stork and BIND 9 software versions.
 It consists of two main parts described below.
 
@@ -858,6 +858,23 @@ The tables may present different types of releases described with the following 
 
 Data source
 ~~~~~~~~~~~
+
+ The data with up-to-date ISC software releases that the Software Versions page is displaying may come from
+ different sources:
+
+- **Offline JSON file** - This data is updated with every Stork release. The further from the release date you are,
+  the more outdated this data may become. ISC advises checking the `download page <https://isc.org/download>`_ regularly
+  for up-to-date information. Please note that the date when this data was generated is displayed in the top
+  notification message. The date is also displayed in messages in the ``Summary`` column of
+  the ``Summary of ISC software versions detected by Stork`` table.
+- **Online source** - This data is supposed to be always up-to-date. This is not supported yet and will be added in
+  future Stork releases.
+
+.. note::
+
+    When the Offline JSON file is the source of the data, caution should be taken when it comes to stable BIND 9
+    releases. BIND 9 team usually issues stable releases on a monthly basis. To be sure about latest releases,
+    ISC advises checking the `download page <https://isc.org/download>`_ regularly.
 
 Inline component
 ~~~~~~~~~~~~~~~~
