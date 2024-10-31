@@ -168,7 +168,7 @@ necessary permissions to access the log files.
 Viewing the DHCP data
 ~~~~~~~~~~~~~~~~~~~~~
 
-The Stork server has a extensive capabilities to display the DHCP details. It
+The Stork server has a extensive capabilities to display the DHCP state and configuration. It
 aggregates the data from all connected Kea servers and presents it in a
 comprehensive form. It allows the user to browse all details of all networks in
 a single place even if they are spread across multiple Kea servers.
@@ -239,7 +239,7 @@ The Stork server has dedicated pages for viewing the following data:
 
   Introduced in Stork 0.3.0.
 
-Modifying the DHCP data
+Managing the DHCP configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The Stork server is capable of modifying the Kea DHCP configuration. It is
@@ -320,6 +320,6 @@ The BIND 9 instance must be configured with the control channel to enable the
 monitoring. Additionally, the Stork agent must have the necessary permissions
 to access the ``named`` daemon configuration and to execute the RNDC commands.
 
-The statistics channel must be configured to enable the statistics fetching.
+The statistics channel must be configured to enable the statistics export to Prometheus.
 
 Introduced in Stork 0.3.0.
