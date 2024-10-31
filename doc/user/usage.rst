@@ -838,7 +838,7 @@ ISC advises reviewing the summary for machines with ``Error`` and ``Warning`` se
 Kea, BIND 9 and Stork current releases
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These tables show the currently available versions of ISC Kea, BIND9, and Stork software that may be used
+These tables show the currently available versions of ISC Kea, BIND 9, and Stork software that may be used
 in your Stork deployment. They contain links to the software documentation and release notes. There are
 release dates and ``EoL Date`` for stable releases. Links to packages and tarballs downloads are also provided.
 
