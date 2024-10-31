@@ -820,16 +820,16 @@ It also can check if the machine's Stork agent version matches the Stork server 
 
 .. note::
 
-  ISC encourages using the matching versions for the Stork server and all Stork agents. E.g.,
-  when Stork server version is ``2.0.0``, all Stork agents versions should be also ``2.0.0``.
+   ISC encourages using the matching versions for the Stork server and all Stork agents. E.g.,
+   when Stork server version is ``2.0.0``, all Stork agents versions should be also ``2.0.0``.
 
 It will also check if all Kea servers use matching Kea daemon versions per server.
 
 .. note::
 
-  ISC encourages that in case your Kea server has more than one daemon active, e.g., ``DHCPv4``,
-  ``DHCPv6``, and ``DDNS`` daemons are all active, they should all originate from the very same release,
-  i.e., they have the same version.
+   ISC encourages that in case your Kea server has more than one daemon active, e.g., ``DHCPv4``,
+   ``DHCPv6``, and ``DDNS`` daemons are all active, they should all originate from the very same release,
+   i.e., they have the same version.
 
 Based on the many software version checks performed, Stork tries to estimate the severity for each machine.
 The summary table groups the machines by severity and sorts them in descending order.
@@ -853,18 +853,18 @@ The tables may present different types of releases described with the following 
 
 .. note::
 
-    For details about ISC's Software Support Policy and Versioning, please refer to the
-    `KB article <https://kb.isc.org/docs/aa-00896>`_.
+   For details about ISC's Software Support Policy and Versioning, please refer to the
+   `KB article <https://kb.isc.org/docs/aa-00896>`_.
 
 Data source
 ~~~~~~~~~~~
 
- The data with up-to-date ISC software releases that the Software Versions page is displaying may come from
- different sources:
+The data with up-to-date ISC software releases that the Software Versions page is displaying may come from
+different sources:
 
 - **Offline JSON file** - This data is updated with every Stork release. The further from the release date you are,
-  the more outdated this data may become. ISC advises checking the `download page <https://isc.org/download>`_ regularly
-  for up-to-date information. Please note that the date when this data was generated is displayed in the top
+  the more outdated this data may become. ISC advises regularly checking the `download page <https://isc.org/download>`_
+  for up-to-date information. Please note that the date this data was generated is displayed in the top
   notification message. The date is also displayed in messages in the ``Summary`` column of
   the ``Summary of ISC software versions detected by Stork`` table.
 - **Online source** - This data is supposed to be always up-to-date. This is not supported yet and will be added in
@@ -872,9 +872,9 @@ Data source
 
 .. note::
 
-    When the Offline JSON file is the source of the data, caution should be taken when it comes to stable BIND 9
-    releases. BIND 9 team usually issues stable releases on a monthly basis. To be sure about latest releases,
-    ISC advises checking the `download page <https://isc.org/download>`_ regularly.
+   When the Offline JSON file is the source of the data, caution should be taken when it comes to stable BIND 9
+   releases. The BIND 9 team usually issues stable releases every month. To be sure about the latest releases,
+   ISC advises checking the `download page <https://isc.org/download>`_ regularly.
 
 Inline component
 ~~~~~~~~~~~~~~~~
