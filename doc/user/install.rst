@@ -1480,10 +1480,10 @@ For more details on monitoring Kea with Stork, see article in the
    - the Kea logs (e.g., ``/var/log/kea/kea-dhcp4.log``)
 
 - Kea Control Agent must have configured control sockets for each monitored Kea daemon (``control-sockets`` property).
-   See the `Kea Administrator Reference Manual <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_ for
+   See the `Configuration section in Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_ for
    an example configuration.
 - All monitored Kea daemons must have the ``control-socket`` property set in the configuration file. Look for the
-  reference in the `Kea Administrator Reference Manual <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_.
+  reference in the `Management API section in Kea ARM <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_.
 
 If Kea Control Agent listens on non-localhost interfaces, it is recommended to:
 
