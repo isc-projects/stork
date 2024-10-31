@@ -114,7 +114,7 @@ disk. It stores host reservations in the database instead. Therefore the note ab
 does not apply to hosts management.
 
 Preprocessing the Kea and BIND 9 statistics for the Prometheus server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=====================================================================
 
 The BIND 9 and Kea DHCP servers provide statistics in their own custom formats.
 The Stork agent preprocesses these statistics and converts them into a format
@@ -135,7 +135,7 @@ can limit the exported statistics in the agent configuration file.
 Introduced in Stork 0.5.0 (Kea) and Stork 0.6.0 (BIND 9).
 
 Monitoring status of services
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=============================
 
 The Stork server monitors continuously the status of the Kea DHCP daemons,
 Kea Control Agent, Kea DHCP-DDNS and BIND 9 services and provides a dashboard
@@ -153,7 +153,7 @@ The Stork server keeps the events log, which contains history of the status
 changes of the Kea and BIND 9 services.
 
 Browsing the logs
-~~~~~~~~~~~~~~~~~
+=================
 
 The Stork server provides a way to browse the logs of the Kea DHCP and BIND 9
 services.
@@ -166,7 +166,7 @@ the logs from the syslog or standard output. The Stork agent must have the
 necessary permissions to access the log files.
 
 Viewing the DHCP data
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
 The Stork server has a extensive capabilities to display the DHCP state and configuration. It
 aggregates the data from all connected Kea servers and presents it in a
@@ -240,7 +240,7 @@ The Stork server has dedicated pages for viewing the following data:
   Introduced in Stork 0.3.0.
 
 Managing the DHCP configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===============================
 
 The Stork server is capable of modifying the Kea DHCP configuration. It is
 altered through calling the Kea hooks or by editing the JSON configuration on
@@ -285,7 +285,7 @@ The following operations are supported:
   Introduced in Stork 1.19.0.
 
 Reviewing the Kea configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===============================
 
 The server provides a way to analyze the Kea DHCP configuration and suggest
 tweaks and improvements. This solution allows to detect potential issues,
@@ -295,7 +295,7 @@ hooks that can be loaded to enable more Stork features.
 Introduced in Stork 0.22.0.
 
 Searching for leases
-~~~~~~~~~~~~~~~~~~~~
+====================
 
 The Stork server provides a search engine to find the DHCP leases. The user
 can search for the leases by the IP address, MAC address, hostname, DUID, or
@@ -309,7 +309,7 @@ reservation.
 Introduced in Stork 0.16.0.
 
 Monitoring the BIND 9 service
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=============================
 
 The Stork server has a limited capabilities to monitor the BIND 9 service.
 It can display the status of the BIND 9 service, the version of the BIND 9
