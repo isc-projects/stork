@@ -12,14 +12,14 @@ Stork services. It contains:
 - Stork Server
 - Stork Agent with Kea DHCPv4
 - Stork Agent with Kea DHCPv6
-- Stork Agent with Kea HA-1 (high availability server 1)
-- Stork Agent with Kea HA-2 (high availability server 2)
-- Stork Agent with Kea HA-3 (high availability server 3)
+- Stork Agent with Kea HA-1 (High Availability Server 1)
+- Stork Agent with Kea HA-2 (High Availability Server 2)
+- Stork Agent with Kea HA-3 (High Availability Server 3)
 - Stork Agent with Kea Using Many Subnets
 - Stork Agent with BIND 9
 - Stork Agent with BIND 9-2
 - Stork Environment Simulator
-- PostgreSQL database
+- PostgreSQL Database
 - Prometheus & Grafana
 
 The demo setup can optionally launch additional containers:
@@ -27,25 +27,25 @@ The demo setup can optionally launch additional containers:
 - Stork Agent with Kea Premium Features-1
 - Stork Agent with Kea Premium Features-2
 
-In the sections below it is explained how to start the demo setup
-and how to launch the containers with the premium Kea features (hooks).
-They are required for hosts, subnets and shared networks management.
+In the sections below, we explain how to start the demo setup
+and how to launch the containers with additional Kea features, provided by "hooks."
+These hooks are required to manage hosts, subnets, and shared networks from within Stork.
 
-The demo starting instructions and its features are also described on the
-`ISC Gitlab Wiki <https://gitlab.isc.org/isc-projects/stork/-/wikis/Demo>`_.
+The demo launch instructions and its features are also described on the
+`ISC GitLab Wiki <https://gitlab.isc.org/isc-projects/stork/-/wikis/Demo>`_.
 
 ISC hosts a public Stork demo available at https://demo.stork.isc.org. This demo
-instance can be freely used to start playing with Stork. It contains Kea instances
-with the premium features, so it can be used to try hosts, subnets and shared
-networks management with Stork.
+instance can be freely used to start experimenting with Stork. It contains Kea instances
+with the additional hooks installed, so the demo can be used to try managing hosts, subnets, and shared
+networks with Stork.
 
 .. note::
 
-   The demo setup at https://demo.stork.isc.org is restarted every full hour.
-   All changes in the demo over last hour (e.g., machines authorization,
-   Kea configuration changes, Stork settings changes) are lost and the defaults
+   The demo setup at https://demo.stork.isc.org is restarted every hour on the hour.
+   All changes in the demo over the previous hour (e.g., machine authorizations,
+   Kea configuration changes, Stork settings changes, etc.) are lost and the defaults
    are restored. It may take several minutes to restart the demo, causing its
-   unavailability around the full hour.
+   unavailability around the top of each hour.
 
 Requirements
 ------------
@@ -53,9 +53,9 @@ Requirements
 Running the Stork demo requires the same dependencies as building
 Stork, which are described in the :ref:`installation_sources` chapter.
 Besides these dependencies, the demo requires
-`Docker Compose <https://docs.docker.com/compose/>`_. See the `Development Evironment
+`Docker Compose <https://docs.docker.com/compose/>`_. See the `Development Environment
 <https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environment>`_
-on Stork Wiki for more details.
+page on the Stork Wiki for more details.
 
 Setup Steps
 -----------
@@ -78,14 +78,14 @@ the Ruby toolkit:
 
    $ ./stork-demo.sh
 
-Premium Features
-~~~~~~~~~~~~~~~~
+Additional Features
+~~~~~~~~~~~~~~~~~~~
 
-It is possible to run the demo with premium features enabled in the Kea
-apps; it requires the demo to be started with an access token for the Kea premium
-repositories. Access tokens are provided to ISC's paid support customers and
+It is possible to run the demo with additional features enabled in the Kea
+app; this requires the demo to be started with an access token for the Kea premium
+and/or subscriber hook repositories. Access tokens are provided to ISC's paid support customers;
 format-specific setup instructions can be found on
-https://cloudsmith.io/~isc/repos/kea-2-6-prv/setup/#tab-formats-deb. ISC paid support
+https://kb.isc.org/docs/isc-kea-packages#private-repositories-for-commercially-licensed-hooks. ISC paid support
 customers should feel free to open a ticket for assistance if needed.
 
 .. code-block:: console
@@ -97,7 +97,7 @@ Detached Mode
 
 It is possible to start the demo in detached mode. In that case, it
 does not depend on the terminal and runs in the background until the
-``rake demo:down`` call. To enable the detached mode, specify the
+``rake demo:down`` call. To enable detached mode, specify the
 DETACH variable set to ``true``.
 
 .. code-block:: console
@@ -119,26 +119,26 @@ server
 webui
    This container is essential in most circumstances. It
    provides the front-end web interface. It is potentially unnecessary with
-   the custom development of a Stork API client. The content is served by Nginx.
+   the custom development of a Stork API client. The content is served by NGINX.
 webui-apache
    This container is similar to the previous one, except Apache serves it, and
-   the web UI is available under the `/stork` sub-directory, port 8081.
+   the web UI is available under the ``/stork`` sub-directory, port 8081.
 agent-bind9
    This container runs a BIND 9 server. With this container, the agent
-   can be added as a machine and Stork will begin monitoring its BIND
+   can be added as a machine and Stork begins monitoring its BIND
    9 service.
 agent-bind9-2
    This container also runs a BIND 9 server, for the purpose of
    experimenting with two different DNS servers.
 agent-kea
    This container runs a Kea DHCPv4 server. With this container, the
-   agent can be added as a machine and Stork will begin monitoring its
+   agent can be added as a machine and Stork begins monitoring its
    Kea DHCPv4 service.
 agent-kea6
    This container runs a Kea DHCPv6 server.
 agent-kea-ha1 and agent-kea-ha2
    These two containers should, in general, be run together. They each
-   have a Kea DHCPv4 server instance configured in an HA pair. With
+   have a Kea DHCPv4 server instance configured in a High Availability (HA) pair. With
    both instances running and registered as machines in Stork, users can observe
    certain HA mechanisms, such as one partner taking over the traffic if the
    other partner becomes unavailable.
@@ -148,7 +148,7 @@ agent-kea-many-subnets
 agent-kea-premium-one and agent-kea-premium-two
    These containers run agents with Kea DHCPv4 and DHCPv6 servers connected
    to a MySQL database containing host reservations. They are only available when
-   premium features have been enabled during the demo build.
+   additional features have been enabled during the demo build.
 
 These are containers with third-party services that are required by Stork:
 
@@ -178,9 +178,9 @@ simulator
    start and stop any service in any other container (useful to
    simulate, for example, a Kea crash).
 dns-proxy-server
-   Used only when the Stork Agent from container connects to a locally running
-   server. The Kea/Bind containers use internal Docker hostnames that the host
-   cannot resolve. We run the DNS proxy in the background that translates the
+   This is used only when the Stork agent from a container connects to a locally running
+   server. The Kea/BIND 9 containers use internal Docker hostnames that the host
+   cannot resolve. ISC runs the DNS proxy in the background that translates the
    Docker hostnames to valid IP addresses.
 
 .. note::
@@ -202,7 +202,7 @@ Initialization
 ``stork-server`` requires some initial information:
 
 #. Go to http://localhost:8080/machines/unauthorized.
-#. Authorize the machines by clicking ``Action -> Authorize`` for the selected machines.
+#. Authorize the machines by clicking ``Action -> Authorize`` for the desired machines.
 
 Stork Environment Simulator
 ---------------------------
@@ -219,7 +219,7 @@ possible to send traffic to only one subnet from a given shared
 network.
 
 The Stork Environment Simulator also allows demonstration DNS traffic to
-be sent selected DNS servers.
+be sent to selected DNS servers.
 
 The Stork Environment Simulator can add all the machines available in the
 demo setup. It can stop and start selected Stork agents and the Kea and
@@ -254,11 +254,11 @@ The Grafana web page can be found at: http://localhost:3000/ .
 Login Page Welcome Message
 --------------------------
 
-:ref:`configuring-deployment-specific-views` section describes how to setup
-custom welcome message on the login page. These instructions can be adopted
-to deploy to the welcome message in the Stork server demo container, but the
+The :ref:`configuring-deployment-specific-views` section describes how to set up
+a custom welcome message on the login page. These instructions can be adapted
+to deploy a welcome message in the Stork server demo container, but the
 copied HTML file is automatically removed from the container when the demo is
-restarted. Therefore, a better approach is to create the ``login-page-welcome.html``
+restarted each hour. Therefore, a better approach is to create the ``login-page-welcome.html``
 file in the Stork source tree (i.e., ``webui/src/assets/static-page-content/login-page-welcome.html``).
 This file will be automatically copied to the Stork server container when the
 demo is started.

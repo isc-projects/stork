@@ -13,13 +13,13 @@ The goals of the ISC Stork project are:
 - To provide alerting mechanisms that indicate failures, fault
   conditions, and other unwanted events in Kea DHCP services.
 - To permit easier troubleshooting of these services.
-- To allow remote configuration of the Kea DHCP servers.
+- To allow remote configuration of Kea DHCP servers.
 
-Although Stork currently only offers monitoring, insight, alerts
+Although Stork currently only offers monitoring, insight, alerts,
 and configuration for Kea DHCP, we plan to add similar capabilities
 for BIND 9 in future versions.
 
-Please refer to the :ref:`glossary` for specific wording used further
+Please refer to the :ref:`glossary` for specific terms used
 in this documentation and in the Stork UI.
 
 Architecture
@@ -37,122 +37,120 @@ in a network.
 The Stork agent is installed along with Kea DHCP and/or BIND 9 and
 interacts directly with those apps. There may be many
 agents deployed in a network, one per machine. The following figure shows
-connections between Stork components, Kea and BIND 9. It also shows different
-kind of databases in a typical deployment.
+the connections between Stork components, Kea, and BIND 9. It also shows the different
+kinds of databases in a typical deployment.
 
 .. figure:: ./static/arch.png
    :align: center
-   :alt: Connections between Stork components, Kea and BIND 9
+   :alt: Connections between Stork components, Kea, and BIND 9
 
 
-The presented example includes 3 physical machines, each running a Stork agent
-instance, and Kea and/or BIND 9 apps. The leftmost machine includes a Kea
-server connected to a database. It is typically one of the database systems
-natively supported by Kea (MySQL or PostgreSQL). Kea uses the database
-to store three types of information:
+The presented example includes three physical machines, each running a Stork agent
+instance and the Kea and/or BIND 9 applications. The leftmost machine includes a Kea
+server connected to a database. Kea natively supports two database systems:
+MySQL and PostgreSQL. Kea uses a database to store three types of information:
 
-- DHCP leases (this storage is often referred to as lease database or lease backend),
-- DHCP host reservations (this storage is referred to as host database or host backend),
-- Kea configuration information (configuration backend).
+- DHCP leases (this storage is often referred to as a lease database or lease backend),
+- DHCP host reservations (this storage is referred to as a host database or host backend),
+- Kea configuration information (called the configuration backend).
 
-For more information regarding the supported database backends please consult
-`Kea ARM <https://kea.readthedocs.io/en/latest/arm/admin.html#kea-database-administration>`_.
+For more information regarding the supported database backends, please consult
+`the Kea Database Administration section of the Kea ARM <https://kea.readthedocs.io/en/latest/arm/admin.html#kea-database-administration>`_.
 
-Note that Stork server does not directly communicate with the Kea databases.
-The lease, host and configuration information is pulled from the Kea instances
-using the Kea control channel. Kea may pull necessary information from its database
-to form a response. Depending on the configuration, Kea may use all database backends
-or only a subset of them. It may also lack the database completely. If it uses
+Note that the Stork server does not communicate directly with the Kea databases.
+The lease, host, and configuration information is pulled from the Kea instances
+by the Kea control channel, which then relays the data to the Stork server.
+Depending on the configuration, Kea may use all the database backends
+or only a subset of them, or it may not use any database at all. If it uses
 the database backends, they may be combined in the same database instance
 or they may be separate instances. The rightmost machine on the figure above
-is an example of the Kea server running without a database. In this case it
-stores allocated DHCP leases in a CSV file (often called Memfile backend).
+is an example of the Kea server running without a database; in this case it
+stores allocated DHCP leases in a CSV file (often called a memfile backend).
 
-Stork server is connected to its own PostgreSQL database. It has a different
-schema than Kea database and stores the information required for the Stork
+The Stork server is connected to its own PostgreSQL database, which has a different
+schema than a Kea database and stores the information required for the Stork
 server operation. This database is typically installed on the same physical
 machine as the Stork server but may also be remote.
 
 .. note::
 
-  Unlike Kea, Stork server has no concept of replaceable database backends.
-  It is integrated only with PostgreSQL. In particular, using MySQL as a
+  Unlike Kea, the Stork server has no concept of replaceable database backends;
+  it is integrated only with PostgreSQL. In particular, using MySQL as a
   Stork server database is not supported.
 
-Stork server pulls the configuration information from the respective
+The Stork server retrieves the configuration information from the respective
 Kea servers when they are first connected to the Stork server via agents,
-saves pulled information in its local database and exposes to
-the end users via the REST API. It continues to pull Kea configurations
-periodically and updates the local database when it finds any changes. It
+then saves the pulled information in its local database and exposes it to
+end users via the REST API. The Stork server continues to check the Kea servers
+periodically and updates the local database when it finds any configuration changes. It
 also pulls the current configuration from the Kea servers before applying
-any configuration updates, to minimize a risk of conflicts with any
+any configuration updates, to minimize the risk of conflicts with any
 updates applied directly to the Kea servers (outside of Stork).
 
 .. note::
 
-  The future goal is to make Kea servers fully configurable from Stork. It
+  The future goal is to make Kea servers fully configurable from Stork, which
   already supports configuring the most frequently changing parameters
-  (e.g., host reservations, subnets, shared networks and selected global parameters).
-  However, some configuration capabilities are still unavailable. It implies that the
-  administrators may sometimes need to apply configuration updates directly to the
-  Kea servers, and these servers are the source of the configuration truth to
-  Stork which periodically pulls this information. Nevertheless, we highly recommend
-  applying configuration updates via Stork interface, whenever possible. Stork
-  provides locking mechanisms preventing multiple end users from concurrently
-  modifying configuration of the same Kea server. Direct configuration updates
-  bypass this mechanism resulting in a risk of configuration conflicts.
+  (e.g., host reservations, subnets, shared networks, and selected global parameters).
+  However, some configuration capabilities are not yet available via Stork, which means that
+  administrators may sometimes need to apply configuration updates directly to
+  Kea servers. These Kea servers are the source of the configuration information in
+  Stork, so ideally all updates to them would be made via Stork. Even though that
+  is not yet an option, we highly recommend
+  applying configuration updates via the Stork interface whenever possible. Stork
+  provides locking mechanisms to prevent multiple end users from concurrently
+  modifying the configuration of the same Kea server; direct configuration updates
+  bypass this mechanism, resulting in a risk of configuration conflicts.
 
 
-Stork uses ``config-set`` and ``config-write`` Kea commands to save changes related
-to global parameters and options, subnets and shared networks. For this to work, Kea
-needs to have write access to its configuration. This is a security decision made
-by a Kea administrator. Some deployments might choose to restrict write access.
-In such cases, Stork will not be able to push configuration changes to Kea.
+Stork uses the ``config-set`` and ``config-write`` Kea commands to save changes related
+to global parameters and options, subnets, and shared networks. For this to work, Stork
+needs to have write access to the Kea configuration, which is a security decision made
+by a Kea administrator. Some deployments may choose to restrict write access;
+in such cases, Stork is not able to push configuration changes to Kea.
 
-The host reservations management mechanism does not modify configuration on
-disk. It stores host reservations in the database instead. Therefore the note above
-does not apply to hosts management.
+The host reservations management mechanism does not modify configurations on
+disk; instead, it stores host reservations in the database. Therefore, the note above
+does not apply to host management.
 
-Preprocessing the Kea and BIND 9 statistics for the Prometheus server
+Preprocessing the Kea and BIND 9 Statistics for the Prometheus Server
 =====================================================================
 
 The BIND 9 and Kea DHCP servers provide statistics in their own custom formats.
 The Stork agent preprocesses these statistics and converts them into a format
-understood by the Prometheus server. The agents acts as a Prometheus exporter
+understood by the Prometheus server. The agent acts as a Prometheus exporter
 and waits for the Prometheus server to scrape the statistics.
 
-To fetch the statistics, Kea DHCP daemon must be configured to load the
-``stats_cmds`` hook. The hook is responsible for sharing the statistics through
+To fetch the statistics, the Kea DHCP daemon must be configured to load the
+``stats_cmds`` hook, which is responsible for sharing the statistics through
 the Kea REST API. Optionally, the ``subnets_cmds`` hook can be loaded to
 provide additional labels for the metrics exported to Prometheus.
 
 The BIND 9 daemon must have a properly configured statistics channel to enable
 this feature.
 
-The Stork agent exports only a subset of the available statistics. The user
+The Stork agent exports only a subset of the available statistics; the user
 can limit the exported statistics in the agent configuration file.
 
-Introduced in Stork 0.5.0 (Kea) and Stork 0.6.0 (BIND 9).
+Monitoring the Status of Services
+=================================
 
-Monitoring status of services
-=============================
+The Stork server continuously monitors the status of the Kea DHCP daemons,
+the Kea Control Agent, and the Kea DHCP-DDNS and BIND 9 services, and provides a dashboard
+to show their current states.
 
-The Stork server monitors continuously the status of the Kea DHCP daemons,
-Kea Control Agent, Kea DHCP-DDNS and BIND 9 services and provides a dashboard
-to show the current state.
-
-The status is monitored on two levels. The first level is the status of the
+The statuses are monitored on two levels: the first level is the status of the
 machine where Kea or BIND 9 is running. The user can see if the connection to
-the agent is established, and additional information about the machine, such as
-the operating system, CPU and memory usage.
+the agent is established and can view additional information about the machine, such as
+the operating system as well as CPU and memory usage.
 The second level is the status of the Kea DHCP and BIND 9 daemons. The user can
-inspect if the processes are running, and if they are not, the user can see the
+inspect whether the processes are running; if they are not, the user can see the
 reason for the failure.
 
-The Stork server keeps the events log, which contains history of the status
+The Stork server keeps an events log, which contains the history of status
 changes of the Kea and BIND 9 services.
 
-Browsing the logs
+Browsing the Logs
 =================
 
 The Stork server provides a way to browse the logs of the Kea DHCP and BIND 9
@@ -165,44 +163,40 @@ The Stork server can read only the data logged into a file. It cannot read
 the logs from the syslog or standard output. The Stork agent must have the
 necessary permissions to access the log files.
 
-Viewing the DHCP data
+Viewing the DHCP Data
 =====================
 
-The Stork server has a extensive capabilities to display the DHCP state and configuration. It
+The Stork server has extensive capabilities to display the DHCP state and configuration. It
 aggregates the data from all connected Kea servers and presents it in a
-comprehensive form. It allows the user to browse all details of all networks in
-a single place even if they are spread across multiple Kea servers.
+comprehensive form. The server allows the user to browse all details of all networks in
+a single place, even if they are spread across multiple Kea servers.
 
 The Stork server has dedicated pages for viewing the following data:
 
-- Viewing subnets
+- Subnets
 
-  The user can see all subnets defined in the Kea servers. The user can view
+  The user can see all subnets defined in the Kea servers, and can view
   the subnet details, such as the subnet ID, subnet prefix, related DHCP
   options, and subnet pools.
 
-  The user can also see the statistics of the subnet usage. They are presented
-  only if the ``stats_cmds`` hook is loaded in a particular Kea server.
+  The subnet usage statistics are presented only if the ``stats_cmds``
+  hook is loaded on the Kea server.
 
-  If the particular subnet is specified in multiple Kea servers, it is
+  If a particular subnet is specified on multiple Kea servers, it is
   displayed only once, with a list of server names where it is defined.
 
-  Introduced in Stork 0.4.0.
+- Shared networks
 
-- Viewing shared networks
-
-  The user can see all shared networks defined in the Kea servers. The user
-  can view the shared network details, such as the shared network ID, and shared
+  The user can see all shared networks defined in the Kea servers, and
+  can view the shared network details, such as the shared network ID and shared
   network name. The server displays the list of subnets belonging to the shared
-  network. The user can see the overall utilization of the shared network and
+  network. The user can see the overall utilization of the shared network as well as
   the utilization of the subnets belonging to the shared network.
 
   The utilization data and other statistics are presented only if the
-  ``stats_cmds`` hook is loaded in a particular Kea server.
+  ``stats_cmds`` hook is loaded on the Kea server.
 
-  Introduced in Stork 0.5.0.
-
-- Viewing host reservations
+- Host reservations
 
   The user can see all host reservations defined in the Kea servers. The user
   can view the host reservation details, such as host identifiers, DHCP options,
@@ -211,115 +205,96 @@ The Stork server has dedicated pages for viewing the following data:
   The server can fetch the host reservations from the host database if the
   ``host_cmds`` hook is loaded in Kea.
 
-  Introduced in Stork 0.6.0.
+- Global parameters and DHCP options
 
-- Viewing global parameters and DHCP options
-
-  The user can see the global parameters and DHCP options defined in the Kea
+  The user can see the global parameters and DHCP options defined on the Kea
   servers.
 
-  Introduced in Stork 1.18.0.
+- High-Availability status
 
-- Viewing the High-Availability status
-
-  The user can see the status of the High-Availability configured across the
-  Kea servers. The UI presents the detailed information about each HA peer.
-  In case of a failure, the user can observe the reason for the failure and
-  how the non-failed server is handling the situation.
+  The user can see the status of the High Availability configuration across the
+  Kea servers. The UI presents detailed information about each HA peer;
+  in the event of a failure, the user can observe the reason for the failure and
+  see how the non-failed server is handling the situation.
 
   The Stork server gracefully supports the hub-and-spoke Kea feature.
 
-  Introduced in Stork 0.3.0.
-
-- Viewing the DHCP daemon details
+- DHCP daemon details
 
   The user can see the details of the Kea DHCP daemons. The UI displays the
-  daemon version, the database backends, the loaded hooks, and the whole
-  configuration in a JSON format.
+  daemon version, the database backends, the loaded hooks, and the entire
+  configuration in JSON format.
 
-  Introduced in Stork 0.3.0.
-
-Managing the DHCP configuration
+Managing the DHCP Configuration
 ===============================
 
-The Stork server is capable of modifying the Kea DHCP configuration. It is
-altered through calling the Kea hooks or by editing the JSON configuration on
+One of the features of the Stork server is its ability to modify the Kea DHCP
+configuration by calling the Kea hooks or by editing the JSON configuration on
 the Stork server side and sending it back to the Kea server.
 
 The following operations are supported:
 
 - Adding, editing, and deleting subnets
 
-  The user can add, edit, and delete subnets in the Kea servers. The user can
-  change the subnet details, such as the subnet prefix, related DHCP options,
+  The user can add, edit, and delete subnets on Kea servers. The user can
+  also change subnet details, such as the subnet prefix, related DHCP options,
   and subnet pools.
 
-  The ``subnet_cmds`` hook must be loaded in Kea to support this feature.
-
-  Introduced in Stork 1.13.0.
+  The ``subnet_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Adding, editing, and deleting shared networks
 
-  The user can add, edit, and delete shared networks in the Kea servers. The
-  user can change the shared network details, such as the shared network name, 
-  the list of subnets belonging to the shared network and the DHCP options.
+  The user can add, edit, and delete shared networks on Kea servers. The
+  user can also change shared network details, such as the shared network name,
+  the list of subnets belonging to the shared network, and the DHCP options.
 
-  The ``subnets_cmds`` hook must be loaded in Kea to support this feature.
-
-  Introduced in Stork 1.18.0.
+  The ``subnets_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Adding, editing, and deleting host reservations
 
-  The user can add, edit, and delete host reservations in the Kea servers. The
+  The user can add, edit, and delete host reservations on Kea servers. The
   user can change the host reservation details, such as host identifiers, DHCP
-  options, and reserved hostname and IP addresses.
+  options, and reserved hostnames and IP addresses.
 
-  The ``host_cmds`` hook must be loaded in Kea to support this feature.
-
-  Introduced in Stork 1.3.0.
+  The ``host_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Editing global parameters and DHCP options
 
-  The user can edit the global parameters and DHCP options in the Kea servers.
+  The user can edit the global parameters and DHCP options on Kea servers.
 
-  Introduced in Stork 1.19.0.
-
-Reviewing the Kea configuration
+Reviewing the Kea Configuration
 ===============================
 
-The server provides a way to analyze the Kea DHCP configuration and suggest
-tweaks and improvements. This solution allows to detect potential issues,
-performance bottlenecks, and fields for optimization. It proposes also the
-hooks that can be loaded to enable more Stork features.
+The Stork server allows the user to analyze the Kea DHCP configuration and suggest
+tweaks and improvements. This solution allows potential issues to be detected,
+performance bottlenecks to be addressed, and fields to be identified for optimization.
+The server also suggests the hooks that can be loaded to enable more Stork features.
 
-Introduced in Stork 0.22.0.
-
-Searching for leases
+Searching for Leases
 ====================
 
-The Stork server provides a search engine to find the DHCP leases. The user
+The Stork server provides an engine to search for DHCP leases. The user
 can search for the leases by the IP address, MAC address, hostname, DUID, or
 client identifier. They can also search for all declined leases.
 
-This feature requires the ``lease_cmds`` hook loaded in Kea.
+This feature requires the ``lease_cmds`` hook to be loaded in Kea.
 
-Stork server also displays a list of the leases related to a particular host
+The Stork server also displays a list of the leases related to a particular host
 reservation.
 
-Introduced in Stork 0.16.0.
-
-Monitoring the BIND 9 service
+Monitoring the BIND 9 Service
 =============================
 
-The Stork server has a limited capabilities to monitor the BIND 9 service.
+The Stork server currently has limited capabilities to monitor the BIND 9 service.
 It can display the status of the BIND 9 service, the version of the BIND 9
 daemon, and the details of the configured control and statistics channels.
-The UI displays also the RNDC keys if set and the basic statistics.
+The UI also displays the RNDC keys, if set, and the basic statistics.
 
-The BIND 9 instance must be configured with the control channel to enable the
-monitoring. Additionally, the Stork agent must have the necessary permissions
+The BIND 9 instance must be configured with the control channel to enable
+monitoring, and the Stork agent must have the necessary permissions
 to access the ``named`` daemon configuration and to execute the RNDC commands.
 
+The BIND 9 statistics channel must be configured to enable the statistics export to Prometheus.
 The statistics channel must be configured to enable the statistics export to Prometheus.
 
 Introduced in Stork 0.3.0.

@@ -17,12 +17,12 @@ principle, the software can be run on any POSIX system that has a Go compiler an
 can also be built on other modern systems, but ISC's testing capabilities are modest. We encourage users to try running
 Stork on other OSes not on this list and report their findings to ISC.
 
-We put the main effort into ensuring compatibility with live Ubuntu and RHEL long-time-support (LTS) versions.
+Our main effort goes into ensuring compatibility with live Ubuntu and RHEL long-time-support (LTS) versions.
 
-The table below describes the checks performed on the particular operating
-systems.
+The table below describes the checks performed on each particular operating
+system.
 
-.. csv-table:: Compatibility of the operating systems
+.. csv-table:: Operating-system compatibility
    :file: compatible-systems.csv
    :header-rows: 1
 
@@ -30,12 +30,12 @@ Legend:
 
 - ``X`` - the check is regularly performed on our CI system
 - ``D`` - the operating system is used to develop Stork, so some checks are performed as a side effect
-- ``U`` - the check is not covered by our CI system, but some users reported successful passes
+- ``U`` - the check is not covered by our CI system, but some users have reported successful passes
 
 \* MacOS is not and will not be officially supported. However, many developers on ISC's team use Macs, so the intention
 is to keep Stork buildable on this platform.
 
-\*\* The BSD-like systems are not officially supported, but some users reported successful installations on these
+\*\* BSD-like systems are not officially supported, but some users have reported successful installations on these
 systems. 
 
 
@@ -46,51 +46,51 @@ The Stork agent does not require any specific dependencies to run. It can be run
 
 Stork uses the ``status-get`` command to communicate with Kea.
 
-Stork requires the premium Host Commands (``host_cmds``) hook library to be loaded by the Kea instance to retrieve host
+Stork requires the premium Host Commands (``host_cmds``) hook library to be loaded by the Kea instances to retrieve host
 reservations stored in an external database. Stork works without the Host Commands hook library, but is not able to display
 host reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
-libraries. Managing (adding, updating, deleting) host reservations requires the ``host_cmds`` to be loaded on all
+libraries; however, managing (adding, updating, deleting) host reservations with Stork requires the ``host_cmds`` to be loaded on all
 Kea instances where these host reservations belong.
 
 Stork requires the premium Subnet Commands (``subnet_cmds``) hook library to be loaded by the Kea instances
 to manage the subnets and shared networks. Stork can fetch and present subnets and shared networks without this
-hook library but is unable to add, update or delete a subnet or shared network if the ``subnet_cmds``
-hook library is not loaded on all Kea instances where this subnet or shared network belongs.
+hook library; however, adding, updating, or deleting a subnet or shared network requires the ``subnet_cmds``
+hook library to be loaded on all Kea instances where this subnet or shared network belongs.
 
 Stork requires the open source Statistics Commands (``stat_cmds``) hook library to be loaded by the Kea instance to retrieve lease
 statistics. Stork works without the Stat Commands hook library, but is not able to show pool utilization and other
 statistics.
 
-Stork uses Go implementation to handle TLS connections, certificates, and keys. The secrets are stored in the PostgreSQL
+Stork uses the Go implementation to handle TLS connections, certificates, and keys. The secrets are stored in the PostgreSQL
 database, in the ``secret`` table.
 
 For the Stork server, a PostgreSQL database (https://www.postgresql.org/) version 10
-or later is required. Stork will attempt to run with older versions, but may not work
+or later is required. Stork attempts to run with older versions, but may not work
 correctly. The general installation procedure for PostgreSQL is OS-specific and is not included
-here. However, please note that Stork uses pgcrypto extensions, which often come in a separate package. For
+here; however, please note that Stork uses pgcrypto extensions, which often come in a separate package. For
 example, a postgresql-crypto package is required on Fedora and postgresql12-contrib is needed on RHEL and CentOS.
 
 .. _stork-tool:
 
-Stork Tool
-==========
+The Stork Tool
+==============
 
-The ``Stork Tool`` is a program installed with the ``Stork Server``, providing commands
-to set up server's database and manage TLS certificates. Using this tool is facultative
+The Stork tool is a program installed with the Stork server, providing commands
+to set up the server's database and manage TLS certificates. Using this tool is optional
 because the server runs the database migrations and creates suitable certificates at
 startup on its own. However,  the tool provides useful commands for inspecting
-the current database schema version and downgrading to one of the previous versions.
-In addition, in the :ref:`setup-server-database` section it is described how the tool can be
-conveniently used to create a new database and its credentials without a need to run
+the current database schema version and downgrading to a previous version.
+In addition, the :ref:`setup-server-database` section describes how the Stork tool can be
+conveniently used to create a new database and its credentials without the need to run
 SQL commands directly using the ``psql`` program.
 
-The :ref:`inspecting-keys-and-certificates` section describes how to use the tool for TLS
-certificates management. The :ref:`configuring-deployment-specific-views` section describes how to setup custom
+The :ref:`inspecting-keys-and-certificates` section describes how to use the Stork tool for TLS
+certificate management. The :ref:`configuring-deployment-specific-views` section describes how to set up a custom
 welcome message on the login page.
 
-Further sections describe different methods for installing the Stork Server from packages.
-See: :ref:`install-server-deb` and :ref:`install-server-rpm`. The ``stork-tool`` program
-is installed from the packages together with the server. Alternatively, the tool can be
+Other sections describe different methods for installing the Stork server from packages;
+see: :ref:`install-server-deb` and :ref:`install-server-rpm`. The ``stork-tool`` program
+is installed from packages along with the server, but the tool can also be
 built from sources:
 
 .. code-block:: console
@@ -101,14 +101,14 @@ Please refer to the manual page for usage details: :ref:`man-stork-tool`.
 
 .. _setup-server-database:
 
-Preparing Stork Server Database
-===============================
+Preparing the Stork Server Database
+===================================
 
-Before running ``Stork Server``, a PostgreSQL database and the user with suitable privileges
-must be created. Using the ``stork-tool`` is the most convenient way to set up the database.
+Before running ``stork-server``, a PostgreSQL database and the user with suitable privileges
+must be created. Using ``stork-tool`` is the most convenient way to set up the database.
 
 The following command creates a new database ``stork`` and a user ``stork`` with all privileges
-in this database. It also installs the ``pgcrypto`` extension required by the Stork Server.
+in this database. It also installs the ``pgcrypto`` extension required by the Stork server:
 
 .. code-block:: console
 
@@ -124,14 +124,14 @@ be specified with the ``--db-maintenance-user`` option. For example:
     $ stork-tool db-create --db-maintenance-user thomson --db-name stork --db-user stork
     created database and user for the server with the following credentials  database_name=stork password=L82B+kJEOyhDoMnZf9qPAGyKjH5Qo/Xb user=stork
 
-Similarly, a ``postgres`` database should often exist in a PostgreSQL installation.
+Similarly, a ``postgres`` database often exists in a PostgreSQL installation.
 However, a different maintenance database can be selected with the ``--db-maintenance-name``
 option.
 
-The ``stork-tool`` generates a random password to the created database. This password needs
-to be copied into the server environment file or used in the ``stork-server`` command line
+``stork-tool`` generates a random password to the created database. This password needs
+to be copied into the server environment file or used in the ``stork-server`` command line,
 to configure the server to use this password while connecting to the database. Use the
-``--db-password`` option with the ``db-create`` command to create a user with a specified
+``--db-password`` option with the ``db-create`` command to create a user with the specified
 password.
 
 
@@ -184,10 +184,10 @@ To generate a random password run:
 
 The newly created database is not ready for use until necessary database migrations
 are executed. The migrations create tables, indexes, triggers, and functions required
-by the ``Stork Server``. As mentioned above, the server can automatically run the
-migrations at startup, bringing up the database schema to the latest version. However,
-if a user wants to run the migrations before starting the server, they can use the
-``stork-tool``:
+by the Stork server. As mentioned above, the server can automatically run the
+migrations at startup, bringing the database schema up to the latest version. However,
+to run the migrations before starting the server, the
+``stork-tool`` command can be used:
 
 .. code-block:: console
 
@@ -196,11 +196,11 @@ if a user wants to run the migrations before starting the server, they can use t
 
 The ``up`` and ``down`` commands have an optional ``-t`` parameter that specifies the
 desired schema version. It is useful when debugging database migrations or downgrading to
-one of the earlier Stork versions.
+an earlier Stork version.
 
 .. code-block:: console
 
-    $ # migrate up version 25
+    $ # migrate up to version 25
     $ stork-tool db-up -t 25
     $ # migrate down back to version 17
     $ stork-tool db-down -t 17
@@ -213,12 +213,12 @@ the service. For the complete manual page, please see
 :ref:`man-stork-tool`.
 
 To debug migrations, another useful feature is SQL tracing using the ``--db-trace-queries`` parameter.
-The options are either "all" (trace all SQL operations, including migrations and runtime) or "run" (only
-trace runtime operations and skip migrations). If specified without any parameters, "all" is assumed. With it enabled,
+The options are either ``all`` (trace all SQL operations, including migrations and runtime) or ``run`` (only
+trace runtime operations and skip migrations). If specified without any parameters, ``all`` is assumed. With it enabled,
 ``stork-tool`` prints out all its SQL queries on stderr. For example, these commands can be used
 to generate an SQL script that updates the schema. Note that for some migrations, the steps are
 dependent on the contents of the database, so this is not a universal Stork schema. This parameter
-is also supported by the ``Stork Server``.
+is also supported by the Stork server.
 
 .. code-block:: console
 
@@ -235,8 +235,8 @@ timeout values can mitigate such issues.
 PostgreSQL exposes two distinct connection options to configure the read and write timeouts. Stork's corresponding
 configuration parameters specify the timeouts: ``--db-read-timeout`` (the
 ``STORK_DATABASE_READ_TIMEOUT`` environment variable) and ``--db-write-timeout`` (the ``STORK_DATABASE_WRITE_TIMEOUT``).
-Non-zero timeout value must be specified with the unit, e.g., ``500ms``` for 500 milliseconds, ``1s`` for one second,
-``5m`` for five minutes.
+A non-zero timeout value must be specified with the unit, e.g., ``500ms``` for 500 milliseconds, ``1s`` for one second,
+or ``5m`` for five minutes.
 
 The default value is ``0``, which disables the timeout. In this case, Stork waits indefinitely for the completion of the
 read and write database operations.
@@ -248,12 +248,12 @@ read and write database operations.
 
 .. warning::
 
-   We don't recommend specifying short timeouts when the database connection problems are rare and/or the hangs related
-   to infinite reads or writes haven't been observed. Specifying too short timeouts may lead to premature database reads
-   or writes errors for long lasting operations.
+   We do not recommend specifying short timeouts when database connection problems are rare and/or hangs related
+   to infinite reads or writes have not been observed. Specifying too-short timeouts may lead to premature database read
+   or write errors for long-lasting operations.
 
-   Note that there are distinct flags ``--rest-read-timeout`` and ``--rest-write-timeout`` for controlling how long the
-   REST API operation last. They are more suitable if you want to secure the Stork API against Denial-of-Service attacks
+   Note that the flags ``--rest-read-timeout`` and ``--rest-write-timeout`` can control how long the
+   REST API operation lasts. They are suitable for securing the Stork API against denial-of-service attacks
    that involve sending massive, long-processing requests to the web service to exhaust its resources.
 
 .. _install-pkgs:
@@ -263,16 +263,16 @@ Installing From Packages
 
 Stork packages are stored in repositories located on the Cloudsmith
 service: https://cloudsmith.io/~isc/repos/stork/packages/. DEB (Debian/Ubuntu
-family), RPM (RedHat-family), and APK (Alpine) packages may be found there.
+family), RPM (RedHat family), and APK (Alpine) packages may be found there.
 
 Detailed instructions for setting up the operating system to use this
 repository are available under the ``Set Me Up`` button on the
 Cloudsmith repository page.
 
-A few command line tools are required for setting up the repository:
+A few command-line tools are required for setting up the repository:
 
 - ``bash`` to execute the ``setup.*.sh`` scripts that use bash-specific features
-  like ``==`` inside the ``test`` expression, ``local`` variables, ``function``
+  like ``==`` inside the ``test`` expression, ``local`` variables, or the ``function``
   keyword in function declarations.
 - ``curl`` to fetch the ``setup.*.sh`` script itself, but also for actions
   carried out by the script like fetching GPG keys, checking if URLs are
@@ -281,13 +281,13 @@ A few command line tools are required for setting up the repository:
 - ``gpg`` for importing GPG keys in the script
 - ``sed`` for various textual substitutions done by the script
 - ``sudo`` for elevating privileges required by the package manager
-- ``apt-get`` in case of a Debian-based distribution
-- ``rpm`` in case of an RPM-based distribution
-- one of ``dnf``, ``microdnf``, ``yum``, ``zypper`` in case of an RPM-based
+- ``apt-get`` for a Debian-based distribution
+- ``rpm`` for an RPM-based distribution
+- one of ``dnf``, ``microdnf``, ``yum``, or ``zypper`` for an RPM-based
   distribution
-- ``apk`` in case of an Alpine-based distribution
+- ``apk`` for an Alpine-based distribution
 
-Other command line tools may be required based on how the script evolves or
+Other command-line tools may be required based on how the script evolves or
 based on what OS the script is running on:
 
 - ``grep`` and ``head`` for filtering output
@@ -301,7 +301,7 @@ It is possible to install both ``stork-agent`` and ``stork-server`` on
 the same machine. It is useful in small deployments with a single
 monitored machine, to avoid setting up a dedicated system for the Stork
 server. In those cases, however, an operator must consider the potential
-impact of the ``stork-server`` on other services running on the same
+impact of the Stork server on other services running on the same
 machine.
 
 Installing the Stork Server
@@ -356,7 +356,7 @@ The first step for Alpine is installing ``bash`` and ``curl``:
 
    $ apk add bash curl
 
-Next, setup the Cloudsmith repository:
+Next, set up the Cloudsmith repository:
 
 .. code-block:: console
 
@@ -380,10 +380,10 @@ Configure the Stork server settings in ``/etc/stork/server.env``.
 
 .. note::
 
-   The environment file **IS NOT** read by default if you run the Stork server
-   manually (without using ``systemd``). To load the environment variables from
-   this file you should call the ``. /etc/stork/server.env`` command before
-   executing the binary (in the same shell instance) or run Stork with
+   The environment file **IS NOT** read by default if the Stork server
+   is run manually (without using ``systemd``). To load the environment variables from
+   this file, call the ``. /etc/stork/server.env`` command before
+   executing the binary (in the same shell instance), or run Stork with
    the ``--use-env-file`` switch.
 
 The following settings are required for the database connection (they have a
@@ -399,7 +399,7 @@ common ``STORK_DATABASE_`` prefix):
 
    All of the database connection settings have default values, but we strongly
    recommend protecting the database with a non-default and hard-to-guess password
-   in the production environment. The ``STORK_DATABASE_PASSWORD`` setting must be
+   in a production environment. The ``STORK_DATABASE_PASSWORD`` setting must be
    adjusted accordingly.
 
 The remaining settings pertain to the server's RESTful API configuration (the ``STORK_REST_`` prefix):
@@ -412,13 +412,13 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
 
    Providing the CA certificate path enables the TLS client certificate
    verification. Any HTTP request to the server assigned with a missing,
-   invalid, or untrusted TLS certificate will be rejected.
+   invalid, or untrusted TLS certificate is rejected.
 
 * ``STORK_REST_STATIC_FILES_DIR`` - a directory with static files served in the user interface
 
    The ``STORK_REST_STATIC_FILES_DIR`` should be set to ``/usr/share/stork/www``
-   for the Stork Server installed from the binary packages. It's the default location
-   for the static content.
+   for the Stork server installed from binary packages; this is the default location
+   for static content.
 
 * ``STORK_REST_BASE_URL`` - the base URL of the UI
 
@@ -428,14 +428,14 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
 
 .. note::
 
-   The Stork agent must trust the REST TLS certificate presented by Stork server.
-   Otherwise, the registration process fails due to invalid Stork Server
+   The Stork agent must trust the REST TLS certificate presented by the Stork server.
+   Otherwise, the registration process fails due to invalid Stork server
    certificate verification. We strongly recommend using proper, trusted
-   certificates for security reasons. If you need to use a self-signed
-   certificate (e.g., for deployment in the Docker environment), then you can
+   certificates for security reasons. To use a self-signed
+   certificate (e.g., for deployment in the Docker environment), it is possible to
    add its CA certificate to the system certificates on the Stork agent machine.
-   See `Stack Overflow thread <https://stackoverflow.com/a/42292623>`_ and
-   `discussion in #859 <https://gitlab.isc.org/isc-projects/stork/-/issues/859>`_.
+   See this `Stack Overflow conversation <https://stackoverflow.com/a/42292623>`_ and
+   `discussion in Stork GitLab issue #859 <https://gitlab.isc.org/isc-projects/stork/-/issues/859>`_.
 
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration (the ``STORK_SERVER_`` prefix is for general purposes):
 
@@ -471,15 +471,15 @@ To check the status:
    file.
 
 The Stork server can be configured to run behind an HTTP reverse proxy
-using ``Nginx`` or ``Apache``. The Stork server package contains an example
-configuration file for ``Nginx``, in ``/usr/share/stork/examples/nginx-stork.conf``.
+using ``nginx`` or ``Apache``. The Stork server package contains an example
+configuration file for ``nginx``, in ``/usr/share/stork/examples/nginx-stork.conf``.
 
-The logging details, including colorization is configured analogously to the
-:ref:`Stork Agent logging settings <logging-settings>`.
+The logging details, including colorization, are configured in the same way as the
+:ref:`Stork agent logging settings <logging-settings>`.
 
-Stork can read and combine the configuration parameters from a few sources simultaneously.
-The command line flags have precedence over the environment variables read from the file
-when the `--use-env-file` flag is specified. The environment variables read from the file
+Stork can read and combine the configuration parameters from multiple sources simultaneously.
+The command-line flags have precedence over the environment variables read from the file,
+when the ``--use-env-file`` flag is specified. The environment variables read from the file
 take precedence over the environment variables set in the current shell.
 
 
@@ -489,40 +489,40 @@ Stork UI Behind a Reverse Proxy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A reverse proxy is a server solution responsible for preliminary processing
-incoming requests from the Internet and redirecting them to specific web
-services running in the internal network. The reverse proxies may help increase
+of incoming requests from the Internet and redirecting them to specific web
+services running in the internal network. Reverse proxies may help increase
 performance (e.g., by caching responses), security (e.g., by enveloping the
 responses in TLS, logging the requests), and reliability (e.g., by allowing
-switching web service instances).
+switching of web service instances).
 
-Stork is distributed with a basic configuration for Nginx. It is available,
+Stork is distributed with a basic configuration for NGINX. It is available,
 after installation from a package, in the ``dist/server/usr/share/stork/examples/nginx-stork.conf`` file.
-The same file is located in git repository: ``etc/nginx-stork.conf``.
+The same file is located in the git repository: ``etc/nginx-stork.conf``.
 
-Stork Server can be configured to expose the web application from a URL subdirectory.
-It may be needed when there is no dedicated domain for Stork Server, and the
+The Stork server can be configured to expose the web application from a URL subdirectory.
+It may be needed when there is no dedicated domain for the Stork server, and the
 web application is served from the subdirectory of an existing domain
 (e.g., ``http://example.com/stork``).
 
 If the backend executable (``stork-server``) and UI files (``/usr/share/stork/www``
 by default) are on the same machine, the backend is responsible for sharing the UI
-static files. You can configure the necessary subdirectory using the ``--rest-base-url``
+static files. The necessary subdirectory can be configured using the ``--rest-base-url``
 CLI flag or the ``STORK_REST_BASE_URL`` environment variable.
 The value must be surrounded by slashes (e.g.: ``/stork/``). The ``--rest-base-url``
 CLI flag affects both the backend and UI. It changes the value of the ``<base>``
-HTML tag in the ``index.html`` file (that modifies all links and URLs used by
-UI) and turns on the simple remapping of the requested URL (the backend trims
-the base path from processed URLs). The reverse proxy doesn't require any
+HTML tag in the ``index.html`` file (which modifies all links and URLs used by
+the UI) and turns on the simple remapping of the requested URL (the backend trims
+the base path from processed URLs). The reverse proxy does not require any
 special configuration.
 
-If the backend and the UI files are located on different machines, you must
-manually modify the value of the ``<base>`` HTML tag in the ``index.html``
+If the backend and the UI files are located on different machines, the value of
+the ``<base>`` HTML tag must be manually modified in the ``index.html``
 file. The ``href`` attribute must be set to a necessary subdirectory.
-The value must be surrounded by slashes (e.g.: ``/stork/``). Configure your
+The value must be surrounded by slashes (e.g.: ``/stork/``). Configure the
 HTTP proxy server to rewrite the requested URL and remove the base URL before
-passing the requests to Stork Server. Below is an example of configuring the
-``<VirtualHost>`` section for Apache. See the ``etc/httpd-stork.conf`` file for
-full configuration.
+passing the requests to the Stork server. Below is an example of configuring the
+``<VirtualHost>`` section for Apache; see the ``etc/httpd-stork.conf`` file for
+the full configuration.
 
 .. code-block::
 
@@ -551,7 +551,7 @@ in the `PostgreSQL documentation
 The Stork server supports secure communications with the database. The following
 configuration settings in the ``server.env`` file enable and configure communication
 encryption with the database server. They correspond with the SSL settings provided
-by ``libpq`` - the native PostgreSQL client library written in C:
+by ``libpq``, the native PostgreSQL client library written in C:
 
 * ``STORK_DATABASE_SSLMODE`` - the SSL mode for connecting to the database (i.e., ``disable``,
   ``require``, ``verify-ca``, or ``verify-full``); the default is ``disable``
@@ -588,7 +588,7 @@ Installing the Stork Agent
 
 There are two ways to install the packaged Stork agent on a monitored machine.
 The first method is to use the Cloudsmith repository, as with the
-Stork server installation. The second method, supported since Stork 0.15.0,
+Stork server installation. The second method
 is to use an installation
 script provided by the Stork server, which downloads the agent packages
 embedded in the server package. The preferred installation method depends on
@@ -608,9 +608,9 @@ using ``systemd``.
 
 .. note::
 
-   The environment file **IS NOT** read by default if you run the Stork agent
+   The environment file **IS NOT** read by default if the Stork agent is run
    manually (without using ``systemd``). To load the environment variables from
-   this file you should call the ``. /etc/stork/agent.env`` command before
+   this file, call the ``. /etc/stork/agent.env`` command before
    executing the binary (in the same shell instance) or run Stork with
    the ``--use-env-file`` switch.
 
@@ -631,25 +631,24 @@ The general settings:
 The following settings are specific to the Prometheus exporters:
 
 * ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS`` - the IP address or hostname the
-  agent should use to receive the connections from Prometheus fetching Kea
-  statistics; default is ``0.0.0.0``
+  agent should use to receive connections from Prometheus fetching Kea
+  statistics; the default is ``0.0.0.0``
 * ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT`` - the port the agent should use to
   receive connections from Prometheus when fetching Kea statistics; the default is
   ``9547``
-* ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL`` - specifies how often
-  the agent collects stats from Kea, in seconds; default is ``10``
-* ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS`` - enable or disable
-  collecting per subnet stats from Kea; default is ``true`` (collecting enabled).
-  You can use this option to limit the data passed to Prometheus/Grafana in large networks.
+* ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL`` - this specifies how often
+  the agent collects stats from Kea, in seconds; the default is ``10``
+* ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS`` - this enables or disables
+  the collection of per-subnet stats from Kea; the default is ``true`` (collecting enabled).
+  This option can be used to limit the data passed to Prometheus/Grafana in large networks.
 * ``STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS`` - the IP address or hostname the
-  agent should use to receive the connections from Prometheus fetching BIND9
-  statistics; default is ``0.0.0.0``
-  to listen on for incoming Prometheus connection; default is `0.0.0.0`
+  agent should use to receive the connections from Prometheus fetching BIND 9
+  statistics; the default is ``0.0.0.0``
 * ``STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT`` - the port the agent should use to
-  receive the connections from Prometheus fetching BIND9 statistics; default is
+  receive connections from Prometheus fetching BIND 9 statistics; the default is
   ``9119``
-* ``STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL`` - specifies how often
-  the agent collects stats from BIND9, in seconds; default is ``10``
+* ``STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL`` - this specifies how often
+  the agent collects stats from BIND 9, in seconds; the default is ``10``
 
 The last setting is used only when Stork agents register in the Stork server
 using an agent token:
@@ -664,8 +663,8 @@ using an agent token:
    that the ``STORK_AGENT_HOST`` variable must be set to a DNS name, an IPv4
    address, or a non-link-local IPv6 address.
 
-Stork can read and combine the configuration parameters from a few sources simultaneously.
-The command line flags have precedence over the environment variables read from the file
+Stork can read and combine the configuration parameters from multiple sources simultaneously.
+The command-line flags have precedence over the environment variables read from the file,
 when the `--use-env-file` flag is specified. The environment variables read from the file
 take precedence over the environment variables set in the current shell.
 
@@ -675,11 +674,11 @@ Logging Settings
 ~~~~~~~~~~~~~~~~
 
 Unless otherwise specified using ``STORK_LOG_LEVEL``, the default value of ``INFO``
-log level is used. Supported log levels are: ``DEBUG``, ``INFO``, ``WARN``, ``ERROR``.
+log level is used. Supported log levels are: ``DEBUG``, ``INFO``, ``WARN``, and ``ERROR``.
 
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. When set, the following
-rules will be applied:
+rules are applied:
 
 * ``CLICOLOR_FORCE`` != ``0``
    ANSI colors should be enabled no matter what.
@@ -702,7 +701,7 @@ For example, to disable the output colorization:
 
 .. note::
 
-   The ``true`` and ``false`` values are also accepted instead of the ``1`` and ``0``.
+   The values ``true`` and ``false`` are also accepted instead of ``1`` and ``0``.
 
 .. _secure-server-agent:
 
@@ -714,7 +713,7 @@ standard cryptography solutions, i.e. PKI and TLS.
 
 The server generates the required keys and certificates during its first startup.
 They are used to establish safe, encrypted connections between the server
-and the agents with authentication at both ends of these connections.
+and the agents, with authentication at both ends of these connections.
 The agents use the keys and certificates generated by the server to
 create agent-side keys and certificates, during the agents' registration
 procedure described in the next sections. The private key and CSR
@@ -728,7 +727,7 @@ methods:
 #. using a server token
 
 In the first case, an agent generates a token and passes it to the server
-requesting registration. The server associates the token with the particular
+when requesting registration. The server associates the token with the particular
 agent. A Stork super administrator must approve the registration request in the web UI,
 ensuring that the token displayed in the UI matches the agent's token in the
 logs. The Stork agent is typically installed from the Cloudsmith repository
@@ -748,7 +747,7 @@ The applicability of the two methods is described in
 :ref:`registration-methods-summary`.
 
 The installation and registration processes using each method are described
-in the subsequent sections.
+in the following sections.
 
 .. _securing-connections-between-agent-and-kea-ca:
 
@@ -756,14 +755,14 @@ Securing Connections Between ``stork-agent`` and the Kea Control Agent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Kea Control Agent (CA) may be configured to accept connections only over TLS.
-It requires specifying ``trust-anchor``, ``cert-file`` and ``key-file`` values in
+This requires specifying ``trust-anchor``, ``cert-file``, and ``key-file`` values in
 the ``kea-ctrl-agent.conf`` file. For details, see the
 `Kea Administrator Reference Manual <https://kea.readthedocs.io/en/latest/index.html>`_.
 
 The Stork agent can communicate with Kea over TLS, via the same certificates
-that it uses in communication with the Stork server.
+that the agent uses in communication with the Stork server.
 
-The Stork agent by default requires that the Kea Control Agent provide a trusted TLS certificate.
+The Stork agent, by default, requires that the Kea Control Agent provide a trusted TLS certificate.
 If Kea uses a self-signed certificate, the Stork agent can be launched with the
 ``--skip-tls-cert-verification`` flag or ``STORK_AGENT_SKIP_TLS_CERT_VERIFICATION`` environment
 variable set to 1, to disable Kea certificate verification.
@@ -772,11 +771,10 @@ The Kea CA accepts only requests signed with a trusted certificate, when the ``c
 is set to ``true`` in the Kea CA configuration file. In this case, the Stork agent must use valid
 certificates; it cannot use self-signed certificates created during Stork agent registration.
 
-Kea 1.9.0 added support for basic HTTP authentication to control access for incoming REST commands over HTTP.
 If the Kea CA is configured to use Basic Auth, valid credentials must be provided in the Stork agent
 credentials file: ``/etc/stork/agent-credentials.json``.
 
-By default, this file does not exist, but the ``/etc/stork/agent-credentials.json.template`` file provides example data.
+By default, this file does not exist, but the ``/etc/stork/agent-credentials.json.template`` file provides sample data.
 The template file can be renamed by removing the ``.template`` suffix; then the file can be edited
 and valid credentials can be provided. The ``chown`` and ``chmod`` commands should be used to set the proper permissions; this
 file contains the secrets, and should be readable/writable only by the user running the Stork agent and
@@ -804,7 +802,7 @@ For example:
       ]
    }
 
-It contains a single object with a single "basic" key. The "basic" value is a list of the Basic Auth credentials.
+The file contains a single object with a single "basic" key. The "basic" value is a list of the Basic Auth credentials.
 All credentials must contain the values for four keys:
 
 - ``ip`` - the IPv4 or IPv6 address of the Kea CA. It supports IPv6 abbreviations (e.g. "FF:0000::" is the same as "ff::").
@@ -814,21 +812,21 @@ All credentials must contain the values for four keys:
 
 To apply changes in the credentials file, the ``stork-agent`` daemon must be restarted.
 
-If the credentials file is invalid, the Stork agent will run but without Basic Auth support.
-The notice will be indicated with a specific message in the log.
+If the credentials file is invalid, the Stork agent runs but without Basic Auth support.
+This condition is indicated with a specific message in the log.
 
 .. _register-agent-token-cloudsmith:
 
 Installation From Cloudsmith and Registration With an Agent Token
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This section describes how to install an agent from the Cloudsmith repository and
+This section describes how to install an agent from a Cloudsmith repository and
 perform the agent's registration using an agent token.
 
 The Stork agent installation steps are similar to the Stork server
 installation steps described in :ref:`install-server-deb` and
-:ref:`install-server-rpm`. Use one of the following commands depending on
-the local Linux distribution:
+:ref:`install-server-rpm`. Use one of the following commands, instead
+of the server installation commands, depending on the local Linux distribution:
 
 .. code-block:: console
 
@@ -838,14 +836,12 @@ the local Linux distribution:
 
    $ sudo dnf install isc-stork-agent
 
-instead of the server installation commands.
-
 Next, specify the required settings in the ``/etc/stork/agent.env`` file.
 The ``STORK_AGENT_SERVER_URL`` should be the URL on which the server receives the
 REST connections, e.g. ``http://stork-server.example.org:8080``. The
 ``STORK_AGENT_HOST`` should point to the agent's address (or name), e.g.
 ``stork-agent.example.org``. Finally, a non-default agent port can be
-specified with the ``STORK_AGENT_PORT``.
+specified with the ``STORK_AGENT_PORT`` variable.
 
 .. note::
 
@@ -893,18 +889,18 @@ Installation With a Script and Registration With a Server Token
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section describes how to install an agent using a script and packages
-downloaded from the Stork server and register the agent
+downloaded from the Stork server, and register the agent
 using a server token.
 
-To enable this installation, you must download Stork agent packages from
-cloudsmith.io for the operating systems on which the agents will be
+To enable the installation, download the Stork agent packages from
+Cloudsmith for the operating systems on which the agents will be
 installed. Next, put the downloaded packages in the ``assets/pkgs``
-subdirectory of the directory holding Stork server's static UI content.
-It is defined by the ``STORK_REST_STATIC_FILES_DIR`` environment variable,
+subdirectory of the directory holding the Stork server's static UI content;
+it is defined by the ``STORK_REST_STATIC_FILES_DIR`` environment variable,
 and its default location is ``/usr/share/stork/www``. The supported
-package types are DEB, RPM, and APK. The package file names must start
+package types are deb, RPM, and APK. The package file names must start
 with the ``isc-stork-agent`` prefix and end with the ``.deb``, ``.rpm``,
-or ``.apk`` extensions. It is recommended to leave the original filenames.
+or ``.apk`` extension. It is recommended to keep the original filenames.
 
 Open Stork in the web browser and log in as a user from the "super admin" group.
 Select ``Services`` and then ``Machines`` from the menu. Click on the
@@ -971,7 +967,7 @@ Installation With a Script and Registration With an Agent Token
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section describes how to install an agent using a script and packages downloaded from
-the Stork server and perform the agent's registration using an agent token. It
+the Stork server, and perform the agent's registration using an agent token. It
 is an interactive alternative to the procedure described in
 :ref:`register-agent-token-cloudsmith`.
 
@@ -985,7 +981,7 @@ In the agent machine's terminal, a prompt for a server token is presented:
     >>>> Server access token (optional):
 
 Because this registration method does not use the server token, do not type anything
-in this prompt. Hit Enter to move on.
+at this prompt. Hit Enter to move on.
 
 The following prompt appears next:
 
@@ -1029,10 +1025,10 @@ the procedure described in :ref:`register-server-token-script`.
 
 .. note::
 
-   During the registration with the server token, the Stork agent verifies
+   During registration with the server token, the Stork agent verifies that
    the server can establish a connection with it using the specified address
-   and port. This agent port must be free. It means the agent must not run
-   in the background (e.g., as a systemd service). If the agent is running,
+   and port. This agent port must be free, meaning the agent must not run
+   in the background (e.g., as a ``systemd`` service). If the agent is running,
    it must be stopped before running the registration commands below.
 
 The Stork agent installation steps are similar to the Stork server
@@ -1107,7 +1103,7 @@ Agent Setup Summary
 ~~~~~~~~~~~~~~~~~~~
 
 After successful agent setup, the agent periodically tries to detect installed
-Kea DHCP or BIND9 services on the system. If it finds them, they are
+Kea DHCP or BIND 9 services on the system. If it finds them, they are
 reported to the Stork server when it connects to the agent.
 
 Further configuration and usage of the Stork server and the
@@ -1168,45 +1164,45 @@ and certificate must also be changed.
 
    Imported certificates and keys must follow the same standards as those self-generated by
    the Stork server. They must also have the same format. This
-   `ISC Knowledge Base article <https://kb.isc.org/docs/importing-external-certificates-to-stork>`_
-   provides step-by-step examples of generating a new set of certificates using OpenSSL and importing
+   `ISC Knowledgebase article <https://kb.isc.org/docs/importing-external-certificates-to-stork>`_
+   provides step-by-step instructions for generating a new set of certificates using OpenSSL and importing
    them to Stork. Note that the example OpenSSL configurations from this article may have to
-   be adjusted to the specifics of your deployment.
+   be adjusted to the specifics of a given deployment.
 
 For more details, please see :ref:`man-stork-tool`.
 
-Installing the hooks
+Installing the Hooks
 --------------------
 
-The hook is an additional file (plugin) that extends the standard Stork
-functionalities. It contains functions that are called during handling of
+Hooks are additional files (plugins) that extend the standard Stork
+functionalities. They contain functions that are called during the handling of
 various operations and can change the typical flow or run in parallel.
-Independent developers may create the hooks and enhance the Stork applications
+Independent developers may create hooks and enhance the Stork applications
 with new, optional features.
 
-The hook packages are distributed as RPM and DEB packages on Cloudsmith.
+Hook packages are distributed as RPM and deb packages on Cloudsmith.
 
-The hooks are binary files with the ``.so`` extension. These files must be
+Hooks are binary files with the ``.so`` extension, and must be
 placed in the hook directory. The default location is
-``/usr/lib/stork-agent/hooks`` for Stork agent and
-``/usr/lib/stork-server/hooks`` for Stork server. You can change it using
-the ``--hook-directory`` CLI option or setting the
+``/usr/lib/stork-agent/hooks`` for the Stork agent and
+``/usr/lib/stork-server/hooks`` for the Stork server. The location can be changed using
+the ``--hook-directory`` CLI option or by setting the
 ``STORK_AGENT_HOOK_DIRECTORY`` or ``STORK_SERVER_HOOK_DIRECTORY`` environment
 variable.
 
-All the hooks must be compatible with the used Stork application (agent or
+All hooks must be compatible with the used Stork application (agent or
 server) and its exact version. If the hook directory contains non-hook files or
-out-of-date hooks, then Stork will not run.
+out-of-date hooks, then Stork does not run.
 
-The hooks may provide own configuration options. The list of available options
+Hooks may provide their own configuration options. The list of available options
 is listed in the output of the ``stork-agent --help`` and
 ``stork-server --help`` commands.
 
-The list of supported Stork server hooks:
+Here is the list of supported Stork server hooks:
 
 * LDAP authentication
 
-   The hook provides the possibility to authenticate users by LDAP credentials,
+   This hook provides the possibility to authenticate users by LDAP credentials,
    fetch their profiles, and map LDAP groups into Stork roles.
 
 Upgrading
@@ -1219,7 +1215,7 @@ to be re-registered.
 The server upgrade procedure is the same as the initial installation procedure.
 
 Install the new packages on the server. Installation scripts in
-the deb/RPM package will perform the required database and other migrations.
+the deb/RPM package perform the required database and other migrations.
 
 .. _installation_sources:
 
@@ -1229,7 +1225,7 @@ Installing From Sources
 Compilation Prerequisites
 -------------------------
 
-Usually, it is more convenient to install Stork using native packages. See :ref:`compatible_systems` and :ref:`install-pkgs` for
+Usually, it is most convenient to install Stork using native packages; see :ref:`compatible_systems` and :ref:`install-pkgs` for
 details regarding supported systems. However, the sources can also be built separately.
 
 The dependencies that need to be installed to build the Stork sources are:
@@ -1251,7 +1247,7 @@ Download Sources
 The Stork sources are available in ISC's GitLab instance:
 https://gitlab.isc.org/isc-projects/stork.
 
-To get the latest sources invoke:
+To get the latest sources, invoke:
 
 .. code-block:: console
 
@@ -1286,8 +1282,8 @@ and the server component with this command:
    $ rake install:server
 
 By default, all components are installed in the specific system directories;
-this is useful for installation in a production environment. For the testing
-purposes tt can be customized via the ``DEST`` variable, e.g.:
+this is useful for installation in a production environment. For testing
+purposes the installation can be customized via the ``DEST`` variable, e.g.:
 
 .. code-block:: console
 
@@ -1315,24 +1311,24 @@ The first step is the installation of packages from the repository:
    pkg install gcc
    pkg install gtar
 
-Stork build system can install all remaining dependencies automatically.
+The Stork build system can install all remaining dependencies automatically.
 
-Unfortunately, there is no possibility to build the binary packages for OpenBSD.
-But it is possible to build the contents of the packages (executables, UI, man, and docs).
+Unfortunately, there is no way to build binary packages for OpenBSD.
+However, it is possible to build the contents of the packages (executables, UI, man, and docs).
 
 .. code-block:: console
 
    rake build:server_dist
    rake build:agent_dist
 
-The output files will be located in the ``dist/`` directory.
+The output files are located in the ``dist/`` directory.
 
 Installing on OpenBSD
 ---------------------
 
 Stork is not regularly tested on OpenBSD but can be installed on this operating
-system with the manual steps provided below. The installation guide is similar
-to FreeBSD one.
+system with the manual steps provided below. The installation is similar
+to the FreeBSD process.
 
 The first step is the installation of packages from the repository:
 
@@ -1351,45 +1347,45 @@ The first step is the installation of packages from the repository:
 
 Stork requires Golang version 1.18 or later.
 
-Stork build system can install all remaining dependencies automatically.
+The Stork build system can install all remaining dependencies automatically.
 
-Unfortunately, there is no possibility to build the binary packages for OpenBSD.
-But it is possible to build the contents of the packages (executables, UI, man, and docs).
+Unfortunately, there is no way to build binary packages for OpenBSD.
+However, it is possible to build the contents of the packages (executables, UI, man, and docs).
 
 .. code-block:: console
 
    rake build:server_dist
    rake build:agent_dist
 
-The output files will be located in the ``dist/`` directory.
+The output files are located in the ``dist/`` directory.
 
 Cross-compilation
 -----------------
 
 .. warning::
 
-   Our tests do not cover the cross-compilation feature; **you use it at your own risk**.
+   Our tests do not cover the cross-compilation feature and we cannot guarantee that it will work correctly for all users.
 
 The Stork build system fully supports Linux and MacOS operating systems on the AMD64 and ARM64 architectures. It is also
-prepared to handle FreeBSD and OpenBSD with some limitations but support for these systems isn't actively maintained.
+prepared to handle FreeBSD and OpenBSD with some limitations, but support for these systems is not actively maintained.
 
 The Stork agent, server, and tool are written in pure Golang, which means they can be easily cross-compiled on all
 supported platforms.
 
-You can use the ``rake utils:list_go_supported_platforms`` to get a list of all supported operating systems and
+The ``rake utils:list_go_supported_platforms`` command gives a list of all supported operating systems and
 architectures.
 
-To build any Stork component for a specific platform, you need to provide the ``STORK_GOOS`` (for the operating system),
-``STORK_GOARCH`` (for the architecture) and (optionally) ``STORK_GOARM`` (for ARM version, ARM architectures only)
-environment variables:
+To build any Stork component for a specific platform, the following environment variables must be provided:
+``STORK_GOOS`` (for the operating system), ``STORK_GOARCH`` (for the architecture), and (optionally)
+``STORK_GOARM`` (for the ARM version, ARM architectures only). For example:
 
 .. code-block:: console
 
    rake build:server STORK_GOOS=darwin STORK_GOARCH=arm64 STORK_GOARM=8
    rake build:agent STORK_GOOS=freebsd STORK_GOARCH=amd64
 
-These variables are supported for the ``build:server``, ``build:agent``, ``build:agent`` commands to compile the
-executable binaries. They can also be used with combination of the ``build:server_pkg`` and ``build:agent_pkg`` commands
+These variables are supported for the ``build:server``, ``build:agent``, and ``build:tool`` commands to compile the
+executable binaries. They can also be used with a combination of the ``build:server_pkg`` and ``build:agent_pkg`` commands
 to build the packages:
 
 .. code-block:: console
@@ -1399,14 +1395,14 @@ to build the packages:
 
 .. warning::
 
-   Remember that the output package type always depends on the current operating system, not the executable type. It
+   Remember that the output package type always depends on the current operating system, not the executable type. This
    means that specifying the ``darwin`` operating system in ``STORK_GOOS`` and building the package on Debian causes
-   generating a DEB package with a macOS-compatible executable, which is useless.
+   the generation of a deb package with a macOS-compatible executable, which is useless.
 
-It is not recommended to compile Stork for 32-bit architectures as it may cause problems with unexpected integer
-overflows. Stork was never designed to operate on non-posix platforms, so Windows is not
+It is not recommended to compile Stork for 32-bit architectures, as this may cause problems with unexpected integer
+overflows. Stork is not designed to operate on non-POSIX platforms, so Windows is not
 and will not be supported. Compiling Stork components for Windows is discouraged because Golang's standard library
-may suppress some errors related to the file operations on the NTFS filesystem.
+may suppress some errors related to file operations on the NTFS filesystem.
 
 Security checklist for the Stork configuration
 ==============================================
@@ -1525,7 +1521,7 @@ Integration With Prometheus and Grafana
 
 Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit,
 and `Grafana <https://grafana.com/>`_, an easy-to-view analytics platform for querying, visualization, and alerting. Grafana
-requires external data storage. Prometheus is currently the only environment supported by both Stork and Grafana. It is possible
+requires external data storage. Prometheus is currently the only environment supported by both Stork and Grafana; it is possible
 to use Prometheus without Grafana, but using Grafana requires Prometheus.
 
 Prometheus Integration
@@ -1533,7 +1529,7 @@ Prometheus Integration
 
 The Stork agent, by default, makes
 Kea statistics, as well as some BIND 9 statistics, available in a format understandable by Prometheus. In Prometheus nomenclature, the
-Stork Agent works as a Prometheus "exporter." If the Prometheus server is available, it can
+Stork agent works as a Prometheus "exporter." If the Prometheus server is available, it can
 be configured to monitor Stork agents. To enable ``stork-agent``
 monitoring, the ``prometheus.yml`` file (which is typically stored in ``/etc/prometheus/``, but this may vary depending on the
 installation) must be edited to add the following entries:
@@ -1554,7 +1550,7 @@ By default, the Stork agent exports Kea data on TCP port 9547 and BIND 9 data on
 command-line parameters, or the Prometheus export can be disabled altogether. For details, see the Stork agent manual page
 at :ref:`man-stork-agent`.
 
-The Stork server can also be optionally integrated, but Prometheus support for it is disabled by default. To enable it,
+The Stork server can also be integrated, but Prometheus support for it is disabled by default. To enable it,
 run the server with the ``-m`` or ``--metrics`` flag or set the ``STORK_SERVER_ENABLE_METRICS`` environment variable.
 Next, update the ``prometheus.yml`` file:
 
@@ -1576,7 +1572,7 @@ The Stork server exports metrics on the assigned HTTP/HTTPS port (defined via th
 .. warning::
 
    The Prometheus ``/metrics`` endpoint does not require authentication. Therefore, securing this endpoint
-   from external access is highly recommended to prevent unauthorized parties from gathering the server's
+   from external access is strongly recommended to prevent unauthorized parties from gathering the server's
    metrics. One way to restrict endpoint access is by using an appropriate HTTP proxy configuration
    to allow only local access or access from the Prometheus host. Please consult the NGINX example
    configuration file shipped with Stork.
@@ -1602,9 +1598,9 @@ considered:
   or server becoming unavailable.
 - The ``storkserver_auth_authorized_machine_total`` and ``storkserver_auth_unauthorized_machine_total``
   metrics may be used to monitor situations when new machines (e.g. by automated VM cloning) may
-  appear in the network or existing machines may disappear.
+  appear in the network or existing machines disappear.
 - The ``kea_dhcp4_addresses_assigned_total`` metric, along with ``kea_dhcp4_addresses_total``, can be used to
-  calculate pool utilization. If the server allocates all available addresses, it will not be able to
+  calculate pool utilization. If the server allocates all available addresses, it is not able to
   handle new devices, which is one of the most common failure cases of the DHCPv4 server. Depending
   on the deployment specifics, a threshold alert when the pool utilization approaches 100% should be
   seriously considered.
@@ -1621,7 +1617,7 @@ Alertmanager instances, which may be helpful in various redundancy consideration
 provides a rich list of receivers, which are the actual notification mechanisms used: email,
 PagerDuty, Pushover, Slack, Opsgenie, webhook, WeChat, and more.
 
-ISC makes no specific recommendations between Prometheus or Grafana. This is a deployment
+ISC makes no specific recommendations between Prometheus or Grafana; this is a deployment
 consideration.
 
 Grafana Integration
@@ -1632,16 +1628,16 @@ Stork source code. The currently available templates are ``bind9-resolver.json``
 
 1. Prometheus must be added as a data source. This can be done in several ways, including using the user interface to edit the Grafana
 configuration files. This is the easiest method; for details, see the Grafana documentation about Prometheus integration.
-Using the Grafana user interface, select Configuration, select Data Sources, click "Add data source," and choose
+Using the Grafana user interface, select Configuration, then Data Sources, then click "Add data source," and choose
 Prometheus; then specify the necessary parameters to connect to the Prometheus instance. In test environments, the only
-necessary parameter is the URL, but authentication is also desirable in most production deployments.
+necessary parameter is the URL, but authentication is desirable in most production deployments.
 
 2. Import the existing dashboard. In the Grafana UI, click Dashboards, then Manage, then Import, and select one of the templates, e.g.
 ``kea-dhcp4.json``. Make sure to select the Prometheus data source added in the previous step. Once imported, the
 dashboard can be tweaked as needed.
 
 3. Once Grafana is configured, go to the Stork user interface, log in as "super admin", click Settings in the Configuration menu, and
-then add the URLs for Grafana and Prometheus that point to the installations. Once this is done, Stork will be able to show links
+then add the URLs for Grafana and Prometheus that point to the installations. Once this is done, Stork is able to show links
 for subnets leading to specific subnets.
 
 Alternatively, a Prometheus data source can be added by editing ``datasource.yaml`` (typically stored in ``/etc/grafana``,
@@ -1666,7 +1662,7 @@ Example dashboards with some live data can be seen in the `Stork screenshots gal
 Subnet Identification
 ---------------------
 
-The Kea Control Agent shares subnet statistics labeled with the internal Kea IDs.
+The Kea Control Agent shares subnet statistics labeled with internal Kea IDs.
 The Prometheus/Grafana subnet labels depend on the installed Kea hooks.
 By default, the internal, numeric Kea IDs are used.
 However, if the ``subnet_cmds`` hook is installed, then the numeric IDs are resolved to subnet prefixes.
@@ -1683,9 +1679,9 @@ The list of notification channels (i.e. the delivery mechanisms) is extensive, a
 email, webhook, Prometheus' Alertmanager, PagerDuty, Slack, Telegram, Discord, Google Hangouts,
 Kafka REST Proxy, Microsoft Teams, Opsgenie, Pushover, and more. Existing dashboards provided by
 Stork can be modified and new dashboards can be created. Grafana first requires a notification
-channel to be configured (Alerting -> Notifications Channel menu). Once configured, existing panels
+channel to be configured, via the Alerting -> Notifications Channel menu; once configured, existing panels
 can be edited with alert rules. One caveat is that most panels in the Stork dashboards use template
-variables, which are not supported in alerting. This `stackoverflow thread
+variables, which are not supported in alerting. This `Stack Overflow thread
 <https://stackoverflow.com/questions/51053893/grafana-template-variables-are-not-supported-in-alert-queries>`_
 discusses several ways to overcome this limitation.
 
@@ -1700,18 +1696,18 @@ sites.
 
 .. _configuring-deployment-specific-views:
 
-Configuring Deployment Specific Views
+Configuring Deployment-Specific Views
 =====================================
 
 Selected UI pages can be customized with deployment-specific information. This section describes
-how it can be configured.
+how this can be configured.
 
 Login Page Welcome Message
 --------------------------
 
-A custom welcome message can be displayed on the login page. Typically, it is used to provide
+A custom welcome message can be displayed on the login page. Typically, the login page is used to provide
 contact information to a server administrator to request access credentials. The welcome
-message should be wrritten to a file using basic HTML format. For example:
+message should be written to a file using basic HTML format. For example:
 
 .. code-block:: html
 
@@ -1725,9 +1721,9 @@ message should be wrritten to a file using basic HTML format. For example:
       service access.
    </p>
 
-This file must be copied to the Stork UI assets directory which is a part of the Stork
-server installation tree. Suppose the Stork server is installed in the ``/usr``
-directory. The welcome message should be saved as ``/usr/share/stork/www/assets/static-page-content/login-screen-welcome.html``.
+This file must be copied to the Stork UI assets directory, which is part of the Stork
+server installation tree. If the Stork server is installed in the ``/usr``
+directory, the welcome message should be saved as ``/usr/share/stork/www/assets/static-page-content/login-screen-welcome.html``.
 Alternatively, a symbolic link can be created. For example:
 
 .. code-block:: console
@@ -1737,7 +1733,7 @@ Alternatively, a symbolic link can be created. For example:
 Remove or unlink the file to remove the custom welcome message.
 
 Deploying and undeploying the welcome message file is also possible using the
-``stork-tool``. To deploy, run:
+Stork tool. To deploy, run:
 
 .. code-block:: console
 
