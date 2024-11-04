@@ -109,8 +109,7 @@ COPY --from=flamethrower-builder /app/flame /usr/local/bin/flame
 WORKDIR /app
 COPY --from=simulator-builder /app /app
 # Start the simulator.
-ENV FLASK_ENV=development
 ENV FLASK_APP=sim.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
-CMD ["/app/venv/bin/python3", "-m", "flask", "run", "--host", "0.0.0.0" ]
+CMD ["/app/venv/bin/python3", "-m", "gunicorn", "-w", "4", "-t", "60", "-b", "0.0.0.0:5000", "sim:app"]
