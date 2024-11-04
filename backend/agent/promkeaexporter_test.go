@@ -32,7 +32,7 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 	return fam
 }
 
-// Fake app monitor that returns some predefined list of apps with with only
+// Fake app monitor that returns some predefined list of apps with only
 // DHCPv4 daemon configured and active.
 func newFakeMonitorWithDefaultsDHCPv4Only() *FakeAppMonitor {
 	fam := newFakeMonitorWithDefaults()
@@ -41,7 +41,7 @@ func newFakeMonitorWithDefaultsDHCPv4Only() *FakeAppMonitor {
 	return fam
 }
 
-// Fake app monitor that returns some predefined list of apps with with only
+// Fake app monitor that returns some predefined list of apps with only
 // DHCPv6 daemon configured and active.
 func newFakeMonitorWithDefaultsDHCPv6Only() *FakeAppMonitor {
 	fam := newFakeMonitorWithDefaults()
