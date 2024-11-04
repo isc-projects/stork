@@ -54,7 +54,7 @@ def checked_pipeline(*commands)
     commands.each_with_index do |command, index|
         status = statuses[index]
         if !status.success?
-            fail "Command '#{command.join(' ')}' failed with status #{status.exitstatus}"
+            fail "Command '#{command}' failed with status #{status.exitstatus}"
         end
     end
 end
