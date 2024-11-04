@@ -32,21 +32,19 @@ crashed"][3].
 
 ## Supported Versions
 
-Stork currently has no stable versions, and all releases are considered development ones. Only the last development
-version is supported:
-
-| Version        | Supported          | End-Of-Life             |
-| -------------- | ------------------ | ----------------------- |
-| latest 1.x.0   | :white_check_mark: | on release of 1.(x+1).0 |
-| 1.16.0         | :x:                | 2024 June 12            |
-| 1.15.1         | :x:                | 2024 April 5            |
-| earlier        | :x:                |                         |
-
-The first stable version will be 2.0.0. Stable versions, denoted with even minor numbers, will be supported for at least
+The first stable version is 2.0.0. Stable versions, denoted with even minor numbers, will be supported for at least
 6 months. Development versions will reach EOL as soon as the next development or stable version is released.
 
 Limited past EOL support may be available to higher tier customers.
 Please contact ISC sales, using the [contact form][4].
+
+The Stork team may release a security release when a severe vulnerability is found. The vulnerability must have a high
+CVSS score and affect any Stork component directly or allow an attack Kea or BIND 9 through Stork. We don't make a
+security release if the vulnerability affects a third-party dependency in part Stork does not use.
+
+If the Stork team recognizes a serious security issue, we will immediately notify higher-tier customers via internal
+security channels. When the fix is ready, we will preannounce the release date (without technical details) on our
+mailing list.
 
 ## Further reading
 
