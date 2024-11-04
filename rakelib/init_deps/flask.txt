@@ -28,5 +28,5 @@ requests==2.32.3
     # via -r rakelib/init_deps/flask.in
 urllib3==2.2.3
     # via requests
-werkzeug==3.0.4
+werkzeug==3.1.2
     # via flask
