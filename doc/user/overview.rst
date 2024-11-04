@@ -358,6 +358,10 @@ database that should ensure the highest level of security. In any case, Stork se
 user with the minimum required permissions and no one else should have access to the database. The database should be
 regularly backed up. See the :ref:`securing-the-database-connection` for more details.
 
+The Stork agent resides on the same machine as the Kea and BIND 9 daemons and it is permitted to access their
+configuration files, logs, and use their APIs. Additionally, it can list the processes running on the machine and read
+their details. Therefore, it is recommended to run the Stork agent as a dedicated user with the minimum required
+permissions.
 The Stork server communicates with the Stork agents over the GRPC protocol (connection no. 5 on the diagram). The Stork
 has a built-in solution for securing the communication on this channel using the Transport Layer Security (TLS)
 protocol. It is a mutual TLS authentication that ensures that the server and the agent are who they claim to be.
@@ -375,6 +379,34 @@ process. The agents registered with this token are automatically approved by the
 The server token is a secret and must be protected. It is recommended to use it only in the secure environments. If it
 is compromised, the administrator can revoke it in the server UI. See the :ref:`secure-server-agent` for more details.
 
+Stork agent is responsible for exchange the data between the Stork server and the Kea (connection no. 11. on the
+diagram) and BIND 9 (connections no. 7 and 9 on the diagram) daemons. The agent and the daemons are running on the same
+machine, so the communication is local. However, it still can be secured.
 
+Kea Control Agent supports Basic Auth to authenticate the clients of its REST API - the control channel used by the
+Stork agent. This solution may be enabled to protect the Kea CA from unauthorized access. If it is enabled, the Stork
+agent must be configured with the username and password to authenticate itself to the Kea CA. It is recommended to limit
+the access to this file only to the Stork agent user. Kea Control Agent may be configured to serve the REST API over the
+HTTPS protocol. Is is strongly recommended to enable it if the Basic Auth is configured or if the Kea CA listens on the
+non-localhost interfaces. Additionally, the Kea CA may be configured to require the client certificate to authenticate
+the clients. The Stork agent supports the mutual TLS authentication partially. If it recognizes the Kea CA requires the
+client certificate, it attaches its GRPC client certificate (the certificate that was obtained during the agent
+registration) to the request. This certificate doesn't pass the client certificate verification by the Kea CA. It means
+that the Kea CA must be configured to not verify the client certificate.
 
+Connection to BIND 9 utilizes two protocols: RNDC (control channel, connection no. 9 on the diagram) and HTTP (
+statistics channel, connection no. 7 on the diagram). The RNDC protocol may be secured by using the RNDC keys. It is
+especially recommended if the BIND 9 daemon listens on the non-localhost interfaces. The Stork agent retries the RNDC
+key from the BIND 9 configuration file. The agent must have the necessary permissions to read this file and use the
+``rndc`` and ``named-checkconf`` commands.
+The statistics channel is served over the HTTP protocol and may be secured by the SSL/TLS certificate.
 
+The Stork agent may acts as a Prometheus exporter for the Kea and BIND 9 statistics. The Prometheus server scrapes the
+metrics from the agent over the HTTP protocol (connection no. 6 on the diagram). This connection is unsecure and doesn't
+support TLS. The metrics channel is expected to not be exposed to the public network. It is recommended to configure the
+firewall to limit the access to the metrics endpoint to the Prometheus server only.
+
+The Stork server supports hooks that may be loaded to provide new authentication methods. If the authentication methods
+uses a dedicated authentication service, it is recommended to secure the connection to this service with the SSL/TLS
+certificate if the service and hook supports it. Especially, the LDAP hook may be configured to use the SSL/TLS (LDAPS)
+protocol.
