@@ -1263,8 +1263,8 @@ GLIBC version. Then, we move the Go binaries back to the modern Ubuntu system
 and continue the build process.
 
 The above flow was implemented in Stork CI only. It is not a part of the standard
-build system (the Rake tasks). It was specified only for the DEB package and
-AMD64 architecture.
+build system (the Rake tasks). It was specified only for the DEB and RPM packages
+on AMD64 and ARM64 architectures.
 
 If you build Stork in your environment, remember the Go compiler uses the GLIBC
 library installed in the system, so the output binaries will only be compatible
