@@ -14,6 +14,8 @@ click==8.1.7
     # via flask
 flask==3.0.3
     # via -r tests/sim/../../rakelib/init_deps/flask.in
+gunicorn==23.0.0
+    # via -r tests/sim/../../rakelib/init_deps/flask.in
 idna==3.10
     # via requests
 itsdangerous==2.2.0
@@ -24,6 +26,8 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   werkzeug
+packaging==24.1
+    # via gunicorn
 requests==2.32.3
     # via -r tests/sim/../../rakelib/init_deps/flask.in
 urllib3==2.2.3
