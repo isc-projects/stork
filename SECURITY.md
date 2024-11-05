@@ -15,6 +15,9 @@ information regarding copyright ownership.
 ISC treats the security of its software products very seriously. ISC's Security Vulnerability Disclosure Policy
 is documented in the relevant [ISC KnowledgeBase article][1].
 
+For official ISC security policy, see [this KB article](https://kb.isc.org/docs/aa-00861). As a convenience to the read,
+below are the major points from the policy.
+
 ## Reporting possible security issues
 
 To report a security vulnerability, please follow [this instruction][5].
