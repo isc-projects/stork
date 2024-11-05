@@ -1,5 +1,5 @@
 {
-  "date": "2024-10-03",
+  "date": "2024-11-06",
   "kea": {
     "currentStable": [
       {
@@ -19,6 +19,13 @@
     }
   },
   "stork": {
+    "currentStable": [
+      {
+        "version": "2.0.0",
+        "releaseDate": "2024-11-13",
+        "eolDate": "2025-07-01"
+      }
+    ],
     "latestDev": {
       "version": "1.19.0",
       "releaseDate": "2024-10-02"
