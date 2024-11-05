@@ -172,6 +172,51 @@ The highest priority always have the command line flags. The parameters from the
 environment file take precedence over the environment variables if the
 ``--use-env-file`` flag is used.
 
+Examples
+
+To start the Stork server with the local PostgreSQL database, run the following command:
+
+.. code-block:: bash
+
+   $ stork-server
+
+You can also specify the database host, port, and user:
+
+.. code-block:: bash
+
+   $ stork-server --db-host=localhost --db-port=5432 --db-user=stork
+
+To listen on a different port and host, run the following command:
+
+.. code-block:: bash
+
+   $ stork-server (...) --rest-host=hostname --rest-port=80
+
+The REST API can be secured with TLS. To enable it, provide the certificate and key:
+
+.. code-block:: bash
+
+   $ stork-server (...) --rest-tls-certificate=/path/to/cert.pem --rest-tls-ca=/path/to/ca.pem --rest-tls-key=/path/to/key.pem
+
+To enable the /metrics HTTP endpoint for Prometheus, run the following command:
+
+.. code-block:: bash
+
+   $ stork-server (...) --metrics
+
+The Stork server can be served from a subdirectory. For example, to run it from the http://example.com/stork/ URL, run the following command:
+
+.. code-block:: bash
+
+   $ stork-server (...) --rest-base-url=/stork/
+
+By default, the Stork server reads the arguments only from the command line. To read the arguments from the environment
+file, run the following command:
+
+.. code-block:: bash
+
+   $ stork-agent --use-env-file
+
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

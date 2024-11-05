@@ -144,6 +144,13 @@ the statistics collection or disable collecting per subnet stats. For example:
 
    $ stork-agent (...) --prometheus-kea-exporter-interval=30 --prometheus-kea-exporter-per-subnet-stats=false
 
+By default, the Stork agent reads the arguments only from the command line. To read the arguments from the environment
+file, run the following command:
+
+.. code-block:: bash
+
+   $ stork-agent --use-env-file
+
 Registration
 ~~~~~~~~~~~~
 
