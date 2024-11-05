@@ -378,9 +378,10 @@ server administrator must approve the agent registration request in the Stork we
 compare the token displayed in the UI with the token displayed in the agent's logs. If the tokens match, the
 administrator can approve the registration request. It is a one-time operation that protect against the
 man-in-the-middle attacks.
-This mechanism can be by-passed by using an additional server token for the agent registration. The server token is a
-secret available only to the administrator on the server UI. It may be provide to the agent during the agent registration
-process. The agents registered with this token are automatically approved by the server.
+Alternatively, new Stork agents can be authorized automatically, if administrator provides agents with the server token.
+This deployment mode might be more useful for automated deployments. The server token is a secret available only to the
+administrator on the server UI. It may be provide to the agent during the agent registration process. The agents
+registered with this token are automatically approved by the server.
 The server token is a secret and must be protected. It is recommended to use it only in the secure environments. If it
 is compromised, the administrator can revoke it in the server UI. See the :ref:`secure-server-agent` for more details.
 
