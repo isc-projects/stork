@@ -110,6 +110,40 @@ The highest priority always have the command line flags. The parameters from the
 environment file take precedence over the environment variables if the
 ``--use-env-file`` flag is used.
 
+Examples
+
+To start the Stork agent and register it automatically with the Stork server, run the following command:
+
+.. code-block:: bash
+
+   $ stork-agent --server-url=http://stork-server.example.com:8080 --host=stork-agent.example.com --port=8080
+
+If the Stork agent is already registered with the Stork server, you can start it without the registration:
+
+.. code-block:: bash
+
+   $ stork-agent --host=stork-agent.example.com --port=8080
+
+By default, the Stork agent listens on the server requests and Prometheus metrics collecting. To listen only for the
+Stork server, run the following command:
+
+.. code-block:: bash
+
+   $ stork-agent (...) --listen-stork-only
+
+To listen only for the Prometheus requests, run the following command:
+
+.. code-block:: bash
+
+   $ stork-agent (...) --listen-prometheus-only
+
+If you observe any performance issues with exporting Kea statistics to Prometheus, you can increase the interval between
+the statistics collection or disable collecting per subnet stats. For example:
+
+.. code-block:: bash
+
+   $ stork-agent (...) --prometheus-kea-exporter-interval=30 --prometheus-kea-exporter-per-subnet-stats=false
+
 Registration
 ~~~~~~~~~~~~
 
