@@ -343,6 +343,10 @@ Typical Stork deployment is a much simpler subset:
 
    Connections and protocols between Stork components and services
 
+..
+  The above diagram may be edited at https://app.diagrams.net/.
+  The source file is located in the doc/user/static/ecosystem-protocols.drawio.xml file.
+
 The Stork server is the central component of the Stork environment. It serves the Web UI and REST API over the HTTP
 protocol (connections no. 1, 4, and 8 on the diagram). The administrator may secure it by providing a trusted
 SSL/TLS certificate. It is recommended especially when the Stork server is exposed to the public network.
