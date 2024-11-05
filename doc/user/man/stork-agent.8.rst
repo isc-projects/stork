@@ -132,6 +132,31 @@ following arguments:
 ``-n|--non-interactive``
    Disables the interactive mode. The default is false. ``[$STORK_AGENT_NON_INTERACTIVE]``
 
+To register Stork agent in an interactive mode, run the following command:
+
+.. code-block:: bash
+
+   $ stork-agent register
+   >>> Enter the URL of the Stork server: 
+   >>> Enter the Stork server access token (optional):
+   >>> Enter IP address or FQDN of the host with Stork agent (for the Stork server connection) [hostname]: 
+   >>> Enter port number that Stork Agent will listen on [8080]: 
+
+To register Stork agent with the server token providing all the necessary information through CLI arguments, run the following command:
+
+.. code-block:: bash
+
+   $ stork-agent register --server-url=http://stork-server.example.com:8080 --server-token=1234567890 --agent-host=stork-agent.example.com --agent-port=8080
+
+To register Stork agent without the server token using the environment variables, run the following command:
+
+.. code-block:: bash
+
+   $ export STORK_AGENT_SERVER_URL=http://stork-server.example.com:8080
+   $ export STORK_AGENT_HOST=stork-agent.example.com
+   $ export STORK_AGENT_PORT=8080
+   $ stork-agent register
+
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
