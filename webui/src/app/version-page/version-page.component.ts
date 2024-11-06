@@ -241,6 +241,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 if (this.versionService.areKeaDaemonsVersionsMismatching(a)) {
                                     m.versionCheckSeverity = Severity.error
                                     a.mismatchingDaemons = true
+                                    this.versionService.detectAlertingSeverity(m.versionCheckSeverity)
                                 }
                             })
                             this.counters[m.versionCheckSeverity]++

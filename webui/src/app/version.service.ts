@@ -175,7 +175,7 @@ export class VersionService {
         let cacheKey = version + app
         let cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
-            this.detectHigherSeverity(cachedFeedback)
+            this.detectAlertingSeverity(cachedFeedback.severity)
             return cachedFeedback
         }
 
@@ -438,13 +438,12 @@ export class VersionService {
     }
 
     /**
-     * Detects if given VersionFeedback response has severity that the user should be notified of.
-     * @param currentResponse current VersionFeedback response
-     * @private
+     * Checks given severity level and if it serious enough, it triggers the version alert.
+     * @param severity current version severity
      */
-    private detectHigherSeverity(currentResponse: VersionFeedback): void {
-        if (currentResponse.severity <= Severity.warn) {
-            this._versionAlert$.next({ detected: true, severity: currentResponse.severity })
+    detectAlertingSeverity(severity: Severity): void {
+        if (severity <= Severity.warn) {
+            this._versionAlert$.next({ detected: true, severity: severity })
         }
     }
 
@@ -459,7 +458,7 @@ export class VersionService {
      */
     private setCacheAndReturnResponse(cacheKey: string, response: VersionFeedback) {
         this._checkedVersionCache.set(cacheKey, response)
-        this.detectHigherSeverity(response)
+        this.detectAlertingSeverity(response.severity)
         return response
     }
 }
