@@ -39,12 +39,12 @@ The first stable version is 2.0.0. Stable versions, denoted with even minor numb
 months plus 3 months of transition when we can provide critical updates. Development versions will reach EOL as soon as
 the next development or stable version is released.
 
-| Version | Kind        | Period                  | End-Of-Life                    |
-| ------- | ----------- | ----------------------- | ------------------------------ |
-| 2.2.0   | stable      | ~6 months (+ ~3 months) | on release of 2.4.0 + 3 months |
-| 2.1.0   | development | ~2 months               | on release of 2.1.1            |
-| 2.0.0   | stable      | ~6 months (+ ~3 months) | on release of 2.2.0 + 3 months |
-| earlier | development |                         | on release of 2.0.0            |
+| Version | Kind        | Period                  | End-Of-Life                      |
+| ------- | ----------- | ----------------------- | -------------------------------- |
+| 2.2.0   | stable      | ~6 months (+ ~3 months) | on release of 2.4.0 + 3 months   |
+| 2.1.x   | development | ~2 months               | on release of 2.1.(x+1) or 2.2.0 |
+| 2.0.0   | stable      | ~6 months (+ ~3 months) | on release of 2.2.0 + 3 months   |
+| earlier | development |                         | on release of 2.0.0              |
 
 Limited past EOL support may be available to higher tier customers.
 Please contact ISC sales, using the [contact form][4].
