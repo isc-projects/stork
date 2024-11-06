@@ -173,6 +173,7 @@ environment file take precedence over the environment variables if the
 ``--use-env-file`` flag is used.
 
 Examples
+~~~~~~~~
 
 To start the Stork server with the local PostgreSQL database, run the following command:
 
@@ -180,13 +181,13 @@ To start the Stork server with the local PostgreSQL database, run the following 
 
    $ stork-server
 
-You can also specify the database host, port, and user:
+You can also specify custom database connection options, e.g., host, port, and user:
 
 .. code-block:: bash
 
    $ stork-server --db-host=localhost --db-port=5432 --db-user=stork
 
-To listen on a different port and host, run the following command:
+To listen on non-default port and host, run the following command:
 
 .. code-block:: bash
 
@@ -198,7 +199,7 @@ The REST API can be secured with TLS. To enable it, provide the certificate and 
 
    $ stork-server (...) --rest-tls-certificate=/path/to/cert.pem --rest-tls-ca=/path/to/ca.pem --rest-tls-key=/path/to/key.pem
 
-To enable the /metrics HTTP endpoint for Prometheus, run the following command:
+To enable the server's /metrics HTTP endpoint for Prometheus, run the following command:
 
 .. code-block:: bash
 

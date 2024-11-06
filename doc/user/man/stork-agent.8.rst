@@ -111,6 +111,7 @@ environment file take precedence over the environment variables if the
 ``--use-env-file`` flag is used.
 
 Examples
+~~~~~~~~
 
 To start the Stork agent and register it automatically with the Stork server, run the following command:
 
@@ -124,14 +125,14 @@ If the Stork agent is already registered with the Stork server, you can start it
 
    $ stork-agent --host=stork-agent.example.com --port=8080
 
-By default, the Stork agent listens on the server requests and Prometheus metrics collecting. To listen only for the
+By default, the Stork agent receives the server requests and exports metrics to Prometheus. To listen only the
 Stork server, run the following command:
 
 .. code-block:: bash
 
    $ stork-agent (...) --listen-stork-only
 
-To listen only for the Prometheus requests, run the following command:
+To listen Prometheus requests only, run the following command:
 
 .. code-block:: bash
 
@@ -189,7 +190,7 @@ To register Stork agent with the server token providing all the necessary inform
 
    $ stork-agent register --server-url=http://stork-server.example.com:8080 --server-token=1234567890 --agent-host=stork-agent.example.com --agent-port=8080
 
-To register Stork agent without the server token using the environment variables, run the following command:
+To register Stork agent without the server token using the environment variables, run the following commands:
 
 .. code-block:: bash
 
