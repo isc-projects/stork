@@ -15,7 +15,7 @@ information regarding copyright ownership.
 ISC treats the security of its software products very seriously. ISC's Security Vulnerability Disclosure Policy
 is documented in the relevant [ISC KnowledgeBase article][1].
 
-For official ISC security policy, see [this KB article](https://kb.isc.org/docs/aa-00861). As a convenience to the read,
+For official ISC security policy, see [this KB article](https://kb.isc.org/docs/aa-00861). As a convenience to the reader,
 below are the major points from the policy.
 
 ## Reporting possible security issues
@@ -41,15 +41,8 @@ the next development or stable version is released.
 
 | Version | Kind        | Period                  | End-Of-Life                    |
 | ------- | ----------- | ----------------------- | ------------------------------ |
-| 2.6.0   | stable      | ~6 months (+ ~3 months) | on release of 2.8.0 + 3 months |
-| 2.5.1   | development | ~1 month                | on release of 2.6.0            |
-| 2.5.0   | development | ~1 month                | on release of 2.5.1            |
-| 2.4.0   | stable      | ~6 months (+ ~3 months) | on release of 2.6.0 + 3 months |
-| 2.3.1   | development | ~1 month                | on release of 2.4.0            |
-| 2.3.0   | development | ~1 month                | on release of 2.3.1            |
 | 2.2.0   | stable      | ~6 months (+ ~3 months) | on release of 2.4.0 + 3 months |
-| 2.1.1   | development | ~1 month                | on release of 2.2.0            |
-| 2.1.0   | development | ~1 month                | on release of 2.1.1            |
+| 2.1.0   | development | ~2 months               | on release of 2.1.1            |
 | 2.0.0   | stable      | ~6 months (+ ~3 months) | on release of 2.2.0 + 3 months |
 | earlier | development |                         | on release of 2.0.0            |
 
