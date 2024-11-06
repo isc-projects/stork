@@ -193,10 +193,14 @@ func TestPromKeaExporterStartDemoResponse(t *testing.T) {
 			},
 		)
 		return testutil.ToFloat64(metric) == 36893488147419103000
-	}, 1*time.Second, 10*time.Millisecond)
+	}, 500*time.Millisecond, 10*time.Millisecond)
 
-	metric, _ := pke.PktStatsMap["pkt6-reply-sent"].Stat.GetMetricWith(prometheus.Labels{"operation": "reply"})
-	require.Equal(t, 4489.0, testutil.ToFloat64(metric))
+	// The response is pretty big, so some metrics are available earlier than
+	// others.
+	require.Eventually(t, func() bool {
+		metric, _ := pke.PktStatsMap["pkt6-reply-sent"].Stat.GetMetricWith(prometheus.Labels{"operation": "reply"})
+		return testutil.ToFloat64(metric) == 4489.0
+	}, 500*time.Millisecond, 10*time.Millisecond)
 
 	require.False(t, gock.HasUnmatchedRequest())
 }
