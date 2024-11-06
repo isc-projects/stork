@@ -11,24 +11,25 @@ Some of these checks and updates can be made before the actual freeze.
 
 1. [ ] Check jenkins job status:
    1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
-   1. [ ] Check [latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+   1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
      - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
    1. [ ] Upload necesary changes and fixes
-1. [ ] Check if ReadTheDocs can build Stork documentation. Alternatively, look for failures in emails if you know that the ReadTheDocs webhook is working.
-   1. Trigger rebuilding docs on [readthedocs.org](https://readthedocs.org/projects/stork/builds) and wait for the build to complete.
+ 1. Check if ReadTheDocs can build Stork documentation.
+    1. [ ] Check if the latest build was successful and if its time matches the merge time of the release changes.
+    1. If not, trigger rebuilding docs on [readthedocs.org](https://readthedocs.org/projects/stork/builds) and wait for the build to complete.
 
 The following steps may involve changing files in the repository.
 
 1. [ ] Prepare release changes. Run QA script [stork/release/update-code-for-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/update-code-for-release.py).
-    * e.g. `GITLAB_TOKEN="........" ./update-code-for-release.py --release-date 'Feb 07, 2030' --repo-dir=/home/wlodek/stork`
-    * [ ] if this is new stable release branch please use `--new-stable` option
+    * e.g. `GITLAB_TOKEN='...' ./update-code-for-release.py --release-date 'Feb 07, 2030' --version=2.3.4 --repo-dir=/home/wlodek/stork`
+    * [ ] <mark>Stable and Maintenance Releases Only</mark>: please use `--branch=stork_v2_2` option
 1. [ ] Check correctness of changes applied and commit changes by rerunning `./update-code-for-release.py` with `--upload-only` option (script will skip all steps related to applying code changes).
-    * e.g.  `GITLAB_TOKEN="........" ./update-code-for-release.py --release-date 'Feb 07, 2030' --repo-dir=/home/wlodek/stork --upload-only`.
-    This will: commit and push changes, create issue and mr for release changes.
-1. [ ] Conduct review process on release changes and merge it.
-1. [ ] Wait for Jenkins jobs and pipelines to conclude, check it's status:
+    * e.g.  `GITLAB_TOKEN='...' ./update-code-for-release.py --repo-dir=/home/wlodek/stork --upload-only`.
+    This will: commit and push changes, create issue and MR for release changes.
+1. [ ] Conduct review process on release changes and merge the MR.
+1. [ ] Wait for Jenkins jobs and pipelines to conclude, check their status:
    1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
-   1. [ ] Check [latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+   1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
      - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
 1. [ ] Test that uploading to Cloudsmith works.
     1. Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
@@ -65,9 +66,9 @@ Hooks:
 
 Release notes: {release_notes}
 ```
-1. [ ] If reported issues require immidiete fixes and respin, please follow standard procedure of creating issue and review.
+1. [ ] If reported issues require immediate fixes and respin, please follow standard procedure of creating issue and review.
     1. [ ] Close current sanity check issue.
-1. [ ] If reported issues do NOT require respin, proceed to `Releasing Tarballs and Packages`
+1. [ ] If reported issues do NOT require respin, proceed to [Releasing Tarballs and Packages][# Releasing Tarballs and Packages].
 
 ## Releasing Tarballs and Packages
 
@@ -135,11 +136,11 @@ Release notes: {release_notes}
     1. Go to `Builds` -> click `Build Version: latest` (this is really a workaround for RTD to pull the repo and discover the new tag).
     1. Go to `Versions` -> `Activate a version` -> fill in the version -> press enter -> click `Activate` on the found result -> check `Active` -> click `Save`.
     1. Go to `Builds` -> wait for the build to complete.
-    1. [ ] If this is newest stable release, change default version:
+    1. [ ] <mark>Stable and Maintenance Releases Only</mark>: change default version:
         1. Go to `Admin` -> `Settings` -> `Default version:` -> choose the new version as default.
         1. Check that https://stork.readthedocs.io/ redirects to the new version.
 
-1. [ ] If this is newest stable release, follow [those instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update public demo
+1. [ ] <mark>Stable and Maintenance Releases Only</mark>: follow [those instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update public demo
 
 1. [ ] Contact the Marketing team, and find a member who will continue work on this release:
     1. [ ] Assign this ticket to the person who will continue.
@@ -148,20 +149,21 @@ Release notes: {release_notes}
 ## Marketing
 
 1. [ ] Publish links to downloads on the ISC website.
-1. [ ] If it is a new `major.minor` version, SWENG will have created a new repo in Cloudsmith, which will need the customer tokens migrated from an existing repo. Verify that the KB on installing from Cloudsmith has also been updated, then update the Kea document in the SF portal and notify support customers that this new private repo exists.
-1. [ ] If a new Cloudsmith repository is used, make sure that the Zapier scripts are updated.
-   * If those are not updated, there was an error made during preparation for new stable release. Please contact QA team and coordinate fix.
-1. [ ] Upload Premium hooks tarball to SendOwl. Create a new product if a new branch, otherwise update existing product. Send notifications to existing subscribers of the new version.
-1. [ ] Write release email to _kea-announce_.
-1. [ ] Announce release to support subscribers using the read-only Kea Announce queue, if a major version or other significant change to stable version.
-1. [ ] Write email to _kea-users_ (if a major release).
+1. [ ] <mark>Stable Releases Only</mark>: If a new Cloudsmith repository was created:
+    1. [ ] Make sure customer tokens were migrated from a priorly existing repo.
+    1. [ ] Verify that the [the KB on installing from Cloudsmith](https://kb.isc.org/docs/stork-quickstart-guide) has also been updated.
+    1. [ ] Update the Stork document in the RT portal.
+    1. [ ] Make sure that the Zapier scripts are updated. If not, contact the QA team and coordinate fix.
+    1. [ ] Notify support customers that this new private repo exists.
+1. [ ] Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
+1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Announce release to support subscribers using the read-only Kea Announce queue.
+1. [ ] Write email to [stork-users](https://lists.isc.org/pipermail/stork-users/).
 1. [ ] Announce on social media.
-1. [ ] Update [Wikipedia entry for Kea](https://en.wikipedia.org/wiki/Kea\_(software)).
-1. [ ] Write blog article (if a major release).
-1. [ ] Update [Kea page on website if any new hooks](https://www.isc.org/kea/).
-1. [ ] Update Kea Premium and Kea Subscription data sheets if any new hooks.
-1. [ ] Update [significant features matrix](https://kb.isc.org/docs/en/aa-01615) (if any significant new features).
-1. [ ] Contact Support team, find a person who will continue this release and assign this issue to them.
+1. [ ] Update [Wikipedia entry for Stork](https://en.wikipedia.org/wiki/Stork\_(software)).
+1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Write blog article.
+1. [ ] Check if [Stork website page](https://www.isc.org/stork/) needs updating.
+1. [ ] Update [significant features matrix](https://kb.isc.org/docs/en/todo) if any significant new features.
+1. [ ] Contact the Support team, find a person who will continue this release and assign this issue to them.
 
 ## Support
 
