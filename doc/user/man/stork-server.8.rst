@@ -224,7 +224,14 @@ file, run the following command:
 
 .. code-block:: bash
 
-   $ stork-agent --use-env-file
+   $ stork-server --use-env-file
+
+The default environment file location is ``/etc/stork/server.env``. To specify a different location, run the following
+command:
+
+.. code-block:: bash
+
+   $ stork-server --use-env-file --env-file=/path/to/agent.env
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
