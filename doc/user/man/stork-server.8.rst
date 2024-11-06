@@ -187,6 +187,14 @@ You can also specify custom database connection options, e.g., host, port, and u
 
    $ stork-server --db-host=localhost --db-port=5432 --db-user=stork
 
+The host may be a socket path. The default value works on most systems, but you
+may need to specify it explicitly if you are using a non-standard PostgreSQL
+distribution or MacOS system:
+
+.. code-block:: bash
+
+   $ stork-server --db-host=/tmp
+
 To listen on non-default port and host, run the following command:
 
 .. code-block:: bash
