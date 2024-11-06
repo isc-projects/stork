@@ -189,7 +189,7 @@ You can also specify custom database connection options, e.g., host, port, and u
 
 The host may be a socket path. The default value works on most systems, but you
 may need to specify it explicitly if you are using a non-standard PostgreSQL
-distribution or MacOS system:
+distribution. For example, on the macOS system you may need to run:
 
 .. code-block:: bash
 
