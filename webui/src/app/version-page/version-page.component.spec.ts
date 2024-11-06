@@ -27,7 +27,6 @@ describe('VersionPageComponent', () => {
     let getCurrentDataSpy: jasmine.Spy<any>
     let getDataManufactureDateSpy: jasmine.Spy<any>
     let getDataSourceSpy: jasmine.Spy<any>
-    let getVersionAlertSpy: jasmine.Spy<any>
     let getMachinesAppsVersionsSpy: jasmine.Spy<any>
     let messageService: MessageService
     let messageAddSpy: jasmine.Spy<any>
@@ -275,8 +274,6 @@ describe('VersionPageComponent', () => {
         getDataSourceSpy = spyOn(versionService, 'getDataSource').and.returnValue(
             of(AppsVersions.DataSourceEnum.Offline)
         )
-        getVersionAlertSpy = spyOn(versionService, 'getVersionAlert')
-        getVersionAlertSpy.and.returnValue(of({ severity: Severity.error, detected: true } as VersionAlert))
         getMachinesAppsVersionsSpy = spyOn(servicesApi, 'getMachinesAppsVersions')
         messageAddSpy = spyOn(messageService, 'add').and.callThrough()
     })
@@ -415,12 +412,19 @@ describe('VersionPageComponent', () => {
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Action required')
 
+        // There is Kea daemons versions mismatch in fakeMachinesResponse, so the highest error severity alert is expected.
+        let alert: VersionAlert
+        versionService.getVersionAlert().subscribe((a) => (alert = a))
+        expect(alert).toBeTruthy()
+        expect(alert.severity).toEqual(Severity.error)
+
         // There is a button to dismiss the alert.
         let btn = de.query(By.css('button'))
         expect(btn).toBeTruthy()
         spyOn(versionService, 'dismissVersionAlert').and.callThrough()
         btn.triggerEventHandler('click')
         expect(versionService.dismissVersionAlert).toHaveBeenCalledTimes(1)
+        expect(alert.detected).toBeFalse()
     })
 
     it('should display button to refresh data', () => {
