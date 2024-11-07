@@ -904,6 +904,9 @@ The following ``Rake`` tasks start these containers.
    |                                        | (published port is 8080) and the second on the Apache server  |
    |                                        | (published port is 8081).                                     |
    +----------------------------------------+---------------------------------------------------------------+
+   | ``rake demo:up:ldap``                  | Build and run an OpenLDAP container. It exposes its ports, so |
+   |                                        | the server running on the host can connect to it.             |
+   +----------------------------------------+---------------------------------------------------------------+
    | ``rake demo:up``                       | Build and run all above containers                            |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake demo:down``                     | Stop and remove all containers and all referenced volumes and |

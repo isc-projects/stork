@@ -10,6 +10,7 @@ The demo installation uses Docker and Docker Compose to set up all
 Stork services. It contains:
 
 - Stork Server
+- Stork Server LDAP Hook
 - Stork Agent with Kea DHCPv4
 - Stork Agent with Kea DHCPv6
 - Stork Agent with Kea HA-1 (High Availability Server 1)
@@ -21,6 +22,7 @@ Stork services. It contains:
 - Stork Environment Simulator
 - PostgreSQL Database
 - Prometheus & Grafana
+- OpenLDAP server
 
 The demo setup can optionally launch additional containers:
 
@@ -167,6 +169,11 @@ grafana
 mariadb
    This container is essential. It runs the MariaDB database that
    is used by the Kea containers.
+openldap
+   This container provides an LDAP server - an authentication service. It is
+   preconfigured with a set of users: ``admin`` (password: ``admin``),
+   ``user1``, ``user2``, ``user3`` (passwords: ``password1``, ``password2``, 
+   ``password3``) and groups: ``stork-admins``, ``stork-super-admins``.
 
 There is also a supporting container:
 
