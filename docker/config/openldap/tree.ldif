@@ -9,6 +9,21 @@ dn: ou=users,dc=example,dc=org
 objectClass: organizationalUnit
 ou: users
 
+# User admin creation
+dn: cn=admin,ou=users,dc=example,dc=org
+cn: Admin
+sn: Admin
+mail: admin@example.com
+givenName: Admin
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword: admin
+uid: admin
+uidNumber: 1000
+gidNumber: 1000
+homeDirectory: /home/admin
+
 # User user1 creation
 dn: cn=user1,ou=users,dc=example,dc=org
 cn: User1
@@ -20,8 +35,8 @@ objectClass: posixAccount
 objectClass: shadowAccount
 userPassword: password1
 uid: user1
-uidNumber: 1000
-gidNumber: 1000
+uidNumber: 1001
+gidNumber: 1001
 homeDirectory: /home/user1
 
 # User user2 creation
@@ -35,8 +50,8 @@ objectClass: posixAccount
 objectClass: shadowAccount
 userPassword: password2
 uid: user2
-uidNumber: 1001
-gidNumber: 1001
+uidNumber: 1002
+gidNumber: 1002
 homeDirectory: /home/user2
 
 # User user3 creation - only mandatory fields
@@ -48,8 +63,8 @@ objectClass: posixAccount
 objectClass: shadowAccount
 userPassword: password3
 uid: user3
-uidNumber: 1002
-gidNumber: 1002
+uidNumber: 1003
+gidNumber: 1003
 homeDirectory: /home/user3
 
 # Group creation - Readers
@@ -57,6 +72,7 @@ dn: cn=readers,ou=users,dc=example,dc=org
 cn: readers
 objectClass: groupOfNames
 # User group membership
+member: cn=admin,ou=users,dc=example,dc=org
 member: cn=user1,ou=users,dc=example,dc=org
 member: cn=user2,ou=users,dc=example,dc=org
 member: cn=user3,ou=users,dc=example,dc=org
@@ -73,4 +89,5 @@ dn: cn=stork-super-admins,ou=users,dc=example,dc=org
 cn: stork-super-admins
 objectClass: groupOfNames
 # User group membership
+member: cn=admin,ou=users,dc=example,dc=org
 member: cn=user2,ou=users,dc=example,dc=org

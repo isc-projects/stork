@@ -31,6 +31,10 @@ services:
       STORK_DATABASE_PASSWORD: stork
       STORK_DATABASE_NAME: stork
       STORK_SERVER_ENABLE_METRICS: 1
+      STORK_SERVER_HOOK_LDAP_URL: ldap://openldap:1389
+      STORK_SERVER_HOOK_LDAP_MAP_GROUPS: 1
+      STORK_SERVER_HOOK_LDAP_GROUP_SUPER_ADMIN: stork-super-admins
+      STORK_SERVER_HOOK_LDAP_GROUP_ADMIN: stork-admins
     volumes:
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf
@@ -39,6 +43,7 @@ services:
       - authentication-icons:/usr/share/stork/www/assets/authentication-methods
     depends_on:
       - postgres
+      - openldap
 
   webui:
     restart: always
@@ -483,8 +488,6 @@ services:
     ports:
       - '1389:1389'
       - '1636:1636'
-    profiles:
-      - ldap
     networks:
       - storknet
     volumes:
