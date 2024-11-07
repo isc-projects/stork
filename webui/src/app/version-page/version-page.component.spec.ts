@@ -407,14 +407,14 @@ describe('VersionPageComponent', () => {
 
     it('should display version alert dismiss message', () => {
         // Arrange & Act & Assert
+        let alert: VersionAlert
+        versionService.getVersionAlert().subscribe((a) => (alert = a))
         apisWorkingFine()
         let de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-warn'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Action required')
 
         // There is Kea daemons versions mismatch in fakeMachinesResponse, so the highest error severity alert is expected.
-        let alert: VersionAlert
-        versionService.getVersionAlert().subscribe((a) => (alert = a))
         expect(alert).toBeTruthy()
         expect(alert.severity).toEqual(Severity.error)
 
