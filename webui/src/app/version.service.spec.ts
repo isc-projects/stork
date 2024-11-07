@@ -568,4 +568,46 @@ describe('VersionService', () => {
             } as App)
         ).toBeTrue()
     })
+
+    it('should detect alerting severity', () => {
+        // Arrange & Act & Assert
+        let alert: VersionAlert
+        service.getVersionAlert().subscribe((a) => (alert = a))
+
+        // Check initial alert.
+        expect(alert.detected).toBeFalse()
+        expect(alert.severity).toEqual(Severity.success)
+
+        // Severity less severe than Warning should not have any effect on the alert.
+        service.detectAlertingSeverity(Severity.success)
+        expect(alert.detected).toBeFalse()
+        expect(alert.severity).toEqual(Severity.success)
+
+        service.detectAlertingSeverity(Severity.secondary)
+        expect(alert.detected).toBeFalse()
+        expect(alert.severity).toEqual(Severity.success)
+
+        service.detectAlertingSeverity(Severity.info)
+        expect(alert.detected).toBeFalse()
+        expect(alert.severity).toEqual(Severity.success)
+
+        // Warning severity should trigger the alert.
+        service.detectAlertingSeverity(Severity.warn)
+        expect(alert.detected).toBeTrue()
+        expect(alert.severity).toEqual(Severity.warn)
+
+        // Error severity should raise the alert level.
+        service.detectAlertingSeverity(Severity.error)
+        expect(alert.detected).toBeTrue()
+        expect(alert.severity).toEqual(Severity.error)
+
+        // Lower severity should not have any effect on the alert.
+        service.detectAlertingSeverity(Severity.warn)
+        expect(alert.detected).toBeTrue()
+        expect(alert.severity).toEqual(Severity.error)
+
+        service.detectAlertingSeverity(Severity.success)
+        expect(alert.detected).toBeTrue()
+        expect(alert.severity).toEqual(Severity.error)
+    })
 })
