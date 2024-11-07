@@ -150,8 +150,8 @@ Release notes: {release_notes}
 
 1. [ ] Publish links to downloads on the ISC website.
 1. [ ] <mark>Stable Releases Only</mark>: If a new Cloudsmith repository was created:
-    1. [ ] Make sure customer tokens were migrated from a priorly existing repo.
-    1. [ ] Verify that the [the KB on installing from Cloudsmith](https://kb.isc.org/docs/stork-quickstart-guide) has also been updated.
+    1. [ ] Make sure customer tokens were migrated from a previously existing repo.
+    1. [ ] Verify that [the KB on installing from Cloudsmith](https://kb.isc.org/docs/stork-quickstart-guide) has also been updated.
     1. [ ] Update the Stork document in the RT portal.
     1. [ ] Make sure that the Zapier scripts are updated. If not, contact the QA team and coordinate fix.
     1. [ ] Notify support customers that this new private repo exists.
