@@ -178,7 +178,7 @@ describe('AppsPageComponent', () => {
         expect(msgSrv.add).toHaveBeenCalled()
     }))
 
-    it('should cancel synchronizing conifgurations from Kea', fakeAsync(() => {
+    it('should cancel synchronizing configurations from Kea', fakeAsync(() => {
         component.onSyncKeaConfigs()
         fixture.detectChanges()
 

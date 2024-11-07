@@ -338,7 +338,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     /**
      * Adjusts the form state based on the selected daemons.
      *
-     * Servers selection affecs the form contents. When none are selected, the
+     * Servers selection affects the form contents. When none are selected, the
      * default form should be displayed. Otherwise, we should track the configuration
      * values for the respective servers. Removing a server also results in the
      * form update because the parts of the form related to that server must be

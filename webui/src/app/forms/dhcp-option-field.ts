@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { LinkedFormGroup } from './linked-form-group'
 
 /**
- * An emum holding all supprted DHCP option field types.
+ * An emum holding all supported DHCP option field types.
  */
 export enum DhcpOptionFieldType {
     Binary = 'binary',

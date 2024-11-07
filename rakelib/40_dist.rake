@@ -117,7 +117,7 @@ agent_dist_system_service_file = File.join(agent_dist_system_dir, "isc-stork-age
 file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-stork-agent.service"] do
     sh "cp", "-a", "etc/isc-stork-agent.service", agent_dist_system_service_file
     sh "chmod", "644", agent_dist_system_service_file
-    # Use the abolute path to the executable
+    # Use the absolute path to the executable
     sh SED,
         "-i.tmp", # Modify in place
         sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file, # Regex
@@ -195,7 +195,7 @@ server_dist_system_service_file = File.join(server_dist_system_dir, "isc-stork-s
 file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-stork-server.service"] do
     sh "cp", "-a", "etc/isc-stork-server.service", server_dist_system_service_file
     sh "chmod", "644", server_dist_system_service_file
-    # Use the abolute path to the executable
+    # Use the absolute path to the executable
     sh SED,
         "-i.tmp", # Modify in place
         sed_regex_to_expand_the_relative_path_to_executable_in_systemd_service_file, # Regex

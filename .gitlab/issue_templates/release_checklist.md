@@ -13,7 +13,7 @@ Some of these checks and updates can be made before the actual freeze.
    1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
      - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
-   1. [ ] Upload necesary changes and fixes
+   1. [ ] Upload necessary changes and fixes.
  1. Check if ReadTheDocs can build Stork documentation.
     1. [ ] Check if the latest build was successful and if its time matches the merge time of the release changes.
     1. If not, trigger rebuilding docs on [readthedocs.org](https://readthedocs.org/projects/stork/builds) and wait for the build to complete.

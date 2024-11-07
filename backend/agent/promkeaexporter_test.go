@@ -295,7 +295,7 @@ func TestUnmarshalSubnetListOKResponse(t *testing.T) {
 func TestUnmarshalSubnetListUnsupportedResponse(t *testing.T) {
 	// Arrange
 	rawResponse := `[
-		{ 
+		{
 			"result": 2,
 			"text": "'subnet4-list' command not supported."
 		}
@@ -444,7 +444,7 @@ func TestNewLazySubnetPrefixLookup(t *testing.T) {
 	require.Zero(t, sender.callCount)
 }
 
-// Test that the subnet names are retrivied.
+// Test that the subnet names are retrieved.
 func TestLazySubnetNameLookupFetchesNames(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()

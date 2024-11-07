@@ -12,7 +12,7 @@ import (
 
 // Structs used to deserialize offline versions.json report.
 
-// This struct represents details about either stable, development or security software realease.
+// This struct represents details about either stable, development or security software release.
 // ReleaseDate and Version are mandatory.
 type ReportVersionDetails struct {
 	EolDate     string                    `json:"eolDate,omitempty"`

@@ -854,7 +854,7 @@ execution first. Then, attach the Golang debugger to the server.
 System Test Commands
 --------------------
 
-To show a list of available commands for running and troubleshooing the
+To show a list of available commands for running and troubleshooting the
 system test type:
 
 .. code-block:: console
@@ -1002,7 +1002,7 @@ Example command output:
 
 The "Base image" is an image or stage name specified in the ``FROM`` directive.
 The "Current version" is a version currently specified in the Dockerfile. The
-trialing asterisks are trimmed.
+trailing asterisks are trimmed.
 The "Latest version" is latest version available in the OS repository.
 The "Latest version" indicates if the "Latest version" meets the
 "Current version".
@@ -1414,7 +1414,7 @@ The profiling commands can be customized using the following environment
 variables:
 
 - ``PROFILE`` - the type of the profile to collect. The available values are:
-  
+
   - ``cpu`` (CPU usage)
   - ``allocs`` (number of allocations and memory usage)
   - ``block`` (number of blocks)
@@ -1526,7 +1526,7 @@ Collected metrics are:
 - ``vsz [B]`` - the virtual memory size in bytes
 
 The HTML report displays the charts using the SI-prefixes (e.g., k, M, G) but
-it divides the values by 1000, not 1024. The percentage values are also 
+it divides the values by 1000, not 1024. The percentage values are also
 displayed with the SI-prefixes - so 200m means 200 mili-percent = 0.2%.
 
 Monitoring Demo

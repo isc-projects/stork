@@ -31,7 +31,7 @@ type HAMultiThreading struct {
 	HTTPClientThreads     *int  `json:"http-client-threads"`
 }
 
-// A structure representing one of the peers in the high avalability
+// A structure representing one of the peers in the high availability
 // configuration (e.g., a standby server).
 type Peer struct {
 	Name         *string `json:"name"`

@@ -1411,7 +1411,7 @@ export class SubnetSetFormService {
      * @param keaVersionRange a tuple with the earliest and the latest Kea version
      *        for the configured daemons.
      * @param topLevelKey: top level key in the Kea configuration, used to determine
-     *        the confgured server type.
+     *        the configured server type.
      * @param configs Kea-specific global parameters parameters.
      * @returns Created form group instance.
      */

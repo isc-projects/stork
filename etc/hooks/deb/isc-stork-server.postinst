@@ -43,7 +43,7 @@ if [ "${1}" = "abort-remove" ] || { [ "${1}" = "configure" ] && [ -z "${2}" ]; }
 then
     # "after install" here
     # "abort-remove" happens when the pre-removal script failed.
-    #   In that case, this script, which should be idemptoent, is run
+    #   In that case, this script, which should be idempotent, is run
     #   to ensure a clean roll-back of the removal.
     after_install
 elif [ "${1}" = "configure" ] && [ -n "${2}" ]

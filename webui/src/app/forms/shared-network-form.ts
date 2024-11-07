@@ -311,7 +311,7 @@ export class SharedNetworkFormState {
         }
         // If user selected or unselected DHCP servers of a certain kind it is a
         // breaking change. In the DHCPv4 case we don't treat the transition from
-        // non-DHCPv4 to DHCPv4 case as a breaking change because, by defeault, we
+        // non-DHCPv4 to DHCPv4 case as a breaking change because, by default, we
         // assume DHCPv4 case when no servers are initially selected. In this case
         // the form remains unchanged after selecting the first server when new
         // shared network is defined.

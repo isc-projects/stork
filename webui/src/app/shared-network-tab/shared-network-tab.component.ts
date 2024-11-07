@@ -67,7 +67,7 @@ export class SharedNetworkTabComponent implements OnInit {
     /**
      * A component lifecycle hook invoked upon the component initialization.
      *
-     * It initializes the @link dhcpParameters arrray by combining the shared
+     * It initializes the @link dhcpParameters array by combining the shared
      * network-level and global parameters into an array.
      */
     ngOnInit(): void {

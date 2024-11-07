@@ -236,7 +236,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
      * The object keys are converted from the camel case to long names.
      *
      * @param value an object to be formatted
-     * @returns fomatted value as a string.
+     * @returns formatted value as a string.
      */
     private serializeObject(value: CascadedParameterType): CascadedParameterType {
         return JSON.stringify(

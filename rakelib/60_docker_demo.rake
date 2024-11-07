@@ -22,26 +22,26 @@ namespace :demo do
             "--project-directory", ".",
             "-f", "docker/docker-compose.yaml"
         ]
-        
+
         if ENV['CS_REPO_ACCESS_TOKEN']
             opts += ["-f", "docker/docker-compose-premium.yaml"]
         end
-        
+
         cache_opts = []
         if !cache
             cache_opts.append "--no-cache"
         end
-        
+
         up_opts = []
         if detach
             up_opts.append "-d"
         else
-            # Warning! Don't use here "--renew-anon-volumes" options. It causes conflicts between running containers. 
+            # Warning! Don't use here "--renew-anon-volumes" options. It causes conflicts between running containers.
             up_opts.append "--attach-dependencies", "--remove-orphans"
         end
 
         additional_services = []
-        
+
         if server_mode == "host"
             if !check_hosts_and_print_hint(ALL_DEMO_COMPOSE_FILES)
                 fail "Update the /etc/hosts file"
@@ -83,10 +83,10 @@ namespace :demo do
             puts "Invalid server mode option. Valid values: 'host', 'with-ui', 'without-ui', 'no-server', or empty (keep default). Got: ", server
             fail
         end
-        
+
         return opts, cache_opts, up_opts, additional_services
     end
-    
+
     # Calls docker-compose up command for the given services, uses all services
     # if the input list is empty
     # SERVER_MODE - server mode - choice: host, with-ui, without-ui, no-server, default
@@ -97,24 +97,24 @@ namespace :demo do
         server_mode = ENV["SERVER_MODE"]
         cache = ENV["CACHE"] != "false"
         detach = ENV["DETACH"] == "true"
-        
+
         # Prepare the docker-compose flags
         opts, build_opts, up_opts, additional_services = get_docker_opts(server_mode, cache, detach, services)
-        
+
         # We don't use the BuildKit features in our Dockerfiles (yet).
-        # But we turn on the BuildKit to build the Docker stages concurrently and skip unnecessary stages.  
+        # But we turn on the BuildKit to build the Docker stages concurrently and skip unnecessary stages.
         ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
         ENV["DOCKER_BUILDKIT"] = "1"
-        
+
         # Execute the docker-compose commands
         sh *DOCKER_COMPOSE, *opts, "build", *build_opts, *services, *additional_services
         sh *DOCKER_COMPOSE, *opts, "up", *up_opts, *services, *additional_services
     end
-    
+
     ##################
     ### Demo tasks ###
     ##################
-    
+
     desc 'Build containers with everything and start all services using docker-compose. Set CS_REPO_ACCESS_TOKEN to use premium features.
     SERVER_MODE - Server mode - choice: host, with-ui, without-ui, no-server, default, default: default
     host - Do not run the server in Docker, instead use the local one (which must be run separately on host)
@@ -127,33 +127,33 @@ namespace :demo do
     task :up => [DOCKER_COMPOSE] do
         docker_up_services()
     end
-    
+
     namespace :up do
         desc 'Build and run container with Stork Agent and Kea
         See "up" command for arguments.'
         task :kea => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea")
         end
-        
+
         desc 'Build and run container with Stork Agent and Kea with many subnets in the configuration.
         See "up" command for arguments.'
         task :kea_many_subnets => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea-many-subnets")
         end
-        
+
         desc 'Build and run container with Stork Agent and Kea DHCPv6 server
         See "up" command for arguments.'
         task :kea6 => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea6")
         end
-        
+
         desc 'Build and run three containers with Stork Agent and Kea HA pair
         See "up" command for arguments.'
         task :kea_ha => [DOCKER_COMPOSE] do
             docker_up_services("agent-kea-ha1", "agent-kea-ha2", "agent-kea-ha3")
         end
-        
-        desc 'Build and run container with Stork Agent and Kea with host reseverations in db
+
+        desc 'Build and run container with Stork Agent and Kea with host reservations in db
         CS_REPO_ACCESS_TOKEN - CloudSmith token - required
         See "up" command for more arguments.'
         task :kea_premium => [DOCKER_COMPOSE] do
@@ -162,19 +162,19 @@ namespace :demo do
             end
             docker_up_services("agent-kea-premium-one", "agent-kea-premium-two")
         end
-        
+
         desc 'Build and run container with Stork Agent and BIND 9
         See "up" command for arguments.'
         task :bind9 => [DOCKER_COMPOSE] do
             docker_up_services("agent-bind9")
         end
-        
+
         desc 'Build and run container with Postgres
             POSTGRES_VERSION - use specific Postgres database version - optional'
         task :postgres => [DOCKER_COMPOSE] do
             docker_up_services("postgres")
         end
-        
+
         desc 'Build and run container with OpenLDAP'
         task :ldap => [DOCKER_COMPOSE] do
             docker_up_services("openldap")
@@ -201,7 +201,7 @@ namespace :demo do
             docker_up_services("grafana")
         end
     end
-    
+
     desc 'Down all containers and remove all volumes'
     task :down => [DOCKER_COMPOSE] do
         ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
@@ -253,13 +253,13 @@ namespace :demo do
         end
 
         cache = ENV["CACHE"] != "false"
-        
+
         # Prepare the docker-compose flags
         opts, build_opts, _, additional_services = get_docker_opts(nil, cache, false, services)
-        
+
         # We don't use the BuildKit features in our Dockerfiles (yet).
         # But we turn on the BuildKit to build the Docker stages concurrently
-        # and skip unnecessary stages.  
+        # and skip unnecessary stages.
         ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
         ENV["DOCKER_BUILDKIT"] = "1"
 
@@ -317,7 +317,7 @@ namespace :demo do
             # Wait for key press to clean up the performance data.
             require 'io/console'
             puts ">>> Press any key to clean up the performance data <<<"
-            STDIN.getch  
+            STDIN.getch
         end
     end
 end
@@ -332,7 +332,7 @@ task :pre_docker_db do
     if ENV["DB_TRACE"] == "true"
         ENV["STORK_DATABASE_TRACE"] = "run"
     end
-    
+
     # Uses exposed port
     ENV["STORK_DATABASE_HOST"] = "localhost"
     ENV["STORK_DATABASE_PORT"] = "5678"

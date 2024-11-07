@@ -757,8 +757,8 @@ namespace :db do
         DB_USER - database user - default: env:POSTGRES_USER or storktest
         DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
         DB_TRACE - trace SQL queries - default: false
-        DB_MAINTENANCE_NAME - maintanance database name - default: postgres
-        DB_MAINTENANCE_USER - maintannce username - default: postgres
+        DB_MAINTENANCE_NAME - maintenance database name - default: postgres
+        DB_MAINTENANCE_USER - maintenance username - default: postgres
         DB_MAINTENANCE_PASSWORD - maintenance password - default: empty'
     task :setup_envvars do
         dbname = ENV["STORK_DATABASE_NAME"] || ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"

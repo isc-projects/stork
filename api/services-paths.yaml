@@ -387,7 +387,7 @@
       summary: Get a list of apps for which the server found communication issues.
       description: >-
         The returned list excludes the detailed information about the apps and
-        the daemons. The returned data primarly contains statistics about the
+        the daemons. The returned data primarily contains statistics about the
         communication failures.
       operationId: getAppsWithCommunicationIssues
       tags:

@@ -303,7 +303,7 @@ func TestMetricsMiddleware(t *testing.T) {
 	require.EqualValues(t, 1, metrics.RequestCount)
 }
 
-// Check if metricsMiddelware returns placeholder when the endpoint is disabled.
+// Check if metricsMiddleware returns placeholder when the endpoint is disabled.
 func TestMetricsMiddlewarePlaceholder(t *testing.T) {
 	// Arrange
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -364,7 +364,7 @@ func TestLoggingMiddlewareHelpers(t *testing.T) {
 // Test the file middleware. Includes the test to check if the middleware
 // is not vulnerable to the Path Traversal attack used to check if a given path
 // exists on the filesystem.
-func TestFileServerMiddelware(t *testing.T) {
+func TestFileServerMiddlewareExtensive(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -374,12 +374,12 @@ func TestFileServerMiddelware(t *testing.T) {
 	publicDirectory = path.Dir(publicDirectory)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	middelware := fileServerMiddleware(nextHandler, publicDirectory)
+	middleware := fileServerMiddleware(nextHandler, publicDirectory)
 
 	requestFileContent := func(path string) (string, int, error) {
 		request := httptest.NewRequest("GET", fmt.Sprintf("http://localhost/%s", path), nil)
 		writer := httptest.NewRecorder()
-		middelware.ServeHTTP(writer, request)
+		middleware.ServeHTTP(writer, request)
 		response := writer.Result()
 		content, err := io.ReadAll(response.Body)
 		defer response.Body.Close()
@@ -497,40 +497,40 @@ func TestFileServerMiddelware(t *testing.T) {
 	})
 }
 
-// Test that the trim base URL middelware is not created if the base URL is
+// Test that the trim base URL middleware is not created if the base URL is
 // root or empty.
-func TestTrimBaseURLMiddelwareNotApplicable(t *testing.T) {
+func TestTrimBaseURLMiddlewareNotApplicable(t *testing.T) {
 	// Arrange
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	t.Run("root as base URL", func(t *testing.T) {
 		// Act
-		middelware := trimBaseURLMiddleware(nextHandler, "/")
+		middleware := trimBaseURLMiddleware(nextHandler, "/")
 
 		// Assert
-		require.Equal(t, reflect.ValueOf(nextHandler).Pointer(), reflect.ValueOf(middelware).Pointer())
+		require.Equal(t, reflect.ValueOf(nextHandler).Pointer(), reflect.ValueOf(middleware).Pointer())
 	})
 
 	t.Run("empty base URL", func(t *testing.T) {
 		// Act
-		middelware := trimBaseURLMiddleware(nextHandler, "")
+		middleware := trimBaseURLMiddleware(nextHandler, "")
 
 		// Assert
-		require.Equal(t, reflect.ValueOf(nextHandler).Pointer(), reflect.ValueOf(middelware).Pointer())
+		require.Equal(t, reflect.ValueOf(nextHandler).Pointer(), reflect.ValueOf(middleware).Pointer())
 	})
 }
 
-// Test that the trim base URL middelware works properly.
-func TestTrimBaseURLMiddelware(t *testing.T) {
+// Test that the trim base URL middleware works properly.
+func TestTrimBaseURLMiddleware(t *testing.T) {
 	// Arrange
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	middelware := trimBaseURLMiddleware(nextHandler, "/base/")
+	middleware := trimBaseURLMiddleware(nextHandler, "/base/")
 
 	request := func(path string) *url.URL {
 		path = strings.TrimPrefix(path, "/")
 		request := httptest.NewRequest("GET", fmt.Sprintf("http://localhost/%s", path), nil)
 		writer := httptest.NewRecorder()
-		middelware.ServeHTTP(writer, request)
+		middleware.ServeHTTP(writer, request)
 		return request.URL
 	}
 

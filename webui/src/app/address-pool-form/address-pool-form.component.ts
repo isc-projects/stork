@@ -8,7 +8,7 @@ import { IPType } from '../iptype'
 import { getSeverityByIndex } from '../utils'
 
 /**
- * A component providing a form for editing and adding an addres pool.
+ * A component providing a form for editing and adding an address pool.
  */
 @Component({
     selector: 'app-address-pool-form',

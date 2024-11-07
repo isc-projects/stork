@@ -195,7 +195,7 @@ namespace :utils do
                 elsif !package_manager_key.nil?
                     # We are in the package manager call.
 
-                    # Check if the line is a beggining of another command.
+                    # Check if the line is a beginning of another command.
                     if line_content.start_with? "&&" or line_content.start_with? "||" or line_content.start_with? ";"
                         package_manager_key = nil
                         next
@@ -213,7 +213,7 @@ namespace :utils do
                         # End line.
                         is_last_line = true
                     else
-                        # Strip the tralling backslash.
+                        # Strip the trailing backslash.
                         line_content = line_content[0..-2]
                         line_content = line_content.strip
                     end
@@ -230,7 +230,7 @@ namespace :utils do
                         current_version = "unspecified"
                     elsif current_version.end_with? "*"
                         # Has a version with a wildcard.
-                        # Strip the tralling asterisk.
+                        # Strip the trailing asterisk.
                         current_version = current_version[0..-2]
                     end
 
