@@ -836,7 +836,6 @@ The table also includes whether the machine's Stork agent version matches the St
    The version of the Stork server and all Stork agents should match; e.g.
    if the Stork server version is ``2.0.0``, all Stork agents should also be version ``2.0.0``.
 
-Stork also checks whether all the Kea servers are using matching Kea daemon versions.
 For each machine where the Kea server is found, Stork also checks whether all the Kea daemons use matching versions.
 
 .. note::
