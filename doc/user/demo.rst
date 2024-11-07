@@ -28,7 +28,7 @@ The demo setup can optionally launch additional containers:
 - Stork Agent with Kea Premium Features-2
 
 In the sections below, we explain how to start the demo setup
-and how to launch the containers with additional Kea features, provided by "hooks."
+and how to launch the containers with additional Kea features, provided by hooks.
 These hooks are required to manage hosts, subnets, and shared networks from within Stork.
 
 The demo launch instructions and its features are also described on the
@@ -180,7 +180,7 @@ simulator
 dns-proxy-server
    This is used only when the Stork agent from a container connects to a locally running
    server. The Kea/BIND 9 containers use internal Docker hostnames that the host
-   cannot resolve. ISC runs the DNS proxy in the background that translates the
+   cannot resolve. The demo runs in background the DNS proxy that translates the
    Docker hostnames to valid IP addresses.
 
 .. note::

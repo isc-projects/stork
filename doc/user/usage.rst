@@ -837,21 +837,18 @@ The table also includes whether the machine's Stork agent version matches the St
    if the Stork server version is ``2.0.0``, all Stork agents should also be version ``2.0.0``.
 
 Stork also checks whether all the Kea servers are using matching Kea daemon versions.
+For each machine where the Kea server is found, Stork also checks whether all the Kea daemons use matching versions.
 
 .. note::
 
-   If the Kea server has more than one daemon active (i.e. the ``dhcp4``,
-   ``dhcp6``, and/or ``ddns`` daemons), they should all use
-   the same version of Kea.
+   If the Kea server has more than one daemon active, they should all use
+   the same version; e.g. if the Kea server has active daemons ``DHCPv4``, ``DHCPv6`` and ``DDNS``,
+   and the ``DHCPv4`` daemon is version ``2.6.1``, all other Kea daemons (``DHCPv6`` and ``DDNS``)
+   should be version ``2.6.1``.
 
 The table includes color-coded notices about the importance of upgrading the Kea, BIND 9, or Stork
 software, based on the software version checks performed.
-The summary table groups the machines by severity and sorts them in descending order:
-
-- Versions marked with a **red X** should be upgraded immediately, as security updates have been issued for that software
-- Versions marked with a **yellow triangle** have updates available and should be upgraded as soon as possible
-- Versions marked with a **blue circle** have updates available, but those updates can be applied on your organization's normal schedule
-- Versions marked with a **green check** are up to date
+The summary table groups the machines by severity and sorts them in descending order.
 
 ISC advises reviewing the summaries for machines with red and yellow severity and updating those software versions.
 

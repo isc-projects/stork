@@ -36,7 +36,7 @@ Legend:
 is to keep Stork buildable on this platform.
 
 \*\* BSD-like systems are not officially supported, but some users have reported successful installations on these
-systems. 
+systems.
 
 
 Installation Prerequisites

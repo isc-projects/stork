@@ -180,7 +180,7 @@ whereby two servers offer the same address (from overlapping pools) to different
 clients. Stork allows the assignment of a pool to a subset
 of the DHCP servers assigned to the subnet. If the pool should be included in
 all servers, pick all servers in the pool's ``Assignments`` panel. Note that, in addition to
-specifying the pool boundaries and assigments, each expandable pool panel also
+specifying the pool boundaries and assignments, each expandable pool panel also
 allows the specification of some pool-level configuration parameters,
 such as ``Client Class`` and ``Pool ID``. It is also possible to specify pool-level
 DHCP options.

@@ -132,6 +132,8 @@ this feature.
 The Stork agent exports only a subset of the available statistics; the user
 can limit the exported statistics in the agent configuration file.
 
+Introduced in Stork 0.5.0 (Kea) and Stork 0.6.0 (BIND 9).
+
 Monitoring the Status of Services
 =================================
 
@@ -185,6 +187,8 @@ The Stork server has dedicated pages for viewing the following data:
   If a particular subnet is specified on multiple Kea servers, it is
   displayed only once, with a list of server names where it is defined.
 
+  Introduced in Stork 0.4.0.
+
 - Shared networks
 
   The user can see all shared networks defined in the Kea servers, and
@@ -196,6 +200,8 @@ The Stork server has dedicated pages for viewing the following data:
   The utilization data and other statistics are presented only if the
   ``stats_cmds`` hook is loaded on the Kea server.
 
+  Introduced in Stork 0.5.0.
+
 - Host reservations
 
   The user can see all host reservations defined in the Kea servers. The user
@@ -205,10 +211,14 @@ The Stork server has dedicated pages for viewing the following data:
   The server can fetch the host reservations from the host database if the
   ``host_cmds`` hook is loaded in Kea.
 
+  Introduced in Stork 0.6.0.
+
 - Global parameters and DHCP options
 
   The user can see the global parameters and DHCP options defined on the Kea
   servers.
+
+  Introduced in Stork 1.18.0.
 
 - High-Availability status
 
@@ -219,11 +229,15 @@ The Stork server has dedicated pages for viewing the following data:
 
   The Stork server gracefully supports the hub-and-spoke Kea feature.
 
+  Introduced in Stork 0.3.0.
+
 - DHCP daemon details
 
   The user can see the details of the Kea DHCP daemons. The UI displays the
   daemon version, the database backends, the loaded hooks, and the entire
   configuration in JSON format.
+
+  Introduced in Stork 0.3.0.
 
 Managing the DHCP Configuration
 ===============================
@@ -240,6 +254,8 @@ The following operations are supported:
   also change subnet details, such as the subnet prefix, related DHCP options,
   and subnet pools.
 
+  Introduced in Stork 1.13.0.
+
   The ``subnet_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Adding, editing, and deleting shared networks
@@ -248,7 +264,9 @@ The following operations are supported:
   user can also change shared network details, such as the shared network name,
   the list of subnets belonging to the shared network, and the DHCP options.
 
-  The ``subnets_cmds`` hook must be loaded on the Kea server to support this feature.
+  Introduced in Stork 1.18.0.
+
+  The ``subnet_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Adding, editing, and deleting host reservations
 
@@ -256,11 +274,15 @@ The following operations are supported:
   user can change the host reservation details, such as host identifiers, DHCP
   options, and reserved hostnames and IP addresses.
 
+  Introduced in Stork 1.3.0.
+
   The ``host_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Editing global parameters and DHCP options
 
   The user can edit the global parameters and DHCP options on Kea servers.
+
+  Introduced in Stork 1.19.0.
 
 Reviewing the Kea Configuration
 ===============================
@@ -269,6 +291,8 @@ The Stork server allows the user to analyze the Kea DHCP configuration and sugge
 tweaks and improvements. This solution allows potential issues to be detected,
 performance bottlenecks to be addressed, and fields to be identified for optimization.
 The server also suggests the hooks that can be loaded to enable more Stork features.
+
+Introduced in Stork 0.22.0.
 
 Searching for Leases
 ====================
@@ -281,6 +305,8 @@ This feature requires the ``lease_cmds`` hook to be loaded in Kea.
 
 The Stork server also displays a list of the leases related to a particular host
 reservation.
+
+Introduced in Stork 0.16.0.
 
 Monitoring the BIND 9 Service
 =============================
