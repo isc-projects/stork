@@ -132,13 +132,11 @@ this feature.
 The Stork agent exports only a subset of the available statistics; the user
 can limit the exported statistics in the agent configuration file.
 
-Introduced in Stork 0.5.0 (Kea) and Stork 0.6.0 (BIND 9).
-
 Monitoring the Status of Services
 =================================
 
 The Stork server continuously monitors the status of the Kea DHCP daemons,
-the Kea Control Agent, and the Kea DHCP-DDNS and BIND 9 services, and provides a dashboard
+the Kea Control Agent (Kea CA), and the Kea DHCP-DDNS and BIND 9 services, and provides a dashboard
 to show their current states.
 
 The statuses are monitored on two levels: the first level is the status of the
@@ -187,8 +185,6 @@ The Stork server has dedicated pages for viewing the following data:
   If a particular subnet is specified on multiple Kea servers, it is
   displayed only once, with a list of server names where it is defined.
 
-  Introduced in Stork 0.4.0.
-
 - Shared networks
 
   The user can see all shared networks defined in the Kea servers, and
@@ -200,8 +196,6 @@ The Stork server has dedicated pages for viewing the following data:
   The utilization data and other statistics are presented only if the
   ``stats_cmds`` hook is loaded on the Kea server.
 
-  Introduced in Stork 0.5.0.
-
 - Host reservations
 
   The user can see all host reservations defined in the Kea servers. The user
@@ -211,14 +205,10 @@ The Stork server has dedicated pages for viewing the following data:
   The server can fetch the host reservations from the host database if the
   ``host_cmds`` hook is loaded in Kea.
 
-  Introduced in Stork 0.6.0.
-
 - Global parameters and DHCP options
 
   The user can see the global parameters and DHCP options defined on the Kea
   servers.
-
-  Introduced in Stork 1.18.0.
 
 - High-Availability status
 
@@ -229,15 +219,11 @@ The Stork server has dedicated pages for viewing the following data:
 
   The Stork server gracefully supports the hub-and-spoke Kea feature.
 
-  Introduced in Stork 0.3.0.
-
 - DHCP daemon details
 
   The user can see the details of the Kea DHCP daemons. The UI displays the
   daemon version, the database backends, the loaded hooks, and the entire
   configuration in JSON format.
-
-  Introduced in Stork 0.3.0.
 
 Managing the DHCP Configuration
 ===============================
@@ -254,8 +240,6 @@ The following operations are supported:
   also change subnet details, such as the subnet prefix, related DHCP options,
   and subnet pools.
 
-  Introduced in Stork 1.13.0.
-
   The ``subnet_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Adding, editing, and deleting shared networks
@@ -263,8 +247,6 @@ The following operations are supported:
   The user can add, edit, and delete shared networks on Kea servers. The
   user can also change shared network details, such as the shared network name,
   the list of subnets belonging to the shared network, and the DHCP options.
-
-  Introduced in Stork 1.18.0.
 
   The ``subnet_cmds`` hook must be loaded on the Kea server to support this feature.
 
@@ -274,15 +256,11 @@ The following operations are supported:
   user can change the host reservation details, such as host identifiers, DHCP
   options, and reserved hostnames and IP addresses.
 
-  Introduced in Stork 1.3.0.
-
   The ``host_cmds`` hook must be loaded on the Kea server to support this feature.
 
 - Editing global parameters and DHCP options
 
   The user can edit the global parameters and DHCP options on Kea servers.
-
-  Introduced in Stork 1.19.0.
 
 Reviewing the Kea Configuration
 ===============================
@@ -291,8 +269,6 @@ The Stork server allows the user to analyze the Kea DHCP configuration and sugge
 tweaks and improvements. This solution allows potential issues to be detected,
 performance bottlenecks to be addressed, and fields to be identified for optimization.
 The server also suggests the hooks that can be loaded to enable more Stork features.
-
-Introduced in Stork 0.22.0.
 
 Searching for Leases
 ====================
@@ -305,8 +281,6 @@ This feature requires the ``lease_cmds`` hook to be loaded in Kea.
 
 The Stork server also displays a list of the leases related to a particular host
 reservation.
-
-Introduced in Stork 0.16.0.
 
 Monitoring the BIND 9 Service
 =============================
@@ -323,20 +297,18 @@ to access the ``named`` daemon configuration and to execute the RNDC commands.
 The BIND 9 statistics channel must be configured to enable the statistics export to Prometheus.
 The statistics channel must be configured to enable the statistics export to Prometheus.
 
-Introduced in Stork 0.3.0.
-
-Security design
+Security Design
 ===============
 
 Stork has been designed with security in mind. The following section describes
 the security design and the security features implemented in Stork.
 
-The Stork environment is composed from several services, i.e., Stork server, Stork agent(s), Kea Control Agent(s), Kea
-DHCP daemons, Kea D2 daemon(s), BIND9 daemon(s), PostgreSQL database(s), and Prometheus. Each service has its own security
+The Stork environment is composed of multiple services: the Stork server, the Stork agent(s), the Kea Control Agent(s), the Kea
+DHCP daemons, the Kea D2 daemon(s), the BIND 9 daemon(s), the PostgreSQL database(s), and Prometheus. Each service has its own security
 considerations.
 
-The following is a diagram of all Stork components and services that it could possibly interact with.
-Typical Stork deployment is a much simpler subset:
+The following is a diagram of all Stork components and the services that they might interact with;
+a typical Stork deployment would have a much simpler subset of components:
 
 .. figure:: ./static/ecosystem-protocols.drawio.png
    :align: center
@@ -348,72 +320,74 @@ Typical Stork deployment is a much simpler subset:
   The above diagram may be edited at https://app.diagrams.net/.
   The source file is located in the doc/user/static/ecosystem-protocols.drawio.xml file.
 
-The Stork server is the central component of the Stork environment. It serves the Web UI and REST API over the HTTP
-protocol (connections no. 1, 4, and 8 on the diagram). The administrator may secure it by providing a trusted
-SSL/TLS certificate. It is recommended especially when the Stork server is exposed to the public network.
-The Stork server may share some statistics with the Prometheus monitoring system. It is strongly recommended to limit
-access to the metrics endpoint to the Prometheus server only. Stork server has no a built-in mechanism to do it but it
-may be achieved by using a reverse proxy like Nginx or Apache. See the :ref:`server-setup` section for more details.
+The Stork server is the central component of the Stork environment. It serves the web UI and REST API over the HTTP
+protocol (connections no. 1, 4, and 8 on the diagram). The administrator may secure the Stork server by providing a trusted
+SSL/TLS certificate. This is recommended, especially when the Stork server is exposed to a public network.
+The Stork server may share some statistics with the Prometheus monitoring system; it is strongly recommended to limit
+access to the metrics endpoint to the Prometheus server only. The Stork server has no built-in mechanism to do limit the access, but this
+may be achieved by using a reverse proxy like NGINX or Apache. See the :ref:`server-setup` section for more details.
 
-The Stork server requires a PostgreSQL database to store its data. The connection to the database may be established
+The Stork server requires a PostgreSQL database to store its data; the connection to the database may be established
 over the local socket or over the HTTP protocol (connection no. 10 on the diagram). The first option is more secure,
-as it does not expose the database traffic to the network but it requires the database to be installed on the same
-machine as the Stork server. The second option allows the database to be installed on a different machine, but it is
-recommended to secure the connection with SSL/TLS. The Stork server supports a mutual TLS authentication with the
-database that should ensure the highest level of security. In any case, Stork server should use a dedicated database
-user with the minimum required permissions and no one else should have access to the database. The database should be
+as it does not expose database traffic to the network, but it requires the database to be installed on the same
+machine as the Stork server. The second option allows the database to be installed on a different machine,
+securing the connection with SSL/TLS is recommended. The Stork server supports mutual TLS authentication with the
+database, which should ensure the highest level of security. In any case, Stork server should use a dedicated database
+user with the minimum required permissions, and no one else should have access to the database; the database should be
 regularly backed up. See the :ref:`securing-the-database-connection` for more details.
 
-The Stork agent resides on the same machine as the Kea and BIND 9 daemons and it is permitted to access their
-configuration files, logs, and use their APIs. Additionally, it can list the processes running on the machine and read
+The Stork agent resides on the same machine as the Kea and BIND 9 daemons and is permitted to access their
+configuration files and logs and use their APIs. Additionally, it can list the processes running on the machine and read
 their details. Therefore, it is recommended to run the Stork agent as a dedicated user with the minimum required
 permissions.
-The Stork server communicates with the Stork agents over the GRPC protocol (connection no. 5 on the diagram). The Stork
+
+The Stork server communicates with the Stork agents over the GRPC protocol (connection no. 5 on the diagram). Stork
 has a built-in solution for securing the communication on this channel using the Transport Layer Security (TLS)
-protocol. It is a mutual TLS authentication that ensures that the server and the agent are who they claim to be.
+protocol: mutual TLS authentication, which ensures that the server and the agent are who they claim to be.
 It is self-managed and does not require any additional configuration. The server acts as a Certificate Authority (CA)
-and generates the root certificate and the private key. They are stored in the server's database. The server generates
-a certificate and a private key for each agent during the agent registration process. The agent uses the certificate and
-the private key to authenticate itself to the server. The server doesn't trust the agent's certificate by default. The
-server administrator must approve the agent registration request in the Stork web UI. The server administrator must
-compare the token displayed in the UI with the token displayed in the agent's logs. If the tokens match, the
-administrator can approve the registration request. It is a one-time operation that protect against the
-man-in-the-middle attacks.
-Alternatively, new Stork agents can be authorized automatically, if administrator provides agents with the server token.
+and generates the root certificate and the private key, which are stored in the server's database. The server generates
+a certificate and a private key for each agent, during the agent-registration process. The agent uses the certificate and
+the private key to authenticate itself to the server; the server does not trust the agent's certificate by default. The
+server administrator must approve the agent-registration request in the Stork web UI, by
+comparing the token displayed in the UI with the token displayed in the agent's logs. If the tokens match, the
+administrator can approve the registration request. It is a one-time operation that protects against
+"man-in-the-middle" attacks.
+
+Alternatively, new Stork agents can be authorized automatically, if an administrator provides agents with the server token.
 This deployment mode might be more useful for automated deployments. The server token is a secret available only to the
-administrator on the server UI. It may be provided to the agent during the agent registration process. The agents
+administrator on the server UI, which may be provided to the agent during the agent registration process. The agents
 registered with this token are automatically approved by the server.
-The server token is a secret and must be protected. It is recommended to use it only in the secure environments. If it
-is compromised, the administrator can revoke it in the server UI. See the :ref:`secure-server-agent` for more details.
+Since the server token is a secret and must be protected, we recommend using it only in secure environments. If the
+server token is compromised, the administrator can revoke it in the server UI. See the :ref:`secure-server-agent` for more details.
 
-Stork agent is responsible for exchange the data between the Stork server and the Kea (connection no. 11. on the
+The Stork agent is responsible for exchanging data between the Stork server and the Kea (connection no. 11 on the
 diagram) and BIND 9 (connections no. 7 and 9 on the diagram) daemons. The agent and the daemons are running on the same
-machine, so the communication is local. However, it still can be secured.
+machine, so the communication is local; however, it can still be secured.
 
-Kea Control Agent supports Basic Auth to authenticate the clients of its REST API - the control channel used by the
+The Kea Control Agent (Kea CA) supports Basic Auth to authenticate the clients of its REST API, via the control channel used by the
 Stork agent. This solution may be enabled to protect the Kea CA from unauthorized access. If it is enabled, the Stork
 agent must be configured with the username and password to authenticate itself to the Kea CA. It is recommended to limit
-the access to this file only to the Stork agent user. Kea Control Agent may be configured to serve the REST API over the
-HTTPS protocol. Is is strongly recommended to enable it if the Basic Auth is configured or if the Kea CA listens on the
+access to this file only to the ``stork-agent`` user. The Kea CA may be configured to serve the REST API over the
+HTTPS protocol; enabling this is strongly recommended if the Basic Auth is configured or if the Kea CA listens on
 non-localhost interfaces. Additionally, the Kea CA may be configured to require the client certificate to authenticate
-the clients. The Stork agent supports the mutual TLS authentication partially. If it recognizes the Kea CA requires the
-client certificate, it attaches its GRPC client certificate (the certificate that was obtained during the agent
-registration) to the request. This certificate doesn't pass the client certificate verification by the Kea CA. It means
-that the Kea CA must be configured to not verify the client certificate.
+clients. The Stork agent offers partial support for mutual TLS authentication. If it recognizes that the Kea CA requires a
+client certificate, the Stork agent attaches its GRPC client certificate (the certificate that was obtained during the agent
+registration) to the request. This certificate does not pass client-certificate verification by the Kea CA, which means
+that the Kea CA must be configured not to verify the client certificate.
 
-Connection to BIND 9 utilizes two protocols: RNDC (control channel, connection no. 9 on the diagram) and HTTP (
-statistics channel, connection no. 7 on the diagram). The RNDC protocol may be secured by using the RNDC keys. It is
-especially recommended if the BIND 9 daemon listens on the non-localhost interfaces. The Stork agent retries the RNDC
-key from the BIND 9 configuration file. The agent must have the necessary permissions to read this file and use the
+Stork's connection to BIND 9 utilizes two protocols: RNDC (control channel, connection no. 9 on the diagram) and HTTP (
+statistics channel, connection no. 7 on the diagram). The RNDC protocol may be secured by using RNDC keys; this is
+especially recommended if the BIND 9 daemon listens on non-localhost interfaces. The Stork agent retries the RNDC
+key from the BIND 9 configuration file; the agent must have the necessary permissions to read this file and use the
 ``rndc`` and ``named-checkconf`` commands.
 The statistics channel is served over the HTTP protocol and may be secured by the SSL/TLS certificate.
 
-The Stork agent may acts as a Prometheus exporter for the Kea and BIND 9 statistics. The Prometheus server scrapes the
-metrics from the agent over the HTTP protocol (connection no. 6 on the diagram). This connection is unsecure and doesn't
-support TLS. The metrics channel is expected to not be exposed to the public network. It is recommended to configure the
-firewall to limit the access to the metrics endpoint to the Prometheus server only.
+The Stork agent acts as a Prometheus exporter for the Kea and BIND 9 statistics. The Prometheus server scrapes the
+metrics from the agent over the HTTP protocol (connection no. 6 on the diagram); this connection is unsecure and does not
+support TLS. The metrics channel is expected not to be exposed to the public network. It is recommended to configure any
+firewall to limit access to the metrics endpoint only to the Prometheus server.
 
-The Stork server supports hooks that may be loaded to provide new authentication methods. If the authentication methods
-uses a dedicated authentication service, it is recommended to secure the connection to this service with the SSL/TLS
-certificate if the service and hook supports it. Especially, the LDAP hook may be configured to use the SSL/TLS (LDAPS)
+The Stork server supports hooks that may be loaded to provide new authentication methods. If these authentication methods
+use a dedicated authentication service, we recommend securing the connection to this service with the SSL/TLS
+certificate if the service and hook support it. In particular, the LDAP hook may be configured to use the SSL/TLS (LDAPS)
 protocol.
