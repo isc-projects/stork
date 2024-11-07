@@ -106,11 +106,16 @@ COPY codegen .
 WORKDIR /app/rakelib
 COPY rakelib/10_codebase.rake rakelib/20_build.rake rakelib/30_dev.rake rakelib/40_dist.rake ./
 
-FROM codebase as codebase-backend
+FROM codebase AS codebase-backend
 WORKDIR /app/tools/golang
 COPY --from=gopath-prepare /app/tools/golang .
 WORKDIR /app/backend
 COPY backend .
+
+FROM codebase-backend AS codebase-hooks
+WORKDIR /app/hooks
+COPY hooks .
+WORKDIR /app/backend
 
 FROM codebase AS codebase-webui
 WORKDIR /app/grafana
@@ -127,6 +132,13 @@ WORKDIR /app/webui
 COPY --from=nodemodules-prepare /app/webui .
 WORKDIR /app/webui
 COPY webui .
+
+# Build the Stork hooks
+FROM codebase-hooks AS hooks-builder
+WORKDIR /app/rakelib
+COPY rakelib/90_hooks.rake .
+WORKDIR /app/backend
+RUN rake hook:build
 
 # Build the Stork binaries
 FROM codebase-backend AS server-builder
@@ -152,7 +164,7 @@ COPY --from=webui-builder /app/ /app/
 RUN rake build:server_dist && rm -rf /app/dist/server/lib
 
 # Agent container
-FROM debian-base as agent
+FROM debian-base AS agent
 COPY --from=agent-builder /app/dist/agent /
 ENTRYPOINT [ "/usr/bin/stork-agent" ]
 # Incoming port
@@ -165,6 +177,7 @@ EXPOSE 9119
 # Server containers
 FROM debian-base AS server
 COPY --from=server-builder /app/dist/server/ /
+COPY --from=hooks-builder /app/hooks/stork-server-*.so /usr/lib/stork-server/hooks/
 ENTRYPOINT [ "/bin/sh", "-c", \
         "supervisord -c /etc/supervisor/supervisord.conf" ]
 EXPOSE 8080
@@ -182,14 +195,6 @@ ENTRYPOINT [ "/bin/sh", "-c", \
         "envsubst < /tmp/nginx.conf.tpl > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'" ]
 EXPOSE 80
 HEALTHCHECK CMD ["curl", "--fail", "http://localhost:80"]
-
-# Server with webui container
-FROM debian-base AS server-webui
-COPY --from=server-builder /app/dist/server /
-COPY --from=webui-builder /app/dist/server /
-ENTRYPOINT [ "/usr/bin/stork-server" ]
-EXPOSE 8080
-HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 # Web UI container on Apache
 FROM httpd:2.4 AS webui-apache
