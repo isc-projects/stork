@@ -77,8 +77,8 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       After starting ``stork-agent``, it keeps printing the following messages:
-              ``loaded server cert: /var/lib/stork-agent/certs/cert.pem and key: /var/lib/stork-agent/certs/key.pem``
+:Issue:       ``stork-agent`` starts but returns the
+              ``loaded server cert: /var/lib/stork-agent/certs/cert.pem and key: /var/lib/stork-agent/certs/key.pem`` message.
 :Description: ``stork-agent`` runs correctly and its registration is successful.
               After the ``started serving Stork Agent`` message, the agent prints the recurring message about loading server certs.
               The network traffic analysis to the server reveals that it rejects all packets from the agent
@@ -96,7 +96,7 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       A connection problem to the DHCP daemon(s).
+:Issue:       A connection problem to the DHCP daemon(s) is occurring.
 :Description: The agent prints the message ``problem with connecting to dhcp daemon: unable to forward command to
               the dhcp6 service: No such file or directory. The server is likely to be offline``.
 :Solution 1:  Try to start the Kea service: ``systemctl start kea-dhcp4 kea-dhcp6``.
@@ -126,7 +126,7 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       Kea Control Agent returns a ``Kea error response - status: 401, message: Unauthorized`` message.
+:Issue:       The Kea Control Agent returns a ``Kea error response - status: 401, message: Unauthorized`` message.
 :Description: The Stork agent and the Kea Control Agent are running, but they cannot connect.
               The ``stork-agent`` logs contain similar messages: ``failed to parse responses from Kea:
               { "result": 401, "text": "Unauthorized" }`` or ``Kea error response - status: 401, message: Unauthorized``.
@@ -137,8 +137,8 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       During the registration process, ``stork-agent`` prints a ``problem with registering machine:
-              cannot parse address`` message.
+:Issue:       During the registration process, ``stork-agent`` returns a 
+              ``problem with registering machine: cannot parse address`` message.
 :Description: Stork is configured to use an IPv6 link-local address. The agent prints the
               ``try to register agent in Stork server`` message and then the above error. The agent exists
               with a fatal status.
@@ -148,8 +148,8 @@ This section describes the solutions for some common issues with the Stork agent
 --------------
 
 :Issue:       A protocol problem occurs during the agent registration.
-:Description: During the registration process, ``stork-agent`` prints a ``problem with registering machine:
-              Post "/api/machines": unsupported protocol scheme ""`` message.
+:Description: During the registration process, ``stork-agent`` prints a
+              ``problem with registering machine: Post "/api/machines": unsupported protocol scheme ""`` message.
 :Solution:    The ``--server-url`` argument is provided in the wrong format; it must be a canonical URL.
               It should begin with the protocol (``http://`` or ``https://``), contain the host (DNS name or
               IP address; for IPv6 escape them with square brackets), and end with the port
@@ -174,7 +174,7 @@ This section describes the solutions for some common issues with the Stork agent
               For example, run ``. /etc/stork/agent.env``.
 :Solution 2:  Run the Stork agent with the ``--use-env-file`` switch.
 :Explanation: The ``/etc/stork/agent.env`` file contains the environment variables, but ``stork-agent`` does not automatically
-              load them, unless the ``--use-env-file flag`` is used; the file must be loaded manually. The default systemd service
+              load them unless the ``--use-env-file flag`` is set; the file must be loaded manually. The default ``systemd`` service
               unit is configured to load this file before starting the agent.
 
 --------------
@@ -194,58 +194,58 @@ This section describes the solutions for some common issues with the Stork agent
 
 --------------
 
-:Issue:       The Stork agent doesn't start with the following error:
+:Issue:       The Stork agent fails to start and returns the following error:
               ``failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
-              ``failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
+              ``failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``.
 :Solution:    Remove the given file from the hook directory.
 :Explanation: The file under a given path is not a valid Stork hook.
 
 --------------
 
-:Issue:       Stork agent doesn't start with the following error:
-              ``Cannot start the Stork Agent: incompatible hook version: 1.0.0``
+:Issue:       The Stork agent fails to start and returns the following error:
+              ``Cannot start the Stork Agent: incompatible hook version: 1.0.0``.
 :Solution:    Update the given hook.
-:Explanation: The hook is out-of-date. It's incompatible with the Stork core
+:Explanation: The hook is out-of-date and is incompatible with the Stork core
               application.
 
 --------------
 
-:Issue:       Stork agent doesn't start with the following error:
-              ``Cannot start the Stork Agent: plugin: symbol Version not found in plugin``
+:Issue:       The Stork agent fails to start and returns the following error:
+              ``Cannot start the Stork Agent: plugin: symbol Version not found in plugin``.
 :Solution:    Remove or fix the given file.
-:Explanation: Hook directory contains Go plugin but that is not a hook; Hook
-              doesn't contain required symbol.
+:Explanation: The hook directory contains the Go plugin, but not the hook; the Go hook
+              does not contain a required symbol.
 
 --------------
 
-:Issue:       Stork agent doesn't start with the following error:
-              ``Cannot start the Stork Agent: hook library dedicated for another program: Stork Server``
+:Issue:       The Stork agent fails to start and returns the following error:
+              ``Cannot start the Stork Agent: hook library dedicated for another program: Stork Server``.
 :Solution:    Move the incompatible hooks to a separate directory.
-:Explanation: Stork agent requires the hook directory to contain only agent
-              hooks. The above error message indicates that the hook directory
+:Explanation: The Stork agent requires the hook directory to contain only agent
+              hooks. The error message indicates that the hook directory
               contains hooks dedicated to the Stork server.
 
 --------------
 
-:Issue:       Stork agent starts but the hooks aren't loaded. The logs comprise
+:Issue:       The Stork agent starts but the hooks are not loaded. The logs include
               the following message:
-              ``Cannot find plugin paths in: /usr/lib/stork-agent/hooks: cannot list hook directory: /usr/lib/stork-agent/hooks: open /usr/lib/stork-agent/hooks: no such file or directory``
+              ``Cannot find plugin paths in: /usr/lib/stork-agent/hooks: cannot list hook directory: /usr/lib/stork-agent/hooks: open /usr/lib/stork-agent/hooks: no such file or directory``.
 :Solution:    Create the hook directory or change the path in the configuration.
-:Explanation: Hook directory doesn't exist.
+:Explanation: The hook directory does not exist.
 
 --------------
 
-:Issue:       Stork agent doesn't start with the following error:
-              ``Cannot start the Stork Agent: open [HOOK DIRECTORY]: permission denied cannot list hook directory``
-:Solution:    Grant the right for read the hook directory for the Stork user.
+:Issue:       The Stork agent fails to start and returns the following error:
+              ``Cannot start the Stork Agent: open [HOOK DIRECTORY]: permission denied cannot list hook directory``.
+:Solution:    Grant read access to the hook directory to the ``stork-agent`` user.
 :Explanation: The hook directory is not readable.
 
 --------------
 
-:Issue:       Stork agent doesn't start with the following error:
-              ``Cannot start the Stork Agent: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``
+:Issue:       The Stork agent fails to start and returns the following error:
+              ``Cannot start the Stork Agent: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``.
 :Solution:    Change the hook directory path.
-:Explanation: File was found instead of directory under given hook directory path.
+:Explanation: A file was found instead of a directory under the given hook directory path.
 
 ``stork-server``
 ================
@@ -255,9 +255,9 @@ This section describes the solutions for some common issues with the Stork serve
 ---------------
 
 :Issue:       The values in ``/etc/stork/server.env`` were changed,
-              but ``stork-server`` does not noticed the changes.
-:Solution 1.: Restart the daemon.
-:Solution 2.: Send the SIGHUP signal to the ``stork-server`` process.
+              but ``stork-server`` does not notice the changes.
+:Solution 1:  Restart the daemon.
+:Solution 2:  Send the SIGHUP signal to the ``stork-server`` process.
 :Explanation: ``stork-server`` reads configurations at startup or after receiving the SIGHUP signal.
 
 --------------
@@ -266,119 +266,119 @@ This section describes the solutions for some common issues with the Stork serve
               it still uses the default values.
 :Description: The server is running using the ``stork-server`` command. It uses the parameters passed
               from the command line but ignores the ``/etc/stork/server.env`` file entries.
-              If the server is running as the systemd daemon, it uses the expected values.
-:Solution 1.: Load the environment variables from the ``/etc/stork/server.env`` file before running Stork server.
+              If the server is running as the ``systemd`` daemon, it uses the expected values.
+:Solution 1:  Load the environment variables from the ``/etc/stork/server.env`` file before running the Stork server.
               For example, run ``. /etc/stork/server.env``.
-:Solution 2.: Run the Stork server with the ``--use-env-file`` switch.
+:Solution 2:  Run the Stork server with the ``--use-env-file`` switch.
 :Explanation: The ``/etc/stork/server.env`` file contains the environment variables, but ``stork-server`` does not automatically
-              load them, unless you use ``--use-env-file`` flag; the file must be loaded manually. The default systemd service
+              load them unless the ``--use-env-file`` flag is set; the file must be loaded manually. The default ``systemd`` service
               unit is configured to load this file before starting the agent.
 
 --------------
 
-:Issue:       The server is running but rejects the HTTP requests due to the TLS handshake error.
-:Description: The HTTP requests sent via an Internet browser or tools like ``curl`` are rejected. The clients show a
-              message similar to: ``OpenSSL SSL_write: Broken pipe, errno 32``. The Stork  server logs contain the
+:Issue:       The server is running but rejects HTTP requests due to a TLS handshake error.
+:Description: HTTP requests sent via an Internet browser or tools like ``curl`` are rejected. The clients show a
+              message similar to: ``OpenSSL SSL_write: Broken pipe, errno 32``. The Stork server logs contain a
               ``TLS handshake error`` entry with the ``tls: client didn't provide a certificate`` description.
-:Solution 1.: Leave the ``STORK_REST_TLS_CA_CERTIFICATE`` environment variable and the ``--rest-tls-ca`` flag empty.
-:Solution 2.: Configure the Internet browser or HTTP tool to use the valid and trusted TLS client certificate.
+:Solution 1:  Leave the ``STORK_REST_TLS_CA_CERTIFICATE`` environment variable and the ``--rest-tls-ca`` flag empty.
+:Solution 2:  Configure the Internet browser or HTTP tool to use a valid and trusted TLS client certificate.
               The client certificate must be signed by the authority whose CA certificate was provided in the server
               configuration.
 :Explanation: Providing the ``STORK_REST_TLS_CA_CERTIFICATE`` environment variable or the ``--rest-tls-ca`` flag turns
-              on the TLS client certificate verification. The HTTP requests must be assigned with the valid and trusted
-              HTTP certificate signed by the authority whose CA certificate was provided in the server configuration.
-              Otherwise, the request will be rejected. This option is dedicated to improving server security by limiting
-              access to only trusted users. You shouldn't use it if you don't have a CA configured or want to allow to
+              on TLS client certificate verification. HTTP requests must be assigned with a valid and trusted
+              HTTP certificate, signed by the authority whose CA certificate was provided in the server configuration;
+              otherwise, the request is rejected. This option improves server security by limiting
+              access to only trusted users; it should not be used if there is no CA configured, or if it is desirable to allow
               login to the Stork server from any computer without prior setup.
 
 --------------
 
-:Issue:       Server doesn't start and prints the ``permission denied for schema public`` message.
-:Description: The fresh installation of the Stork server is made, and the database is empty. The Stork server doesn't
-              start, and the Stork tool returns an error on the database migration. The logs reveal the denied access to
+:Issue:       The Stork server fails to start and returns the following error: ``permission denied for schema public``.
+:Description: A fresh installation of the Stork server is made and the database is empty. However, the Stork server does not
+              start and the Stork tool returns an error on the database migration. The logs reveal denied access to
               the schema public.
-:Solution 1.: Execute the ``GRANT ALL ON DATABASE stork_db TO stork_user;`` on the Stork database (replace ``stork_db``
+:Solution 1:  Execute ``GRANT ALL ON DATABASE stork_db TO stork_user;`` on the Stork database (replace ``stork_db``
               and ``stork_user`` with the proper names).
-:Solution 2.: Perform migration using Stork tool with the maintenance (e.g., superuser) database credentials.
-:Explanation: In some Postgres installations (by default in Postgres 15 and above), the ``CREATE`` permission is not
-              initially granted to all users except the database owner. The stork server needs this permission to
-              perform the database migration on startup. You can grant this permission or use the Stork tool to migrate
-              the schema as the maintenance database user (e.g., superuser).
+:Solution 2:  Perform the migration using the Stork tool with the maintenance (e.g., super-admin) database credentials.
+:Explanation: In some Postgres installations (by default in Postgres 15 and above), the ``CREATE`` permission is only
+              initially granted to the database owner. The Stork server needs this permission to
+              perform the database migration on startup. This permission can be granted manually, or the Stork tool can be used to migrate
+              the schema as the maintenance database user (e.g., super-admin).
 
 --------------
 
-:Issue:       Stork server doesn't start with the following error:
+:Issue:       The Stork server fails to start and returns the following error:
               ``Cannot start the Stork Server: failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: file too short`` or
-              ``Cannot start the Stork Server: failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``
+              ``Cannot start the Stork Server: failed to load hooks from directory: '[HOOK DIRECTORY]': plugin.Open("[HOOK DIRECTORY]/[FILENAME]"): [HOOK DIRECTORY]/[FILENAME]: invalid ELF header``.
 :Solution:    Remove the given file from the hook directory.
-:Explanation: The file under a given path is not valid Stork hook.
+:Explanation: The file under the given path is not a valid Stork hook.
 
 --------------
 
-:Issue:       Stork server doesn't start with the following error:
-              ``Cannot start the Stork Server: incompatible hook version: 1.0.0``
+:Issue:       The Stork server fails to start and returns the following error:
+              ``Cannot start the Stork Server: incompatible hook version: 1.0.0``.
 :Solution:    Update the given hook.
-:Explanation: The hook is out-of-date. It's incompatible with the Stork core
+:Explanation: The hook is out-of-date and is incompatible with the Stork core
               application.
 
 --------------
 
-:Issue:       Stork server doesn't start with the following error:
-              ``Cannot start the Stork Server: plugin: symbol Version not found in plugin``
+:Issue:       The Stork server fails to start and returns the following error:
+              ``Cannot start the Stork Server: plugin: symbol Version not found in plugin``.
 :Solution:    Remove or fix the given file.
-:Explanation: Hook directory contains Go plugin but that is not a hook; Hook
-              doesn't contain required symbol.
+:Explanation: The hook directory contains the Go plugin but not the hook; the Go hook
+              does not contain a required symbol.
 
 --------------
 
-:Issue:       Stork server doesn't start with the following error:
-              ``Cannot start the Stork Server: hook library dedicated for another program: Stork Agent``
+:Issue:       The Stork server fails to start and returns the following error:
+              ``Cannot start the Stork Server: hook library dedicated for another program: Stork Agent``.
 :Solution:    Move the incompatible hooks to a separate directory.
-:Explanation: Stork server requires the hook directory to contain only server
-              hooks. The above error message indicates that the hook directory
+:Explanation: The Stork server requires the hook directory to contain only server
+              hooks. The error message indicates that the hook directory
               contains hooks dedicated to the Stork agent.
 
 --------------
 
-:Issue:       Stork server starts but the hooks aren't loaded. The logs comprise
+:Issue:       The Stork server starts but the hooks are not loaded. The logs include
               the following message:
-              ``Cannot find plugin paths in: /usr/lib/stork-server/hooks: cannot list hook directory: /usr/lib/stork-server/hooks: open /usr/lib/stork-server/hooks: no such file or directory``
+              ``Cannot find plugin paths in: /usr/lib/stork-server/hooks: cannot list hook directory: /usr/lib/stork-server/hooks: open /usr/lib/stork-server/hooks: no such file or directory``.
 :Solution:    Create the hook directory or change the path in the configuration.
-:Explanation: Hook directory doesn't exist.
+:Explanation: The hook directory does not exist.
 
 --------------
 
-:Issue:       Stork server doesn't start with the following error:
-              ``Cannot start the Stork Server: open [HOOK DIRECTORY]: permission denied cannot list hook directory``
-:Solution:    Grant the right for read the hook directory for the Stork user.
+:Issue:       The Stork server fails to start and returns the following error:
+              ``Cannot start the Stork Server: open [HOOK DIRECTORY]: permission denied cannot list hook directory``.
+:Solution:    Grant read access to the hook directory to the ``stork-server`` user.
 :Explanation: The hook directory is not readable.
 
 --------------
 
-:Issue:       Stork server doesn't start with the following error:
-              ``Cannot start the Stork Server: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``
+:Issue:       The Stork server fails to start and returns the following error:
+              ``Cannot start the Stork Server: readdirent [HOOK DIRECTORY]/[FILENAME]: not a directory cannot list hook directory``.
 :Solution:    Change the hook directory path.
-:Explanation: File was found instead of directory under given hook directory path.
+:Explanation: A file was found instead of a directory under the given hook directory path.
 
 
 High Virtual Memory Usage
 =========================
 
-Stork processes allocate large amount of virtual memory. It is a common
-situation in applications written in Golang. The Go runtime uses the virtual
-memory to manage the memory efficiently. The virtual memory is not the same as
-the physical memory. The size of the reserved virtual memory depends on the
-internal implementation details of the Go memory allocator. The high value of
-virtual memory usage is not alarming as long as the real memory usage is low.
+Stork processes allocate a large amount of virtual memory, which is a common
+situation for applications written in Golang. The Go runtime uses virtual
+memory to manage memory efficiently. Virtual memory is not the same as
+physical memory. The size of the reserved virtual memory depends on the
+internal implementation details of the Go memory allocator. A high value of
+virtual memory usage is not alarming, as long as real memory usage is low.
 
-You can examine the virtual memory usage using the ``ps aux`` command. The
-virtual memory usage is displayed in the ``VSZ`` column. There is also the
-``RSS`` column that shows the physical memory usage.
+Virtual  and physical memory usage can be examined using the ``ps aux`` command.
+Virtual memory usage is displayed in the ``VSZ`` column; the
+``RSS`` column shows physical memory usage.
 
-The usual virtual memory usage of the Stork agent on machine with 16GB RAM,
+The usual virtual memory usage of the Stork agent on a machine with 16GB RAM,
 Go 1.22.4, and Ubuntu 22.04 is about 2.5-3GB.
 The real memory usage is relatively low, about 10-40MB for Kea deployments with
-dozen of subnets and host reservations and 40-80MB for the deployments with
+dozens of subnets and host reservations and 40-80MB for deployments with
 thousands of subnets and host reservations.
 
 References:
