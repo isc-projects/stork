@@ -10,7 +10,7 @@
 
 .. _man-stork-agent:
 
-``stork-agent`` - Stork Agent to Monitor BIND 9 and Kea services
+``stork-agent`` - Stork Agent to Monitor BIND 9 and Kea Services
 ----------------------------------------------------------------
 
 Synopsis
@@ -24,16 +24,18 @@ Description
 ~~~~~~~~~~~
 
 The ``stork-agent`` is a tool that operates on systems that are running BIND 9
-or Kea services. The Stork typically server connects to the Stork agent and uses it to
+or Kea services. The Stork server typically connects to the Stork agent and uses it to
 monitor services remotely, but can also act as a stand-alone statistics exporter to
 Prometheus.
 
 Arguments
 ~~~~~~~~~
 
-Stork agent's behavior can be controlled with command-line switches and/or
+
+
+The Stork agent's behavior can be controlled with command-line switches and/or
 environment variables. The environment variables can be set before running
-the agent or they can be loaded from a file using the ``--use-env-file``
+the agent, or they can be loaded from a file using the ``--use-env-file``
 and ``--env-file`` flags. ``stork-agent`` takes the following arguments
 (equivalent environment variables are listed in square brackets,
 where applicable)
@@ -48,13 +50,13 @@ where applicable)
    The path to the hook directory. ``[$STORK_AGENT_HOOK_DIRECTORY]``
 
 ``--bind9-path``
-   The path to BIND 9 config file. Does not need to be specified, unless the location is very uncommon. ``[$STORK_AGENT_BIND9_PATH]``
+   The path to the BIND 9 configuration file. Does not need to be specified, unless the location is uncommon. ``[$STORK_AGENT_BIND9_PATH]``
 
 ``--env-file``
-   Environment file location; applicable only if the use-env-file is provided. The default is ``/etc/stork/agent.env``.
+   The environment file location; applicable only if the ``use-env-file`` is provided. The default is ``/etc/stork/agent.env``.
 
 ``--use-env-file``
-   Read the environment variables from the environment file. The default is ``false``.
+   Instructs ``stork-agent`` to read the environment variables from the environment file. The default is ``false``.
 
 ``-v|--version``
    Returns the software version.
@@ -65,7 +67,7 @@ where applicable)
 Stork server flags:
 
 ``--server-url=``
-   Specifies a URL of the Stork Server receiving the registration request. Optional - can be skipped to suppress automatic registration. ``[$STORK_AGENT_SERVER_URL]``
+   Specifies the URL of the Stork server receiving the registration request. Optional; can be skipped to suppress automatic registration. ``[$STORK_AGENT_SERVER_URL]``
 
 ``--host=``
    Specifies the IP address or hostname to listen on for incoming Stork server connections. ``[$STORK_AGENT_HOST]``
@@ -79,31 +81,31 @@ Stork server flags:
 Prometheus Kea Exporter flags:
 
 ``--prometheus-kea-exporter-address=``
-   Specifies the IP address or hostname on which the agent exports Kea statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]``
+   Specifies the IP address or hostname on which the Stork agent exports Kea statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]``
 
 ``--prometheus-kea-exporter-port=``
-   Specifies the port on which the agent exports Kea statistics to Prometheus. The default is 9547. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT]``
+   Specifies the port on which the Stork agent exports Kea statistics to Prometheus. The default is 9547. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT]``
 
 ``--prometheus-kea-exporter-interval=``
-   Specifies how often the agent collects statistics from Kea, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]``
+   Specifies how often the Stork agent collects statistics from Kea, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]``
 
 ``--prometheus-kea-exporter-per-subnet-stats=``
-   Enable or disable collecting per subnet stats from Kea. The default is true. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]``
+   Enables or disables collecting per-subnet stats from Kea. The default is true. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]``
 
 Prometheus BIND 9 Exporter flags:
 
 ``--prometheus-bind9-exporter-address=``
-   Specifies the IP address or hostname on which the agent exports BIND 9 statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]``
+   Specifies the IP address or hostname on which the Stork agent exports BIND 9 statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]``
 
 ``--prometheus-bind9-exporter-port=``
-   Specifies the port on which the agent exports BIND 9 statistics to Prometheus. The default is 9119. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]``
+   Specifies the port on which the Stork agent exports BIND 9 statistics to Prometheus. The default is 9119. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]``
 
 Stork logs at INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
 
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. Use ``CLICOLOR_FORCE`` to
-enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
+enforce enabling or disabling ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
 ``false`` to disable colorization even if the TTY is attached.
 
 The highest priority always have the command line flags. The parameters from the
@@ -119,33 +121,33 @@ To start the Stork agent and register it automatically with the Stork server, ru
 
    $ stork-agent --server-url=http://stork-server.example.com:8080 --host=stork-agent.example.com --port=8080
 
-If the Stork agent is already registered with the Stork server, you can start it without the registration:
+If the Stork agent is already registered with the Stork server, it can be started with this command:
 
 .. code-block:: bash
 
    $ stork-agent --host=stork-agent.example.com --port=8080
 
-By default, the Stork agent receives the server requests and exports metrics to Prometheus. To listen only the
+By default, the Stork agent receives server requests and exports metrics to Prometheus. To only listen to the
 Stork server, run the following command:
 
 .. code-block:: bash
 
    $ stork-agent (...) --listen-stork-only
 
-To listen Prometheus requests only, run the following command:
+To only listen to Prometheus requests, run the following command:
 
 .. code-block:: bash
 
    $ stork-agent (...) --listen-prometheus-only
 
-If you observe any performance issues with exporting Kea statistics to Prometheus, you can increase the interval between
-the statistics collection or disable collecting per subnet stats. For example:
+If performance issues are observed with exporting Kea statistics to Prometheus, the interval between
+statistics collection can be increased, or collection of per-subnet stats can be disabled. For example:
 
 .. code-block:: bash
 
    $ stork-agent (...) --prometheus-kea-exporter-interval=30 --prometheus-kea-exporter-per-subnet-stats=false
 
-By default, the Stork agent reads the arguments only from the command line. To read the arguments from the environment
+By default, the Stork agent reads arguments only from the command line. To read arguments from the environment
 file, run the following command:
 
 .. code-block:: bash
@@ -163,17 +165,17 @@ Registration
 ~~~~~~~~~~~~
 
 The ``register`` command runs the agent registration using a specified server token and exits.
-After the successful registration, run the agent normally. The ``register`` command takes the
+After successful registration, run the agent normally. The ``register`` command takes the
 following arguments:
 
 ``-u|--server-url=``
-   Specifies a URL of the Stork Server receiving the registration request. ``[$STORK_AGENT_SERVER_URL]``
+   Specifies the URL of the Stork server receiving the registration request. ``[$STORK_AGENT_SERVER_URL]``
 
 ``-t|--server-token=``
    Specifies the access token used by the Stork server to allow registration of the Stork agents. ``[$STORK_AGENT_SERVER_TOKEN]``
 
 ``-a|--agent-host=``
-   Specifies an IP address or DNS name the host where the agent is running. E.g.: localhost or 10.11.12.13. ``[$STORK_AGENT_HOST]``
+   Specifies an IP address or DNS name of the host where the agent is running, e.g. localhost or 10.11.12.13. ``[$STORK_AGENT_HOST]``
 
 ``-p|--agent-port=``
    Specifies the port on which the agent listens for incoming connections. The default is 8080. ``[$STORK_AGENT_PORT]``
@@ -181,7 +183,7 @@ following arguments:
 ``-n|--non-interactive``
    Disables the interactive mode. The default is false. ``[$STORK_AGENT_NON_INTERACTIVE]``
 
-To register Stork agent in an interactive mode, run the following command:
+To register the Stork agent in interactive mode, run the following command:
 
 .. code-block:: bash
 
@@ -191,13 +193,13 @@ To register Stork agent in an interactive mode, run the following command:
    >>> Enter IP address or FQDN of the host with Stork agent (for the Stork server connection) [hostname]: 
    >>> Enter port number that Stork Agent will listen on [8080]: 
 
-To register Stork agent with the server token providing all the necessary information through CLI arguments, run the following command:
+To register the Stork agent with the server token, providing all the necessary information through CLI arguments, run the following command:
 
 .. code-block:: bash
 
    $ stork-agent register --server-url=http://stork-server.example.com:8080 --server-token=1234567890 --agent-host=stork-agent.example.com --agent-port=8080
 
-To register Stork agent without the server token using the environment variables, run the following commands:
+To register the Stork agent without the server token, using the environment variables, run the following commands:
 
 .. code-block:: bash
 
