@@ -180,8 +180,8 @@ simulator
 dns-proxy-server
    This is used only when the Stork agent from a container connects to a locally running
    server. The Kea/BIND 9 containers use internal Docker hostnames that the host
-   cannot resolve. The demo runs in the background of the DNS proxy that translates the
-   Docker hostnames to valid IP addresses.
+   cannot resolve. To translate Docker hostnames to valid IP addresses, the demo
+   launches a DNS proxy in the background.
 
 .. note::
 
