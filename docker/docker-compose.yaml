@@ -36,6 +36,7 @@ services:
       - ./docker/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
       - ./docker/tools/supervisor_monitor.py:/usr/lib/supervisor_monitor.py
+      - authentication-icons:/usr/share/stork/www/assets/authentication-methods
     depends_on:
       - postgres
 
@@ -55,6 +56,8 @@ services:
       API_PORT: 8080
     depends_on:
       - server
+    volumes:
+      - authentication-icons:/usr/share/stork/www/assets/authentication-methods
 
   webui-apache:
     restart: always
@@ -548,3 +551,10 @@ networks:
     ipam:
       config:
         - subnet: 3001:db8:1::/64
+
+# Volumes shared cross services
+volumes:
+  # Volume where the server hooks unpack the authentication icons.
+  # As webUI is a separate service, it needs to have access to the icons that
+  # are unpacked by the server.
+  authentication-icons:
