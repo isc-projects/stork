@@ -284,7 +284,7 @@
         <mxCell id="LTtG2cjOAy06JSQsf4y8-100" value="" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#505050;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.security.lock_protected;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
           <mxGeometry x="22.694999999999965" y="63.94" width="14.61" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="LTtG2cjOAy06JSQsf4y8-101" value="Support TLS" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
+        <mxCell id="LTtG2cjOAy06JSQsf4y8-101" value="TLS support" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
           <mxGeometry x="65" y="57.629999999999995" width="90" height="30" as="geometry" />
         </mxCell>
         <mxCell id="LTtG2cjOAy06JSQsf4y8-102" value="" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.security.lock_unprotected;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
@@ -314,7 +314,7 @@
         <mxCell id="LTtG2cjOAy06JSQsf4y8-142" value="Client cert supported" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
           <mxGeometry x="65" y="175.12" width="130" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="LTtG2cjOAy06JSQsf4y8-112" value="Number of connection" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
+        <mxCell id="LTtG2cjOAy06JSQsf4y8-112" value="Connection number" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
           <mxGeometry x="65" y="145.12" width="140" height="30" as="geometry" />
         </mxCell>
         <mxCell id="LTtG2cjOAy06JSQsf4y8-141" value="" style="sketch=0;aspect=fixed;pointerEvents=1;shadow=0;dashed=0;html=1;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;shape=mxgraph.mscae.enterprise.connectors;rotation=-90;" parent="LTtG2cjOAy06JSQsf4y8-93" vertex="1">
@@ -413,7 +413,7 @@
         <mxCell id="LTtG2cjOAy06JSQsf4y8-24" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://gitlab.isc.org/isc-projects/stork/-/raw/master/doc/static/stork-square-200px.png;imageBackground=default;" parent="1" vertex="1">
           <mxGeometry x="330" y="280.01" width="22.71" height="19.99" as="geometry" />
         </mxCell>
-        <mxCell id="LTtG2cjOAy06JSQsf4y8-14" value="BIND9&amp;nbsp; Daemon" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+        <mxCell id="LTtG2cjOAy06JSQsf4y8-14" value="BIND 9 Daemon" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
           <mxGeometry x="700" y="280.01" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="LTtG2cjOAy06JSQsf4y8-27" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://gitlab.isc.org/uploads/-/system/project/avatar/1/Bind_9_Mark_ISC_Blue.png;imageBackground=default;" parent="1" vertex="1">
