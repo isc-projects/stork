@@ -49,7 +49,7 @@ Stork uses the ``status-get`` command to communicate with Kea.
 Stork requires the premium Host Commands (``host_cmds``) hook library to be loaded by the Kea instances to retrieve host
 reservations stored in an external database. Stork works without the Host Commands hook library, but is not able to display
 host reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
-libraries; however, managing (adding, updating, deleting) host reservations with Stork requires the ``host_cmds`` to be loaded on all
+libraries; however, managing (adding, updating, deleting) host reservations with Stork requires the ``host_cmds`` hooks to be loaded on all
 Kea instances where these host reservations belong.
 
 Stork requires the premium Subnet Commands (``subnet_cmds``) hook library to be loaded by the Kea instances
@@ -1404,86 +1404,86 @@ overflows. Stork is not designed to operate on non-POSIX platforms, so Windows i
 and will not be supported. Compiling Stork components for Windows is discouraged because Golang's standard library
 may suppress some errors related to file operations on the NTFS filesystem.
 
-Security checklist for the Stork configuration
-==============================================
+Security Checklist for Stork Configurations
+===========================================
 
 The following list provides a set of recommendations to secure the Stork server and agent installations. The list is not
 exhaustive and should be adjusted to the specific deployment requirements.
 
-Stork server
-------------
+The Stork Server
+----------------
 
-The Stork server configuration is described in details in the :ref:`server-setup` section.
+The Stork server configuration is described in detail in the :ref:`server-setup` section.
 
-- Run Stork server as a non-privileged, dedicated user.
-- Limit the Stork server user rights only to the necessary directories and files.
+- Run the Stork server as a non-privileged, dedicated user.
+- Limit the Stork server user rights to only the necessary directories and files:
 
-   - ``/etc/stork/server.env`` - the configuration file (read only)
-   - ``/etc/stork/versions.json`` - the EOL versions file (read only)
-   - ``/share/stork/www`` - the static web files (read only)
+   - ``/etc/stork/server.env`` - the configuration file (read-only)
+   - ``/etc/stork/versions.json`` - the EOL versions file (read-only)
+   - ``/share/stork/www`` - the static web files (read-only)
    - ``/share/stork/www/index.html`` - the main web page (write and read)
    - ``/share/stork/www/assets/authentication-methods`` - the authentication icons (write and read)
 
-- (Optional) Setup the Stork server as a systemd service to start the server automatically after the system reboot, to
-  restart the server in case of the crash, and to manage the server's logs.
+- (Optional) Set up the Stork server as a ``systemd`` service to restart the server automatically after a system reboot
+  or crash and to manage the server's logs.
 - (Advanced) Run the Stork server behind a reverse proxy to protect the server from direct access from the Internet, to
-  enable more extensive logging, or restrict access to the server from specific IP addresses.
-- Setup TLS/SSL certificate for the web UI and REST API.
+  enable more extensive logging, or to restrict access to the server from specific IP addresses.
+- Set up TLS/SSL certificates for the web UI and REST API.
 
 If the metrics endpoint is enabled:
 
-- Ensure the ``/metrics`` endpoint is not accessible from the Internet and allowed only for the Prometheus server. It
-  may be achieved by setting up the firewall rules or using the reverse proxy.
+- Ensure the ``/metrics`` endpoint is not accessible from the Internet and is allowed only for the Prometheus server. This
+  may be achieved by setting up firewall rules or using a reverse proxy.
 
-During the Stork server operation:
+During Stork server operation:
 
-- Verify the agent token fingerprints before authorizing the agent registration.
-- Disable the agent registration in settings if you don't expect new agents to register.
-- Force users to change their passwords if you suspect they have been compromised.
+- Verify the agent token fingerprints before authorizing an agent registration.
+- Disable agent registration in settings if new agents are not anticipated.
+- Force users to change their passwords if they may have been compromised.
 
-Stork agent
------------
+The Stork Agent
+---------------
 
-See the :ref:`agent-configuration-settings` section for the Stork agent configuration details.
+See the :ref:`agent-configuration-settings` section for Stork agent configuration details.
 
-- Run Stork agent as a dedicated user.
-- Limit the Stork agent user rights only to the necessary directories and files. No one except the Stork agent user and
-  administrator should have access to the agent's data directory.
+- Run the Stork agent as a dedicated user.
+- Limit the Stork agent user rights to only the necessary directories and files. No one except the ``stork-agent`` user and
+  the administrator should have access to the agent's data directory:
 
-  - ``/etc/stork/agent.env`` - the configuration file (read only)
-  - ``/etc/stork/agent-credentials.json`` - the agent credentials file (read only)
+  - ``/etc/stork/agent.env`` - the configuration file (read-only)
+  - ``/etc/stork/agent-credentials.json`` - the agent credentials file (read-only)
   - ``/var/lib/stork`` - the agent's data directory (write and read)
-  - the system process details (i.e., the current working directory, the command line arguments).
+  - the system process details (i.e., the current working directory, the command-line arguments).
 
 - The Stork agent must have rights to read the system process list.
-- (Optional) Setup the Stork agent as a systemd service to start the server automatically after the system reboot, to
-  restart the server in case of the crash, and to manage the server's logs.
+- (Optional) Set up the Stork agent as a ``systemd`` service to restart the server automatically after a system reboot or
+  crash and to manage the server's logs.
 
 If the Stork agent acts as a Prometheus exporter:
 
 - Ensure the connection between the Stork agent and Prometheus is secure and cannot be intercepted. These two services
-  exchange data over the network on unsecure protocol (HTTP).
+  exchange data over the network via an insecure protocol (HTTP).
 
 Monitoring Kea
 ~~~~~~~~~~~~~~
 
-For more details on monitoring Kea with Stork, see article in the
-:ref:`securing-connections-between-agent-and-kea-ca` section.
+For more details on monitoring Kea with Stork, refer to the
+:ref:`securing-connections-between-agent-and-kea-ca` section of this document.
 
 - The Stork agent must have rights to read:
 
    - the Kea configuration files (e.g., ``/etc/kea/kea-ctrl-agent.conf``)
    - the Kea logs (e.g., ``/var/log/kea/kea-dhcp4.log``)
 
-- Kea Control Agent must have configured control sockets for each monitored Kea daemon (``control-sockets`` property).
-   See the `Configuration section in Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_ for
-   an example configuration.
-- All monitored Kea daemons must have the ``control-socket`` property set in the configuration file. Look for the
-  reference in the `Management API section in Kea ARM <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_.
+- The Kea Control Agent must have configured control sockets for each monitored Kea daemon (the ``control-sockets`` property).
+   See the `Configuration section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/agent.html#configuration>`_ for
+   a sample configuration.
+- All monitored Kea daemons must have the ``control-socket`` property set in the configuration file. Please refer to
+  the `Management API section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server>`_ for more details.
 
-If Kea Control Agent listens on non-localhost interfaces, it is recommended to:
+If the Kea Control Agent listens on non-localhost interfaces, it is recommended to:
 
-- Configure the Basic Auth in Kea CA. Set the credentials for Stork agent in its credentials file (``/etc/stork/agent-credentials.json``).
+- Configure the Basic Auth in Kea CA by setting the credentials for the Stork agent in its credentials file (``/etc/stork/agent-credentials.json``).
 - Configure the Kea REST API to be served over TLS by setting the ``trust-anchor``, ``cert-file``, and ``key-file`` properties.
 
 Monitoring BIND 9
@@ -1497,19 +1497,19 @@ Monitoring BIND 9
 
 If BIND 9 listens on non-localhost interfaces, it is recommended to:
 
-- Secure the its control channel by setting the RNDC key.
+- Secure its control channel by setting the RNDC key.
 
 PostgreSQL
 ----------
 
 Check the :ref:`securing-the-database-connection` section for details on how to configure the database.
 
-- Create a dedicated user for the Stork server. Use the strong password for the user.
-- Create a dedicated database for the Stork server
+- Create a dedicated user for the Stork server and assign a strong password.
+- Create a dedicated database for the Stork server.
 - Schedule regular backups of the database.
 - (Advanced) Use a separate user to perform the database migrations and run the Stork server. The application user should
-  have only the rights to perform queries (SELECT, INSERT, UPDATE, DELETE) on the database tables without the rights to
-  create or drop tables. This approach requires to manually update the database schema before starting the Stork server
+  have only the rights to perform queries (SELECT, INSERT, UPDATE, DELETE) on the database tables, without the rights to
+  create or drop tables. This approach requires the database schema to be manually updated before starting the Stork server
   using the Stork tool.
 
 If the database is not installed on the same machine as the Stork server:
