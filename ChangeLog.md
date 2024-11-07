@@ -1,3 +1,118 @@
+Stork 2.0.0 released on 2024-11-13.
+
+* 471 [perf] slawek
+
+    Solved a problem with consuming abnormally much memory if the Stork
+    server monitored multiple Kea servers that simultaneously managed
+    thousands of shared networks.
+    (Gitlab #1552)
+
+* 470 [func] marcin
+
+    Conditionally set ddns-use-conflict-resolution and
+    ddns-conflict-resolution-mode, depending on the configured
+    Kea version. Previously a user could set one of these
+    parameters for the Kea versions that did not support them,
+    causing configuration errors.
+    (Gitlab #1536)
+
+* 469 [bug] slawek
+
+    Fixed a migration to downgrade a database version that failed if any
+    host reservation was specified both in a configuration file and in a
+    database.
+    (Gitlab #1553)
+
+* 468 [func] slawek
+
+    Upgraded Grafana and Prometheus versions. Fixed a bug with fetching
+    statistics from a single DHCPv6 daemon. Added Grafana links for IPv6
+    subnets.
+    (Gitlab #1322, #1529)
+
+* 467 [build] slawek
+
+    Build Stork DEB and RPM packages with GLIBC 2.31 to preserve
+    compatibility with legacy operating systems.
+    (Gitlab #1538)
+
+* 466 [func] piotrek
+
+    Implemented a new feature to inform about used Kea, Bind9
+    and Stork versions. There is a new view where all found
+    versions are summarized together with information about
+    current ISC software releases.
+    (Gitlab #222)
+
+* 465 [bug] piotrek
+
+    Fixed a bug where login was not possible using
+    the LDAP authentication method.
+    (Gitlab #1540)
+
+* 464 [bug] slawek
+
+    Fixed a ping request handling issue in the agent registration flow
+    with the server token. It caused an error at the end of the
+    registration attempt.
+    (Gitlab #1491)
+
+* 463 [func] slawek
+
+    Added a possibility to force users to change a password. The default
+    administrator must always change password when logging in for the
+    first time.
+    (Gitlab #1385)
+
+* 462 [build] marcin
+
+    Changes in DEB packages to use useradd instead of adduser command.
+    The former is available by default on deb-based distributions but
+    the latter isn't, causing potential issues with installing Stork
+    on these systems.
+    (Gitlab #1537)
+
+* 461 [func] marcin
+
+    Return errors reported by Kea to a Stork user unsuccessfully
+    updating Kea configuration.
+    (Gitlab #1535)
+
+* 460 [func] slawek
+
+    Refactored the application detection loop in the Stork agent to
+    prevent continuous logging of the same detection errors. Removed the
+    log message about successfully finding the BIND 9 configuration.
+    Stork agent no longer logs the RNDC key status for BIND 9 statistics
+    channel.
+    (Gitlab #1422, #1388, #1384)
+
+* 459 [func] marcin
+
+    Stork passwords can contain space characters.
+    (Gitlab #1532)
+
+* 458 [func] marcin
+
+    Stork server detects the directory with static UI files relative
+    to the stork-server binary when rest-static-files-dir is
+    not specified. It eliminates the need to specify this parameter
+    when Stork server is installed in a custom directory.
+    (Gitlab #1434)
+
+* 457 [build] marcin
+
+    Moved High Availability monitoring panel to the bottom of the
+    Kea daemon tab. This change prevents browser scroller's
+    position change when the HA status is updated.
+    (Gitlab #1472)
+
+* 456 [func] marcin
+
+    Added possibility to set custom welcome message in the Stork
+    login page.
+    (Gitlab #1431)
+
 Stork 1.19.0 released on 2024-10-02.
 
 * 455 [func] marcin
