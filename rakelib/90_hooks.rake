@@ -317,7 +317,7 @@ namespace :hook do
         repositories"
     task :sync => [GIT] do
         # Update the hook submodules.
-        sh GIT, "submodule", "update", "--remote", "--recursive"
+        sh GIT, "submodule", "update", "--recursive"
     end
 
     desc "Prepare release tarball with Stork hook sources"
