@@ -1,43 +1,43 @@
 .. _ci-images:
 
 *********
-CI images
+CI Images
 *********
 
 The GitLab CI in the Stork project is extensively used to test, build, and
-release on multiple operating systems and architectures. Each Gitlab CI
-pipeline runs a new Docker container. Stork has some big dependencies as Java,
-Python, and Ruby which makes the official Docker images shared by Docker Hub or
-other registries to not be appropriate. We needed to prepare our own images with
-all the dependencies installed. It allows us to limit the amount of
+release the software on multiple operating systems and architectures. Each GitLab CI
+pipeline runs a new Docker container. Stork has some major dependencies: Java,
+Python, and Ruby, which make the official Docker images shared by Docker Hub or
+other registries. Preparing our own images with
+all the dependencies installed allows our developers to limit the amount of
 transferred data and speed up the execution of the CI pipelines.
 
 .. warning::
 
     The images tagged as ``latest`` are legacy. They should not be overwritten
-    because their Dockerfiles were lost (it seems they were not prepared from
-    the images stored in the repository).
-    The explicit tags should be used instead of them.
+    because their Dockerfiles were lost; they were not prepared from
+    the images stored in the repository.
+    Use explicit tags instead of the legacy images.
 
 The Dockerfiles of CI images are located in the ``docker/images/ci``
-directory. The Rake tasks related to the CI images are defined in the
+directory. Rake tasks related to the CI images are defined in the
 ``rakelib/45_docker_registry.rake`` file.
 
-List of CI images
+List of CI Images
 =================
 
 Currently available images:
 
-    - ``debian.Dockerfile`` - Debian-based image, it is a default base for CI task.
+    - ``debian.Dockerfile`` - Debian-based image; a default base for CI tasks.
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
       registry as the ``ci-base`` image.
-    - ``redhat-ubi8.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile``) - RedHat-based image
+    - ``redhat-ubi8.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile``) - RedHat-based image.
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
       registry as the ``pkgs-redhat-ubi`` image (prior tag ``5``: ````pkgs-redhat-ubi8``).
-    - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines
+    - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines.
       Available only for AMD64 architecture. Stored in the registry as the
       ``pkgs-compose`` image.
-    - ``cloudsmith.Dockerfile`` - Image for Cloudsmith CLI for the release purposes
+    - ``cloudsmith.Dockerfile`` - Image for Cloudsmith CLI for release purposes.
       Available only for AMD64 architecture. Stored in the registry as the
       ``pkgs-cloudsmith`` image.
     - ``alpine.Dockerfile`` - Alpine-based image. Available for AMD64 and ARM64
@@ -46,17 +46,17 @@ Currently available images:
 Removed images:
 
     - ``ubuntu-18.04.Dockerfile`` - Ubuntu-based image. It was initially used as a
-      default base for CI task, but it was replaced with ``debian.Dockerfile``.
+      default base for CI tasks, but it was replaced by ``debian.Dockerfile``.
 
 Deprecated images:
 
     The Dockerfiles for the images are missing but they are stored in the
     registry. Intended for removal.
 
-    - ``ci-danger`` - Image for Danger CI tool. It was replaced with
+    - ``ci-danger`` - Image for the Danger CI tool. It was replaced with the
       ``debian.Dockerfile`` (``ci-base``) image.
     - ``ci-postgres`` - Image for PostgreSQL database. It was used to perform
-      the backend unit tests in the CI pipeline. It was replaced with the
+      backend unit tests in the CI pipeline. It was replaced by the
       official Postgres image (based on Alpine).
 
 Update the Docker CI Images
@@ -66,29 +66,29 @@ To update the Docker CI images, follow these steps:
 
 1. Edit the specific Dockerfile.
 2. Check the next free tag number in the GitLab registry. Specify it in the
-   ``TAG`` variable. Don't override existing tags (always keep the previous
-   version around) and don't use the ``latest``  keyword, unless you really
-   know what you're doing. Use incremented tags.
-   The tags should be consistent across all images. You should assign
-   the same tag to all images that are updated in the same ticket. It means
-   you should pick the higher tag number from the registry and increment it by
+   ``TAG`` variable. Do not override existing tags (always keep the previous
+   version around), and do not use the ``latest``  keyword unless absolutely
+   confident. Use incremented tags.
+   The tags should be consistent across all images. Assign
+   the same tag to all images that are updated in the same ticket, meaning
+   pick the highest tag number from the registry and increment it by
    one.
 
    For example: the registry contains two images A and B. The image A has the
    tag ``2`` and the image B has the tag ``1`` (because there were no changes
-   in the last update). If you update the A and B images now, you should assign
+   in the last update). When updating the A and B images, assign
    the tag ``3`` to both of them.
    
 3. Run the specific Rake task with the ``DRY_RUN`` set to ``true``:
 
-    See below for the full list of the available commands.
+    See below for the full list of available commands.
 
     .. code-block:: console
 
         $ rake push:debian TAG=42 DRY_RUN=true
         $ rake push:rhel TAG=42 DRY_RUN=true
 
-4. Check if the build was successful.
+4. Check whether the build was successful.
 5. If the ``DRY_RUN`` was set to ``true``, the image is available locally. Call
    the below command to run the container and attach to it:
 
@@ -99,12 +99,12 @@ To update the Docker CI images, follow these steps:
         $ docker run -it registry.gitlab.isc.org/isc-projects/stork/ci-base:42
 
 6. Check if the container is working as expected.
-7. If everything is OK, login to the registry.
+7. If everything is OK, log into the registry.
 
-    1. Create a new access token to the registry.
+    1. Create a new access token for the registry.
 
         Open `the Access Token GitLab page <https://gitlab.isc.org/-/profile/personal_access_tokens>`_
-        and add a new token with the 1-day validity (recommended) and the
+        and add a new token with a 1-day validity (recommended) and the
         ``read_registry`` and ``write_registry`` scopes. Copy the token value.
 
     2. Login to the registry.
@@ -126,10 +126,10 @@ The newly pushed image is available in the GitLab registry.
 
 .. note::
 
-    You can observe the exclamation mark near the image tag with the hint
+    An exclamation mark may appear near the image tag with the hint
     message (visible on hover) - ``Invalid tag: missing manifest digest``.
     It is caused by
-    `a bug in the Gitlab UI <https://gitlab.com/groups/gitlab-org/-/epics/10434>`_.
+    `a bug in the GitLab UI <https://gitlab.com/groups/gitlab-org/-/epics/10434>`_.
 
 The following Rake tasks are available:
 
@@ -138,7 +138,7 @@ The following Rake tasks are available:
 - ``rake push:alpine`` - builds and pushes the image based on Alpine.
 - ``rake push:compose`` - builds and pushes the image based on official
   Docker image (includes docker-compose).
-- ``rake push:cloudsmith`` - builds and pushes the image with the CloudSmith tools
+- ``rake push:cloudsmith`` - builds and pushes the image with the Cloudsmith tools
 
 Changelog
 =========
@@ -152,7 +152,7 @@ The image names are the file names of their Dockerfiles.
 
         Introduced in the #1512 ticket to upgrade overall dependencies.
         Upgraded Go to 1.23.1, NodeJS 20, and Protoc to 24.4. Removed the FPM
-        dependencies i.e., tar.
+        dependencies, i.e. tar.
 
     - ``redhat-ubi.Dockerfile``:
 
@@ -166,15 +166,15 @@ The image names are the file names of their Dockerfiles.
         Introduced in #1328 ticket to add the missing ``protoc`` dependency.
 
         - Added: protoc 24
-        - Update: NodeJS 20 and NPM 10
+        - Updated: NodeJS 20 and NPM 10
 
     - ``alpine.Dockerfile``:
 
-        Introduced in the #1353 ticket to provide new Alpine 3.18 image,
-        which includes updated Go 1.22.2 package.
+        Introduced in the #1353 ticket to provide the new Alpine 3.18 image,
+        which includes the updated Go 1.22.2 package.
 
         - Base: ``golang:1.22-alpine3.18``
-        - Frozen all dependency versions
+        - Froze all dependency versions
         - Updated to Ruby 3.2, Python 3.11, NPM 9.6, Make 4.4, Binutils-gold 2.40
 
     Other images were not changed.
@@ -202,7 +202,7 @@ The image names are the file names of their Dockerfiles.
     - ``debian.Dockerfile``:
 
         - Base: ``debian:12.1-slim``
-        - Frozen all dependency versions
+        - Froze all dependency versions
         - Updated to Python 3.11, OpenJDK 17, Postgres client 15, Chromium 117,
           build essentials 12
         - Added Ruby 3.1
