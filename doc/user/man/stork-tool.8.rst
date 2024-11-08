@@ -79,7 +79,7 @@ Certificate Management
 
   ``-f|--object=``
   Specifies the object to dump, which can be one of ``cakey``, ``cacert``, ``srvkey``, ``srvcert``, or ``srvtkn``.
-   ``[$STORK_TOOL_CERT_OBJECT]``
+  ``[$STORK_TOOL_CERT_OBJECT]``
 
   ``-i``, ``--file=``
   Specifies the location of the file from which the object is loaded. ``[$STORK_TOOL_CERT_FILE]``
