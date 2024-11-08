@@ -158,7 +158,7 @@ variables are listed in square brackets, where applicable):
    The base URL of the UI. This flag should be set if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. For example: https://www.example.com/admin/stork/ would need to have ``/admin/stork/`` as the base url. The default is ``/``. ``[$STORK_REST_BASE_URL]``
 
 Note that there is no argument for the database password, as command-line arguments can sometimes be seen
-by other users. The password can be sent using the ``STORK_DATABASE_PASSWORD`` variable.
+by other users. The password can be set using the ``STORK_DATABASE_PASSWORD`` variable.
 
 Stork logs on INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
