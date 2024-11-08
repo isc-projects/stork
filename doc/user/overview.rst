@@ -304,7 +304,7 @@ Stork has been designed with security in mind. The following section describes
 the security design and the security features implemented in Stork.
 
 The Stork environment is composed of multiple services: the Stork server, the Stork agent(s), the Kea Control Agent(s), the Kea
-DHCP daemons, the Kea D2 daemon(s), the BIND 9 daemon(s), the PostgreSQL database(s), and Prometheus. Each service has its own security
+DHCP daemon(s), the Kea D2 daemon(s), the BIND 9 daemon(s), the PostgreSQL database(s), and Prometheus. Each service has its own security
 considerations.
 
 The following is a diagram of all Stork components and the services that they might interact with;
@@ -324,7 +324,7 @@ The Stork server is the central component of the Stork environment. It serves th
 protocol (connections no. 1, 4, and 8 on the diagram). The administrator may secure the Stork server by providing a trusted
 SSL/TLS certificate. This is recommended, especially when the Stork server is exposed to a public network.
 The Stork server may share some statistics with the Prometheus monitoring system; it is strongly recommended to limit
-access to the metrics endpoint to the Prometheus server only. The Stork server has no built-in mechanism to do limit the access, but this
+access to the metrics endpoint to the Prometheus server only. The Stork server has no built-in mechanism to limit the access, but this
 may be achieved by using a reverse proxy like NGINX or Apache. See the :ref:`server-setup` section for more details.
 
 The Stork server requires a PostgreSQL database to store its data; the connection to the database may be established
