@@ -6,11 +6,10 @@ CI Images
 
 The GitLab CI in the Stork project is extensively used to test, build, and
 release the software on multiple operating systems and architectures. Each GitLab CI
-pipeline runs a new Docker container. Stork has some major dependencies: Java,
-Python, and Ruby, which make the official Docker images shared by Docker Hub or
-other registries. Preparing our own images with
-all the dependencies installed allows our developers to limit the amount of
-transferred data and speed up the execution of the CI pipelines.
+pipeline runs a new Docker container. To avoid repeatedly fetching the dependencies
+required to build and test Stork (i.e. Java, Python, and Ruby), our developers have
+prepared custom Docker images that include these dependencies. This limits the amount
+of transferred data and speeds up the execution of the CI pipelines.
 
 .. warning::
 
@@ -31,8 +30,9 @@ Currently available images:
     - ``debian.Dockerfile`` - Debian-based image; a default base for CI tasks.
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
       registry as the ``ci-base`` image.
-    - ``redhat-ubi8.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile``) - RedHat-based image.
-      Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
+    - ``redhat-ubi.Dockerfile`` (old names: ``redhat-ubi8.Dockerfile`` and
+      ``redhat-ubi8.Dockerfile``) - RedHat-based image. Available for AMD64 and ARM64
+      architectures from the ``1`` tag. Stored in the
       registry as the ``pkgs-redhat-ubi`` image (prior tag ``5``: ````pkgs-redhat-ubi8``).
     - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines.
       Available only for AMD64 architecture. Stored in the registry as the
