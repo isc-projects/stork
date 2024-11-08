@@ -10,8 +10,8 @@
 
 .. _man-stork-server:
 
-``stork-server`` - Main Stork Server
-------------------------------------
+``stork-server`` - The Main Stork Server
+----------------------------------------
 
 Synopsis
 ~~~~~~~~
