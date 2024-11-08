@@ -30,8 +30,8 @@ Currently available images:
     - ``debian.Dockerfile`` - Debian-based image; a default base for CI tasks.
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
       registry as the ``ci-base`` image.
-    - ``redhat-ubi.Dockerfile`` (old names: ``redhat-ubi8.Dockerfile`` and
-      ``redhat-ubi8.Dockerfile``) - RedHat-based image. Available for AMD64 and ARM64
+    - ``redhat-ubi.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile`` - RedHat-based
+      image. Available for AMD64 and ARM64
       architectures from the ``1`` tag. Stored in the
       registry as the ``pkgs-redhat-ubi`` image (prior tag ``5``: ````pkgs-redhat-ubi8``).
     - ``compose.Dockerfile`` - Allows using Docker-in-Docker in CI pipelines.
