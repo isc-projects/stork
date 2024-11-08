@@ -108,9 +108,10 @@ To control the logging colorization, Stork supports the ``CLICOLOR`` and
 enforce enabling or disabling ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
 ``false`` to disable colorization even if the TTY is attached.
 
-The highest priority always have the command line flags. The parameters from the
-environment file take precedence over the environment variables if the
-``--use-env-file`` flag is used.
+Stork evaluates and prioritizes the settings it receives based on where they are applied.
+Command-line flags have the highest priority; next are parameters from the
+environment file, if the ``--use-env-file`` flag is used. The lowest priority is given
+to environment variables.
 
 Examples
 ~~~~~~~~
