@@ -10,8 +10,8 @@
 
 .. _man-stork-agent:
 
-``stork-agent`` - Stork Agent to Monitor BIND 9 and Kea Services
-----------------------------------------------------------------
+``stork-agent`` - The Stork Agent to Monitor BIND 9 and Kea Services
+--------------------------------------------------------------------
 
 Synopsis
 ~~~~~~~~
