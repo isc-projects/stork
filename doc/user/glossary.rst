@@ -30,9 +30,8 @@ Glossary
    |                       | reservations on a given Kea server, unless overridden at lower |
    |                       | (non-global) configuration levels.                             |
    +-----------------------+----------------------------------------------------------------+
-   | global parameter      | A portion of a Kea configuration that applies to all aspects of|
-   |                       | the server's operation, but that does not include              |
-   |                       | DHCP-specific options.                                         |
+   | global parameter      | A parameter of the global configuration other than DHCP        |
+   |                       | options.                                                       |
    +-----------------------+----------------------------------------------------------------+
    | global DHCP option    | A DHCP option specified within a global configuration of a     |
    |                       | Kea instance.                                                  |
