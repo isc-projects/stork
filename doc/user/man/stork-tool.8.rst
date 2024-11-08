@@ -254,7 +254,7 @@ The following options pertain to both the ``db-`` and ``cert-`` commands:
    Shows a help message.
 
 Note that there is no argument for the database password, as command-line arguments can sometimes be seen
-by other users. The password can be sent using the ``STORK_DATABASE_PASSWORD`` variable.
+by other users. The password can be set using the ``STORK_DATABASE_PASSWORD`` variable.
 
 Stork logs on INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
