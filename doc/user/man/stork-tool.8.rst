@@ -10,8 +10,8 @@
 
 .. _man-stork-tool:
 
-``stork-tool`` - A Tool for Managing Stork Server
--------------------------------------------------
+``stork-tool`` - A Tool for Managing the Stork Server
+-----------------------------------------------------
 
 Synopsis
 ~~~~~~~~
@@ -23,20 +23,20 @@ Description
 
 ``stork-tool`` provides four features:
 
-- Certificate management - it allows the Stork server to export keys, certificates
-  and tokens that are used to secure communication between Stork server
+- Certificate management - The tool allows the Stork server to export keys, certificates,
+  and tokens that are used to secure communication between the Stork server
   and Stork agents.
 
-- Database Creation - it facilitates creating a new database for the Stork Server,
-  and a user that can access this database with a generated password
+- Database Creation - The tool facilitates creating a new database for the Stork server
+  and a user that can access this database with a generated password.
 
-- Database migration - it allows database schema migrations to be performed,
-  overwriting the database schema version and getting its current value.
+- Database migration - The tool allows database schema migrations to be performed,
+  overwriting the existing database schema version and getting its current value.
   There is normally no need to use this, as the Stork server always runs
   the migration scripts on startup.
 
-- Static views deployment - it allows for setting custom content in selected
-  Stork views (e.g., custom welcome message on the login page).
+- Static views deployment - The tool allows custom content to be set in selected
+  Stork views (e.g. a custom welcome message on the login page).
 
 Certificate Management
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +78,7 @@ Certificate Management
   Imports a certificate or other secret data. The options are:
 
   ``-f|--object=``
-   Specifies the object to dump, which can be one of ``cakey``, ``cacert``, ``srvkey``, ``srvcert``, or ``srvtkn``.
+  Specifies the object to dump, which can be one of ``cakey``, ``cacert``, ``srvkey``, ``srvcert``, or ``srvtkn``.
    ``[$STORK_TOOL_CERT_OBJECT]``
 
   ``-i``, ``--file=``
@@ -104,25 +104,27 @@ Certificate Management
 Database Creation
 ~~~~~~~~~~~~~~~~~
 
-``stork-tool`` offers the following commands for creating the database for the Stork Server:
+``stork-tool`` offers the following commands for creating the database for the Stork server:
 
-- ``db-create``       Create new database
+- ``db-create``
+  Creates a new database.
 
-- ``db-password-gen`` Generate random database password
+- ``db-password-gen``
+  Generates a random database password.
 
-Options specific to ``db-create`` command:
+There are several options specific to the ``db-create`` command:
 
 ``-m``, ``--db-maintenance-name``
-   Existing maintenance database name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_NAME]``
+   The existing maintenance database name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_NAME]``
 
 ``-a``, ``--db-maintenance-user``
-   Database administrator user name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_USER_NAME]``
+   The database administrator user name. The default is "postgres". ``[$STORK_DATABASE_MAINTENANCE_USER_NAME]``
 
 ``--db-maintenance-password``
-   Database administrator password; if not specified, the user will be prompted for the password if necessary. ``[$STORK_DATABASE_MAINTENANCE_PASSWORD]``
+   The database administrator password; if not specified, the user is prompted for the password if necessary. ``[$STORK_DATABASE_MAINTENANCE_PASSWORD]``
 
 ``-f``, ``--force``
-   Recreate the database and the user if they exist. The default is false.
+   Recreates the database and the user if they exist. The default is ``false``.
 
 Examples
 ........
@@ -134,7 +136,7 @@ Create a new database ``stork`` with user ``stork`` and a generated password:
     $ stork-tool db-create --db-maintenance-user postgres --db-name stork --db-user stork
     INFO[2022-01-25 17:04:56]             main.go:145   created database and user for the server with the following credentials  database_name=stork password=L82B+kJEOyhDoMnZf9qPAGyKjH5Qo/Xb user=stork
 
-When a database is created using ``psql`` tool, it is sometimes useful to generate
+When a database is created using the ``psql`` tool, it is sometimes useful to generate
 a hard-to-guess password for this database:
 
 .. code-block:: console
@@ -190,19 +192,19 @@ To overwrite the current schema version to an arbitrary value:
 Common Options
 ~~~~~~~~~~~~~~
 
-The following options pertain to both ``db-`` and ``cert-`` commands:
+The following options pertain to both the ``db-`` and ``cert-`` commands:
 
 ``--db-url=``
-   Specifies the URL for the Stork PostgreSQL database. It's mutually exclusive with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
+   Specifies the URL for the Stork PostgreSQL database; mutually exclusive with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
 
 ``-u|--db-user=``
    Specifies the user name for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
 
 ``--db-password=``
-   Specifies the database password for database connections. If not specified, the user will be prompted for the password if necessary. ``[$STORK_DATABASE_PASSWORD]``
+   Specifies the database password for database connections. If not specified, the user is prompted for the password if necessary. ``[$STORK_DATABASE_PASSWORD]``
 
 ``--db-host=``
-   Specifies the name of the host, IP address or a socket path for the database connection. The default value depends on the system. ``[$STORK_DATABASE_HOST]``
+   Specifies the name of the host, IP address, or socket path for the database connection. The default value depends on the system. ``[$STORK_DATABASE_HOST]``
 
 ``-p|--db-port=``
    Specifies the port on which the database is available. The default is 5432. ``[$STORK_DATABASE_PORT]``
@@ -240,51 +242,51 @@ The following options pertain to both ``db-`` and ``cert-`` commands:
    Specifies the location of the root certificate file used to verify the database server's certificate. ``[$STORK_DATABASE_SSLROOTCERT]``
 
 ``--db-trace-queries=``
-   Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, ``all`` - both migrations and runtime, or ``none`` - disable the query logging. ``[$STORK_DATABASE_TRACE_QUERIES]``
+   Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, ``all`` - both migrations and runtime, or ``none`` - disables the query logging. ``[$STORK_DATABASE_TRACE_QUERIES]``
 
 ``--db-read-timeout``
-   Timeout for socket reads. If reached, commands will fail instead of blocking, zero disables the timeout; requires unit: ms (milliseconds), s (seconds), m (minutes), e.g.: 42s The default is 0. ``[$STORK_DATABASE_READ_TIMEOUT]``
+   The timeout for socket reads. If reached, commands will fail instead of blocking, zero disables the timeout; requires unit: ms (milliseconds), s (seconds), m (minutes), e.g.: 42s The default is 0. ``[$STORK_DATABASE_READ_TIMEOUT]``
 
 ``--db-write-timeout``
-   Timeout for socket writes. If reached, commands will fail instead of blocking, zero disables the timeout; requires unit: ms (milliseconds), s (seconds), m (minutes), e.g.: 42s The default is 0. ``[$STORK_DATABASE_WRITE_TIMEOUT]``
+   The timeout for socket writes; if reached, commands fail instead of blocking. Zero disables the timeout. Requires a unit: ms (milliseconds), s (seconds), or m (minutes), e.g.: 42s. The default is 0. ``[$STORK_DATABASE_WRITE_TIMEOUT]``
 
 ``-h|--help``
    Shows a help message.
 
-Note that there is no argument for the database password, as the command-line arguments can sometimes be seen
-by other users. It can be passed using the ``STORK_DATABASE_PASSWORD`` variable.
+Note that there is no argument for the database password, as command-line arguments can sometimes be seen
+by other users. The password can be sent using the ``STORK_DATABASE_PASSWORD`` variable.
 
 Stork logs on INFO level by default. Other levels can be configured using the
 ``STORK_LOG_LEVEL`` variable. Allowed values are: DEBUG, INFO, WARN, ERROR.
 
 To control the logging colorization, Stork supports the ``CLICOLOR`` and
 ``CLICOLOR_FORCE`` standard UNIX environment variables. Use ``CLICOLOR_FORCE`` to
-enforce enabling or disabling the ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
+enforce enabling or disabling ANSI colors usage. Set ``CLICOLOR`` to ``0`` or
 ``false`` to disable colorization even if the TTY is attached.
 
 Static Views Deployment
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-To set custom welcome message on the login screen first create a short HTML
+To set a custom welcome message on the login screen, first create a short HTML
 file with the message contents. Next, deploy the file using the
 ``deploy-login-page-welcome`` command with the following options:
 
 ``-i|--file=``
-   HTML source file with a custom welcome message. ``[$STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE]``
+   An HTML source file with a custom welcome message. ``[$STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE]``
 
 ``-d|--rest-static-files-dir=``
-   The directory with static files for the UI; if not provided the tool will try to use default locations. ``[$STORK_TOOL_REST_STATIC_FILES_DIR]``
+   The directory with static files for the UI; if not provided, the tool tries to use default locations. ``[$STORK_TOOL_REST_STATIC_FILES_DIR]``
 
-To remove the welcome message use ``undeploy-login-page-welcome`` command
+To remove the welcome message, use the ``undeploy-login-page-welcome`` command
 with the following option:
 
 ``-d|--rest-static-files-dir=``
-   The directory with static files for the UI; if not provided the tool will try to use default locations. ``[$STORK_TOOL_REST_STATIC_FILES_DIR]``
+   The directory with static files for the UI; if not provided, the tool tries to use default locations. ``[$STORK_TOOL_REST_STATIC_FILES_DIR]``
 
-In a typical installation there is no need to specify the directory with
-the UI static files. ``stork-tool``  assumes the directory relative to its
-location. For example, if the ``stork-tool`` is installed in the ``/usr/bin``,
-it assumes that the directory is ``/usr/share/stork/www``.
+In a typical installation, there is no need to specify the directory with
+the UI static files; ``stork-tool``  assumes the directory relative to its
+location. For example, if ``stork-tool`` is installed in the ``/usr/bin`` directory,
+it assumes that the directory for UI files is ``/usr/share/stork/www``.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
