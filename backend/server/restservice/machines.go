@@ -61,8 +61,8 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 		VersionsJSON,        // this is default location of the file in case Stork is installed from packages - most common use case
 		"etc/versions.json", // this is added in case Stork is built and ran from sources - typical for Stork development
 	}
-	// In case Stork was installed with the rake task 'rake install:server DEST=path', path to the JSON file with software versions metadata
-	// must be computed relative to the executable.
+	// In case Stork was installed with the rake task 'rake install:server DEST=path', path to the JSON file with
+	// software versions metadata must be computed relative to the executable.
 	ex, err := os.Executable()
 	if err == nil {
 		bindir := filepath.Dir(ex)
