@@ -57,18 +57,16 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	}
 
 	// Find the location of the JSON file with software versions metadata.
-	searchPaths := []string{
-		VersionsJSON,        // this is default location of the file in case Stork is installed from packages - most common use case
-		"etc/versions.json", // this is added in case Stork is built and ran from sources - typical for Stork development
-	}
-	// In case Stork was installed with the rake task 'rake install:server DEST=path', path to the JSON file with
-	// software versions metadata must be computed relative to the executable.
-	ex, err := os.Executable()
-	if err == nil {
-		bindir := filepath.Dir(ex)
-		searchPaths = append(searchPaths, filepath.Join(bindir, "..", "..", "etc", "stork", "versions.json"))
-	}
+	searchPaths := []string{}
 
+	// Path to the JSON file with software versions metadata is computed relative to the executable.
+	if ex, err := os.Executable(); err == nil {
+		if ex, err = filepath.EvalSymlinks(ex); err == nil {
+			exDir := filepath.Dir(ex)
+			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "etc", "stork", "versions.json")) // relative path when Stork was installed from package or with 'rake install' task
+			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "..", "etc", "versions.json"))    // relative path when running Stork server with 'rake run' task - typical for DEV
+		}
+	}
 	jsonFile := storkutil.GetFirstExistingPathOrDefault(VersionsJSON, searchPaths...)
 
 	// Open JSON file.
