@@ -1,5 +1,12 @@
 Stork 2.0.0 released on 2024-11-13.
 
+* 472 [bug] marcin
+
+    Fixed a problem with resetting the database schema to the initial
+    version, using the stork-tool db-reset command, when some of the
+    database users had no email assigned.
+    (Gitlab #1583)
+
 * 471 [perf] slawek
 
     Solved a problem with consuming abnormally much memory if the Stork
