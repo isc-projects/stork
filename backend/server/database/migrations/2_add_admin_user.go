@@ -59,9 +59,16 @@ func init() {
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-             -- Deletes the default user.
-             DELETE FROM public.system_user
-               WHERE login = 'admin';
+             -- Deletes all users. It includes the admin user added in the forward
+             -- migration. We cannot preserve other users in the database because
+             -- below we are going to apply NOT NULL constraint on the email column.
+             -- We could theoretically only remove the users that have NULL email
+             -- but it would leave the database in the inconsistent state. Generating
+             -- artificial emails is not a good idea too, because they will remain
+             -- if the admin runs forward migrations. Removing all users ensures that
+             -- the version 1 of the database has the same contents as it had at the
+             -- creation time.
+             DELETE FROM public.system_user;
 
              -- Removes the trigger hashing passwords.
              DROP TRIGGER IF EXISTS system_user_before_insert_update ON public.system_user;

@@ -622,3 +622,26 @@ func TestMigration55LocalHostInDatabaseAndConfig(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 }
+
+// Test that it is possible to run all down migrations and reset the
+// database schema when there are users with NULL email.
+func TestDownMigration2NullUserEmail(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a user with NULL email.
+	user := &dbmodel.SystemUser{
+		Login:    "pablo",
+		Lastname: "Valio",
+		Name:     "Pablo",
+	}
+	_, err := dbmodel.CreateUserWithPassword(db, user, "pass")
+	require.NoError(t, err)
+
+	// Make sure we can reset the database schema. Previously, the down migration
+	// from version 2 to 1 would fail because it would try to apply a non NULL constraint
+	// on NULL email column.
+	_, newVersion, err := dbops.Migrate(db, "reset")
+	require.NoError(t, err)
+	require.Zero(t, newVersion)
+}
