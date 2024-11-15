@@ -176,17 +176,27 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         if (data) {
                             this._processedData = data
                             this.keaVersions = deepCopy(data?.kea?.currentStable ?? [])
-                            if (data?.kea?.latestDev) {
+                            if (
+                                data?.kea?.latestDev &&
+                                this.versionService.isDevMoreRecentThanStable('kea', this._processedData)
+                            ) {
                                 this.keaVersions.push(data.kea?.latestDev)
                             }
 
                             this.bind9Versions = deepCopy(data?.bind9?.currentStable ?? [])
-                            if (data.bind9?.latestDev) {
+                            if (
+                                data.bind9?.latestDev &&
+                                data.bind9.latestDev &&
+                                this.versionService.isDevMoreRecentThanStable('bind9', this._processedData)
+                            ) {
                                 this.bind9Versions.push(data?.bind9?.latestDev)
                             }
 
                             this.storkVersions = deepCopy(data.stork?.currentStable ?? [])
-                            if (data.stork?.latestDev) {
+                            if (
+                                data.stork?.latestDev &&
+                                this.versionService.isDevMoreRecentThanStable('stork', this._processedData)
+                            ) {
                                 this.storkVersions.push(data.stork?.latestDev)
                             }
                         }
