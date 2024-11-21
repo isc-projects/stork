@@ -310,7 +310,6 @@ export class VersionService {
                     response.messages.push(
                         'Please be advised that using development version in production is not recommended.'
                     )
-                    response.severity = Severity.warn
                 }
 
                 response = this.getStorkFeedback(app, sanitizedSemver, response)
