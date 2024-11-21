@@ -326,12 +326,16 @@ export class VersionService {
 
     /**
      * Returns true when the latest development release version is more recent than
-     * the latest stable version; false otherwise.
+     * the latest stable version or when there are no stable realeases; false otherwise.
      * @param app either stork, kea or bind9 app
      * @param data versions data used to determine returned value
      */
     isDevMoreRecentThanStable(app: AppType, data: AppsVersions): boolean {
         let stables = this.getVersion(app, 'currentStable', data)
+        if (!stables || stables?.length < 1) {
+            return true
+        }
+
         let lastStable = stables[stables.length - 1]
         let devVersion = this.getVersion(app, 'latestDev', data) as string
         return gt(devVersion, lastStable)
