@@ -4,6 +4,7 @@ import { Severity, VersionAlert, VersionFeedback, VersionService } from './versi
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { App, AppsVersions, GeneralService } from './backend'
 import { of } from 'rxjs'
+import { deepCopy } from './utils'
 
 describe('VersionService', () => {
     let service: VersionService
@@ -609,5 +610,30 @@ describe('VersionService', () => {
         service.detectAlertingSeverity(Severity.success)
         expect(alert.detected).toBeTrue()
         expect(alert.severity).toEqual(Severity.error)
+    })
+
+    it('should return more recent dev than a stable', () => {
+        // Arrange & Act & Assert
+        // There is no stable stork release in fakeResponse data, so true is expected.
+        expect(service.isDevMoreRecentThanStable('stork', fakeResponse)).toBeTrue()
+        // Kea has more recent dev release than a stable release.
+        expect(service.isDevMoreRecentThanStable('kea', fakeResponse)).toBeTrue()
+        // BIND9 has more recent dev release than a stable release.
+        expect(service.isDevMoreRecentThanStable('bind9', fakeResponse)).toBeTrue()
+        let data = deepCopy(fakeResponse)
+        data.stork.currentStable = [
+            {
+                eolDate: '2026-07-01',
+                major: 2,
+                minor: 0,
+                range: '2.0.x',
+                releaseDate: '2024-11-13',
+                status: 'Current Stable',
+                version: '2.0.0',
+            },
+        ]
+        data.stork.sortedStableVersions = ['2.0.0']
+        // In this data, Stork stable is more recent than the dev release, so false is expected.
+        expect(service.isDevMoreRecentThanStable('stork', data)).toBeFalse()
     })
 })
