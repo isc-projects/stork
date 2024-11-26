@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -144,6 +145,9 @@ func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
 }
 
 // getRndcKey looks for the key with a given `name` in `contents`.
+// If `name` is empty, first key is returned. This is useful, if parsing
+// the default /etc/bind/rndc.key file. No matter the name, we want to
+// take it (or first in case there are multiple)
 //
 // Example key clause:
 //
@@ -159,10 +163,10 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 	}
 
 	for _, key := range keys {
-		if key[1] != name {
+		if len(name) > 0 && key[1] != name {
 			continue
 		}
-		pattern = regexp.MustCompile(`(?s)algorithm\s+\"(\S+)\";`)
+		pattern = regexp.MustCompile(`(?s)algorithm\s+\"?(\S+)\"?;`)
 		algorithm := pattern.FindStringSubmatch(key[2])
 		if len(algorithm) < 2 {
 			log.Warnf("No key algorithm found for name %s", name)
@@ -178,7 +182,7 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 
 		// this key clause matches the name we are looking for
 		controlKey = &Bind9RndcKey{
-			Name:      name,
+			Name:      key[1],
 			Algorithm: algorithm[1],
 			Secret:    secret[1],
 		}
@@ -274,6 +278,19 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key *Bin
 	return address, port, key
 }
 
+// Attempts to load rndc config from specified file. Returns contents of the
+// file or empty string.
+func loadRndcConfig(path string) (contents string) {
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		log.Infof("Unable to read rndc config %v: %+v", path, err)
+		return ""
+	}
+
+	return strings.TrimSpace(string(content))
+}
+
 // getCtrlAddressFromBind9Config retrieves the rndc control access address,
 // port, and secret key (if configured) from the configuration `text`.
 //
@@ -309,8 +326,19 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 	pattern := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
 	controls := pattern.FindStringSubmatch(text)
 	if len(controls) == 0 {
+
+		const defaultRndcPath string = "/etc/bind/rndc.key"
 		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
-		return "127.0.0.1", 953, nil
+
+		// Try to load rndc key from the default location.
+		txt := loadRndcConfig(defaultRndcPath)
+
+		controlKey = getRndcKey(txt, "")
+		if controlKey != nil {
+			log.Infof("Loaded rdnc key from the default location (%s): %+s", defaultRndcPath, controlKey.Name)
+		}
+
+		return "127.0.0.1", 953, controlKey
 	}
 
 	// See if there's any non-whitespace characters in the controls clause.
@@ -330,6 +358,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 			controlPort = RndcDefaultPort
 		}
 	}
+
 	return controlAddress, controlPort, controlKey
 }
 
