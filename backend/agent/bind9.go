@@ -320,7 +320,6 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 	pattern := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
 	controls := pattern.FindStringSubmatch(text)
 	if len(controls) == 0 {
-
 		// Try to load rndc key from the default locations.
 		for _, f := range getPotentialNamedConfLocations() {
 			rndcPath := path.Join(f, RndcKeyFile)
@@ -331,8 +330,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 
 			controlKey = getRndcKey(string(txt), "")
 			if controlKey != nil {
-				log.Infof("Loaded rdnc key %s from the default location (%s)", controlKey.Name, rndcPath)
-				log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
+				log.Debugf("Loaded rdnc key %s from the default location (%s)", controlKey.Name, rndcPath)
 				break
 			}
 		}
@@ -341,6 +339,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 		// wasn't found. Not sure if it's even possible to use rndc without any keys. We should
 		// probably return null if rndc's key is not found. Or report that BIND was detected, but
 		// since rndc is unusable, it's broken and can't interact with Stork.
+		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
 		return "127.0.0.1", 953, controlKey
 	}
 

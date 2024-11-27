@@ -511,7 +511,6 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 	executor := newTestCommandExecutor()
 
 	for _, expectedPath := range getPotentialNamedConfLocations() {
-
 		// getPotentialNamedConfLocations now returns dirs, need to append
 		// filename.
 		expectedConfigPath := path.Join(expectedPath, "named.conf")
@@ -552,7 +551,6 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 	executor := newTestCommandExecutor()
 
 	for _, expectedPath := range getPotentialNamedConfLocations() {
-
 		expectedConfigPath := path.Join(expectedPath, "named.conf")
 		executor.
 			clear().
