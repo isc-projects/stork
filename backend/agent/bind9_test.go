@@ -511,11 +511,17 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 	executor := newTestCommandExecutor()
 
 	for _, expectedPath := range getPotentialNamedConfLocations() {
+
+		// getPotentialNamedConfLocations now returns dirs, need to append
+		// filename.
+		expectedConfigPath := path.Join(expectedPath, "named.conf")
+
 		executor.
 			clear().
-			addCheckConfOutput(expectedPath, config)
+			addCheckConfOutput(expectedConfigPath, config).
+			setConfigPathInNamedOutput(expectedConfigPath)
 
-		t.Run(expectedPath, func(t *testing.T) {
+		t.Run(expectedConfigPath, func(t *testing.T) {
 			// Act
 			app := detectBind9App([]string{"", "/dir", "-some -params"}, "", executor, "")
 
@@ -546,9 +552,12 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 	executor := newTestCommandExecutor()
 
 	for _, expectedPath := range getPotentialNamedConfLocations() {
+
+		expectedConfigPath := path.Join(expectedPath, "named.conf")
 		executor.
 			clear().
-			addCheckConfOutput(path.Join("/chroot", expectedPath), config)
+			addCheckConfOutput(path.Join("/chroot", expectedConfigPath), config).
+			setConfigPathInNamedOutput(expectedConfigPath)
 
 		t.Run(expectedPath, func(t *testing.T) {
 			// Act
@@ -650,7 +659,7 @@ func TestGetRndcKeyUnknownKey(t *testing.T) {
 	require.Nil(t, getRndcKey(content, "key"))
 }
 
-// Test that the empty string is returned if a given name is an empty string.
+// Test that the first key is returned if a given key name is an empty string.
 func TestGetRndcKeyBlankName(t *testing.T) {
 	// Arrange
 	content := `key "foo" {
@@ -659,7 +668,7 @@ func TestGetRndcKeyBlankName(t *testing.T) {
 	};`
 
 	// Act & Assert
-	require.Nil(t, getRndcKey(content, ""))
+	require.NotNil(t, getRndcKey(content, ""))
 }
 
 // Test that the empty string is returned if the algorithm property is missing.
@@ -711,7 +720,7 @@ func TestGetRndcKeyValidDataMultipleKeys(t *testing.T) {
 		algorithm  "bar";
 		secret  "baz";
 	};
-	
+
 	key "foo" {
 		algorithm  "bar";
 		secret  "baz";
@@ -775,6 +784,19 @@ func TestParseInetSpecForDifferentKeysFormatting(t *testing.T) {
 			})
 		}
 	}
+}
+
+// Test that unquoted algorithm is parsed correctly. All other tests
+// use quoted input data.
+func TestGetRndcKeyUnquoted(t *testing.T) {
+	keyConfig := `key "rndc-key" {
+						algorithm hmac-sha256;
+						secret "secret";
+					};`
+	key := getRndcKey(keyConfig, "rndc-key")
+
+	require.NotNil(t, key)
+	require.EqualValues(t, "hmac-sha256", key.Algorithm)
 }
 
 // Test that the wildcard addresses are resolved to the localhost address.

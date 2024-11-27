@@ -163,10 +163,17 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 	}
 
 	for _, key := range keys {
+		// skip this key if the name doesn't match. If user didn't specify
+		// a name, use the first key.
 		if len(name) > 0 && key[1] != name {
 			continue
 		}
-		pattern = regexp.MustCompile(`(?s)algorithm\s+\"?(\S+)\"?;`)
+
+		// Here's the tricky part. Algorithm value might or might not be quoted.
+		// The regex match uses \S+ which will catch the closing ". So for
+		// unquoted it will return something like hmac-sha256, but for quoted
+		// it will be hmac-sha256". Hence we need to trim it a bit further down.
+		pattern = regexp.MustCompile(`algorithm\s+"?(\S+)"?;`)
 		algorithm := pattern.FindStringSubmatch(key[2])
 		if len(algorithm) < 2 {
 			log.Warnf("No key algorithm found for name %s", name)
@@ -183,7 +190,7 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 		// this key clause matches the name we are looking for
 		controlKey = &Bind9RndcKey{
 			Name:      key[1],
-			Algorithm: algorithm[1],
+			Algorithm: strings.Trim(algorithm[1], "\""),
 			Secret:    secret[1],
 		}
 		break
@@ -278,19 +285,6 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key *Bin
 	return address, port, key
 }
 
-// Attempts to load rndc config from specified file. Returns contents of the
-// file or empty string.
-func loadRndcConfig(path string) (contents string) {
-
-	content, err := os.ReadFile(path)
-	if err != nil {
-		log.Infof("Unable to read rndc config %v: %+v", path, err)
-		return ""
-	}
-
-	return strings.TrimSpace(string(content))
-}
-
 // getCtrlAddressFromBind9Config retrieves the rndc control access address,
 // port, and secret key (if configured) from the configuration `text`.
 //
@@ -327,17 +321,26 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 	controls := pattern.FindStringSubmatch(text)
 	if len(controls) == 0 {
 
-		const defaultRndcPath string = "/etc/bind/rndc.key"
-		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
+		// Try to load rndc key from the default locations.
+		for _, f := range getPotentialNamedConfLocations() {
+			rndcPath := path.Join(f, RndcKeyFile)
+			txt, err := os.ReadFile(rndcPath)
+			if err != nil {
+				log.Debugf("Tried to load %s, but failed: %v", rndcPath, err)
+			}
 
-		// Try to load rndc key from the default location.
-		txt := loadRndcConfig(defaultRndcPath)
-
-		controlKey = getRndcKey(txt, "")
-		if controlKey != nil {
-			log.Infof("Loaded rdnc key from the default location (%s): %+s", defaultRndcPath, controlKey.Name)
+			controlKey = getRndcKey(string(txt), "")
+			if controlKey != nil {
+				log.Infof("Loaded rdnc key %s from the default location (%s)", controlKey.Name, rndcPath)
+				log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
+				break
+			}
 		}
 
+		// TODO: Historically, we returned the defaults and hoped for the best, even if the key
+		// wasn't found. Not sure if it's even possible to use rndc without any keys. We should
+		// probably return null if rndc's key is not found. Or report that BIND was detected, but
+		// since rndc is unusable, it's broken and can't interact with Stork.
 		return "127.0.0.1", 953, controlKey
 	}
 
@@ -419,13 +422,13 @@ func determineBinPath(baseNamedDir, executable string, executor storkutil.Comman
 	return fullPath, nil
 }
 
-// Get potential locations of named.conf.
+// Get potential locations of BIND configs: named.conf, rndc.conf and others.
 func getPotentialNamedConfLocations() []string {
 	return []string{
-		"/etc/bind/named.conf",
-		"/etc/opt/isc/isc-bind/named.conf",
-		"/etc/opt/isc/scls/isc-bind/named.conf",
-		"/usr/local/etc/namedb/named.conf",
+		"/etc/bind/",                  // default for many Linux distros
+		"/etc/opt/isc/isc-bind/",      // default for make install?
+		"/etc/opt/isc/scls/isc-bind/", // default for some RHEL installs
+		"/usr/local/etc/namedb/",      // default for FreeBSD
 	}
 }
 
@@ -565,7 +568,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		// config path not found in cmdline params so try to guess its location
 		for _, f := range getPotentialNamedConfLocations() {
 			// Concat with root or chroot.
-			fullPath := path.Join(rootPrefix, f)
+			fullPath := path.Join(rootPrefix, f, "named.conf")
 			log.Debugf("Looking for BIND 9 config file in %s", fullPath)
 			if executor.IsFileExist(fullPath) {
 				bind9ConfPath = f
