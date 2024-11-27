@@ -635,7 +635,8 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Port:    port,
 		})
 	} else {
-		log.Warnf("Cannot parse BIND 9 statistics-channels clause. Unable to gather statistics.")
+		log.Warnf("BIND 9 `statistics-channels` clause unparsable or not found. Statistics export won't work.")
+		log.Warnf("To fix this problem, please configure `statistics-channels` in named.conf and ensure Stork-agent is able to access it.")
 	}
 
 	// determine rndc details
