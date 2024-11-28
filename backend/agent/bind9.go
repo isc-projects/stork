@@ -169,10 +169,8 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 			continue
 		}
 
-		// Here's the tricky part. Algorithm value might or might not be quoted.
-		// The regex match uses \S+ which will catch the closing ". So for
-		// unquoted it will return something like hmac-sha256, but for quoted
-		// it will be hmac-sha256". Hence we need to trim it a bit further down.
+		// This regex matches both quoted (algorithm "hmac-sha256") and
+		// unquoted (algorithm hmac-sha256).
 		pattern = regexp.MustCompile(`algorithm\s+"?(\S+?)"?;`)
 		algorithm := pattern.FindStringSubmatch(key[2])
 		if len(algorithm) < 2 {
