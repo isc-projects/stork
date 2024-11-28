@@ -820,7 +820,7 @@ func (pbe *PromBind9Exporter) Start() {
 	var err error
 	pbe.procID, err = pbe.collectStats()
 	if err != nil {
-		log.Errorf("Some errors were encountered while collecting stats from BIND 9: %v", err)
+		log.WithError(err).Error("Some errors were encountered while collecting stats from BIND 9")
 	}
 
 	// register collectors
@@ -1196,7 +1196,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 		sap, err := getAccessPoint(app, AccessPointStatistics)
 		if err != nil {
 			lastErr = err
-			log.Errorf("Problem getting stats from BIND 9, bad access statistics point: %v", err)
+			log.WithError(err).Error("Problem getting stats from BIND 9, bad access statistics point")
 			continue
 		}
 		address := storkutil.HostWithPortURL(sap.Address, sap.Port, sap.UseSecureProtocol)
