@@ -170,10 +170,11 @@ mariadb
    This container is essential. It runs the MariaDB database that
    is used by the Kea containers.
 openldap
-   This container provides an LDAP server - an authentication service. It is
-   preconfigured with a set of users: ``admin`` (password: ``admin``),
-   ``user1``, ``user2``, ``user3`` (passwords: ``password1``, ``password2``, 
-   ``password3``) and groups: ``stork-admins``, ``stork-super-admins``.
+   This container provides an LDAP server - an authentication service
+   (https://www.openldap.org/). It is preconfigured with a set of users:
+   ``admin`` (password: ``admin``), ``user1``, ``user2``, ``user3`` (passwords:
+   ``password1``, ``password2``,  ``password3``) and groups: ``stork-admins``,
+   ``stork-super-admins``.
 
 There is also a supporting container:
 
