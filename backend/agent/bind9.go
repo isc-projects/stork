@@ -173,7 +173,7 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 		// The regex match uses \S+ which will catch the closing ". So for
 		// unquoted it will return something like hmac-sha256, but for quoted
 		// it will be hmac-sha256". Hence we need to trim it a bit further down.
-		pattern = regexp.MustCompile(`algorithm\s+"?(\S+)"?;`)
+		pattern = regexp.MustCompile(`algorithm\s+"?(\S+?)"?;`)
 		algorithm := pattern.FindStringSubmatch(key[2])
 		if len(algorithm) < 2 {
 			log.Warnf("No key algorithm found for name %s", name)
@@ -190,7 +190,7 @@ func getRndcKey(contents, name string) (controlKey *Bind9RndcKey) {
 		// this key clause matches the name we are looking for
 		controlKey = &Bind9RndcKey{
 			Name:      key[1],
-			Algorithm: strings.Trim(algorithm[1], "\""),
+			Algorithm: algorithm[1],
 			Secret:    secret[1],
 		}
 		break
