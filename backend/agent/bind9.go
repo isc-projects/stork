@@ -121,7 +121,7 @@ func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAd
 	} else {
 		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
 		if !rc.executor.IsFileExist(keyPath) {
-			return errors.Errorf("the rndc key fie %s does not exist", keyPath)
+			return errors.Errorf("the rndc key file %s does not exist", keyPath)
 		}
 		cmd = append(cmd, "-k")
 		cmd = append(cmd, keyPath)
@@ -335,10 +335,14 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 			}
 		}
 
-		// TODO: Historically, we returned the defaults and hoped for the best, even if the key
-		// wasn't found. Not sure if it's even possible to use rndc without any keys. We should
-		// probably return null if rndc's key is not found. Or report that BIND was detected, but
-		// since rndc is unusable, it's broken and can't interact with Stork.
+		// We need to consider two cases here. First, there's rndc key file and we found it
+		// (the loop above found it). The rndc channel is configured, we detected the key
+		// and all is good. The alternative, however, is that there is no rndc key file on disk
+		// or we haven't found it. BIND will start without it, but will have rndc channel
+		// disabled. In this case we technically found BIND, but can't communicate with it.
+		// Our code doesn't have a good way to represent "BIND found, but can't communicate"
+		// scenario. In such case we return the defaults (127.0.0.0, port 953), but the key
+		// is nil and BIND doesn't listen.
 		log.Debugf("BIND9 has no `controls` clause, assuming defaults (127.0.0.1, port 953)")
 		return "127.0.0.1", 953, controlKey
 	}
