@@ -188,17 +188,44 @@ export class VersionService {
             let isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
 
             // check security releases first
-            let latestSecureVersion = this.getVersion(app, 'latestSecure', data)
-            if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
-                response = {
-                    severity: Severity.error,
-                    messages: [
-                        `Security update ${latestSecureVersion} was released for ${appName}. Please update as soon as possible!`,
-                    ],
-                }
+            let latestSecureVersionDetails = data?.[app]?.latestSecure || null
+            if (
+                latestSecureVersionDetails &&
+                Array.isArray(latestSecureVersionDetails) &&
+                latestSecureVersionDetails.length >= 1
+            ) {
+                for (let details of latestSecureVersionDetails) {
+                    if (satisfies(sanitizedSemver, details.range)) {
+                        if (lt(sanitizedSemver, details.version)) {
+                            response = {
+                                severity: Severity.error,
+                                messages: [
+                                    `Security update ${details.version} was released for ${appName}. Please update as soon as possible!`,
+                                ],
+                            }
 
-                return this.setCacheAndReturnResponse(cacheKey, response)
+                            response = this.getStorkFeedback(app, sanitizedSemver, response)
+                            return this.setCacheAndReturnResponse(cacheKey, response)
+                        }
+
+                        // matching range was found and detected semver >= security release, so break the for loop
+                        break
+                    }
+                }
             }
+
+            // let latestSecureVersion = this.getVersion(app, 'latestSecure', data)
+            //
+            // if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
+            //     response = {
+            //         severity: Severity.error,
+            //         messages: [
+            //             `Security update ${latestSecureVersion} was released for ${appName}. Please update as soon as possible!`,
+            //         ],
+            //     }
+            //
+            //     return this.setCacheAndReturnResponse(cacheKey, response)
+            // }
 
             // case - stable version
             let currentStableVersionDetails = data?.[app]?.currentStable || null
@@ -432,7 +459,9 @@ export class VersionService {
     private getVersion(app: AppType, swType: ReleaseType, data: AppsVersions): string | string[] | null {
         return swType === 'currentStable'
             ? data?.[app]?.sortedStableVersions || null
-            : data?.[app]?.[swType]?.version || null
+            : swType === 'latestDev'
+              ? data?.[app]?.[swType]?.version || null
+              : null
     }
 
     /**

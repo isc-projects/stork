@@ -25,7 +25,7 @@ type ReportVersionDetails struct {
 type ReportAppVersionMetadata struct {
 	CurrentStable []*ReportVersionDetails `json:"currentStable,omitempty"`
 	LatestDev     *ReportVersionDetails   `json:"latestDev,omitempty"`
-	LatestSecure  *ReportVersionDetails   `json:"latestSecure,omitempty"`
+	LatestSecure  []*ReportVersionDetails `json:"latestSecure,omitempty"`
 }
 
 // This is top level struct representing all metadata for ISC Kea, BIND9 and Stork latest software releases.
@@ -44,10 +44,9 @@ var VersionsJSON = "/etc/stork/versions.json" //nolint:gochecknoglobals
 // It returns an error when problem occurs when parsing dates.
 func appVersionMetadataToRestAPI(input ReportAppVersionMetadata) (*models.AppVersionMetadata, error) {
 	out := models.AppVersionMetadata{}
-	if input.LatestSecure != nil && input.LatestSecure.ReleaseDate != nil {
-		if v, err := versionDetailsToRestAPI(*input.LatestSecure); err == nil {
+	if input.LatestSecure != nil {
+		if v, err := secureSwVersionsToRestAPI(input.LatestSecure); err == nil {
 			out.LatestSecure = v
-			out.LatestSecure.Status = "Security update"
 		} else {
 			return nil, err
 		}
@@ -121,4 +120,19 @@ func stableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.Version
 	}
 	stablesStringArr := storkutil.SortSemversAsc(&stablesArr)
 	return versionDetailsArr, stablesStringArr, nil
+}
+
+func secureSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, error) {
+	versionDetailsArr := []*models.VersionDetails{}
+
+	for _, details := range input {
+		if v, err := versionDetailsToRestAPI(*details); err == nil {
+			v.Status = "Security update"
+			v.Range = fmt.Sprintf("%d.%d.x", int(v.Major), int(v.Minor))
+			versionDetailsArr = append(versionDetailsArr, v)
+		} else {
+			return nil, err
+		}
+	}
+	return versionDetailsArr, nil
 }

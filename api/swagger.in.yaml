@@ -141,7 +141,9 @@ definitions:
         items: 
           $ref: '#/definitions/VersionDetails'
       latestSecure:
-        $ref: '#/definitions/VersionDetails'
+        type: array
+        items:
+          $ref: '#/definitions/VersionDetails'
       sortedStableVersions:
         type: array
         items:

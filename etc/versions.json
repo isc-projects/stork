@@ -27,13 +27,13 @@
       }
     ],
     "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
     },
-    "latestSecure": {
-      "version": "1.15.1",
-      "releaseDate": "2024-03-27"
-    }
+    "latestSecure": [
+      {
+        "version": "1.15.1",
+        "releaseDate": "2024-03-27"
+      }
+    ]
   },
   "bind9": {
     "currentStable": [
