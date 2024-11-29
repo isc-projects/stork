@@ -115,6 +115,8 @@ COPY backend .
 FROM codebase-backend AS codebase-hooks
 WORKDIR /app/hooks
 COPY hooks .
+# Remove the empty (not cloned) hook directories.
+RUN find . -type d -empty -delete
 WORKDIR /app/backend
 
 FROM codebase AS codebase-webui
