@@ -3267,6 +3267,93 @@ func TestGetSoftwareVersions(t *testing.T) {
 	require.Equal(t, "9.21.1", *okRsp.Payload.Bind9.LatestDev.Version)
 }
 
+// Test that information about current ISC software versions is returned
+// via the API when some of the JSON values are empty.
+func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
+	// Arrange
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	content := `{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      },
+      {
+        "version": "2.4.1",
+        "releaseDate": "2023-11-29",
+        "eolDate": "2025-07-01"
+      }
+    ],
+    "latestDev": {},
+	"latestSecure" : {}
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": {
+      "version": "1.15.1",
+      "releaseDate": "2024-03-27"
+    },
+	"currentStable": []
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      },
+      {
+        "version": "9.20.2",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2028-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`
+	VersionsJSON, _ = sb.Write("versions.json", content)
+
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Act
+	rsp := rapi.GetSoftwareVersions(ctx, general.GetSoftwareVersionsParams{})
+
+	// Assert
+	okRsp, ok := rsp.(*general.GetSoftwareVersionsOK)
+	require.True(t, ok)
+	require.Equal(t, "2024-10-03", okRsp.Payload.Date.String())
+	require.NotNil(t, okRsp.Payload.DataSource)
+	require.Equal(t, "offline", okRsp.Payload.DataSource)
+	require.NotNil(t, okRsp.Payload.Bind9)
+	require.NotNil(t, okRsp.Payload.Kea)
+	require.NotNil(t, okRsp.Payload.Stork)
+	require.Nil(t, okRsp.Payload.Kea.LatestDev)
+	require.Nil(t, okRsp.Payload.Kea.LatestSecure)
+	require.Equal(t, "2.4.1", okRsp.Payload.Kea.SortedStableVersions[0])
+	require.Equal(t, "2.6.1", okRsp.Payload.Kea.SortedStableVersions[1])
+	require.Equal(t, "1.19.0", *okRsp.Payload.Stork.LatestDev.Version)
+	require.Equal(t, "9.21.1", *okRsp.Payload.Bind9.LatestDev.Version)
+	require.Len(t, okRsp.Payload.Stork.CurrentStable, 0)
+}
+
 // Test that a list of all authorized machines' ids and apps versions is returned
 // via the API.
 func TestGetMachinesAppsVersions(t *testing.T) {

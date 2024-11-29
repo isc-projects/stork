@@ -132,8 +132,8 @@ definitions:
   AppVersionMetadata:
     type: object
     required:
-      - latestDev
-    properties: 
+      - currentStable
+    properties:
       latestDev:
         $ref: '#/definitions/VersionDetails'
       currentStable:
