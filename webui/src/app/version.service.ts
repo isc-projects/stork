@@ -335,8 +335,12 @@ export class VersionService {
             return true
         }
 
-        let lastStable = stables[stables.length - 1]
         let devVersion = this.getVersion(app, 'latestDev', data) as string
+        if (!devVersion) {
+            return false
+        }
+
+        let lastStable = stables[stables.length - 1]
         return gt(devVersion, lastStable)
     }
 

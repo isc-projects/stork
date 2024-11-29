@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing'
 
 import { Severity, VersionAlert, VersionFeedback, VersionService } from './version.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { App, AppsVersions, GeneralService } from './backend'
+import { App, AppsVersions, GeneralService, VersionDetails } from './backend'
 import { of } from 'rxjs'
 import { deepCopy } from './utils'
 
@@ -633,7 +633,10 @@ describe('VersionService', () => {
             },
         ]
         data.stork.sortedStableVersions = ['2.0.0']
+        data.kea.latestDev = {} as VersionDetails
         // In this data, Stork stable is more recent than the dev release, so false is expected.
         expect(service.isDevMoreRecentThanStable('stork', data)).toBeFalse()
+        // In this data, Kea has no dev release, so false is expected.
+        expect(service.isDevMoreRecentThanStable('kea', data)).toBeFalse()
     })
 })
