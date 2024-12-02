@@ -65,13 +65,15 @@ describe('VersionService', () => {
         stork: {
             currentStable: null,
             latestDev: { major: 1, minor: 19, releaseDate: '2024-10-02', status: 'Development', version: '1.19.0' },
-            latestSecure: {
-                major: 1,
-                minor: 15,
-                releaseDate: '2024-03-27',
-                status: 'Security update',
-                version: '1.15.1',
-            },
+            latestSecure: [
+                {
+                    major: 1,
+                    minor: 15,
+                    releaseDate: '2024-03-27',
+                    status: 'Security update',
+                    version: '1.15.1',
+                },
+            ],
             sortedStableVersions: null,
         },
     }

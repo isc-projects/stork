@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { minor, coerce, valid, lt, satisfies, gt } from 'semver'
+import { minor, coerce, valid, lt, satisfies, gt, minSatisfying } from 'semver'
 import { App, AppsVersions, GeneralService } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
 import { BehaviorSubject, Observable } from 'rxjs'
@@ -194,7 +194,13 @@ export class VersionService {
                 Array.isArray(latestSecureVersionDetails) &&
                 latestSecureVersionDetails.length >= 1
             ) {
+                let isSecure = false
+                let secureDevVersions = []
                 for (let details of latestSecureVersionDetails) {
+                    if (this.isDevelopmentVersion(details.version, app)) {
+                        secureDevVersions.push(details.version)
+                    }
+
                     if (satisfies(sanitizedSemver, details.range)) {
                         if (lt(sanitizedSemver, details.version)) {
                             response = {
@@ -209,23 +215,26 @@ export class VersionService {
                         }
 
                         // matching range was found and detected semver >= security release, so break the for loop
+                        isSecure = true
                         break
                     }
                 }
-            }
 
-            // let latestSecureVersion = this.getVersion(app, 'latestSecure', data)
-            //
-            // if (latestSecureVersion && lt(sanitizedSemver, latestSecureVersion as string)) {
-            //     response = {
-            //         severity: Severity.error,
-            //         messages: [
-            //             `Security update ${latestSecureVersion} was released for ${appName}. Please update as soon as possible!`,
-            //         ],
-            //     }
-            //
-            //     return this.setCacheAndReturnResponse(cacheKey, response)
-            // }
+                if (!isSecure && isDevelopmentVersion && secureDevVersions.length >= 1) {
+                    let minDevSecure = minSatisfying(secureDevVersions, '*')
+                    if (lt(sanitizedSemver, minDevSecure)) {
+                        response = {
+                            severity: Severity.error,
+                            messages: [
+                                `Security update ${minDevSecure} was released for ${appName}. Please update as soon as possible!`,
+                            ],
+                        }
+
+                        response = this.getStorkFeedback(app, sanitizedSemver, response)
+                        return this.setCacheAndReturnResponse(cacheKey, response)
+                    }
+                }
+            }
 
             // case - stable version
             let currentStableVersionDetails = data?.[app]?.currentStable || null
