@@ -247,15 +247,13 @@ namespace :release do
         desc 'Upload packages to Cloudsmith
             CS_API_KEY - the Cloudsmith API key - required
             COMPONENTS - the filename component - required
-            REPO - the Cloudsmith repository - required'
+            REPO - the Cloudsmith repository - auto-determined if not provided'
         task :upload => [CLOUDSMITH] do
             key = ENV["CS_API_KEY"]
             repo = ENV["REPO"]
             components = ENV["COMPONENTS"]
             if key.nil?
                 fail "You need to provide the CS_API_KEY variable"
-            elsif repo.nil?
-                fail "You need to provide the REPO variable"
             elsif components.nil?
                 fail "You need to provide the COMPONENTS variable"
             end
@@ -284,6 +282,16 @@ namespace :release do
                         fail 'ERROR: could not find any files matching ' + pattern
                     end
                     files.each do |file|
+                        if repo.nil? then
+                            versions = file.match(/^\D*(\d+)\.(\d+)\.(\d+)/)
+                            stork_minor_version = versions[2]
+                            is_development_version = Integer(stork_minor_version) % 2 == 1
+                            if is_development_version then
+                                repo = 'stork-dev'
+                            else
+                                repo = 'stork'
+                            end
+                        end
                         sh CLOUDSMITH, "upload", type_command, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/#{distro}/any-version", file
                     end
                 end
