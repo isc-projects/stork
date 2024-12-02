@@ -206,6 +206,13 @@ ENV API_HOST localhost
 ENV API_PORT 8080
 EXPOSE 81
 EXPOSE 82
+RUN apt-get update \
+        && apt-get install \
+                --no-install-recommends \
+                -y \
+                curl=7.88.* \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
 RUN sed -i 's/<base href="\/">/<base href="\/stork\/">/g' /usr/share/stork/www/index.html
 HEALTHCHECK CMD ["curl", "--fail", "http://localhost:81"]
 
