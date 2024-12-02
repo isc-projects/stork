@@ -40,13 +40,16 @@ func getExampleData() ReportAppsVersions {
 		&stable1,
 		&stableEsv,
 	}
+	secures := []*ReportVersionDetails{
+		&dev,
+	}
 	kea := ReportAppVersionMetadata{
 		LatestDev:     &dev,
 		CurrentStable: stables,
 	}
 	stork := ReportAppVersionMetadata{
 		LatestDev:    &dev,
-		LatestSecure: &dev,
+		LatestSecure: secures,
 	}
 	bind := ReportAppVersionMetadata{
 		LatestDev:     &dev,
@@ -184,7 +187,8 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 
 	require.Empty(t, stork.CurrentStable)
 	require.Equal(t, "Development", stork.LatestDev.Status)
-	require.Equal(t, "Security update", stork.LatestSecure.Status)
+	require.Len(t, stork.LatestSecure, 1)
+	require.Equal(t, "Security update", stork.LatestSecure[0].Status)
 
 	require.Len(t, bind.CurrentStable, 2)
 	require.Equal(t, "Current Stable", bind.CurrentStable[0].Status)
