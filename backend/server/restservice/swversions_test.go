@@ -16,6 +16,10 @@ func getExampleData() ReportAppsVersions {
 		Version:     storkutil.NewSemanticVersion(2, 7, 3),
 		ReleaseDate: &relDate,
 	}
+	secure := ReportVersionDetails{
+		Version:     storkutil.NewSemanticVersion(2, 0, 1),
+		ReleaseDate: &relDate,
+	}
 	stableEsv := ReportVersionDetails{
 		Version:     storkutil.NewSemanticVersion(9, 18, 30),
 		ReleaseDate: &relDate,
@@ -42,6 +46,7 @@ func getExampleData() ReportAppsVersions {
 	}
 	secures := []*ReportVersionDetails{
 		&dev,
+		&secure,
 	}
 	kea := ReportAppVersionMetadata{
 		LatestDev:     &dev,
@@ -187,8 +192,9 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 
 	require.Empty(t, stork.CurrentStable)
 	require.Equal(t, "Development", stork.LatestDev.Status)
-	require.Len(t, stork.LatestSecure, 1)
+	require.Len(t, stork.LatestSecure, 2)
 	require.Equal(t, "Security update", stork.LatestSecure[0].Status)
+	require.Equal(t, "Security update", stork.LatestSecure[1].Status)
 
 	require.Len(t, bind.CurrentStable, 2)
 	require.Equal(t, "Current Stable", bind.CurrentStable[0].Status)
@@ -198,4 +204,24 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	require.Len(t, bind.SortedStableVersions, 2)
 	require.Equal(t, "9.18.30", bind.SortedStableVersions[0])
 	require.Equal(t, "9.20.2", bind.SortedStableVersions[1])
+}
+
+// Test that secureSwVersionsToRestAPI works fine.
+func TestSecureSwVersionsToRestAPI(t *testing.T) {
+	// Arrange
+	testData := getExampleData()
+	expectedRanges := []string{
+		"2.7.x",
+		"2.0.x",
+	}
+
+	// Act
+	versionDetailsArr, err := secureSwVersionsToRestAPI(testData.Stork.LatestSecure)
+
+	// Assert
+	require.NoError(t, err)
+	for idx := range versionDetailsArr {
+		require.Equal(t, expectedRanges[idx], versionDetailsArr[idx].Range)
+		require.Equal(t, "Security update", versionDetailsArr[idx].Status)
+	}
 }

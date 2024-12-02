@@ -122,6 +122,10 @@ func stableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.Version
 	return versionDetailsArr, stablesStringArr, nil
 }
 
+// Post processes either Kea, Bind9 or Stork security release details and returns the data in REST API format.
+// Takes an array of pointers to ReportVersionDetails for security releases.
+// Returns an array of pointers to VersionDetails for security releases in REST API format.
+// It returns an error when problem occurs when parsing dates.
 func secureSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, error) {
 	versionDetailsArr := []*models.VersionDetails{}
 
