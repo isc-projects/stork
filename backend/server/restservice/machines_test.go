@@ -3212,10 +3212,12 @@ func TestGetSoftwareVersions(t *testing.T) {
       "version": "1.19.0",
       "releaseDate": "2024-10-02"
     },
-    "latestSecure": {
-      "version": "1.15.1",
-      "releaseDate": "2024-03-27"
-    }
+    "latestSecure": [
+	  {
+        "version": "1.15.1",
+        "releaseDate": "2024-03-27"
+      }
+    ]
   },
   "bind9": {
     "currentStable": [
@@ -3291,17 +3293,19 @@ func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
       }
     ],
     "latestDev": {},
-	"latestSecure" : {}
+	"latestSecure" : []
   },
   "stork": {
     "latestDev": {
       "version": "1.19.0",
       "releaseDate": "2024-10-02"
     },
-    "latestSecure": {
-      "version": "1.15.1",
-      "releaseDate": "2024-03-27"
-    },
+    "latestSecure": [
+	  {
+        "version": "1.15.1",
+        "releaseDate": "2024-03-27"
+      }
+	],
 	"currentStable": []
   },
   "bind9": {
@@ -3346,7 +3350,8 @@ func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
 	require.NotNil(t, okRsp.Payload.Kea)
 	require.NotNil(t, okRsp.Payload.Stork)
 	require.Nil(t, okRsp.Payload.Kea.LatestDev)
-	require.Nil(t, okRsp.Payload.Kea.LatestSecure)
+	require.NotNil(t, okRsp.Payload.Kea.LatestSecure)
+	require.Len(t, okRsp.Payload.Kea.LatestSecure, 0)
 	require.Equal(t, "2.4.1", okRsp.Payload.Kea.SortedStableVersions[0])
 	require.Equal(t, "2.6.1", okRsp.Payload.Kea.SortedStableVersions[1])
 	require.Equal(t, "1.19.0", *okRsp.Payload.Stork.LatestDev.Version)
