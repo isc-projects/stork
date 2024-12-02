@@ -641,4 +641,116 @@ describe('VersionService', () => {
         // In this data, Kea has no dev release, so false is expected.
         expect(service.isDevMoreRecentThanStable('kea', data)).toBeFalse()
     })
+
+    it('should return software version feedback for security updates available', () => {
+        // Arrange
+        let data = deepCopy(fakeResponse)
+        data.kea.latestSecure = [
+            { version: '2.6.10', range: '2.6.x', releaseDate: '2024-12-02' },
+            { version: '2.4.10', range: '2.4.x', releaseDate: '2024-12-02' },
+            { version: '2.7.10', range: '2.7.x', releaseDate: '2024-12-02' },
+        ]
+
+        // Act
+        const securityCheckCurrentStable1 = service.getSoftwareVersionFeedback('2.4.1', 'kea', data)
+        const securityCheckCurrentStable2 = service.getSoftwareVersionFeedback('2.6.1', 'kea', data)
+        const securityCheckCurrentDev = service.getSoftwareVersionFeedback('2.7.5', 'kea', data)
+        const securityCheckOlderDev = service.getSoftwareVersionFeedback('2.5.15', 'kea', data)
+
+        // Assert
+        // Matches latestSecure range and is older.
+        expect(securityCheckCurrentStable1).toBeTruthy()
+        expect(securityCheckCurrentStable1.severity).toBe(Severity.error)
+        expect(securityCheckCurrentStable1.messages.length).toBe(1)
+        expect(securityCheckCurrentStable1.messages[0]).toMatch(new RegExp(/Security update \d+.\d+.\d+ was released/))
+
+        // Matches latestSecure range and is older.
+        expect(securityCheckCurrentStable2).toBeTruthy()
+        expect(securityCheckCurrentStable2.severity).toBe(Severity.error)
+        expect(securityCheckCurrentStable2.messages.length).toBe(1)
+        expect(securityCheckCurrentStable2.messages[0]).toMatch(new RegExp(/Security update \d+.\d+.\d+ was released/))
+
+        // Matches latestSecure range + it's dev release and is older.
+        expect(securityCheckCurrentDev).toBeTruthy()
+        expect(securityCheckCurrentDev.severity).toBe(Severity.error)
+        expect(securityCheckCurrentDev.messages.length).toBe(1)
+        expect(securityCheckCurrentDev.messages[0]).toMatch(new RegExp(/Security update \d+.\d+.\d+ was released/))
+
+        // Does not match latestSecure range, but it's dev release and is older.
+        // It is considered insecure.
+        expect(securityCheckOlderDev).toBeTruthy()
+        expect(securityCheckOlderDev.severity).toBe(Severity.error)
+        expect(securityCheckOlderDev.messages.length).toBe(1)
+        expect(securityCheckOlderDev.messages[0]).toMatch(new RegExp(/Security update \d+.\d+.\d+ was released/))
+    })
+
+    it('should not return software version feedback for security updates available', () => {
+        // Arrange
+        let data = deepCopy(fakeResponse)
+        data.kea.latestSecure = [
+            { version: '2.6.10', range: '2.6.x', releaseDate: '2024-12-02' },
+            { version: '2.4.10', range: '2.4.x', releaseDate: '2024-12-02' },
+            { version: '2.7.10', range: '2.7.x', releaseDate: '2024-12-02' },
+        ]
+        data.kea.currentStable[0].version = '2.6.10'
+        data.kea.currentStable[1].version = '2.4.10'
+        data.kea.latestDev.version = '2.7.10'
+
+        // Act
+        const securityCheckCurrentStable1 = service.getSoftwareVersionFeedback('2.4.10', 'kea', data)
+        const securityCheckCurrentStable2 = service.getSoftwareVersionFeedback('2.6.10', 'kea', data)
+        const securityCheckOlderStable = service.getSoftwareVersionFeedback('2.2.1', 'kea', data)
+        const securityCheckCurrentDev = service.getSoftwareVersionFeedback('2.7.10', 'kea', data)
+        const securityCheckNewerDev1 = service.getSoftwareVersionFeedback('3.1.0', 'kea', data)
+        const securityCheckNewerDev2 = service.getSoftwareVersionFeedback('2.7.11', 'kea', data)
+
+        // Assert
+        // Matches latestSecure range and it is equal to latest stable release.
+        expect(securityCheckCurrentStable1).toBeTruthy()
+        expect(securityCheckCurrentStable1.severity).toBe(Severity.success)
+        expect(securityCheckCurrentStable1.messages.length).toBe(1)
+        expect(securityCheckCurrentStable1.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ stable version/))
+
+        // Matches other latestSecure range and it is equal to latest stable release.
+        expect(securityCheckCurrentStable2).toBeTruthy()
+        expect(securityCheckCurrentStable2.severity).toBe(Severity.success)
+        expect(securityCheckCurrentStable2.messages.length).toBe(1)
+        expect(securityCheckCurrentStable2.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ stable version/))
+
+        // Does not match latestSecure range. Detected stable minor is below latestSecure ranges.
+        // It is considered secure.
+        expect(securityCheckOlderStable).toBeTruthy()
+        expect(securityCheckOlderStable.severity).toBe(Severity.warn)
+        expect(securityCheckOlderStable.messages.length).toBe(1)
+        expect(securityCheckOlderStable.messages[0]).toMatch(
+            new RegExp(/version \d+.\d+.\d+ is older than current stable version/)
+        )
+
+        // Matches latestSecure range and it is equal to latest development release.
+        expect(securityCheckCurrentDev).toBeTruthy()
+        expect(securityCheckCurrentDev.severity).toBe(Severity.success)
+        expect(securityCheckCurrentDev.messages.length).toBe(2)
+        expect(securityCheckCurrentDev.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ development version/))
+        expect(securityCheckCurrentDev.messages[1]).toMatch(
+            'Please be advised that using development version in production is not recommended'
+        )
+
+        // Does not match latestSecure range. Dev release detected and it is more recent than the latest development release.
+        expect(securityCheckNewerDev1).toBeTruthy()
+        expect(securityCheckNewerDev1.severity).toBe(Severity.secondary)
+        expect(securityCheckNewerDev1.messages.length).toBe(2)
+        expect(securityCheckNewerDev1.messages[0]).toMatch('You are using more recent version')
+        expect(securityCheckNewerDev1.messages[1]).toMatch(
+            'Please be advised that using development version in production is not recommended'
+        )
+
+        // Matches latestSecure range and it is more recent than the latest development release.
+        expect(securityCheckNewerDev2).toBeTruthy()
+        expect(securityCheckNewerDev2.severity).toBe(Severity.secondary)
+        expect(securityCheckNewerDev2.messages.length).toBe(2)
+        expect(securityCheckNewerDev2.messages[0]).toMatch('You are using more recent version')
+        expect(securityCheckNewerDev2.messages[1]).toMatch(
+            'Please be advised that using development version in production is not recommended'
+        )
+    })
 })

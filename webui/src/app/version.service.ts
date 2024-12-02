@@ -470,7 +470,7 @@ export class VersionService {
             ? data?.[app]?.sortedStableVersions || null
             : swType === 'latestDev'
               ? data?.[app]?.[swType]?.version || null
-              : null
+              : data?.[app]?.latestSecure?.map((details) => details.version) || null
     }
 
     /**
