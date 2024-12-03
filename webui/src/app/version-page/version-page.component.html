@@ -405,7 +405,12 @@
                         {{ v.eolDate | date: 'MMMM YYYY' }}
                     </td>
                     <td>
-                        Download (<a href="https://cloudsmith.io/~isc/repos/stork/groups/" target="_blank">Packages</a
+                        Download (<a
+                            href="https://cloudsmith.io/~isc/repos/stork{{
+                                v.status === 'Development' ? '-dev' : ''
+                            }}/packages/"
+                            target="_blank"
+                            >Packages</a
                         ><a
                             target="_blank"
                             class="ml-2"
