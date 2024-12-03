@@ -190,7 +190,7 @@ type LocalSubnet struct {
 	PrefixPools  []PrefixPool  `pg:"rel:has-many"`
 
 	KeaParameters *keaconfig.SubnetParameters
-	UserContext   map[string]interface{}
+	UserContext   map[string]any
 }
 
 // Reflects IPv4 or IPv6 subnet from the database.
@@ -469,7 +469,8 @@ func AddLocalSubnets(dbi dbops.DBI, subnet *Subnet) error {
 			Set("local_subnet_id = EXCLUDED.local_subnet_id").
 			Set("kea_parameters = EXCLUDED.kea_parameters").
 			Set("dhcp_option_set = EXCLUDED.dhcp_option_set").
-			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash")
+			Set("dhcp_option_set_hash = EXCLUDED.dhcp_option_set_hash").
+			Set("user_context = EXCLUDED.user_context")
 		_, err := q.Insert()
 		if err != nil {
 			return pkgerrors.Wrapf(err, "problem associating the daemon %d with the subnet %s",
@@ -861,6 +862,9 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 			subnet.SharedNetworkID = networkID
 		}
 
+		// Extract the subnet name from the user-context.
+		subnet.Name = extractSubnetNameFromUserContext(subnet)
+
 		if subnet.ID == 0 {
 			err = AddSubnet(tx, subnet)
 			if err != nil {
@@ -888,6 +892,38 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 		}
 	}
 	return addedSubnets, nil
+}
+
+// Extract the subnet name from the user-context.
+// Returns the subnet name if found, otherwise an empty string.
+//
+// ToDo: The below list contains the user-context keys that we
+// expect/predict/assume/guess to store the subnet name. This list is
+// arbitrary and may not fit for all users. We should consider to make
+// the name key configurable.
+//
+// The keys are ordered from the most to the least recommended. Only
+// the "subnet-name" key is officially recommended in the Stork docs.
+// Note that the Kea documentation does not specify any convention for
+// storing the subnet name in the user-context.
+//
+// The first key that is found in the user-context in any related
+// user-context is used as the subnet name.
+func extractSubnetNameFromUserContext(subnet *Subnet) string {
+	subnetNameKeys := []string{
+		"subnet-name", "subnet_name", "name", "label", "location", "role",
+	}
+	for _, key := range subnetNameKeys {
+		for _, localSubnet := range subnet.LocalSubnets {
+			if name, ok := localSubnet.UserContext[key]; ok {
+				nameStr, ok := name.(string)
+				if ok {
+					return nameStr
+				}
+			}
+		}
+	}
+	return ""
 }
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
