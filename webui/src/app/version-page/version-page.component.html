@@ -1,24 +1,41 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <p>This page displays various information about software versions. It consists of two parts:</p>
+        <p>
+            This page provides information about the Kea, Stork, and BIND 9 software versions currently running on
+            monitored machines. It consists of two main parts:
+        </p>
         <h4>Summary</h4>
         <p>
-            The first part shows a summary table of the ISC software used on your authorized machines. It checks whether
-            the software is up-to-date or if there are any software updates available.<br />It also can check if the
-            machine's <i>Stork agent</i> version matches the <i>Stork server</i> version. ISC encourages using the
-            matching versions for the <i>Stork server</i> and all <i>Stork agents</i>.<br />It will also check if all
-            Kea servers use matching Kea daemon versions per server. ISC encourages that in case your Kea server has
-            more than one daemon active, e.g., <i>DHCPv4</i>, <i>DHCPv6</i>, and <i>DDNS</i> daemons are all active,
-            they should all originate from the very same release, i.e., they have the same version.<br />Based on the
-            many software version checks performed, Stork tries to estimate the severity for each machine. The summary
-            table groups the machines by severity and sorts them in descending order. ISC advises reviewing the summary
-            for machines with <i>Error</i> and <i>Warning</i> severity.
+            Stork can identify the ISC software used on all authorized machines and check whether those software
+            packages are up-to-date. The summary table indicates whether there are software updates available for any of
+            the versions that are running, with messages that show how critical those updates are.<br />
+            The table also includes whether the machine's <i>Stork agent</i> version matches the
+            <i>Stork server</i> version.<br />
+            The version of the <i>Stork server</i> and all <i>Stork agents</i> should match; e.g. if the
+            <i>Stork server</i> version is <i>2.0.0</i>, all Stork agents should also be version <i>2.0.0</i>.<br />
+
+            For each machine where the Kea server is found, Stork also checks whether all the Kea daemons use matching
+            versions.<br />
+
+            If the Kea server has more than one daemon active, they should all use the same version; e.g. if the Kea
+            server has active daemons <i>DHCPv4</i>, <i>DHCPv6</i> and <i>DDNS</i>, and the <i>DHCPv4</i> daemon is
+            version <i>2.6.1</i>, all other Kea daemons (<i>DHCPv6</i> and <i>DDNS</i>) should be version
+            <i>2.6.1</i>.<br />
+
+            The table includes color-coded notices about the importance of upgrading the Kea, BIND 9, or Stork software,
+            based on the software version checks performed. The summary table groups the machines by severity and sorts
+            them in descending order.<br />
+
+            ISC advises reviewing the summaries for machines with red and yellow severity and updating those software
+            versions.
         </p>
         <h4>Current releases</h4>
         <p>
-            The second part shows the currently available versions of ISC Kea, BIND9, and Stork software that may be
-            used in your Stork deployment. The tables may present different types of releases described with the
-            following terms:
+            These tables show the currently available versions of ISC's Kea, BIND 9, and Stork software. There are links
+            to the software documentation and release notes, as well as to packages and tarball downloads. The table
+            also indicates the version release dates and an EoL (End-of-Life) date for stable releases.<br />
+
+            The tables may include different types of releases described with the following terms:
         </p>
         <ul>
             <li>
@@ -28,26 +45,27 @@
                 use.
             </li>
             <li><b>Stable</b> - These versions are fully supported and meant for production use.</li>
-            <li><b>ESV</b> - BIND9 Extended Support version - suitable for those needing long-term stability.</li>
+            <li>
+                <b>ESV</b> - (only for the BIND 9 Extended Support version) - These versions are suitable for those
+                needing long-term stability.
+            </li>
             <li><b>EoL date</b> - the release will no longer be supported after that date.</li>
         </ul>
         <p>
-            For details about ISC's Software Support Policy and Versioning, please refer to the
+            For details about ISC's Software Support Policy and Version Numbering, please refer to this
             <a href="https://kb.isc.org/docs/aa-00896" target="_blank">KB article</a>.
         </p>
         <h4>Data source</h4>
-        <p>
-            The data with up-to-date ISC software releases that this page is displaying may come from different sources:
-        </p>
+        <p>The information about ISC software releases shown on this page may come from different sources:</p>
         <ul>
             <li>
-                <b>Offline JSON file</b> - This data is updated with every Stork release. The further from the release
-                date you are, the more outdated this data may become. ISC advises checking the
-                <a target="_blank" href="https://isc.org/download">download page</a> regularly for up-to-date
+                <b>Offline JSON file</b> - This data is updated with every Stork release. Of course, the more time has
+                passed since a given release date, the more outdated this data may be. ISC advises regularly checking
+                the <a target="_blank" href="https://isc.org/download">ISC software download page</a> for up-to-date
                 information.
             </li>
             <li>
-                <b>Online source</b> - This data is supposed to be always up-to-date. This is not supported yet and will
+                <b>Online source</b> - This data is intended to be always up-to-date. This is not yet supported and will
                 be added in future Stork releases.
             </li>
         </ul>
@@ -233,7 +251,9 @@
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="5">No data retrieved from Stork server.</td>
+                    <td colspan="5">
+                        No data retrieved from Stork server (this may be due to no authorized machines being found).
+                    </td>
                 </tr>
             </ng-template>
         </p-table>
