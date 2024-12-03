@@ -322,6 +322,8 @@
           $ref: '#/definitions/DelegatedPrefixPool'
       keaConfigSubnetParameters:
           $ref: '#/definitions/KeaConfigSubnetParameters'
+      userContext:
+        type: object
 
   Subnet:
     type: object
@@ -350,6 +352,8 @@
         type: array
         items:
           $ref: '#/definitions/LocalSubnet'
+      name:
+        type: string
 
   Subnets:
     type: object

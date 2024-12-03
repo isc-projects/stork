@@ -339,6 +339,10 @@
                         ],
                         "require-client-classes": [ "late" ],
                         "subnet": "2001:db8::/32",
+                        "user-context": {
+                            "subnet-name": "foo-subnet",
+                            "answer": 42
+                        },
                         "valid-lifetime": 6000,
                         "min-valid-lifetime": 4000,
                         "max-valid-lifetime": 8000

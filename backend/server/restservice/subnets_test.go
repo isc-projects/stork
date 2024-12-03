@@ -351,6 +351,12 @@ func TestGetSubnet4(t *testing.T) {
 	require.Len(t, subnet.LocalSubnets, 1)
 	ls := subnet.LocalSubnets[0]
 
+	// Validate the name.
+	require.Equal(t, "foo-subnet", subnet.Name)
+	require.NotNil(t, ls.UserContext)
+	require.IsType(t, map[string]any(nil), ls.UserContext)
+	require.Equal(t, 42, ls.UserContext.(map[string]any)["answer"])
+
 	// Validate the pools.
 	require.Len(t, ls.Pools, 2)
 	require.NotNil(t, ls.Pools[0].Pool)
@@ -848,6 +854,12 @@ func TestGetSubnet6(t *testing.T) {
 
 	require.Len(t, subnet.LocalSubnets, 1)
 	ls := subnet.LocalSubnets[0]
+
+	// Validate the name.
+	require.Equal(t, "foo-subnet", subnet.Name)
+	require.NotNil(t, ls.UserContext)
+	require.IsType(t, map[string]any(nil), ls.UserContext)
+	require.Equal(t, 42, ls.UserContext.(map[string]any)["answer"])
 
 	// Validate the prefix delegation pools.
 	require.Len(t, ls.PrefixDelegationPools, 1)

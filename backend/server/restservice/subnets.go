@@ -91,6 +91,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		PdUtilization:    float64(sn.PdUtilization) / 10,
 		Stats:            sn.Stats,
 		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
+		Name:             sn.Name,
 	}
 
 	if sn.SharedNetwork != nil {
@@ -108,6 +109,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			MachineHostname:  lsn.Daemon.App.Machine.State.Hostname,
 			Stats:            lsn.Stats,
 			StatsCollectedAt: convertToOptionalDatetime(lsn.StatsCollectedAt),
+			UserContext:      lsn.UserContext,
 		}
 		for _, poolDetails := range lsn.AddressPools {
 			pool := &models.Pool{
@@ -286,6 +288,7 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 		Prefix:          restSubnet.Subnet,
 		ClientClass:     restSubnet.ClientClass,
 		SharedNetworkID: restSubnet.SharedNetworkID,
+		Name:            restSubnet.Name,
 	}
 	hasher := keaconfig.NewHasher()
 	// Convert local subnet containing associations of the subnet with daemons.
@@ -294,6 +297,11 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 			LocalSubnetID: ls.ID,
 			DaemonID:      ls.DaemonID,
 		}
+
+		if userContext, ok := ls.UserContext.(map[string]any); ok {
+			localSubnet.UserContext = userContext
+		}
+
 		for _, poolDetails := range ls.Pools {
 			pool, err := dbmodel.NewAddressPoolFromRange(*poolDetails.Pool)
 			if err != nil {
