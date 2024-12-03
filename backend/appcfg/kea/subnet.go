@@ -35,6 +35,7 @@ type Subnet interface {
 	GetSubnetParameters() *SubnetParameters
 	GetDHCPOptions() []SingleOptionData
 	GetUniverse() storkutil.IPType
+	GetUserContext() map[string]any
 }
 
 // Represents a relay configuration for a subnet in Kea.
@@ -177,6 +178,7 @@ type CommonSubnetParameters struct {
 	Pools             []Pool             `json:"pools,omitempty"`
 	Relay             *Relay             `json:"relay,omitempty"`
 	Reservations      []Reservation      `json:"reservations,omitempty"`
+	UserContext       map[string]any     `json:"user-context,omitempty"`
 }
 
 // Represents an IPv4 subnet in Kea.
@@ -297,6 +299,11 @@ func (s *Subnet4) GetUniverse() storkutil.IPType {
 	return storkutil.IPv4
 }
 
+// Returns user-context data.
+func (s *Subnet4) GetUserContext() map[string]any {
+	return s.UserContext
+}
+
 // Returns Kea-specific IPv4 subnet configuration parameters.
 func (s *Subnet4) GetSubnetParameters() *SubnetParameters {
 	return &SubnetParameters{
@@ -358,6 +365,11 @@ func (s *Subnet6) GetDHCPOptions() []SingleOptionData {
 // Returns IPv6 universe.
 func (s *Subnet6) GetUniverse() storkutil.IPType {
 	return storkutil.IPv6
+}
+
+// Returns user-context data.
+func (s *Subnet6) GetUserContext() map[string]any {
+	return s.UserContext
 }
 
 // Returns Kea-specific IPv6 subnet configuration parameters.
@@ -561,7 +573,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 	return subnet6, nil
 }
 
-// Converts a subnet in Stork to a structure accepted by the subent4-del and
+// Converts a subnet in Stork to a structure accepted by the subnet4-del and
 // subnet6-del commands in Kea.
 func CreateSubnetCmdsDeletedSubnet(daemonID int64, subnet SubnetAccessor) (deletedSubnet *SubnetCmdsDeletedSubnet, err error) {
 	var subnetID int64

@@ -151,6 +151,7 @@ func convertSubnetFromKea(keaSubnet keaconfig.Subnet, daemon *Daemon, source Hos
 				DaemonID:      daemon.ID,
 				LocalSubnetID: keaSubnet.GetID(),
 				KeaParameters: keaSubnet.GetSubnetParameters(),
+				UserContext:   keaSubnet.GetUserContext(),
 			},
 		},
 	}

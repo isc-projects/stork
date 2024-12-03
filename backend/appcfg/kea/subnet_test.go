@@ -96,6 +96,10 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.EqualValues(t, 6000, *params.ValidLifetime)
 	require.EqualValues(t, 4000, *params.MinValidLifetime)
 	require.EqualValues(t, 8000, *params.MaxValidLifetime)
+	userContext := params.GetUserContext()
+	require.Len(t, userContext, 1)
+	require.Contains(t, userContext, "foo")
+	require.Equal(t, "bar", userContext["foo"])
 }
 
 // Test getting a canonical subnet prefix when the prefix is already in
@@ -313,6 +317,10 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.EqualValues(t, 6000, *params.ValidLifetime)
 	require.EqualValues(t, 4000, *params.MinValidLifetime)
 	require.EqualValues(t, 8000, *params.MaxValidLifetime)
+	userContext := params.GetUserContext()
+	require.Len(t, userContext, 1)
+	require.Contains(t, userContext, "foo")
+	require.Equal(t, "bar", userContext["foo"])
 }
 
 // Test that the Kea IPv6 subnet configuration parameters are returned

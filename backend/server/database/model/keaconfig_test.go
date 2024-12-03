@@ -126,6 +126,10 @@ func TestNewSubnetFromKea(t *testing.T) {
 					},
 				},
 			},
+			UserContext: map[string]interface{}{
+				"foo":         "bar",
+				"subnet-name": "baz",
+			},
 		},
 		PDPools: []keaconfig.PDPool{
 			{
@@ -175,6 +179,10 @@ func TestNewSubnetFromKea(t *testing.T) {
 	require.Equal(t, parsedSubnet.Hosts[0].ID, parsedSubnet.Hosts[0].LocalHosts[0].HostID)
 	require.EqualValues(t, 234, parsedSubnet.Hosts[0].LocalHosts[0].DaemonID)
 	require.Equal(t, HostDataSourceConfig, parsedSubnet.Hosts[0].LocalHosts[0].DataSource)
+
+	require.Equal(t, "bar", parsedSubnet.LocalSubnets[0].UserContext["foo"])
+	require.Equal(t, "baz", parsedSubnet.LocalSubnets[0].UserContext["subnet-name"])
+	require.Empty(t, parsedSubnet.Name)
 }
 
 // Test that the error is returned when the subnet prefix is invalid.

@@ -77,6 +77,7 @@
     "require-client-classes": [ "late" ],
     "server-hostname": "myhost.example.org",
     "subnet": "192.0.0.0/8",
+    "user-context": { "foo": "bar" },
     "valid-lifetime": 6000,
     "min-valid-lifetime": 4000,
     "max-valid-lifetime": 8000
