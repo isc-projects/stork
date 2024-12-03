@@ -190,6 +190,7 @@ type LocalSubnet struct {
 	PrefixPools  []PrefixPool  `pg:"rel:has-many"`
 
 	KeaParameters *keaconfig.SubnetParameters
+	UserContext   map[string]interface{}
 }
 
 // Reflects IPv4 or IPv6 subnet from the database.
@@ -210,6 +211,8 @@ type Subnet struct {
 	PdUtilization    int16
 	Stats            SubnetStats
 	StatsCollectedAt time.Time
+
+	Name string
 }
 
 // Returns local subnet id for the specified daemon.
