@@ -1056,7 +1056,6 @@ func TestExtractSubnetNameFromUserContextPositive(t *testing.T) {
 			// Assert
 			require.Equal(t, fmt.Sprintf("value-%s", preferredKey), name)
 		})
-
 	}
 }
 
