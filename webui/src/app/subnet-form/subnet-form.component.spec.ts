@@ -702,7 +702,7 @@ describe('SubnetFormComponent', () => {
                             ],
                         },
                     },
-                    userContext: null
+                    userContext: null,
                 },
                 {
                     id: 123,
@@ -741,7 +741,7 @@ describe('SubnetFormComponent', () => {
                             ],
                         },
                     },
-                    userContext: null
+                    userContext: null,
                 },
             ],
         }

@@ -1190,9 +1190,7 @@ export class SubnetSetFormService {
                 },
                 Validators.required
             ),
-            userContexts: new UntypedFormArray(
-                subnet.localSubnets?.map(ls => new FormControl(ls.userContext)) ?? []
-            )
+            userContexts: new UntypedFormArray(subnet.localSubnets?.map((ls) => new FormControl(ls.userContext)) ?? []),
         })
         return formGroup
     }
@@ -1294,7 +1292,7 @@ export class SubnetSetFormService {
             parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4, keaVersionRange),
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl<number[]>([], Validators.required),
-            userContexts: new UntypedFormArray([])
+            userContexts: new UntypedFormArray([]),
         })
         return formGroup
     }

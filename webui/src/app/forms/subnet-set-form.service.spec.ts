@@ -2189,8 +2189,8 @@ describe('SubnetSetFormService', () => {
                         },
                     },
                     userContext: {
-                        foo: 'bar'
-                    }
+                        foo: 'bar',
+                    },
                 },
                 {
                     daemonId: 2,
@@ -2200,8 +2200,8 @@ describe('SubnetSetFormService', () => {
                         },
                     },
                     userContext: {
-                        bar: 'foo'
-                    }
+                        bar: 'foo',
+                    },
                 },
             ],
         }
