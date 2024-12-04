@@ -19,3 +19,4 @@ documentation.json
 src/app/*.ts.template
 .npmrc
 .browserlistrc
+junit.xml
