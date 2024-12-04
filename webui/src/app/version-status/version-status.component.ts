@@ -107,7 +107,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
             return
         }
 
-        let sanitizedSemver = this.versionService.sanitizeSemver(this.version)
+        const sanitizedSemver = this.versionService.sanitizeSemver(this.version)
         if (sanitizedSemver) {
             this.version = sanitizedSemver
             this._subscriptions.add(
@@ -128,7 +128,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                             }
                         },
                         error: (err) => {
-                            let msg = getErrorMessage(err)
+                            const msg = getErrorMessage(err)
                             this.messageService.add({
                                 severity: 'error',
                                 summary: 'Error fetching software versions data',
@@ -170,7 +170,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     private setSeverity(feedback: VersionFeedback) {
         this.severity = feedback.severity
         this.feedbackMessages = feedback.messages ?? []
-        let m: Message = {
+        const m: Message = {
             severity: Severity[feedback.severity],
             summary: `${this.appName} ${this.version}`,
             detail: feedback.messages.join('<br><br>'),

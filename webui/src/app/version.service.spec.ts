@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing'
 
-import { Severity, VersionAlert, VersionFeedback, VersionService } from './version.service'
+import { Severity, VersionAlert, VersionService } from './version.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { App, AppsVersions, GeneralService, VersionDetails } from './backend'
 import { of } from 'rxjs'
@@ -10,7 +10,7 @@ describe('VersionService', () => {
     let service: VersionService
     let generalService: GeneralService
     let getSwVersionsSpy: jasmine.Spy<any>
-    let fakeResponse: AppsVersions = {
+    const fakeResponse: AppsVersions = {
         bind9: {
             currentStable: [
                 {
@@ -153,7 +153,7 @@ describe('VersionService', () => {
             .unsubscribe()
 
         // Act
-        let spy = spyOn(service, 'isDataOutdated')
+        const spy = spyOn(service, 'isDataOutdated')
         spy.and.returnValue(true)
         service
             .getCurrentData()
@@ -212,9 +212,9 @@ describe('VersionService', () => {
     it('should sanitize semver', () => {
         // Arrange
         // Act
-        let res1 = service.sanitizeSemver('there is semver here 12.23.1 where? there <=')
-        let res2 = service.sanitizeSemver('BIND 9.18.30 (Extended Support Version) <id:cdc8d69>')
-        let res3 = service.sanitizeSemver('2.6.3')
+        const res1 = service.sanitizeSemver('there is semver here 12.23.1 where? there <=')
+        const res2 = service.sanitizeSemver('BIND 9.18.30 (Extended Support Version) <id:cdc8d69>')
+        const res3 = service.sanitizeSemver('2.6.3')
 
         // Assert
         expect(service.sanitizeSemver(null)).toBeNull()
@@ -242,14 +242,10 @@ describe('VersionService', () => {
 
     it('should return software version feedback for update available', () => {
         // Arrange
-        let securityUpdateFound: VersionFeedback
-        let stableUpdateFound: VersionFeedback
-        let devUpdateFound: VersionFeedback
-
         // Act
-        securityUpdateFound = service.getSoftwareVersionFeedback('1.14.0', 'stork', fakeResponse)
-        stableUpdateFound = service.getSoftwareVersionFeedback('9.18.10', 'bind9', fakeResponse)
-        devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'kea', fakeResponse)
+        const securityUpdateFound = service.getSoftwareVersionFeedback('1.14.0', 'stork', fakeResponse)
+        const stableUpdateFound = service.getSoftwareVersionFeedback('9.18.10', 'bind9', fakeResponse)
+        const devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'kea', fakeResponse)
 
         // Assert
         expect(securityUpdateFound).toBeTruthy()
@@ -275,14 +271,10 @@ describe('VersionService', () => {
 
     it('should return software version feedback for current version used', () => {
         // Arrange
-        let devNoStableCheck: VersionFeedback
-        let stableCheck: VersionFeedback
-        let devCheck: VersionFeedback
-
         // Act
-        devNoStableCheck = service.getSoftwareVersionFeedback('1.19.0', 'stork', fakeResponse)
-        stableCheck = service.getSoftwareVersionFeedback('9.20.2', 'bind9', fakeResponse)
-        devCheck = service.getSoftwareVersionFeedback('2.7.3', 'kea', fakeResponse)
+        const devNoStableCheck = service.getSoftwareVersionFeedback('1.19.0', 'stork', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('9.20.2', 'bind9', fakeResponse)
+        const devCheck = service.getSoftwareVersionFeedback('2.7.3', 'kea', fakeResponse)
 
         // Assert
         expect(devNoStableCheck).toBeTruthy()
@@ -304,14 +296,10 @@ describe('VersionService', () => {
 
     it('should return software version feedback for more recent version used', () => {
         // Arrange
-        let devNoStableCheck: VersionFeedback
-        let stableCheck: VersionFeedback
-        let devCheck: VersionFeedback
-
         // Act
-        devNoStableCheck = service.getSoftwareVersionFeedback('1.19.5', 'stork', fakeResponse)
-        stableCheck = service.getSoftwareVersionFeedback('9.20.22', 'bind9', fakeResponse)
-        devCheck = service.getSoftwareVersionFeedback('2.9.3', 'kea', fakeResponse)
+        const devNoStableCheck = service.getSoftwareVersionFeedback('1.19.5', 'stork', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('9.20.22', 'bind9', fakeResponse)
+        const devCheck = service.getSoftwareVersionFeedback('2.9.3', 'kea', fakeResponse)
 
         // Assert
         expect(devNoStableCheck).toBeTruthy()
@@ -333,10 +321,8 @@ describe('VersionService', () => {
 
     it('should return software version feedback for not known stable', () => {
         // Arrange
-        let stableCheck: VersionFeedback
-
         // Act
-        stableCheck = service.getSoftwareVersionFeedback('2.0.0', 'stork', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('2.0.0', 'stork', fakeResponse)
 
         // Assert
         expect(stableCheck).toBeTruthy()
@@ -347,10 +333,8 @@ describe('VersionService', () => {
 
     it('should return software version feedback for newer stable not matching known ranges', () => {
         // Arrange
-        let stableCheck: VersionFeedback
-
         // Act
-        stableCheck = service.getSoftwareVersionFeedback('4.0.0', 'kea', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('4.0.0', 'kea', fakeResponse)
 
         // Assert
         expect(stableCheck).toBeTruthy()
@@ -363,10 +347,8 @@ describe('VersionService', () => {
 
     it('should return software version feedback for older stable not matching known ranges', () => {
         // Arrange
-        let stableCheck: VersionFeedback
-
         // Act
-        stableCheck = service.getSoftwareVersionFeedback('1.0.0', 'kea', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('1.0.0', 'kea', fakeResponse)
 
         // Assert
         expect(stableCheck).toBeTruthy()
@@ -386,7 +368,7 @@ describe('VersionService', () => {
 
     it('should throw error for version check for incorrect AppVersions data', () => {
         // Arrange
-        let data: AppsVersions = {
+        const data: AppsVersions = {
             date: 'abc',
             bind9: null,
             kea: null,
@@ -397,11 +379,25 @@ describe('VersionService', () => {
         expect(() => {
             service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
         }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+
+        // Stable release metadata is there, but sortedStableVersions is missing.
+        // It is expected to throw an error here as well.
+        data.kea = { currentStable: [{ version: '2.6.1', releaseDate: '2024-02-01', eolDate: '2026-02-01' }] }
+        expect(() => {
+            service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
+        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+
+        // Stable release metadata is missing.
+        // It is expected to throw an error here as well.
+        data.kea = { currentStable: [], sortedStableVersions: ['2.6.1'] }
+        expect(() => {
+            service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
+        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
     })
 
     it('should throw error for version check for incomplete AppVersions data', () => {
         // Arrange
-        let data: AppsVersions = {
+        const data: AppsVersions = {
             date: 'abc',
             bind9: null,
             kea: {
@@ -439,11 +435,10 @@ describe('VersionService', () => {
 
     it('should return software version feedback for stork agent vs server mismatch', () => {
         // Arrange
-        let storkCheck: VersionFeedback
         service.setStorkServerVersion('1.19.0')
 
         // Act
-        storkCheck = service.getSoftwareVersionFeedback('1.18.0', 'stork', fakeResponse)
+        const storkCheck = service.getSoftwareVersionFeedback('1.18.0', 'stork', fakeResponse)
 
         // Assert
         expect(storkCheck).toBeTruthy()
@@ -486,7 +481,7 @@ describe('VersionService', () => {
         expect(resp.detected).toBeTrue()
         expect(resp.severity).toBe(Severity.warn)
         // success severity expected
-        let f = service.getSoftwareVersionFeedback('2.4.1', 'kea', fakeResponse)
+        const f = service.getSoftwareVersionFeedback('2.4.1', 'kea', fakeResponse)
         expect(f.severity).toBe(Severity.success)
         // however this shouldn't change the alert severity
         expect(resp.detected).toBeTrue()
@@ -622,7 +617,7 @@ describe('VersionService', () => {
         expect(service.isDevMoreRecentThanStable('kea', fakeResponse)).toBeTrue()
         // BIND9 has more recent dev release than a stable release.
         expect(service.isDevMoreRecentThanStable('bind9', fakeResponse)).toBeTrue()
-        let data = deepCopy(fakeResponse)
+        const data = deepCopy(fakeResponse)
         data.stork.currentStable = [
             {
                 eolDate: '2026-07-01',
@@ -644,7 +639,7 @@ describe('VersionService', () => {
 
     it('should return software version feedback for security updates available', () => {
         // Arrange
-        let data = deepCopy(fakeResponse)
+        const data = deepCopy(fakeResponse)
         data.kea.latestSecure = [
             { version: '2.6.10', range: '2.6.x', releaseDate: '2024-12-02' },
             { version: '2.4.10', range: '2.4.x', releaseDate: '2024-12-02' },
@@ -686,7 +681,7 @@ describe('VersionService', () => {
 
     it('should not return software version feedback for security updates available', () => {
         // Arrange
-        let data = deepCopy(fakeResponse)
+        const data = deepCopy(fakeResponse)
         data.kea.latestSecure = [
             { version: '2.6.10', range: '2.6.x', releaseDate: '2024-12-02' },
             { version: '2.4.10', range: '2.4.x', releaseDate: '2024-12-02' },
@@ -750,6 +745,24 @@ describe('VersionService', () => {
         expect(securityCheckNewerDev2.messages.length).toBe(2)
         expect(securityCheckNewerDev2.messages[0]).toMatch('You are using more recent version')
         expect(securityCheckNewerDev2.messages[1]).toMatch(
+            'Please be advised that using development version in production is not recommended'
+        )
+    })
+
+    it('should return software version feedback when dev metadata is missing', () => {
+        // Arrange
+        const data = deepCopy(fakeResponse)
+        data.kea.latestDev = null
+
+        // Act
+        const devUpdateFound = service.getSoftwareVersionFeedback('2.7.1', 'kea', data)
+
+        // Assert
+        expect(devUpdateFound).toBeTruthy()
+        expect(devUpdateFound.severity).toBe(Severity.secondary)
+        expect(devUpdateFound.messages.length).toBeGreaterThan(1)
+        expect(devUpdateFound.messages[0]).toMatch(new RegExp(/has current stable version.+available/))
+        expect(devUpdateFound.messages[1]).toMatch(
             'Please be advised that using development version in production is not recommended'
         )
     })

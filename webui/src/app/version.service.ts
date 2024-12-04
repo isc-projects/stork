@@ -120,6 +120,7 @@ export class VersionService {
         if (this.isDataOutdated()) {
             this.refreshData()
         }
+
         return this.currentData$
     }
 
@@ -172,31 +173,31 @@ export class VersionService {
      * @throws Error when the assessment fails for any reason
      */
     getSoftwareVersionFeedback(version: string, app: AppType, data: AppsVersions): VersionFeedback {
-        let cacheKey = version + app
-        let cachedFeedback = this._checkedVersionCache?.get(cacheKey)
+        const cacheKey = version + app
+        const cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
             this.detectAlertingSeverity(cachedFeedback.severity)
             return cachedFeedback
         }
 
         let response: VersionFeedback = { severity: Severity.success, messages: [] }
-        let sanitizedSemver = this.sanitizeSemver(version)
+        const sanitizedSemver = this.sanitizeSemver(version)
         let appName = ''
         if (sanitizedSemver) {
             appName = app === 'bind9' ? app.toUpperCase() : app[0].toUpperCase() + app.slice(1)
             appName += app === 'stork' ? ' agent' : ''
-            let isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
+            const isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
 
             // check security releases first
-            let latestSecureVersionDetails = data?.[app]?.latestSecure || null
+            const latestSecureVersionDetails = data?.[app]?.latestSecure || null
             if (
                 latestSecureVersionDetails &&
                 Array.isArray(latestSecureVersionDetails) &&
                 latestSecureVersionDetails.length >= 1
             ) {
                 let isSecure = false
-                let secureDevVersions = []
-                for (let details of latestSecureVersionDetails) {
+                const secureDevVersions = []
+                for (const details of latestSecureVersionDetails) {
                     if (this.isDevelopmentVersion(details.version, app)) {
                         secureDevVersions.push(details.version)
                     }
@@ -221,7 +222,7 @@ export class VersionService {
                 }
 
                 if (!isSecure && isDevelopmentVersion && secureDevVersions.length >= 1) {
-                    let minDevSecure = minSatisfying(secureDevVersions, '*')
+                    const minDevSecure = minSatisfying(secureDevVersions, '*')
                     if (lt(sanitizedSemver, minDevSecure)) {
                         response = {
                             severity: Severity.error,
@@ -236,9 +237,15 @@ export class VersionService {
                 }
             }
 
+            const currentStableVersionDetails = data?.[app]?.currentStable || null
+            const currentStableMetadataAvailable =
+                Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length > 0
+            const sortedCurrentStableVersions = this.getVersion(app, 'currentStable', data)
+            const sortedCurrentStablesAvailable =
+                Array.isArray(sortedCurrentStableVersions) && sortedCurrentStableVersions.length > 0
+            const dataDate = data?.date || 'unknown'
+
             // case - stable version
-            let currentStableVersionDetails = data?.[app]?.currentStable || null
-            let dataDate = data?.date || 'unknown'
             if (!isDevelopmentVersion) {
                 if (!currentStableVersionDetails) {
                     response = {
@@ -252,8 +259,8 @@ export class VersionService {
                     return this.setCacheAndReturnResponse(cacheKey, response)
                 }
 
-                if (Array.isArray(currentStableVersionDetails) && currentStableVersionDetails.length >= 1) {
-                    for (let details of currentStableVersionDetails) {
+                if (currentStableMetadataAvailable) {
+                    for (const details of currentStableVersionDetails) {
                         if (satisfies(sanitizedSemver, details.range)) {
                             if (lt(sanitizedSemver, details.version)) {
                                 response = {
@@ -284,10 +291,9 @@ export class VersionService {
                     }
 
                     // current version not matching currentStable ranges
-                    let stableVersions = data?.[app].sortedStableVersions || null
-                    if (Array.isArray(stableVersions) && stableVersions.length > 0) {
-                        let versionsText = stableVersions.join(', ')
-                        if (lt(sanitizedSemver, stableVersions[0])) {
+                    if (sortedCurrentStablesAvailable) {
+                        const versionsText = sortedCurrentStableVersions.join(', ')
+                        if (lt(sanitizedSemver, sortedCurrentStableVersions[0])) {
                             // either semver major or minor are below min(current stable)
                             response = {
                                 severity: Severity.warn,
@@ -317,39 +323,57 @@ export class VersionService {
             }
 
             // case - development version
-            let latestDevVersion = this.getVersion(app, 'latestDev', data)
-            if (isDevelopmentVersion && latestDevVersion) {
-                if (lt(sanitizedSemver, latestDevVersion as string)) {
-                    response = {
-                        severity: Severity.warn,
-                        messages: [
-                            `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
-                        ],
+            const latestDevVersion = this.getVersion(app, 'latestDev', data)
+            if (isDevelopmentVersion) {
+                if (latestDevVersion) {
+                    if (lt(sanitizedSemver, latestDevVersion as string)) {
+                        response = {
+                            severity: Severity.warn,
+                            messages: [
+                                `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
+                            ],
+                        }
+                    } else if (gt(sanitizedSemver, latestDevVersion as string)) {
+                        response = {
+                            severity: Severity.secondary,
+                            messages: [
+                                `Current development ${appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
+                            ],
+                        }
+                    } else {
+                        response = {
+                            severity: Severity.success,
+                            messages: [
+                                `${sanitizedSemver} is current ${appName} development version (known as of ${dataDate}).`,
+                            ],
+                        }
                     }
-                } else if (gt(sanitizedSemver, latestDevVersion as string)) {
+
+                    if (currentStableMetadataAvailable) {
+                        response.messages.push(
+                            'Please be advised that using development version in production is not recommended.'
+                        )
+                    }
+
+                    response = this.getStorkFeedback(app, sanitizedSemver, response)
+                    return this.setCacheAndReturnResponse(cacheKey, response)
+                } else if (currentStableMetadataAvailable && sortedCurrentStablesAvailable) {
+                    // There is no metadata for development release, but there is metadata for stable releases.
+                    // This is very uncommon case, but it is possible.
                     response = {
                         severity: Severity.secondary,
                         messages: [
-                            `Current development ${appName} version (known as of ${dataDate}) is ${latestDevVersion}. You are using more recent version ${sanitizedSemver}.`,
+                            `${appName} has current stable version/s ${sortedCurrentStableVersions.join(', ')} available (known as of ${dataDate}).`,
                         ],
                     }
-                } else {
-                    response = {
-                        severity: Severity.success,
-                        messages: [
-                            `${sanitizedSemver} is current ${appName} development version (known as of ${dataDate}).`,
-                        ],
-                    }
-                }
 
-                if (currentStableVersionDetails) {
                     response.messages.push(
                         'Please be advised that using development version in production is not recommended.'
                     )
-                }
 
-                response = this.getStorkFeedback(app, sanitizedSemver, response)
-                return this.setCacheAndReturnResponse(cacheKey, response)
+                    response = this.getStorkFeedback(app, sanitizedSemver, response)
+                    return this.setCacheAndReturnResponse(cacheKey, response)
+                }
             }
 
             throw new Error(`Couldn't asses the software version for ${appName} ${version}!`)
@@ -366,17 +390,17 @@ export class VersionService {
      * @param data versions data used to determine returned value
      */
     isDevMoreRecentThanStable(app: AppType, data: AppsVersions): boolean {
-        let stables = this.getVersion(app, 'currentStable', data)
+        const stables = this.getVersion(app, 'currentStable', data)
         if (!stables || stables?.length < 1) {
             return true
         }
 
-        let devVersion = this.getVersion(app, 'latestDev', data) as string
+        const devVersion = this.getVersion(app, 'latestDev', data) as string
         if (!devVersion) {
             return false
         }
 
-        let lastStable = stables[stables.length - 1]
+        const lastStable = stables[stables.length - 1]
         return gt(devVersion, lastStable)
     }
 
@@ -387,7 +411,7 @@ export class VersionService {
      * @return sanitized semver or null in case semver was not parsed
      */
     sanitizeSemver(version: string): string | null {
-        let sanitizedSemver = coerce(version)?.version
+        const sanitizedSemver = coerce(version)?.version
         if (sanitizedSemver && valid(sanitizedSemver)) {
             return sanitizedSemver
         }
@@ -432,7 +456,7 @@ export class VersionService {
      */
     areKeaDaemonsVersionsMismatching(app: App): boolean {
         if (app?.type === 'kea') {
-            let daemons = app.details?.daemons?.filter((daemon) => daemon.version)
+            const daemons = app.details?.daemons?.filter((daemon) => daemon.version)
             return daemons?.slice(1)?.some((daemon) => daemon.version !== daemons?.[0]?.version)
         }
 
@@ -462,7 +486,7 @@ export class VersionService {
      * @param app app for which the version lookup is done; accepted values: 'kea' | 'bind9' | 'stork'
      * @param swType sw version type for which the version lookup is done; accepted values: 'latestSecure' | 'currentStable' | 'latestDev'
      * @param data
-     * @return version as either string (in case of latestSecure and latestDev) or array of strings (in case of currentStable)
+     * @return version as either string (in case of latestDev) or array of strings (in case of currentStable or latestSecure)
      * @private
      */
     private getVersion(app: AppType, swType: ReleaseType, data: AppsVersions): string | string[] | null {
@@ -485,7 +509,7 @@ export class VersionService {
      */
     private getStorkFeedback(app: AppType, version: string, currentResponse: VersionFeedback): VersionFeedback {
         if (app === 'stork' && this._storkServerVersion && this._storkServerVersion !== version) {
-            let addMsg = `Stork server ${this._storkServerVersion} and Stork agent ${version} versions do not match! Please install matching versions!`
+            const addMsg = `Stork server ${this._storkServerVersion} and Stork agent ${version} versions do not match! Please install matching versions!`
             return {
                 severity: Severity.warn,
                 messages: [...currentResponse.messages, addMsg],

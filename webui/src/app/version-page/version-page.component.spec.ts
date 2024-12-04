@@ -30,7 +30,7 @@ describe('VersionPageComponent', () => {
     let getMachinesAppsVersionsSpy: jasmine.Spy<any>
     let messageService: MessageService
     let messageAddSpy: jasmine.Spy<any>
-    let fakeResponse = {
+    const fakeResponse = {
         bind9: {
             currentStable: [
                 {
@@ -96,7 +96,7 @@ describe('VersionPageComponent', () => {
             sortedStableVersions: null,
         },
     }
-    let fakeMachinesResponse = {
+    const fakeMachinesResponse = {
         items: [
             {
                 address: 'agent-kea', // warn
@@ -312,7 +312,7 @@ describe('VersionPageComponent', () => {
     it('should get daemons versions', () => {
         // Arrange
         apisWorkingFine()
-        let app = fakeMachinesResponse.items.filter((m) => m.address === 'agent-kea')[0].apps[0]
+        const app = fakeMachinesResponse.items.filter((m) => m.address === 'agent-kea')[0].apps[0]
 
         // Act & Assert
         expect(component.getDaemonsVersions(app)).toEqual('dhcp4 2.7.2, ca 2.7.2')
@@ -326,7 +326,7 @@ describe('VersionPageComponent', () => {
         expect(getCurrentDataSpy).toHaveBeenCalledTimes(1)
         expect(getMachinesAppsVersionsSpy).toHaveBeenCalledTimes(1)
 
-        let de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-info'))
+        const de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-info'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain(
             'Below information about ISC software versions relies on a data that was generated on 2024-10-03.'
@@ -339,14 +339,14 @@ describe('VersionPageComponent', () => {
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
-        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        const tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
         expect(tablesDe.length).toEqual(4)
-        let summaryTableDe = tablesDe[0]
+        const summaryTableDe = tablesDe[0]
 
         // There should be 4 group headers, one per error, warn, info and success severity.
         expect(summaryTableDe.queryAll(By.css('tbody tr')).length).toEqual(4)
         expect(component.counters).toEqual([1, 1, 1, 0, 1])
-        let groupHeaderMessagesDe = summaryTableDe.queryAll(By.css('.p-message'))
+        const groupHeaderMessagesDe = summaryTableDe.queryAll(By.css('.p-message'))
         expect(groupHeaderMessagesDe.length).toEqual(4)
         expect(Object.keys(groupHeaderMessagesDe[0].classes)).toContain('p-message-error')
         expect(Object.keys(groupHeaderMessagesDe[1].classes)).toContain('p-message-warn')
@@ -360,9 +360,9 @@ describe('VersionPageComponent', () => {
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
-        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        const tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
         expect(tablesDe.length).toEqual(4)
-        let keaTable = tablesDe[1]
+        const keaTable = tablesDe[1]
 
         // There should be 2 rows for stable releases and 1 for development.
         expect(keaTable.queryAll(By.css('tbody tr')).length).toEqual(3)
@@ -378,9 +378,9 @@ describe('VersionPageComponent', () => {
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
-        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        const tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
         expect(tablesDe.length).toEqual(4)
-        let bindTable = tablesDe[2]
+        const bindTable = tablesDe[2]
 
         // There should be 2 rows for stable releases and 1 for development.
         expect(bindTable.queryAll(By.css('tbody tr')).length).toEqual(3)
@@ -396,9 +396,9 @@ describe('VersionPageComponent', () => {
         expect(component.machines.length).toEqual(4)
 
         // There should be 4 tables.
-        let tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
+        const tablesDe = fixture.debugElement.queryAll(By.css('table.p-datatable-table'))
         expect(tablesDe.length).toEqual(4)
-        let storkTable = tablesDe[3]
+        const storkTable = tablesDe[3]
 
         // There is 1 row for development release.
         expect(storkTable.queryAll(By.css('tbody tr')).length).toEqual(1)
@@ -412,7 +412,7 @@ describe('VersionPageComponent', () => {
         let alert: VersionAlert
         versionService.getVersionAlert().subscribe((a) => (alert = a))
         apisWorkingFine()
-        let de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-warn'))
+        const de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-warn'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Action required')
 
@@ -421,7 +421,7 @@ describe('VersionPageComponent', () => {
         expect(alert.severity).toEqual(Severity.error)
 
         // There is a button to dismiss the alert.
-        let btn = de.query(By.css('button'))
+        const btn = de.query(By.css('button'))
         expect(btn).toBeTruthy()
         spyOn(versionService, 'dismissVersionAlert').and.callThrough()
         btn.triggerEventHandler('click')
@@ -434,11 +434,11 @@ describe('VersionPageComponent', () => {
         apisWorkingFine()
 
         // There is a button to refresh the data.
-        let de = fixture.debugElement.query(By.css('p-button[label="Refresh Versions"]'))
+        const de = fixture.debugElement.query(By.css('p-button[label="Refresh Versions"]'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Refresh Versions')
 
-        let btn = de.query(By.css('button'))
+        const btn = de.query(By.css('button'))
         expect(btn).toBeTruthy()
         spyOn(versionService, 'refreshData').and.callThrough()
         btn.triggerEventHandler('click')

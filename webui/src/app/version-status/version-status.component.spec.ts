@@ -17,7 +17,7 @@ describe('VersionStatusComponent', () => {
     let getCurrentDataSpy: jasmine.Spy<any>
     let getSoftwareVersionFeedbackSpy: jasmine.Spy<any>
     let messageAddSpy: jasmine.Spy<any>
-    let fakeResponse = {
+    const fakeResponse = {
         bind9: {
             currentStable: [
                 {
@@ -192,7 +192,7 @@ describe('VersionStatusComponent', () => {
 
         // Act & Assert
         setCorrectInputs()
-        let span = fixture.nativeElement.querySelector('span')
+        const span = fixture.nativeElement.querySelector('span')
         expect(span).toBeTruthy()
         expect(span.textContent).toContain('Kea 2.6.1')
     })
@@ -201,7 +201,7 @@ describe('VersionStatusComponent', () => {
         // Arrange
         // Act & Assert
         setCorrectInputs()
-        let span = fixture.nativeElement.querySelector('span')
+        const span = fixture.nativeElement.querySelector('span')
         expect(span).toBeNull()
     })
 
@@ -209,7 +209,7 @@ describe('VersionStatusComponent', () => {
         // Arrange
         // Act & Assert
         setCorrectInputs()
-        let messagesDiv = fixture.nativeElement.querySelector('div.p-messages')
+        const messagesDiv = fixture.nativeElement.querySelector('div.p-messages')
         expect(messagesDiv).toBeNull()
     })
 
@@ -219,7 +219,7 @@ describe('VersionStatusComponent', () => {
 
         // Act & Assert
         setCorrectInputs()
-        let messagesDiv = fixture.nativeElement.querySelector('div.p-messages')
+        const messagesDiv = fixture.nativeElement.querySelector('div.p-messages')
         expect(messagesDiv).toBeTruthy()
     })
 
