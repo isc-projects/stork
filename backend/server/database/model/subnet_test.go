@@ -595,6 +595,7 @@ func TestGetSubnetsByPage(t *testing.T) {
 		{
 			Prefix:          "192.0.2.0/24",
 			SharedNetworkID: sharedNetwork.ID,
+			Name:            "subnet-name",
 			LocalSubnets: []*LocalSubnet{
 				{
 					DaemonID: apps[0].Daemons[0].ID,
@@ -688,9 +689,23 @@ func TestGetSubnetsByPage(t *testing.T) {
 	// It must be nil to limit memory usage.
 	require.Nil(t, returned[0].LocalSubnets[0].Daemon.KeaDaemon)
 
+	// This should match one subnet.
+	filters.Text = newPtr("net-name")
+	returned, count, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	require.Len(t, returned, 1)
+	require.Equal(t, "192.0.2.0/24", returned[0].Prefix)
+
 	// This should have no match.
 	filters.Text = newPtr("192.0.5.0")
 	returned, count, err = GetSubnetsByPage(db, 0, 10, filters, "id", SortDirAsc)
+	require.NoError(t, err)
+	require.Zero(t, count)
+	require.Empty(t, returned)
+
+	filters.Text = newPtr("subnet-name-suffix")
+	returned, count, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
 	require.NoError(t, err)
 	require.Zero(t, count)
 	require.Empty(t, returned)

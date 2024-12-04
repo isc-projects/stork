@@ -706,7 +706,8 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
 			q = q.WhereOr("text(subnet.prefix) LIKE ?", "%"+*filters.Text+"%").
 				WhereOr("concat(host(ap.lower_bound), '-', host(ap.upper_bound)) LIKE ?", "%"+*filters.Text+"%").
-				WhereOr("shared_network.name LIKE ?", "%"+*filters.Text+"%")
+				WhereOr("shared_network.name LIKE ?", "%"+*filters.Text+"%").
+				WhereOr("subnet.name LIKE ?", "%"+*filters.Text+"%")
 			return q, nil
 		})
 	}
