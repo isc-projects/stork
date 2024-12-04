@@ -206,8 +206,8 @@ func TestAppVersionMetadataToRestAPI(t *testing.T) {
 	require.Equal(t, "9.20.2", bind.SortedStableVersions[1])
 }
 
-// Test that secureSwVersionsToRestAPI works fine.
-func TestSecureSwVersionsToRestAPI(t *testing.T) {
+// Test that secureSoftwareVersionsToRestAPI works fine.
+func TestSecureSoftwareVersionsToRestAPI(t *testing.T) {
 	// Arrange
 	testData := getExampleData()
 	expectedRanges := []string{
@@ -216,7 +216,7 @@ func TestSecureSwVersionsToRestAPI(t *testing.T) {
 	}
 
 	// Act
-	versionDetailsArr, err := secureSwVersionsToRestAPI(testData.Stork.LatestSecure)
+	versionDetailsArr, err := secureSoftwareVersionsToRestAPI(testData.Stork.LatestSecure)
 
 	// Assert
 	require.NoError(t, err)

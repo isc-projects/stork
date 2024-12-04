@@ -45,7 +45,7 @@ var VersionsJSON = "/etc/stork/versions.json" //nolint:gochecknoglobals
 func appVersionMetadataToRestAPI(input ReportAppVersionMetadata) (*models.AppVersionMetadata, error) {
 	out := models.AppVersionMetadata{}
 	if input.LatestSecure != nil {
-		if v, err := secureSwVersionsToRestAPI(input.LatestSecure); err == nil {
+		if v, err := secureSoftwareVersionsToRestAPI(input.LatestSecure); err == nil {
 			out.LatestSecure = v
 		} else {
 			return nil, err
@@ -126,7 +126,7 @@ func stableSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.Version
 // Takes an array of pointers to ReportVersionDetails for security releases.
 // Returns an array of pointers to VersionDetails for security releases in REST API format.
 // It returns an error when problem occurs when parsing dates.
-func secureSwVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, error) {
+func secureSoftwareVersionsToRestAPI(input []*ReportVersionDetails) ([]*models.VersionDetails, error) {
 	versionDetailsArr := []*models.VersionDetails{}
 
 	for _, details := range input {
