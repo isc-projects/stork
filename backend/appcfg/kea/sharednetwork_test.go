@@ -409,6 +409,7 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{})
 	subnetMock.EXPECT().GetKeaParameters(gomock.Any()).Return(&keaconfig.SubnetParameters{})
 	subnetMock.EXPECT().GetDHCPOptions(gomock.Any()).Return([]dhcpmodel.DHCPOptionAccessor{})
+	subnetMock.EXPECT().GetUserContext(gomock.Any()).Return(nil)
 
 	mock.EXPECT().GetSubnets(gomock.Any()).Return([]keaconfig.SubnetAccessor{
 		subnetMock,
