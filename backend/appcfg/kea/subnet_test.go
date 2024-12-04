@@ -405,6 +405,8 @@ func TestCreateSubnet4(t *testing.T) {
 	mock.EXPECT().GetPrefix().Return("192.0.2.0/24")
 	// Return a pool defined above.
 	mock.EXPECT().GetAddressPools(gomock.Eq(int64(1))).Return([]dhcpmodel.AddressPoolAccessor{poolMock})
+	// Return a user context.
+	mock.EXPECT().GetUserContext(gomock.Any()).Return(map[string]any{"foo": "bar"})
 	// Return subnet-level Kea parameters.
 	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SubnetParameters{
 		CacheParameters: keaconfig.CacheParameters{
@@ -485,6 +487,9 @@ func TestCreateSubnet4(t *testing.T) {
 	require.NotNil(t, *subnet4)
 
 	// Make sure that the conversion was correct.
+	require.Len(t, subnet4.UserContext, 1)
+	require.Contains(t, subnet4.UserContext, "foo")
+	require.Equal(t, "bar", subnet4.UserContext["foo"])
 	require.Equal(t, "iterative", *subnet4.Allocator)
 	require.True(t, *subnet4.Authoritative)
 	require.Equal(t, "/tmp/bootfile", *subnet4.BootFileName)
@@ -601,6 +606,8 @@ func TestCreateSubnet6(t *testing.T) {
 	mock.EXPECT().GetAddressPools(gomock.Eq(int64(1))).Return([]dhcpmodel.AddressPoolAccessor{poolMock})
 	// Return a delegated prefix pool defined above.
 	mock.EXPECT().GetPrefixPools(gomock.Eq(int64(1))).Return([]dhcpmodel.PrefixPoolAccessor{pdPoolMock})
+	// Return a user context.
+	mock.EXPECT().GetUserContext(gomock.Any()).Return(map[string]any{"foo": "bar"})
 	// Return subnet-level Kea parameters.
 	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SubnetParameters{
 		CacheParameters: keaconfig.CacheParameters{
@@ -679,6 +686,9 @@ func TestCreateSubnet6(t *testing.T) {
 	require.NotNil(t, subnet6)
 
 	// Make sure that the conversion was correct.
+	require.Len(t, subnet6.UserContext, 1)
+	require.Contains(t, subnet6.UserContext, "foo")
+	require.Equal(t, "bar", subnet6.UserContext["foo"])
 	require.Equal(t, "iterative", *subnet6.Allocator)
 	require.EqualValues(t, 1001, *subnet6.CacheMaxAge)
 	require.EqualValues(t, 0.25, *subnet6.CacheThreshold)
