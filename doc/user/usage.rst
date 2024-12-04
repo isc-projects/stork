@@ -300,8 +300,11 @@ button is enabled; click this button to submit the new name. The ``Rename``
 button is disabled if the name is invalid. In this case, a hint is displayed
 to explain the issues with the new name.
 
+Subnets and Networks
+~~~~~~~~~~~~~~~~~~~~
+
 IPv4 and IPv6 Subnets per Kea Application
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 
 One of the primary configuration aspects of any network is the layout
 of IP addressing. This is represented in Kea with IPv4 and IPv6
@@ -321,7 +324,7 @@ subnet, with three pools configured in it.
    :alt: View of subnets assigned to a single Kea application
 
 IPv4 and IPv6 Subnets in the Whole Network
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 
 It is convenient to see a complete overview of all subnets
 configured in the network that are being monitored by Stork. Once at least one
@@ -351,8 +354,21 @@ There are two thresholds: 80% (warning; the pool utilization
 bar turns orange) and 90% (critical; the pool utilization bar
 turns red).
 
+Subnet Names
+------------
+
+Kea allows store any arbitrary data related to a subnet in the ``user-context``
+field. This field is a JSON object. It may be used to store some metadata about
+the subnet, such as the name of the location where the subnet is used, the name
+of the department, name of related service or any other information that is
+useful for the network administrator.
+
+Stork displays the subnet's user context in the subnet page. Additionally, the
+value of the ``subnet-name`` key is displayed in the subnet list view. This
+allows the network administrator to quickly identify the subnet by its name.
+
 IPv4 and IPv6 Networks
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 Kea uses the concept of a shared network, which is essentially a stack
 of subnets deployed on the same physical link. Stork
