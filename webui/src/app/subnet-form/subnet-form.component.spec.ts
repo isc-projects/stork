@@ -702,6 +702,7 @@ describe('SubnetFormComponent', () => {
                             ],
                         },
                     },
+                    userContext: null
                 },
                 {
                     id: 123,
@@ -740,6 +741,7 @@ describe('SubnetFormComponent', () => {
                             ],
                         },
                     },
+                    userContext: null
                 },
             ],
         }
@@ -809,6 +811,7 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
+                    userContext: null,
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             allocator: 'random',
@@ -855,6 +858,7 @@ describe('SubnetFormComponent', () => {
                             },
                         },
                     ],
+                    userContext: null,
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
                             pdAllocator: 'iterative',

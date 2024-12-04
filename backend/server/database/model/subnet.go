@@ -278,6 +278,16 @@ func (s *Subnet) GetDHCPOptions(daemonID int64) (accessors []dhcpmodel.DHCPOptio
 	return
 }
 
+// Return user context for the subnet configured in the specified daemon.
+func (s *Subnet) GetUserContext(daemonID int64) map[string]any {
+	for _, ls := range s.LocalSubnets {
+		if ls.DaemonID == daemonID {
+			return ls.UserContext
+		}
+	}
+	return nil
+}
+
 // Return family of the subnet.
 func (s *Subnet) GetFamily() int {
 	family := 4

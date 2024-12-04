@@ -20,4 +20,6 @@ type SubnetAccessor interface {
 	// Returns a slice of DHCP options configured for a selected daemon in
 	// the subnet.
 	GetDHCPOptions(int64) []DHCPOptionAccessor
+	// Returns a user-context for a selected daemon in the subnet.
+	GetUserContext(int64) map[string]any
 }

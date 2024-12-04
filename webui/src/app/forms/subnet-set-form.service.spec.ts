@@ -2188,6 +2188,9 @@ describe('SubnetSetFormService', () => {
                             optionsHash: '123',
                         },
                     },
+                    userContext: {
+                        foo: 'bar'
+                    }
                 },
                 {
                     daemonId: 2,
@@ -2196,6 +2199,9 @@ describe('SubnetSetFormService', () => {
                             allocator: 'random',
                         },
                     },
+                    userContext: {
+                        bar: 'foo'
+                    }
                 },
             ],
         }
@@ -2216,6 +2222,9 @@ describe('SubnetSetFormService', () => {
         expect(subnet1.subnet).toBe('192.0.2.0/24')
         expect(subnet1.sharedNetworkId).toBe(1)
         expect(subnet1.localSubnets.length).toBe(2)
+
+        expect(subnet1.localSubnets[0].userContext).toEqual({ foo: 'bar' })
+        expect(subnet1.localSubnets[1].userContext).toEqual({ bar: 'foo' })
 
         expect(subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.options?.length).toBe(1)
         expect(subnet1.localSubnets[0].keaConfigSubnetParameters?.subnetLevelParameters?.options[0].code).toBe(5)

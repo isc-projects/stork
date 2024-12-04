@@ -1325,6 +1325,9 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 							Pool: storkutil.Ptr("192.0.2.30-192.0.2.40"),
 						},
 					},
+					UserContext: map[string]any{
+						"answer": 42,
+					},
 					KeaConfigSubnetParameters: keaConfigSubnetParameters,
 				},
 				{
@@ -1358,6 +1361,9 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 						{
 							Pool: storkutil.Ptr("192.0.2.30-192.0.2.40"),
 						},
+					},
+					UserContext: map[string]any{
+						"answer": 42,
 					},
 					KeaConfigSubnetParameters: keaConfigSubnetParameters,
 				},
@@ -1403,6 +1409,10 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 									"pool": "192.0.2.30-192.0.2.40"
 								}
 							],
+
+							"user-context": {
+								"answer": 42
+							},
 
 							"cache-max-age": 1000,
 							"cache-threshold": 0.25,
@@ -1505,6 +1515,9 @@ func TestCreateSubnet4BeginSubmit(t *testing.T) {
 		require.Equal(t, "192.0.2.20", ls.AddressPools[0].UpperBound)
 		require.Equal(t, "192.0.2.30", ls.AddressPools[1].LowerBound)
 		require.Equal(t, "192.0.2.40", ls.AddressPools[1].UpperBound)
+
+		require.NotNil(t, ls.UserContext)
+		require.EqualValues(t, 42, ls.UserContext["answer"])
 
 		require.NotNil(t, ls.KeaParameters)
 		require.NotNil(t, ls.KeaParameters.CacheMaxAge)
@@ -2007,7 +2020,10 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 									"data": "192.0.2.1",
 									"space": "dhcp4"
 								}
-							]
+							],
+							"user-context": {
+								"foo": "bar"
+							}
 						}
 					]
 				},
@@ -2192,8 +2208,9 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 			SharedNetwork:   "foo",
 			LocalSubnets: []*models.LocalSubnet{
 				{
-					ID:       1,
-					DaemonID: dbapps[0].Daemons[0].ID,
+					ID:          1,
+					DaemonID:    subnets[0].LocalSubnets[0].DaemonID,
+					UserContext: subnets[0].LocalSubnets[0].UserContext,
 					Pools: []*models.Pool{
 						{
 							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
@@ -2229,8 +2246,9 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 					KeaConfigSubnetParameters: keaConfigSubnetParameters,
 				},
 				{
-					ID:       1,
-					DaemonID: dbapps[1].Daemons[0].ID,
+					ID:          1,
+					DaemonID:    subnets[0].LocalSubnets[1].DaemonID,
+					UserContext: subnets[0].LocalSubnets[1].UserContext,
 					Pools: []*models.Pool{
 						{
 							Pool: storkutil.Ptr("192.0.2.10-192.0.2.20"),
@@ -2307,6 +2325,10 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 									"pool": "192.0.2.30-192.0.2.40"
 								}
 							],
+
+							"user-context": {
+								"foo": "bar"
+							},
 
 							"cache-max-age": 1000,
 							"cache-threshold": 0.25,
@@ -2397,6 +2419,10 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 		require.Equal(t, "192.0.2.20", ls.AddressPools[0].UpperBound)
 		require.Equal(t, "192.0.2.30", ls.AddressPools[1].LowerBound)
 		require.Equal(t, "192.0.2.40", ls.AddressPools[1].UpperBound)
+
+		require.NotNil(t, ls.UserContext)
+		require.Contains(t, ls.UserContext, "foo")
+		require.Equal(t, "bar", ls.UserContext["foo"])
 
 		require.NotNil(t, ls.KeaParameters)
 		require.NotNil(t, ls.KeaParameters.CacheMaxAge)

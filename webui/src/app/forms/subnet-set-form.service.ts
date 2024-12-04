@@ -240,6 +240,11 @@ export interface SubnetForm {
      * Selected daemons are associated with the subnet.
      */
     selectedDaemons: FormControl<number[]>
+
+    /**
+     * User contexts for a subnet.
+     */
+    userContexts: UntypedFormArray
 }
 
 /**
@@ -1185,6 +1190,9 @@ export class SubnetSetFormService {
                 },
                 Validators.required
             ),
+            userContexts: new UntypedFormArray(
+                subnet.localSubnets?.map(ls => new FormControl(ls.userContext)) ?? []
+            )
         })
         return formGroup
     }
@@ -1286,6 +1294,7 @@ export class SubnetSetFormService {
             parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4, keaVersionRange),
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl<number[]>([], Validators.required),
+            userContexts: new UntypedFormArray([])
         })
         return formGroup
     }
@@ -1343,6 +1352,12 @@ export class SubnetSetFormService {
                         subnet.subnet?.includes(':') ? IPType.IPv6 : IPType.IPv4,
                         data.at(!!options.get('unlocked')?.value ? i : 0) as UntypedFormArray
                     )
+            }
+        }
+        const userContexts = form.get('userContexts') as UntypedFormArray
+        for (let i = 0; i < subnet.localSubnets.length; i++) {
+            if (userContexts?.length > i) {
+                subnet.localSubnets[i].userContext = userContexts.at(i).value
             }
         }
         return subnet

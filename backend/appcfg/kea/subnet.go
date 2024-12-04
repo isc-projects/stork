@@ -406,7 +406,9 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			ID:     subnet.GetID(daemonID),
 			Subnet: subnet.GetPrefix(),
 		},
-		CommonSubnetParameters: CommonSubnetParameters{},
+		CommonSubnetParameters: CommonSubnetParameters{
+			UserContext: subnet.GetUserContext(daemonID),
+		},
 	}
 	// Address pools.
 	for _, pool := range subnet.GetAddressPools(daemonID) {
@@ -476,6 +478,9 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		MandatorySubnetParameters: MandatorySubnetParameters{
 			ID:     subnet.GetID(daemonID),
 			Subnet: subnet.GetPrefix(),
+		},
+		CommonSubnetParameters: CommonSubnetParameters{
+			UserContext: subnet.GetUserContext(daemonID),
 		},
 	}
 	// Address pools.
