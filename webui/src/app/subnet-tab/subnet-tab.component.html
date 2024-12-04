@@ -4,6 +4,7 @@
         <div class="fa fa-project-diagram mr-2"></div>
         <div id="tab-title-span" class="word-break-all">
             Subnet {{ subnet.subnet }}
+            <ng-container *ngIf="subnet.name"> named {{ subnet.name }} </ng-container>
             <ng-container *ngIf="subnet.sharedNetwork">
                 in <app-entity-link entity="shared-network" [attrs]="getSharedNetworkAttrs()"></app-entity-link>
             </ng-container>
@@ -148,6 +149,34 @@
             <app-utilization-stats-charts [network]="subnet"></app-utilization-stats-charts>
         </p-fieldset>
     </div>
+
+    <div *ngFor="let localSubnet of subnet.localSubnets; let i = index" class="mb-4">
+        <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualUserContext()">
+            <ng-template pTemplate="header">
+                <span class="stork-fieldset-legend-text"
+                    >User Context&nbsp;/&nbsp;
+                    <a
+                        *ngIf="!allDaemonsHaveEqualUserContext(); else equalPoolsBlock"
+                        routerLink="/apps/kea/{{ localSubnet.appId }}"
+                    >
+                        {{ localSubnet.appName }}
+                    </a>
+                    <ng-template #equalPoolsBlock>
+                        <span class="font-normal"> All Servers </span>
+                    </ng-template>
+                </span>
+            </ng-template>
+            <div *ngIf="!localSubnet.userContext; else userContextExistBlock">No user context configured.</div>
+            <ng-template #userContextExistBlock>
+                <!-- Wrapper to shrink the width of the viewer to its content. -->
+                <div class="w-max">
+                    <!-- JSON viewer -->
+                    <app-json-tree-root [value]="localSubnet.userContext"></app-json-tree-root>
+                </div>
+            </ng-template>
+        </p-fieldset>
+    </div>
+
     <ng-container *ngIf="subnet.localSubnets?.length > 0">
         <div class="mb-4">
             <p-fieldset legend="DHCP Parameters">

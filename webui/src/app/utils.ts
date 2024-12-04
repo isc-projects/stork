@@ -663,3 +663,35 @@ export function getVersionRange(versions: string[]): [string, string] | null {
     }
     return null
 }
+
+/**
+ * Deeply compares two objects.
+ */
+export function deepEqual<T>(a: T, b: T, parents: [any, any][] = []): boolean {
+    if (typeof a !== 'object' || typeof b !== 'object') {
+        return a === b
+    }
+
+    // Check for circular references.
+    if (parents.some(([aParent, bParent]) => aParent === a && bParent === b)) {
+        return true
+    }
+
+    const aKeys = Object.keys(a)
+    const bKeys = Object.keys(b)
+    if (aKeys.length !== bKeys.length) {
+        return false
+    }
+
+    for (const key of aKeys) {
+        if (!bKeys.includes(key)) {
+            return false
+        }
+
+        if (!deepEqual(a[key], b[key], parents.concat([[a, b]]))) {
+            return false
+        }
+    }
+
+    return true
+}

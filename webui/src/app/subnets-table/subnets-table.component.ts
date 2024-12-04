@@ -170,6 +170,13 @@ export class SubnetsTableComponent
     }
 
     /**
+     * Returns true if the subnet list presents at least one subnet with name.
+     */
+    get isAnySubnetWithNameVisible(): boolean {
+        return !!this.dataCollection?.some((s) => s.name)
+    }
+
+    /**
      * Checks if the local subnets in a given subnet have different local
      * subnet IDs.
      *

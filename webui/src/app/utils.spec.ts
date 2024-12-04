@@ -15,6 +15,7 @@ import {
     daemonNameToFriendlyName,
     unhyphen,
     getVersionRange,
+    deepEqual,
 } from './utils'
 
 describe('utils', () => {
@@ -408,5 +409,57 @@ describe('utils', () => {
         expect(getVersionRange(['2.3.2', null, '3.3.0'])).toEqual(['2.3.2', '3.3.0'])
         expect(getVersionRange(['10', '3.3.0'])).toEqual(['3.3.0', '3.3.0'])
         expect(getVersionRange([])).toBeFalsy()
+    })
+
+    it('should compare the primitive values', () => {
+        expect(deepEqual(1, 1)).toBeTrue()
+        expect(deepEqual(1, 2)).toBeFalse()
+
+        expect(deepEqual('foo', 'foo')).toBeTrue()
+        expect(deepEqual('foo', 'bar')).toBeFalse()
+
+        expect(deepEqual(true, true)).toBeTrue()
+        expect(deepEqual(true, false)).toBeFalse()
+    })
+
+    it('should compare the arrays', () => {
+        expect(deepEqual([1, 2, 3], [1, 2, 3])).toBeTrue()
+        expect(deepEqual([1, 2, 3], [1, 2, 4])).toBeFalse()
+
+        expect(deepEqual(['foo', 'bar'], ['foo', 'bar'])).toBeTrue()
+        expect(deepEqual(['foo', 'bar'], ['foo', 'baz'])).toBeFalse()
+        expect(deepEqual(['foo', 'bar'], ['foo'])).toBeFalse()
+        expect(deepEqual(['foo', 'bar'], ['foo', 'bar', 'baz'])).toBeFalse()
+        expect(deepEqual(['foo', 'bar'], ['bar', 'foo'])).toBeFalse()
+
+        expect(deepEqual([true, false], [true, false])).toBeTrue()
+        expect(deepEqual([true, false], [false, true])).toBeFalse()
+        expect(deepEqual([true, false], [1, 0])).toBeFalse()
+    })
+
+    it('should compare the objects', () => {
+        expect(deepEqual({ foo: 'bar' }, { foo: 'bar' })).toBeTrue()
+        expect(deepEqual({ foo: 'bar' }, { foo: 'baz' })).toBeFalse()
+        expect(deepEqual({ foo: 'bar' }, { bar: 'foo' })).toBeFalse()
+        expect(deepEqual({ foo: 'bar' }, { foo: 'bar', bar: 'foo' })).toBeFalse()
+    })
+
+    it('should compare the nested objects', () => {
+        expect(deepEqual({ foo: { bar: 'baz' } }, { foo: { bar: 'baz' } })).toBeTrue()
+        expect(deepEqual({ foo: { bar: 'baz' } }, { foo: { bar: 'foo' } })).toBeFalse()
+        expect(deepEqual({ foo: { bar: 'baz' } }, { foo: { baz: 'bar' } })).toBeFalse()
+        expect(deepEqual({ foo: { bar: 'baz' } }, { foo: { bar: 'baz', baz: 'bar' } })).toBeFalse()
+
+        expect(deepEqual([{ foo: 'bar' }, { bar: 'baz' }, 42], [{ foo: 'bar' }, { bar: 'baz' }, 42])).toBeTrue()
+        expect(deepEqual([{ foo: 'bar' }, { bar: 'baz' }, 42], [{ foo: 'bar' }, { bar: 'boz' }, 42])).toBeFalse()
+    })
+
+    it('should compare the objects with circular references', () => {
+        const a: any = {}
+        a.b = a
+        const c: any = {}
+        c.d = c
+        expect(deepEqual(a, a)).toBeTrue()
+        expect(deepEqual(a, c)).toBeFalse()
     })
 })

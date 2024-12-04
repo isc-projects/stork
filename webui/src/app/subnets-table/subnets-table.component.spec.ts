@@ -135,4 +135,22 @@ describe('SubnetsTableComponent', () => {
             }
         }
     }))
+
+    it('should recognize that there are subnets with names', () => {
+        // No subnets.
+        component.dataCollection = []
+        expect(component.isAnySubnetWithNameVisible).toBeFalse()
+
+        // Subnets without names.
+        component.dataCollection = [{}]
+        expect(component.isAnySubnetWithNameVisible).toBeFalse()
+
+        // Subnets with names.
+        component.dataCollection = [{ name: 'foo' }]
+        expect(component.isAnySubnetWithNameVisible).toBeTrue()
+
+        // Subnets with names and without names.
+        component.dataCollection = [{ name: 'foo' }, {}]
+        expect(component.isAnySubnetWithNameVisible).toBeTrue()
+    })
 })

@@ -37,6 +37,8 @@ import { ParameterViewComponent } from '../parameter-view/parameter-view.compone
 import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { PositivePipe } from '../pipes/positive.pipe'
+import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
+import { JsonTreeComponent } from '../json-tree/json-tree.component'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -84,6 +86,8 @@ describe('SubnetTabComponent', () => {
                 UnhyphenPipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
+                JsonTreeRootComponent,
+                JsonTreeComponent,
             ],
         }).compileComponents()
 
@@ -156,6 +160,9 @@ describe('SubnetTabComponent', () => {
                             optionsHash: 'abc',
                         },
                     },
+                    userContext: {
+                        foo: 'user-context-is-here',
+                    },
                 },
             ],
         }
@@ -165,7 +172,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(6)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
@@ -181,17 +188,22 @@ describe('SubnetTabComponent', () => {
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(1)
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('Cache Threshold')
-        expect(fieldsets[3].nativeElement.innerText).toContain('0.25')
-        expect(fieldsets[3].nativeElement.innerText).toContain('1000')
+        // User contexts.
+        expect(fieldsets[3].nativeElement.innerText).toContain('User Context')
+        expect(fieldsets[3].nativeElement.innerText).toContain('foo')
+        expect(fieldsets[3].nativeElement.innerText).toContain('user-context-is-here')
+
+        expect(fieldsets[4].nativeElement.innerText).toContain('Cache Threshold')
+        expect(fieldsets[4].nativeElement.innerText).toContain('0.25')
+        expect(fieldsets[4].nativeElement.innerText).toContain('1000')
 
         // Ensure that the DHCP options are excluded from this list.
-        expect(fieldsets[3].nativeElement.innerText).not.toContain('Options')
-        expect(fieldsets[3].nativeElement.innerText).not.toContain('Options Hash')
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Options')
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Options Hash')
 
         // DHCP options sit in their own fieldset.
-        expect(fieldsets[4].nativeElement.innerText).toContain('DHCP Options')
-        expect(fieldsets[4].nativeElement.innerText).toContain('1033')
+        expect(fieldsets[5].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[5].nativeElement.innerText).toContain('1033')
     })
 
     it('should display an IPv4 subnet without pools', () => {
@@ -222,7 +234,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 192.0.2.0/24 in shared network Fiber')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(6)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@192.0.2.1')
@@ -232,9 +244,11 @@ describe('SubnetTabComponent', () => {
         expect(fieldsets[1].nativeElement.innerText).toContain('All Servers')
         expect(fieldsets[1].nativeElement.innerText).toContain('No pools configured.')
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
+        expect(fieldsets[3].nativeElement.innerText).toContain('No user context configured.')
 
-        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
+        expect(fieldsets[4].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[5].nativeElement.innerText).toContain('No options configured.')
     })
 
     it('should display an IPv6 subnet', () => {
@@ -269,7 +283,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(6)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -285,9 +299,11 @@ describe('SubnetTabComponent', () => {
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(1)
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
+        expect(fieldsets[3].nativeElement.innerText).toContain('No user context configured.')
 
-        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
+        expect(fieldsets[4].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[5].nativeElement.innerText).toContain('No options configured.')
     })
 
     it('should display an IPv6 subnet with address pools and prefixes', () => {
@@ -333,7 +349,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(5)
+        expect(fieldsets.length).toBe(6)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -353,9 +369,11 @@ describe('SubnetTabComponent', () => {
         const charts = fieldsets[2].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(2)
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
+        expect(fieldsets[3].nativeElement.innerText).toContain('No user context configured.')
 
-        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
+        expect(fieldsets[4].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[5].nativeElement.innerText).toContain('No options configured.')
     })
 
     it('should display an IPv6 subnet with different fieldsets for different servers', () => {
@@ -416,6 +434,7 @@ describe('SubnetTabComponent', () => {
                             cacheThreshold: 0.29,
                         },
                     },
+                    userContext: { foo: 'user-context-is-here' },
                 },
                 {
                     id: 25432,
@@ -473,7 +492,7 @@ describe('SubnetTabComponent', () => {
         expect(fixture.nativeElement.innerText).toContain('Subnet 2001:db8:1::/64')
 
         const fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
-        expect(fieldsets.length).toBe(7)
+        expect(fieldsets.length).toBe(9)
 
         expect(fieldsets[0].nativeElement.innerText).toContain('DHCP Servers Using the Subnet')
         expect(fieldsets[0].nativeElement.innerText).toContain('foo@2001:db8:1::1')
@@ -506,12 +525,17 @@ describe('SubnetTabComponent', () => {
         const charts = fieldsets[3].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(6)
 
-        expect(fieldsets[4].nativeElement.innerText).toContain('No parameters configured.')
+        expect(fieldsets[4].nativeElement.innerText).toContain('User Context')
+        expect(fieldsets[4].nativeElement.innerText).toContain('foo')
+        expect(fieldsets[4].nativeElement.innerText).toContain('user-context-is-here')
+        expect(fieldsets[5].nativeElement.innerText).toContain('No user context configured.')
 
-        expect(fieldsets[5].nativeElement.innerText).toContain('DHCP Options')
-        expect(fieldsets[5].nativeElement.innerText).toContain('foo@2001:db8:1::1')
-        expect(fieldsets[6].nativeElement.innerText).toContain('DHCP Options')
-        expect(fieldsets[6].nativeElement.innerText).toContain('bar@2001:db8:2::5')
+        expect(fieldsets[6].nativeElement.innerText).toContain('No parameters configured.')
+
+        expect(fieldsets[7].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[7].nativeElement.innerText).toContain('foo@2001:db8:1::1')
+        expect(fieldsets[8].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[8].nativeElement.innerText).toContain('bar@2001:db8:2::5')
     })
 
     it('should return shared network attributes for IPv6 subnet', () => {
@@ -600,4 +624,90 @@ describe('SubnetTabComponent', () => {
         // This flag should be cleared.
         expect(component.subnetDeleting).toBeFalse()
     }))
+
+    it('should detect if any subnet has a user context', () => {
+        // No local subnets.
+        component.subnet = {}
+        expect(component.hasUserContext).toBeFalse()
+
+        component.subnet = { localSubnets: [] }
+        expect(component.hasUserContext).toBeFalse()
+
+        // Local subnets without user context.
+        component.subnet = { localSubnets: [{}] }
+        expect(component.hasUserContext).toBeFalse()
+
+        component.subnet = { localSubnets: [{ userContext: null }] }
+        expect(component.hasUserContext).toBeFalse()
+
+        // Local subnets with user context.
+        component.subnet = { localSubnets: [{ userContext: {} }] }
+        expect(component.hasUserContext).toBeTrue()
+
+        // Multiple local subnets.
+        component.subnet = { localSubnets: [{ userContext: {} }, { userContext: {} }] }
+        expect(component.hasUserContext).toBeTrue()
+
+        component.subnet = { localSubnets: [{ userContext: {} }, { userContext: null }] }
+        expect(component.hasUserContext).toBeTrue()
+
+        component.subnet = { localSubnets: [{ userContext: null }, { userContext: {} }] }
+        expect(component.hasUserContext).toBeTrue()
+
+        component.subnet = { localSubnets: [{ userContext: null }, { userContext: null }] }
+        expect(component.hasUserContext).toBeFalse()
+
+        component.subnet = { localSubnets: [{}, {}] }
+        expect(component.hasUserContext).toBeFalse()
+    })
+
+    it('should compare the user contexts of all local subnets', () => {
+        // No local subnets.
+        component.subnet = {}
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        component.subnet = { localSubnets: [] }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        // Local subnets without user context.
+        component.subnet = { localSubnets: [{}, {}] }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        // Local subnets with user context.
+        component.subnet = { localSubnets: [{ userContext: {} }, { userContext: {} }] }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        component.subnet = { localSubnets: [{ userContext: {} }, {}] }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeFalse()
+
+        component.subnet = { localSubnets: [{ userContext: { foo: 42 } }, { userContext: { foo: 42 } }] }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        component.subnet = {
+            localSubnets: [{ userContext: { foo: 42 } }, { userContext: { foo: 42 } }, { userContext: { foo: 42 } }],
+        }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        component.subnet = { localSubnets: [{ userContext: { foo: 42 } }, { userContext: { foo: 43 } }] }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeFalse()
+
+        // Nested.
+        component.subnet = {
+            localSubnets: [{ userContext: { foo: { bar: 42 } } }, { userContext: { foo: { bar: 42 } } }],
+        }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        component.subnet = {
+            localSubnets: [{ userContext: { foo: { bar: 42 } } }, { userContext: { foo: { bar: 43 } } }],
+        }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeFalse()
+
+        // Array.
+        component.subnet = { localSubnets: [{ userContext: { foo: [42] } }, { userContext: { foo: [42] } }] }
+
+        expect(component.allDaemonsHaveEqualUserContext()).toBeTrue()
+
+        component.subnet = { localSubnets: [{ userContext: { foo: [42] } }, { userContext: { foo: [43] } }] }
+        expect(component.allDaemonsHaveEqualUserContext()).toBeFalse()
+    })
 })

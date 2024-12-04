@@ -3,7 +3,7 @@ import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, Subnet } fro
 import { hasAddressPools, hasDifferentLocalSubnetOptions, hasPrefixPools } from '../subnets'
 import { hasDifferentLocalSubnetPools } from '../subnets'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
-import { getErrorMessage } from '../utils'
+import { deepEqual, getErrorMessage } from '../utils'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
 
@@ -230,5 +230,31 @@ export class SubnetTabComponent implements OnInit {
                     life: 10000,
                 })
             })
+    }
+
+    /**
+     * Indicates if the subnet has any user-context.
+     */
+    get hasUserContext(): boolean {
+        return !!this.subnet.localSubnets?.some((ls) => ls.userContext)
+    }
+
+    /**
+     * Indicates if all local subnets have the same user-context.
+     */
+    allDaemonsHaveEqualUserContext(): boolean {
+        if (!(this.subnet.localSubnets?.length > 0)) {
+            // If there are no local subnets, the user context is not relevant
+            // and we can assume that the user context is the same.
+            return true
+        }
+
+        const firstUserContext = this.subnet.localSubnets[0].userContext
+        for (let i = 1; i < this.subnet.localSubnets.length; i++) {
+            if (!deepEqual(firstUserContext, this.subnet.localSubnets[i].userContext)) {
+                return false
+            }
+        }
+        return true
     }
 }
