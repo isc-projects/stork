@@ -668,7 +668,7 @@ export function getVersionRange(versions: string[]): [string, string] | null {
  * Deeply compares two objects.
  */
 export function deepEqual<T>(a: T, b: T, parents: [any, any][] = []): boolean {
-    if (typeof a !== 'object' || typeof b !== 'object') {
+    if (typeof a !== 'object' || typeof b !== 'object' || a == null || b == null) {
         return a === b
     }
 

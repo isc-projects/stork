@@ -420,6 +420,11 @@ describe('utils', () => {
 
         expect(deepEqual(true, true)).toBeTrue()
         expect(deepEqual(true, false)).toBeFalse()
+
+        expect(deepEqual(null, null)).toBeTrue()
+        expect(deepEqual(null, undefined)).toBeFalse()
+        expect(deepEqual(undefined, undefined)).toBeTrue()
+        expect(deepEqual(null, {})).toBeFalse()
     })
 
     it('should compare the arrays', () => {
