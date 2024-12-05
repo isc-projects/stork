@@ -2213,3 +2213,33 @@ func TestSubnetStatsSetBigCounter(t *testing.T) {
 		), stats["bigint"])
 	})
 }
+
+// Test that the user context is retrivied properly.
+func TestGetUserContext(t *testing.T) {
+	// Arrange
+	subnet := &Subnet{
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID:    42,
+				UserContext: map[string]any{"key": "value"},
+			},
+		},
+	}
+
+	t.Run("existing", func(t *testing.T) {
+		// Act
+		userContext := subnet.GetUserContext(42)
+
+		// Assert
+		require.NotNil(t, userContext)
+		require.Equal(t, "value", userContext["key"])
+	})
+
+	t.Run("non-existing", func(t *testing.T) {
+		// Act
+		userContext := subnet.GetUserContext(1)
+
+		// Assert
+		require.Nil(t, userContext)
+	})
+}
