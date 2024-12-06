@@ -368,6 +368,9 @@ Stork displays the subnet's user context in the subnet page. Additionally, the
 value of the ``subnet-name`` key is displayed in the subnet list view. This
 allows the network administrator to quickly identify the subnet by its name.
 
+Tne subnet name can be used to filter the subnets on the subnet list page and
+in the global search box.
+
 IPv4 and IPv6 Networks
 ----------------------
 
