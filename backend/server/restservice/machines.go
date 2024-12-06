@@ -53,8 +53,7 @@ func getOnlineVersionsJSON(url string) ([]byte, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	req, err := http.NewRequest("GET", url, nil)
-
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		err = errors.Wrapf(err, "could not create HTTP GET request to %s", url)
 		return nil, err
@@ -71,7 +70,6 @@ func getOnlineVersionsJSON(url string) ([]byte, error) {
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-
 	if err != nil {
 		err = errors.Wrapf(err, "problem reading received online versions.json response body")
 		return nil, err
@@ -86,7 +84,6 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode string) (models.AppsVersions,
 	// Unmarshal the JSON to custom struct.
 	s := ReportAppsVersions{}
 	err := json.Unmarshal(*bytes, &s)
-
 	if err != nil {
 		err = errors.Wrapf(err, "problem unmarshalling contents of the %s JSON file with software versions metadata", mode)
 		return models.AppsVersions{}, err
