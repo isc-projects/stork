@@ -1041,37 +1041,15 @@ func TestExtractSubnetNameFromUserContextNegative(t *testing.T) {
 // Test the cases when the subnet name is extracted from the user context.
 func TestExtractSubnetNameFromUserContextPositive(t *testing.T) {
 	// Arrange
+	subnet := &Subnet{Name: "foo", LocalSubnets: []*LocalSubnet{{
+		UserContext: map[string]any{"subnet-name": "value"},
+	}}}
 
-	// Generate a user context with the preferable subnet names. The last item
-	// is a key that is not considered as a subnet name.
-	subnetNameKeys := []string{
-		"subnet-name", "subnet_name", "name", "label", "location", "role", "unknown",
-	}
+	// Act
+	name := extractSubnetNameFromUserContext(subnet)
 
-	for i := 0; i < len(subnetNameKeys)-1; i++ {
-		preferredKey := subnetNameKeys[i]
-
-		// Generate user-context with the certain key and all other keys with
-		// a lower priority.
-		userContext := map[string]any{}
-		for j := i; j < len(subnetNameKeys); j++ {
-			key := subnetNameKeys[j]
-			value := fmt.Sprintf("value-%s", key)
-			userContext[key] = value
-		}
-
-		t.Run(preferredKey, func(t *testing.T) {
-			subnet := &Subnet{Name: "foo", LocalSubnets: []*LocalSubnet{{
-				UserContext: userContext,
-			}}}
-
-			// Act
-			name := extractSubnetNameFromUserContext(subnet)
-
-			// Assert
-			require.Equal(t, fmt.Sprintf("value-%s", preferredKey), name)
-		})
-	}
+	// Assert
+	require.Equal(t, "value", name)
 }
 
 // Test that the subnet name is extracted from the user context when the subnet
@@ -1081,11 +1059,9 @@ func TestExtractSubnetNameFromUserContextMultiple(t *testing.T) {
 	subnet := &Subnet{Name: "foo", LocalSubnets: []*LocalSubnet{
 		// No user-context.
 		{UserContext: nil},
-		// First user-context but with lower priority key.
-		{UserContext: map[string]any{"name": "foo"}},
-		// Second user-context with the preferred key.
+		// First user-context but with the name key.
 		{UserContext: map[string]any{"subnet-name": "bar"}},
-		// Third user-context but with lower priority key.
+		// Third user-context but with a non-name key.
 		{UserContext: map[string]any{"label": "baz"}},
 	}}
 

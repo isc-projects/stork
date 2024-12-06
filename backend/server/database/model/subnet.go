@@ -908,29 +908,22 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 // Extract the subnet name from the user-context.
 // Returns the subnet name if found, otherwise an empty string.
 //
-// ToDo: The below list contains the user-context keys that we
-// expect/predict/assume/guess to store the subnet name. This list is
-// arbitrary and may not fit for all users. We should consider to make
-// the name key configurable.
+// ToDo: We arbitrarily choose the property key that is used to store the
+// subnet name in the user-context. It may not fit all deployments. We should
+// consider adding a configuration option to specify the key.
 //
-// The keys are ordered from the most to the least recommended. Only
-// the "subnet-name" key is officially recommended in the Stork docs.
 // Note that the Kea documentation does not specify any convention for
 // storing the subnet name in the user-context.
 //
-// The first key that is found in the user-context in any related
-// user-context is used as the subnet name.
+// The first name that is found in any related user-context is used as the
+// subnet name.
 func extractSubnetNameFromUserContext(subnet *Subnet) string {
-	subnetNameKeys := []string{
-		"subnet-name", "subnet_name", "name", "label", "location", "role",
-	}
-	for _, key := range subnetNameKeys {
-		for _, localSubnet := range subnet.LocalSubnets {
-			if name, ok := localSubnet.UserContext[key]; ok {
-				nameStr, ok := name.(string)
-				if ok {
-					return nameStr
-				}
+	subnetNameKey := "subnet-name"
+	for _, localSubnet := range subnet.LocalSubnets {
+		if name, ok := localSubnet.UserContext[subnetNameKey]; ok {
+			nameStr, ok := name.(string)
+			if ok {
+				return nameStr
 			}
 		}
 	}
