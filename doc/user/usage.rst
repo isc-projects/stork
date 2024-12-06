@@ -358,7 +358,7 @@ turns red).
 Subnet Names
 ------------
 
-Kea allows store any arbitrary data related to a subnet in the ``user-context``
+Kea allows storing any arbitrary data related to a subnet in the ``user-context``
 field. This field is a JSON object. It may be used to store some metadata about
 the subnet, such as the name of the location where the subnet is used, the name
 of the department, name of related service or any other information that is

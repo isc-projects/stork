@@ -906,7 +906,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 }
 
 // Extract the subnet name from the user-context.
-// Returns the subnet name if found, otherwise an empty string.
+// Returns the subnet name if found; otherwise, an empty string.
 //
 // ToDo: We arbitrarily choose the property key that is used to store the
 // subnet name in the user-context. It may not fit all deployments. We should
