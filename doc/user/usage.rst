@@ -364,7 +364,7 @@ the subnet, such as the name of the location where the subnet is used, the name
 of the department, name of related service or any other information that is
 useful for the network administrator.
 
-Stork displays the subnet's user context in the subnet page. Additionally, the
+Stork displays the subnet's user context on the subnet page. Additionally, the
 value of the ``subnet-name`` key is displayed in the subnet list view. This
 allows the network administrator to quickly identify the subnet by its name.
 
