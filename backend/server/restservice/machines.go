@@ -48,6 +48,40 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSoftwareVersionsParams) middleware.Responder {
 	appsVersions := models.AppsVersions{}
 
+	url := "https://www.isc.org/versions.json"
+	accept := "application/json"
+	userAgent := fmt.Sprintf("ISC Stork / %s built on %s", stork.Version, stork.BuildDate)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		fmt.Println("Error while creating HTTP GET request. Falling back to offline mode.")
+		fmt.Println(err)
+	}
+
+	req.Header.Add("Accept", accept)
+	req.Header.Add("User-Agent", userAgent)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error while sending and waiting for response for HTTP GET request. Falling back to offline mode.")
+		fmt.Println(err)
+	} else {
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+
+		if err != nil {
+			fmt.Println("Error while reading response for HTTP GET request. Falling back to offline mode.")
+			fmt.Println(err)
+		} else {
+			fmt.Println("-------------------------")
+			fmt.Println("rxed online versions.json")
+			fmt.Println(string(body))
+		}
+	}
+
 	// For now, this feature only supports "offline" versions checking.
 	// In the future, "offline path" will be a fallback in case "online path" fails for any reason.
 	onlineData := false
