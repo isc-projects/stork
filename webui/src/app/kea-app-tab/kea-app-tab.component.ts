@@ -100,6 +100,9 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         'libdhcp_user_chk.so': 'user-chk-user-check',
         'libdhcp_ping_check.so': 'ping-check-so-ping-check',
         'libdhcp_perfmon.so': 'perfmon',
+        'libdhcp_mysql.so': 'dhcp_mysql', // added in Kea 2.7.4
+        'libdhcp_pgsql.so': 'dhcp_pgsql', // added in Kea 2.7.4
+        'libdhcp_rbac.so': 'dhcp_rbac', // added in Kea 2.7.2
     }
 
     /**
