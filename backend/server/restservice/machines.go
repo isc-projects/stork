@@ -78,6 +78,37 @@ func getOnlineVersionsJSON(url string) ([]byte, error) {
 	return body, nil
 }
 
+func getOfflineVersionsJSON() ([]byte, error) {
+	// Find the location of the JSON file with software versions metadata.
+	searchPaths := []string{}
+
+	// Path to the JSON file with software versions metadata is computed relative to the executable.
+	if ex, err := os.Executable(); err == nil {
+		if ex, err = filepath.EvalSymlinks(ex); err == nil {
+			exDir := filepath.Dir(ex)
+			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "etc", "stork", "versions.json")) // relative path when Stork was installed from package or with 'rake install' task
+			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "..", "etc", "versions.json"))    // relative path when running Stork server with 'rake run' task - typical for DEV
+		}
+	}
+	jsonFile := storkutil.GetFirstExistingPathOrDefault(VersionsJSON, searchPaths...)
+
+	// Open JSON file.
+	file, err := os.Open(jsonFile)
+	if err != nil {
+		err = errors.Wrapf(err, "problem opening the JSON file with software versions metadata")
+		return nil, err
+	}
+	defer file.Close()
+
+	// Read the contents of the file.
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		err = errors.Wrapf(err, "problem reading the contents of the JSON file with software versions metadata")
+		return nil, err
+	}
+	return bytes, nil
+}
+
 // Unmarshals bytes data into ReportAppsVersions struct, converts and returns the data in REST API format.
 // It takes mode string as argument, which should be value from data source Enum: ["offline","online"].
 func unmarshalVersionsJSONData(bytes *[]byte, mode string) (models.AppsVersions, error) {
@@ -129,62 +160,32 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 
 	url := "https://www.isc.org/versions.json"
 
-	if bytes, err := getOnlineVersionsJSON(url); err == nil {
+	bytes, err := getOnlineVersionsJSON(url)
+	if err == nil {
 		// Online versions.json was received, so let's try to use that data.
 
 		// Unmarshal the JSON to custom struct.
-		if appsVersions, err = unmarshalVersionsJSONData(&bytes, "online"); err == nil {
+		appsVersions, err = unmarshalVersionsJSONData(&bytes, "online")
+		if err == nil {
 			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
 		}
-		log.Error(errors.Wrapf(err, "problem processing online versions.json data; falling back to offline mode"))
 	}
+	log.Error(errors.Wrapf(err, "problem processing online versions.json data; falling back to offline mode"))
 
-	// Find the location of the JSON file with software versions metadata.
-	searchPaths := []string{}
-
-	// Path to the JSON file with software versions metadata is computed relative to the executable.
-	if ex, err := os.Executable(); err == nil {
-		if ex, err = filepath.EvalSymlinks(ex); err == nil {
-			exDir := filepath.Dir(ex)
-			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "etc", "stork", "versions.json")) // relative path when Stork was installed from package or with 'rake install' task
-			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "..", "etc", "versions.json"))    // relative path when running Stork server with 'rake run' task - typical for DEV
+	bytes, err = getOfflineVersionsJSON()
+	if err == nil {
+		// Unmarshal the JSON to custom struct.
+		appsVersions, err = unmarshalVersionsJSONData(&bytes, "offline")
+		if err == nil {
+			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
 		}
 	}
-	jsonFile := storkutil.GetFirstExistingPathOrDefault(VersionsJSON, searchPaths...)
-
-	// Open JSON file.
-	file, err := os.Open(jsonFile)
-	if err != nil {
-		log.Error(err)
-		msg := "Cannot open the JSON file with software versions metadata"
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
-	defer file.Close()
-
-	// Read the contents of the file.
-	bytes, err := io.ReadAll(file)
-	if err != nil {
-		log.Error(err)
-		msg := "Cannot read the contents of the JSON file with software versions metadata"
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
-
-	// Unmarshal the JSON to custom struct.
-	if appsVersions, err = unmarshalVersionsJSONData(&bytes, "offline"); err == nil {
-		return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
-	}
-	log.Error(errors.Wrapf(err, "problem processing offline versions.json data"))
+	log.Error(errors.Wrapf(err, "problem processing offline versions.json data; returning HTTP 500"))
 	errMsg := "Error parsing the contents of the JSON file with software versions metadata"
-
-	return general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+	rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 		Message: &errMsg,
 	})
+	return rsp
 }
 
 // Convert db machine to rest structure.
