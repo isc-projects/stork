@@ -346,7 +346,8 @@ Enter. For example, in the above example it is possible to show only
 the first (192.0.2.0/24) subnet by searching for the *0.2* string. One
 can also search for specific pools, and easily filter the subnet with
 a specific pool, by searching for part of the pool range,
-e.g. *3.200*.
+e.g. *3.200*. The input box accepts a text string that can be a part of the
+subnet or shared network name.
 
 Stork displays pool utilization for each subnet, with
 the absolute number of addresses allocated and usage percentage.
