@@ -204,24 +204,19 @@ describe('SubnetsTableComponent', () => {
         expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeFalse()
 
         // Multiple local subnets with the same name.
-        subnet = { localSubnets: [
-            { userContext: { 'subnet-name': 'foo' } },
-            { userContext: { 'subnet-name': 'foo' } }
-        ]}
+        subnet = {
+            localSubnets: [{ userContext: { 'subnet-name': 'foo' } }, { userContext: { 'subnet-name': 'foo' } }],
+        }
         expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeFalse()
 
         // Multiple subnets with different names.
-        subnet = { localSubnets: [
-            { userContext: { 'subnet-name': 'foo' } },
-            { userContext: { 'subnet-name': 'bar' } }
-        ]}
+        subnet = {
+            localSubnets: [{ userContext: { 'subnet-name': 'foo' } }, { userContext: { 'subnet-name': 'bar' } }],
+        }
         expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeTrue()
 
         // Multiple subnets. One with a name, one without.
-        subnet = { localSubnets: [
-            { userContext: { 'subnet-name': 'foo' } },
-            { userContext: {} }
-        ]}
+        subnet = { localSubnets: [{ userContext: { 'subnet-name': 'foo' } }, { userContext: {} }] }
         expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeTrue()
     })
 })
