@@ -153,6 +153,7 @@ definitions:
     type: string
     enum: &VERSIONSDATASOURCE
       - "offline"
+      - "online"
   
   AppsVersions:
     type: object

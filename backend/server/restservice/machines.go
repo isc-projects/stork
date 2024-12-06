@@ -14,6 +14,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
@@ -44,20 +45,19 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
-// Get information about current ISC software versions.
-func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSoftwareVersionsParams) middleware.Responder {
-	appsVersions := models.AppsVersions{}
-
-	url := "https://www.isc.org/versions.json"
+// Tries to send HTTP GET to given URL to retrieve versions.json file containing information about current ISC software versions.
+func getOnlineVersionsJSON(url string) ([]byte, error) {
 	accept := "application/json"
 	userAgent := fmt.Sprintf("ISC Stork / %s built on %s", stork.Version, stork.BuildDate)
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
-		fmt.Println("Error while creating HTTP GET request. Falling back to offline mode.")
-		fmt.Println(err)
+		err = errors.Wrapf(err, "could not create HTTP GET request to %s", url)
+		return nil, err
 	}
 
 	req.Header.Add("Accept", accept)
@@ -65,29 +65,81 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error while sending and waiting for response for HTTP GET request. Falling back to offline mode.")
-		fmt.Println(err)
-	} else {
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-
-		if err != nil {
-			fmt.Println("Error while reading response for HTTP GET request. Falling back to offline mode.")
-			fmt.Println(err)
-		} else {
-			fmt.Println("-------------------------")
-			fmt.Println("rxed online versions.json")
-			fmt.Println(string(body))
-		}
+		err = errors.Wrapf(err, "problem sending HTTP GET request to %s", url)
+		return nil, err
 	}
 
-	// For now, this feature only supports "offline" versions checking.
-	// In the future, "offline path" will be a fallback in case "online path" fails for any reason.
-	onlineData := false
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
 
-	if onlineData {
-		return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
+	if err != nil {
+		err = errors.Wrapf(err, "problem reading received online versions.json response body")
+		return nil, err
+	}
+
+	return body, nil
+}
+
+// Unmarshals bytes data into ReportAppsVersions struct, converts and returns the data in REST API format.
+// It takes mode string as argument, which should be value from data source Enum: ["offline","online"].
+func unmarshalVersionsJSONData(bytes *[]byte, mode string) (models.AppsVersions, error) {
+	// Unmarshal the JSON to custom struct.
+	s := ReportAppsVersions{}
+	err := json.Unmarshal(*bytes, &s)
+
+	if err != nil {
+		err = errors.Wrapf(err, "problem unmarshalling contents of the %s JSON file with software versions metadata", mode)
+		return models.AppsVersions{}, err
+	}
+
+	bind9, err := appVersionMetadataToRestAPI(*s.Bind9)
+	if err != nil {
+		err = errors.Wrapf(err, "problem converting BIND 9 data from the %s JSON file with software versions metadata", mode)
+		return models.AppsVersions{}, err
+	}
+	kea, err := appVersionMetadataToRestAPI(*s.Kea)
+	if err != nil {
+		err = errors.Wrapf(err, "problem converting Kea data from the %s JSON file with software versions metadata", mode)
+		return models.AppsVersions{}, err
+	}
+	stork, err := appVersionMetadataToRestAPI(*s.Stork)
+	if err != nil {
+		err = errors.Wrapf(err, "problem converting Stork data from the %s JSON file with software versions metadata", mode)
+		return models.AppsVersions{}, err
+	}
+
+	parsedTime, err := time.Parse("2006-01-02", *s.Date)
+	if err != nil {
+		err = errors.Wrapf(err, "problem parsing date from the %s JSON file with software versions metadata", mode)
+		return models.AppsVersions{}, err
+	}
+	dataDate := strfmt.Date(parsedTime)
+
+	// Prepare REST API response.
+	appsVersions := models.AppsVersions{
+		Date:       &dataDate,
+		Bind9:      bind9,
+		Kea:        kea,
+		Stork:      stork,
+		DataSource: mode,
+	}
+	return appsVersions, nil
+}
+
+// Get information about current ISC software versions.
+func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSoftwareVersionsParams) middleware.Responder {
+	appsVersions := models.AppsVersions{}
+
+	url := "https://www.isc.org/versions.json"
+
+	if bytes, err := getOnlineVersionsJSON(url); err == nil {
+		// Online versions.json was received, so let's try to use that data.
+
+		// Unmarshal the JSON to custom struct.
+		if appsVersions, err = unmarshalVersionsJSONData(&bytes, "online"); err == nil {
+			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
+		}
+		log.Error(errors.Wrapf(err, "problem processing online versions.json data; falling back to offline mode"))
 	}
 
 	// Find the location of the JSON file with software versions metadata.
@@ -127,63 +179,15 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	}
 
 	// Unmarshal the JSON to custom struct.
-	s := ReportAppsVersions{}
-	err = json.Unmarshal(bytes, &s)
+	if appsVersions, err = unmarshalVersionsJSONData(&bytes, "offline"); err == nil {
+		return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
+	}
+	log.Error(errors.Wrapf(err, "problem processing offline versions.json data"))
 	errMsg := "Error parsing the contents of the JSON file with software versions metadata"
-	if err != nil {
-		log.Error(err)
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &errMsg,
-		})
-		return rsp
-	}
 
-	bind9, err := appVersionMetadataToRestAPI(*s.Bind9)
-	if err != nil {
-		log.Error(err)
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &errMsg,
-		})
-		return rsp
-	}
-	kea, err := appVersionMetadataToRestAPI(*s.Kea)
-	if err != nil {
-		log.Error(err)
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &errMsg,
-		})
-		return rsp
-	}
-	stork, err := appVersionMetadataToRestAPI(*s.Stork)
-	if err != nil {
-		log.Error(err)
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &errMsg,
-		})
-		return rsp
-	}
-
-	parsedTime, err := time.Parse("2006-01-02", *s.Date)
-	if err != nil {
-		log.Error(err)
-		rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &errMsg,
-		})
-		return rsp
-	}
-	dataDate := strfmt.Date(parsedTime)
-
-	// Prepare REST API response.
-	appsVersions = models.AppsVersions{
-		Date:  &dataDate,
-		Bind9: bind9,
-		Kea:   kea,
-		Stork: stork,
-	}
-
-	appsVersions.DataSource = "offline"
-
-	return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
+	return general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		Message: &errMsg,
+	})
 }
 
 // Convert db machine to rest structure.
