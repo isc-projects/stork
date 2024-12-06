@@ -126,7 +126,7 @@ func TestNewSubnetFromKea(t *testing.T) {
 					},
 				},
 			},
-			UserContext: map[string]interface{}{
+			UserContext: map[string]any{
 				"foo":         "bar",
 				"subnet-name": "baz",
 			},
