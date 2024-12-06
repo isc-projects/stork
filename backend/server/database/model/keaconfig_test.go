@@ -182,7 +182,6 @@ func TestNewSubnetFromKea(t *testing.T) {
 
 	require.Equal(t, "bar", parsedSubnet.LocalSubnets[0].UserContext["foo"])
 	require.Equal(t, "baz", parsedSubnet.LocalSubnets[0].UserContext["subnet-name"])
-	require.Empty(t, parsedSubnet.Name)
 }
 
 // Test that the error is returned when the subnet prefix is invalid.

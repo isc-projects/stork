@@ -192,7 +192,16 @@
                 <app-subnet-bar [subnet]="sn"></app-subnet-bar>
             </td>
             <td *ngIf="isAnySubnetWithNameVisible">
-                {{ sn.name }}
+                <div class="grid" *ngIf="hasAssignedMultipleSubnetNames(sn); else elseSingleSubnetName">
+                    <div class="col-fixed flex flex-column">
+                        <span *ngFor="let lsn of sn.localSubnets">
+                            {{ lsn.userContext?.['subnet-name'] }}
+                        </span>
+                    </div>
+                </div>
+                <ng-template #elseSingleSubnetName>
+                    <span>{{ sn.localSubnets?.[0].userContext?.['subnet-name'] }}</span>
+                </ng-template>
             </td>
             <td>
                 <app-human-count [value]="getTotalAddresses(sn)"></app-human-count>

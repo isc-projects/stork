@@ -91,7 +91,6 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		PdUtilization:    float64(sn.PdUtilization) / 10,
 		Stats:            sn.Stats,
 		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
-		Name:             sn.Name,
 	}
 
 	if sn.SharedNetwork != nil {
@@ -288,7 +287,6 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 		Prefix:          restSubnet.Subnet,
 		ClientClass:     restSubnet.ClientClass,
 		SharedNetworkID: restSubnet.SharedNetworkID,
-		Name:            restSubnet.Name,
 	}
 	hasher := keaconfig.NewHasher()
 	// Convert local subnet containing associations of the subnet with daemons.

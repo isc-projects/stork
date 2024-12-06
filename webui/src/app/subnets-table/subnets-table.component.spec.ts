@@ -141,16 +141,87 @@ describe('SubnetsTableComponent', () => {
         component.dataCollection = []
         expect(component.isAnySubnetWithNameVisible).toBeFalse()
 
-        // Subnets without names.
-        component.dataCollection = [{}]
+        // Subnet without names.
+        component.dataCollection = [{ localSubnets: [{ userContext: {} }] }]
         expect(component.isAnySubnetWithNameVisible).toBeFalse()
 
-        // Subnets with names.
-        component.dataCollection = [{ name: 'foo' }]
+        // Subnet with names.
+        component.dataCollection = [
+            {
+                localSubnets: [
+                    {
+                        userContext: { 'subnet-name': 'foo' },
+                    },
+                ],
+            },
+        ]
         expect(component.isAnySubnetWithNameVisible).toBeTrue()
 
-        // Subnets with names and without names.
-        component.dataCollection = [{ name: 'foo' }, {}]
+        // Subnet with names and without names.
+        component.dataCollection = [
+            {
+                localSubnets: [{ userContext: { 'subnet-name': 'foo' } }],
+            },
+            {
+                localSubnets: [{ userContext: {} }],
+            },
+        ]
         expect(component.isAnySubnetWithNameVisible).toBeTrue()
+
+        // Subnet with multiple names.
+        component.dataCollection = [
+            {
+                localSubnets: [{ userContext: { 'subnet-name': 'foo' } }],
+            },
+            {
+                localSubnets: [{ userContext: { 'subnet-name': 'bar' } }],
+            },
+        ]
+        expect(component.isAnySubnetWithNameVisible).toBeTrue()
+
+        component.dataCollection = [
+            {
+                localSubnets: [{ userContext: {} }],
+            },
+            {
+                localSubnets: [{ userContext: { 'subnet-name': 'bar' } }],
+            },
+        ]
+        expect(component.isAnySubnetWithNameVisible).toBeTrue()
+    })
+
+    it('should recognize that there are subnets with multiple names', () => {
+        // No local subnets.
+        let subnet = {}
+        expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeFalse()
+
+        // Subnet without names.
+        subnet = { localSubnets: [{ userContext: {} }] }
+        expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeFalse()
+
+        // Single local subnet.
+        subnet = { localSubnets: [{ userContext: { 'subnet-name': 'foo' } }] }
+        expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeFalse()
+
+        // Multiple local subnets with the same name.
+        subnet = { localSubnets: [
+            { userContext: { 'subnet-name': 'foo' } },
+            { userContext: { 'subnet-name': 'foo' } }
+        ]}
+        expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeFalse()
+
+        // Multiple subnets with different names.
+        subnet = { localSubnets: [
+            { userContext: { 'subnet-name': 'foo' } },
+            { userContext: { 'subnet-name': 'bar' } }
+        ]}
+        expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeTrue()
+
+        // Multiple subnets. One with a name, one without.
+        subnet = { localSubnets: [
+            { userContext: { 'subnet-name': 'foo' } },
+            { userContext: {} }
+        ]}
+        expect(component.hasAssignedMultipleSubnetNames(subnet)).toBeTrue()
     })
 })

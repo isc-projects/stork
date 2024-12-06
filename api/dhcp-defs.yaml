@@ -352,8 +352,6 @@
         type: array
         items:
           $ref: '#/definitions/LocalSubnet'
-      name:
-        type: string
 
   Subnets:
     type: object

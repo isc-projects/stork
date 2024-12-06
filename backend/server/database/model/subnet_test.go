@@ -595,7 +595,6 @@ func TestGetSubnetsByPage(t *testing.T) {
 		{
 			Prefix:          "192.0.2.0/24",
 			SharedNetworkID: sharedNetwork.ID,
-			Name:            "subnet-name",
 			LocalSubnets: []*LocalSubnet{
 				{
 					DaemonID: apps[0].Daemons[0].ID,
@@ -612,6 +611,9 @@ func TestGetSubnetsByPage(t *testing.T) {
 							LowerBound: "192.0.2.21",
 							UpperBound: "192.0.2.30",
 						},
+					},
+					UserContext: map[string]interface{}{
+						"subnet-name": "subnet-name",
 					},
 				},
 			},
@@ -630,6 +632,15 @@ func TestGetSubnetsByPage(t *testing.T) {
 							LowerBound: "192.0.3.11",
 							UpperBound: "192.0.3.20",
 						},
+					},
+					UserContext: map[string]interface{}{
+						"subnet-name": "foo",
+					},
+				},
+				{
+					DaemonID: apps[1].Daemons[0].ID,
+					UserContext: map[string]interface{}{
+						"subnet-name": "bar",
 					},
 				},
 			},
@@ -709,6 +720,21 @@ func TestGetSubnetsByPage(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, count)
 	require.Empty(t, returned)
+
+	// This should match one subnet.
+	filters.Text = newPtr("foo")
+	returned, count, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	require.Len(t, returned, 1)
+	require.Equal(t, "192.0.3.0/24", returned[0].Prefix)
+
+	filters.Text = newPtr("bar")
+	returned, count, err = GetSubnetsByPage(db, 0, 10, filters, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	require.Len(t, returned, 1)
+	require.Equal(t, "192.0.3.0/24", returned[0].Prefix)
 }
 
 // Test that the subnet can be fetched by local ID and app ID.
@@ -967,12 +993,10 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
 	require.Equal(t, "192.0.2.0/24", returnedSubnets[0].Prefix)
 	require.NotNil(t, returnedSubnets[0].LocalSubnets[0].UserContext)
-	require.Equal(t, "foo", returnedSubnets[0].Name)
 
 	require.Len(t, returnedSubnets[1].LocalSubnets, 1)
 	require.Equal(t, "192.0.3.0/24", returnedSubnets[1].Prefix)
 	require.Nil(t, returnedSubnets[1].LocalSubnets[0].UserContext)
-	require.Empty(t, returnedSubnets[1].Name)
 
 	// There should be one shared network.
 	returnedNetworks, err := GetAllSharedNetworks(db, 4)
@@ -996,80 +1020,6 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets)
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 0)
-}
-
-// Test the cases when the subnet name is not extracted from the user context.
-func TestExtractSubnetNameFromUserContextNegative(t *testing.T) {
-	t.Run("no local subnets", func(t *testing.T) {
-		// Arrange
-		subnet := &Subnet{Name: "foo"}
-
-		// Act
-		name := extractSubnetNameFromUserContext(subnet)
-
-		// Assert
-		require.Empty(t, name)
-	})
-
-	t.Run("no user context", func(t *testing.T) {
-		// Arrange
-		subnet := &Subnet{Name: "foo", LocalSubnets: []*LocalSubnet{{
-			UserContext: nil,
-		}}}
-
-		// Act
-		name := extractSubnetNameFromUserContext(subnet)
-
-		// Assert
-		require.Empty(t, name)
-	})
-
-	t.Run("no subnet name", func(t *testing.T) {
-		// Arrange
-		subnet := &Subnet{Name: "foo", LocalSubnets: []*LocalSubnet{{
-			UserContext: map[string]any{},
-		}}}
-
-		// Act
-		name := extractSubnetNameFromUserContext(subnet)
-
-		// Assert
-		require.Empty(t, name)
-	})
-}
-
-// Test the cases when the subnet name is extracted from the user context.
-func TestExtractSubnetNameFromUserContextPositive(t *testing.T) {
-	// Arrange
-	subnet := &Subnet{Name: "foo", LocalSubnets: []*LocalSubnet{{
-		UserContext: map[string]any{"subnet-name": "value"},
-	}}}
-
-	// Act
-	name := extractSubnetNameFromUserContext(subnet)
-
-	// Assert
-	require.Equal(t, "value", name)
-}
-
-// Test that the subnet name is extracted from the user context when the subnet
-// refers to multiple local subnets.
-func TestExtractSubnetNameFromUserContextMultiple(t *testing.T) {
-	// Arrange
-	subnet := &Subnet{Name: "foo", LocalSubnets: []*LocalSubnet{
-		// No user-context.
-		{UserContext: nil},
-		// First user-context but with the name key.
-		{UserContext: map[string]any{"subnet-name": "bar"}},
-		// Third user-context but with a non-name key.
-		{UserContext: map[string]any{"label": "baz"}},
-	}}
-
-	// Act
-	name := extractSubnetNameFromUserContext(subnet)
-
-	// Assert
-	require.Equal(t, "bar", name)
 }
 
 // Check if getting subnet family works.

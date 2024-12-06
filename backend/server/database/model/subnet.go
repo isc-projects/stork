@@ -211,8 +211,6 @@ type Subnet struct {
 	PdUtilization    int16
 	Stats            SubnetStats
 	StatsCollectedAt time.Time
-
-	Name string
 }
 
 // Returns local subnet id for the specified daemon.
@@ -717,7 +715,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit int64, filters *SubnetsByPage
 			q = q.WhereOr("text(subnet.prefix) LIKE ?", "%"+*filters.Text+"%").
 				WhereOr("concat(host(ap.lower_bound), '-', host(ap.upper_bound)) LIKE ?", "%"+*filters.Text+"%").
 				WhereOr("shared_network.name LIKE ?", "%"+*filters.Text+"%").
-				WhereOr("subnet.name LIKE ?", "%"+*filters.Text+"%")
+				WhereOr("ls.user_context->>'subnet-name' LIKE ?", "%"+*filters.Text+"%")
 			return q, nil
 		})
 	}
@@ -873,9 +871,6 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 			subnet.SharedNetworkID = networkID
 		}
 
-		// Extract the subnet name from the user-context.
-		subnet.Name = extractSubnetNameFromUserContext(subnet)
-
 		if subnet.ID == 0 {
 			err = AddSubnet(tx, subnet)
 			if err != nil {
@@ -903,31 +898,6 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet) (addedSub
 		}
 	}
 	return addedSubnets, nil
-}
-
-// Extract the subnet name from the user-context.
-// Returns the subnet name if found; otherwise, an empty string.
-//
-// ToDo: We arbitrarily choose the property key that is used to store the
-// subnet name in the user-context. It may not fit all deployments. We should
-// consider adding a configuration option to specify the key.
-//
-// Note that the Kea documentation does not specify any convention for
-// storing the subnet name in the user-context.
-//
-// The first name that is found in any related user-context is used as the
-// subnet name.
-func extractSubnetNameFromUserContext(subnet *Subnet) string {
-	subnetNameKey := "subnet-name"
-	for _, localSubnet := range subnet.LocalSubnets {
-		if name, ok := localSubnet.UserContext[subnetNameKey]; ok {
-			nameStr, ok := name.(string)
-			if ok {
-				return nameStr
-			}
-		}
-	}
-	return ""
 }
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.

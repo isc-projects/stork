@@ -173,7 +173,7 @@ export class SubnetsTableComponent
      * Returns true if the subnet list presents at least one subnet with name.
      */
     get isAnySubnetWithNameVisible(): boolean {
-        return !!this.dataCollection?.some((s) => s.name)
+        return !!this.dataCollection?.some((s) => s.localSubnets?.some((ls) => !!ls.userContext?.['subnet-name']))
     }
 
     /**
@@ -194,6 +194,24 @@ export class SubnetsTableComponent
 
         const firstId = localSubnets[0].id
         return localSubnets.slice(1).some((ls) => ls.id !== firstId)
+    }
+
+    /**
+     * Checks if the local subnets in a given subnet have different subnet
+     * names in their user context.
+     *
+     * @param subnet Subnet with local subnets
+     * @returns True if the referenced local subnets have different subnet
+     *          names.
+     */
+    hasAssignedMultipleSubnetNames(subnet: Subnet): boolean {
+        const localSubnets = subnet.localSubnets
+        if (!localSubnets || localSubnets.length <= 1) {
+            return false
+        }
+
+        const firstSubnetName = localSubnets[0].userContext?.['subnet-name']
+        return localSubnets.slice(1).some((ls) => ls.userContext?.['subnet-name'] !== firstSubnetName)
     }
 
     /**

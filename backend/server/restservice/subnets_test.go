@@ -352,7 +352,6 @@ func TestGetSubnet4(t *testing.T) {
 	ls := subnet.LocalSubnets[0]
 
 	// Validate the name.
-	require.Equal(t, "foo-subnet", subnet.Name)
 	require.NotNil(t, ls.UserContext)
 	require.IsType(t, map[string]any(nil), ls.UserContext)
 	require.EqualValues(t, 42, ls.UserContext.(map[string]any)["answer"])
@@ -856,7 +855,6 @@ func TestGetSubnet6(t *testing.T) {
 	ls := subnet.LocalSubnets[0]
 
 	// Validate the name.
-	require.Equal(t, "foo-subnet", subnet.Name)
 	require.NotNil(t, ls.UserContext)
 	require.IsType(t, map[string]any(nil), ls.UserContext)
 	require.EqualValues(t, 42, ls.UserContext.(map[string]any)["answer"])

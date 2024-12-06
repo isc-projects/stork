@@ -4,7 +4,6 @@
         <div class="fa fa-project-diagram mr-2"></div>
         <div id="tab-title-span" class="word-break-all">
             Subnet {{ subnet.subnet }}
-            <ng-container *ngIf="subnet.name"> named {{ subnet.name }} </ng-container>
             <ng-container *ngIf="subnet.sharedNetwork">
                 in <app-entity-link entity="shared-network" [attrs]="getSharedNetworkAttrs()"></app-entity-link>
             </ng-container>
