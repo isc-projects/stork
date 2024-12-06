@@ -10,27 +10,39 @@ about: Create a new issue using this checklist for each release.
 Some of these checks and updates can be made before the actual freeze.
 
 1. [ ] Check jenkins job status:
-   1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
-   1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
-     - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
-   1. [ ] Upload necessary changes and fixes.
- 1. Check if ReadTheDocs can build Stork documentation.
+    1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
+    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+        - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
+    1. [ ] Upload necessary changes and fixes.
+1. [ ] Do some quick checks on https://demo.stork.isc.org/. There should be an old version deployed at this time, but there may be bugs worth pointing out to the Stork team, or other bugs that affect the normal release workflow to fix.
+    - Login with admin:admin using LDAP credentials.
+    - Stork should have not requested for the credentials to be changed after logging in.
+    - Do any error notifications appear when you load the page?
+    - Hover over the logo in the top left corner, and check that the tooltip shows the expected version and build date.
+    - Check that the page is loading outside VPN.
+1. Check if ReadTheDocs can build Stork documentation.
     1. [ ] Check if the latest build was successful and if its time matches the merge time of the release changes.
     1. If not, trigger rebuilding docs on [readthedocs.org](https://readthedocs.org/projects/stork/builds) and wait for the build to complete.
+1. Prepare release notes.
+    1. [ ] Create a draft of the release notes on the [Stork GitLab wiki](https://gitlab.isc.org/isc-projects/stork/-/wikis/home). It should be created under [the Releases directory](https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases), like this one: https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-2.0.0.
+    1. [ ] Notify @tomek that the draft is ready to be redacted. Wait for that to be done.
+    1. [ ] Notify support that release notes are ready for review. To avoid conflicts in edits wait with next step after review is done. Due to the time difference, please do this at least 36 hours before the planned release.
 
 The following steps may involve changing files in the repository.
 
 1. [ ] Prepare release changes. Run QA script [stork/release/update-code-for-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/update-code-for-release.py).
     * e.g. `GITLAB_TOKEN='...' ./update-code-for-release.py --release-date 'Feb 07, 2030' --version=2.3.4 --repo-dir=/home/wlodek/stork`
     * [ ] <mark>Stable and Maintenance Releases Only</mark>: please use `--branch=stork_v2_2` option
+1. [ ] If any systems were added or removed in Jenkins since the latest release, update `doc/user/compatible-systems.csv`. The columns that could be modified are: `Unit Tests`, `System Tests`, `Installation & Upgrade & Run (with systemd)`. The legend for what `X`, `D`, `U` mean is in `doc/user/install.rst` or below the table at https://stork.readthedocs.io/en/latest/install.html#compatible-systems.
 1. [ ] Check correctness of changes applied and commit changes by rerunning `./update-code-for-release.py` with `--upload-only` option (script will skip all steps related to applying code changes).
     * e.g.  `GITLAB_TOKEN='...' ./update-code-for-release.py --repo-dir=/home/wlodek/stork --upload-only`.
     This will: commit and push changes, create issue and MR for release changes.
 1. [ ] Conduct review process on release changes and merge the MR.
 1. [ ] Wait for Jenkins jobs and pipelines to conclude, check their status:
-   1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
-   1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
-     - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
+    1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
+    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+        - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
+        - If packaging jobs failed, it is likely that the `pkg` Jenkins job also failed. Re-run it in that case. It is responsible for uploading packages to Nexus. Released packages in Nexus are required for testing.
 1. [ ] Test that uploading to Cloudsmith works.
     1. Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
     1. Run `upload_test_packages`.
@@ -98,9 +110,9 @@ Release notes: {release_notes}
     * To overwrite existing content, use `--force` option.
     * If you did a mistake, contact ASAP someone from the ops team to remove incorrectly uploaded tarballs.
 1. [ ] Clean up test packages on Cloudsmith since they are no longer required.
-   1. Go to https://cloudsmith.io/~isc/repos/stork-testing/packages/.
-   1. Click the checkbox that checks all packages.
-   1. Click the red trash-can icon that says `Delete (remove) completely.`.
+    1. Go to https://cloudsmith.io/~isc/repos/stork-testing/packages/.
+    1. Click the checkbox that checks all packages.
+    1. Click the red trash-can icon that says `Delete (remove) completely.`.
 1. [ ] Add release tag. Run QA script [stork/release/add-tag-and-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/add-tag-and-release.py).
     * Example command: `GITLAB_TOKEN='...' ./add-tag-and-release.py`
     * Fallback if it does not work:
@@ -142,6 +154,8 @@ Release notes: {release_notes}
 
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: follow [those instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update public demo
 
+1. [ ] <mark>Stable Releases Only</mark>: Update the [the Stork Quickstart Guide](https://kb.isc.org/docs/stork-quickstart-guide).
+
 1. [ ] Contact the Marketing team, and find a member who will continue work on this release:
     1. [ ] Assign this ticket to the person who will continue.
     1. [ ] Share the link to signing the ticket either directly or as a comment in this issue.
@@ -149,20 +163,14 @@ Release notes: {release_notes}
 ## Marketing
 
 1. [ ] Publish links to downloads on the ISC website.
-1. [ ] <mark>Stable Releases Only</mark>: If a new Cloudsmith repository was created:
-    1. [ ] Make sure customer tokens were migrated from a previously existing repo.
-    1. [ ] Verify that [the KB on installing from Cloudsmith](https://kb.isc.org/docs/stork-quickstart-guide) has also been updated.
-    1. [ ] Update the Stork document in the RT portal.
-    1. [ ] Make sure that the Zapier scripts are updated. If not, contact the QA team and coordinate fix.
-    1. [ ] Notify support customers that this new private repo exists.
 1. [ ] Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Announce release to support subscribers using the read-only Kea Announce queue.
 1. [ ] Write email to [stork-users](https://lists.isc.org/pipermail/stork-users/).
 1. [ ] Announce on social media.
-1. [ ] Update [Wikipedia entry for Stork](https://en.wikipedia.org/wiki/Stork\_(software)).
+1. [ ] If there is a [Wikipedia entry for Stork](https://en.wikipedia.org/wiki/Stork\_(software)), update it.
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Write blog article.
 1. [ ] Check if [Stork website page](https://www.isc.org/stork/) needs updating.
-1. [ ] Update [significant features matrix](https://kb.isc.org/docs/en/todo) if any significant new features.
+1. [ ] If a feature matrix for Stork exists in KB, update it with any significant new features.
 1. [ ] Contact the Support team, find a person who will continue this release and assign this issue to them.
 
 ## Support
