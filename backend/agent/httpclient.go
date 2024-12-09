@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -16,6 +17,9 @@ import (
 // CredentialsFile path to a file holding credentials used in basic authentication of the agent in Kea.
 // It is being modified by tests so needs to be writable.
 var CredentialsFile = "/etc/stork/agent-credentials.json" //nolint:gochecknoglobals,gosec
+
+// Default HTTP client timeout.
+const DefaultHTTPClientTimeout = 10 * time.Second
 
 // HTTPClient is a normal http client.
 type HTTPClient struct {
@@ -56,9 +60,15 @@ func NewHTTPClient() *HTTPClient {
 	return &HTTPClient{
 		client: &http.Client{
 			Transport: transport,
+			Timeout:   DefaultHTTPClientTimeout,
 		},
 		credentials: nil,
 	}
+}
+
+// Sets custom timeout for HTTP client requests.
+func (c *HTTPClient) SetRequestTimeout(timeout time.Duration) {
+	c.client.Timeout = timeout
 }
 
 // If true then it doesn't verify the server credentials

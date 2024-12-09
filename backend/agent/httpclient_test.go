@@ -9,7 +9,9 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
@@ -25,6 +27,7 @@ func TestNewHTTPClient(t *testing.T) {
 	require.NotNil(t, client)
 	require.Nil(t, client.credentials)
 	require.NotNil(t, client.client)
+	require.EqualValues(t, DefaultHTTPClientTimeout, client.client.Timeout)
 	transport := client.getTransport()
 	require.NotNil(t, transport)
 	require.NotNil(t, transport.TLSClientConfig)
@@ -323,4 +326,63 @@ func TestLoadCredentialsCredentialsMissingFile(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, ok)
 	require.False(t, client.HasAuthenticationCredentials())
+}
+
+// Test that the client returns with a timeout if the server doesn't
+// respond.
+func TestCallTimeout(t *testing.T) {
+	wgServer := &sync.WaitGroup{}
+	wgServer.Add(1)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate slow/blocked response.
+		wgServer.Wait()
+	}))
+	defer func() {
+		wgServer.Done()
+		ts.Close()
+	}()
+
+	client := NewHTTPClient()
+	// Set very short timeout for the testing purposes.
+	client.SetRequestTimeout(100 * time.Millisecond)
+	var (
+		res        *http.Response
+		err        error
+		clientDone bool
+		mutex      sync.RWMutex
+		wgClient   sync.WaitGroup
+	)
+	// Ensyre that the client returned before we check an error code.
+	wgClient.Add(1)
+	go func() {
+		// Use HTTP client to communicate with the server. This call
+		// should return with a timeout because the server response
+		// is blocked.
+		res, err = client.Call(ts.URL, nil)
+		defer func() {
+			if err == nil {
+				res.Body.Close()
+			}
+			// Indicate that the client returned.
+			mutex.Lock()
+			defer mutex.Unlock()
+			clientDone = true
+		}()
+		// Indicate that the client has returned so we can now check
+		// an error code returned.
+		wgClient.Done()
+	}()
+	// The timeout is 100ms. Let's wait up to 2 seconds for the timeout.
+	require.Eventually(t, func() bool {
+		mutex.RLock()
+		defer mutex.RUnlock()
+		return clientDone
+	}, 2*time.Second, 100*time.Millisecond)
+
+	// Ensure that the client has returned and we can safely access the
+	// returned error.
+	wgClient.Wait()
+	require.NotNil(t, err)
+	require.ErrorContains(t, err, "context deadline exceeded")
 }
