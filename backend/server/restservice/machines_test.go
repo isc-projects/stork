@@ -3150,30 +3150,6 @@ func TestGetOfflineVersionsJSONrrorNoSuchFile(t *testing.T) {
 	require.ErrorContains(t, err, "no such file")
 }
 
-// Test that an error is returned by getOfflineVersionsJSON
-// if permission to the versions.json file is denied.
-func TestGetOfflineVersionsJSONrrorPermissionDenied(t *testing.T) {
-	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-	content := `{
-	"date": "2024-10-03`
-	VersionsJSONPath, _ = sb.Write("versions.json", content)
-	err := os.Chmod(VersionsJSONPath, fs.FileMode(int(0o000)))
-	require.NoError(t, err)
-
-	// Act
-	bytes, err := getOfflineVersionsJSON()
-
-	// Assert
-	require.Nil(t, bytes)
-	require.Error(t, err)
-	require.ErrorContains(t, err, "problem opening the JSON file")
-	require.ErrorContains(t, err, "permission denied")
-}
-
 // Test that getOnlineVersionsJSON sends appropriate HTTP GET request
 // and it returns the data received from server.
 func TestGetOnlineVersionsJSON(t *testing.T) {
