@@ -3,12 +3,10 @@ package restservice
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path"
 	"regexp"
 	"sort"
