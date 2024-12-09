@@ -897,19 +897,24 @@ Data Source
 The information about ISC software releases shown on the Software Versions page may come from
 different sources:
 
+- **Online JSON file** - A `JSON file <https://isc.org/versions.json>`_ available online. This data is intended to be always up-to-date.
+  It is updated with every Stork, Kea or BIND 9 release.
 - **Offline JSON file** - This data is updated with every Stork release. Of course, the more time has passed since a given release date,
   the more outdated this data may be. ISC advises regularly checking the `ISC software download page <https://isc.org/download>`_
   for up-to-date information. Please note that the date this data was generated is displayed in the top
   notification message. The date is also displayed in messages in the ``Summary`` column of
   the ``Summary of ISC software versions detected by Stork`` table.
-- **Online source** - This data is intended to be always up-to-date. This is not yet supported and will be added in
-  future Stork releases.
 
 .. note::
 
    When the Offline JSON file is the source of the data, the stable BIND 9 version should be verified;
    the BIND 9 team usually issues stable releases every month. To check the latest release,
    visit the `BIND download page <https://isc.org/download#BIND>`_.
+
+.. note::
+
+   Stork server tries to retrieve the data from the Online source first. If for any reason this
+   data cannot be retrieved, there is a fallback mechanism that reads the Offline JSON file.
 
 The Version Status Icon
 ~~~~~~~~~~~~~~~~~~~~~~~
