@@ -45,26 +45,26 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
-// Tries to send HTTP GET to given URL to retrieve versions.json file containing information about current ISC software versions.
-func getOnlineVersionsJSON(url string) ([]byte, error) {
+// Tries to send HTTP GET to VersionsJSONOnlineURL to retrieve versions.json file containing information about current ISC software versions.
+func getOnlineVersionsJSON() ([]byte, error) {
 	accept := "application/json"
 	userAgent := fmt.Sprintf("ISC Stork / %s built on %s", stork.Version, stork.BuildDate)
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", VersionsJSONOnlineURL, nil)
 	if err != nil {
-		err = errors.Wrapf(err, "could not create HTTP GET request to %s", url)
+		err = errors.Wrapf(err, "could not create HTTP GET request to %s", VersionsJSONOnlineURL)
 		return nil, err
 	}
 
 	req.Header.Add("Accept", accept)
 	req.Header.Add("User-Agent", userAgent)
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		err = errors.Wrapf(err, "problem sending HTTP GET request to %s", url)
+		err = errors.Wrapf(err, "problem sending HTTP GET request to %s", VersionsJSONOnlineURL)
 		return nil, err
 	}
 
@@ -90,7 +90,7 @@ func getOfflineVersionsJSON() ([]byte, error) {
 			searchPaths = append(searchPaths, filepath.Join(exDir, "..", "..", "..", "etc", "versions.json"))    // relative path when running Stork server with 'rake run' task - typical for DEV
 		}
 	}
-	jsonFile := storkutil.GetFirstExistingPathOrDefault(VersionsJSON, searchPaths...)
+	jsonFile := storkutil.GetFirstExistingPathOrDefault(VersionsJSONPath, searchPaths...)
 
 	// Open JSON file.
 	file, err := os.Open(jsonFile)
@@ -109,7 +109,7 @@ func getOfflineVersionsJSON() ([]byte, error) {
 	return bytes, nil
 }
 
-// Unmarshals bytes data into ReportAppsVersions struct, converts and returns the data in REST API format.
+// Deserializes bytes data into ReportAppsVersions struct, converts and returns the data in REST API format.
 // It takes mode string as argument, which should be value from data source Enum: ["offline","online"].
 func unmarshalVersionsJSONData(bytes *[]byte, mode string) (models.AppsVersions, error) {
 	// Unmarshal the JSON to custom struct.
@@ -157,14 +157,9 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode string) (models.AppsVersions,
 // Get information about current ISC software versions.
 func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSoftwareVersionsParams) middleware.Responder {
 	appsVersions := models.AppsVersions{}
-
-	url := "https://www.isc.org/versions.json"
-
-	bytes, err := getOnlineVersionsJSON(url)
+	bytes, err := getOnlineVersionsJSON()
 	if err == nil {
 		// Online versions.json was received, so let's try to use that data.
-
-		// Unmarshal the JSON to custom struct.
 		appsVersions, err = unmarshalVersionsJSONData(&bytes, "online")
 		if err == nil {
 			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
@@ -174,13 +169,13 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 
 	bytes, err = getOfflineVersionsJSON()
 	if err == nil {
-		// Unmarshal the JSON to custom struct.
+		// Try to use offline versions.json data.
 		appsVersions, err = unmarshalVersionsJSONData(&bytes, "offline")
 		if err == nil {
 			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
 		}
 	}
-	log.Error(errors.Wrapf(err, "problem processing offline versions.json data; returning HTTP 500"))
+	log.Error(errors.Wrapf(err, "problem processing offline versions.json data"))
 	errMsg := "Error parsing the contents of the JSON file with software versions metadata"
 	rsp := general.NewGetSoftwareVersionsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 		Message: &errMsg,
