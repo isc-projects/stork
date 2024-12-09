@@ -211,7 +211,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                             // the inner getMachinesAppsVersions() observable, so let's catch the inner observable
                             // error here and gracefully return empty machines array.
                             catchError((err) => {
-                                let msg = getErrorMessage(err)
+                                const msg = getErrorMessage(err)
                                 this.messageService.add({
                                     severity: 'error',
                                     summary: 'Error retrieving software versions data',
@@ -266,7 +266,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         this.summaryDataLoading = false
                     },
                     error: (err) => {
-                        let msg = getErrorMessage(err)
+                        const msg = getErrorMessage(err)
                         this.messageService.add({
                             severity: 'error',
                             summary: 'Error retrieving software versions data',
@@ -317,8 +317,8 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * @param a Kea app
      */
     getDaemonsVersions(a: BackendApp): string {
-        let daemons: string[] = []
-        for (let d of a.details?.daemons ?? []) {
+        const daemons: string[] = []
+        for (const d of a.details?.daemons ?? []) {
             if (d.name && d.version) {
                 daemons.push(`${d.name} ${d.version}`)
             }

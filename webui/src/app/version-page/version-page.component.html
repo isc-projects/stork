@@ -59,16 +59,20 @@
         <p>The information about ISC software releases shown on this page may come from different sources:</p>
         <ul>
             <li>
+                <b>Online source</b> - <a target="_blank" href="https://isc.org/versions.json">JSON file</a> available
+                online. This data is intended to be always up-to-date.
+            </li>
+            <li>
                 <b>Offline JSON file</b> - This data is updated with every Stork release. Of course, the more time has
                 passed since a given release date, the more outdated this data may be. ISC advises regularly checking
                 the <a target="_blank" href="https://isc.org/download">ISC software download page</a> for up-to-date
                 information.
             </li>
-            <li>
-                <b>Online source</b> - This data is intended to be always up-to-date. This is not yet supported and will
-                be added in future Stork releases.
-            </li>
         </ul>
+        <p>
+            <i>Stork server</i> tries to retrieve the data from the <i>Online source</i> first. If for any reason this
+            data cannot be retrieved, there is a fallback mechanism that reads the <i>Offline JSON file</i>.
+        </p>
     </div>
 </app-breadcrumbs>
 <div>
