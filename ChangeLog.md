@@ -1,3 +1,39 @@
+Stork 2.1.0 released on 2024-12-11.
+
+* 477 [bug] slawek
+
+    Fixed a bug in the LDAP hook that made connecting to the server over
+    the LDAPS (TLS) protocol impossible. Thanks to Cameron Ditchfield
+    for proposing a fix.
+    (Gitlab #1488)
+
+* 476 [func] slawek
+
+    The subnet's user context is now displayed on the subnet page. The
+    "subnet-name" property value of the context is also shown on the
+    subnet list.
+    (Gitlab #459)
+
+* 475 [func] piotrek
+
+    The "Software versions" view was updated with a list of small
+    changes, such as corrected help tooltip text, adjusted notification
+    message severity for development releases, and improved badge
+    notification displayed in the top menu.
+    (Gitlab #1571)
+
+* 474 [build] slawek
+
+    The demo now loads the LDAP hook and starts the OpenLDAP server.
+    (Gitlab #1554)
+
+* 473 [bug] tomek
+
+    The Stork agent can now detect the default RNDC key of BIND 9.
+    The parser code can now handle algorithm definitions both quoted and
+    unquoted.
+    (Gitlab #1590)
+
 Stork 2.0.0 released on 2024-11-13.
 
 * 472 [bug] marcin
