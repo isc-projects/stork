@@ -3,9 +3,12 @@ package restservice
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"math/big"
 	"net"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"path"
 	"regexp"
 	"sort"
@@ -3116,75 +3119,396 @@ func TestGetAccessPointKey(t *testing.T) {
 }
 
 // Helper function to store and defer restore
-// original path of versions.json file.
-func RememberVersionsJSONPath() func() {
-	originalPath := VersionsJSON
+// original path and URL of versions.json file.
+func RememberVersionsJSONPathAndURL() func() {
+	originalPath := VersionsJSONPath
+	originalURL := VersionsJSONOnlineURL
 
 	return func() {
-		VersionsJSON = originalPath
+		VersionsJSONPath = originalPath
+		VersionsJSONOnlineURL = originalURL
 	}
 }
 
-// Test that the HTTP 500 Internal Server Error status is returned
+// Test that an error is returned by getOfflineVersionsJSON
 // if the versions.json file doesn't exist.
-func TestGetSoftwareVersionsNoVersionsJSONError(t *testing.T) {
+func TestGetOfflineVersionsJSONrrorNoSuchFile(t *testing.T) {
 	// Arrange
-	restoreJSONPath := RememberVersionsJSONPath()
-	defer restoreJSONPath()
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
-	VersionsJSON = path.Join(sb.BasePath, "not-exists.json")
-
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	settings := &RestAPISettings{}
-	rapi, _ := NewRestAPI(settings, dbSettings, db)
-	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	VersionsJSONPath = path.Join(sb.BasePath, "not-exists.json")
 
 	// Act
-	rsp := rapi.GetSoftwareVersions(ctx, general.GetSoftwareVersionsParams{})
+	bytes, err := getOfflineVersionsJSON()
 
 	// Assert
-	defaultRsp, ok := rsp.(*general.GetSoftwareVersionsDefault)
-	require.True(t, ok)
-	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	require.Nil(t, bytes)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem opening the JSON file")
+	require.ErrorContains(t, err, "no such file")
 }
 
-// Test that the HTTP 500 Internal Server Error status is returned
-// if the versions.json file content is truncated.
-func TestGetSoftwareVersionsTruncatedVersionsJSONError(t *testing.T) {
+// Test that an error is returned by getOfflineVersionsJSON
+// if permission to the versions.json file is denied.
+func TestGetOfflineVersionsJSONrrorPermissionDenied(t *testing.T) {
 	// Arrange
-	restoreJSONPath := RememberVersionsJSONPath()
-	defer restoreJSONPath()
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	content := `{
-  	"date": "2024-10-03`
-	VersionsJSON, _ = sb.Write("versions.json", content)
-
-	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	settings := &RestAPISettings{}
-	rapi, _ := NewRestAPI(settings, dbSettings, db)
-	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+	"date": "2024-10-03`
+	VersionsJSONPath, _ = sb.Write("versions.json", content)
+	os.Chmod(VersionsJSONPath, fs.FileMode(int(0200)))
 
 	// Act
-	rsp := rapi.GetSoftwareVersions(ctx, general.GetSoftwareVersionsParams{})
+	bytes, err := getOfflineVersionsJSON()
 
 	// Assert
-	defaultRsp, ok := rsp.(*general.GetSoftwareVersionsDefault)
-	require.True(t, ok)
-	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	require.Nil(t, bytes)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem opening the JSON file")
+	require.ErrorContains(t, err, "permission denied")
+}
+
+// Test that getOnlineVersionsJSON sends appropriate HTTP GET request
+// and it returns the data received from server.
+func TestGetOnlineVersionsJSON(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+
+	testBody := []byte(`{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": [
+    ]
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "202a-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`)
+
+	// Prepare test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hAccept := r.Header.Get("Accept")
+		require.NotEmpty(t, hAccept)
+		require.Contains(t, hAccept, "application/json")
+		hUserAgent := r.Header.Get("User-Agent")
+		require.NotEmpty(t, hUserAgent)
+		require.Regexp(t, `^ISC Stork / \d+\.\d+\.\d+ built on .+$`, hUserAgent)
+		w.WriteHeader(http.StatusOK)
+		w.Write(testBody)
+	}))
+	defer ts.Close()
+
+	serverURL := ts.URL
+	VersionsJSONOnlineURL = serverURL
+
+	// Act
+	bytes, err := getOnlineVersionsJSON()
+
+	// Assert
+	require.NotNil(t, bytes)
+	require.Equal(t, testBody, bytes)
+	require.NoError(t, err)
+}
+
+// Test that getOnlineVersionsJSON returns an error when the online versions.json URL is incorrect.
+func TestGetOnlineVersionsJSONSendingError(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	VersionsJSONOnlineURL = " foobar "
+
+	// Act
+	bytes, err := getOnlineVersionsJSON()
+
+	// Assert
+	require.Nil(t, bytes)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem sending HTTP GET request to")
+}
+
+// Test that an error is returned by unmarshalVersionsJSONData
+// if the versions.json file content is truncated.
+func TestUnmarshalVersionsJSONDataTruncatedVersionsJSONError(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	bytes := []byte(`"date": "2024-12-08"`)
+
+	// Act
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+
+	// Assert
+	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem unmarshalling contents of the offline JSON file")
+}
+
+// Test that an error is returned by unmarshalVersionsJSONData
+// if the versions.json BIND 9 metadata has wrong format.
+func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	bytes := []byte(`{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": [
+    ]
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "202a-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`)
+
+	// Act
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+
+	// Assert
+	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem converting BIND 9 data")
+}
+
+// Test that an error is returned by unmarshalVersionsJSONData
+// if the versions.json Kea metadata has wrong format.
+func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	bytes := []byte(`{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "026-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": [
+    ]
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.20.2",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2028-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`)
+
+	// Act
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+
+	// Assert
+	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem converting Kea data")
+}
+
+// Test that an error is returned by unmarshalVersionsJSONData
+// if the versions.json Stork metadata has wrong format.
+func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	bytes := []byte(`{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "z024-10-02"
+    },
+    "latestSecure": [
+    ]
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`)
+
+	// Act
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+
+	// Assert
+	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem converting Stork data")
+}
+
+// Test that an error is returned by unmarshalVersionsJSONData
+// if the versions.json date field has wrong format.
+func TestUnmarshalVersionsJSONDataDateError(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	bytes := []byte(`{
+  "date": "024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": [
+    ]
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`)
+
+	// Act
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+
+	// Assert
+	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "problem parsing date")
 }
 
 // Test that information about current ISC software versions is returned
-// via the API.
-func TestGetSoftwareVersions(t *testing.T) {
+// via the API. Getting online versions.json fails, so there should be
+// fallback to offline mode.
+func TestGetSoftwareVersionsOffline(t *testing.T) {
 	// Arrange
-	restoreJSONPath := RememberVersionsJSONPath()
-	defer restoreJSONPath()
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	content := `{
@@ -3239,7 +3563,8 @@ func TestGetSoftwareVersions(t *testing.T) {
     }
   }
 }`
-	VersionsJSON, _ = sb.Write("versions.json", content)
+	VersionsJSONPath, _ = sb.Write("versions.json", content)
+	VersionsJSONOnlineURL = " foo bar "
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -3270,11 +3595,167 @@ func TestGetSoftwareVersions(t *testing.T) {
 }
 
 // Test that information about current ISC software versions is returned
+// via the API using online versions.json file data.
+func TestGetSoftwareVersionsOnline(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	offlineContent := `{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      },
+      {
+        "version": "2.4.1",
+        "releaseDate": "2023-11-29",
+        "eolDate": "2025-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": [
+	  {
+        "version": "1.15.1",
+        "releaseDate": "2024-03-27"
+      }
+    ]
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      },
+      {
+        "version": "9.20.2",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2028-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`
+	onlineContent := `{
+    "bind9": {
+        "currentStable": [
+            {
+                "version": "9.18.31",
+                "releaseDate": "2024-10-01",
+                "eolDate": "2026-07-01",
+                "ESV": "true"
+            },
+            {
+                "version": "9.20.3",
+                "releaseDate": "2024-10-01",
+                "eolDate": "2028-07-01"
+            }
+        ],
+        "latestDev": {
+            "version": "9.21.2",
+            "releaseDate": "2024-10-01"
+        },
+        "latestSecure": []
+    },
+    "kea": {
+        "currentStable": [
+            {
+                "version": "2.6.1",
+                "releaseDate": "2024-07-01",
+                "eolDate": "2026-07-01"
+            },
+            {
+                "version": "2.4.1",
+                "releaseDate": "2023-11-01",
+                "eolDate": "2025-07-01"
+            }
+        ],
+        "latestDev": {
+            "version": "2.7.4",
+            "releaseDate": "2024-10-01"
+        },
+        "latestSecure": []
+    },
+    "stork": {
+        "currentStable": [
+            {
+                "version": "2.0.0",
+                "releaseDate": "2024-11-01",
+                "eolDate": "2025-07-01"
+            }
+        ],
+        "latestDev": {
+            "version": "1.19.0",
+            "releaseDate": "2024-10-01"
+        },
+        "latestSecure": []
+    },
+    "date": "2024-12-05"
+}`
+	// Prepare test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(onlineContent))
+	}))
+	defer ts.Close()
+	VersionsJSONPath, _ = sb.Write("versions.json", offlineContent)
+	VersionsJSONOnlineURL = ts.URL
+
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Act
+	rsp := rapi.GetSoftwareVersions(ctx, general.GetSoftwareVersionsParams{})
+
+	// Assert
+	okRsp, ok := rsp.(*general.GetSoftwareVersionsOK)
+	require.True(t, ok)
+	require.Equal(t, "2024-12-05", okRsp.Payload.Date.String())
+	require.NotNil(t, okRsp.Payload.DataSource)
+	require.Equal(t, "online", okRsp.Payload.DataSource)
+	require.NotNil(t, okRsp.Payload.Bind9)
+	require.NotNil(t, okRsp.Payload.Kea)
+	require.NotNil(t, okRsp.Payload.Stork)
+	require.Equal(t, "2.7.4", *okRsp.Payload.Kea.LatestDev.Version)
+	require.Equal(t, int64(2), okRsp.Payload.Kea.LatestDev.Major)
+	require.Equal(t, int64(7), okRsp.Payload.Kea.LatestDev.Minor)
+	require.Equal(t, "2.4.1", okRsp.Payload.Kea.SortedStableVersions[0])
+	require.Equal(t, "2.6.1", okRsp.Payload.Kea.SortedStableVersions[1])
+	require.Equal(t, "1.19.0", *okRsp.Payload.Stork.LatestDev.Version)
+	require.Equal(t, "9.21.2", *okRsp.Payload.Bind9.LatestDev.Version)
+	require.NotNil(t, okRsp.Payload.Stork.CurrentStable)
+	require.Len(t, okRsp.Payload.Stork.CurrentStable, 1)
+	require.Equal(t, "2.0.0", *okRsp.Payload.Stork.CurrentStable[0].Version)
+}
+
+// Test that information about current ISC software versions is returned
 // via the API when some of the JSON values are empty.
 func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
 	// Arrange
-	restoreJSONPath := RememberVersionsJSONPath()
-	defer restoreJSONPath()
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	content := `{
@@ -3328,7 +3809,8 @@ func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
     }
   }
 }`
-	VersionsJSON, _ = sb.Write("versions.json", content)
+	VersionsJSONPath, _ = sb.Write("versions.json", content)
+	VersionsJSONOnlineURL = " foo bar "
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
