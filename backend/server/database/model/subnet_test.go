@@ -645,6 +645,14 @@ func TestGetSubnetsByPage(t *testing.T) {
 				},
 			},
 		},
+		{
+			Prefix: "192.0.4.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID: apps[0].Daemons[0].ID,
+				},
+			},
+		},
 	}
 	for i := range subnets {
 		err := AddSubnet(db, &subnets[i])
@@ -661,13 +669,14 @@ func TestGetSubnetsByPage(t *testing.T) {
 		Family: newPtr(int64(4)),
 	}
 
-	returned, count, err := GetSubnetsByPage(db, 0, 10, filters, "prefix", SortDirDesc)
+	returned, count, err := GetSubnetsByPage(db, 0, 10, filters, "prefix", SortDirAsc)
 	require.NoError(t, err)
-	require.EqualValues(t, 2, count)
-	require.Len(t, returned, 2)
-	// The subnets are returned in descending prefix order.
-	require.Equal(t, "192.0.3.0/24", returned[0].Prefix)
-	require.Equal(t, "192.0.2.0/24", returned[1].Prefix)
+	require.EqualValues(t, 3, count)
+	require.Len(t, returned, 3)
+	// The subnets are returned in ascending prefix order.
+	require.Equal(t, "192.0.2.0/24", returned[0].Prefix)
+	require.Equal(t, "192.0.3.0/24", returned[1].Prefix)
+	require.Equal(t, "192.0.4.0/24", returned[2].Prefix)
 
 	for _, s := range returned {
 		for _, ls := range s.LocalSubnets {
@@ -677,10 +686,10 @@ func TestGetSubnetsByPage(t *testing.T) {
 		}
 	}
 
-	require.Nil(t, returned[0].SharedNetwork)
-	require.NotNil(t, returned[1].SharedNetwork)
+	require.Nil(t, returned[1].SharedNetwork)
+	require.NotNil(t, returned[0].SharedNetwork)
 	// The related shared networks are not presented on the subnet list.
-	require.Empty(t, returned[1].SharedNetwork.LocalSharedNetworks)
+	require.Empty(t, returned[0].SharedNetwork.LocalSharedNetworks)
 
 	// This should match multiple pools in the first subnet. However,
 	// only one record should be returned.
