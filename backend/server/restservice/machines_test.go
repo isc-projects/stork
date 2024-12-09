@@ -3161,7 +3161,7 @@ func TestGetOfflineVersionsJSONrrorPermissionDenied(t *testing.T) {
 	content := `{
 	"date": "2024-10-03`
 	VersionsJSONPath, _ = sb.Write("versions.json", content)
-	os.Chmod(VersionsJSONPath, fs.FileMode(int(0200)))
+	os.Chmod(VersionsJSONPath, fs.FileMode(int(0o200)))
 
 	// Act
 	bytes, err := getOfflineVersionsJSON()
