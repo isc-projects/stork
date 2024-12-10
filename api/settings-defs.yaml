@@ -17,6 +17,8 @@
         type: string
       enableMachineRegistration:
         type: boolean
+      enableOnlineSoftwareVersions:
+        type: boolean
 
   Puller:
     type: object

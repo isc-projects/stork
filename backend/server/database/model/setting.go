@@ -91,6 +91,11 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 			ValType: SettingValTypeBool,
 			Value:   "true",
 		},
+		{
+			Name:    "enable_online_software_versions",
+			ValType: SettingValTypeBool,
+			Value:   "true",
+		},
 	}
 
 	// Check if there are new settings vs existing ones. Add new ones to DB.

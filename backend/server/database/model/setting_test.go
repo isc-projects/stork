@@ -53,11 +53,18 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, boolVal)
 
+	boolVal, err = GetSettingBool(db, "enable_online_software_versions")
+	require.NoError(t, err)
+	require.True(t, boolVal)
+
 	// change the settings
 	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
 	require.NoError(t, err)
 
 	err = SetSettingBool(db, "enable_machine_registration", false)
+	require.NoError(t, err)
+
+	err = SetSettingBool(db, "enable_online_software_versions", false)
 	require.NoError(t, err)
 
 	// reinitialize settings, nothing should change
@@ -71,6 +78,10 @@ func TestInitializeSettings(t *testing.T) {
 	require.EqualValues(t, 123, val)
 
 	boolVal, err = GetSettingBool(db, "enable_machine_registration")
+	require.NoError(t, err)
+	require.False(t, boolVal)
+
+	boolVal, err = GetSettingBool(db, "enable_online_software_versions")
 	require.NoError(t, err)
 	require.False(t, boolVal)
 

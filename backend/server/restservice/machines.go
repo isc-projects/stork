@@ -159,17 +159,27 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (m
 // Get information about current ISC software versions.
 func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSoftwareVersionsParams) middleware.Responder {
 	appsVersions := models.AppsVersions{}
-	bytes, err := getOnlineVersionsJSON()
-	if err == nil {
-		// Online versions.json was received, so let's try to use that data.
-		appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOnline)
-		if err == nil {
-			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
-		}
-	}
-	log.Error(errors.Wrapf(err, "problem processing online versions.json data; falling back to offline mode"))
 
-	bytes, err = getOfflineVersionsJSON()
+	onlineModeEnabled, err := dbmodel.GetSettingBool(r.DB, "enable_online_software_versions")
+	if err != nil {
+		log.Error(errors.Wrapf(err, "problem reading boolean setting enable_online_software_versions"))
+		onlineModeEnabled = false
+	}
+	if onlineModeEnabled {
+		bytes, err := getOnlineVersionsJSON()
+		if err == nil {
+			// Online versions.json was received, so let's try to use that data.
+			appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOnline)
+			if err == nil {
+				return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
+			}
+		}
+		log.Error(errors.Wrapf(err, "problem processing online versions.json data; falling back to offline mode"))
+	} else {
+		log.Warn("online mode of software version checking disabled")
+	}
+
+	bytes, err := getOfflineVersionsJSON()
 	if err == nil {
 		// Try to use offline versions.json data.
 		appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
