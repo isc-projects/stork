@@ -3239,10 +3239,6 @@ func TestGetOnlineVersionsJSONSendingError(t *testing.T) {
 // if the versions.json file content is truncated.
 func TestUnmarshalVersionsJSONDataTruncatedVersionsJSONError(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
 	bytes := []byte(`"date": "2024-12-08"`)
 
 	// Act
@@ -3258,10 +3254,6 @@ func TestUnmarshalVersionsJSONDataTruncatedVersionsJSONError(t *testing.T) {
 // if the versions.json BIND 9 metadata has wrong format.
 func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
 	bytes := []byte(`{
   "date": "2024-10-03",
   "kea": {
@@ -3314,10 +3306,6 @@ func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
 // if the versions.json Kea metadata has wrong format.
 func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
 	bytes := []byte(`{
   "date": "2024-10-03",
   "kea": {
@@ -3369,10 +3357,6 @@ func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
 // if the versions.json Stork metadata has wrong format.
 func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
 	bytes := []byte(`{
   "date": "2024-10-03",
   "kea": {
@@ -3425,10 +3409,6 @@ func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
 // if the versions.json date field has wrong format.
 func TestUnmarshalVersionsJSONDataDateError(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
 	bytes := []byte(`{
   "date": "024-10-03",
   "kea": {
