@@ -3246,7 +3246,7 @@ func TestUnmarshalVersionsJSONDataTruncatedVersionsJSONError(t *testing.T) {
 	bytes := []byte(`"date": "2024-12-08"`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
 	require.Equal(t, appsVersions, models.AppsVersions{})
@@ -3302,7 +3302,7 @@ func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
 }`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
 	require.Equal(t, appsVersions, models.AppsVersions{})
@@ -3357,7 +3357,7 @@ func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
 }`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
 	require.Equal(t, appsVersions, models.AppsVersions{})
@@ -3413,7 +3413,7 @@ func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
 }`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
 	require.Equal(t, appsVersions, models.AppsVersions{})
@@ -3469,7 +3469,7 @@ func TestUnmarshalVersionsJSONDataDateError(t *testing.T) {
 }`)
 
 	// Act
-	appsVersions, err := unmarshalVersionsJSONData(&bytes, "offline")
+	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
 	require.Equal(t, appsVersions, models.AppsVersions{})

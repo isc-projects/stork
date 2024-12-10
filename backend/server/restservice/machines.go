@@ -46,6 +46,7 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 }
 
 // Tries to send HTTP GET to VersionsJSONOnlineURL to retrieve versions.json file containing information about current ISC software versions.
+// If response to the HTTP request is successful, the body of the response is returned as bytes; error otherwise.
 func getOnlineVersionsJSON() ([]byte, error) {
 	accept := "application/json"
 	userAgent := fmt.Sprintf("ISC Stork / %s built on %s", stork.Version, stork.BuildDate)
@@ -78,6 +79,8 @@ func getOnlineVersionsJSON() ([]byte, error) {
 	return body, nil
 }
 
+// Tries to read versions.json local file containing information about current ISC software versions.
+// In case of success, the content of the file is returned as bytes; error otherwise.
 func getOfflineVersionsJSON() ([]byte, error) {
 	// Find the location of the JSON file with software versions metadata.
 	searchPaths := []string{}
@@ -110,8 +113,7 @@ func getOfflineVersionsJSON() ([]byte, error) {
 }
 
 // Deserializes bytes data into ReportAppsVersions struct, converts and returns the data in REST API format.
-// It takes mode string as argument, which should be value from data source Enum: ["offline","online"].
-func unmarshalVersionsJSONData(bytes *[]byte, mode string) (models.AppsVersions, error) {
+func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (models.AppsVersions, error) {
 	// Unmarshal the JSON to custom struct.
 	s := ReportAppsVersions{}
 	err := json.Unmarshal(*bytes, &s)
@@ -160,7 +162,7 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	bytes, err := getOnlineVersionsJSON()
 	if err == nil {
 		// Online versions.json was received, so let's try to use that data.
-		appsVersions, err = unmarshalVersionsJSONData(&bytes, "online")
+		appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOnline)
 		if err == nil {
 			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
 		}
@@ -170,7 +172,7 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	bytes, err = getOfflineVersionsJSON()
 	if err == nil {
 		// Try to use offline versions.json data.
-		appsVersions, err = unmarshalVersionsJSONData(&bytes, "offline")
+		appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 		if err == nil {
 			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
 		}
