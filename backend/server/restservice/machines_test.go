@@ -3523,6 +3523,7 @@ func TestGetSoftwareVersionsOffline(t *testing.T) {
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	dbmodel.InitializeSettings(db, 0)
 
 	settings := &RestAPISettings{}
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
@@ -3676,6 +3677,7 @@ func TestGetSoftwareVersionsOnline(t *testing.T) {
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	dbmodel.InitializeSettings(db, 0)
 
 	settings := &RestAPISettings{}
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
@@ -3703,6 +3705,162 @@ func TestGetSoftwareVersionsOnline(t *testing.T) {
 	require.NotNil(t, okRsp.Payload.Stork.CurrentStable)
 	require.Len(t, okRsp.Payload.Stork.CurrentStable, 1)
 	require.Equal(t, "2.0.0", *okRsp.Payload.Stork.CurrentStable[0].Version)
+}
+
+// Test that information about current ISC software versions is returned
+// via the API using offline versions.json file data, because online mode is disabled in settings.
+func TestGetSoftwareVersionsOnlineDisabled(t *testing.T) {
+	// Arrange
+	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
+	defer restoreJSONPathAndURL()
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	offlineContent := `{
+  "date": "2024-10-03",
+  "kea": {
+    "currentStable": [
+      {
+        "version": "2.6.1",
+        "releaseDate": "2024-07-31",
+        "eolDate": "2026-07-01"
+      },
+      {
+        "version": "2.4.1",
+        "releaseDate": "2023-11-29",
+        "eolDate": "2025-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "2.7.3",
+      "releaseDate": "2024-09-25"
+    }
+  },
+  "stork": {
+    "latestDev": {
+      "version": "1.19.0",
+      "releaseDate": "2024-10-02"
+    },
+    "latestSecure": [
+	  {
+        "version": "1.15.1",
+        "releaseDate": "2024-03-27"
+      }
+    ]
+  },
+  "bind9": {
+    "currentStable": [
+      {
+        "version": "9.18.30",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2026-07-01",
+        "ESV": "true"
+      },
+      {
+        "version": "9.20.2",
+        "releaseDate": "2024-09-18",
+        "eolDate": "2028-07-01"
+      }
+    ],
+    "latestDev": {
+      "version": "9.21.1",
+      "releaseDate": "2024-09-18"
+    }
+  }
+}`
+	onlineContent := `{
+    "bind9": {
+        "currentStable": [
+            {
+                "version": "9.18.31",
+                "releaseDate": "2024-10-01",
+                "eolDate": "2026-07-01",
+                "ESV": "true"
+            },
+            {
+                "version": "9.20.3",
+                "releaseDate": "2024-10-01",
+                "eolDate": "2028-07-01"
+            }
+        ],
+        "latestDev": {
+            "version": "9.21.2",
+            "releaseDate": "2024-10-01"
+        },
+        "latestSecure": []
+    },
+    "kea": {
+        "currentStable": [
+            {
+                "version": "2.6.1",
+                "releaseDate": "2024-07-01",
+                "eolDate": "2026-07-01"
+            },
+            {
+                "version": "2.4.1",
+                "releaseDate": "2023-11-01",
+                "eolDate": "2025-07-01"
+            }
+        ],
+        "latestDev": {
+            "version": "2.7.4",
+            "releaseDate": "2024-10-01"
+        },
+        "latestSecure": []
+    },
+    "stork": {
+        "currentStable": [
+            {
+                "version": "2.0.0",
+                "releaseDate": "2024-11-01",
+                "eolDate": "2025-07-01"
+            }
+        ],
+        "latestDev": {
+            "version": "1.19.0",
+            "releaseDate": "2024-10-01"
+        },
+        "latestSecure": []
+    },
+    "date": "2024-12-05"
+}`
+	// Prepare test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(onlineContent))
+	}))
+	defer ts.Close()
+	VersionsJSONPath, _ = sb.Write("versions.json", offlineContent)
+	VersionsJSONOnlineURL = ts.URL
+
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	dbmodel.InitializeSettings(db, 0)
+	err := dbmodel.SetSettingBool(db, "enable_online_software_versions", false)
+	require.NoError(t, err)
+
+	settings := &RestAPISettings{}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
+	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
+
+	// Act
+	rsp := rapi.GetSoftwareVersions(ctx, general.GetSoftwareVersionsParams{})
+
+	// Assert
+	okRsp, ok := rsp.(*general.GetSoftwareVersionsOK)
+	require.True(t, ok)
+	require.Equal(t, "2024-10-03", okRsp.Payload.Date.String())
+	require.NotNil(t, okRsp.Payload.DataSource)
+	require.EqualValues(t, "offline", okRsp.Payload.DataSource)
+	require.NotNil(t, okRsp.Payload.Bind9)
+	require.NotNil(t, okRsp.Payload.Kea)
+	require.NotNil(t, okRsp.Payload.Stork)
+	require.Equal(t, "2.7.3", *okRsp.Payload.Kea.LatestDev.Version)
+	require.Equal(t, int64(2), okRsp.Payload.Kea.LatestDev.Major)
+	require.Equal(t, int64(7), okRsp.Payload.Kea.LatestDev.Minor)
+	require.Equal(t, "2.4.1", okRsp.Payload.Kea.SortedStableVersions[0])
+	require.Equal(t, "2.6.1", okRsp.Payload.Kea.SortedStableVersions[1])
+	require.Equal(t, "1.19.0", *okRsp.Payload.Stork.LatestDev.Version)
+	require.Equal(t, "9.21.1", *okRsp.Payload.Bind9.LatestDev.Version)
 }
 
 // Test that information about current ISC software versions is returned
@@ -3769,6 +3927,7 @@ func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	dbmodel.InitializeSettings(db, 0)
 
 	settings := &RestAPISettings{}
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
