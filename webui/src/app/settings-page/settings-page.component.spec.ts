@@ -73,6 +73,7 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('prometheusUrl')?.value).toBe('')
         expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeFalse()
+        expect(component.settingsForm.get('enableOnlineSoftwareVersions')?.value).toBeFalse()
     })
 
     it('should have breadcrumbs', () => {
@@ -103,6 +104,7 @@ describe('SettingsPageComponent', () => {
             keaStatusPullerInterval: 32,
             prometheusUrl: 'http://notlocalhost:2222',
             enableMachineRegistration: true,
+            enableOnlineSoftwareVersions: true,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         component.ngOnInit()
@@ -118,6 +120,7 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
         expect(component.settingsForm.get('prometheusUrl')?.value).toBe('http://notlocalhost:2222')
         expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeTrue()
+        expect(component.settingsForm.get('enableOnlineSoftwareVersions')?.value).toBeTrue()
     }))
 
     it('should display error message upon getting the settings', fakeAsync(() => {
@@ -153,6 +156,18 @@ describe('SettingsPageComponent', () => {
             keaStatusPullerInterval: 32,
             prometheusUrl: 'http://notlocalhost:2222',
             enableMachineRegistration: true,
+            enableOnlineSoftwareVersions: true,
+        }
+        const updatedSettings: any = {
+            appsStatePullerInterval: 13,
+            bind9StatsPullerInterval: 13,
+            grafanaUrl: 'http://localhost:4234',
+            keaHostsPullerInterval: 13,
+            keaStatsPullerInterval: 13,
+            keaStatusPullerInterval: 13,
+            prometheusUrl: 'http://notlocalhost:3222',
+            enableMachineRegistration: false,
+            enableOnlineSoftwareVersions: false,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
@@ -160,8 +175,11 @@ describe('SettingsPageComponent', () => {
         fixture.detectChanges()
         tick()
 
+        component.settingsForm.setValue(updatedSettings)
+        fixture.detectChanges()
+
         component.saveSettings()
-        expect(settingsApi.updateSettings).toHaveBeenCalledWith(settings)
+        expect(settingsApi.updateSettings).toHaveBeenCalledWith(updatedSettings)
     }))
 
     it('should validate the form', fakeAsync(() => {
