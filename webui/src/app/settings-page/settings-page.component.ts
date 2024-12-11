@@ -3,7 +3,7 @@ import { FormControl, FormGroup, FormBuilder, Validators } from '@angular/forms'
 
 import { MessageService } from 'primeng/api'
 
-import { SettingsService } from '../backend/api/api'
+import { SettingsService } from '../backend'
 import { getErrorMessage } from '../utils'
 
 /**
@@ -18,6 +18,7 @@ interface SettingsForm {
     grafanaUrl: FormControl<string>
     prometheusUrl: FormControl<string>
     enableMachineRegistration: FormControl<boolean>
+    enableOnlineSoftwareVersions: FormControl<boolean>
 }
 
 /**
@@ -130,6 +131,7 @@ export class SettingsPageComponent implements OnInit {
             grafanaUrl: [''],
             prometheusUrl: [''],
             enableMachineRegistration: [false],
+            enableOnlineSoftwareVersions: [false],
         })
     }
 
@@ -139,12 +141,12 @@ export class SettingsPageComponent implements OnInit {
      */
     private getSettings(): void {
         this.formState = 'loading'
-        this.settingsApi.getSettings().subscribe(
-            (data) => {
+        this.settingsApi.getSettings().subscribe({
+            next: (data) => {
                 this.settingsForm.patchValue(data)
                 this.formState = 'success'
             },
-            (err) => {
+            error: (err) => {
                 this.formState = 'fail'
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
@@ -153,8 +155,8 @@ export class SettingsPageComponent implements OnInit {
                     detail: 'Error getting settings: ' + msg,
                     life: 10000,
                 })
-            }
-        )
+            },
+        })
     }
 
     /**
@@ -183,15 +185,15 @@ export class SettingsPageComponent implements OnInit {
         }
         const settings = this.settingsForm.getRawValue()
 
-        this.settingsApi.updateSettings(settings).subscribe(
-            (/* data */) => {
+        this.settingsApi.updateSettings(settings).subscribe({
+            next: (/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'Settings updated',
                     detail: 'Updating settings succeeded.',
                 })
             },
-            (err) => {
+            error: (err) => {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
@@ -199,8 +201,8 @@ export class SettingsPageComponent implements OnInit {
                     detail: 'Error saving settings: ' + msg,
                     life: 10000,
                 })
-            }
-        )
+            },
+        })
     }
 
     /**

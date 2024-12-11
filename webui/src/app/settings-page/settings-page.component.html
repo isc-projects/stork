@@ -52,6 +52,26 @@
                         </app-help-tip>
                     </div>
                 </p-fieldset>
+                <p-fieldset legend="Automatic software updates checking">
+                    <div class="flex align-items-center">
+                        <p-checkbox
+                            formControlName="enableOnlineSoftwareVersions"
+                            [binary]="true"
+                            inputId="online-versions-checkbox"
+                        />
+                        <label class="ml-2" for="online-versions-checkbox"
+                            >Enable online software updates checking</label
+                        >
+                        <app-help-tip subject="Online Software Updates Checking Setting">
+                            Stork can automatically check for software updates available for Kea, BIND 9 and Stork
+                            itself. To be able to do that, Stork server downloads a
+                            <a href="https://versions.isc.org" target="_blank">JSON file</a> with latest software
+                            releases metadata. This feature can be disabled using this setting. When disabled, all the
+                            feedback displayed regarding software versions detected by Stork will be generated based on
+                            offline built-in information stored as a JSON file.
+                        </app-help-tip>
+                    </div>
+                </p-fieldset>
                 <p-fieldset legend="Intervals">
                     <div *ngFor="let setting of intervalSettings" class="my-2 flex flex-column">
                         <label [for]="setting.formControlName"> {{ setting.title }} (in seconds): </label>
