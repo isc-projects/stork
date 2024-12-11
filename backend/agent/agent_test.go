@@ -36,6 +36,9 @@ func setupAgentTest() (*StorkAgent, context.Context, func()) {
 // Initializes StorkAgent instance and context used by the tests. Loads the
 // given list of callout carriers (hooks' contents).
 func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgent, context.Context, func()) {
+	bind9StatsClient := NewBind9StatsClient()
+	gock.InterceptClient(bind9StatsClient.innerClient.GetClient())
+
 	httpClient := NewHTTPClient()
 	httpClient.SetSkipTLSVerification(true)
 	gock.InterceptClient(httpClient.client)
@@ -44,12 +47,12 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
-		AppMonitor:        &fam,
-		GeneralHTTPClient: httpClient,
-		KeaHTTPClient:     httpClient,
-		logTailer:         newLogTailer(),
-		keaInterceptor:    newKeaInterceptor(),
-		hookManager:       NewHookManager(),
+		AppMonitor:       &fam,
+		bind9StatsClient: bind9StatsClient,
+		KeaHTTPClient:    httpClient,
+		logTailer:        newLogTailer(),
+		keaInterceptor:   newKeaInterceptor(),
+		hookManager:      NewHookManager(),
 	}
 
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
@@ -100,11 +103,11 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 // Check if NewStorkAgent can be invoked and sets SA members.
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
-	generalHTTPClient := NewHTTPClient()
+	bind9StatsClient := NewBind9StatsClient()
 	keaHTTPClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, fam, generalHTTPClient, keaHTTPClient, NewHookManager(), "")
+	sa := NewStorkAgent("foo", 42, fam, bind9StatsClient, keaHTTPClient, NewHookManager(), "")
 	require.NotNil(t, sa.AppMonitor)
-	require.Equal(t, generalHTTPClient, sa.GeneralHTTPClient)
+	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)
 	require.Equal(t, keaHTTPClient, sa.KeaHTTPClient)
 }
 
@@ -338,14 +341,14 @@ func TestForwardToNamedStatsSuccess(t *testing.T) {
 	// an error will be raised.
 	defer gock.Off()
 	gock.New("http://localhost:45634/").
-		MatchHeader("Content-Type", "application/json").
-		Post("/").
+		MatchHeader("Accept", "application/json").
+		Get("json/v1").
 		Reply(200).
 		JSON([]map[string]int{{"result": 0}})
 
 	// Forward the request with the expected body.
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1",
+		Url:               "http://localhost:45634/",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 
@@ -366,14 +369,14 @@ func TestForwardToNamedStatsBadRequest(t *testing.T) {
 	defer teardown()
 
 	defer gock.Off()
-	gock.New("http://localhost:45634/json/v1").
-		MatchHeader("Content-Type", "application/json").
-		Post("/").
+	gock.New("http://localhost:45634/").
+		MatchHeader("Accept", "application/json").
+		Get("/json/v1").
 		Reply(400).
 		JSON([]map[string]string{{"HttpCode": "Bad Request"}})
 
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1",
+		Url:               "http://localhost:45634/",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 
@@ -394,13 +397,13 @@ func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
 	defer teardown()
 
 	defer gock.Off()
-	gock.New("http://localhost:45634/json/v1").
-		MatchHeader("Content-Type", "application/json").
-		Post("/").
+	gock.New("http://localhost:45634/").
+		MatchHeader("Accept", "application/json").
+		Get("/json/v1").
 		Reply(200)
 
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1",
+		Url:               "http://localhost:45634/",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 
@@ -421,7 +424,7 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 	defer teardown()
 
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1",
+		Url:               "http://localhost:45634/",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 

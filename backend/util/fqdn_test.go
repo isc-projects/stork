@@ -6,6 +6,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test names comparison.
+func TestCompareNames(t *testing.T) {
+	require.Negative(t, CompareNames("authors.bind", "version.bind"))
+	require.Positive(t, CompareNames("version.bind", "authors.bind"))
+	require.Zero(t, CompareNames("version.bind", "version.bind"))
+	require.Negative(t, CompareNames("example.com", "www.example.com"))
+	require.Positive(t, CompareNames("host.example.com", "example.com"))
+	require.Negative(t, CompareNames("host.example.com", "example.org"))
+	require.Negative(t, CompareNames("com", "org"))
+	require.Positive(t, CompareNames("com", ""))
+	require.Zero(t, CompareNames("", ""))
+}
+
 // Test parsing a full FQDN.
 func TestParseFullFqdn(t *testing.T) {
 	fqdn, err := ParseFqdn("foo.example.org.")

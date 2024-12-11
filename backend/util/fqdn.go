@@ -2,10 +2,60 @@ package storkutil
 
 import (
 	"bytes"
+	"slices"
 	"strings"
 
+	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 )
+
+// Compares two DNS names. This yields the following zones ordering:
+//
+// - example.com (com is before .org and .version)
+// - host.example.com (host is a child of example.com, so it is behind it)
+// - example.org (.org is after com but before .version)
+// - a.example.org (a is a child of example.org)
+// - bind.version (.version is behind .com and .org)
+//
+// It returns -1 when name1 is before name2; it returns 0 when
+// name1 and name2 are the same; it returns 1 when name1 is after name2.
+func CompareNames(name1, name2 string) int {
+	// Turn the domain names into labels.
+	s1 := dns.SplitDomainName(name1)
+	s2 := dns.SplitDomainName(name2)
+
+	// Reverse the labels order because we compare them from the back.
+	slices.Reverse(s1)
+	slices.Reverse(s2)
+
+	// Compare the labels that exist in both names.
+	for i := 0; i < min(len(s1), len(s2)); i++ {
+		switch {
+		case s2[i] == s1[i]:
+			continue
+		case s1[i] < s2[i]:
+			return -1
+		default:
+			return 1
+		}
+	}
+	// It seems that all compared labels so far are equal.
+	switch {
+	// If the name lengths are the same it means that the names are
+	// equal (remember that we have already compared the labels for
+	// equality).
+	case len(s1) == len(s2):
+		return 0
+	// The second name is longer so it goes behind the first name.
+	// It is a child zone.
+	case len(s1) < len(s2):
+		return -1
+	default:
+		// The first name is longer so it goes behind the second
+		// name. It is a child zone.
+		return 1
+	}
+}
 
 // Represents Fully Qualified Domain Name (FQDN).
 // See https://datatracker.ietf.org/doc/html/rfc1035.

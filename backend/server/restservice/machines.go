@@ -19,6 +19,7 @@ import (
 
 	"isc.org/stork"
 	keaconfig "isc.org/stork/appcfg/kea"
+	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
@@ -1173,7 +1174,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 	case isBind9App:
 		var bind9DaemonDB *dbmodel.Daemon
-		var namedStats *dbmodel.Bind9NamedStats
+		var namedStats *bind9stats.Bind9NamedStats
 		if len(dbApp.Daemons) > 0 {
 			bind9DaemonDB = dbApp.Daemons[0]
 			if bind9DaemonDB.Bind9Daemon != nil {

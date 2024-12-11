@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	log "github.com/sirupsen/logrus"
+	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
@@ -80,15 +81,15 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 	statsOutput := NamedStatsGetResponse{}
 	ctx := context.Background()
-	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
+	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp, statsChannel.Address, statsChannel.Port, "", &statsOutput)
 	if err != nil {
 		return err
 	}
 
-	namedStats := &dbmodel.Bind9NamedStats{}
+	namedStats := &bind9stats.Bind9NamedStats{}
 
 	if statsOutput.Views != nil {
-		viewStats := make(map[string]*dbmodel.Bind9StatsView)
+		viewStats := make(map[string]*bind9stats.Bind9StatsView)
 
 		for name, view := range statsOutput.Views {
 			// Only deal with the default view for now.
@@ -102,8 +103,8 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			cacheStats["QueryHits"] = view.Resolver.CacheStats.QueryHits
 			cacheStats["QueryMisses"] = view.Resolver.CacheStats.QueryMisses
 
-			viewStats[name] = &dbmodel.Bind9StatsView{
-				Resolver: &dbmodel.Bind9StatsResolver{
+			viewStats[name] = &bind9stats.Bind9StatsView{
+				Resolver: &bind9stats.Bind9StatsResolver{
 					CacheStats: cacheStats,
 				},
 			}

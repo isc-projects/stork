@@ -1,0 +1,30 @@
+[
+    {
+        "name": "authors.bind",
+        "class": "CH",
+        "serial": 0,
+        "type": "builtin",
+        "loaded": "2024-11-26T11:42:14Z"
+    },
+    {
+        "name": "hostname.bind",
+        "class": "CH",
+        "serial": 0,
+        "type": "builtin",
+        "loaded": "2024-11-26T11:42:14Z"
+    },
+    {
+        "name": "version.bind",
+        "class": "CH",
+        "serial": 0,
+        "type": "builtin",
+        "loaded": "2024-11-26T11:42:14Z"
+    },
+    {
+        "name": "id.server",
+        "class": "CH",
+        "serial": 0,
+        "type": "builtin",
+        "loaded": "2024-11-26T11:42:14Z"
+    }
+]

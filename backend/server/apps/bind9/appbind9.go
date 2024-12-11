@@ -7,6 +7,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -54,15 +55,15 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 
 	// store all collected details in app db record
 	statsOutput := NamedStatsGetResponse{}
-	err = agents.ForwardToNamedStats(ctx2, dbApp, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
+	err = agents.ForwardToNamedStats(ctx2, dbApp, statsChannel.Address, statsChannel.Port, "", &statsOutput)
 	if err != nil {
 		log.Warnf("Problem retrieving stats from named: %s", err)
 	}
 
-	namedStats := &dbmodel.Bind9NamedStats{}
+	namedStats := &bind9stats.Bind9NamedStats{}
 
 	if statsOutput.Views != nil {
-		viewStats := make(map[string]*dbmodel.Bind9StatsView)
+		viewStats := make(map[string]*bind9stats.Bind9StatsView)
 
 		for name, view := range statsOutput.Views {
 			// Only deal with the default view for now.
@@ -76,8 +77,8 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 			cacheStats["QueryHits"] = view.Resolver.CacheStats.QueryHits
 			cacheStats["QueryMisses"] = view.Resolver.CacheStats.QueryMisses
 
-			viewStats[name] = &dbmodel.Bind9StatsView{
-				Resolver: &dbmodel.Bind9StatsResolver{
+			viewStats[name] = &bind9stats.Bind9StatsView{
+				Resolver: &bind9stats.Bind9StatsResolver{
 					CacheStats: cacheStats,
 				},
 			}

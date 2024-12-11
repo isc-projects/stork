@@ -38,8 +38,8 @@ type StorkAgent struct {
 	// to detect the BIND 9 app. It may be empty.
 	ExplicitBind9ConfigPath string
 	AppMonitor              AppMonitor
-	// General-purpose HTTP client. It doesn't use any app-specific features.
-	GeneralHTTPClient *HTTPClient
+	// BIND9 HTTP stats client.
+	bind9StatsClient *bind9StatsClient
 	// To communicate with Kea Control Agent.
 	// It may contain the HTTP credentials.
 	// If the agent is registered, it will use the GRPC credentials obtained
@@ -55,7 +55,7 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, appMonitor AppMonitor, httpClient, keaHTTPClient *HTTPClient, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
+func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClient *HTTPClient, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
@@ -63,7 +63,7 @@ func NewStorkAgent(host string, port int, appMonitor AppMonitor, httpClient, kea
 		Port:                    port,
 		ExplicitBind9ConfigPath: explicitBind9ConfigPath,
 		AppMonitor:              appMonitor,
-		GeneralHTTPClient:       httpClient,
+		bind9StatsClient:        bind9StatsClient,
 		KeaHTTPClient:           keaHTTPClient,
 		logTailer:               logTailer,
 		keaInterceptor:          newKeaInterceptor(),
@@ -322,48 +322,44 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 // ForwardToNamedStats forwards a statistics request to the named daemon.
 func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.ForwardToNamedStatsReq) (*agentapi.ForwardToNamedStatsRsp, error) {
 	reqURL := in.GetUrl()
-	req := in.GetNamedStatsRequest()
 
-	response := &agentapi.ForwardToNamedStatsRsp{
+	grpcResponse := &agentapi.ForwardToNamedStatsRsp{
 		Status: &agentapi.Status{
 			Code: agentapi.Status_OK, // all ok
 		},
 	}
 
-	rsp := &agentapi.NamedStatsResponse{
+	innerGrpcResponse := &agentapi.NamedStatsResponse{
 		Status: &agentapi.Status{},
 	}
 
 	// Try to forward the command to named daemon.
-	namedRsp, err := sa.GeneralHTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+	namedResponse, payload, err := sa.bind9StatsClient.requestFromURL(reqURL).getRawJSON("/")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"URL": reqURL,
-		}).Errorf("Failed to forward commands to named: %+v", err)
-		rsp.Status.Code = agentapi.Status_ERROR
-		rsp.Status.Message = fmt.Sprintf("Failed to forward commands to named: %s", err.Error())
-		response.NamedStatsResponse = rsp
-		return response, nil
+		}).Errorf("Failed to forward commands to named over the stats channel: %+v", err)
+		innerGrpcResponse.Status.Code = agentapi.Status_ERROR
+		innerGrpcResponse.Status.Message = fmt.Sprintf("Failed to forward commands to named over the stats channel: %s", err.Error())
+		grpcResponse.NamedStatsResponse = innerGrpcResponse
+		return grpcResponse, nil
 	}
 
-	// Read the response body.
-	body, err := io.ReadAll(namedRsp.Body)
-	namedRsp.Body.Close()
-	if err != nil {
+	// Communication successful but HTTP error code returned.
+	if namedResponse.IsError() {
 		log.WithFields(log.Fields{
-			"URL": reqURL,
-		}).Errorf("Failed to read the body of the named response: %+v", err)
-		rsp.Status.Code = agentapi.Status_ERROR
-		rsp.Status.Message = fmt.Sprintf("Failed to read the body of the named response: %s", err.Error())
-		response.NamedStatsResponse = rsp
-		return response, nil
+			"URL":    reqURL,
+			"Status": namedResponse.StatusCode(),
+		}).Errorf("named stats channel returned error status code with message: %s", namedResponse.String())
+		innerGrpcResponse.Status.Code = agentapi.Status_ERROR
+		innerGrpcResponse.Status.Message = fmt.Sprintf("named stats channel returned error status code with message: %s", namedResponse.String())
 	}
 
 	// Everything looks good, so include the body in the response.
-	rsp.Response = string(body)
-	rsp.Status.Code = agentapi.Status_OK
-	response.NamedStatsResponse = rsp
-	return response, nil
+	innerGrpcResponse.Response = string(payload)
+	innerGrpcResponse.Status.Code = agentapi.Status_OK
+	grpcResponse.NamedStatsResponse = innerGrpcResponse
+	return grpcResponse, nil
 }
 
 // Forwards one or more Kea commands sent by the Stork Server to the appropriate Kea instance over

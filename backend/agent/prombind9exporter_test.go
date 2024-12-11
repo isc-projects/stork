@@ -18,7 +18,7 @@ type PromFakeBind9AppMonitor struct {
 
 func (fam *PromFakeBind9AppMonitor) GetApps() []App {
 	log.Println("GetApps")
-	accessPoints := makeAccessPoint(AccessPointStatistics, "1.2.3.4", "", 1234, false)
+	accessPoints := makeAccessPoint(AccessPointStatistics, "localhost", "", 1234, false)
 	accessPoints = append(accessPoints, AccessPoint{
 		Type:    AccessPointControl,
 		Address: "1.9.5.3",
@@ -48,7 +48,7 @@ func (fam *PromFakeBind9AppMonitor) Start(storkAgent *StorkAgent) {
 // Check creating PromBind9Exporter, check if prometheus stats are set up.
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}
-	httpClient := NewHTTPClient()
+	httpClient := NewBind9StatsClient()
 	pbe := NewPromBind9Exporter("foo", 42, fam, httpClient)
 	defer pbe.Shutdown()
 
@@ -63,14 +63,15 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 // Check starting PromBind9Exporter and collecting stats.
 func TestPromBind9ExporterStart(t *testing.T) {
 	defer gock.Off()
-	gock.New("http://1.2.3.4:1234/").
-		Post("/").
+	gock.New("http://localhost:1234/").
+		Get("json/v1").
 		AddMatcher(func(r1 *http.Request, r2 *gock.Request) (bool, error) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
 		Persist().
 		Reply(200).
+		AddHeader("Content-Type", "application/json").
 		BodyString(`{ "json-stats-version": "1.2",
                               "boot-time": "2020-04-21T07:13:08.888Z",
                               "config-time": "2020-04-21T07:13:09.989Z",
@@ -180,11 +181,11 @@ func TestPromBind9ExporterStart(t *testing.T) {
                               }
                             }`)
 	fam := &PromFakeBind9AppMonitor{}
-	httpClient := NewHTTPClient()
-	pbe := NewPromBind9Exporter("foo", 1234, fam, httpClient)
+	httpClient := NewBind9StatsClient()
+	pbe := NewPromBind9Exporter("localhost", 1234, fam, httpClient)
 	defer pbe.Shutdown()
 
-	gock.InterceptClient(pbe.HTTPClient.client)
+	gock.InterceptClient(pbe.HTTPClient.innerClient.GetClient())
 
 	// start exporter
 	pbe.Start()

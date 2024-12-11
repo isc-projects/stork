@@ -1,0 +1,52 @@
+{
+    "_default": {
+        "zones": [
+            {
+                "name": "RESOLVER.ARPA",
+                "class": "IN",
+                "serial": 0,
+                "type": "builtin",
+                "loaded": "2024-11-26T11:42:14Z"
+            },
+            {
+                "name": "example.com",
+                "class": "IN",
+                "serial": 2003080800,
+                "type": "primary",
+                "loaded": "2024-11-04T21:12:45Z"
+            }
+        ]
+    },
+    "_bind": {
+        "zones": [
+            {
+                "name": "authors.bind",
+                "class": "CH",
+                "serial": 0,
+                "type": "builtin",
+                "loaded": "2024-11-26T11:42:14Z"
+            },
+            {
+                "name": "hostname.bind",
+                "class": "CH",
+                "serial": 0,
+                "type": "builtin",
+                "loaded": "2024-11-26T11:42:14Z"
+            },
+            {
+                "name": "version.bind",
+                "class": "CH",
+                "serial": 0,
+                "type": "builtin",
+                "loaded": "2024-11-26T11:42:14Z"
+            },
+            {
+                "name": "id.server",
+                "class": "CH",
+                "serial": 0,
+                "type": "builtin",
+                "loaded": "2024-11-26T11:42:14Z"
+            }
+        ]
+    }
+}

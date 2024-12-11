@@ -2,10 +2,8 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"net"
 	"net/http"
@@ -23,7 +21,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
-	storkutil "isc.org/stork/util"
 )
 
 const (
@@ -67,7 +64,7 @@ type PromBind9Exporter struct {
 	StartTime time.Time
 
 	AppMonitor AppMonitor
-	HTTPClient *HTTPClient
+	HTTPClient *bind9StatsClient
 	HTTPServer *http.Server
 
 	up               int
@@ -82,7 +79,7 @@ type PromBind9Exporter struct {
 }
 
 // Create new Prometheus BIND 9 Exporter.
-func NewPromBind9Exporter(host string, port int, appMonitor AppMonitor, httpClient *HTTPClient) *PromBind9Exporter {
+func NewPromBind9Exporter(host string, port int, appMonitor AppMonitor, httpClient *bind9StatsClient) *PromBind9Exporter {
 	pbe := &PromBind9Exporter{
 		Host:       host,
 		Port:       port,
@@ -1199,33 +1196,24 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 			log.WithError(err).Error("Problem getting stats from BIND 9, bad access statistics point")
 			continue
 		}
-		address := storkutil.HostWithPortURL(sap.Address, sap.Port, sap.UseSecureProtocol)
-		path := "json/v1"
-		url := fmt.Sprintf("%s%s", address, path)
-		httpRsp, err := pbe.HTTPClient.Call(url, nil)
+		response, rspIfc, err := pbe.HTTPClient.request(sap.Address, sap.Port).getRawStats()
 		if err != nil {
 			lastErr = err
 			log.Errorf("Problem getting stats from BIND 9: %+v", err)
 			continue
 		}
-		body, err := io.ReadAll(httpRsp.Body)
-		httpRsp.Body.Close()
-		if err != nil {
-			lastErr = err
-			log.Errorf("Problem reading stats response from BIND 9: %+v", err)
+
+		// Error HTTP response received.
+		if response.IsError() {
+			errorText := fmt.Sprintf("BIND9 stats returned error status code with message: %s", response.String())
+			lastErr = pkgerrors.New(errorText)
+			log.WithFields(log.Fields{
+				"StatusCode": response.StatusCode(),
+			}).Error(errorText)
 			continue
 		}
 
 		// parse response
-		var rspIfc interface{}
-		response := string(body)
-		err = json.Unmarshal([]byte(response), &rspIfc)
-		if err != nil {
-			lastErr = err
-			log.Errorf("Failed to parse responses from BIND 9: %s", err)
-			continue
-		}
-
 		err = pbe.setDaemonStats(rspIfc)
 		if err != nil {
 			lastErr = err

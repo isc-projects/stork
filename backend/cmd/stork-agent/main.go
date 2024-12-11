@@ -118,12 +118,14 @@ func runAgent(settings *generalSettings, reload bool) error {
 		log.Info("The GRPC credentials will be used as the client TLS certificate when connecting to Kea")
 	}
 
+	bind9StatsClient := agent.NewBind9StatsClient()
+
 	// Prepare agent gRPC handler
 	storkAgent := agent.NewStorkAgent(
 		settings.Host,
 		settings.Port,
 		appMonitor,
-		httpClient,
+		bind9StatsClient,
 		keaHTTPClient,
 		hookManager,
 		settings.Bind9Path,
@@ -152,7 +154,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 			settings.PrometheusBind9ExporterAddress,
 			settings.PrometheusBind9ExporterPort,
 			appMonitor,
-			httpClient,
+			bind9StatsClient,
 		)
 
 		promKeaExporter.Start()

@@ -21,8 +21,9 @@ import (
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	hm := NewHookManager()
+	bind9StatsClient := NewBind9StatsClient()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -199,8 +200,9 @@ func TestDetectApps(t *testing.T) {
 
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
+	bind9StatsClient := NewBind9StatsClient()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -234,8 +236,9 @@ func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
 	executor := newTestCommandExecutorDefault()
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
+	bind9StatsClient := NewBind9StatsClient()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -271,8 +274,9 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 	executor := newTestCommandExecutorDefault()
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
+	bind9StatsClient := NewBind9StatsClient()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -306,8 +310,9 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 	executor := newTestCommandExecutorDefault()
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
+	bind9StatsClient := NewBind9StatsClient()
 	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -319,6 +324,7 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{}
+	bind9StatsClient := NewBind9StatsClient()
 	httpClient := NewHTTPClient()
 	am.apps = append(am.apps, &KeaApp{
 		BaseApp: BaseApp{
@@ -335,7 +341,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	})
 
 	hm := NewHookManager()
-	sa := NewStorkAgent("foo", 42, am, httpClient, httpClient, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
