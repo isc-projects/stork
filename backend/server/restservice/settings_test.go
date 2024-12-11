@@ -49,7 +49,6 @@ func TestSettings(t *testing.T) {
 			KeaStatsPullerInterval:    4,
 			KeaStatusPullerInterval:   5,
 			GrafanaURL:                "http://foo:3000",
-			PrometheusURL:             "http://bar:3000",
 			EnableMachineRegistration: false,
 		},
 	}
@@ -69,7 +68,6 @@ func TestSettings(t *testing.T) {
 	require.EqualValues(t, 5, okRsp.Payload.KeaStatusPullerInterval)
 
 	require.EqualValues(t, "http://foo:3000", okRsp.Payload.GrafanaURL)
-	require.EqualValues(t, "http://bar:3000", okRsp.Payload.PrometheusURL)
 
 	require.False(t, okRsp.Payload.EnableMachineRegistration)
 }

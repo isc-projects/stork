@@ -71,7 +71,6 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(0)
-        expect(component.settingsForm.get('prometheusUrl')?.value).toBe('')
         expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeFalse()
         expect(component.settingsForm.get('enableOnlineSoftwareVersions')?.value).toBeFalse()
     })
@@ -102,7 +101,6 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
-            prometheusUrl: 'http://notlocalhost:2222',
             enableMachineRegistration: true,
             enableOnlineSoftwareVersions: true,
         }
@@ -118,7 +116,6 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(30)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(31)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
-        expect(component.settingsForm.get('prometheusUrl')?.value).toBe('http://notlocalhost:2222')
         expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeTrue()
         expect(component.settingsForm.get('enableOnlineSoftwareVersions')?.value).toBeTrue()
     }))
@@ -154,7 +151,6 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
-            prometheusUrl: 'http://notlocalhost:2222',
             enableMachineRegistration: true,
             enableOnlineSoftwareVersions: true,
         }
@@ -165,7 +161,6 @@ describe('SettingsPageComponent', () => {
             keaHostsPullerInterval: 13,
             keaStatsPullerInterval: 13,
             keaStatusPullerInterval: 13,
-            prometheusUrl: 'http://notlocalhost:3222',
             enableMachineRegistration: false,
             enableOnlineSoftwareVersions: false,
         }

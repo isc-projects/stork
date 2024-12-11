@@ -13,7 +13,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { DividerModule } from 'primeng/divider'
-import { Settings } from '../backend/model/settings'
+import { Settings } from '../backend'
 import { HttpClientModule } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
@@ -27,7 +27,6 @@ let mockGetSettingsResponse: Settings = {
     keaStatsPullerInterval: 15,
     keaStatusPullerInterval: 23,
     appsStatePullerInterval: 44,
-    prometheusUrl: 'http://prometheus.org',
     enableMachineRegistration: true,
 }
 

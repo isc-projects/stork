@@ -13,8 +13,6 @@
         type: integer
       appsStatePullerInterval:
         type: integer
-      prometheusUrl:
-        type: string
       enableMachineRegistration:
         type: boolean
       enableOnlineSoftwareVersions:

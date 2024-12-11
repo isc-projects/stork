@@ -16,7 +16,6 @@ interface SettingsForm {
     keaStatsPullerInterval: FormControl<number>
     keaStatusPullerInterval: FormControl<number>
     grafanaUrl: FormControl<string>
-    prometheusUrl: FormControl<string>
     enableMachineRegistration: FormControl<boolean>
     enableOnlineSoftwareVersions: FormControl<boolean>
 }
@@ -83,18 +82,13 @@ export class SettingsPageComponent implements OnInit {
     /**
      * A list of URL settings to specify in the form.
      *
-     * An URL input form control is created for each setting in this array.
+     * A URL input form control is created for each setting in this array.
      */
     urlSettings: SettingsItem[] = [
         {
             title: 'URL to Grafana',
             formControlName: 'grafanaUrl',
             help: 'Specifies a Grafana instance URL. It is optional.',
-        },
-        {
-            title: 'URL to Prometheus',
-            formControlName: 'prometheusUrl',
-            help: 'Specifies a Prometheus instance URL. It is optional.',
         },
     ]
 
@@ -129,7 +123,6 @@ export class SettingsPageComponent implements OnInit {
             keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
             grafanaUrl: [''],
-            prometheusUrl: [''],
             enableMachineRegistration: [false],
             enableOnlineSoftwareVersions: [false],
         })

@@ -82,11 +82,6 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 			Value:   "",
 		},
 		{
-			Name:    "prometheus_url",
-			ValType: SettingValTypeStr,
-			Value:   "",
-		},
-		{
 			Name:    "enable_machine_registration",
 			ValType: SettingValTypeBool,
 			Value:   "true",
