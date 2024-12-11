@@ -43,13 +43,14 @@ func TestSettings(t *testing.T) {
 	// Update settings.
 	paramsUS := settings.UpdateSettingsParams{
 		Settings: &models.Settings{
-			Bind9StatsPullerInterval:  1,
-			AppsStatePullerInterval:   2,
-			KeaHostsPullerInterval:    3,
-			KeaStatsPullerInterval:    4,
-			KeaStatusPullerInterval:   5,
-			GrafanaURL:                "http://foo:3000",
-			EnableMachineRegistration: false,
+			Bind9StatsPullerInterval:     1,
+			AppsStatePullerInterval:      2,
+			KeaHostsPullerInterval:       3,
+			KeaStatsPullerInterval:       4,
+			KeaStatusPullerInterval:      5,
+			GrafanaURL:                   "http://foo:3000",
+			EnableMachineRegistration:    false,
+			EnableOnlineSoftwareVersions: false,
 		},
 	}
 	rsp = rapi.UpdateSettings(ctx, paramsUS)
@@ -70,4 +71,5 @@ func TestSettings(t *testing.T) {
 	require.EqualValues(t, "http://foo:3000", okRsp.Payload.GrafanaURL)
 
 	require.False(t, okRsp.Payload.EnableMachineRegistration)
+	require.False(t, okRsp.Payload.EnableOnlineSoftwareVersions)
 }
