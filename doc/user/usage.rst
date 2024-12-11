@@ -100,8 +100,8 @@ The Stork server is started with the command-line switches and/or environment
 variables controlling some of its behavior. However, the server also exposes
 other configuration options only available at runtime from the web UI.
 To access these options, select ``Configuration`` from the menu and choose
-``Settings``. There are three classes of settings available: ``Security``,
-``Intervals``, and ``Grafana & Prometheus``.
+``Settings``. There are four classes of settings available: ``Security``,
+``Automatic software updates checking``, ``Intervals``, and ``Grafana``.
 
 ``Security`` settings currently contain only one option, which controls whether
 the machine registration REST API endpoint is enabled. New machines
@@ -111,6 +111,13 @@ to uncheck the ``Enable machine registration`` option when no new registrations
 are expected. The option can be re-enabled at any time when new registrations
 are required. Unchecking the option does not affect the ability to re-register
 existing machines.
+
+``Automatic software updates checking`` setting controls whether Stork should
+automatically check for software updates available for Kea, BIND 9 and Stork itself.
+To be able to do that, Stork server downloads a JSON file with latest software releases metadata.
+This feature can be disabled using this setting. When disabled, all the feedback displayed
+regarding software versions detected by Stork will be generated based on offline built-in
+information stored as a JSON file.
 
 ``Intervals`` settings specify the configuration of "pullers." A puller is a
 mechanism in Stork that triggers a specific action at the
@@ -128,8 +135,7 @@ on the amount of information pulled, network congestion, and other factors.
 The interval setting guarantees that there is a constant idle time between
 any consecutive attempts.
 
-The ``Grafana & Prometheus`` settings allow the URLs
-of the Prometheus and Grafana instances used with Stork to be specified.
+The ``Grafana`` setting allows to specify the URL of the Grafana instance used with Stork.
 
 Connecting and Monitoring Machines
 ==================================

@@ -1637,7 +1637,7 @@ necessary parameter is the URL, but authentication is desirable in most producti
 dashboard can be tweaked as needed.
 
 3. Once Grafana is configured, go to the Stork user interface, log in as "super admin", click Settings in the Configuration menu, and
-then add the URLs for Grafana and Prometheus that point to the installations. Once this is done, Stork is able to show links
+then add the URL for Grafana that points to the installation. Once this is done, Stork is able to show links
 for subnets leading to specific subnets.
 
 Alternatively, a Prometheus data source can be added by editing ``datasource.yaml`` (typically stored in ``/etc/grafana``,
