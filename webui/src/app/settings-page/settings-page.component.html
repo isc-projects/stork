@@ -73,15 +73,18 @@
                     </div>
                 </p-fieldset>
                 <p-fieldset legend="Intervals">
-                    <div *ngFor="let setting of intervalSettings" class="my-2 flex flex-column">
+                    <div *ngFor="let setting of intervalSettings" class="my-3 flex flex-column">
                         <label [for]="setting.formControlName"> {{ setting.title }} (in seconds): </label>
                         <div class="flex align-items-center">
-                            <input
-                                type="number"
+                            <p-inputNumber
+                                [inputId]="setting.formControlName"
+                                mode="decimal"
+                                [min]="0"
+                                [useGrouping]="false"
                                 [formControlName]="setting.formControlName"
-                                [id]="setting.formControlName"
-                                class="w-full"
-                            /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
+                                styleClass="min-w-0 w-full"
+                            ></p-inputNumber
+                            ><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                         </div>
                         <div *ngIf="hasError(setting.formControlName, 'required')" class="p-error">It is required.</div>
                         <div *ngIf="hasError(setting.formControlName, 'min')" class="p-error">
@@ -95,9 +98,9 @@
                         <div class="flex align-items-center">
                             <input
                                 type="url"
+                                pInputText
                                 [formControlName]="setting.formControlName"
                                 [id]="setting.formControlName"
-                                class="w-full"
                             /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                         </div>
                     </div>

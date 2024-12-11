@@ -19,6 +19,8 @@ import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { CheckboxModule } from 'primeng/checkbox'
+import { InputNumberModule } from 'primeng/inputnumber'
+import { InputTextModule } from 'primeng/inputtext'
 
 let mockGetSettingsResponse: Settings = {
     bind9StatsPullerInterval: 10,
@@ -56,6 +58,8 @@ export default {
                 ReactiveFormsModule,
                 RouterTestingModule,
                 ToastModule,
+                InputNumberModule,
+                InputTextModule,
             ],
             declarations: [BreadcrumbsComponent, HelpTipComponent, SettingsPageComponent],
         }),
