@@ -19,6 +19,7 @@ import { DividerModule } from 'primeng/divider'
 import { of, throwError } from 'rxjs'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { CheckboxModule } from 'primeng/checkbox'
+import { InputNumberModule } from 'primeng/inputnumber'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
@@ -42,6 +43,7 @@ describe('SettingsPageComponent', () => {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 RouterTestingModule,
+                InputNumberModule,
             ],
             declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
             providers: [
