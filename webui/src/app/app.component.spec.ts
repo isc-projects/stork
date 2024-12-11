@@ -6,7 +6,7 @@ import { MenubarModule } from 'primeng/menubar'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ToastModule } from 'primeng/toast'
-import { GeneralService, ServicesService, Settings, SettingsService, UsersService } from './backend'
+import { AppsVersions, GeneralService, ServicesService, Settings, SettingsService, UsersService } from './backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { GlobalSearchComponent } from './global-search/global-search.component'
@@ -36,6 +36,7 @@ describe('AppComponent', () => {
     beforeEach(waitForAsync(() => {
         versionServiceStub = {
             getVersionAlert: () => of({ severity: Severity.error, detected: true } as VersionAlert),
+            getCurrentData: () => of({} as AppsVersions),
         }
 
         TestBed.configureTestingModule({

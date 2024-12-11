@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
-import { Observable, Subscription } from 'rxjs'
+import { firstValueFrom, Observable, Subscription } from 'rxjs'
 
 import { MenuItem } from 'primeng/api'
 
@@ -295,6 +295,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
                 // Only get the stats and settings when the user is logged in.
                 if (this.auth.currentUserValue) {
+                    // Use firstValueFrom to subscribe to the observable and unsubscribe as soon as first value arrives.
+                    // This is to check Stork server updates and unsubscribe.
+                    firstValueFrom(this.versionService.getCurrentData())
+
                     this.serverData.getAppsStats().subscribe((data) => {
                         // if there are Kea apps then show Kea related menu items
                         // otherwise hide them

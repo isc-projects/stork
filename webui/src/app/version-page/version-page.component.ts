@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { AppType, Severity, VersionService } from '../version.service'
+import { AppType, Severity, UpdateNotification, VersionService } from '../version.service'
 import { App as BackendApp, AppsVersions, Machine, ServicesService, VersionDetails } from '../backend'
 import { deepCopy, getErrorMessage } from '../utils'
 import { Observable, of, Subscription, tap } from 'rxjs'
@@ -121,6 +121,11 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     showAlert$: Observable<boolean>
 
     /**
+     * An Observable of a notification about updates available for Stork server.
+     */
+    storkServerUpdateAvailable$: Observable<UpdateNotification>
+
+    /**
      * An array of Machines in the "summary of ISC software versions detected by Stork" table.
      */
     machines: Machine[]
@@ -161,6 +166,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                 return a.detected
             })
         )
+        this.storkServerUpdateAvailable$ = this.versionService.getStorkServerUpdateNotification()
         this._subscriptions.add(
             this.versionService
                 .getCurrentData()

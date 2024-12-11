@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core'
 import { minor, coerce, valid, lt, satisfies, gt, minSatisfying } from 'semver'
 import { App, AppsVersions, GeneralService } from './backend'
 import { distinctUntilChanged, map, mergeMap, shareReplay } from 'rxjs/operators'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, Observable, tap } from 'rxjs'
 
 /**
  * Interface defining fields for an object which is returned after
@@ -11,6 +11,7 @@ import { BehaviorSubject, Observable } from 'rxjs'
 export interface VersionFeedback {
     severity: Severity
     messages: string[]
+    update?: string
 }
 
 /**
@@ -20,6 +21,15 @@ export interface VersionFeedback {
  */
 export interface VersionAlert {
     detected: boolean
+    severity: Severity
+}
+
+/**
+ * Interface defining notification about software update.
+ */
+export interface UpdateNotification {
+    available: boolean
+    version: string
     severity: Severity
 }
 
@@ -86,6 +96,16 @@ export class VersionService {
     private _versionAlert$ = new BehaviorSubject<VersionAlert>({ detected: false, severity: Severity.success })
 
     /**
+     * RxJS Subject that emits next value when a notification for the Stork server update changes.
+     * @private
+     */
+    private _serverUpdateNotification$ = new BehaviorSubject<UpdateNotification>({
+        available: false,
+        version: '',
+        severity: Severity.success,
+    })
+
+    /**
      * An Observable which emits current software versions data retrieved from the backend.
      * It acts like a cache, because every observer that subscribes to it, receives replayed response
      * from the backend. This is to prevent backend overload with recurring queries.
@@ -94,7 +114,7 @@ export class VersionService {
     currentData$ = this._currentDataSubject$.pipe(
         mergeMap(() => {
             this.dataFetchedTimestamp = new Date()
-            return this.generalService.getSoftwareVersions()
+            return this.generalService.getSoftwareVersions().pipe(tap((d) => this.checkStorkServerUpdates(d)))
         }),
         shareReplay(1)
     )
@@ -128,7 +148,7 @@ export class VersionService {
      * Forces retrieval of current software versions data from the backend.
      * Clears the _checkedVersionCache and disables previous _versionAlert$.
      */
-    refreshData() {
+    refreshData(): void {
         this._checkedVersionCache = new Map()
         this._versionAlert$.next({ detected: false, severity: Severity.success })
         this._currentDataSubject$.next({})
@@ -139,7 +159,7 @@ export class VersionService {
      * This is used to regularly query the backend for current software versions data.
      * @return true if data is outdated; false otherwise
      */
-    isDataOutdated() {
+    isDataOutdated(): boolean {
         return (
             this.dataFetchedTimestamp && Date.now() - this.dataFetchedTimestamp.getTime() > this._dataOutdatedThreshold
         )
@@ -209,6 +229,7 @@ export class VersionService {
                                 messages: [
                                     `Security update ${details.version} was released for ${appName}. Please update as soon as possible!`,
                                 ],
+                                update: details.version,
                             }
 
                             response = this.getStorkFeedback(app, sanitizedSemver, response)
@@ -229,6 +250,7 @@ export class VersionService {
                             messages: [
                                 `Security update ${minDevSecure} was released for ${appName}. Please update as soon as possible!`,
                             ],
+                            update: minDevSecure,
                         }
 
                         response = this.getStorkFeedback(app, sanitizedSemver, response)
@@ -268,6 +290,7 @@ export class VersionService {
                                     messages: [
                                         `Stable ${appName} version update (${details.version}) is available (known as of ${dataDate}).`,
                                     ],
+                                    update: details.version,
                                 }
                             } else if (gt(sanitizedSemver, details.version)) {
                                 response = {
@@ -300,6 +323,7 @@ export class VersionService {
                                 messages: [
                                     `${appName} version ${sanitizedSemver} is older than current stable version/s ${versionsText}.`,
                                 ],
+                                update: sortedCurrentStableVersions[0],
                             }
                         } else {
                             // either semver major or minor are bigger than current stable
@@ -332,6 +356,7 @@ export class VersionService {
                             messages: [
                                 `Development ${appName} version update (${latestDevVersion}) is available (known as of ${dataDate}).`,
                             ],
+                            update: latestDevVersion as string,
                         }
                     } else if (gt(sanitizedSemver, latestDevVersion as string)) {
                         response = {
@@ -423,7 +448,7 @@ export class VersionService {
      * Setter of the _storkServerVersion that is tracked by this service.
      * @param version
      */
-    setStorkServerVersion(version: string) {
+    setStorkServerVersion(version: string): void {
         this._storkServerVersion = version
     }
 
@@ -441,9 +466,23 @@ export class VersionService {
     }
 
     /**
+     * Returns an observable of UpdateNotification.
+     * The observable will emit next notification when the notification
+     * for Stork server update changes. The UpdateNotification contains
+     * information:
+     * available - whether there is an update available or not
+     * version - latest Stork server version available
+     * severity - how important is the update. For security release it will be Severity.error.
+     * For normal updates it will be Severity warn or info.
+     */
+    getStorkServerUpdateNotification(): Observable<UpdateNotification> {
+        return this._serverUpdateNotification$
+    }
+
+    /**
      * Dismisses the _versionAlert$ by setting 'detected' flag to false and completing the RxJS subject.
      */
-    dismissVersionAlert() {
+    dismissVersionAlert(): void {
         this._versionAlert$.next({ detected: false, severity: Severity.success })
         this._versionAlert$.complete()
     }
@@ -471,7 +510,7 @@ export class VersionService {
      * @return true if provided app version is a development release; false otherwise
      * @private
      */
-    private isDevelopmentVersion(version: string, app: AppType) {
+    private isDevelopmentVersion(version: string, app: AppType): boolean {
         // Stork versions are all dev until 2.0.0.
         if (app === 'stork' && lt(version, '2.0.0')) {
             return true
@@ -513,6 +552,7 @@ export class VersionService {
             return {
                 severity: Severity.warn,
                 messages: [...currentResponse.messages, addMsg],
+                update: currentResponse.update ?? '',
             }
         }
 
@@ -538,9 +578,27 @@ export class VersionService {
      * @param response VersionFeedback response
      * @private
      */
-    private setCacheAndReturnResponse(cacheKey: string, response: VersionFeedback) {
+    private setCacheAndReturnResponse(cacheKey: string, response: VersionFeedback): VersionFeedback {
         this._checkedVersionCache.set(cacheKey, response)
         this.detectAlertingSeverity(response.severity)
         return response
+    }
+
+    /**
+     * Checks if there is update available for Stork server.
+     * @param data AppsVersions data used to perform the check
+     * @private
+     */
+    private checkStorkServerUpdates(data: AppsVersions): void {
+        if (this._storkServerVersion) {
+            const serverFeedback = this.getSoftwareVersionFeedback(this._storkServerVersion, 'stork', data)
+            console.log('stork server was checked', serverFeedback)
+            this._serverUpdateNotification$.next({
+                available: !!serverFeedback.update,
+                version: serverFeedback.update,
+                severity: serverFeedback.severity ?? Severity.success,
+            })
+            this.detectAlertingSeverity(serverFeedback.severity ?? Severity.success)
+        }
     }
 }
