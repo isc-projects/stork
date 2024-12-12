@@ -295,6 +295,8 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      */
     refreshVersions() {
         this.versionService.refreshData()
+        this.swVersionsDataLoading = true
+        this.summaryDataLoading = true
     }
 
     /**

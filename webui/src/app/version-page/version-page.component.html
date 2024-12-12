@@ -103,7 +103,7 @@
                         summary: 'Note',
                         severity: 'info',
                         detail:
-                            'Below information about ISC software versions relies on a data that was generated on ' +
+                            'Below information about ISC software versions relies on an offline built-in JSON file that was generated on ' +
                             (dataDate$ | async) +
                             '. To see up-to-date information, please visit the <a target=\'_blank\' href=\'https:\/\/www.isc.org\/download\/\'>ISC webpage</a>.',
                     },
@@ -128,6 +128,7 @@
             label="Refresh Versions"
             icon="pi pi-refresh"
             (onClick)="refreshVersions()"
+            [disabled]="summaryDataLoading || swVersionsDataLoading"
         ></p-button>
     </div>
     <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->

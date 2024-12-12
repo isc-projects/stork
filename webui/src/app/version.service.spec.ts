@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing'
 
-import { Severity, VersionAlert, VersionService } from './version.service'
+import { Severity, UpdateNotification, VersionAlert, VersionService } from './version.service'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { App, AppsVersions, GeneralService, VersionDetails } from './backend'
 import { of } from 'rxjs'
@@ -267,6 +267,9 @@ describe('VersionService', () => {
         expect(devUpdateFound.messages[1]).toMatch(
             'Please be advised that using development version in production is not recommended'
         )
+        expect(securityUpdateFound.update).toBe('1.15.1')
+        expect(stableUpdateFound.update).toBe('9.18.30')
+        expect(devUpdateFound.update).toBe('2.7.3')
     })
 
     it('should return software version feedback for current version used', () => {
@@ -765,5 +768,43 @@ describe('VersionService', () => {
         expect(devUpdateFound.messages[1]).toMatch(
             'Please be advised that using development version in production is not recommended'
         )
+    })
+
+    it('should emit notification about stork server update', () => {
+        // Arrange
+        let notification: UpdateNotification
+        service.getStorkServerUpdateNotification().subscribe((n) => (notification = n))
+        expect(notification).toBeTruthy()
+        expect(notification.available).toBeFalse()
+        // Stork server version not set yet, so there should be no notification.
+        service.getCurrentData().subscribe().unsubscribe()
+        expect(notification.available).toBeFalse()
+
+        // Act
+        service.setStorkServerVersion('1.18.0')
+        service.refreshData()
+
+        // Assert
+        expect(notification).toBeTruthy()
+        expect(notification.available).toBeTrue()
+        expect(notification.feedback).toBeTruthy()
+        expect(notification.feedback.update).toBe('1.19.0')
+        expect(notification.feedback.severity).toBe(Severity.warn)
+    })
+
+    it('should not emit notification about stork server update', () => {
+        // Arrange
+        service.setStorkServerVersion('1.19.0')
+        let notification: UpdateNotification
+        service.getStorkServerUpdateNotification().subscribe((n) => (notification = n))
+        expect(notification).toBeTruthy()
+        expect(notification.available).toBeFalse()
+
+        // Act
+        service.getCurrentData().subscribe().unsubscribe()
+
+        // Assert
+        expect(notification).toBeTruthy()
+        expect(notification.available).toBeFalse()
     })
 })

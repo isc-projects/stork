@@ -276,6 +276,15 @@ describe('VersionPageComponent', () => {
         getDataSourceSpy = spyOn(versionService, 'getDataSource').and.returnValue(
             of(AppsVersions.DataSourceEnum.Offline)
         )
+        spyOn(versionService, 'getStorkServerUpdateNotification').and.returnValue(
+            of({
+                available: true,
+                feedback: {
+                    severity: Severity.warn,
+                    messages: ['Development Stork server version update (1.19.0) is available'],
+                },
+            })
+        )
         getMachinesAppsVersionsSpy = spyOn(servicesApi, 'getMachinesAppsVersions')
         messageAddSpy = spyOn(messageService, 'add').and.callThrough()
     })
@@ -329,7 +338,7 @@ describe('VersionPageComponent', () => {
         const de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-info'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain(
-            'Below information about ISC software versions relies on a data that was generated on 2024-10-03.'
+            'Below information about ISC software versions relies on an offline built-in JSON file that was generated on 2024-10-03.'
         )
     })
 
@@ -466,5 +475,19 @@ describe('VersionPageComponent', () => {
             detail: 'Error occurred when retrieving software versions data: version service error2',
             life: 10000,
         })
+    })
+
+    it('should display stork server update notification message', () => {
+        // Arrange & Act & Assert
+        apisWorkingFine()
+        const wrappers = fixture.debugElement.queryAll(By.css('.p-panel-content .p-message-wrapper'))
+        expect(wrappers).toBeTruthy()
+        expect(wrappers.length).toBeGreaterThan(0)
+
+        // This should be first message of all.
+        const de = wrappers[0]
+        expect(de).toBeTruthy()
+        expect(de.nativeElement.innerText).toContain('Stork server update available')
+        expect(de.nativeElement.innerText).toContain('Development Stork server version update (1.19.0) is available')
     })
 })
