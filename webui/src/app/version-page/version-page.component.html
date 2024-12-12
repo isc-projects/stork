@@ -89,7 +89,7 @@
                     {
                         summary: 'Action required',
                         severity: 'warn',
-                        detail: 'Stork has detected ISC software version in use that requires your attention. Please review below tables.',
+                        detail: 'Stork has detected ISC software version in use that requires your attention. Please review below Summary table.',
                     },
                 ]"
             ></p-messages>
@@ -130,32 +130,25 @@
             (onClick)="refreshVersions()"
         ></p-button>
     </div>
-    <p-panel
-        header="Stork Server update available!"
-        styleClass="mt-3"
-        *ngIf="(storkServerUpdateAvailable$ | async).available === true"
-    >
+    <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
+    <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
         <p-messages
-            styleClass="mb-2"
+            *ngIf="(storkServerUpdateAvailable$ | async).available === true"
+            styleClass="mb-2 inline-block"
             [escape]="false"
             [enableService]="false"
             [closable]="false"
             [value]="[
                 {
                     summary: 'Stork server update available!',
-                    severity: (storkServerUpdateAvailable$ | async).severity === Severity.error ? 'error' : 'warn',
+                    severity:
+                        (storkServerUpdateAvailable$ | async).feedback?.severity === Severity.error ? 'error' : 'warn',
                     detail:
-                        'Stork server ' +
-                        ((storkServerUpdateAvailable$ | async).severity === Severity.error ? 'security ' : '') +
-                        'update ' +
-                        (storkServerUpdateAvailable$ | async).version +
-                        ' is available.',
+                        (storkServerUpdateAvailable$ | async)?.feedback?.messages?.[0] ||
+                        'Stork server version update is available.',
                 },
             ]"
         ></p-messages>
-    </p-panel>
-    <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
-    <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
         <p-table
             [value]="machines"
             styleClass="p-datatable-striped"
@@ -169,7 +162,6 @@
             [tableStyle]="{ 'min-width': '15rem' }"
             [loading]="summaryDataLoading"
         >
-            >
             <ng-template pTemplate="header">
                 <tr>
                     <th class="w-6rem lg:w-10rem">Hostname</th>

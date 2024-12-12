@@ -29,8 +29,7 @@ export interface VersionAlert {
  */
 export interface UpdateNotification {
     available: boolean
-    version: string
-    severity: Severity
+    feedback: VersionFeedback
 }
 
 /**
@@ -101,8 +100,7 @@ export class VersionService {
      */
     private _serverUpdateNotification$ = new BehaviorSubject<UpdateNotification>({
         available: false,
-        version: '',
-        severity: Severity.success,
+        feedback: { severity: Severity.success, messages: [] },
     })
 
     /**
@@ -471,9 +469,7 @@ export class VersionService {
      * for Stork server update changes. The UpdateNotification contains
      * information:
      * available - whether there is an update available or not
-     * version - latest Stork server version available
-     * severity - how important is the update. For security release it will be Severity.error.
-     * For normal updates it will be Severity warn or info.
+     * feedback - VersionFeedback object holding update Severity, feedback messages, and update software version available
      */
     getStorkServerUpdateNotification(): Observable<UpdateNotification> {
         return this._serverUpdateNotification$
@@ -591,14 +587,19 @@ export class VersionService {
      */
     private checkStorkServerUpdates(data: AppsVersions): void {
         if (this._storkServerVersion) {
-            const serverFeedback = this.getSoftwareVersionFeedback(this._storkServerVersion, 'stork', data)
-            console.log('stork server was checked', serverFeedback)
-            this._serverUpdateNotification$.next({
-                available: !!serverFeedback.update,
-                version: serverFeedback.update,
-                severity: serverFeedback.severity ?? Severity.success,
-            })
-            this.detectAlertingSeverity(serverFeedback.severity ?? Severity.success)
+            try {
+                const serverFeedback = this.getSoftwareVersionFeedback(this._storkServerVersion, 'stork', data)
+                serverFeedback.messages[0] =
+                    serverFeedback.messages?.[0]?.replace('agent', 'server') ||
+                    'Stork server version update is available.'
+                this._serverUpdateNotification$.next({
+                    available: !!serverFeedback.update,
+                    feedback: serverFeedback,
+                })
+                this.detectAlertingSeverity(serverFeedback?.severity ?? Severity.success)
+            } catch {
+                // no-op when getSoftwareVersionFeedback() throws an error
+            }
         }
     }
 }
