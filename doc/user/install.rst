@@ -437,6 +437,14 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
    See this `Stack Overflow conversation <https://stackoverflow.com/a/42292623>`_ and
    `discussion in Stork GitLab issue #859 <https://gitlab.isc.org/isc-projects/stork/-/issues/859>`_.
 
+* ``STORK_REST_VERSIONS_URL`` - the URL of the file with current Kea, Stork and BIND 9 software versions metadata; the default is ``https://www.isc.org/versions.json``
+
+   Stork can automatically check for software updates available for Kea, BIND 9 and Stork itself.
+   To be able to do that, Stork server downloads a JSON file with the latest software releases metadata.
+   The URL of the file by default is set to `https://www.isc.org/versions.json <https://www.isc.org/versions.json>`_.
+   There is no need to modify this setting until the software releases metadata file is published by ISC under different URL.
+   See also chapters :ref:`usage-software-versions-page` and :ref:`Automatic software updates checking <usage-online-version-check-setting>`.
+
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration (the ``STORK_SERVER_`` prefix is for general purposes):
 
 * ``STORK_SERVER_ENABLE_METRICS`` - enable the Prometheus metrics collector and ``/metrics`` HTTP endpoint
@@ -1419,7 +1427,7 @@ The Stork server configuration is described in detail in the :ref:`server-setup`
 - Limit the Stork server user rights to only the necessary directories and files:
 
    - ``/etc/stork/server.env`` - the configuration file (read-only)
-   - ``/etc/stork/versions.json`` - the EOL versions file (read-only)
+   - ``/etc/stork/versions.json`` - the current Kea, Stork and BIND 9 software versions metadata file (read-only)
    - ``/share/stork/www`` - the static web files (read-only)
    - ``/share/stork/www/index.html`` - the main web page (write and read)
    - ``/share/stork/www/assets/authentication-methods`` - the authentication icons (write and read)

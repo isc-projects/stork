@@ -112,12 +112,25 @@ are expected. The option can be re-enabled at any time when new registrations
 are required. Unchecking the option does not affect the ability to re-register
 existing machines.
 
+.. _usage-online-version-check-setting:
+
 ``Automatic software updates checking`` setting controls whether Stork should
 automatically check for software updates available for Kea, BIND 9 and Stork itself.
-To be able to do that, Stork server downloads a JSON file with latest software releases metadata.
+To be able to do that, Stork server downloads a `JSON file <https://www.isc.org/versions.json>`_
+with the latest software releases metadata.
 This feature can be disabled using this setting. When disabled, all the feedback displayed
 regarding software versions detected by Stork will be generated based on offline built-in
 information stored as a JSON file.
+
+.. note::
+
+   The offline JSON file location is under path ``/etc/stork/versions.json``
+   in the Stork server installation location. If the ``Automatic software updates checking``
+   feature is disabled for any reason, the offline JSON file content can be
+   updated manually. It is suggested to update it with the content published
+   under `https://www.isc.org/versions.json <https://www.isc.org/versions.json>`_
+   URL. The content of this file is maintained by ISC and is kept up-to-date
+   with current Stork, Kea and BIND 9 releases on a "best-effort" basis.
 
 ``Intervals`` settings specify the configuration of "pullers." A puller is a
 mechanism in Stork that triggers a specific action at the
@@ -841,6 +854,8 @@ to be filtered by:
 - application type (Kea, BIND 9)
 - daemon type (``dhcp4``, ``dhcp6``, ``named``, etc.)
 - the user who caused a given event (available only to users in the ``super-admin`` group).
+
+.. _usage-software-versions-page:
 
 The Software Versions Page
 ==========================

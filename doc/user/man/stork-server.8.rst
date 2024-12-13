@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-static-files-dir**]
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
 
 Description
 ~~~~~~~~~~~
@@ -156,6 +156,9 @@ variables are listed in square brackets, where applicable):
 
 ``--rest-base-url``
    The base URL of the UI. This flag should be set if the UI is served from a subdirectory instead of the root URL. It must start and end with a slash. For example: https://www.example.com/admin/stork/ would need to have ``/admin/stork/`` as the base url. The default is ``/``. ``[$STORK_REST_BASE_URL]``
+
+``--rest-versions-url``
+   Specifies the URL of the file with current Kea, Stork and BIND 9 software versions metadata. By default it is `https://www.isc.org/versions.json <https://www.isc.org/versions.json>`_. ``[$STORK_REST_VERSIONS_URL]``
 
 Note that there is no argument for the database password, as command-line arguments can sometimes be seen
 by other users. The password can be set using the ``STORK_DATABASE_PASSWORD`` variable.
