@@ -903,7 +903,7 @@ Data Source
 The information about ISC software releases shown on the Software Versions page may come from
 different sources:
 
-- **Online JSON file** - A `JSON file <https://isc.org/versions.json>`_ available online. This data is intended to be always up-to-date.
+- **Online JSON file** - A `JSON file <https://www.isc.org/versions.json>`_ available online. This data is intended to be always up-to-date.
   It is updated with every Stork, Kea or BIND 9 release.
 - **Offline JSON file** - This data is updated with every Stork release. Of course, the more time has passed since a given release date,
   the more outdated this data may be. ISC advises regularly checking the `ISC software download page <https://isc.org/download>`_
