@@ -3117,14 +3117,12 @@ func TestGetAccessPointKey(t *testing.T) {
 }
 
 // Helper function to store and defer restore
-// original path and URL of versions.json file.
-func RememberVersionsJSONPathAndURL() func() {
+// original path of versions.json file.
+func RememberVersionsJSONPath() func() {
 	originalPath := VersionsJSONPath
-	originalURL := VersionsJSONOnlineURL
 
 	return func() {
 		VersionsJSONPath = originalPath
-		VersionsJSONOnlineURL = originalURL
 	}
 }
 
@@ -3132,8 +3130,8 @@ func RememberVersionsJSONPathAndURL() func() {
 // if the versions.json file doesn't exist.
 func TestGetOfflineVersionsJSONrrorNoSuchFile(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	VersionsJSONPath = path.Join(sb.BasePath, "not-exists.json")
@@ -3152,8 +3150,8 @@ func TestGetOfflineVersionsJSONrrorNoSuchFile(t *testing.T) {
 // and it returns the data received from server.
 func TestGetOnlineVersionsJSON(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
 
 	testBody := []byte(`{
   "date": "2024-10-03",
@@ -3206,12 +3204,14 @@ func TestGetOnlineVersionsJSON(t *testing.T) {
 		w.Write(testBody)
 	}))
 	defer ts.Close()
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
-	serverURL := ts.URL
-	VersionsJSONOnlineURL = serverURL
+	settings := &RestAPISettings{VersionsURL: ts.URL}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
 
 	// Act
-	bytes, err := getOnlineVersionsJSON()
+	bytes, err := rapi.getOnlineVersionsJSON()
 
 	// Assert
 	require.NotNil(t, bytes)
@@ -3222,12 +3222,16 @@ func TestGetOnlineVersionsJSON(t *testing.T) {
 // Test that getOnlineVersionsJSON returns an error when the online versions.json URL is incorrect.
 func TestGetOnlineVersionsJSONSendingError(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
-	VersionsJSONOnlineURL = " foobar "
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := &RestAPISettings{VersionsURL: "foobar"}
+	rapi, _ := NewRestAPI(settings, dbSettings, db)
 
 	// Act
-	bytes, err := getOnlineVersionsJSON()
+	bytes, err := rapi.getOnlineVersionsJSON()
 
 	// Assert
 	require.Nil(t, bytes)
@@ -3462,8 +3466,8 @@ func TestUnmarshalVersionsJSONDataDateError(t *testing.T) {
 // fallback to offline mode.
 func TestGetSoftwareVersionsOffline(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	content := `{
@@ -3519,13 +3523,12 @@ func TestGetSoftwareVersionsOffline(t *testing.T) {
   }
 }`
 	VersionsJSONPath, _ = sb.Write("versions.json", content)
-	VersionsJSONOnlineURL = " foo bar "
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	dbmodel.InitializeSettings(db, 0)
 
-	settings := &RestAPISettings{}
+	settings := &RestAPISettings{VersionsURL: "foobar"}
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 
@@ -3554,8 +3557,8 @@ func TestGetSoftwareVersionsOffline(t *testing.T) {
 // via the API using online versions.json file data.
 func TestGetSoftwareVersionsOnline(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	offlineContent := `{
@@ -3673,13 +3676,12 @@ func TestGetSoftwareVersionsOnline(t *testing.T) {
 	}))
 	defer ts.Close()
 	VersionsJSONPath, _ = sb.Write("versions.json", offlineContent)
-	VersionsJSONOnlineURL = ts.URL
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	dbmodel.InitializeSettings(db, 0)
 
-	settings := &RestAPISettings{}
+	settings := &RestAPISettings{VersionsURL: ts.URL}
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 
@@ -3711,8 +3713,8 @@ func TestGetSoftwareVersionsOnline(t *testing.T) {
 // via the API using offline versions.json file data, because online mode is disabled in settings.
 func TestGetSoftwareVersionsOnlineDisabled(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	offlineContent := `{
@@ -3830,7 +3832,6 @@ func TestGetSoftwareVersionsOnlineDisabled(t *testing.T) {
 	}))
 	defer ts.Close()
 	VersionsJSONPath, _ = sb.Write("versions.json", offlineContent)
-	VersionsJSONOnlineURL = ts.URL
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -3838,7 +3839,7 @@ func TestGetSoftwareVersionsOnlineDisabled(t *testing.T) {
 	err := dbmodel.SetSettingBool(db, "enable_online_software_versions", false)
 	require.NoError(t, err)
 
-	settings := &RestAPISettings{}
+	settings := &RestAPISettings{VersionsURL: ts.URL}
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
 	ctx, _ := rapi.SessionManager.Load(context.Background(), "")
 
@@ -3867,8 +3868,8 @@ func TestGetSoftwareVersionsOnlineDisabled(t *testing.T) {
 // via the API when some of the JSON values are empty.
 func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
 	// Arrange
-	restoreJSONPathAndURL := RememberVersionsJSONPathAndURL()
-	defer restoreJSONPathAndURL()
+	restoreJSONPath := RememberVersionsJSONPath()
+	defer restoreJSONPath()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	content := `{
@@ -3923,11 +3924,12 @@ func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
   }
 }`
 	VersionsJSONPath, _ = sb.Write("versions.json", content)
-	VersionsJSONOnlineURL = " foo bar "
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	dbmodel.InitializeSettings(db, 0)
+	err := dbmodel.SetSettingBool(db, "enable_online_software_versions", false)
+	require.NoError(t, err)
 
 	settings := &RestAPISettings{}
 	rapi, _ := NewRestAPI(settings, dbSettings, db)

@@ -45,15 +45,16 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
-// Tries to send HTTP GET to VersionsJSONOnlineURL to retrieve versions.json file containing information about current ISC software versions.
+// Tries to send HTTP GET to STORK_REST_VERSIONS_URL to retrieve versions metadata file containing information about current ISC software versions.
 // If response to the HTTP request is successful, the body of the response is returned as bytes; error otherwise.
-func getOnlineVersionsJSON() ([]byte, error) {
+func (r *RestAPI) getOnlineVersionsJSON() ([]byte, error) {
+	url := r.Settings.VersionsURL
 	accept := "application/json"
 	userAgent := fmt.Sprintf("ISC Stork / %s built on %s", stork.Version, stork.BuildDate)
 
-	req, err := http.NewRequestWithContext(context.Background(), "GET", VersionsJSONOnlineURL, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
-		err = errors.Wrapf(err, "could not create HTTP GET request to %s", VersionsJSONOnlineURL)
+		err = errors.Wrapf(err, "could not create HTTP GET request to %s", url)
 		return nil, err
 	}
 
@@ -65,14 +66,14 @@ func getOnlineVersionsJSON() ([]byte, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		err = errors.Wrapf(err, "problem sending HTTP GET request to %s", VersionsJSONOnlineURL)
+		err = errors.Wrapf(err, "problem sending HTTP GET request to %s", url)
 		return nil, err
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		err = errors.Wrapf(err, "problem reading received online versions.json response body")
+		err = errors.Wrapf(err, "problem reading received online versions metadata file response body")
 		return nil, err
 	}
 
@@ -166,15 +167,15 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 		onlineModeEnabled = false
 	}
 	if onlineModeEnabled {
-		bytes, err := getOnlineVersionsJSON()
+		bytes, err := r.getOnlineVersionsJSON()
 		if err == nil {
-			// Online versions.json was received, so let's try to use that data.
+			// Online versions metadata was received, so let's try to use that data.
 			appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOnline)
 			if err == nil {
 				return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
 			}
 		}
-		log.Error(errors.Wrapf(err, "problem processing online versions.json data; falling back to offline mode"))
+		log.Error(errors.Wrapf(err, "problem processing online versions metadata file data; falling back to offline mode"))
 	} else {
 		log.Warn("online mode of software version checking disabled")
 	}

@@ -61,6 +61,7 @@ type RestAPISettings struct {
 
 	StaticFilesDir string `long:"rest-static-files-dir" description:"The directory with static files for the UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
 	BaseURL        string `long:"rest-base-url" description:"The base URL of the UI. Specify this flag if the UI is served from a subdirectory (not the root URL). It must start and end with a slash. Example: https://www.example.com/admin/stork/ would need to have '/admin/stork/' as the rest-base-url" default:"/" env:"STORK_REST_BASE_URL"`
+	VersionsURL    string `long:"rest-versions-url" description:"URL of the file with current Kea, Stork and BIND 9 software versions metadata" env:"STORK_REST_VERSIONS_URL" default:"https://www.isc.org/versions.json"`
 }
 
 // Runtime information and settings for RestAPI service.
@@ -429,6 +430,10 @@ func (r *RestAPI) Serve() (err error) {
 	// Modify the base URL in the index file.
 	if err = setBaseURLInIndexFile(r.Settings.BaseURL, r.Settings.StaticFilesDir); err != nil {
 		return err
+	}
+
+	if r.Settings.VersionsURL != "" {
+		log.Infof("Setting URL of the versions metadata file to %s", r.Settings.VersionsURL)
 	}
 
 	err = prepareAuthenticationIcons(r.HookManager, r.Settings.StaticFilesDir)
