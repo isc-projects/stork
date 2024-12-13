@@ -871,6 +871,8 @@ Stork can identify the ISC software used on all authorized machines and
 check whether those software packages are up-to-date. The summary table indicates whether there are software updates available
 for any of the versions that are running, with messages that show how critical those updates are.
 The table also includes whether the machine's Stork agent version matches the Stork server version.
+Stork server's version is also checked. If an update is available, the notification message is displayed
+right above the Summary table.
 
 .. note::
 
