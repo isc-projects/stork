@@ -441,8 +441,8 @@ The remaining settings pertain to the server's RESTful API configuration (the ``
 
    Stork can automatically check for software updates available for Kea, BIND 9 and Stork itself.
    To be able to do that, Stork server downloads a JSON file with the latest software releases metadata.
-   The URL of the file by default is set to `https://www.isc.org/versions.json <https://www.isc.org/versions.json>`_.
-   There is no need to modify this setting until the software releases metadata file is published by ISC under different URL.
+   The file's URL by default is set to `https://www.isc.org/versions.json <https://www.isc.org/versions.json>`_.
+   There is no need to modify this setting until the software releases metadata file is published by ISC under a different URL.
    See also chapters :ref:`usage-software-versions-page` and :ref:`Automatic software updates checking <usage-online-version-check-setting>`.
 
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration (the ``STORK_SERVER_`` prefix is for general purposes):

@@ -3147,7 +3147,7 @@ func TestGetOfflineVersionsJSONrrorNoSuchFile(t *testing.T) {
 }
 
 // Test that getOnlineVersionsJSON sends appropriate HTTP GET request
-// and it returns the data received from server.
+// and it returns the data received from the server.
 func TestGetOnlineVersionsJSON(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()

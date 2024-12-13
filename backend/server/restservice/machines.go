@@ -46,7 +46,7 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 }
 
 // Tries to send HTTP GET to STORK_REST_VERSIONS_URL to retrieve versions metadata file containing information about current ISC software versions.
-// If response to the HTTP request is successful, the body of the response is returned as bytes; error otherwise.
+// If the response to the HTTP request is successful, the response body is returned as bytes; error otherwise.
 func (r *RestAPI) getOnlineVersionsJSON() ([]byte, error) {
 	url := r.Settings.VersionsURL
 	accept := "application/json"
@@ -81,7 +81,7 @@ func (r *RestAPI) getOnlineVersionsJSON() ([]byte, error) {
 }
 
 // Tries to read versions.json local file containing information about current ISC software versions.
-// In case of success, the content of the file is returned as bytes; error otherwise.
+// In case of success, the file's content is returned as bytes; error otherwise.
 func getOfflineVersionsJSON() ([]byte, error) {
 	// Find the location of the JSON file with software versions metadata.
 	searchPaths := []string{}
