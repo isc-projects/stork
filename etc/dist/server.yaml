@@ -17,7 +17,10 @@ suggests:
 - isc-stork-server-hook-ldap
 conflicts: []
 maintainer: "Stork team <stork-users@lists.isc.org>"
-description: ISC Stork Server
+description: "ISC Stork Server
+
+Provides centralized, front end to apps (Kea and BIND9) monitored by Stork agents.
+You typically need a single server in a network."
 vendor: "Internet Systems Consortium, Inc."
 homepage: "https://stork.isc.org"
 license: "MPL 2.0"

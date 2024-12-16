@@ -16,7 +16,11 @@ recommends: []
 suggests: []
 conflicts: []
 maintainer: "Stork team <stork-users@lists.isc.org>"
-description: ISC Stork Server
+description: "ISC Stork Agent.
+
+It can monitor ISC Kea and/or ISC BIND9 processes, typically used
+with ISC Stork Server. You typically want an agent running on each
+machine in your network that has either Kea or BIND9 servers running."
 vendor: "Internet Systems Consortium, Inc."
 homepage: "https://stork.isc.org"
 license: "MPL 2.0"
