@@ -58,7 +58,7 @@ func TestUpdateDataSession(t *testing.T) {
 	require.Len(t, sessions, 1)
 	require.Equal(t, "foo", sessions[0].Token)
 	require.Equal(t, []byte("baz"), sessions[0].Data)
-	require.Equal(t, expireTime, sessions[0].Expiry)
+	require.True(t, expireTime.Equal(sessions[0].Expiry))
 }
 
 func TestUpdateExpireTimeSession(t *testing.T) {
