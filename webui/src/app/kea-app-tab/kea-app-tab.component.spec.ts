@@ -306,6 +306,7 @@ describe('KeaAppTabComponent', () => {
     })
 
     it('should know how to convert hook libraries to Kea documentation anchors', () => {
+        expect(component.docAnchorFromHookLibrary('libdhcp_user_chk.so', '')).toBeNull()
         expect(component.docAnchorFromHookLibrary('', '2.3.8')).toBeNull()
         expect(component.docAnchorFromHookLibrary('', '2.4.0')).toBeNull()
         expect(component.docAnchorFromHookLibrary('', '2.5.4-git')).toBeNull()
@@ -319,11 +320,23 @@ describe('KeaAppTabComponent', () => {
             'latest/arm/hooks.html#std-ischooklib-libdhcp_user_chk.so'
         )
         expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.3.8')).toBeNull()
-        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.4.0')).toBeNull()
-        expect(component.docAnchorFromHookLibrary('libdhcp_fake.so', '2.5.4-git')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('libdns_fake.so', '2.4.0')).toBe(
+            'kea-2.4.0/arm/hooks.html#std-ischooklib-libdns_fake.so'
+        )
+        expect(component.docAnchorFromHookLibrary('libca_fake.so', '2.5.4-git')).toBe(
+            'latest/arm/hooks.html#std-ischooklib-libca_fake.so'
+        )
         expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.3.7')).toBeNull()
-        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.4.0')).toBeNull()
-        expect(component.docAnchorFromHookLibrary('kea-dhcp4', '2.5.4-git')).toBeNull()
+        expect(component.docAnchorFromHookLibrary('libdhcp_mysql.so', '2.7.4')).toBe(
+            'kea-2.7.4/arm/hooks.html#std-ischooklib-libdhcp_mysql.so'
+        )
+        expect(component.docAnchorFromHookLibrary('libdhcp_pgsql.so', '2.7.4')).toBe(
+            'kea-2.7.4/arm/hooks.html#std-ischooklib-libdhcp_pgsql.so'
+        )
+        expect(component.docAnchorFromHookLibrary('libdhcp_rbac.so', '2.7.4')).toBe(
+            'kea-2.7.4/arm/hooks.html#std-ischooklib-libdhcp_rbac.so'
+        )
+        expect(component.docAnchorFromHookLibrary('libdhcp_mysql.so', '2.3.8')).toBeNull()
     })
 
     it('should display an empty placeholder when no app is loaded', () => {

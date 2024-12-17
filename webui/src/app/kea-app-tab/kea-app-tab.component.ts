@@ -71,6 +71,10 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
 
     /**
      * Holds Kea documentation anchors indexed by hook libraries base names.
+     * Anchors are valid for Kea versions < 2.4.0.
+     * For more recent Kea versions, there is no need to track the anchors,
+     * since new anchor type was provided in documentation, which can be generated
+     * automatically: std-ischooklib-hook_lib_base_name.so
      *
      * Makes lookup as efficient as O(log(n)) instead of the O(n)
      * that would result from an alternative switch-case statement.
@@ -98,11 +102,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         'libdhcp_stat_cmds.so': 'stat-cmds-statistics-commands-for-supplemental-lease-statistics',
         'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
         'libdhcp_user_chk.so': 'user-chk-user-check',
-        'libdhcp_ping_check.so': 'ping-check-so-ping-check',
-        'libdhcp_perfmon.so': 'perfmon',
-        'libdhcp_mysql.so': 'dhcp_mysql', // added in Kea 2.7.4
-        'libdhcp_pgsql.so': 'dhcp_pgsql', // added in Kea 2.7.4
-        'libdhcp_rbac.so': 'dhcp_rbac', // added in Kea 2.7.2
     }
 
     /**
@@ -465,13 +464,17 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * @returns anchor or null if the hook library is not recognized
      */
     docAnchorFromHookLibrary(hookLibrary: string, keaVersion: string): string | null {
-        if (!this.anchorsByHook[hookLibrary]) {
-            // For Kea version >= 2.4 lookup is not needed, but it must be checked
-            // whether given hookLibrary exists.
+        const isNewVer = gte(keaVersion || '1.0.0', '2.4.0') // Kea versions >= 2.4 are considered new, where new anchors were introduced in ARM docs.
+        if (!hookLibrary || !keaVersion || !(isNewVer || this.anchorsByHook[hookLibrary])) {
+            // Return null:
+            // - if hook name is not provided
+            // - or if kea version is not provided
+            // - or if it is older Kea version (< 2.4) and there is no lookup value in the anchorsByHook for given hook.
+            // For Kea version >= 2.4 lookup is not needed because new 'std-ischooklib-hook_name.so' anchors were
+            // introduced in ARM.
             return null
         }
         const isPreRel = prerelease(keaVersion) != null // Will not be null for e.g. '2.5.4-git', will be null for '2.5.4'.
-        const isNewVer = gte(keaVersion, '2.4.0') // Kea versions >= 2.4 are considered new, where new anchors were introduced in ARM docs.
         const version = isPreRel ? 'latest' : 'kea-' + keaVersion
         const anchorId = isNewVer ? 'std-ischooklib-' + hookLibrary : this.anchorsByHook[hookLibrary]
 
