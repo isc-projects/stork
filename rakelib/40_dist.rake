@@ -57,7 +57,7 @@ def get_package_manager_type()
     # Read environment variable.
     if !ENV["PKG_TYPE"].nil?
         pkg_type = ENV["PKG_TYPE"].downcase
-        allowed_types = ["deb", "rpm"]
+        allowed_types = ["deb", "rpm", "apk"]
         if !allowed_types.include?(pkg_type)
             fail "Invalid PKG_TYPE value: #{ENV["PKG_TYPE"]}. Must be one of: #{allowed_types.join(", ")}"
         end
