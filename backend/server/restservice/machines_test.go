@@ -3154,43 +3154,43 @@ func TestGetOnlineVersionsJSON(t *testing.T) {
 	defer restoreJSONPath()
 
 	testBody := []byte(`{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "202a-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`)
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "202a-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`)
 
 	// Prepare test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3259,43 +3259,43 @@ func TestUnmarshalVersionsJSONDataTruncatedVersionsJSONError(t *testing.T) {
 func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
 	// Arrange
 	bytes := []byte(`{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "202a-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`)
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "202a-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`)
 
 	// Act
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
@@ -3311,42 +3311,42 @@ func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
 func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
 	// Arrange
 	bytes := []byte(`{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "026-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.20.2",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2028-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`)
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "026-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.20.2",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2028-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`)
 
 	// Act
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
@@ -3362,43 +3362,43 @@ func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
 func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
 	// Arrange
 	bytes := []byte(`{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "z024-10-02"
-    },
-    "latestSecure": [
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`)
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "z024-10-02"
+			},
+			"latestSecure": [
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`)
 
 	// Act
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
@@ -3414,43 +3414,43 @@ func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
 func TestUnmarshalVersionsJSONDataDateError(t *testing.T) {
 	// Arrange
 	bytes := []byte(`{
-  "date": "024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`)
+		"date": "024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`)
 
 	// Act
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
@@ -3471,57 +3471,57 @@ func TestGetSoftwareVersionsOffline(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	content := `{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      },
-      {
-        "version": "2.4.1",
-        "releaseDate": "2023-11-29",
-        "eolDate": "2025-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-	  {
-        "version": "1.15.1",
-        "releaseDate": "2024-03-27"
-      }
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      },
-      {
-        "version": "9.20.2",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2028-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				},
+				{
+					"version": "2.4.1",
+					"releaseDate": "2023-11-29",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+				{
+					"version": "1.15.1",
+					"releaseDate": "2024-03-27"
+				}
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				},
+				{
+					"version": "9.20.2",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2028-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`
 	VersionsJSONPath, _ = sb.Write("versions.json", content)
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -3562,113 +3562,113 @@ func TestGetSoftwareVersionsOnline(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	offlineContent := `{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      },
-      {
-        "version": "2.4.1",
-        "releaseDate": "2023-11-29",
-        "eolDate": "2025-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-	  {
-        "version": "1.15.1",
-        "releaseDate": "2024-03-27"
-      }
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      },
-      {
-        "version": "9.20.2",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2028-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				},
+				{
+					"version": "2.4.1",
+					"releaseDate": "2023-11-29",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+				{
+					"version": "1.15.1",
+					"releaseDate": "2024-03-27"
+				}
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				},
+				{
+					"version": "9.20.2",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2028-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`
 	onlineContent := `{
-    "bind9": {
-        "currentStable": [
-            {
-                "version": "9.18.31",
-                "releaseDate": "2024-10-01",
-                "eolDate": "2026-07-01",
-                "ESV": "true"
-            },
-            {
-                "version": "9.20.3",
-                "releaseDate": "2024-10-01",
-                "eolDate": "2028-07-01"
-            }
-        ],
-        "latestDev": {
-            "version": "9.21.2",
-            "releaseDate": "2024-10-01"
-        },
-        "latestSecure": []
-    },
-    "kea": {
-        "currentStable": [
-            {
-                "version": "2.6.1",
-                "releaseDate": "2024-07-01",
-                "eolDate": "2026-07-01"
-            },
-            {
-                "version": "2.4.1",
-                "releaseDate": "2023-11-01",
-                "eolDate": "2025-07-01"
-            }
-        ],
-        "latestDev": {
-            "version": "2.7.4",
-            "releaseDate": "2024-10-01"
-        },
-        "latestSecure": []
-    },
-    "stork": {
-        "currentStable": [
-            {
-                "version": "2.0.0",
-                "releaseDate": "2024-11-01",
-                "eolDate": "2025-07-01"
-            }
-        ],
-        "latestDev": {
-            "version": "1.19.0",
-            "releaseDate": "2024-10-01"
-        },
-        "latestSecure": []
-    },
-    "date": "2024-12-05"
-}`
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.31",
+					"releaseDate": "2024-10-01",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				},
+				{
+					"version": "9.20.3",
+					"releaseDate": "2024-10-01",
+					"eolDate": "2028-07-01"
+				}
+			],
+			"latestDev": {
+				"version": "9.21.2",
+				"releaseDate": "2024-10-01"
+			},
+			"latestSecure": []
+		},
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-01",
+					"eolDate": "2026-07-01"
+				},
+				{
+					"version": "2.4.1",
+					"releaseDate": "2023-11-01",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {
+				"version": "2.7.4",
+				"releaseDate": "2024-10-01"
+			},
+			"latestSecure": []
+		},
+		"stork": {
+			"currentStable": [
+				{
+					"version": "2.0.0",
+					"releaseDate": "2024-11-01",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {
+				"version": "1.19.0",
+				"releaseDate": "2024-10-01"
+			},
+			"latestSecure": []
+		},
+		"date": "2024-12-05"
+	}`
 	// Prepare test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -3718,113 +3718,113 @@ func TestGetSoftwareVersionsOnlineDisabled(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	offlineContent := `{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      },
-      {
-        "version": "2.4.1",
-        "releaseDate": "2023-11-29",
-        "eolDate": "2025-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "2.7.3",
-      "releaseDate": "2024-09-25"
-    }
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-	  {
-        "version": "1.15.1",
-        "releaseDate": "2024-03-27"
-      }
-    ]
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      },
-      {
-        "version": "9.20.2",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2028-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				},
+				{
+					"version": "2.4.1",
+					"releaseDate": "2023-11-29",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "2.7.3",
+			"releaseDate": "2024-09-25"
+			}
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+				{
+					"version": "1.15.1",
+					"releaseDate": "2024-03-27"
+				}
+			]
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				},
+				{
+					"version": "9.20.2",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2028-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`
 	onlineContent := `{
-    "bind9": {
-        "currentStable": [
-            {
-                "version": "9.18.31",
-                "releaseDate": "2024-10-01",
-                "eolDate": "2026-07-01",
-                "ESV": "true"
-            },
-            {
-                "version": "9.20.3",
-                "releaseDate": "2024-10-01",
-                "eolDate": "2028-07-01"
-            }
-        ],
-        "latestDev": {
-            "version": "9.21.2",
-            "releaseDate": "2024-10-01"
-        },
-        "latestSecure": []
-    },
-    "kea": {
-        "currentStable": [
-            {
-                "version": "2.6.1",
-                "releaseDate": "2024-07-01",
-                "eolDate": "2026-07-01"
-            },
-            {
-                "version": "2.4.1",
-                "releaseDate": "2023-11-01",
-                "eolDate": "2025-07-01"
-            }
-        ],
-        "latestDev": {
-            "version": "2.7.4",
-            "releaseDate": "2024-10-01"
-        },
-        "latestSecure": []
-    },
-    "stork": {
-        "currentStable": [
-            {
-                "version": "2.0.0",
-                "releaseDate": "2024-11-01",
-                "eolDate": "2025-07-01"
-            }
-        ],
-        "latestDev": {
-            "version": "1.19.0",
-            "releaseDate": "2024-10-01"
-        },
-        "latestSecure": []
-    },
-    "date": "2024-12-05"
-}`
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.31",
+					"releaseDate": "2024-10-01",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				},
+				{
+					"version": "9.20.3",
+					"releaseDate": "2024-10-01",
+					"eolDate": "2028-07-01"
+				}
+			],
+			"latestDev": {
+				"version": "9.21.2",
+				"releaseDate": "2024-10-01"
+			},
+			"latestSecure": []
+		},
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-01",
+					"eolDate": "2026-07-01"
+				},
+				{
+					"version": "2.4.1",
+					"releaseDate": "2023-11-01",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {
+				"version": "2.7.4",
+				"releaseDate": "2024-10-01"
+			},
+			"latestSecure": []
+		},
+		"stork": {
+			"currentStable": [
+				{
+					"version": "2.0.0",
+					"releaseDate": "2024-11-01",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {
+				"version": "1.19.0",
+				"releaseDate": "2024-10-01"
+			},
+			"latestSecure": []
+		},
+		"date": "2024-12-05"
+	}`
 	// Prepare test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -3873,56 +3873,56 @@ func TestGetSoftwareVersionsSomeValuesEmpty(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	content := `{
-  "date": "2024-10-03",
-  "kea": {
-    "currentStable": [
-      {
-        "version": "2.6.1",
-        "releaseDate": "2024-07-31",
-        "eolDate": "2026-07-01"
-      },
-      {
-        "version": "2.4.1",
-        "releaseDate": "2023-11-29",
-        "eolDate": "2025-07-01"
-      }
-    ],
-    "latestDev": {},
-	"latestSecure" : []
-  },
-  "stork": {
-    "latestDev": {
-      "version": "1.19.0",
-      "releaseDate": "2024-10-02"
-    },
-    "latestSecure": [
-	  {
-        "version": "1.15.1",
-        "releaseDate": "2024-03-27"
-      }
-	],
-	"currentStable": []
-  },
-  "bind9": {
-    "currentStable": [
-      {
-        "version": "9.18.30",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2026-07-01",
-        "ESV": "true"
-      },
-      {
-        "version": "9.20.2",
-        "releaseDate": "2024-09-18",
-        "eolDate": "2028-07-01"
-      }
-    ],
-    "latestDev": {
-      "version": "9.21.1",
-      "releaseDate": "2024-09-18"
-    }
-  }
-}`
+		"date": "2024-10-03",
+		"kea": {
+			"currentStable": [
+				{
+					"version": "2.6.1",
+					"releaseDate": "2024-07-31",
+					"eolDate": "2026-07-01"
+				},
+				{
+					"version": "2.4.1",
+					"releaseDate": "2023-11-29",
+					"eolDate": "2025-07-01"
+				}
+			],
+			"latestDev": {},
+			"latestSecure" : []
+		},
+		"stork": {
+			"latestDev": {
+			"version": "1.19.0",
+			"releaseDate": "2024-10-02"
+			},
+			"latestSecure": [
+				{
+					"version": "1.15.1",
+					"releaseDate": "2024-03-27"
+				}
+			],
+			"currentStable": []
+		},
+		"bind9": {
+			"currentStable": [
+				{
+					"version": "9.18.30",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2026-07-01",
+					"ESV": "true"
+				},
+				{
+					"version": "9.20.2",
+					"releaseDate": "2024-09-18",
+					"eolDate": "2028-07-01"
+				}
+			],
+			"latestDev": {
+			"version": "9.21.1",
+			"releaseDate": "2024-09-18"
+			}
+		}
+	}`
 	VersionsJSONPath, _ = sb.Write("versions.json", content)
 
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
