@@ -3128,7 +3128,7 @@ func RememberVersionsJSONPath() func() {
 
 // Test that an error is returned by getOfflineVersionsJSON
 // if the versions.json file doesn't exist.
-func TestGetOfflineVersionsJSONrrorNoSuchFile(t *testing.T) {
+func TestGetOfflineVersionsJSONErrorNoSuchFile(t *testing.T) {
 	// Arrange
 	restoreJSONPath := RememberVersionsJSONPath()
 	defer restoreJSONPath()
