@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing'
-import { DHCPOption, SharedNetwork } from './backend'
+import { DHCPOption, SharedNetwork, Subnet } from './backend'
 
 import {
     getTotalAddresses,
@@ -19,6 +19,7 @@ import {
     hasDifferentLocalPoolOptions,
     hasDifferentSharedNetworkLevelOptions,
     hasDifferentGlobalLevelOptions,
+    hasDifferentSubnetUserContexts,
 } from './subnets'
 
 describe('subnets', () => {
@@ -864,6 +865,67 @@ describe('subnets', () => {
         }
         expect(hasDifferentLocalSubnetOptions(subnet)).toBeTrue()
         expect(hasDifferentSubnetLevelOptions(subnet)).toBeTrue()
+    })
+
+    it('detect different user-contexts for subnet', () => {
+        const subnet: Subnet = {
+            localSubnets: [
+                {
+                    userContext: {
+                        foo: 1,
+                        bar: 2,
+                    },
+                },
+                {
+                    userContext: {
+                        foo: 1,
+                        bar: 2,
+                    },
+                },
+                {
+                    userContext: {
+                        foo: 1,
+                        bar: 3,
+                    },
+                },
+                {
+                    userContext: {}
+                },
+                {}
+            ]
+        }
+
+        expect(hasDifferentSubnetUserContexts(subnet)).toBeTrue()
+    })
+
+    it('should detect same user-contexts for subnet', () => {
+        let subnet: Subnet = {
+            localSubnets: [
+                {
+                    userContext: {
+                        foo: 1,
+                        bar: 2,
+                    },
+                },
+                {
+                    userContext: {
+                        foo: 1,
+                        bar: 2,
+                    },
+                },
+                {
+                    userContext: {
+                        foo: 1,
+                        bar: 2,
+                    },
+                }
+            ]
+        }
+
+        expect(hasDifferentSubnetUserContexts(subnet)).toBeFalse()
+        expect(hasDifferentSubnetUserContexts({})).toBeFalse()
+        expect(hasDifferentSubnetUserContexts({ localSubnets: [] })).toBeFalse()
+        expect(hasDifferentSubnetUserContexts({ localSubnets: [{}] })).toBeFalse()
     })
 
     it('extracts unique pools from a shared network', () => {
