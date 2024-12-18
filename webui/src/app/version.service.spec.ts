@@ -275,9 +275,9 @@ describe('VersionService', () => {
     it('should return software version feedback for current version used', () => {
         // Arrange
         // Act
-        const devNoStableCheck = service.getSoftwareVersionFeedback('1.19.0', 'stork', fakeResponse)
-        const stableCheck = service.getSoftwareVersionFeedback('9.20.2', 'bind9', fakeResponse)
-        const devCheck = service.getSoftwareVersionFeedback('2.7.3', 'kea', fakeResponse)
+        const devNoStableCheck = service.getSoftwareVersionFeedback('1.19.0', 'stork', fakeResponse, true)
+        const stableCheck = service.getSoftwareVersionFeedback('9.20.2', 'bind9', fakeResponse, true)
+        const devCheck = service.getSoftwareVersionFeedback('2.7.3', 'kea', fakeResponse, true)
 
         // Assert
         expect(devNoStableCheck).toBeTruthy()
@@ -289,7 +289,9 @@ describe('VersionService', () => {
         expect(devNoStableCheck.messages.length).toBe(1)
         expect(stableCheck.messages.length).toBe(1)
         expect(devCheck.messages.length).toBeGreaterThan(1)
-        expect(devNoStableCheck.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ development version/))
+        expect(devNoStableCheck.messages[0]).toMatch(
+            new RegExp(/\d+.\d+.\d+ is current Stork server development version/)
+        )
         expect(stableCheck.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ stable version/))
         expect(devCheck.messages[0]).toMatch(new RegExp(/\d+.\d+.\d+ is current .+ development version/))
         expect(devCheck.messages[1]).toMatch(
@@ -315,6 +317,7 @@ describe('VersionService', () => {
         expect(stableCheck.messages.length).toBe(1)
         expect(devCheck.messages.length).toBeGreaterThan(1)
         expect(devNoStableCheck.messages[0]).toMatch('You are using more recent version')
+        expect(devNoStableCheck.messages[0]).toMatch('Current development Stork agent version')
         expect(stableCheck.messages[0]).toMatch('You are using more recent version')
         expect(devCheck.messages[0]).toMatch('You are using more recent version')
         expect(devCheck.messages[1]).toMatch(
@@ -325,13 +328,15 @@ describe('VersionService', () => {
     it('should return software version feedback for not known stable', () => {
         // Arrange
         // Act
-        const stableCheck = service.getSoftwareVersionFeedback('2.0.0', 'stork', fakeResponse)
+        const stableCheck = service.getSoftwareVersionFeedback('2.0.0', 'stork', fakeResponse, true)
 
         // Assert
         expect(stableCheck).toBeTruthy()
         expect(stableCheck.severity).toBe(Severity.secondary)
         expect(stableCheck.messages.length).toBe(1)
-        expect(stableCheck.messages[0]).toMatch(new RegExp(/the .+ \d+.\d+.\d+ stable version is not known yet/))
+        expect(stableCheck.messages[0]).toMatch(
+            new RegExp(/the Stork server \d+.\d+.\d+ stable version is not known yet/)
+        )
     })
 
     it('should return software version feedback for newer stable not matching known ranges', () => {
