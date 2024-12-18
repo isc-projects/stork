@@ -46,8 +46,9 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 }
 
 // Tries to send HTTP GET to STORK_REST_VERSIONS_URL to retrieve versions metadata file containing information about current ISC software versions.
-// If the response to the HTTP request is successful, the response body is returned as bytes; error otherwise.
-func (r *RestAPI) getOnlineVersionsJSON() ([]byte, error) {
+// If the response to the HTTP request is successful, it tries to unmarshall received data.
+// If it succeeeds, pointer to the AppsVersions is returned. Non-nil error is returned in case of any fail.
+func (r *RestAPI) getOnlineVersionsJSON() (*models.AppsVersions, error) {
 	url := r.Settings.VersionsURL
 	accept := "application/json"
 	userAgent := fmt.Sprintf("ISC Stork / %s built on %s", stork.Version, stork.BuildDate)
@@ -76,13 +77,13 @@ func (r *RestAPI) getOnlineVersionsJSON() ([]byte, error) {
 		err = errors.Wrapf(err, "problem reading received online versions metadata file response body")
 		return nil, err
 	}
-
-	return body, nil
+	return unmarshalVersionsJSONData(&body, models.VersionsDataSourceOnline)
 }
 
-// Tries to read versions.json local file containing information about current ISC software versions.
-// In case of success, the file's content is returned as bytes; error otherwise.
-func getOfflineVersionsJSON() ([]byte, error) {
+// Tries to read versions.json local file containing information about current ISC software versions
+// and then it tries to unmarshall read data.
+// If it succeeeds, pointer to the AppsVersions is returned. Non-nil error is returned in case of any fail.
+func getOfflineVersionsJSON() (*models.AppsVersions, error) {
 	// Find the location of the JSON file with software versions metadata.
 	searchPaths := []string{}
 
@@ -110,39 +111,39 @@ func getOfflineVersionsJSON() ([]byte, error) {
 		err = errors.Wrapf(err, "problem reading the contents of the JSON file with software versions metadata")
 		return nil, err
 	}
-	return bytes, nil
+	return unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 }
 
 // Deserializes bytes data into ReportAppsVersions struct, converts and returns the data in REST API format.
-func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (models.AppsVersions, error) {
+func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (*models.AppsVersions, error) {
 	// Unmarshal the JSON to custom struct.
 	s := ReportAppsVersions{}
 	err := json.Unmarshal(*bytes, &s)
 	if err != nil {
 		err = errors.Wrapf(err, "problem unmarshalling contents of the %s JSON file with software versions metadata", mode)
-		return models.AppsVersions{}, err
+		return nil, err
 	}
 
 	bind9, err := appVersionMetadataToRestAPI(*s.Bind9)
 	if err != nil {
 		err = errors.Wrapf(err, "problem converting BIND 9 data from the %s JSON file with software versions metadata", mode)
-		return models.AppsVersions{}, err
+		return nil, err
 	}
 	kea, err := appVersionMetadataToRestAPI(*s.Kea)
 	if err != nil {
 		err = errors.Wrapf(err, "problem converting Kea data from the %s JSON file with software versions metadata", mode)
-		return models.AppsVersions{}, err
+		return nil, err
 	}
 	stork, err := appVersionMetadataToRestAPI(*s.Stork)
 	if err != nil {
 		err = errors.Wrapf(err, "problem converting Stork data from the %s JSON file with software versions metadata", mode)
-		return models.AppsVersions{}, err
+		return nil, err
 	}
 
 	parsedTime, err := time.Parse("2006-01-02", *s.Date)
 	if err != nil {
 		err = errors.Wrapf(err, "problem parsing date from the %s JSON file with software versions metadata", mode)
-		return models.AppsVersions{}, err
+		return nil, err
 	}
 	dataDate := strfmt.Date(parsedTime)
 
@@ -154,39 +155,29 @@ func unmarshalVersionsJSONData(bytes *[]byte, mode models.VersionsDataSource) (m
 		Stork:      stork,
 		DataSource: mode,
 	}
-	return appsVersions, nil
+	return &appsVersions, nil
 }
 
 // Get information about current ISC software versions.
 func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSoftwareVersionsParams) middleware.Responder {
-	appsVersions := models.AppsVersions{}
-
 	onlineModeEnabled, err := dbmodel.GetSettingBool(r.DB, "enable_online_software_versions")
 	if err != nil {
 		log.Error(errors.Wrapf(err, "problem reading boolean setting enable_online_software_versions"))
 		onlineModeEnabled = false
 	}
 	if onlineModeEnabled {
-		bytes, err := r.getOnlineVersionsJSON()
+		appsVersions, err := r.getOnlineVersionsJSON()
 		if err == nil {
-			// Online versions metadata was received, so let's try to use that data.
-			appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOnline)
-			if err == nil {
-				return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
-			}
+			return general.NewGetSoftwareVersionsOK().WithPayload(appsVersions)
 		}
 		log.Error(errors.Wrapf(err, "problem processing online versions metadata file data; falling back to offline mode"))
 	} else {
 		log.Warn("online mode of software version checking disabled")
 	}
 
-	bytes, err := getOfflineVersionsJSON()
+	appsVersions, err := getOfflineVersionsJSON()
 	if err == nil {
-		// Try to use offline versions.json data.
-		appsVersions, err = unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
-		if err == nil {
-			return general.NewGetSoftwareVersionsOK().WithPayload(&appsVersions)
-		}
+		return general.NewGetSoftwareVersionsOK().WithPayload(appsVersions)
 	}
 	log.Error(errors.Wrapf(err, "problem processing offline versions.json data"))
 	errMsg := "Error parsing the contents of the JSON file with software versions metadata"

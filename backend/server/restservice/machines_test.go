@@ -3137,10 +3137,10 @@ func TestGetOfflineVersionsJSONErrorNoSuchFile(t *testing.T) {
 	VersionsJSONPath = path.Join(sb.BasePath, "not-exists.json")
 
 	// Act
-	bytes, err := getOfflineVersionsJSON()
+	appsVersions, err := getOfflineVersionsJSON()
 
 	// Assert
-	require.Nil(t, bytes)
+	require.Nil(t, appsVersions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem opening the JSON file")
 	require.ErrorContains(t, err, "no such file")
@@ -3180,7 +3180,7 @@ func TestGetOnlineVersionsJSON(t *testing.T) {
 			"currentStable": [
 				{
 					"version": "9.18.30",
-					"releaseDate": "202a-09-18",
+					"releaseDate": "2024-09-18",
 					"eolDate": "2026-07-01",
 					"ESV": "true"
 				}
@@ -3211,12 +3211,14 @@ func TestGetOnlineVersionsJSON(t *testing.T) {
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
 
 	// Act
-	bytes, err := rapi.getOnlineVersionsJSON()
+	appsVersions, err := rapi.getOnlineVersionsJSON()
 
 	// Assert
-	require.NotNil(t, bytes)
-	require.Equal(t, testBody, bytes)
+	require.NotNil(t, appsVersions)
 	require.NoError(t, err)
+	require.Equal(t, "9.21.1", *appsVersions.Bind9.LatestDev.Version)
+	require.Equal(t, "2.7.3", *appsVersions.Kea.LatestDev.Version)
+	require.Equal(t, "1.19.0", *appsVersions.Stork.LatestDev.Version)
 }
 
 // Test that getOnlineVersionsJSON returns an error when the online versions.json URL is incorrect.
@@ -3231,10 +3233,10 @@ func TestGetOnlineVersionsJSONSendingError(t *testing.T) {
 	rapi, _ := NewRestAPI(settings, dbSettings, db)
 
 	// Act
-	bytes, err := rapi.getOnlineVersionsJSON()
+	appsVersions, err := rapi.getOnlineVersionsJSON()
 
 	// Assert
-	require.Nil(t, bytes)
+	require.Nil(t, appsVersions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem sending HTTP GET request to")
 }
@@ -3249,7 +3251,7 @@ func TestUnmarshalVersionsJSONDataTruncatedVersionsJSONError(t *testing.T) {
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Nil(t, appsVersions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem unmarshalling contents of the offline JSON file")
 }
@@ -3301,7 +3303,7 @@ func TestUnmarshalVersionsJSONDataBindMetadataError(t *testing.T) {
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Nil(t, appsVersions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem converting BIND 9 data")
 }
@@ -3352,7 +3354,7 @@ func TestUnmarshalVersionsJSONDataKeaMetadataError(t *testing.T) {
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Nil(t, appsVersions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem converting Kea data")
 }
@@ -3404,7 +3406,7 @@ func TestUnmarshalVersionsJSONDataStorkMetadataError(t *testing.T) {
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Nil(t, appsVersions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem converting Stork data")
 }
@@ -3456,7 +3458,7 @@ func TestUnmarshalVersionsJSONDataDateError(t *testing.T) {
 	appsVersions, err := unmarshalVersionsJSONData(&bytes, models.VersionsDataSourceOffline)
 
 	// Assert
-	require.Equal(t, appsVersions, models.AppsVersions{})
+	require.Nil(t, appsVersions)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "problem parsing date")
 }
