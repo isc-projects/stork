@@ -31,6 +31,7 @@ import {
     hasDifferentLocalPoolOptions,
     hasDifferentSharedNetworkLevelOptions,
     hasDifferentSubnetLevelOptions,
+    hasDifferentSubnetNames,
 } from '../subnets'
 import { AddressRange } from '../address-range'
 import { GenericFormService } from './generic-form.service'
@@ -48,6 +49,15 @@ interface LocalDaemonData {
 export interface OptionsForm {
     unlocked: FormControl<boolean>
     data: UntypedFormArray
+}
+
+/**
+ * A type of a form holding user-contexts.
+ */
+export interface UserContextsForm {
+    unlocked: FormControl<boolean>,
+    contexts: FormArray<FormControl<object>>
+    names: FormArray<FormControl<string>>
 }
 
 /**
@@ -244,7 +254,7 @@ export interface SubnetForm {
     /**
      * User contexts for a subnet.
      */
-    userContexts: UntypedFormArray
+    userContexts: FormGroup<UserContextsForm>
 }
 
 /**
@@ -410,7 +420,7 @@ export class SubnetSetFormService {
                 }
                 // Some of the configured parameters may not be applicable to certain Kea
                 // server versions. We need to compare the daemon versions with the upper
-                // and lower bound versions potentailly set for each parameter.
+                // and lower bound versions potentially set for each parameter.
                 if (
                     valid(daemons?.[i]?.version) &&
                     ((valid(data?.versionLowerBound) && lt(daemons[i].version, data.versionLowerBound)) ||
@@ -1190,7 +1200,15 @@ export class SubnetSetFormService {
                 },
                 Validators.required
             ),
-            userContexts: new UntypedFormArray(subnet.localSubnets?.map((ls) => new FormControl(ls.userContext)) ?? []),
+            userContexts: new FormGroup({
+                unlocked: new FormControl(hasDifferentSubnetNames(subnet)),
+                contexts: new FormArray<FormControl<object>>(
+                    subnet.localSubnets?.map((ls) => new FormControl(ls.userContext)) ?? []
+                ),
+                names: new FormArray<FormControl<string>>(
+                    subnet.localSubnets?.map((ls) => new FormControl(ls.userContext?.['subnet-name'])) ?? []
+                )
+            })
         })
         return formGroup
     }
@@ -1292,7 +1310,11 @@ export class SubnetSetFormService {
             parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4, keaVersionRange),
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl<number[]>([], Validators.required),
-            userContexts: new UntypedFormArray([]),
+            userContexts: new FormGroup({
+                unlocked: new FormControl(false),
+                contexts: new FormArray([]),
+                names: new FormArray([]),
+            }),
         })
         return formGroup
     }
@@ -1352,11 +1374,27 @@ export class SubnetSetFormService {
                     )
             }
         }
-        const userContexts = form.get('userContexts') as UntypedFormArray
+        const group = form.get('userContexts') as FormGroup<UserContextsForm>
+        const contexts = group.get('contexts')?.value
+        const names = group.get('names')?.value
+        const unlocked = !!group.get('unlocked')?.value
         for (let i = 0; i < subnet.localSubnets.length; i++) {
-            if (userContexts?.length > i) {
-                subnet.localSubnets[i].userContext = userContexts.at(i).value
+            if (contexts?.length <= i) {
+                break
             }
+            let context = contexts[unlocked ? i : 0]
+            const name = names[unlocked ? i : 0]
+
+            if (!context && name) {
+                context = {}
+            }
+            if (name) {
+                context['subnet-name'] = name
+            } else if (context) {
+                delete context['subnet-name']
+            }
+
+            subnet.localSubnets[i].userContext = context
         }
         return subnet
     }

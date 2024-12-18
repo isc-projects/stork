@@ -82,6 +82,32 @@
                 <label for="shared-network-select">Shared Network</label>
             </span>
         </p-fieldset>
+        <p-fieldset
+            *ngIf="!state.wizard"
+            [formGroup]="state.group.get('userContexts')"
+            legend="User Contexts"
+            styleClass="mt-4">
+            <div class="flex mt-2 pb-4">
+                <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
+                <div class="flex ml-2 font-semibold">Unlock setting user contexts for individual servers.</div>
+            </div>
+            <ng-container *ngFor="let userContext of state.group.get('userContexts.names')?.controls; let i = index">
+                <div *ngIf="i === 0 || state.group.get('userContexts.unlocked')?.value" class="mb-3 mt-3">
+                    <div *ngIf="state.group.get('userContexts.unlocked')?.value" class="pb-5">
+                        <p-divider *ngIf="state.group.get('userContexts.names')?.length > 1" align="center">
+                            <p-tag [severity]="getServerTagSeverity(i)">
+                                {{ state.servers[i] }}
+                            </p-tag>
+                        </p-divider>
+                    </div>
+                    <!-- Content -->
+                    <span class="p-float-label mt-4 mb-2" formArrayName="names">
+                        <input id="subnet-name-{{ i }}" pInputText formControlName="{{ i }}" class="w-full" />
+                        <label for="subnet-name-{{ i }}">Subnet name</label>
+                    </span>
+                </div>
+            </ng-container>
+        </p-fieldset>
         <p-fieldset *ngIf="!state.wizard" legend="Pools" styleClass="mt-4">
             <p-accordion>
                 <p-accordionTab *ngFor="let pool of state.group.get('pools')?.controls; let i = index">

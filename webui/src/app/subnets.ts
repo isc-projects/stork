@@ -405,6 +405,21 @@ export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]): bool
 }
 
 /**
+ * Utility function checking if there are differences between subnet names.
+ * 
+ * @param subnet subnet instance.
+ * @returns true if there are differences in subnet names, false otherwise.
+ */
+export function hasDifferentSubnetNames(subnet: Subnet): boolean {
+    if (!subnet.localSubnets?.length) {
+        return false
+    }
+
+    const names = (subnet.localSubnets || []).map((ls) => ls.userContext?.["subnet-name"])
+    return names.slice(1).some((name) => name !== names[0])
+}
+
+/**
  * Converts the list of subnets into the subnets with extracted unique pools.
  *
  * The address and delegated prefix pools are carried in the objects associating

@@ -13,6 +13,7 @@ import {
     parseSubnetsStatisticValues,
     SubnetWithUniquePools,
     extractUniqueSubnetPools,
+    hasDifferentSubnetNames,
 } from '../subnets'
 import { map } from 'rxjs/operators'
 
@@ -205,13 +206,7 @@ export class SubnetsTableComponent
      *          names.
      */
     hasAssignedMultipleSubnetNames(subnet: Subnet): boolean {
-        const localSubnets = subnet.localSubnets
-        if (!localSubnets || localSubnets.length <= 1) {
-            return false
-        }
-
-        const firstSubnetName = localSubnets[0].userContext?.['subnet-name']
-        return localSubnets.slice(1).some((ls) => ls.userContext?.['subnet-name'] !== firstSubnetName)
+        return hasDifferentSubnetNames(subnet)
     }
 
     /**
