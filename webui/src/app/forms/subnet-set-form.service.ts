@@ -31,7 +31,7 @@ import {
     hasDifferentLocalPoolOptions,
     hasDifferentSharedNetworkLevelOptions,
     hasDifferentSubnetLevelOptions,
-    hasDifferentSubnetNames,
+    hasDifferentSubnetUserContexts,
 } from '../subnets'
 import { AddressRange } from '../address-range'
 import { GenericFormService } from './generic-form.service'
@@ -55,8 +55,10 @@ export interface OptionsForm {
  * A type of a form holding user-contexts.
  */
 export interface UserContextsForm {
-    unlocked: FormControl<boolean>,
+    unlocked: FormControl<boolean>
+    // An original user context data. Not editable now.
     contexts: FormArray<FormControl<object>>
+    // The subnet names extracted from the user contexts.
     names: FormArray<FormControl<string>>
 }
 
@@ -1201,7 +1203,7 @@ export class SubnetSetFormService {
                 Validators.required
             ),
             userContexts: new FormGroup({
-                unlocked: new FormControl(hasDifferentSubnetNames(subnet)),
+                unlocked: new FormControl(hasDifferentSubnetUserContexts(subnet)),
                 contexts: new FormArray<FormControl<object>>(
                     subnet.localSubnets?.map((ls) => new FormControl(ls.userContext)) ?? []
                 ),

@@ -8,6 +8,7 @@ import {
     KeaSubnetParametersForm,
     OptionsForm,
     SubnetSetFormService,
+    UserContextsForm,
     VersionedDaemon,
 } from './subnet-set-form.service'
 import {
@@ -18,7 +19,7 @@ import {
     Subnet,
 } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
-import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
+import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms'
 import { IPType } from '../iptype'
 
 describe('SubnetSetFormService', () => {
@@ -1783,6 +1784,10 @@ describe('SubnetSetFormService', () => {
                             optionsHash: '123',
                         },
                     },
+                    userContext: {
+                        "foo": "bar",
+                        "subnet-name": "baz"
+                    }
                 },
             ],
         }
@@ -1827,6 +1832,15 @@ describe('SubnetSetFormService', () => {
         const selectedDaemons = formGroup.get('selectedDaemons') as FormControl<number[]>
         expect(selectedDaemons?.value).toEqual([1])
         expect(selectedDaemons?.disabled).toBeTrue()
+
+        const userContextGroup = formGroup.get('userContexts') as FormGroup<UserContextsForm>
+        expect(userContextGroup.get("unlocked")?.value).toBeFalse()
+        const userContexts = userContextGroup.get("contexts") as UntypedFormArray
+        expect(userContexts.length).toBe(1)
+        const userContext = userContexts.get('0').value
+        expect(userContext['foo']).toBe('bar')
+        expect(userContext['subnet-name']).toBe('baz')
+        expect(Object.keys(userContext).length).toBe(2)
     })
 
     it('should only include subnet-level ddns-use-conflict-resolution when all Kea versions are earlier than 2.5.0', () => {
@@ -2398,6 +2412,33 @@ describe('SubnetSetFormService', () => {
         expect(
             subnet1.localSubnets[1].keaConfigSubnetParameters?.subnetLevelParameters?.ddnsConflictResolutionMode
         ).toBe('check-with-dhcid')
+    })
+
+    it('should change the subnet name in the user context', () => {
+        const subnet0: Subnet = {
+            subnet: '10.0.0.0/8',
+            localSubnets: [
+                {
+                    daemonId: 1,
+                    keaConfigSubnetParameters: { subnetLevelParameters: {} },
+                    userContext: {
+                        subnetName: 'foo',
+                    },
+                },
+            ]
+        }
+
+        // Edit the subnet name.
+        const form = service.convertSubnetToForm(IPType.IPv4, null, subnet0)
+        form.get('userContexts.names.0')?.setValue('bar')
+
+        const subnet1 = service.convertFormToSubnet([], form)
+        expect(subnet1.localSubnets[0].userContext['subnet-name']).toBe('bar')
+
+        // Remove the subnet name.
+        form.get('userContexts.names.0')?.setValue('')
+        const subnet2 = service.convertFormToSubnet([], form)
+        expect(subnet2.localSubnets[0].userContext['subnet-name']).toBeUndefined()
     })
 
     it('should convert a form to shared network', () => {

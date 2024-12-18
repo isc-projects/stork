@@ -8,6 +8,7 @@ import {
     SharedNetwork,
     Subnet,
 } from './backend'
+import { deepEqual } from './utils'
 
 /**
  * Association of the pool with a daemon and daemon-specific pool
@@ -405,18 +406,22 @@ export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]): bool
 }
 
 /**
- * Utility function checking if there are differences between subnet names.
+ * Utility function checking if there are differences between user contexts in
+ * subnet.
  * 
  * @param subnet subnet instance.
  * @returns true if there are differences in subnet names, false otherwise.
  */
-export function hasDifferentSubnetNames(subnet: Subnet): boolean {
+export function hasDifferentSubnetUserContexts(subnet: Subnet): boolean {
     if (!subnet.localSubnets?.length) {
         return false
     }
 
-    const names = (subnet.localSubnets || []).map((ls) => ls.userContext?.["subnet-name"])
-    return names.slice(1).some((name) => name !== names[0])
+    return subnet.localSubnets.
+        slice(1).
+        some(
+            (ls) => !deepEqual(ls.userContext, subnet.localSubnets[0].userContext)
+        )
 }
 
 /**
