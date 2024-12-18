@@ -889,10 +889,10 @@ describe('subnets', () => {
                     },
                 },
                 {
-                    userContext: {}
+                    userContext: {},
                 },
-                {}
-            ]
+                {},
+            ],
         }
 
         expect(hasDifferentSubnetUserContexts(subnet)).toBeTrue()
@@ -918,8 +918,8 @@ describe('subnets', () => {
                         foo: 1,
                         bar: 2,
                     },
-                }
-            ]
+                },
+            ],
         }
 
         expect(hasDifferentSubnetUserContexts(subnet)).toBeFalse()

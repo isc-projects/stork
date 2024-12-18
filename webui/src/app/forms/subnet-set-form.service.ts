@@ -1209,8 +1209,8 @@ export class SubnetSetFormService {
                 ),
                 names: new FormArray<FormControl<string>>(
                     subnet.localSubnets?.map((ls) => new FormControl(ls.userContext?.['subnet-name'])) ?? []
-                )
-            })
+                ),
+            }),
         })
         return formGroup
     }

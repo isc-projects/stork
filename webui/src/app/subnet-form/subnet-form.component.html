@@ -86,7 +86,8 @@
             *ngIf="!state.wizard"
             [formGroup]="state.group.get('userContexts')"
             legend="User Contexts"
-            styleClass="mt-4">
+            styleClass="mt-4"
+        >
             <div class="flex mt-2 pb-4">
                 <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                 <div class="flex ml-2 font-semibold">Unlock setting user contexts for individual servers.</div>

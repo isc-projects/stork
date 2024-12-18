@@ -19,7 +19,7 @@ import {
     Subnet,
 } from '../backend'
 import { SharedParameterFormGroup } from './shared-parameter-form-group'
-import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl, UntypedFormGroup } from '@angular/forms'
+import { FormControl, FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { IPType } from '../iptype'
 
 describe('SubnetSetFormService', () => {
@@ -1785,9 +1785,9 @@ describe('SubnetSetFormService', () => {
                         },
                     },
                     userContext: {
-                        "foo": "bar",
-                        "subnet-name": "baz"
-                    }
+                        foo: 'bar',
+                        'subnet-name': 'baz',
+                    },
                 },
             ],
         }
@@ -1834,8 +1834,8 @@ describe('SubnetSetFormService', () => {
         expect(selectedDaemons?.disabled).toBeTrue()
 
         const userContextGroup = formGroup.get('userContexts') as FormGroup<UserContextsForm>
-        expect(userContextGroup.get("unlocked")?.value).toBeFalse()
-        const userContexts = userContextGroup.get("contexts") as UntypedFormArray
+        expect(userContextGroup.get('unlocked')?.value).toBeFalse()
+        const userContexts = userContextGroup.get('contexts') as UntypedFormArray
         expect(userContexts.length).toBe(1)
         const userContext = userContexts.get('0').value
         expect(userContext['foo']).toBe('bar')
@@ -2425,7 +2425,7 @@ describe('SubnetSetFormService', () => {
                         subnetName: 'foo',
                     },
                 },
-            ]
+            ],
         }
 
         // Edit the subnet name.

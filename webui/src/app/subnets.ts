@@ -408,7 +408,7 @@ export function hasDifferentGlobalLevelOptions(configs: KeaDaemonConfig[]): bool
 /**
  * Utility function checking if there are differences between user contexts in
  * subnet.
- * 
+ *
  * @param subnet subnet instance.
  * @returns true if there are differences in subnet names, false otherwise.
  */
@@ -417,11 +417,7 @@ export function hasDifferentSubnetUserContexts(subnet: Subnet): boolean {
         return false
     }
 
-    return subnet.localSubnets.
-        slice(1).
-        some(
-            (ls) => !deepEqual(ls.userContext, subnet.localSubnets[0].userContext)
-        )
+    return subnet.localSubnets.slice(1).some((ls) => !deepEqual(ls.userContext, subnet.localSubnets[0].userContext))
 }
 
 /**
