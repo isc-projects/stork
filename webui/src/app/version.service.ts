@@ -586,20 +586,21 @@ export class VersionService {
      * @private
      */
     private checkStorkServerUpdates(data: AppsVersions): void {
-        if (this._storkServerVersion) {
-            try {
-                const serverFeedback = this.getSoftwareVersionFeedback(this._storkServerVersion, 'stork', data)
-                serverFeedback.messages[0] =
-                    serverFeedback.messages?.[0]?.replace('agent', 'server') ||
-                    'Stork server version update is available.'
-                this._serverUpdateNotification$.next({
-                    available: !!serverFeedback.update,
-                    feedback: serverFeedback,
-                })
-                this.detectAlertingSeverity(serverFeedback?.severity ?? Severity.success)
-            } catch {
-                // no-op when getSoftwareVersionFeedback() throws an error
-            }
+        if (!this._storkServerVersion) {
+            return
         }
+
+        const serverFeedback = this.getSoftwareVersionFeedback(this._storkServerVersion, 'stork', data)
+        const updateType = serverFeedback.severity === Severity.error ? 'security update' : 'update'
+        serverFeedback.messages = [
+            !!serverFeedback.update
+                ? `Stork server ${updateType} is available (${serverFeedback.update}).`
+                : `Stork server is up-to-date.`,
+        ]
+        this._serverUpdateNotification$.next({
+            available: !!serverFeedback.update,
+            feedback: serverFeedback,
+        })
+        this.detectAlertingSeverity(serverFeedback?.severity ?? Severity.success)
     }
 }
