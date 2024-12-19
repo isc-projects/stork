@@ -181,22 +181,16 @@ export class VersionService {
     }
 
     /**
-     * Makes an assessment whether provided app (Kea, Bind9 or Stork) version is up-to-date
+     * Makes an assessment whether provided app (Kea, Bind9 or Stork Agent) version is up-to-date
      * and returns the feedback information with the severity of the urge to update the software and
      * a message containing details of the assessment.
      * @param version string version that must contain a parsable semver
      * @param app either kea, bind9 or stork
      * @param data input data used to make the assessment
-     * @param storkServer set to true when the assessment is about Stork server, not Stork agent; defaults to false
      * @return assessment result as a VersionFeedback object; it contains severity and messages to be displayed to the user
      * @throws Error when the assessment fails for any reason
      */
-    getSoftwareVersionFeedback(
-        version: string,
-        app: AppType,
-        data: AppsVersions,
-        storkServer = false
-    ): VersionFeedback {
+    getSoftwareVersionFeedback(version: string, app: AppType, data: AppsVersions): VersionFeedback {
         const cacheKey = version + app
         const cachedFeedback = this._checkedVersionCache?.get(cacheKey)
         if (cachedFeedback) {
@@ -209,7 +203,7 @@ export class VersionService {
         let appName = ''
         if (sanitizedSemver) {
             appName = app === 'bind9' ? app.toUpperCase() : app[0].toUpperCase() + app.slice(1)
-            appName += app === 'stork' ? (storkServer ? ' server' : ' agent') : ''
+            appName += app === 'stork' ? ' agent' : ''
             const isDevelopmentVersion = this.isDevelopmentVersion(sanitizedSemver, app)
 
             // check security releases first
@@ -592,19 +586,20 @@ export class VersionService {
      * @private
      */
     private checkStorkServerUpdates(data: AppsVersions): void {
-        if (!this._storkServerVersion) {
-            return
-        }
-
-        try {
-            const serverFeedback = this.getSoftwareVersionFeedback(this._storkServerVersion, 'stork', data, true)
-            this._serverUpdateNotification$.next({
-                available: !!serverFeedback.update,
-                feedback: serverFeedback,
-            })
-            this.detectAlertingSeverity(serverFeedback?.severity ?? Severity.success)
-        } catch {
-            // no-op when getSoftwareVersionFeedback() throws an error
+        if (this._storkServerVersion) {
+            try {
+                const serverFeedback = this.getSoftwareVersionFeedback(this._storkServerVersion, 'stork', data)
+                serverFeedback.messages[0] =
+                    serverFeedback.messages?.[0]?.replace('agent', 'server') ||
+                    'Stork server version update is available.'
+                this._serverUpdateNotification$.next({
+                    available: !!serverFeedback.update,
+                    feedback: serverFeedback,
+                })
+                this.detectAlertingSeverity(serverFeedback?.severity ?? Severity.success)
+            } catch {
+                // no-op when getSoftwareVersionFeedback() throws an error
+            }
         }
     }
 }
