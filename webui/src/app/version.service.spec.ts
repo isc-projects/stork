@@ -790,6 +790,29 @@ describe('VersionService', () => {
         expect(notification.feedback).toBeTruthy()
         expect(notification.feedback.update).toBe('1.19.0')
         expect(notification.feedback.severity).toBe(Severity.warn)
+        expect(notification.feedback.messages).toBeTruthy()
+        expect(notification.feedback.messages.length).toBeGreaterThan(0)
+        expect(notification.feedback.messages[0]).toContain('Stork server update is available')
+    })
+
+    it('should emit notification about stork server security update', () => {
+        // Arrange
+        let notification: UpdateNotification
+        service.getStorkServerUpdateNotification().subscribe((n) => (notification = n))
+        service.setStorkServerVersion('1.15.0')
+
+        // Act
+        service.getCurrentData().subscribe().unsubscribe()
+
+        // Assert
+        expect(notification).toBeTruthy()
+        expect(notification.available).toBeTrue()
+        expect(notification.feedback).toBeTruthy()
+        expect(notification.feedback.update).toBe('1.15.1')
+        expect(notification.feedback.severity).toBe(Severity.error)
+        expect(notification.feedback.messages).toBeTruthy()
+        expect(notification.feedback.messages.length).toBeGreaterThan(0)
+        expect(notification.feedback.messages[0]).toContain('Stork server security update is available')
     })
 
     it('should not emit notification about stork server update', () => {

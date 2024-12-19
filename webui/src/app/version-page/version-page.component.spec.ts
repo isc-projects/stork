@@ -281,7 +281,7 @@ describe('VersionPageComponent', () => {
                 available: true,
                 feedback: {
                     severity: Severity.warn,
-                    messages: ['Development Stork server version update (1.19.0) is available'],
+                    messages: ['Stork server update is available (1.19.0).'],
                 },
             })
         )
@@ -488,6 +488,6 @@ describe('VersionPageComponent', () => {
         const de = wrappers[0]
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain('Stork server update available')
-        expect(de.nativeElement.innerText).toContain('Development Stork server version update (1.19.0) is available')
+        expect(de.nativeElement.innerText).toContain('Stork server update is available (1.19.0)')
     })
 })
