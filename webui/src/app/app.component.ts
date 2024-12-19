@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
 import { firstValueFrom, Observable, Subscription } from 'rxjs'
 
-import { MenuItem } from 'primeng/api'
+import { MenuItem, MessageService } from 'primeng/api'
 
 import { GeneralService } from './backend/api/api'
 import { AuthService } from './auth.service'
@@ -59,7 +59,8 @@ export class AppComponent implements OnInit, OnDestroy {
         private loadingService: LoadingService,
         private settingSvc: SettingService,
         private themeService: ThemeService,
-        private versionService: VersionService
+        private versionService: VersionService,
+        private messageService: MessageService
     ) {
         this.initMenus()
 
@@ -259,7 +260,12 @@ export class AppComponent implements OnInit, OnDestroy {
                 }
             }
         }
-        console.error('menu item not found', name)
+        this.messageService.add({
+            severity: 'error',
+            summary: 'Error getting menu item',
+            detail: 'Menu item not found: ' + name,
+            life: 10000,
+        })
         return null
     }
 
@@ -297,7 +303,14 @@ export class AppComponent implements OnInit, OnDestroy {
                 if (this.auth.currentUserValue) {
                     // Use firstValueFrom to subscribe to the observable and unsubscribe as soon as first value arrives.
                     // This is to check Stork server updates and unsubscribe.
-                    firstValueFrom(this.versionService.getCurrentData())
+                    firstValueFrom(this.versionService.getCurrentData()).catch((err) =>
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error retrieving software versions data',
+                            detail: 'Error occurred when retrieving software versions data: ' + err,
+                            life: 10000,
+                        })
+                    )
 
                     this.serverData.getAppsStats().subscribe((data) => {
                         // if there are Kea apps then show Kea related menu items
