@@ -8,10 +8,28 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"isc.org/stork/testutil"
 )
 
 //go:embed testdata/zones.json
 var bind9Zones []byte
+
+// Test instantiating views.
+func TestNewZones(t *testing.T) {
+	// Create unsorted list of zones.
+	zoneList := []*Zone{
+		{
+			ZoneName: "my.example.org",
+		},
+		{
+			ZoneName: "yours.example.com",
+		},
+	}
+	zones := newZones(zoneList)
+	require.NotNil(t, zones)
+	// The zones should be sorted.
+	require.Equal(t, []string{"yours.example.com", "my.example.org"}, zones.GetZoneNames())
+}
 
 // Test marshalling the zone into binary form.
 func TestMarshalZone(t *testing.T) {
@@ -30,10 +48,50 @@ func TestLinearSearch(t *testing.T) {
 	err := json.Unmarshal(bind9Zones, &zones)
 	require.NoError(t, err)
 
-	zone := zones.linearSearch("authors.bind")
+	index := linearSearchZone(zones.zoneList, "authors.bind")
+	require.GreaterOrEqual(t, index, 0)
+	zone := zones.zoneList[index]
 	require.NotNil(t, zone)
 
-	require.Equal(t, "authors.bind", zone.Name)
+	require.Equal(t, "authors.bind", zone.Name())
+	require.Equal(t, "CH", zone.Class)
+	require.Zero(t, zone.Serial)
+	require.Equal(t, "builtin", zone.Type)
+	require.NotZero(t, zone.Loaded)
+}
+
+// Test searching a zone lower bound using linear search.
+func TestLinearSearchLowerBoundEqual(t *testing.T) {
+	var zones zones
+	err := json.Unmarshal(bind9Zones, &zones)
+	require.NoError(t, err)
+
+	index, equal := linearSearchZoneLowerBound(zones.zoneList, "authors.bind")
+	require.True(t, equal)
+	require.GreaterOrEqual(t, index, 0)
+	zone := zones.zoneList[index]
+	require.NotNil(t, zone)
+
+	require.Equal(t, "authors.bind", zone.Name())
+	require.Equal(t, "CH", zone.Class)
+	require.Zero(t, zone.Serial)
+	require.Equal(t, "builtin", zone.Type)
+	require.NotZero(t, zone.Loaded)
+}
+
+// Test searching a zone lower bound using linear search.
+func TestLinearSearchLowerBoundUnequal(t *testing.T) {
+	var zones zones
+	err := json.Unmarshal(bind9Zones, &zones)
+	require.NoError(t, err)
+
+	index, equal := linearSearchZoneLowerBound(zones.zoneList, "abc.authors.bind")
+	require.False(t, equal)
+	require.GreaterOrEqual(t, index, 0)
+	zone := zones.zoneList[index]
+	require.NotNil(t, zone)
+
+	require.Equal(t, "hostname.bind", zone.Name())
 	require.Equal(t, "CH", zone.Class)
 	require.Zero(t, zone.Serial)
 	require.Equal(t, "builtin", zone.Type)
@@ -46,10 +104,50 @@ func TestBinarySearch(t *testing.T) {
 	err := json.Unmarshal(bind9Zones, &zones)
 	require.NoError(t, err)
 
-	zone := zones.binarySearch("authors.bind")
+	index := binarySearchZone(zones.zoneList, "authors.bind")
+	require.GreaterOrEqual(t, index, 0)
+	zone := zones.zoneList[index]
 	require.NotNil(t, zone)
 
-	require.Equal(t, "authors.bind", zone.Name)
+	require.Equal(t, "authors.bind", zone.Name())
+	require.Equal(t, "CH", zone.Class)
+	require.Zero(t, zone.Serial)
+	require.Equal(t, "builtin", zone.Type)
+	require.NotZero(t, zone.Loaded)
+}
+
+// Test searching a zone lower bound using binary search.
+func TestBinarySearchLowerBoundEqual(t *testing.T) {
+	var zones zones
+	err := json.Unmarshal(bind9Zones, &zones)
+	require.NoError(t, err)
+
+	index, equal := binarySearchZoneLowerBound(zones.zoneList, "authors.bind")
+	require.True(t, equal)
+	require.GreaterOrEqual(t, index, 0)
+	zone := zones.zoneList[index]
+	require.NotNil(t, zone)
+
+	require.Equal(t, "authors.bind", zone.Name())
+	require.Equal(t, "CH", zone.Class)
+	require.Zero(t, zone.Serial)
+	require.Equal(t, "builtin", zone.Type)
+	require.NotZero(t, zone.Loaded)
+}
+
+// Test searching a zone lower bound using binary search.
+func TestBinarySearchLowerBoundUnequal(t *testing.T) {
+	var zones zones
+	err := json.Unmarshal(bind9Zones, &zones)
+	require.NoError(t, err)
+
+	index, equal := binarySearchZoneLowerBound(zones.zoneList, "abc.authors.bind")
+	require.False(t, equal)
+	require.GreaterOrEqual(t, index, 0)
+	zone := zones.zoneList[index]
+	require.NotNil(t, zone)
+
+	require.Equal(t, "hostname.bind", zone.Name())
 	require.Equal(t, "CH", zone.Class)
 	require.Zero(t, zone.Serial)
 	require.Equal(t, "builtin", zone.Type)
@@ -70,6 +168,16 @@ func TestGetZoneNames(t *testing.T) {
 	require.Contains(t, names, "id.server")
 }
 
+// Test getting the number of zones.
+func TestGetZoneCount(t *testing.T) {
+	var zones zones
+	err := json.Unmarshal(bind9Zones, &zones)
+	require.NoError(t, err)
+
+	count := zones.GetZoneCount()
+	require.EqualValues(t, 4, count)
+}
+
 // Test that empty list of zone names is returned when the zone
 // collection is empty.
 func TestGetZoneNamesEmpty(t *testing.T) {
@@ -86,7 +194,7 @@ func TestGetZone(t *testing.T) {
 	zone := zones.GetZone("authors.bind")
 	require.NotNil(t, zone)
 
-	require.Equal(t, "authors.bind", zone.Name)
+	require.Equal(t, "authors.bind", zone.Name())
 	require.Equal(t, "CH", zone.Class)
 	require.Zero(t, zone.Serial)
 	require.Equal(t, "builtin", zone.Type)
@@ -111,61 +219,17 @@ func TestGetZoneEmpty(t *testing.T) {
 
 // This function generates a collection of zones used in the benchmarks.
 // The function argument specifies the number of zones to be generated.
-func generateRandomZones(num int64) zones {
-	// We construct labels from this set of characters.
-	const charset = "abcdefghijklmnopqrstuvwxyz"
-	var (
-		// We want to simulate a use case where zones have child zones, e.g.:
-		// example.com, zone1.example.com, etc. This slice will be used to
-		// remember some of the previously generated parent zones and we
-		// will derive child zones from it.
-		labels []string
-		zones  zones
-	)
-	// Generate num number of zones.
-	for i := int64(0); i < num; i++ {
-		// For every 10th zone we forget previously generated zones
-		// and generate completely new one.
-		if i%10 == 0 {
-			labels = []string{}
-		}
-		// Generated zone name will be stored here.
-		var name string
-		// Generate the name that has up to 6 labels.
-		labelsCount := rand.IntN(5) + 1
-		// Generate the labels.
-		for j := 0; j < labelsCount; j++ {
-			// Next label.
-			var label string
-			// If we cached some labels let's use them to generate
-			// a child zone. Don't use the cached label if this is
-			// the front label. Reusing front label would cause
-			// zone name duplicates.
-			if j < labelsCount-1 && len(labels) > j {
-				label = labels[j]
-			} else {
-				// Label is not cached for this position, so we have to generate one.
-				// The label length is between 1 and 16.
-				for k := 0; k < rand.IntN(15)+1; k++ {
-					// Get a random set of characters.
-					label += string(charset[rand.IntN(len(charset)-1)])
-				}
-				// Cache this label for generating child zones.
-				labels = append(labels, label)
-			}
-			// If this is not the last label we should add a dot as a separator.
-			if j > 0 {
-				label += "."
-			}
-			// Prepend the label and the dot to the name.
-			name = label + name
-		}
-		// Create the zone entry.
+func generateRandomZones(num int) zones {
+	generatedZones := testutil.GenerateRandomZones(num)
+	var zones zones
+	for _, generatedZone := range generatedZones {
 		zones.zoneList = append(zones.zoneList, &Zone{
-			Name: name,
+			ZoneName: generatedZone.Name,
+			Class:    generatedZone.Class,
+			Serial:   generatedZone.Serial,
+			Type:     generatedZone.Type,
 		})
 	}
-	// The zones must be sorted in DNS order.
 	zones.sort()
 	return zones
 }
@@ -185,14 +249,14 @@ func generateRandomZones(num int64) zones {
 // search is less efficient for smaller zone collections. It becomes faster
 // for larger collections. It is 50x faster for 100000 zones.
 func BenchmarkGetZoneBinarySearch(b *testing.B) {
-	testCases := []int64{10, 100, 1000, 3000, 10000, 100000}
+	testCases := []int{10, 100, 1000, 3000, 10000, 100000}
 	for _, testCase := range testCases {
 		b.Run(fmt.Sprintf("zones-%d", testCase), func(b *testing.B) {
 			zones := generateRandomZones(testCase)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				zone := zones.zoneList[rand.IntN(len(zones.zoneList))]
-				zones.binarySearch(zone.Name)
+				binarySearchZone(zones.zoneList, zone.Name())
 			}
 		})
 	}
@@ -214,14 +278,14 @@ func BenchmarkGetZoneBinarySearch(b *testing.B) {
 // 10 zones in the collection. This advantage disappears for several thousands zones
 // where the binary search becomes faster.
 func BenchmarkGetZoneLinearSearch(b *testing.B) {
-	testCases := []int64{10, 100, 1000, 3000, 10000, 100000}
+	testCases := []int{10, 100, 1000, 3000, 10000, 100000}
 	for _, testCase := range testCases {
 		b.Run(fmt.Sprintf("zones-%d", testCase), func(b *testing.B) {
 			zones := generateRandomZones(testCase)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				zone := zones.zoneList[rand.IntN(len(zones.zoneList))]
-				zones.linearSearch(zone.Name)
+				linearSearchZone(zones.zoneList, zone.Name())
 			}
 		})
 	}
@@ -242,14 +306,14 @@ func BenchmarkGetZoneLinearSearch(b *testing.B) {
 // The benchmark results are the evidence that the GetZone() function takes
 // advantage from both searching techniques.
 func BenchmarkGetZone(b *testing.B) {
-	testCases := []int64{10, 100, 1000, 3000, 10000, 100000}
+	testCases := []int{10, 100, 1000, 3000, 10000, 100000}
 	for _, testCase := range testCases {
 		b.Run(fmt.Sprintf("zones-%d", testCase), func(b *testing.B) {
 			zones := generateRandomZones(testCase)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				zone := zones.zoneList[rand.IntN(len(zones.zoneList))]
-				zones.GetZone(zone.Name)
+				zones.GetZone(zone.Name())
 			}
 		})
 	}

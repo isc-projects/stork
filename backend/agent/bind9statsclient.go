@@ -139,3 +139,8 @@ func (client *bind9StatsClient) createRequest(host string, port int64) *bind9Sta
 func (client *bind9StatsClient) createRequestFromURL(url string) *bind9StatsClientRequest {
 	return newBind9StatsClientRequestFromURL(client.innerClient, url)
 }
+
+// Makes a request to retrieve BIND9 views over the stats channel.
+func (client *bind9StatsClient) getViews(host string, port int64) (httpResponse, *bind9stats.Views, error) {
+	return client.request(host, port).getViews()
+}

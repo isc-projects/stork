@@ -146,7 +146,7 @@ func TestBind9GetViews(t *testing.T) {
 	zone := view.GetZone("example.com")
 	require.NotNil(t, zone)
 
-	require.Equal(t, "example.com", zone.Name)
+	require.Equal(t, "example.com", zone.Name())
 	require.Equal(t, "primary", zone.Type)
 }
 
