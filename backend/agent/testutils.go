@@ -12,7 +12,6 @@ func RememberPaths() func() {
 	originalCertPEMFile := CertPEMFile
 	originalRootCAFile := RootCAFile
 	originalAgentTokenFile := AgentTokenFile
-	originalCredentialsFile := CredentialsFile
 	originalServerCertFingerprintFile := ServerCertFingerprintFile
 
 	return func() {
@@ -20,7 +19,6 @@ func RememberPaths() func() {
 		CertPEMFile = originalCertPEMFile
 		RootCAFile = originalRootCAFile
 		AgentTokenFile = originalAgentTokenFile
-		CredentialsFile = originalCredentialsFile
 		ServerCertFingerprintFile = originalServerCertFingerprintFile
 	}
 }

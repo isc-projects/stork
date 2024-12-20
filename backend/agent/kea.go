@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"io"
+	"os"
 	"path"
 	"strings"
 
@@ -34,31 +35,42 @@ func (ka *KeaApp) GetBaseApp() *BaseApp {
 
 // Sends a command to Kea and returns a response.
 func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) error {
-	ap := &ka.BaseApp.AccessPoints[0]
-	caURL := storkutil.HostWithPortURL(ap.Address, ap.Port, ap.UseSecureProtocol)
-
 	// Get the textual representation of the command.
 	request := command.Marshal()
 
-	// Send the command to the Kea server.
-	response, err := ka.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
+	// Send the command to Kea CA.
+	body, err := ka.sendCommandRaw([]byte(request))
 	if err != nil {
-		return errors.WithMessagef(err, "failed to send command to Kea: %s", caURL)
+		return err
+	}
+
+	// Parse the response.
+	err = keactrl.UnmarshalResponseList(command, body, responses)
+	if err != nil {
+		return errors.WithMessage(err, "failed to parse Kea response body received")
+	}
+	return nil
+}
+
+// Sends a serialized command to Kea and returns a serialized response.
+func (ka *KeaApp) sendCommandRaw(command []byte) ([]byte, error) {
+	ap := &ka.BaseApp.AccessPoints[0]
+	caURL := storkutil.HostWithPortURL(ap.Address, ap.Port, ap.UseSecureProtocol)
+
+	// Send the command to the Kea server.
+	response, err := ka.HTTPClient.Call(caURL, bytes.NewBuffer(command))
+	if err != nil {
+		return nil, errors.WithMessagef(err, "failed to send command to Kea: %s", caURL)
 	}
 
 	// Read the response.
 	body, err := io.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		return errors.WithMessagef(err, "failed to read Kea response body received from %s", caURL)
+		return nil, errors.WithMessagef(err, "failed to read Kea response body received from %s", caURL)
 	}
 
-	// Parse the response.
-	err = keactrl.UnmarshalResponseList(command, body, responses)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to parse Kea response body received from %s", caURL)
-	}
-	return nil
+	return body, nil
 }
 
 // Collect the list of log files which can be viewed by the Stork user
@@ -194,7 +206,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 	return config, err
 }
 
-func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) (*KeaApp, error) {
+func detectKeaApp(match []string, cwd string, httpClientCloner HTTPClientCloner) (*KeaApp, error) {
 	if len(match) < 3 {
 		return nil, errors.Errorf("problem parsing Kea cmdline: %s", match[0])
 	}
@@ -219,12 +231,43 @@ func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) (*KeaApp, 
 	// Address
 	address, _ := config.GetHTTPHost()
 
+	// Credentials
+	httpClient := httpClientCloner.Clone()
+	authentication := config.GetBasicAuthenticationDetails()
+	// Key is an user name that Stork uses to authenticate with Kea.
+	var key string
+	if authentication != nil {
+		allCredentials, err := readClientCredentials(authentication)
+		if err != nil {
+			return nil, errors.WithMessage(err, "cannot read client credentials")
+		}
+
+		if len(allCredentials) > 0 {
+			// Fall back to the first set of credentials.
+			credentials := allCredentials[0]
+
+			// Look for the credentials prefixed with "stork".
+			for _, c := range allCredentials {
+				if strings.HasPrefix(c.User, "stork") {
+					credentials = c
+					break
+				}
+			}
+
+			httpClient.SetBasicAuth(
+				credentials.User, credentials.Password,
+			)
+			key = credentials.User
+		}
+	}
+
 	accessPoints := []AccessPoint{
 		{
 			Type:              AccessPointControl,
 			Address:           address,
 			Port:              port,
 			UseSecureProtocol: config.UseSecureProtocol(),
+			Key:               key,
 		},
 	}
 	keaApp := &KeaApp{
@@ -282,4 +325,93 @@ func detectKeaActiveDaemons(keaApp *KeaApp, previousActiveDaemons []string) (dae
 	}
 
 	return daemons, nil
+}
+
+type ClientCredentials struct {
+	User     string
+	Password string
+}
+
+// Reads the client credentials.
+// Kea supports multiple ways of providing client credentials.
+//
+// 1. Username and password can be provided directly in the configuration file.
+// 2. Username and password can be provided in separate files.
+// 3. Username and password can be provided in a separate file delimited by a colon.
+func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCredentials, error) {
+	credentials := []ClientCredentials{}
+	for _, client := range authentication.Clients {
+		if client.User != nil && client.Password != nil {
+			// The user and password are provided directly.
+			credentials = append(credentials, ClientCredentials{
+				User:     *client.User,
+				Password: *client.Password,
+			})
+			continue
+		}
+
+		directory := "/"
+		if authentication.Directory != nil {
+			directory = *authentication.Directory
+		}
+
+		switch {
+		case client.UserFile != nil && client.PasswordFile != nil:
+			// The user and password are provided in separate files.
+			userPath := path.Join(directory, *client.UserFile)
+			passwordPath := path.Join(directory, *client.PasswordFile)
+
+			userRaw, err := os.ReadFile(userPath)
+			if err != nil {
+				return nil, errors.WithMessagef(err,
+					"cannot read the user file '%s'",
+					userPath,
+				)
+			}
+
+			passwordRaw, err := os.ReadFile(passwordPath)
+			if err != nil {
+				return nil, errors.WithMessagef(err,
+					"cannot read the password file '%s'",
+					passwordPath,
+				)
+			}
+
+			user := strings.TrimSpace(string(userRaw))
+			password := strings.TrimSpace(string(passwordRaw))
+
+			credentials = append(credentials, ClientCredentials{
+				User:     user,
+				Password: password,
+			})
+		case client.PasswordFile != nil:
+			// The user and password are provided in a single file.
+			passwordPath := path.Join(directory, *client.PasswordFile)
+
+			passwordRaw, err := os.ReadFile(passwordPath)
+			if err != nil {
+				return nil, errors.WithMessagef(err,
+					"cannot read the password file '%s'",
+					passwordPath,
+				)
+			}
+
+			passwordStr := strings.TrimSpace(string(passwordRaw))
+			parts := strings.Split(passwordStr, ":")
+			if len(parts) != 2 {
+				return nil, errors.Errorf(
+					"invalid format of the password file '%s'",
+					passwordPath,
+				)
+			}
+
+			credentials = append(credentials, ClientCredentials{
+				User:     parts[0],
+				Password: parts[1],
+			})
+		default:
+			return nil, errors.New("invalid client credentials")
+		}
+	}
+	return credentials, nil
 }

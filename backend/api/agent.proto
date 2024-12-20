@@ -71,6 +71,9 @@ message GetStateRsp {
   string virtualizationSystem = 16;
   string virtualizationRole = 17;
   string hostID = 18;
+  // Parameter is no longer used, but it is kept for backward compatibility.
+  // Always false.
+  // TODO: Remove it when the API will be changed.
   bool agentUsesHTTPCredentials = 19;
 }
 

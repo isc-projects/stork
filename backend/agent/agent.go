@@ -1,11 +1,9 @@
 package agent
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net"
 	"runtime"
 	"strconv"
@@ -28,6 +26,7 @@ import (
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
 	"isc.org/stork/pki"
+	storkutil "isc.org/stork/util"
 )
 
 // Global Stork Agent state.
@@ -40,22 +39,21 @@ type StorkAgent struct {
 	AppMonitor              AppMonitor
 	// BIND9 HTTP stats client.
 	bind9StatsClient *bind9StatsClient
-	// To communicate with Kea Control Agent.
-	// It may contain the HTTP credentials.
+	// Creates an HTTP client to communicate with Kea Control Agent.
 	// If the agent is registered, it will use the GRPC credentials obtained
 	// from the server as TLS client certificate.
-	KeaHTTPClient  *HTTPClient
-	server         *grpc.Server
-	logTailer      *logTailer
-	keaInterceptor *keaInterceptor
-	shutdownOnce   sync.Once
-	hookManager    *HookManager
+	KeaHTTPClientCloner HTTPClientCloner
+	server              *grpc.Server
+	logTailer           *logTailer
+	keaInterceptor      *keaInterceptor
+	shutdownOnce        sync.Once
+	hookManager         *HookManager
 
 	agentapi.UnimplementedAgentServer
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClient *HTTPClient, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
+func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClientCloner HTTPClientCloner, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
@@ -64,7 +62,7 @@ func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClien
 		ExplicitBind9ConfigPath: explicitBind9ConfigPath,
 		AppMonitor:              appMonitor,
 		bind9StatsClient:        bind9StatsClient,
-		KeaHTTPClient:           keaHTTPClient,
+		KeaHTTPClientCloner:     keaHTTPClientCloner,
 		logTailer:               logTailer,
 		keaInterceptor:          newKeaInterceptor(),
 		hookManager:             hookManager,
@@ -227,6 +225,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	loadStr := fmt.Sprintf("%.2f %.2f %.2f", load.Load1, load.Load5, load.Load15)
 
 	var apps []*agentapi.App
+
 	for _, app := range sa.AppMonitor.GetApps() {
 		var accessPoints []*agentapi.AccessPoint
 		for _, point := range app.GetBaseApp().AccessPoints {
@@ -246,25 +245,28 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	}
 
 	state := agentapi.GetStateRsp{
-		AgentVersion:             stork.Version,
-		Apps:                     apps,
-		Hostname:                 hostInfo.Hostname,
-		Cpus:                     int64(runtime.NumCPU()),
-		CpusLoad:                 loadStr,
-		Memory:                   int64(vm.Total / (1024 * 1024 * 1024)), // in GiB
-		UsedMemory:               int64(vm.UsedPercent),
-		Uptime:                   int64(hostInfo.Uptime / (60 * 60 * 24)), // in days
-		Os:                       hostInfo.OS,
-		Platform:                 hostInfo.Platform,
-		PlatformFamily:           hostInfo.PlatformFamily,
-		PlatformVersion:          hostInfo.PlatformVersion,
-		KernelVersion:            hostInfo.KernelVersion,
-		KernelArch:               hostInfo.KernelArch,
-		VirtualizationSystem:     hostInfo.VirtualizationSystem,
-		VirtualizationRole:       hostInfo.VirtualizationRole,
-		HostID:                   hostInfo.HostID,
-		Error:                    "",
-		AgentUsesHTTPCredentials: sa.KeaHTTPClient.HasAuthenticationCredentials(),
+		AgentVersion:         stork.Version,
+		Apps:                 apps,
+		Hostname:             hostInfo.Hostname,
+		Cpus:                 int64(runtime.NumCPU()),
+		CpusLoad:             loadStr,
+		Memory:               int64(vm.Total / (1024 * 1024 * 1024)), // in GiB
+		UsedMemory:           int64(vm.UsedPercent),
+		Uptime:               int64(hostInfo.Uptime / (60 * 60 * 24)), // in days
+		Os:                   hostInfo.OS,
+		Platform:             hostInfo.Platform,
+		PlatformFamily:       hostInfo.PlatformFamily,
+		PlatformVersion:      hostInfo.PlatformVersion,
+		KernelVersion:        hostInfo.KernelVersion,
+		KernelArch:           hostInfo.KernelArch,
+		VirtualizationSystem: hostInfo.VirtualizationSystem,
+		VirtualizationRole:   hostInfo.VirtualizationRole,
+		HostID:               hostInfo.HostID,
+		Error:                "",
+		// This field is not used by the agent. It is here to keep the
+		// API backward compatibility. The Stork Server should not rely
+		// on this field.
+		AgentUsesHTTPCredentials: false,
 	}
 
 	return &state, nil
@@ -290,6 +292,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		response.Status = rndcRsp.Status
 		return response, nil
 	}
+
 	bind9App := app.(*Bind9App)
 	if bind9App == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
@@ -385,6 +388,20 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		return response, nil
 	}
 
+	host, port, _ := storkutil.ParseURL(reqURL)
+	app := sa.AppMonitor.GetApp(AppTypeKea, AccessPointControl, host, port)
+	if app == nil {
+		response.Status.Code = agentapi.Status_ERROR
+		response.Status.Message = "Cannot find Kea app"
+		return response, nil
+	}
+	keaApp := app.(*KeaApp)
+	if keaApp == nil {
+		response.Status.Code = agentapi.Status_ERROR
+		response.Status.Message = fmt.Sprintf("Incorrect app found: %s instead of Kea", app.GetBaseApp().Type)
+		return response, nil
+	}
+
 	requests := in.GetKeaRequests()
 
 	// forward requests to kea one by one
@@ -393,26 +410,13 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			Status: &agentapi.Status{},
 		}
 		// Try to forward the command to Kea Control Agent.
-		keaRsp, err := sa.KeaHTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+		body, err := keaApp.sendCommandRaw([]byte(req.Request))
 		if err != nil {
 			log.WithFields(log.Fields{
 				"URL": reqURL,
 			}).Errorf("Failed to forward commands to Kea CA: %+v", err)
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to forward commands to Kea: %s", err.Error())
-			response.KeaResponses = append(response.KeaResponses, rsp)
-			continue
-		}
-
-		// Read the response body.
-		body, err := io.ReadAll(keaRsp.Body)
-		keaRsp.Body.Close()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"URL": reqURL,
-			}).Errorf("Failed to read the body of the Kea response to forwarded commands: %+v", err)
-			rsp.Status.Code = agentapi.Status_ERROR
-			rsp.Status.Message = fmt.Sprintf("Failed to read the body of the Kea response: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
 			continue
 		}

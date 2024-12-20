@@ -6,18 +6,14 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 )
 
 // Fake app monitor that returns some predefined list of apps.
-type PromFakeBind9AppMonitor struct {
-	Apps []App
-}
+type PromFakeBind9AppMonitor struct{}
 
 func (fam *PromFakeBind9AppMonitor) GetApps() []App {
-	log.Println("GetApps")
 	accessPoints := makeAccessPoint(AccessPointStatistics, "localhost", "", 1234, false)
 	accessPoints = append(accessPoints, AccessPoint{
 		Type:    AccessPointControl,

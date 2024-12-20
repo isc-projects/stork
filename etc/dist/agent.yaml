@@ -33,8 +33,6 @@ contents:
 - src: dist/agent/etc/stork/agent.env
   dst: /etc/stork/agent.env
   type: config
-- src: dist/agent/etc/stork/agent-credentials.json.template
-  dst: /etc/stork/agent-credentials.json.template
 - src: dist/agent/etc/stork/isc-stork-agent.initd
   dst: /etc/init.d/isc-stork-agent
   packager: apk

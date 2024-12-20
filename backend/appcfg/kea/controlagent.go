@@ -13,6 +13,7 @@ type CtrlAgentConfig struct {
 	CertRequired   *bool           `json:"cert-required,omitempty"`
 	HookLibraries  []HookLibrary   `json:"hooks-libraries"`
 	Loggers        []Logger        `json:"loggers"`
+	Authentication *Authentication `json:"authentication,omitempty"`
 }
 
 // Represents settable Kea Control Agent's configuration.
@@ -32,6 +33,28 @@ type ControlSockets struct {
 type ControlSocket struct {
 	SocketName string `json:"socket-name"`
 	SocketType string `json:"socket-type"`
+}
+
+// A structure representing the client credentials in the Kea Control Agent.
+type ClientCredentials struct {
+	User         *string `json:"user"`
+	Password     *string `json:"password"`
+	UserFile     *string `json:"user-file"`
+	PasswordFile *string `json:"password-file"`
+}
+
+// A structure representing a configuration of the authentication credentials
+// in the Kea Control Agent.
+type Authentication struct {
+	Type      string              `json:"type"`
+	Realm     string              `json:"realm"`
+	Directory *string             `json:"directory"`
+	Clients   []ClientCredentials `json:"clients"`
+}
+
+// Indicates whether the basic auth method is used.
+func (a Authentication) IsBasicAuth() bool {
+	return a.Type == "basic"
 }
 
 // Returns a list of daemons for which sockets have been configured.
@@ -156,4 +179,13 @@ func (c *Config) UseSecureProtocol() bool {
 	certFile, _ := c.GetCertFile()
 	keyFile, _ := c.GetKeyFile()
 	return len(trustAnchor) != 0 && len(certFile) != 0 && len(keyFile) != 0
+}
+
+// Return basic auth credentials if provided in the configuration.
+func (c *Config) GetBasicAuthenticationDetails() *Authentication {
+	if !c.IsCtrlAgent() || c.Authentication == nil || !c.Authentication.IsBasicAuth() {
+		return nil
+	}
+
+	return c.Authentication
 }

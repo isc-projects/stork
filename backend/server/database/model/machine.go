@@ -11,23 +11,22 @@ import (
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
 type MachineState struct {
-	AgentVersion             string
-	Cpus                     int64
-	CpusLoad                 string
-	Memory                   int64
-	Hostname                 string
-	Uptime                   int64
-	UsedMemory               int64
-	Os                       string
-	Platform                 string
-	PlatformFamily           string
-	PlatformVersion          string
-	KernelVersion            string
-	KernelArch               string
-	VirtualizationSystem     string
-	VirtualizationRole       string
-	HostID                   string
-	AgentUsesHTTPCredentials bool
+	AgentVersion         string
+	Cpus                 int64
+	CpusLoad             string
+	Memory               int64
+	Hostname             string
+	Uptime               int64
+	UsedMemory           int64
+	Os                   string
+	Platform             string
+	PlatformFamily       string
+	PlatformVersion      string
+	KernelVersion        string
+	KernelArch           string
+	VirtualizationSystem string
+	VirtualizationRole   string
+	HostID               string
 }
 
 // Represents a machine held in machine table in the database.

@@ -7,24 +7,30 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-// CredentialsFile path to a file holding credentials used in basic authentication of the agent in Kea.
-// It is being modified by tests so needs to be writable.
-var CredentialsFile = "/etc/stork/agent-credentials.json" //nolint:gochecknoglobals,gosec
+// Basic auth credentials.
+type BasicAuthCredentials struct {
+	User     string
+	Password string
+}
 
 // Default HTTP client timeout.
 const DefaultHTTPClientTimeout = 10 * time.Second
 
 // HTTPClient is a normal http client.
 type HTTPClient struct {
-	client      *http.Client
-	credentials *CredentialsStore
+	client    *http.Client
+	basicAuth *BasicAuthCredentials
+}
+
+// A cloner interface for HTTP client.
+type HTTPClientCloner interface {
+	Clone() *HTTPClient
 }
 
 // Returns the reference to the http.Transport object of the underlying
@@ -62,7 +68,17 @@ func NewHTTPClient() *HTTPClient {
 			Transport: transport,
 			Timeout:   DefaultHTTPClientTimeout,
 		},
-		credentials: nil,
+	}
+}
+
+// Clones the HTTP client instance. The cloned client has the same TLS
+// configuration and credentials as the original client.
+func (c *HTTPClient) Clone() *HTTPClient {
+	return &HTTPClient{
+		client: &http.Client{
+			Transport: c.getTransport().Clone(),
+		},
+		basicAuth: c.basicAuth,
 	}
 }
 
@@ -114,36 +130,13 @@ func (c *HTTPClient) LoadGRPCCertificates() (bool, error) {
 	return true, nil
 }
 
-// Loads the HTTP credentials from a file. The credentials will be used if
-// necessary to authenticate the requests. Returns true if the credentials
-// has been loaded successfully. Returns false if the credentials file does
-// not exist.
-func (c *HTTPClient) LoadCredentials() (bool, error) {
-	credentialsStore := NewCredentialsStore()
-	// Check if the credential file exist
-	_, err := os.Stat(CredentialsFile)
-	if errors.Is(err, os.ErrNotExist) {
-		// The credentials file may not exist.
-		return false, nil
+// Set the basic auth credentials to the client. The credentials will be
+// attached to all sent requests.
+func (c *HTTPClient) SetBasicAuth(user, password string) {
+	c.basicAuth = &BasicAuthCredentials{
+		User:     user,
+		Password: password,
 	}
-	if err != nil {
-		// Unexpected error.
-		return false, errors.Wrapf(err, "could not access the Basic Auth credentials file (%s)", CredentialsFile)
-	}
-
-	file, err := os.Open(CredentialsFile)
-	if err != nil {
-		return false, errors.Wrapf(err, "could not read the Basic Auth credentials from file (%s)", CredentialsFile)
-	}
-	defer file.Close()
-
-	err = credentialsStore.Read(file)
-	if err != nil {
-		return false, errors.WithMessagef(err, "could not read the credentials file (%s)", CredentialsFile)
-	}
-
-	c.credentials = credentialsStore
-	return true, nil
 }
 
 // Sends a request to a given endpoint using the HTTP POST method. The payload
@@ -159,13 +152,11 @@ func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error)
 	}
 	req.Header.Add("Content-Type", "application/json")
 
-	if c.credentials != nil {
-		if basicAuth, ok := c.credentials.GetBasicAuthByURL(url); ok {
-			secret := fmt.Sprintf("%s:%s", basicAuth.User, basicAuth.Password)
-			encodedSecret := base64.StdEncoding.EncodeToString([]byte(secret))
-			headerContent := fmt.Sprintf("Basic %s", encodedSecret)
-			req.Header.Add("Authorization", headerContent)
-		}
+	if c.basicAuth != nil {
+		secret := fmt.Sprintf("%s:%s", c.basicAuth.User, c.basicAuth.Password)
+		encodedSecret := base64.StdEncoding.EncodeToString([]byte(secret))
+		headerContent := fmt.Sprintf("Basic %s", encodedSecret)
+		req.Header.Add("Authorization", headerContent)
 	}
 
 	rsp, err := c.client.Do(req)
@@ -178,5 +169,5 @@ func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error)
 // Indicates if the Stork Agent attaches the authentication credentials to
 // the requests.
 func (c *HTTPClient) HasAuthenticationCredentials() bool {
-	return c.credentials != nil && !c.credentials.IsEmpty()
+	return c.basicAuth != nil
 }

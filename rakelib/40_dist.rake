@@ -132,7 +132,7 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
     sh "rm", "-f", agent_dist_system_service_file + ".tmp"
 end
 
-agent_etc_files = FileList["etc/agent.env", "etc/agent-credentials.json.template"]
+agent_etc_files = FileList["etc/agent.env"]
 if get_package_manager_types().include?("apk")
     agent_etc_files.append("etc/isc-stork-agent.initd")
 end

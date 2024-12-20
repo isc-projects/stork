@@ -278,8 +278,7 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/ \
         # Puts empty credentials file to allow mount it as volume.
-        && mkdir -p /etc/stork/ \
-        && echo "{}" > /etc/stork/agent-credentials.json
+        && mkdir -p /etc/stork/
 
 # Install premium packages. The KEA_REPO variable must
 # be set to the private repository and include an access token.

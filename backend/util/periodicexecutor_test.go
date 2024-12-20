@@ -81,7 +81,7 @@ func TestPausedWhileHandling(t *testing.T) {
 // This test verifies that the executor can be paused and resumed.
 func TestPauseAndUnpauseOrReset(t *testing.T) {
 	testCases := []string{"Unpause", "Reset"}
-	getIntervalFunc := func() (time.Duration, error) { return 1 * time.Second, nil }
+	getIntervalFunc := func() (time.Duration, error) { return 10 * time.Millisecond, nil }
 
 	// The test is almost the same for both cases. The only difference is
 	// that we call Resume or Reset to start the executor again.
@@ -115,8 +115,8 @@ func TestPauseAndUnpauseOrReset(t *testing.T) {
 				}
 				return invoked
 			},
-				3*time.Second,
-				time.Second,
+				1*time.Second,
+				50*time.Millisecond,
 				"executor function was invoked but it shouldn't when executor is paused")
 
 			// Make sure that the paused flag is set as expected.
@@ -134,7 +134,7 @@ func TestPauseAndUnpauseOrReset(t *testing.T) {
 				return len(testExecutorInstance.pausedChan) > 0
 			},
 				5*time.Second,
-				time.Second,
+				50*time.Millisecond,
 				"test executor did not invoke a function within a desired time period")
 		})
 	}

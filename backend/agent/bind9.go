@@ -490,7 +490,7 @@ func parseNamedDefaultPath(output []byte) string {
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
 // error occurs.
-func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor, explicitConfigPath string) App {
+func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor, explicitConfigPath string) *Bind9App {
 	if len(match) < 3 {
 		log.Warnf("Problem with parsing BIND 9 cmdline: %s", match[0])
 		return nil

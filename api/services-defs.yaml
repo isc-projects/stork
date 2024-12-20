@@ -146,8 +146,6 @@
         type: string
       hostID:
         type: string
-      agentUsesHttpCredentials:
-        type: boolean
       lastVisitedAt:
         type: string
         format: date-time

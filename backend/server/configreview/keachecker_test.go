@@ -3912,27 +3912,10 @@ func TestCredentialsOverHTTPSForNonCADaemon(t *testing.T) {
 }
 
 // Test that the credentials over HTTPS checker returns no report if the
-// HTTP credentials are not provided in the Stork agent.
-func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
+// basic authentication is not used.
+func TestCredentialsOverHTTPSForNoBasicAuth(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`, "2.2.0")
-
-	machine := &dbmodel.Machine{
-		Address:   "10.0.0.2",
-		AgentPort: 8080,
-		State: dbmodel.MachineState{
-			AgentUsesHTTPCredentials: false,
-		},
-	}
-
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Daemons:   []*dbmodel.Daemon{ctx.subjectDaemon},
-		Machine:   machine,
-	}
-
-	ctx.subjectDaemon.App = app
 
 	// Act
 	report, err := credentialsOverHTTPS(ctx)
@@ -3947,24 +3930,13 @@ func TestCredentialsOverHTTPSForMissingCredentials(t *testing.T) {
 // communicate over the secure protocol.
 func TestCredentialsOverHTTPSForProvidedCredentialsWithoutTLS(t *testing.T) {
 	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Control-agent": { } }`, "2.2.0")
-
-	machine := &dbmodel.Machine{
-		Address:   "10.0.0.2",
-		AgentPort: 8080,
-		State: dbmodel.MachineState{
-			AgentUsesHTTPCredentials: true,
-		},
-	}
-
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Daemons:   []*dbmodel.Daemon{ctx.subjectDaemon},
-		Machine:   machine,
-	}
-
-	ctx.subjectDaemon.App = app
+	ctx := createReviewContext(t, nil, `{ "Control-agent": {
+		"authentication": {
+			"type": "basic",
+			"realm": "kea-dhcp-ddns-server",
+			"clients": [{ "user": "admin", "password": "1234" }]
+		}
+	} }`, "2.2.0")
 
 	// Act
 	report, err := credentialsOverHTTPS(ctx)
@@ -3989,64 +3961,13 @@ func TestCredentialsOverHTTPSForProvidedCredentialsWithTLS(t *testing.T) {
 	ctx := createReviewContext(t, nil, `{ "Control-agent": {
         "trust-anchor": "foo",
         "cert-file": "/bar",
-        "key-file": "/baz"
+        "key-file": "/baz",
+		"authentication": {
+			"type": "basic",
+			"realm": "kea-dhcp-ddns-server",
+			"clients": [{ "user": "admin", "password": "1234" }]
+		}
     } }`, "2.2.0")
-
-	machine := &dbmodel.Machine{
-		Address:   "10.0.0.2",
-		AgentPort: 8080,
-		State: dbmodel.MachineState{
-			AgentUsesHTTPCredentials: true,
-		},
-	}
-
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Daemons:   []*dbmodel.Daemon{ctx.subjectDaemon},
-		Machine:   machine,
-	}
-
-	ctx.subjectDaemon.App = app
-
-	// Act
-	report, err := credentialsOverHTTPS(ctx)
-
-	// Assert
-	require.NoError(t, err)
-	require.Nil(t, report)
-}
-
-// Test that the credentials over HTTPS checker fetches the machine if it misses
-// in the subject daemon.
-func TestCredentialsOverHTTPSForMissingMachine(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	ctx := createReviewContext(t, db, `{ "Control-agent": {
-        "trust-anchor": "foo",
-        "cert-file": "/bar",
-        "key-file": "/baz"
-    } }`, "2.2.0")
-	ctx.subjectDaemon.ID = 0
-
-	machine := &dbmodel.Machine{
-		Address:   "10.0.0.2",
-		AgentPort: 8080,
-		State: dbmodel.MachineState{
-			AgentUsesHTTPCredentials: true,
-		},
-	}
-	_ = dbmodel.AddMachine(db, machine)
-
-	app := &dbmodel.App{
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeKea,
-		Daemons:   []*dbmodel.Daemon{ctx.subjectDaemon},
-	}
-	addedDaemons, _ := dbmodel.AddApp(db, app)
-
-	ctx.subjectDaemon.ID = addedDaemons[0].ID
 
 	// Act
 	report, err := credentialsOverHTTPS(ctx)

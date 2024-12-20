@@ -96,22 +96,12 @@ func runAgent(settings *generalSettings, reload bool) error {
 	// Start app monitor.
 	appMonitor := agent.NewAppMonitor()
 
-	// Prepare Kea HTTP client. It may use the certificates obtained during
+	// A base HTTP client. It may use the certificates obtained during
 	// the registration and GRPC credentials as TLS credentials.
 	keaHTTPClient := agent.NewHTTPClient()
 	keaHTTPClient.SetSkipTLSVerification(skipTLSCertVerification)
 
-	ok, err := keaHTTPClient.LoadCredentials()
-	switch {
-	case err != nil:
-		log.WithError(err).Fatal("Could not load the HTTP credentials")
-	case !ok:
-		log.Infof("The Basic Auth credentials file (%s) is missing - HTTP authentication is not used", agent.CredentialsFile)
-	default:
-		log.Infof("The Basic Auth credentials have been loaded from file (%s)", agent.CredentialsFile)
-	}
-
-	ok, err = keaHTTPClient.LoadGRPCCertificates()
+	ok, err := keaHTTPClient.LoadGRPCCertificates()
 	switch {
 	case err != nil:
 		log.WithError(err).Error("Could not load the GRPC credentials")

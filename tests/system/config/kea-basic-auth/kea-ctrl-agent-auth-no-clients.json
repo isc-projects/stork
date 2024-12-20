@@ -1,0 +1,5 @@
+"authentication": {
+    "type": "basic",
+    "realm": "kea-control-agent",
+    "clients": []
+},

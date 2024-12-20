@@ -7,7 +7,7 @@ import (
 // Intercept callback function for config-get. It records log files
 // found in the daemon's configuration, making them accessible by the
 // log viewer.
-func icptConfigGetLoggers(agent *StorkAgent, response *keactrl.Response) error {
+func interceptConfigGetLoggers(agent *StorkAgent, response *keactrl.Response) error {
 	paths := collectKeaAllowedLogs(response)
 	for _, p := range paths {
 		agent.logTailer.allow(p)
@@ -34,6 +34,6 @@ func reservationGetPageUnsupported(agent *StorkAgent, response *keactrl.Response
 // Registers all intercept functions defined in this file. It should
 // be extended every time a new intercept function is defined.
 func registerKeaInterceptFns(agent *StorkAgent) {
-	agent.keaInterceptor.registerAsync(icptConfigGetLoggers, "config-get")
+	agent.keaInterceptor.registerAsync(interceptConfigGetLoggers, "config-get")
 	agent.keaInterceptor.registerSync(reservationGetPageUnsupported, "reservation-get-page")
 }

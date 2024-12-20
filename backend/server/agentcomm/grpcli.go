@@ -49,27 +49,26 @@ const (
 // State of the machine. It describes multiple properties of the machine like number of CPUs
 // or operating system name and version.
 type State struct {
-	Address                  string
-	AgentVersion             string
-	Cpus                     int64
-	CpusLoad                 string
-	Memory                   int64
-	Hostname                 string
-	Uptime                   int64
-	UsedMemory               int64
-	Os                       string
-	Platform                 string
-	PlatformFamily           string
-	PlatformVersion          string
-	KernelVersion            string
-	KernelArch               string
-	VirtualizationSystem     string
-	VirtualizationRole       string
-	HostID                   string
-	AgentUsesHTTPCredentials bool
-	LastVisitedAt            time.Time
-	Error                    string
-	Apps                     []*App
+	Address              string
+	AgentVersion         string
+	Cpus                 int64
+	CpusLoad             string
+	Memory               int64
+	Hostname             string
+	Uptime               int64
+	UsedMemory           int64
+	Os                   string
+	Platform             string
+	PlatformFamily       string
+	PlatformVersion      string
+	KernelVersion        string
+	KernelArch           string
+	VirtualizationSystem string
+	VirtualizationRole   string
+	HostID               string
+	LastVisitedAt        time.Time
+	Error                string
+	Apps                 []*App
 }
 
 // An interface to an app that can receive commands from Stork.
@@ -365,27 +364,26 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, machine dbmodel
 	}
 
 	state := State{
-		Address:                  machine.GetAddress(),
-		AgentVersion:             grpcState.AgentVersion,
-		Cpus:                     grpcState.Cpus,
-		CpusLoad:                 grpcState.CpusLoad,
-		Memory:                   grpcState.Memory,
-		Hostname:                 grpcState.Hostname,
-		Uptime:                   grpcState.Uptime,
-		UsedMemory:               grpcState.UsedMemory,
-		Os:                       grpcState.Os,
-		Platform:                 grpcState.Platform,
-		PlatformFamily:           grpcState.PlatformFamily,
-		PlatformVersion:          grpcState.PlatformVersion,
-		KernelVersion:            grpcState.KernelVersion,
-		KernelArch:               grpcState.KernelArch,
-		VirtualizationSystem:     grpcState.VirtualizationSystem,
-		VirtualizationRole:       grpcState.VirtualizationRole,
-		HostID:                   grpcState.HostID,
-		AgentUsesHTTPCredentials: grpcState.AgentUsesHTTPCredentials,
-		LastVisitedAt:            storkutil.UTCNow(),
-		Error:                    grpcState.Error,
-		Apps:                     apps,
+		Address:              machine.GetAddress(),
+		AgentVersion:         grpcState.AgentVersion,
+		Cpus:                 grpcState.Cpus,
+		CpusLoad:             grpcState.CpusLoad,
+		Memory:               grpcState.Memory,
+		Hostname:             grpcState.Hostname,
+		Uptime:               grpcState.Uptime,
+		UsedMemory:           grpcState.UsedMemory,
+		Os:                   grpcState.Os,
+		Platform:             grpcState.Platform,
+		PlatformFamily:       grpcState.PlatformFamily,
+		PlatformVersion:      grpcState.PlatformVersion,
+		KernelVersion:        grpcState.KernelVersion,
+		KernelArch:           grpcState.KernelArch,
+		VirtualizationSystem: grpcState.VirtualizationSystem,
+		VirtualizationRole:   grpcState.VirtualizationRole,
+		HostID:               grpcState.HostID,
+		LastVisitedAt:        storkutil.UTCNow(),
+		Error:                grpcState.Error,
+		Apps:                 apps,
 	}
 
 	return &state, nil

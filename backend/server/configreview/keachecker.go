@@ -1206,23 +1206,12 @@ func credentialsOverHTTPS(ctx *ReviewContext) (*Report, error) {
 		return nil, errors.Errorf("unsupported daemon %s", daemon.Name)
 	}
 
-	// It isn't guarantied that the subject daemon has the referenced app member
-	// so we need to retrieve the database entry.
-	if daemon.App == nil || daemon.App.Machine == nil {
-		var err error
-		daemon, err = dbmodel.GetDaemonByID(ctx.db, ctx.subjectDaemon.ID)
-		if err != nil {
-			return nil, err
-		}
-	}
-	machine := daemon.App.Machine
+	config := daemon.KeaDaemon.Config
 
-	if !machine.State.AgentUsesHTTPCredentials {
-		// The HTTP credentials are not configured. Nothing to do.
+	if config.Authentication == nil || !config.Authentication.IsBasicAuth() {
+		// The Basic Auth credentials are not configured.
 		return nil, nil
 	}
-
-	config := daemon.KeaDaemon.Config
 
 	if config.UseSecureProtocol() {
 		// The TLS is configured. All is OK.

@@ -36,29 +36,36 @@ func TestGetApps(t *testing.T) {
 func TestGetApp(t *testing.T) {
 	am := NewAppMonitor()
 
-	var apps []App
-	apps = append(apps, &KeaApp{
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, true),
+	apps := []App{
+		&KeaApp{
+			BaseApp: BaseApp{
+				Type:         AppTypeKea,
+				AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, true),
+			},
+			HTTPClient: nil,
 		},
-		HTTPClient: nil,
-	})
-
-	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345, false)
-	accessPoints = append(accessPoints, AccessPoint{
-		Type:    AccessPointStatistics,
-		Address: "2.3.4.5",
-		Port:    2346,
-		Key:     "",
-	})
-
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
+		&Bind9App{
+			BaseApp: BaseApp{
+				Type: AppTypeBind9,
+				AccessPoints: []AccessPoint{
+					{
+						Type:              AccessPointControl,
+						Address:           "2.3.4.4",
+						Port:              2345,
+						UseSecureProtocol: false,
+						Key:               "abcd",
+					},
+					{
+						Type:              AccessPointStatistics,
+						Address:           "2.3.4.5",
+						Port:              2346,
+						UseSecureProtocol: false,
+						Key:               "",
+					},
+				},
+			},
 		},
-	})
+	}
 
 	// Monitor holds apps in background goroutine. So to get apps we need
 	// to send a request over a channel to this goroutine and wait for

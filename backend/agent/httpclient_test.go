@@ -3,7 +3,6 @@ package agent
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/testutil"
-	storkutil "isc.org/stork/util"
 )
 
 // Check that HTTP client can be created.
@@ -25,7 +23,7 @@ func TestNewHTTPClient(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, client)
-	require.Nil(t, client.credentials)
+	require.Nil(t, client.basicAuth)
 	require.NotNil(t, client.client)
 	require.EqualValues(t, DefaultHTTPClientTimeout, client.client.Timeout)
 	transport := client.getTransport()
@@ -62,7 +60,8 @@ func TestLoadGRPCCertificates(t *testing.T) {
 	require.NotNil(t, transportConfig.RootCAs)
 	require.NotNil(t, transportConfig.Certificates)
 
-	require.Nil(t, client.credentials)
+	require.Nil(t, client.basicAuth)
+	require.False(t, client.HasAuthenticationCredentials())
 }
 
 // Check that HTTP client returns an error if the TLS credentials could not be
@@ -119,8 +118,7 @@ func TestCreateHTTPClientSkipVerification(t *testing.T) {
 }
 
 // Test that an authorization header is added to the HTTP request
-// when the credentials file contains the credentials for specific
-// network location.
+// when there are credentials for specific network location.
 func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	// Prepare test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -139,36 +137,12 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	serverURL := ts.URL
-	serverIP, serverPort, _ := storkutil.ParseURL(serverURL)
-
-	// Create credentials file
-	restorePaths := RememberPaths()
-	defer restorePaths()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
-	content := fmt.Sprintf(`{
-		"basic_auth": [
-			{
-				"ip": "%s",
-				"port": %d,
-				"user": "foo",
-				"password": "bar"
-			}
-		]
-	}`, serverIP, serverPort)
-
-	CredentialsFile, _ = sb.Write("credentials.json", content)
-
 	// Create HTTP Client
 	client := NewHTTPClient()
 
 	// Load credentials
-	ok, err := client.LoadCredentials()
-	require.NoError(t, err)
-	require.True(t, ok)
-	require.NotNil(t, client.credentials)
+	client.SetBasicAuth("foo", "bar")
+	require.NotNil(t, client.basicAuth)
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
@@ -176,15 +150,8 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 }
 
 // Test that an authorization header isn't added to the HTTP request
-// when the credentials file doesn't exist.
+// if the basic auth credentials are missing.
 func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
-	restorePaths := RememberPaths()
-	defer restorePaths()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
-	CredentialsFile = path.Join(sb.BasePath, "credentials-not-exists.json")
-
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		headerContent := r.Header.Get("Authorization")
 		require.Empty(t, headerContent)
@@ -193,12 +160,6 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 
 	client := NewHTTPClient()
 	client.SetSkipTLSVerification(true)
-
-	// Load credentials
-	ok, err := client.LoadCredentials()
-	require.NoError(t, err)
-	require.False(t, ok)
-	require.Nil(t, client.credentials)
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
@@ -227,105 +188,16 @@ func TestHasAuthenticationCredentials(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "reg")
 	defer os.RemoveAll(tmpDir)
 
-	CredentialsFile = path.Join(tmpDir, "credentials.json")
-
-	content := `{
-		"basic_auth": [
-			{
-				"ip": "10.0.0.1",
-				"port": 42,
-				"user": "foo",
-				"password": "bar"
-			}
-		]
-	}`
-
-	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
-
 	client := NewHTTPClient()
 
 	// Act & Assert
 	require.False(t, client.HasAuthenticationCredentials())
 
 	// Load credentials.
-	ok, err := client.LoadCredentials()
-	require.NoError(t, err)
-	require.True(t, ok)
+	client.SetBasicAuth("foo", "bar")
 
 	// Act & Assert
 	require.True(t, client.HasAuthenticationCredentials())
-}
-
-// Test that the loading credentials returns no error if the credentials
-// file has no entries.
-func TestLoadCredentialsNoEntries(t *testing.T) {
-	// Arrange
-	restorePaths := RememberPaths()
-	defer restorePaths()
-
-	tmpDir, _ := os.MkdirTemp("", "reg")
-	defer os.RemoveAll(tmpDir)
-
-	CredentialsFile = path.Join(tmpDir, "credentials.json")
-	content := `{ "basic_auth": [ ] }`
-	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
-
-	client := NewHTTPClient()
-
-	// Act
-	ok, err := client.LoadCredentials()
-
-	// Assert
-	require.NoError(t, err)
-	require.True(t, ok)
-	require.False(t, client.HasAuthenticationCredentials())
-}
-
-// Test that the loading credentials returns an error if the credentials
-// file is empty.
-func TestLoadCredentialsEmptyFile(t *testing.T) {
-	// Arrange
-	restorePaths := RememberPaths()
-	defer restorePaths()
-
-	tmpDir, _ := os.MkdirTemp("", "reg")
-	defer os.RemoveAll(tmpDir)
-
-	CredentialsFile = path.Join(tmpDir, "credentials.json")
-	content := ""
-	_ = os.WriteFile(CredentialsFile, []byte(content), 0o600)
-
-	client := NewHTTPClient()
-
-	// Act
-	ok, err := client.LoadCredentials()
-
-	// Assert
-	require.Error(t, err)
-	require.False(t, ok)
-	require.False(t, client.HasAuthenticationCredentials())
-}
-
-// Test that loading the authentication credentials returns no error if the
-// credentials is missing.
-func TestLoadCredentialsCredentialsMissingFile(t *testing.T) {
-	// Arrange
-	restorePaths := RememberPaths()
-	defer restorePaths()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
-	CredentialsFile = path.Join(sb.BasePath, "/not/exist/file.json")
-
-	client := NewHTTPClient()
-
-	// Act
-	ok, err := client.LoadCredentials()
-
-	// Assert
-	require.NoError(t, err)
-	require.False(t, ok)
-	require.False(t, client.HasAuthenticationCredentials())
 }
 
 // Test that the client returns with a timeout if the server doesn't

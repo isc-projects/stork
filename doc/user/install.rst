@@ -779,14 +779,9 @@ The Kea CA accepts only requests signed with a trusted certificate, when the ``c
 is set to ``true`` in the Kea CA configuration file. In this case, the Stork agent must use valid
 certificates; it cannot use self-signed certificates created during Stork agent registration.
 
-If the Kea CA is configured to use Basic Auth, valid credentials must be provided in the Stork agent
-credentials file: ``/etc/stork/agent-credentials.json``.
-
-By default, this file does not exist, but the ``/etc/stork/agent-credentials.json.template`` file provides sample data.
-The template file can be renamed by removing the ``.template`` suffix; then the file can be edited
-and valid credentials can be provided. The ``chown`` and ``chmod`` commands should be used to set the proper permissions; this
-file contains the secrets, and should be readable/writable only by the user running the Stork agent and
-any administrators.
+If the Kea CA is configured to use Basic Auth, the Stork agent will read the credentials from the Kea CA configuration
+file. The Stork agent chooses credentials which user name begins with ``stork``. If there is no such user, the agent
+will use the first user from the list.
 
 .. warning::
 
@@ -794,34 +789,6 @@ any administrators.
    but those attacks require a "man in the middle" to get access to the HTTP traffic. That can be eliminated
    by using basic HTTP authentication exclusively over TLS.
    In fact, if possible, using client certificates for TLS is better than using basic HTTP authentication.
-
-For example:
-
-.. code-block:: json
-
-   {
-      "basic_auth": [
-         {
-            "ip": "127.0.0.1",
-            "port": 8000,
-            "user": "foo",
-            "password": "bar"
-         }
-      ]
-   }
-
-The file contains a single object with a single "basic" key. The "basic" value is a list of the Basic Auth credentials.
-All credentials must contain the values for four keys:
-
-- ``ip`` - the IPv4 or IPv6 address of the Kea CA. It supports IPv6 abbreviations (e.g. "FF:0000::" is the same as "ff::").
-- ``port`` - the Kea Control Agent port number.
-- ``user`` - the Basic Auth user ID to use in connection with a specific Kea CA.
-- ``password`` - the Basic Auth password to use in connection with a specific Kea CA.
-
-To apply changes in the credentials file, the ``stork-agent`` daemon must be restarted.
-
-If the credentials file is invalid, the Stork agent runs but without Basic Auth support.
-This condition is indicated with a specific message in the log.
 
 .. _register-agent-token-cloudsmith:
 
@@ -1459,7 +1426,6 @@ See the :ref:`agent-configuration-settings` section for Stork agent configuratio
   the administrator should have access to the agent's data directory:
 
   - ``/etc/stork/agent.env`` - the configuration file (read-only)
-  - ``/etc/stork/agent-credentials.json`` - the agent credentials file (read-only)
   - ``/var/lib/stork`` - the agent's data directory (write and read)
   - the system process details (i.e., the current working directory, the command-line arguments).
 
@@ -1491,7 +1457,7 @@ For more details on monitoring Kea with Stork, refer to the
 
 If the Kea Control Agent listens on non-localhost interfaces, it is recommended to:
 
-- Configure the Basic Auth in Kea CA by setting the credentials for the Stork agent in its credentials file (``/etc/stork/agent-credentials.json``).
+- Configure the Basic Auth in Kea CA.
 - Configure the Kea REST API to be served over TLS by setting the ``trust-anchor``, ``cert-file``, and ``key-file`` properties.
 
 Monitoring BIND 9

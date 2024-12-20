@@ -45,14 +45,33 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 
 	cleanupCerts, _ := GenerateSelfSignedCerts()
 
-	fam := FakeAppMonitor{}
+	fam := FakeAppMonitor{
+		Apps: []App{
+			&KeaApp{
+				BaseApp: BaseApp{
+					Type:         AppTypeKea,
+					AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
+					Pid:          42,
+				},
+				HTTPClient: httpClient,
+			},
+			&Bind9App{
+				BaseApp: BaseApp{
+					Type:         AppTypeBind9,
+					AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "abcd", 45635, false),
+					Pid:          43,
+				},
+			},
+		},
+	}
+
 	sa := &StorkAgent{
-		AppMonitor:       &fam,
-		bind9StatsClient: bind9StatsClient,
-		KeaHTTPClient:    httpClient,
-		logTailer:        newLogTailer(),
-		keaInterceptor:   newKeaInterceptor(),
-		hookManager:      NewHookManager(),
+		AppMonitor:          &fam,
+		bind9StatsClient:    bind9StatsClient,
+		KeaHTTPClientCloner: httpClient,
+		logTailer:           newLogTailer(),
+		keaInterceptor:      newKeaInterceptor(),
+		hookManager:         NewHookManager(),
 	}
 
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
@@ -64,13 +83,14 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	return sa, ctx, cleanupCerts
 }
 
+// Stub function for AppMonitor. It returns a fixed list of apps.
 func (fam *FakeAppMonitor) GetApps() []App {
 	return fam.Apps
 }
 
 // Stub function for AppMonitor. It behaves in the same way as original one.
 func (fam *FakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
-	for _, app := range fam.Apps {
+	for _, app := range fam.GetApps() {
 		if app.GetBaseApp().Type != appType {
 			continue
 		}
@@ -105,10 +125,12 @@ func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	bind9StatsClient := NewBind9StatsClient()
 	keaHTTPClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, fam, bind9StatsClient, keaHTTPClient, NewHookManager(), "")
+	sa := NewStorkAgent(
+		"foo", 42, fam, bind9StatsClient, keaHTTPClient, NewHookManager(), "",
+	)
 	require.NotNil(t, sa.AppMonitor)
 	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)
-	require.Equal(t, keaHTTPClient, sa.KeaHTTPClient)
+	require.Equal(t, keaHTTPClient, sa.KeaHTTPClientCloner)
 }
 
 // Check if an agent returns a response to a ping message..
@@ -126,6 +148,8 @@ func TestPing(t *testing.T) {
 func TestGetState(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()
 	defer teardown()
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = nil
 
 	// app monitor is empty, no apps should be returned by GetState
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
@@ -140,7 +164,7 @@ func TestGetState(t *testing.T) {
 			Type:         AppTypeKea,
 			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, false),
 		},
-		HTTPClient: nil,
+		HTTPClient: NewHTTPClient(),
 	})
 
 	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345, true)
@@ -159,7 +183,6 @@ func TestGetState(t *testing.T) {
 		},
 		RndcClient: nil,
 	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
@@ -197,32 +220,13 @@ func TestGetState(t *testing.T) {
 	sa, ctx, teardown = setupAgentTest()
 	defer teardown()
 
-	// Prepare credentials file.
-	restorePaths := RememberPaths()
-	defer restorePaths()
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-
-	content := `{
-		"basic_auth": [
-			{
-				"ip": "10.0.0.1",
-				"port": 42,
-				"user": "foo",
-				"password": "bar"
-			}
-		]
-	}`
-
-	CredentialsFile, _ = sb.Write("credentials.json", content)
-
-	ok, err := sa.KeaHTTPClient.LoadCredentials()
-	require.NoError(t, err)
-	require.True(t, ok)
+	fam.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234).(*KeaApp).
+		HTTPClient.SetBasicAuth("foo", "bar")
 
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
-	require.True(t, rsp.AgentUsesHTTPCredentials)
+	// Deprecated parameter. Always false.
+	require.False(t, rsp.AgentUsesHTTPCredentials)
 }
 
 // Test forwarding command to Kea when HTTP 200 status code

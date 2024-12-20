@@ -93,7 +93,6 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	dbMachine.State.VirtualizationSystem = m.VirtualizationSystem
 	dbMachine.State.VirtualizationRole = m.VirtualizationRole
 	dbMachine.State.HostID = m.HostID
-	dbMachine.State.AgentUsesHTTPCredentials = m.AgentUsesHTTPCredentials
 	dbMachine.LastVisitedAt = m.LastVisitedAt
 	dbMachine.Error = m.Error
 	err := dbmodel.UpdateMachine(db, dbMachine)
@@ -255,9 +254,12 @@ func UpdateMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *d
 	}
 
 	// The Stork server doesn't gather the Stork agent configuration, so we cannot
-	// detect its change. It compares the current agent state and the database
-	// entry to only recognize the HTTP credentials state was changed.
-	isStorkAgentChanged := dbMachine.State.AgentUsesHTTPCredentials != state.AgentUsesHTTPCredentials
+	// detect its change. It compared the current agent state and the database
+	// entry to only recognize the HTTP credentials state was changed but this
+	// parameter has been removed from the agent state. The following code is
+	// a placeholder for the future implementation of the Stork agent
+	// configuration change detection.
+	isStorkAgentChanged := false
 
 	// store machine's state in db
 	err = updateMachineFields(db, dbMachine, state)

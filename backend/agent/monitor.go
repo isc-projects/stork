@@ -277,7 +277,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			m := keaPattern.FindStringSubmatch(cmdline)
 			if m != nil {
 				// Detect the app.
-				keaApp, err := detectKeaApp(m, cwd, storkAgent.KeaHTTPClient)
+				keaApp, err := detectKeaApp(m, cwd, storkAgent.KeaHTTPClientCloner)
 				if err != nil {
 					log.WithError(err).Warn("Failed to detect Kea app")
 					continue
@@ -360,6 +360,7 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 	if storkAgent == nil {
 		return
 	}
+
 	for _, app := range sm.apps {
 		paths, err := app.DetectAllowedLogs()
 		if err != nil {
@@ -410,8 +411,7 @@ func (sm *appMonitor) GetApps() []App {
 
 // Get an app from a monitor that matches provided params.
 func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
-	apps := sm.GetApps()
-	for _, app := range apps {
+	for _, app := range sm.GetApps() {
 		if app.GetBaseApp().Type != appType {
 			continue
 		}

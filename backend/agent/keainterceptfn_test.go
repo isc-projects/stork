@@ -11,7 +11,7 @@ import (
 // Tests that config-get is intercepted and loggers found in the returned
 // configuration are recorded. The log tailer is permitted to access only
 // those log files.
-func TestIcptConfigGetLoggers(t *testing.T) {
+func TestInterceptConfigGetLoggers(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
 
@@ -67,7 +67,7 @@ func TestIcptConfigGetLoggers(t *testing.T) {
 		},
 		Arguments: &responseArgs,
 	}
-	err = icptConfigGetLoggers(sa, response)
+	err = interceptConfigGetLoggers(sa, response)
 	require.NoError(t, err)
 	require.NotNil(t, sa.logTailer)
 	require.True(t, sa.logTailer.allowed("/tmp/kea-dhcp4.log"))

@@ -130,10 +130,12 @@ This section describes the solutions for some common issues with the Stork agent
 :Description: The Stork agent and the Kea Control Agent are running, but they cannot connect.
               The ``stork-agent`` logs contain similar messages: ``failed to parse responses from Kea:
               { "result": 401, "text": "Unauthorized" }`` or ``Kea error response - status: 401, message: Unauthorized``.
-:Solution:    Update the ``/etc/stork/agent-credentials.json`` file with the valid user/password credentials.
-:Explanation: The Kea Control Agent can be configured to use Basic Authentication. If it is enabled,
-              valid credentials must be provided in the ``stork-agent`` configuration. Verify that this file exists
-              and contains a valid username, password, and IP address.
+:Solution:    Check if there are any clients specified in the Kea Control Agent configuration file in the
+              ``authentication`` node.
+:Explanation: The Kea Control Agent can be configured to use Basic Authentication. If it is enabled, Stork agent will
+              read the credentials from the Kea CA configuration file and use them to authenticate. The Stork agent
+              chooses credentials which user name begins with ``stork``. If there is no such user, the agent will use
+              the first user from the list.
 
 --------------
 
@@ -157,8 +159,7 @@ This section describes the solutions for some common issues with the Stork agent
 
 ---------------
 
-:Issue:       The values in ``/etc/stork/agent.env`` or ``/etc/stork/agent-credentials.json`` were changed,
-              but ``stork-agent`` does not notice the changes.
+:Issue:       The values in ``/etc/stork/agent.env``  were changed, but ``stork-agent`` does not notice the changes.
 :Solution 1:  Restart the daemon.
 :Solution 2:  Send the SIGHUP signal to the ``stork-agent`` process.
 :Explanation: ``stork-agent`` reads configurations at startup or after receiving the SIGHUP signal.
