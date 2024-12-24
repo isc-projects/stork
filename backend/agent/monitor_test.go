@@ -6,6 +6,7 @@ import (
 	"path"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ import (
 )
 
 //go:generate mockgen -source process.go -package=agent -destination=processmock_test.go isc.org/agent Process ProcessManager
+//go:generate mockgen -source monitor.go -package=agent -destination=monitormock_test.go isc.org/agent App
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
@@ -203,6 +205,14 @@ func TestDetectApps(t *testing.T) {
 	bind9StatsClient := NewBind9StatsClient()
 	httpClient := NewHTTPClient()
 	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
+
+	// Create fake app to test that the shutdown is called when the apps
+	// are detected.
+	fakeApp := NewMockApp(ctrl)
+	fakeApp.EXPECT().GetBaseApp().AnyTimes().Return(&BaseApp{})
+	fakeApp.EXPECT().Shutdown().Times(1)
+
+	am.apps = append(am.apps, fakeApp)
 
 	// Act
 	am.detectApps(sa)
@@ -854,4 +864,63 @@ func TestBaseAppEqual(t *testing.T) {
 	// The second app has the same app type and includes the access points from
 	// the first app but it has an additional access point.
 	require.False(t, app1.IsEqual(app5))
+}
+
+func TestPopulateZoneInventories(t *testing.T) {
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": generateRandomZones(10),
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	monitor := NewAppMonitor()
+	appMonitor, ok := monitor.(*appMonitor)
+	require.True(t, ok)
+
+	app0 := &Bind9App{
+		BaseApp: BaseApp{
+			Type: AppTypeBind9,
+		},
+		zoneInventory: nil,
+	}
+	zi1, err := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+	app1 := &Bind9App{
+		BaseApp: BaseApp{
+			Type: AppTypeBind9,
+		},
+		zoneInventory: zi1,
+	}
+	zi2, err := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+	app2 := &Bind9App{
+		BaseApp: BaseApp{
+			Type: AppTypeBind9,
+		},
+		zoneInventory: zi2,
+	}
+	app3 := &KeaApp{
+		BaseApp: BaseApp{
+			Type: AppTypeKea,
+		},
+	}
+	appMonitor.apps = append(appMonitor.apps, app0, app1, app2, app3)
+	appMonitor.populateZoneInventories()
+
+	require.Eventually(t, func() bool {
+		for _, app := range appMonitor.apps {
+			bind9App, ok := app.(*Bind9App)
+			if !ok || bind9App.zoneInventory == nil {
+				continue
+			}
+			if !bind9App.zoneInventory.getCurrentState().isReady() {
+				return false
+			}
+		}
+		return true
+	}, 5*time.Second, time.Millisecond)
 }

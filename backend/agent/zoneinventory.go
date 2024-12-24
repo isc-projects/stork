@@ -600,16 +600,16 @@ func (inventory *zoneInventory) populate() (chan zoneInventoryAsyncNotify, error
 			}
 		}
 		if err == nil {
-			log.WithFields(log.Fields{
-				"zones": views.GetZoneCount(),
-				"views": len(views.Views),
-			}).Info("Populated DNS zones for indicated number views")
 			if inventory.storage.hasMemoryStorage() {
-				inventory.transitionWithViews(newZoneInventoryStatePopulated(), views)
-			} else {
+				log.WithFields(log.Fields{
+					"zones": views.GetZoneCount(),
+					"views": len(views.Views),
+				}).Info("Populated DNS zones for indicated number views")
 				inventory.transitionWithViews(newZoneInventoryStatePopulated(), nil)
 			}
 		} else {
+			log.WithError(err).Error("Failed to populate DNS zone views")
+			err = errors.WithMessage(err, "failed to populate DNS zone views")
 			inventory.transition(newZoneInventoryStatePopulatingErred(err))
 		}
 		// We are done populating the views. Send notification and close the channel.
@@ -687,11 +687,14 @@ func (inventory *zoneInventory) load() (chan zoneInventoryAsyncNotify, error) {
 		}
 		if err == nil {
 			views := bind9stats.NewViews(viewList)
-			log.Infof("Loaded %d zones in %d views", views.GetZoneCount(), len(views.Views))
+			log.WithFields(log.Fields{
+				"zones": views.GetZoneCount(),
+				"views": len(views.Views),
+			}).Info("Loaded DNS zones for indicated number views")
 			inventory.transitionWithViews(newZoneInventoryStateLoaded(time.Now().UTC()), bind9stats.NewViews(viewList))
 		} else {
-			log.WithError(err).Error("failed to load zones inventory")
-			err = errors.WithMessage(err, "failed to load zones inventory")
+			log.WithError(err).Error("Failed to load DNS zones inventory")
+			err = errors.WithMessage(err, "failed to load DNS zones inventory")
 			inventory.transition(newZoneInventoryStateLoadingErred(err))
 		}
 		// We are done loading the views. Send notification and close the channel.

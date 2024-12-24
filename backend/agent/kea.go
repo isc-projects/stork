@@ -14,6 +14,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var _ App = (*KeaApp)(nil)
+
 // It holds common and Kea specific runtime information.
 type KeaApp struct {
 	BaseApp
@@ -171,6 +173,9 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 
 	return paths, nil
 }
+
+// Currently it does nothing.
+func (ka *KeaApp) Shutdown() {}
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
 func readKeaConfig(path string) (*keaconfig.Config, error) {

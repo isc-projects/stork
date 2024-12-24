@@ -90,6 +90,9 @@ func runAgent(settings *generalSettings, reload bool) error {
 		}
 	}
 
+	// Create BIND9 stats client.
+	bind9StatsClient := agent.NewBind9StatsClient()
+
 	// Start app monitor.
 	appMonitor := agent.NewAppMonitor()
 
@@ -117,8 +120,6 @@ func runAgent(settings *generalSettings, reload bool) error {
 	default:
 		log.Info("The GRPC credentials will be used as the client TLS certificate when connecting to Kea")
 	}
-
-	bind9StatsClient := agent.NewBind9StatsClient()
 
 	// Prepare agent gRPC handler
 	storkAgent := agent.NewStorkAgent(

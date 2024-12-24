@@ -14,6 +14,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var _ App = (*Bind9App)(nil)
+
 // Represents the BIND 9 process metadata.
 type Bind9Daemon struct {
 	Pid     int32
@@ -44,7 +46,8 @@ func (k *Bind9RndcKey) String() string {
 // It holds common and BIND 9 specific runtime information.
 type Bind9App struct {
 	BaseApp
-	RndcClient *RndcClient // to communicate with BIND 9 via rndc
+	RndcClient    *RndcClient // to communicate with BIND 9 via rndc
+	zoneInventory *zoneInventory
 }
 
 // Get base information about BIND 9 app.
@@ -57,6 +60,13 @@ func (ba *Bind9App) GetBaseApp() *BaseApp {
 // it returns always empty list and no error.
 func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
+}
+
+// Shuts down BIND9 zone inventory.
+func (ba *Bind9App) Shutdown() {
+	if ba.zoneInventory != nil {
+		ba.zoneInventory.shutdown()
+	}
 }
 
 // List of BIND 9 executables used during app detection.
@@ -629,6 +639,7 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	}
 
 	// look for statistics channel address in config
+	var inventory *zoneInventory
 	address, port := getStatisticsChannelFromBind9Config(cfgText)
 	if port > 0 && len(address) != 0 {
 		accessPoints = append(accessPoints, AccessPoint{
@@ -636,9 +647,13 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Address: address,
 			Port:    port,
 		})
+		inventory, err = newZoneInventory(newZoneInventoryStorageMemory(), NewBind9StatsClient(), address, port)
+		if err != nil {
+			log.WithError(err).Error("Unable to initialize zone inventory. Zone viewer won't work.")
+		}
 	} else {
-		log.Warnf("BIND 9 `statistics-channels` clause unparsable or not found. Statistics export won't work.")
-		log.Warnf("To fix this problem, please configure `statistics-channels` in named.conf and ensure Stork-agent is able to access it.")
+		log.Warn("BIND 9 `statistics-channels` clause unparsable or not found. Neither statistics export nor zone viewer will work.")
+		log.Warn("To fix this problem, please configure `statistics-channels` in named.conf and ensure Stork-agent is able to access it.")
 	}
 
 	// determine rndc details
@@ -662,7 +677,8 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
-		RndcClient: rndcClient,
+		RndcClient:    rndcClient,
+		zoneInventory: inventory,
 	}
 
 	return bind9App

@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -93,6 +94,7 @@ func (ba *BaseApp) IsEqual(other *BaseApp) bool {
 type App interface {
 	GetBaseApp() *BaseApp
 	DetectAllowedLogs() ([]string, error)
+	Shutdown()
 }
 
 // Currently supported types are: "kea" and "bind9".
@@ -163,6 +165,9 @@ func (sm *appMonitor) run(storkAgent *StorkAgent) {
 	// from the UI.
 	sm.detectAllowedLogs(storkAgent)
 
+	// Populate zone inventories for all detected DNS servers.
+	sm.populateZoneInventories()
+
 	// prepare ticker
 	const detectionInterval = 10 * time.Second
 	ticker := time.NewTicker(detectionInterval)
@@ -176,7 +181,11 @@ func (sm *appMonitor) run(storkAgent *StorkAgent) {
 
 		case <-ticker.C:
 			// periodic detection
+			ticker.Stop()
 			sm.detectApps(storkAgent)
+			sm.detectAllowedLogs(storkAgent)
+			sm.populateZoneInventories()
+			ticker.Reset(detectionInterval)
 
 		case <-sm.quit:
 			// exit run
@@ -252,7 +261,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 		if procName == keaProcName || procName == namedProcName {
 			cmdline, err = p.GetCmdline()
 			if err != nil {
-				log.WithError(err).Warnf("Cannot get process command line")
+				log.WithError(err).Warn("Cannot get process command line")
 				continue
 			}
 			cwd, err = p.GetCwd()
@@ -262,7 +271,8 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			}
 		}
 
-		if procName == keaProcName {
+		switch procName {
+		case keaProcName:
 			// Detect Kea.
 			m := keaPattern.FindStringSubmatch(cmdline)
 			if m != nil {
@@ -291,10 +301,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 				keaApp.GetBaseApp().Pid = p.GetPid()
 				apps = append(apps, keaApp)
 			}
-			continue
-		}
-
-		if procName == namedProcName {
+		case namedProcName:
 			// detect bind9
 			m := bind9Pattern.FindStringSubmatch(cmdline)
 			if m != nil {
@@ -305,10 +312,16 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 					storkAgent.ExplicitBind9ConfigPath,
 				)
 				if bind9App != nil {
+					if i := slices.IndexFunc(sm.apps, func(app App) bool {
+						return app.GetBaseApp().HasEqualType(bind9App.GetBaseApp()) && app.GetBaseApp().HasEqualAccessPoints(bind9App.GetBaseApp())
+					}); i >= 0 {
+						bind9App = sm.apps[i]
+					}
 					bind9App.GetBaseApp().Pid = p.GetPid()
 					apps = append(apps, bind9App)
 				}
 			}
+		default:
 			continue
 		}
 	}
@@ -319,13 +332,18 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			// Agent is starting up but no app to monitor has been detected.
 			// Usually, the agent is installed with at least one monitored app.
 			// The below message is printed for easier troubleshooting.
-			log.Warnf("No Kea nor Bind9 app detected for monitoring; please check if they are running, and Stork can communicate with them.")
+			log.Warn("No Kea nor Bind9 app detected for monitoring; please check if they are running, and Stork can communicate with them.")
 			// Mark this message as reported to avoid printing it continuously.
 			sm.isNoAppsReported = true
 		}
 	} else {
 		printNewOrUpdatedApps(apps, sm.apps)
 		sm.isNoAppsReported = false
+	}
+
+	// Wait for the zone inventories to complete pending operations.
+	for _, app := range sm.apps {
+		app.Shutdown()
 	}
 
 	// Remember detected apps.
@@ -359,6 +377,27 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 	}
 }
 
+// Iterates over the detected BIND9 apps and populates their zone inventories.
+func (sm *appMonitor) populateZoneInventories() {
+	for _, app := range sm.apps {
+		if bind9app, ok := app.(*Bind9App); ok {
+			if bind9app.zoneInventory == nil || bind9app.zoneInventory.getCurrentState().isReady() {
+				continue
+			}
+			var busyError *zoneInventoryBusyError
+			if _, err := bind9app.zoneInventory.populate(); err != nil {
+				switch {
+				case errors.As(err, &busyError):
+					// Inventory creation is in progress. This is not an error.
+					continue
+				default:
+					log.WithError(err).Error("Failed to populate DNS zones inventory")
+				}
+			}
+		}
+	}
+}
+
 // Get a list of detected apps by a monitor.
 func (sm *appMonitor) GetApps() []App {
 	ret := make(chan []App)
@@ -383,8 +422,11 @@ func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
 	return nil
 }
 
-// Shut down monitor. Stop its background goroutine.
+// Shut down monitor. Stop background goroutines.
 func (sm *appMonitor) Shutdown() {
+	for _, app := range sm.GetApps() {
+		app.Shutdown()
+	}
 	sm.quit <- true
 	sm.wg.Wait()
 }
