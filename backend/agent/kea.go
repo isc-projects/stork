@@ -339,28 +339,24 @@ type ClientCredentials struct {
 // 2. Username and password can be provided in separate files.
 // 3. Username and password can be provided in a separate file delimited by a colon.
 func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCredentials, error) {
-	credentials := []ClientCredentials{}
+	allCredentials := []ClientCredentials{}
+
+	directory := "/"
+	if authentication.Directory != nil {
+		directory = *authentication.Directory
+	}
+
 	for _, client := range authentication.Clients {
-		if client.User != nil && client.Password != nil {
-			// The user and password are provided directly.
-			credentials = append(credentials, ClientCredentials{
-				User:     *client.User,
-				Password: *client.Password,
-			})
-			continue
-		}
+		var credentials ClientCredentials
 
-		directory := "/"
-		if authentication.Directory != nil {
-			directory = *authentication.Directory
-		}
-
+		// Read the user.
 		switch {
-		case client.UserFile != nil && client.PasswordFile != nil:
-			// The user and password are provided in separate files.
+		case client.User != nil:
+			// The user provided as a string.
+			credentials.User = *client.User
+		case client.UserFile != nil:
+			// The user is provided in a file.
 			userPath := path.Join(directory, *client.UserFile)
-			passwordPath := path.Join(directory, *client.PasswordFile)
-
 			userRaw, err := os.ReadFile(userPath)
 			if err != nil {
 				return nil, errors.WithMessagef(err,
@@ -368,26 +364,10 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 					userPath,
 				)
 			}
-
-			passwordRaw, err := os.ReadFile(passwordPath)
-			if err != nil {
-				return nil, errors.WithMessagef(err,
-					"could not read the password file '%s'",
-					passwordPath,
-				)
-			}
-
-			user := strings.TrimSpace(string(userRaw))
-			password := strings.TrimSpace(string(passwordRaw))
-
-			credentials = append(credentials, ClientCredentials{
-				User:     user,
-				Password: password,
-			})
+			credentials.User = strings.TrimSpace(string(userRaw))
 		case client.PasswordFile != nil:
 			// The user and password are provided in a single file.
 			passwordPath := path.Join(directory, *client.PasswordFile)
-
 			passwordRaw, err := os.ReadFile(passwordPath)
 			if err != nil {
 				return nil, errors.WithMessagef(err,
@@ -395,25 +375,49 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 					passwordPath,
 				)
 			}
-
-			passwordStr := strings.TrimSpace(string(passwordRaw))
-			parts := strings.Split(passwordStr, ":")
+			parts := strings.Split(strings.TrimSpace(string(passwordRaw)), ":")
 			if len(parts) != 2 {
 				return nil, errors.Errorf(
 					"invalid format of the password file '%s'",
 					passwordPath,
 				)
 			}
-
-			credentials = append(credentials, ClientCredentials{
-				User:     parts[0],
-				Password: parts[1],
-			})
+			credentials.User = parts[0]
+			credentials.Password = parts[1]
 		default:
+			// Missing user.
 			return nil, errors.New(
-				"invalid client credentials - user file is not provided",
+				"invalid client credentials - user or user-file is not provided",
 			)
 		}
+
+		// Read the password.
+		switch {
+		case credentials.Password != "":
+			// The password has been provided together with the user in
+			// the password file.
+		case client.Password != nil:
+			// The password provided as a string.
+			credentials.Password = *client.Password
+		case client.PasswordFile != nil:
+			// The password is provided in a file.
+			passwordPath := path.Join(directory, *client.PasswordFile)
+			passwordRaw, err := os.ReadFile(passwordPath)
+			if err != nil {
+				return nil, errors.WithMessagef(err,
+					"could not read the password file '%s'",
+					passwordPath,
+				)
+			}
+			credentials.Password = strings.TrimSpace(string(passwordRaw))
+		default:
+			// Missing password.
+			return nil, errors.New(
+				"invalid client credentials - password or password-file is not provided",
+			)
+		}
+
+		allCredentials = append(allCredentials, credentials)
 	}
-	return credentials, nil
+	return allCredentials, nil
 }

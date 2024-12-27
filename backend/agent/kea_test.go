@@ -664,6 +664,58 @@ func TestReadClientCredentials(t *testing.T) {
 		require.Equal(t, "bar", clients[0].Password)
 	})
 
+	t.Run("User string and password file", func(t *testing.T) {
+		// Arrange
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+
+		passwordFile, _ := sb.Write("password", "bar")
+
+		authentication := &keaconfig.Authentication{
+			Clients: []keaconfig.ClientCredentials{
+				{
+					User:         storkutil.Ptr("foo"),
+					PasswordFile: storkutil.Ptr(passwordFile),
+				},
+			},
+		}
+
+		// Act
+		clients, err := readClientCredentials(authentication)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, clients, 1)
+		require.Equal(t, "foo", clients[0].User)
+		require.Equal(t, "bar", clients[0].Password)
+	})
+
+	t.Run("User file and password string", func(t *testing.T) {
+		// Arrange
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+
+		userFile, _ := sb.Write("user", "foo")
+
+		authentication := &keaconfig.Authentication{
+			Clients: []keaconfig.ClientCredentials{
+				{
+					UserFile: storkutil.Ptr(userFile),
+					Password: storkutil.Ptr("bar"),
+				},
+			},
+		}
+
+		// Act
+		clients, err := readClientCredentials(authentication)
+
+		// Assert
+		require.NoError(t, err)
+		require.Len(t, clients, 1)
+		require.Equal(t, "foo", clients[0].User)
+		require.Equal(t, "bar", clients[0].Password)
+	})
+
 	t.Run("All methods at once", func(t *testing.T) {
 		// Arrange
 		sb := testutil.NewSandbox()
@@ -674,19 +726,31 @@ func TestReadClientCredentials(t *testing.T) {
 		singlePasswordFile, _ := sb.Write("password-single", "baz:boz")
 
 		authentication := &keaconfig.Authentication{
-
 			Clients: []keaconfig.ClientCredentials{
 				{
+					// User and password as strings.
 					User:     storkutil.Ptr("bim"),
 					Password: storkutil.Ptr("bom"),
 				},
 				{
+					// User and password as files.
 					UserFile:     storkutil.Ptr(userFile),
 					PasswordFile: storkutil.Ptr(passwordFile),
 				},
 				{
+					// User and password in a single file.
 					UserFile:     nil,
 					PasswordFile: storkutil.Ptr(singlePasswordFile),
+				},
+				{
+					// User as a string and password as a file.
+					User:         storkutil.Ptr("ding"),
+					PasswordFile: storkutil.Ptr(passwordFile),
+				},
+				{
+					// User as a file and password as a string.
+					UserFile: storkutil.Ptr(userFile),
+					Password: storkutil.Ptr("dong"),
 				},
 			},
 		}
@@ -696,12 +760,21 @@ func TestReadClientCredentials(t *testing.T) {
 
 		// Assert
 		require.NoError(t, err)
-		require.Len(t, clients, 3)
+		require.Len(t, clients, 5)
+
 		require.Equal(t, "bim", clients[0].User)
 		require.Equal(t, "bom", clients[0].Password)
+
 		require.Equal(t, "foo", clients[1].User)
 		require.Equal(t, "bar", clients[1].Password)
+
 		require.Equal(t, "baz", clients[2].User)
 		require.Equal(t, "boz", clients[2].Password)
+
+		require.Equal(t, "ding", clients[3].User)
+		require.Equal(t, "bar", clients[3].Password)
+
+		require.Equal(t, "foo", clients[4].User)
+		require.Equal(t, "dong", clients[4].Password)
 	})
 }
