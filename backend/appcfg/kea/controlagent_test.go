@@ -472,3 +472,109 @@ func TestGetControlAgentLoggers(t *testing.T) {
 	require.Equal(t, "DEBUG", libraries[0].Severity)
 	require.EqualValues(t, 99, libraries[0].DebugLevel)
 }
+
+// Test that the basic authentication method is recognized properly.
+func TestAuthenticationIsBasicAuth(t *testing.T) {
+	authentication := Authentication{Type: "basic"}
+	require.True(t, authentication.IsBasicAuth())
+
+	authentication.Type = "digest"
+	require.False(t, authentication.IsBasicAuth())
+}
+
+// Test that the authentication details are returned properly.
+func TestAuthenticationGetBasicAuthenticationDetails(t *testing.T) {
+	t.Run("non-CA", func(t *testing.T) {
+		// Arrange
+		config, err := NewConfig(`{
+			"Dhcp4": {}
+		}`)
+
+		// Act
+		details := config.GetBasicAuthenticationDetails()
+
+		// Assert
+		require.NoError(t, err)
+		require.Nil(t, details)
+	})
+
+	t.Run("missing authentication", func(t *testing.T) {
+		// Arrange
+		config, err := NewConfig(`{
+			"Control-agent": {}
+		}`)
+
+		// Act
+		details := config.GetBasicAuthenticationDetails()
+
+		// Assert
+		require.NoError(t, err)
+		require.Nil(t, details)
+	})
+
+	t.Run("complete authentication", func(t *testing.T) {
+		// Arrange
+		config, err := NewConfig(`{
+			"Control-agent": {
+				"authentication": {
+					"type": "basic",
+					"realm": "kea-control-agent",
+					"directory": "/path",
+					"clients": [
+						{
+							"user": "foo",
+							"password": "bar"
+						},
+						{
+							"user-file": "/path/user-file",
+							"password-file": "/path/password-file"
+						},
+						{
+							"password-file": "/path/password-file"
+						}
+					]
+				}
+			}
+		}`)
+
+		// Act
+		details := config.GetBasicAuthenticationDetails()
+
+		// Assert
+		require.NoError(t, err)
+		require.NotNil(t, details)
+		require.Equal(t, "basic", details.Type)
+		require.Equal(t, "kea-control-agent", details.Realm)
+		require.Equal(t, "/path", *details.Directory)
+		require.Len(t, details.Clients, 3)
+
+		require.Equal(t, "foo", *details.Clients[0].User)
+		require.Equal(t, "bar", *details.Clients[0].Password)
+
+		require.Equal(t, "/path/user-file", *details.Clients[1].UserFile)
+		require.Equal(t, "/path/password-file", *details.Clients[1].PasswordFile)
+
+		require.Nil(t, details.Clients[2].User)
+		require.Equal(t, "/path/password-file", *details.Clients[2].PasswordFile)
+	})
+
+	t.Run("another type of authentication", func(t *testing.T) {
+		// Arrange
+		config, err := NewConfig(`{
+			"Control-agent": {
+				"authentication": {
+					"type": "digest",
+					"realm": "kea-control-agent",
+					"clients": []
+				}
+			}
+		}`)
+
+		// Act
+		details := config.GetBasicAuthenticationDetails()
+
+		// Assert
+		require.NoError(t, err)
+		require.Nil(t, details)
+	})
+}

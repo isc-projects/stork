@@ -364,7 +364,7 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 			userRaw, err := os.ReadFile(userPath)
 			if err != nil {
 				return nil, errors.WithMessagef(err,
-					"cannot read the user file '%s'",
+					"could not read the user file '%s'",
 					userPath,
 				)
 			}
@@ -372,7 +372,7 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 			passwordRaw, err := os.ReadFile(passwordPath)
 			if err != nil {
 				return nil, errors.WithMessagef(err,
-					"cannot read the password file '%s'",
+					"could not read the password file '%s'",
 					passwordPath,
 				)
 			}
@@ -391,7 +391,7 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 			passwordRaw, err := os.ReadFile(passwordPath)
 			if err != nil {
 				return nil, errors.WithMessagef(err,
-					"cannot read the password file '%s'",
+					"could not read the password file '%s'",
 					passwordPath,
 				)
 			}
@@ -410,7 +410,9 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 				Password: parts[1],
 			})
 		default:
-			return nil, errors.New("invalid client credentials")
+			return nil, errors.New(
+				"invalid client credentials - user file is not provided",
+			)
 		}
 	}
 	return credentials, nil
