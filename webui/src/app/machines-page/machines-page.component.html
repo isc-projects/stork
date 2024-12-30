@@ -249,7 +249,8 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </ng-template>
     </p-messages>
-
+    <app-authorized-machines-table #authorizedMachinesTableComponent *ngIf="!showUnauthorized" [unauthorizedMachinesCount]="unauthorizedMachinesCount"></app-authorized-machines-table>
+    <app-unauthorized-machines-table *ngIf="showUnauthorized"></app-unauthorized-machines-table>
     <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
     <p-table
         #machinesTable

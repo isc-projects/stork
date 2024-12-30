@@ -1,14 +1,16 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
-import { ActivatedRoute, ParamMap, Router } from '@angular/router'
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core'
+import {ActivatedRoute, EventType, ParamMap, Router} from '@angular/router'
 
 import { MessageService, MenuItem } from 'primeng/api'
-import { concat, Observable, Subscription } from 'rxjs'
+import {concat, EMPTY, Observable, Subscription} from 'rxjs'
 import { Machine, Settings } from '../backend'
 
 import { ServicesService, SettingsService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 import { copyToClipboard, getErrorMessage } from '../utils'
 import { Table } from 'primeng/table'
+import {catchError, filter} from "rxjs/operators";
+import {AuthorizedMachinesTableComponent} from "../authorized-machines-table/authorized-machines-table.component";
 
 interface AppType {
     name: string
@@ -21,7 +23,7 @@ interface AppType {
     templateUrl: './machines-page.component.html',
     styleUrls: ['./machines-page.component.sass'],
 })
-export class MachinesPageComponent implements OnInit, OnDestroy {
+export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'Services' }, { label: 'Machines' }]
 
@@ -63,6 +65,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     // Indicates if the machines registration is administratively disabled.
     registrationDisabled = false
 
+    @ViewChild('authorizedMachinesTableComponent') authorizedMachinesTable: AuthorizedMachinesTableComponent
+
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -74,6 +78,102 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
+    }
+
+    /**
+     * Component lifecycle hook called after Angular completed the initialization of the
+     * component's view.
+     *
+     * We subscribe to router events to act upon URL and/or queryParams changes.
+     * This is done at this step, because we have to be sure that all child components,
+     * especially PrimeNG table in SubnetsTableComponent, are initialized.
+     */
+    ngAfterViewInit(): void {
+        this.router.events
+            .pipe(
+                filter((event, idx) => idx === 0 || event.type === EventType.NavigationEnd),
+                catchError((err) => {
+                    const msg = getErrorMessage(err)
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Cannot process the URL query',
+                        detail: msg,
+                        life: 10000,
+                    })
+                    return EMPTY
+                })
+            )
+            .subscribe(() => {
+                const paramMap = this.route.snapshot.paramMap
+                const queryParamMap = this.route.snapshot.queryParamMap
+
+                // Apply to the changes of the subnet id, e.g. from /dhcp/subnets/all to
+                // /dhcp/subnets/1. Those changes are triggered by switching between the
+                // tabs.
+
+                // Get subnet id.
+                const id = paramMap.get('id')
+                if (!id || id === 'all' || id === 'authorized' || id === 'unauthorized') {
+                    // Update the filter only if the target is subnet list.
+                    this.showUnauthorized = id === 'unauthorized'
+                    this.authorizedMachinesTable?.updateFilterFromQueryParameters(queryParamMap)
+                    this.switchToTab(0)
+                    return
+                }
+                const numericId = parseInt(id, 10)
+                if (!Number.isNaN(numericId)) {
+                    // The path has a numeric id indicating that we should
+                    // open a tab with selected subnet information or switch
+                    // to this tab if it has been already opened.
+                    // this.openTabBySubnetId(numericId)
+                    let found = false
+                    // if tab for this machine is already opened then switch to it
+                    for (let idx = 0; idx < this.openedMachines.length; idx++) {
+                        const m = this.openedMachines[idx].machine
+                        if (m.id === numericId) {
+                            this.switchToTab(idx + 1)
+                            found = true
+                        }
+                    }
+
+                    // if tab is not opened then search for list of machines if the one is present there,
+                    // if so then open it in new tab and switch to it
+                    if (!found) {
+                        for (const m of this.machines) {
+                            if (m.id === numericId) {
+                                this.addMachineTab(m)
+                                this.switchToTab(this.tabs.length - 1)
+                                found = true
+                                break
+                            }
+                        }
+                    }
+
+                    // if machine is not loaded in list fetch it individually
+                    if (!found) {
+                        this.servicesApi.getMachine(numericId).subscribe(
+                            (data) => {
+                                this.addMachineTab(data)
+                                this.switchToTab(this.tabs.length - 1)
+                            },
+                            (err) => {
+                                const msg = getErrorMessage(err)
+                                this.msgSrv.add({
+                                    severity: 'error',
+                                    summary: 'Cannot get machine',
+                                    detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
+                                    life: 10000,
+                                })
+                                this.navigateToMachinesList()
+                            }
+                        )
+                    }
+                } else {
+                    // In case of failed Id parsing, open list tab.
+                    this.switchToTab(0)
+                    this.authorizedMachinesTable?.loadDataWithoutFilter()
+                }
+            })
     }
 
     /** Switches to tab with the given index. */

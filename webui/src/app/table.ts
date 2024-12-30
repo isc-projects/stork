@@ -388,7 +388,7 @@ export abstract class PrefilteredTable<
                 }
 
                 if (Array.isArray(filterMetadata)) {
-                    for (let filter of filterMetadata) {
+                    for (const filter of filterMetadata) {
                         if ((filterKey != 'text' && filter.value !== null) || (filterKey == 'text' && filter.value)) {
                             return true
                         }
@@ -419,10 +419,10 @@ export abstract class PrefilteredTable<
                 ? this.queryParamNumericKeys
                 : [this.prefilterKey, ...this.queryParamNumericKeys]
 
-        let filter: BaseQueryParamFilter = {}
+        const filter: BaseQueryParamFilter = {}
         filter.text = params.get('text')
 
-        for (let key of numericKeys) {
+        for (const key of numericKeys) {
             // Convert the value to a number. It is NaN if the parameter
             // doesn't exist or it is malformed.
             if (params.has(key as string)) {
@@ -433,7 +433,7 @@ export abstract class PrefilteredTable<
 
         const parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
 
-        for (let key of this.queryParamBooleanKeys) {
+        for (const key of this.queryParamBooleanKeys) {
             if (params.has(key as string)) {
                 filter[key as any] = parseBoolean(params.get(key as string))
             }
@@ -518,7 +518,7 @@ export abstract class PrefilteredTable<
     private updateQueryParameters() {
         const params = []
 
-        for (let key of Object.keys(this.validFilter)) {
+        for (const key of Object.keys(this.validFilter)) {
             if (this.validFilter[key] != null) {
                 params.push(`${encodeURIComponent(key)}=${encodeURIComponent(this.validFilter[key])}`)
             }
@@ -538,13 +538,13 @@ export abstract class PrefilteredTable<
     private validateFilter(filter: FilterInterface): string[] {
         const errors: string[] = []
 
-        for (let key of this.filterNumericKeys) {
+        for (const key of this.filterNumericKeys) {
             if (filter.hasOwnProperty(key) && filter[key] == null) {
                 errors.push(`Please specify ${String(key)} as a number (e.g., ${String(key)}=4).`)
             }
         }
 
-        for (let key of this.filterBooleanKeys) {
+        for (const key of this.filterBooleanKeys) {
             if (filter.hasOwnProperty(key) && filter[key] == null) {
                 errors.push(
                     `Please specify ${String(key)} as a boolean (e.g., ${String(key)}=true or ${String(key)}=false).`
@@ -552,7 +552,7 @@ export abstract class PrefilteredTable<
             }
         }
 
-        for (let validator of this.filterValidators) {
+        for (const validator of this.filterValidators) {
             if (
                 filter.hasOwnProperty(validator.filterKey) &&
                 !(validator.allowedValues as any[]).includes(filter[validator.filterKey])
@@ -584,14 +584,14 @@ export abstract class PrefilteredTable<
         }
 
         // Now let's compare all filterNumericKeys filters.
-        for (let k of this.filterNumericKeys) {
+        for (const k of this.filterNumericKeys) {
             if (this.validFilter.hasOwnProperty(k) && this.validFilter[k] != this.getTableFilterValue(k as string)) {
                 return true
             }
         }
 
         // Now let's compare all filterBooleanKeys filters.
-        for (let k of this.filterBooleanKeys) {
+        for (const k of this.filterBooleanKeys) {
             if (this.validFilter.hasOwnProperty(k) && this.validFilter[k] != this.getTableFilterValue(k as string)) {
                 return true
             }
@@ -619,11 +619,11 @@ export abstract class PrefilteredTable<
             matchMode: 'contains',
         }
 
-        for (let k of this.filterNumericKeys) {
+        for (const k of this.filterNumericKeys) {
             filter[k as string] = { value: this.validFilter[k] ?? null, matchMode: 'equals' }
         }
 
-        for (let k of this.filterBooleanKeys) {
+        for (const k of this.filterBooleanKeys) {
             filter[k as string] = {
                 value: this.validFilter.hasOwnProperty(k) ? this.validFilter[k] : null,
                 matchMode: 'equals',

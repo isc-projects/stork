@@ -4,14 +4,6 @@
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
-    <a
-        label="New Subnet"
-        icon="pi pi-plus"
-        class="block p-button p-button-primary no-underline"
-        type="button"
-        routerLink="/dhcp/subnets/new"
-        pButton
-    ></a>
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"
@@ -19,7 +11,6 @@
         (onClick)="reloadData(machinesTable)"
     ></p-button>
 </div>
-<p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
 <p-table
     #machinesTable
     [value]="dataCollection"
@@ -54,33 +45,7 @@
                         [rounded]="true"
                     ></p-tag>
                     <app-help-tip subject="filtering" id="filtering-help-button">
-                        <p>
-                            Subnets in the table below can be filtered by entering a text in the search box; the table
-                            shows all subnets matching the filter text. Currently supported fields for such filtering
-                            are:
-                        </p>
-                        <ul>
-                            <li>Subnet Prefix</li>
-                            <li>Lower and Upper Bound of Pools</li>
-                            <li>Shared Network Name</li>
-                            <li>Subnet Name</li>
-                        </ul>
-                        <p>
-                            The table can present subnets that meet certain criteria, e.g. <b>192.0</b> will show all
-                            subnets that contain 192.0 octets. It can also filter by shared network name and/or pools.
-                        </p>
-                        <p>
-                            In addition, subnets can be filtered by an explicitly selected field using text input and
-                            dropdown filters. Currently supported fields for explicit filtering are:
-                        </p>
-                        <ul>
-                            <li class="monospace">appId</li>
-                            <li>
-                                <span class="monospace">subnetId</span> - the subnet ID assigned in the Kea DHCP daemon
-                                configuration
-                            </li>
-                            <li class="monospace">DHCP version 4/6</li>
-                        </ul>
+                       TBD
                     </app-help-tip>
                 </div>
             </ng-template>
@@ -210,16 +175,17 @@
                     type="button"
                     pButton
                     icon="pi pi-bars"
-                    id="show-machines-menu"
-                    (click)="showMachineMenu($event, machineMenu, m, machinesTable)"
+                    id="show-machines-menu-{{m.id}}"
+                    (click)="machineMenuDisplayed(m)"
                 ></button>
             </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <tr>
-            <td colspan="9">
-                No subnets found.
+            <td colspan="13">
+                <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
+                No authorized machines found.
                 <span *ngIf="hasFilter(machinesTable)">
                     Try to clear filtering.
                     <button
@@ -230,10 +196,23 @@
                         (click)="clearFilters(machinesTable)"
                     ></button>
                 </span>
+                <div class="mt-3">
+                    <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
+                    Information about adding new machines to Stork server is available after clicking on the
+                    <b>How to Install Agent to New Machine</b> button at the top.
+                </div>
+                <div *ngIf="unauthorizedMachinesCount > 0">
+                    <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
+                    There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
+                    <b class="text-xl text-red-500">{{ unauthorizedMachinesCount }}</b>
+                    unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
+                    {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by selecting <b>Unauthorized</b> button
+                    above.
+                </div>
             </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="paginatorright" let-paginatorState>
-        Total: {{ paginatorState.totalRecords | pluralize: 'subnet' }}
+        Total: {{ paginatorState.totalRecords | pluralize: 'machine' }}
     </ng-template>
 </p-table>
