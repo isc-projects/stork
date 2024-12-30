@@ -338,6 +338,8 @@ type ClientCredentials struct {
 // 1. Username and password can be provided directly in the configuration file.
 // 2. Username and password can be provided in separate files.
 // 3. Username and password can be provided in a separate file delimited by a colon.
+// 4. Username can be provided directly in the configuration file and the password in a separate file.
+// 5. Username can be provided in the separate file and the password directly in the configuration file.
 func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCredentials, error) {
 	allCredentials := []ClientCredentials{}
 
