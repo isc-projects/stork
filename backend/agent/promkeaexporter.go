@@ -1,10 +1,8 @@
 package agent
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net"
 	"net/http"
 	"regexp"
@@ -20,7 +18,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	keactrl "isc.org/stork/appctrl/kea"
-	storkutil "isc.org/stork/util"
 )
 
 // Parsed subnet list from Kea `subnet4-list` and `subnet6-list` response.
@@ -226,7 +223,7 @@ type subnetPrefixLookup interface {
 
 // An object that implements this interface can send requests to the Kea CA.
 type keaCommandSender interface {
-	sendCommandToKeaCA(ctrl *AccessPoint, request string) ([]byte, error)
+	sendCommandRaw(command []byte) ([]byte, error)
 }
 
 // Subnet prefix lookup that fetches the subnet prefixes only if necessary.
@@ -235,8 +232,7 @@ type keaCommandSender interface {
 // change. Therefore, the lifetime of instances should be short to avoid
 // out-of-date prefixes in a cache.
 type lazySubnetPrefixLookup struct {
-	sender      keaCommandSender
-	accessPoint *AccessPoint
+	sender keaCommandSender
 	// Cached subnet prefixes from current family.
 	cachedPrefixes SubnetList
 	// Indicates that the subnet prefixes were fetched for current family.
@@ -245,10 +241,9 @@ type lazySubnetPrefixLookup struct {
 	family int8
 }
 
-// Constructs the lazySubnetPrefixLookup instance. It accepts the Kea CA request sender
-// and specific access point.
-func newLazySubnetPrefixLookup(sender keaCommandSender, ap *AccessPoint) subnetPrefixLookup {
-	return &lazySubnetPrefixLookup{sender, ap, nil, false, 4}
+// Constructs the lazySubnetPrefixLookup instance. It accepts the Kea CA request sender.
+func newLazySubnetPrefixLookup(sender keaCommandSender) subnetPrefixLookup {
+	return &lazySubnetPrefixLookup{sender, nil, false, 4}
 }
 
 // Fetches the subnet prefixes from Kea CA and stores the response in a cache.
@@ -272,7 +267,7 @@ func (l *lazySubnetPrefixLookup) fetchAndCachePrefixes() SubnetList {
 		}`
 	}
 
-	response, err := l.sender.sendCommandToKeaCA(l.accessPoint, request)
+	response, err := l.sender.sendCommandRaw([]byte(request))
 	var target SubnetList
 	if err == nil {
 		err = json.Unmarshal(response, &target)
@@ -323,7 +318,6 @@ type PromKeaExporter struct {
 	EnablePerSubnetStats bool
 
 	AppMonitor AppMonitor
-	HTTPClient *HTTPClient
 	HTTPServer *http.Server
 
 	Ticker        *time.Ticker
@@ -345,14 +339,13 @@ type PromKeaExporter struct {
 }
 
 // Create new Prometheus Kea Exporter.
-func NewPromKeaExporter(host string, port int, interval time.Duration, enablePerSubnetStats bool, appMonitor AppMonitor, httpClient *HTTPClient) *PromKeaExporter {
+func NewPromKeaExporter(host string, port int, interval time.Duration, enablePerSubnetStats bool, appMonitor AppMonitor) *PromKeaExporter {
 	pke := &PromKeaExporter{
 		Host:                 host,
 		Port:                 port,
 		Interval:             interval,
 		EnablePerSubnetStats: enablePerSubnetStats,
 		AppMonitor:           appMonitor,
-		HTTPClient:           httpClient,
 		DoneCollector:        make(chan bool),
 		Wg:                   &sync.WaitGroup{},
 		Registry:             prometheus.NewRegistry(),
@@ -845,11 +838,11 @@ func (pke *PromKeaExporter) collectStats() error {
 	var lastErr error
 
 	// Request to kea dhcp daemons for getting all stats.
-	requestData := map[string]any{
-		"command": "statistic-get-all",
+	requestData := &keactrl.Command{
+		Command: keactrl.StatisticGetAll,
 		// Send the request only to the configured daemons.
-		"service":   nil,
-		"arguments": map[string]any{},
+		Daemons:   nil,
+		Arguments: map[string]any{},
 	}
 
 	// Go through all kea apps discovered by monitor and query them for stats.
@@ -900,16 +893,9 @@ func (pke *PromKeaExporter) collectStats() error {
 			log.WithError(err).Error("The Kea application has no DHCP daemons configured")
 			continue
 		}
-		requestData["service"] = services
+		requestData.Daemons = services
 
 		// get stats from kea
-		ctrl, err := getAccessPoint(app, AccessPointControl)
-		if err != nil {
-			lastErr = err
-			log.WithError(err).Error("Problem getting stats from Kea: bad Kea access control point")
-			continue
-		}
-
 		requestDataBytes, err := json.Marshal(requestData)
 		if err != nil {
 			err = errors.Wrap(err, "cannot serialize a request to JSON")
@@ -919,7 +905,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 
 		// Fetching statistics
-		responseData, err := pke.sendCommandToKeaCA(ctrl, string(requestDataBytes))
+		responseData, err := keaApp.sendCommandRaw(requestDataBytes)
 		if err != nil {
 			lastErr = err
 			log.WithError(err).Error("Problem fetching stats from Kea")
@@ -947,7 +933,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 
 		// Prepare subnet prefix lookup
-		subnetPrefixLookup := newLazySubnetPrefixLookup(pke, ctrl)
+		subnetPrefixLookup := newLazySubnetPrefixLookup(keaApp)
 
 		// Go though responses from daemons (it can have none or some responses from dhcp4/dhcp6)
 		// and store collected stats in Prometheus structures.
@@ -976,19 +962,4 @@ func (pke *PromKeaExporter) collectStats() error {
 	pke.ExporterStatMap["configured_dhcp6_daemons"].Set(float64(configuredDHCP6DaemonsCount))
 
 	return lastErr
-}
-
-// Send any command to Kea CA and returns body content.
-func (pke *PromKeaExporter) sendCommandToKeaCA(ctrl *AccessPoint, request string) ([]byte, error) {
-	caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port, ctrl.UseSecureProtocol)
-	httpRsp, err := pke.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
-	if err != nil {
-		return nil, errors.Wrap(err, "problem getting stats from Kea")
-	}
-	body, err := io.ReadAll(httpRsp.Body)
-	httpRsp.Body.Close()
-	if err != nil {
-		return nil, errors.Wrap(err, "problem reading stats response from Kea")
-	}
-	return body, nil
 }

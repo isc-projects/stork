@@ -23,7 +23,8 @@ import (
 )
 
 type FakeAppMonitor struct {
-	Apps []App
+	Apps       []App
+	HTTPClient *HTTPClient
 }
 
 // Initializes StorkAgent instance and context used by the tests.

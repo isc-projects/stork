@@ -16,6 +16,7 @@ import (
 
 // Fake app monitor that returns some predefined list of apps.
 func newFakeMonitorWithDefaults() *FakeAppMonitor {
+	httpClient := NewHTTPClient()
 	fam := &FakeAppMonitor{
 		Apps: []App{
 			&KeaApp{
@@ -23,11 +24,12 @@ func newFakeMonitorWithDefaults() *FakeAppMonitor {
 					Type:         AppTypeKea,
 					AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234, false),
 				},
-				HTTPClient:        nil,
+				HTTPClient:        httpClient,
 				ConfiguredDaemons: []string{"dhcp4", "dhcp6"},
 				ActiveDaemons:     []string{"dhcp4", "dhcp6"},
 			},
 		},
+		HTTPClient: httpClient,
 	}
 	return fam
 }
@@ -53,11 +55,9 @@ func newFakeMonitorWithDefaultsDHCPv6Only() *FakeAppMonitor {
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 42, 24*time.Millisecond, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 42, 24*time.Millisecond, true, fam)
 	defer pke.Shutdown()
 
-	require.NotNil(t, pke.HTTPClient)
 	require.NotNil(t, pke.HTTPServer)
 
 	require.Equal(t, "foo", pke.Host)
@@ -106,11 +106,10 @@ func TestPromKeaExporterStart(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaultsDHCPv4Only()
 
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(fam.HTTPClient.client)
 
 	// start exporter
 	pke.Start()
@@ -173,11 +172,10 @@ func TestPromKeaExporterStartDemoResponse(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaultsDHCPv6Only()
 
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 5*time.Millisecond, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 5*time.Millisecond, true, fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(fam.HTTPClient.client)
 
 	// start exporter
 	pke.Start()
@@ -367,11 +365,10 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(fam.HTTPClient.client)
 	pke.Start()
 
 	// Act & Assert
@@ -425,7 +422,7 @@ func newFakeKeaCASender() *FakeKeaCASender {
 }
 
 // Increment call counter and return fixed data.
-func (s *FakeKeaCASender) sendCommandToKeaCA(ctrl *AccessPoint, request string) ([]byte, error) {
+func (s *FakeKeaCASender) sendCommandRaw(request []byte) ([]byte, error) {
 	s.callCount++
 	return s.payload, s.err
 }
@@ -434,10 +431,9 @@ func (s *FakeKeaCASender) sendCommandToKeaCA(ctrl *AccessPoint, request string) 
 func TestNewLazySubnetPrefixLookup(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
-	accessPoint := &AccessPoint{Address: "foo"}
 
 	// Act
-	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender)
 
 	// Assert
 	require.NotNil(t, lookup)
@@ -448,8 +444,7 @@ func TestNewLazySubnetPrefixLookup(t *testing.T) {
 func TestLazySubnetNameLookupFetchesNames(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
-	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender)
 
 	// Act
 	name1, ok1 := lookup.getPrefix(1)
@@ -475,8 +470,7 @@ func TestLazySubnetNameLookupFetchesNames(t *testing.T) {
 func TestLazySubnetNameLookupFetchesOnlyOnce(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
-	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender)
 
 	// Act
 	_, _ = lookup.getPrefix(1)
@@ -495,8 +489,7 @@ func TestLazySubnetNameLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
 	sender := newFakeKeaCASender()
 	sender.payload = nil
 	sender.err = errors.New("baz")
-	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender)
 
 	for _, subnetID := range []int{1, 1, 1, 42, 100} {
 		// Act
@@ -511,8 +504,7 @@ func TestLazySubnetNameLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
 func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
-	accessPoint := &AccessPoint{Address: "foo"}
-	lookup := newLazySubnetPrefixLookup(sender, accessPoint)
+	lookup := newLazySubnetPrefixLookup(sender)
 
 	// Act
 	_, _ = lookup.getPrefix(1)
@@ -548,10 +540,9 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	fam := newFakeMonitorWithDefaultsDHCPv4Only()
 
 	// Act
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, false, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, false, fam)
 	defer pke.Shutdown()
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(fam.HTTPClient.client)
 	pke.Start()
 
 	// Assert
@@ -597,11 +588,10 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(fam.HTTPClient.client)
 	pke.Start()
 
 	// Act & Assert
@@ -645,23 +635,14 @@ func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
             }
 		}]`)
 
-	fam := &FakeAppMonitor{}
-	fam.Apps = append(fam.Apps, &KeaApp{
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234, false),
-		},
-		HTTPClient: nil,
-		// Reduced list of the configured daemons.
-		ConfiguredDaemons: []string{"dhcp6"},
-		ActiveDaemons:     []string{"dhcp6"},
-	})
+	fam := newFakeMonitorWithDefaults()
+	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
+	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp6"}
 
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Act
 	err := pke.collectStats()
@@ -696,11 +677,10 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	httpClient := NewHTTPClient()
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam, httpClient)
+	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(fam.HTTPClient.client)
 
 	// Act
 	err := pke.collectStats()

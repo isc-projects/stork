@@ -139,7 +139,6 @@ func runAgent(settings *generalSettings, reload bool) error {
 			time.Duration(settings.PrometheusKeaExporterInterval)*time.Second,
 			prometheusKeaExporterPerSubnetStats,
 			appMonitor,
-			keaHTTPClient,
 		)
 		promBind9Exporter := agent.NewPromBind9Exporter(
 			settings.PrometheusBind9ExporterAddress,
