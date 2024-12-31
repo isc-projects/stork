@@ -85,15 +85,17 @@ def test_communication_with_kea_using_basic_auth_no_credentials(
     """
     The Kea CA is configured to accept requests only with Basic Auth
     credentials in header but no clients has been provided in Kea CA config.
-    Kea shouldn't accept the requests from the Stork Agent.
+    Kea should not enable the Basic Auth.
     """
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     # Trig forward command to Kea
-    server_service.wait_for_next_machine_states()
-    # The Stork Agent doesn't know the credentials.
-    # The above request should fail.
-    server_service.wait_for_failed_ca_communication()
+    machine, *_ = server_service.wait_for_next_machine_states()
+
+    assert len(machine.apps) == 1
+    app = machine.apps[0]
+    key = server_service.read_access_point_key(app.id)
+    assert key == ""
 
 
 @kea_parametrize("agent-kea-basic-auth")
@@ -107,10 +109,15 @@ def test_communication_with_kea_using_basic_auth(
     """
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
-    server_service.wait_for_next_machine_states()
+    machine, *_ = server_service.wait_for_next_machine_states()
     # Check communication
     leases = server_service.list_leases("192.0.2.1")
     assert leases.total == 1
+
+    assert len(machine.apps) == 1
+    app = machine.apps[0]
+    key = server_service.read_access_point_key(app.id)
+    assert key == "foo"
 
 
 @kea_parametrize(suppress_registration=True)

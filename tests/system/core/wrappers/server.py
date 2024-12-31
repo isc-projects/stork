@@ -336,6 +336,13 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         api_instance = ServicesApi(self._api_client)
         response = api_instance.get_machines_server_token()
         return response.token
+    
+    def read_access_point_key(self, app_id) -> str:
+        """Read the access point key."""
+        api_instance = ServicesApi(self._api_client)
+        # Currently, only the control access points support the key.
+        response = api_instance.get_access_point_key(app_id=app_id, type="control")
+        return response
 
     # Update
 
