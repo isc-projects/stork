@@ -4,22 +4,13 @@
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
-    <a
-            label="New Subnet"
-            icon="pi pi-plus"
-            class="block p-button p-button-primary no-underline"
-            type="button"
-            routerLink="/dhcp/subnets/new"
-            pButton
-    ></a>
     <p-button
-            label="Refresh List"
-            icon="pi pi-refresh"
-            styleClass="block p-button-primary no-underline"
-            (onClick)="reloadData(machinesTable)"
+        label="Refresh List"
+        icon="pi pi-refresh"
+        styleClass="block p-button-primary no-underline"
+        (onClick)="reloadData(machinesTable)"
     ></p-button>
 </div>
-<p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
 <p-table
     #machinesTable
     [value]="dataCollection"
@@ -47,80 +38,36 @@
                     <i class="pi pi-filter"></i>
                     <span class="font-bold">Filters</span>
                     <p-tag
-                            icon="pi pi-check"
-                            value="Filter applied"
-                            severity="success"
-                            *ngIf="hasFilter(machinesTable)"
-                            [rounded]="true"
+                        icon="pi pi-check"
+                        value="Filter applied"
+                        severity="success"
+                        *ngIf="hasFilter(machinesTable)"
+                        [rounded]="true"
                     ></p-tag>
-                    <app-help-tip subject="filtering" id="filtering-help-button">
-                        <p>
-                            Subnets in the table below can be filtered by entering a text in the search box; the table
-                            shows all subnets matching the filter text. Currently supported fields for such filtering
-                            are:
-                        </p>
-                        <ul>
-                            <li>Subnet Prefix</li>
-                            <li>Lower and Upper Bound of Pools</li>
-                            <li>Shared Network Name</li>
-                            <li>Subnet Name</li>
-                        </ul>
-                        <p>
-                            The table can present subnets that meet certain criteria, e.g. <b>192.0</b> will show all
-                            subnets that contain 192.0 octets. It can also filter by shared network name and/or pools.
-                        </p>
-                        <p>
-                            In addition, subnets can be filtered by an explicitly selected field using text input and
-                            dropdown filters. Currently supported fields for explicit filtering are:
-                        </p>
-                        <ul>
-                            <li class="monospace">appId</li>
-                            <li>
-                                <span class="monospace">subnetId</span> - the subnet ID assigned in the Kea DHCP daemon
-                                configuration
-                            </li>
-                            <li class="monospace">DHCP version 4/6</li>
-                        </ul>
-                    </app-help-tip>
+                    <app-help-tip subject="filtering" id="filtering-help-button"> TBD </app-help-tip>
                 </div>
             </ng-template>
             <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
                 <button
-                        pButton
-                        label="Clear"
-                        [class.p-button-warning]="hasFilter(machinesTable)"
-                        [class.p-button-secondary]="!hasFilter(machinesTable)"
-                        icon="pi pi-filter-slash"
-                        (click)="clearFilters(machinesTable)"
-                        [disabled]="!hasFilter(machinesTable)"
+                    pButton
+                    label="Clear"
+                    [class.p-button-warning]="hasFilter(machinesTable)"
+                    [class.p-button-secondary]="!hasFilter(machinesTable)"
+                    icon="pi pi-filter-slash"
+                    (click)="clearFilters(machinesTable)"
+                    [disabled]="!hasFilter(machinesTable)"
                 ></button>
                 <div class="flex-auto"></div>
-                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
-                        <span class="p-float-label">
-                            <p-inputNumber
-                                    inputId="app-id"
-                                    mode="decimal"
-                                    [useGrouping]="false"
-                                    (onInput)="filter($event.value)"
-                                    [ngModel]="value"
-                                    [disabled]="hasPrefilter()"
-                            ></p-inputNumber>
-                            <label for="app-id">Kea App Id</label>
-                        </span>
-                    </ng-template>
-                </p-columnFilter>
-
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input
-                                    pInputText
-                                    type="text"
-                                    (input)="filter($event.target.value)"
-                                    [ngModel]="value"
-                                    placeholder="Search machines"
+                                pInputText
+                                type="text"
+                                (input)="filter($event.target.value)"
+                                [ngModel]="value"
+                                placeholder="Search machines"
                             />
                         </span>
                     </ng-template>
@@ -129,7 +76,7 @@
         </p-panel>
     </ng-template>
     <ng-template pTemplate="header">
-        <tr >
+        <tr>
             <th style="width: 4rem">
                 <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
             </th>
@@ -147,8 +94,8 @@
                 Agent Token
                 <app-help-tip subject="Agent Token" id="agent-token-help-button">
                     <p>
-                        This is a token generated by an agent during its first start up. Verify if value visible
-                        here is the same as agent token present in its logs or in
+                        This is a token generated by an agent during its first start up. Verify if value visible here is
+                        the same as agent token present in its logs or in
                         <span style="font-family: monospace">/var/lib/stork-agent/tokens/agent-token.txt</span>.
                     </p>
                 </app-help-tip>
@@ -157,7 +104,7 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-m>
-        <tr >
+        <tr>
             <td>
                 <p-tableCheckbox [value]="m"></p-tableCheckbox>
             </td>
@@ -168,33 +115,44 @@
             <td>{{ m.agentToken }}</td>
             <td>
                 <button
-                        type="button"
-                        pButton
-                        icon="pi pi-bars"
-                        id="show-machines-menu"
-                        (click)="showMachineMenu($event, machineMenu, m, machinesTable)"
+                    type="button"
+                    pButton
+                    icon="pi pi-bars"
+                    id="show-machines-menu"
+                    (click)="machineMenuDisplayed(m)"
                 ></button>
             </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <tr>
-            <td colspan="9">
-                No subnets found.
+            <td colspan="5">
+                <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
+                No unauthorized machines found.
                 <span *ngIf="hasFilter(machinesTable)">
                     Try to clear filtering.
                     <button
-                            pButton
-                            label="Clear"
-                            class="p-button-outlined"
-                            icon="pi pi-filter-slash"
-                            (click)="clearFilters(machinesTable)"
+                        pButton
+                        label="Clear"
+                        class="p-button-outlined"
+                        icon="pi pi-filter-slash"
+                        (click)="clearFilters(machinesTable)"
                     ></button>
                 </span>
+                <div class="mt-3">
+                    <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
+                    Information about adding new machines to Stork server is available after clicking on the
+                    <b>How to Install Agent to New Machine</b> button at the top.
+                </div>
+                <div *ngIf="!hasFilter(machinesTable)">
+                    <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
+                    There are no machines waiting for the authorization. You can now select the <b>Authorized</b>
+                    button above to see all authorized machines.
+                </div>
             </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="paginatorright" let-paginatorState>
-        Total: {{ paginatorState.totalRecords | pluralize: 'subnet' }}
+        Total: {{ paginatorState.totalRecords | pluralize: 'machine' }}
     </ng-template>
 </p-table>

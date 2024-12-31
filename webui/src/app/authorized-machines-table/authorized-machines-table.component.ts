@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
 import { PrefilteredTable } from '../table'
 import { Machine, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'

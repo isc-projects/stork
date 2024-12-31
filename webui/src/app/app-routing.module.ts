@@ -194,7 +194,12 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
      *
      * @private
      */
-    private specificComponents: any[] = [HostsPageComponent, SubnetsPageComponent, SharedNetworksPageComponent]
+    private specificComponents: any[] = [
+        HostsPageComponent,
+        SubnetsPageComponent,
+        SharedNetworksPageComponent,
+        MachinesPageComponent,
+    ]
 
     /**
      * The point of this CustomRouteReuseStrategy is to skip route reuse in specific cases.
@@ -240,7 +245,8 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
             this.specificComponents.includes(future.component) &&
             future.component === curr.component &&
             (future.queryParamMap.has('gs') ||
-                (curr.paramMap.get('id')?.includes('all') && future.paramMap.get('id')?.includes('all')))
+                (curr.paramMap.get('id')?.includes('all') && future.paramMap.get('id')?.includes('all')) ||
+                (curr.paramMap.get('id')?.includes('authorized') && future.paramMap.get('id')?.includes('authorized')))
         ) {
             // Do not reuse route when navigation happens between two same specific components,
             // (e.g. between two HostsPageComponents)

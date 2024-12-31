@@ -41,7 +41,7 @@
                 <a routerLink="/machines/{{ m.id }}">[{{ m.id }}] {{ m.hostname }}</a>
             </div>
             <div style="margin-top: 10px">
-                <a routerLink="/machines/all" [queryParams]="{ text: searchText }">more</a>
+                <a routerLink="/machines/authorized" [queryParams]="{ text: searchText, gs: true }">more</a>
             </div>
         </div>
         <div id="apps-div" *ngIf="searchResults.apps.items.length > 0" style="margin-right: 20px; min-width: 9em">
