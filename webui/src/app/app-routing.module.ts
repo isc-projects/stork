@@ -46,7 +46,7 @@ const routes: Routes = [
     {
         path: 'machines',
         pathMatch: 'full',
-        redirectTo: 'machines/authorized',
+        redirectTo: 'machines/all',
     },
     {
         path: 'machines/:id',

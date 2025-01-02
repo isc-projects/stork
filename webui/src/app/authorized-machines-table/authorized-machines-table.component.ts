@@ -11,6 +11,7 @@ import { Location } from '@angular/common'
 export interface MachinesFilter {
     text?: string
     appId?: number
+    authorized?: string
 }
 
 @Component({
@@ -33,7 +34,7 @@ export class AuthorizedMachinesTableComponent
      * Array of all boolean keys that are supported when filtering machines via URL queryParams.
      * Currently, no boolean key is supported in queryParams filtering.
      */
-    queryParamBooleanKeys: (keyof MachinesFilter)[] = []
+    queryParamBooleanKeys: (keyof MachinesFilter)[] = ['authorized']
 
     /**
      * Array of all numeric keys that can be used to filter machines.
@@ -43,7 +44,7 @@ export class AuthorizedMachinesTableComponent
     /**
      * Array of all boolean keys that can be used to filter machines.
      */
-    filterBooleanKeys: (keyof MachinesFilter)[] = []
+    filterBooleanKeys: (keyof MachinesFilter)[] = ['authorized']
 
     /**
      * Prefix of the stateKey. Will be used to evaluate stateKey.
@@ -53,7 +54,7 @@ export class AuthorizedMachinesTableComponent
     /**
      * queryParam keyword of the filter by appId.
      */
-    prefilterKey: keyof MachinesFilter = 'appId'
+    prefilterKey: keyof MachinesFilter = 'authorized'
 
     /**
      * Array of FilterValidators that will be used for validation of filters, which values are limited
@@ -101,6 +102,7 @@ export class AuthorizedMachinesTableComponent
         super.onInit()
     }
     loadData(event: TableLazyLoadEvent): void {
+        console.log('prefilterValue', this.prefilterValue)
         // Indicate that machines refresh is in progress.
         this.dataLoading = true
         // The goal is to send to backend something as simple as:
@@ -110,8 +112,8 @@ export class AuthorizedMachinesTableComponent
                 event.first,
                 event.rows,
                 this.getTableFilterValue('text', event.filters),
-                this.prefilterValue ?? this.getTableFilterValue('appId', event.filters),
-                true
+                this.getTableFilterValue('appId', event.filters),
+                this.prefilterValue ?? this.getTableFilterValue('authorized', event.filters)
             )
         )
             .then((data) => {

@@ -127,13 +127,13 @@ export abstract class PrefilteredTable<
     filterTextFormatErrors: string[] = []
 
     /**
-     * queryParam keyword of the filter by Id.
+     * queryParam keyword of the prefilter.
      */
     abstract prefilterKey: keyof FilterInterface
 
     /**
      * Prefix of the stateKey. Will be used to evaluate stateKey by appending either '-all' suffix or
-     * numeric value, e.g. '-1'.
+     * numeric value, e.g. '-1', or boolean value as string, e.g. '-true'.
      *
      * Example:
      * stateKeyPrefix = 'hosts-table'
@@ -151,10 +151,10 @@ export abstract class PrefilteredTable<
     stateKey: string
 
     /**
-     * Keeps value of the "by Id" pre-filter from queryParam (e.g. by kea app Id).
-     * If no pre-filtering by Id is used, it will be null.
+     * Keeps value of the pre-filter from queryParam (e.g. by kea app Id).
+     * If no pre-filtering is used, it will be null.
      */
-    prefilterValue: number
+    prefilterValue: number | string
 
     /**
      * Table's index of the first row to be displayed, restored from browser's storage.
@@ -308,7 +308,7 @@ export abstract class PrefilteredTable<
         const paramMap = this._route.snapshot.paramMap
         const queryParamMap = this._route.snapshot.queryParamMap
 
-        // Get param id and queryParam value for prefilerKey Id.
+        // Get param id and queryParam value for prefilterKey Id.
         const id = paramMap.get('id')
         if (!id || id === 'all') {
             this.parseIdFromQueryParam(queryParamMap)
@@ -342,7 +342,7 @@ export abstract class PrefilteredTable<
     }
 
     /**
-     * Returns true if prefilter by Id from queryParam was applied; false otherwise.
+     * Returns true if the prefilter from queryParam was applied; false otherwise.
      */
     hasPrefilter(): boolean {
         return this.prefilterValue != null
@@ -359,7 +359,7 @@ export abstract class PrefilteredTable<
         // Clear queryParam filters parsing errors.
         this.filterTextFormatErrors = []
 
-        // Even when all filters are cleared, restore "by Id" filter if it was given in queryParams.
+        // Even when all filters are cleared, restore the prefilter value if it was given in queryParams.
         // Note that other queryParam filters are also cleared here.
         if (this.hasPrefilter()) {
             table.filters[this.prefilterKey as string] = { value: this.prefilterValue, matchMode: 'equals' }
@@ -415,7 +415,7 @@ export abstract class PrefilteredTable<
      */
     updateFilterFromQueryParameters(params: ParamMap): void {
         const numericKeys =
-            !this.prefilterKey || this.prefilterKey in this.queryParamNumericKeys
+            (this.isPrefilterNumber() && !this.prefilterKey) || this.prefilterKey in this.queryParamNumericKeys
                 ? this.queryParamNumericKeys
                 : [this.prefilterKey, ...this.queryParamNumericKeys]
 
@@ -433,7 +433,11 @@ export abstract class PrefilteredTable<
 
         const parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
 
-        for (const key of this.queryParamBooleanKeys) {
+        const booleanKeys =
+            (this.isPrefilterBoolean() && !this.prefilterKey) || this.prefilterKey in this.queryParamBooleanKeys
+                ? this.queryParamBooleanKeys
+                : [this.prefilterKey, ...this.queryParamBooleanKeys]
+        for (const key of booleanKeys) {
             if (params.has(key as string)) {
                 filter[key as any] = parseBoolean(params.get(key as string))
             }
@@ -634,12 +638,34 @@ export abstract class PrefilteredTable<
     }
 
     /**
-     * Parses value for the queryParam "by Id" keyword and stores this value under tableId.
+     * Parses value for the queryParam prefilter keyword and stores this value under tableId.
      * @param queryParamMap
      * @private
      */
     private parseIdFromQueryParam(queryParamMap: ParamMap): void {
-        const id = parseInt(queryParamMap.get(this.prefilterKey as string))
-        this.prefilterValue = isNaN(id) ? null : id
+        const prefilterValue = queryParamMap.get(this.prefilterKey as string)
+        if (this.isPrefilterNumber()) {
+            const numericId = parseInt(prefilterValue)
+            this.prefilterValue = isNaN(numericId) ? null : numericId
+        } else if (this.isPrefilterBoolean()) {
+            this.prefilterValue = prefilterValue === 'true' || prefilterValue === 'false' ? prefilterValue : null
+        }
+    }
+
+    /**
+     * Returns true if the prefilter is a numeric filter; false otherwise.
+     * @private
+     */
+    private isPrefilterNumber(): boolean {
+        return this.prefilterKey in this.filterNumericKeys
+    }
+
+    /**
+     * Returns true if the prefilter is a boolean filter; false otherwise.
+     * @private
+     */
+    private isPrefilterBoolean(): boolean {
+        console.log('isPrefilterBoolean()', this.prefilterKey in this.filterBooleanKeys, this.prefilterKey, this.filterBooleanKeys)
+        return this.prefilterKey in this.filterBooleanKeys
     }
 }

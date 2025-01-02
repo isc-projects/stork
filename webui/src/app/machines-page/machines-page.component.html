@@ -136,7 +136,7 @@ sudo ./stork-install-agent.sh</textarea
 
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
+        <a role="menuitem" pRipple [routerLink]="item.routerLink" [queryParams]="i === 0 ? authorizedMachinesTable?.validFilter : null" class="p-ripple p-element p-menuitem-link">
             <div class="flex justify-content-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">

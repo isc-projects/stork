@@ -58,7 +58,7 @@
                     [disabled]="!hasFilter(machinesTable)"
                 ></button>
                 <div class="flex-auto"></div>
-                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
+                <p-columnFilter field="appId" matchMode="equals" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                         <span class="p-float-label">
                             <p-inputNumber
@@ -67,12 +67,16 @@
                                 [useGrouping]="false"
                                 (onInput)="filter($event.value)"
                                 [ngModel]="value"
-                                [disabled]="hasPrefilter()"
                             ></p-inputNumber>
                             <label for="app-id">Kea App Id</label>
                         </span>
                     </ng-template>
                 </p-columnFilter>
+
+                <div class="flex align-items-center gap-1">
+                    Authorized machines
+                    <p-columnFilter type="boolean" field="authorized" matchMode="equals" [showClearButton]="!hasPrefilter()"></p-columnFilter>
+                </div>
 
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filter="filterCallback">

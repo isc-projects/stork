@@ -120,7 +120,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 // Get machine id.
                 // this.showUnauthorized = false
                 const id = paramMap.get('id')
-                if (!id || id === 'authorized' || id === 'unauthorized') {
+                if (!id || id === 'all') {
                     // Update the filter only if the target is machine list.
                     this.showUnauthorized = id === 'unauthorized'
                     this.table?.updateFilterFromQueryParameters(queryParamMap)
@@ -217,7 +217,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     ngOnInit() {
-        this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/authorized' }]
+        this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
         this.machines = []
         this.appTypes = [
@@ -471,11 +471,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
         if (this.activeTabIdx === idx) {
             this.switchToTab(idx - 1)
-            if (idx - 1 > 0) {
-                this.router.navigate(['/machines/' + this.machineTab.machine.id])
-            } else {
-                this.navigateToMachinesList()
-            }
+            this.router.navigate(this.tabs[idx - 1].routerLink)
         } else if (this.activeTabIdx > idx) {
             this.activeTabIdx = this.activeTabIdx - 1
         }

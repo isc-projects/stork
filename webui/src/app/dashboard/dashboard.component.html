@@ -19,7 +19,7 @@
 
                 <p class="pb-3">
                     Currently, there are no machines to monitor defined in Stork. To add a new machine visit the
-                    <a routerLink="/machines/unauthorized">machines page</a>.
+                    <a routerLink="/machines/all" [queryParams]="{authorized: 'false'}">machines page</a>.
                 </p>
 
                 <p>
