@@ -2,7 +2,6 @@ package storkutil
 
 import (
 	"bytes"
-	"slices"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -24,16 +23,12 @@ func CompareNames(name1, name2 string) int {
 	s1 := dns.SplitDomainName(name1)
 	s2 := dns.SplitDomainName(name2)
 
-	// Reverse the labels order because we compare them from the back.
-	slices.Reverse(s1)
-	slices.Reverse(s2)
-
 	// Compare the labels that exist in both names.
 	for i := 0; i < min(len(s1), len(s2)); i++ {
 		switch {
-		case s2[i] == s1[i]:
+		case s2[len(s2)-i-1] == s1[len(s1)-i-1]:
 			continue
-		case s1[i] < s2[i]:
+		case s1[len(s1)-i-1] < s2[len(s2)-i-1]:
 			return -1
 		default:
 			return 1
