@@ -161,7 +161,7 @@ func generateRandomZones(num int64) zones {
 			name = label + name
 		}
 		// Create the zone entry.
-		zones.Zones = append(zones.Zones, &Zone{
+		zones.zoneList = append(zones.zoneList, &Zone{
 			Name: name,
 		})
 	}
@@ -191,7 +191,7 @@ func BenchmarkGetZoneBinarySearch(b *testing.B) {
 			zones := generateRandomZones(testCase)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				zone := zones.Zones[rand.IntN(len(zones.Zones))]
+				zone := zones.zoneList[rand.IntN(len(zones.zoneList))]
 				zones.binarySearch(zone.Name)
 			}
 		})
@@ -220,7 +220,7 @@ func BenchmarkGetZoneLinearSearch(b *testing.B) {
 			zones := generateRandomZones(testCase)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				zone := zones.Zones[rand.IntN(len(zones.Zones))]
+				zone := zones.zoneList[rand.IntN(len(zones.zoneList))]
 				zones.linearSearch(zone.Name)
 			}
 		})
@@ -248,7 +248,7 @@ func BenchmarkGetZone(b *testing.B) {
 			zones := generateRandomZones(testCase)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				zone := zones.Zones[rand.IntN(len(zones.Zones))]
+				zone := zones.zoneList[rand.IntN(len(zones.zoneList))]
 				zones.GetZone(zone.Name)
 			}
 		})
