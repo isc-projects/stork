@@ -10,6 +10,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var _ httpResponse = (*resty.Response)(nil)
+
 // BIND9 stats API version. This is the number being a part of
 // the URL path, e.g. http://localhost:8080/json/v1, where 1 is
 // the API version specified here.
@@ -25,6 +27,14 @@ func setBind9StatsClientBasePath(baseURL string) string {
 type bind9StatsClientRequest struct {
 	innerClient *resty.Client
 	baseURL     string
+}
+
+// Interface to the HTTP response exposing functions to check the response status.
+// The resty.Response implements this interface.
+type httpResponse interface {
+	IsError() bool
+	StatusCode() int
+	String() string
 }
 
 // Creates new BIND9 stats request to the host and port.
@@ -58,7 +68,7 @@ func (request *bind9StatsClientRequest) makeURL(path string) string {
 // Makes an HTTP GET request and expects JSON payload in return. The returned
 // value is unmarshalled and stored in the result. The path is the path part
 // of the URL.
-func (request *bind9StatsClientRequest) getJSON(path string, result any) (*resty.Response, error) {
+func (request *bind9StatsClientRequest) getJSON(path string, result any) (httpResponse, error) {
 	url := request.makeURL(path)
 	response, err := request.innerClient.R().SetHeader("Accept", "application/json").SetResult(&result).Get(url)
 	if err == nil {
@@ -69,7 +79,7 @@ func (request *bind9StatsClientRequest) getJSON(path string, result any) (*resty
 
 // Makes an HTTP GET request and expects JSON payload in return. The returned payload
 // is neither validated nor parsed. It is returned as a slice of bytes to a caller.
-func (request *bind9StatsClientRequest) getRawJSON(path string) (*resty.Response, []byte, error) {
+func (request *bind9StatsClientRequest) getRawJSON(path string) (httpResponse, []byte, error) {
 	url := request.makeURL(path)
 	response, err := request.innerClient.R().SetHeader("Accept", "application/json").Get(url)
 	if err == nil {
@@ -79,7 +89,7 @@ func (request *bind9StatsClientRequest) getRawJSON(path string) (*resty.Response
 }
 
 // Makes a request to retrieve BIND9 views over the stats channel.
-func (request *bind9StatsClientRequest) getViews() (*resty.Response, *bind9stats.Views, error) {
+func (request *bind9StatsClientRequest) getViews() (httpResponse, *bind9stats.Views, error) {
 	// The /zones path returns the top level stats structure. Besides the
 	// map of views it returns other top-level information. We need to embed
 	// the Views field in the structure to fit the returned data. Next
@@ -98,7 +108,7 @@ func (request *bind9StatsClientRequest) getViews() (*resty.Response, *bind9stats
 // Get the whole statistics structure. It should be a map[string]any
 // structure wrapped in the any interface. The interface should cast
 // to map[string]any.
-func (request *bind9StatsClientRequest) getRawStats() (*resty.Response, any, error) {
+func (request *bind9StatsClientRequest) getRawStats() (httpResponse, any, error) {
 	var stats any
 	response, err := request.getJSON("/", &stats)
 	if err != nil {
