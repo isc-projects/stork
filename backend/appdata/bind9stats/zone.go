@@ -9,7 +9,7 @@ import (
 )
 
 // A maximum size of the zone collection for which a linear zone search
-// is performed. A binary search is be used for larger collections.
+// is performed. A binary search is used for larger collections.
 const binaryZoneSearchThreshold = 3000
 
 // Represents a BIND9 zone retrieved from the stats channel.
