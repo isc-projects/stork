@@ -899,7 +899,7 @@ describe('subnets', () => {
     })
 
     it('should detect same user-contexts for subnet', () => {
-        let subnet: Subnet = {
+        const subnet: Subnet = {
             localSubnets: [
                 {
                     userContext: {
