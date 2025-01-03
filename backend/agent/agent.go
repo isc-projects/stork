@@ -334,7 +334,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	}
 
 	// Try to forward the command to named daemon.
-	namedResponse, payload, err := sa.bind9StatsClient.requestFromURL(reqURL).getRawJSON("/")
+	namedResponse, payload, err := sa.bind9StatsClient.createRequestFromURL(reqURL).getRawJSON("/")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"URL": reqURL,

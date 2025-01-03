@@ -130,12 +130,12 @@ func NewBind9StatsClient() *bind9StatsClient {
 	}
 }
 
-// Creates new request to the particular host and port.
-func (client *bind9StatsClient) request(host string, port int64) *bind9StatsClientRequest {
+// Creates new createRequest to the particular host and port.
+func (client *bind9StatsClient) createRequest(host string, port int64) *bind9StatsClientRequest {
 	return newBind9StatsClientRequest(client.innerClient, host, port)
 }
 
 // Creates new request sent to the specified URL. The URL must exclude the "/json/v{n}" part.
-func (client *bind9StatsClient) requestFromURL(url string) *bind9StatsClientRequest {
+func (client *bind9StatsClient) createRequestFromURL(url string) *bind9StatsClientRequest {
 	return newBind9StatsClientRequestFromURL(client.innerClient, url)
 }

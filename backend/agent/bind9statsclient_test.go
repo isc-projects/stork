@@ -25,7 +25,7 @@ func TestSetBind9StatsClientBasePath(t *testing.T) {
 
 // Test making an URL by appending the path to the base URL.
 func TestMakeURL(t *testing.T) {
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	require.NotNil(t, request)
 	require.Equal(t, fmt.Sprintf("http://localhost:5380/json/v%d/views/zones", bind9StatsAPIVersion), request.makeURL("views/zones"))
 	require.Equal(t, fmt.Sprintf("http://localhost:5380/json/v%d/views/zones", bind9StatsAPIVersion), request.makeURL("/views/zones"))
@@ -48,7 +48,7 @@ func TestBind9GetRawJSON(t *testing.T) {
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(bind9Stats))
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, rawJSON, err := request.getRawJSON("/mem")
@@ -74,7 +74,7 @@ func TestBind9GetRawJSON404(t *testing.T) {
 		Reply(404).
 		AddHeader("Content-Type", "application/json").
 		BodyString("No such URL")
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, rawJSON, err := request.getRawJSON("/")
@@ -99,7 +99,7 @@ func TestBind9GetRawJSONError(t *testing.T) {
 		}).
 		Persist().
 		ReplyError(pkgerrors.New("error during the HTTP request"))
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, rawJSON, err := request.getRawJSON("/")
@@ -122,7 +122,7 @@ func TestBind9GetViews(t *testing.T) {
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(bind9Stats))
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, views, err := request.getViews()
@@ -165,7 +165,7 @@ func TestBind9GetViews404(t *testing.T) {
 		Reply(404).
 		AddHeader("Content-Type", "application/json").
 		BodyString("No such URL")
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, views, err := request.getViews()
@@ -189,7 +189,7 @@ func TestBind9GetViewsError(t *testing.T) {
 		}).
 		Persist().
 		ReplyError(pkgerrors.New("error making HTTP request"))
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, views, err := request.getViews()
@@ -212,7 +212,7 @@ func TestBind9GetRawStats(t *testing.T) {
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(bind9Stats))
-	request := NewBind9StatsClient().request("localhost", 5380)
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, rawStats, err := request.getRawStats()

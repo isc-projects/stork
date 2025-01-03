@@ -1196,7 +1196,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 			log.WithError(err).Error("Problem getting stats from BIND 9, bad access statistics point")
 			continue
 		}
-		response, rspIfc, err := pbe.HTTPClient.request(sap.Address, sap.Port).getRawStats()
+		response, rspIfc, err := pbe.HTTPClient.createRequest(sap.Address, sap.Port).getRawStats()
 		if err != nil {
 			lastErr = err
 			log.Errorf("Problem getting stats from BIND 9: %+v", err)
