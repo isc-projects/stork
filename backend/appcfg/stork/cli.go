@@ -21,13 +21,8 @@ type environmentFileSettings struct {
 // Read hook directory settings. They are parsed after environment file
 // settings but before the main settings.
 // It allows us to merge the hook flags with the core flags into a single output.
-type hookDirectorySettings struct {
+type HookDirectorySettings struct {
 	HookDirectory string `long:"hook-directory" description:"The path to the hook directory" env:"STORK_@APP_HOOK_DIRECTORY" default:"/usr/lib/stork-@APP/hooks"`
-}
-
-type BaseSettings struct {
-	environmentFileSettings
-	hookDirectorySettings
 }
 
 // Defines the type for set of hook settings grouped by the hook name.
@@ -42,6 +37,11 @@ type CLIParser struct {
 
 // Constructs CLI parser.
 func NewCLIParser(parser *flags.Parser, app string, onLoadEnvironmentFileCallback func()) *CLIParser {
+	if app != "server" && app != "agent" {
+		// Programming error.
+		panic("invalid application name")
+	}
+
 	return &CLIParser{
 		parser:                        parser,
 		application:                   strings.ToLower(app),
@@ -51,23 +51,25 @@ func NewCLIParser(parser *flags.Parser, app string, onLoadEnvironmentFileCallbac
 
 // Parse the command line arguments into Stork-specific GO structures.
 // At the end, it composes the CLI parser from all the flags and runs it.
-func (p *CLIParser) Parse() (hookFlags GroupedHookCLIFlags, isHelp bool, err error) {
-	allHookFLags, err := p.bootstrap()
+// Returns a hook directory settings, hook settings extracted from the hooks,
+// flag indication if the help was requested and an error if any.
+func (p *CLIParser) Parse() (*HookDirectorySettings, GroupedHookCLIFlags, bool, error) {
+	hookDirectorySettings, allHookFLags, err := p.bootstrap()
 	if err != nil {
 		if isHelpRequest(err) {
-			return nil, true, nil
+			return nil, nil, true, nil
 		}
-		return nil, false, err
+		return nil, nil, false, err
 	}
 
 	err = p.parse()
 	if err != nil {
 		if isHelpRequest(err) {
-			return nil, true, nil
+			return nil, nil, true, nil
 		}
-		return nil, false, err
+		return nil, nil, false, err
 	}
-	return allHookFLags, false, nil
+	return hookDirectorySettings, allHookFLags, false, nil
 }
 
 // Parse the CLI flags stored in the main parser.
@@ -85,35 +87,50 @@ func (p *CLIParser) parse() (err error) {
 // is provided, the content is loaded.
 // Next, it parses the hooks location and extracts their CLI flags.
 // The hook flags are then merged with the core flags.
-func (p *CLIParser) bootstrap() (GroupedHookCLIFlags, error) {
+func (p *CLIParser) bootstrap() (*HookDirectorySettings, GroupedHookCLIFlags, error) {
 	// Environment variables.
 	envFileSettings := &environmentFileSettings{}
 	envParser := p.createSubParser(envFileSettings)
 	if _, err := envParser.Parse(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err := p.loadEnvironmentFile(envFileSettings)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Process the hook directory location.
-	hookDirectorySettings := &hookDirectorySettings{}
+	hookDirectorySettings := &HookDirectorySettings{}
 	hookParser := p.createSubParser(hookDirectorySettings)
 	if _, err := hookParser.Parse(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	allHookCLIFlags, err := p.collectHookCLIFlags(hookDirectorySettings)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = p.mergeHookFlags(allHookCLIFlags)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return allHookCLIFlags, nil
+	// Append the parser-related flags to the main parser.
+	group, err := p.parser.AddGroup("Environment File Flags", "", envFileSettings)
+	if err != nil {
+		err = errors.Wrap(err, "cannot add the environment file group")
+		return nil, nil, err
+	}
+	p.substitutePlaceholdersInGroup(group)
+
+	group, err = p.parser.AddGroup("Hook Directory Flags", "", hookDirectorySettings)
+	if err != nil {
+		err = errors.Wrap(err, "cannot add the hook directory group")
+		return nil, nil, err
+	}
+	p.substitutePlaceholdersInGroup(group)
+
+	return hookDirectorySettings, allHookCLIFlags, nil
 }
 
 // Merges the CLI flags of the hooks with the core CLI flags.
@@ -192,20 +209,26 @@ func (p *CLIParser) createSubParser(settings any) *flags.Parser {
 // Substitutes the placeholders in the defaults and environment variable names.
 func (p *CLIParser) substitutePlaceholders(parser *flags.Parser) {
 	for _, group := range parser.Groups() {
-		for _, option := range group.Options() {
-			// Defaults.
-			for i, d := range option.Default {
-				option.Default[i] = strings.Replace(d, "@APP", p.application, 1)
-			}
+		p.substitutePlaceholdersInGroup(group)
+	}
+}
 
-			// Environment variables.
-			option.EnvDefaultKey = strings.Replace(
-				option.EnvDefaultKey,
-				"@APP",
-				strings.ToUpper(p.application),
-				1,
-			)
+// Substitutes the placeholders in the defaults and environment variable names
+// in a group of flags.
+func (p *CLIParser) substitutePlaceholdersInGroup(group *flags.Group) {
+	for _, option := range group.Options() {
+		// Defaults.
+		for i, d := range option.Default {
+			option.Default[i] = strings.Replace(d, "@APP", p.application, 1)
 		}
+
+		// Environment variables.
+		option.EnvDefaultKey = strings.Replace(
+			option.EnvDefaultKey,
+			"@APP",
+			strings.ToUpper(p.application),
+			1,
+		)
 	}
 }
 
@@ -234,15 +257,20 @@ func (p *CLIParser) loadEnvironmentFile(envFileSettings *environmentFileSettings
 }
 
 // Extracts the CLI flags from the hooks.
-func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *hookDirectorySettings) (map[string]hooks.HookSettings, error) {
+func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySettings) (map[string]hooks.HookSettings, error) {
 	allCLIFlags := map[string]hooks.HookSettings{}
 	stat, err := os.Stat(hookDirectorySettings.HookDirectory)
 	switch {
 	case err == nil && stat.IsDir():
 		// Gather the hook flags.
 		hookWalker := hooksutil.NewHookWalker()
+		program := hooks.HookProgramServer
+		if p.application == "agent" {
+			program = hooks.HookProgramAgent
+		}
+
 		allCLIFlags, err = hookWalker.CollectCLIFlags(
-			hooks.HookProgramServer,
+			program,
 			hookDirectorySettings.HookDirectory,
 		)
 		if err != nil {

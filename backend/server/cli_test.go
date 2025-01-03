@@ -2,22 +2,11 @@ package server
 
 import (
 	"os"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/hooks"
 	"isc.org/stork/testutil"
 )
-
-// Test that the CLI parser is constructed properly.
-func TestNewCLIParser(t *testing.T) {
-	// Arrange & Act
-	parser := NewCLIParser()
-
-	// Assert
-	require.NotNil(t, parser)
-}
 
 // Test that the environment variables from the environment file are loaded
 // and parsed by the CLI parser.
@@ -41,10 +30,8 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 		"--env-file", envPath,
 	}
 
-	parser := NewCLIParser()
-
 	// Act
-	command, settings, err := parser.Parse()
+	command, settings, err := ParseCLIFlags()
 
 	// Assert
 	require.NoError(t, err)
@@ -52,7 +39,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 	require.Equal(t, RunCommand, command)
 
 	require.Equal(t, "foo", settings.DatabaseSettings.Host)
-	require.Equal(t, "bar", settings.GeneralSettings.HookDirectory)
+	require.Equal(t, "bar", settings.HookDirectory)
 	require.Equal(t, "baz", settings.RestAPISettings.Host)
 }
 
@@ -75,10 +62,8 @@ func TestEnvironmentFileIsInvalid(t *testing.T) {
 		"--env-file", envPath,
 	}
 
-	parser := NewCLIParser()
-
 	// Act
-	command, settings, err := parser.Parse()
+	command, settings, err := ParseCLIFlags()
 
 	// Assert
 	require.Error(t, err)
@@ -115,9 +100,8 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 		"--env-file", environmentFile.Name(),
 	}
 
-	parser := NewCLIParser()
 	// Act
-	command, settings, err := parser.Parse()
+	command, settings, err := ParseCLIFlags()
 
 	// Assert
 	require.NoError(t, err)
@@ -132,70 +116,14 @@ func TestCLIParserRejectsWrongCLIArguments(t *testing.T) {
 	// Arrange
 	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{"stork-server", "--foo-bar-baz"}
-	parser := NewCLIParser()
 
 	// Act
-	command, settings, err := parser.Parse()
+	command, settings, err := ParseCLIFlags()
 
 	// Assert
 	require.Error(t, err)
 	require.Nil(t, settings)
 	require.EqualValues(t, NoneCommand, command)
-}
-
-// Test that the namespaces are correct.
-func TestHookNamespaces(t *testing.T) {
-	// Arrange
-	hookNames := []string{
-		"foo",
-		"foo-bar",
-		"foo_bar",
-		"foo-42",
-		"foo-!@#",
-		"foo bar",
-		"foo.bar",
-		"FOO",
-		"fOo",
-		"FoO",
-		"stork-server-foo",
-	}
-	expectedFlagNamespaces := []string{
-		"foo",
-		"foo-bar",
-		"foo-bar",
-		"foo-42",
-		"foo-!@#",
-		"foo-bar",
-		"foo-bar",
-		"foo",
-		"foo",
-		"foo",
-		"foo",
-	}
-	expectedEnvironmentNamespaces := []string{
-		"STORK_SERVER_HOOK_FOO",
-		"STORK_SERVER_HOOK_FOO_BAR",
-		"STORK_SERVER_HOOK_FOO_BAR",
-		"STORK_SERVER_HOOK_FOO_42",
-		"STORK_SERVER_HOOK_FOO_!@#",
-		"STORK_SERVER_HOOK_FOO_BAR",
-		"STORK_SERVER_HOOK_FOO_BAR",
-		"STORK_SERVER_HOOK_FOO",
-		"STORK_SERVER_HOOK_FOO",
-		"STORK_SERVER_HOOK_FOO",
-		"STORK_SERVER_HOOK_FOO",
-	}
-
-	for i := 0; i < len(hookNames); i++ {
-		hookName := hookNames[i]
-		t.Run(hookName, func(t *testing.T) {
-			// Act
-			flagNamespace, envNamespace := getHookNamespaces(hookName)
-			// Assert
-			require.Equal(t, expectedFlagNamespaces[i], flagNamespace)
-			require.Equal(t, expectedEnvironmentNamespaces[i], envNamespace)
-		})
-	}
 }
 
 // Test that the error is returned if the hook directory path points to a file.
@@ -205,119 +133,13 @@ func TestCollectHookCLIFlagsForNonDirectoryPath(t *testing.T) {
 	defer sandbox.Close()
 	path, _ := sandbox.Join("file.ext")
 	defer testutil.CreateOsArgsRestorePoint()()
-	parser := NewCLIParser()
 
 	// Act
 	os.Args = []string{"stork-server", "--hook-directory", path}
-	command, settings, err := parser.Parse()
+	command, settings, err := ParseCLIFlags()
 
 	// Assert
 	require.ErrorContains(t, err, "hook directory path is not pointing to a directory")
 	require.Nil(t, settings)
 	require.Equal(t, NoneCommand, command)
-}
-
-// Test that the no error is returned if the hook directory doesn't exist.
-func TestCollectHookCLIFlagsForMissingDirectory(t *testing.T) {
-	// Arrange
-	sb := testutil.NewSandbox()
-	defer sb.Close()
-	parser := NewCLIParser()
-	hookSettings := &HookDirectorySettings{
-		path.Join(sb.BasePath, "non-exists-directory"),
-	}
-
-	// Act
-	flags, err := parser.collectHookCLIFlags(hookSettings)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, flags)
-	require.Empty(t, flags)
-}
-
-// Test that the hook settings are properly parsed from environment variables.
-func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
-	// Arrange
-	restore := testutil.CreateEnvironmentRestorePoint()
-	defer restore()
-	os.Setenv("STORK_SERVER_HOOK_BAZ_FOO_BAR", "fooBar")
-
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{"program-name"}
-
-	type hookSettings struct {
-		FooBar string `long:"foo-bar" env:"FOO_BAR"`
-	}
-
-	hookFlags := map[string]hooks.HookSettings{
-		"baz": &hookSettings{},
-	}
-
-	parser := NewCLIParser()
-
-	// Act
-	settings, err := parser.parseSettings(hookFlags)
-
-	// Assert
-	require.NoError(t, err)
-	require.Contains(t, settings.HooksSettings, "baz")
-	require.Equal(t, "fooBar", settings.HooksSettings["baz"].(*hookSettings).FooBar)
-}
-
-// Test that the hook settings are properly parsed from the CLI arguments.
-func TestParseHookSettingsFromCLI(t *testing.T) {
-	// Arrange
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
-		"program-name",
-		"--baz.foo-bar", "fooBar",
-	}
-
-	type hookSettings struct {
-		FooBar string `long:"foo-bar" env:"FOO_BAR"`
-	}
-
-	hookFlags := map[string]hooks.HookSettings{
-		"baz": &hookSettings{},
-	}
-
-	parser := NewCLIParser()
-
-	// Act
-	settings, err := parser.parseSettings(hookFlags)
-
-	// Assert
-	require.NoError(t, err)
-	require.Contains(t, settings.HooksSettings, "baz")
-	require.Equal(t, "fooBar", settings.HooksSettings["baz"].(*hookSettings).FooBar)
-}
-
-// Test that an error is returned if the two hooks are solved to the same
-// namespace.
-func TestPaseHookSettingsDuplicatedNamespace(t *testing.T) {
-	// Arrange
-	defer testutil.CreateOsArgsRestorePoint()()
-	os.Args = []string{
-		"program-name",
-		"--baz.foo-bar", "fooBar",
-	}
-
-	type hookSettings struct {
-		FooBar string `long:"foo-bar" env:"FOO_BAR"`
-	}
-
-	hookFlags := map[string]hooks.HookSettings{
-		"baz":              &hookSettings{},
-		"stork-server-baz": &hookSettings{},
-	}
-
-	parser := NewCLIParser()
-
-	// Act
-	settings, err := parser.parseSettings(hookFlags)
-
-	// Assert
-	require.ErrorContains(t, err, "two hooks using the same configuration namespace")
-	require.Nil(t, settings)
 }

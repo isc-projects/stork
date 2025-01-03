@@ -53,6 +53,7 @@ type Settings struct {
 	AgentsSettings   *agentcomm.AgentsSettings
 	HooksSettings    map[string]hooks.HookSettings
 	DatabaseSettings *dbops.DatabaseSettings
+	HookDirectory    string
 }
 
 // Constructs a new settings instance.
@@ -75,6 +76,7 @@ func newSettings() *Settings {
 // At the end, it composes the CLI parser from all the flags and runs it.
 func ParseCLIFlags() (command Command, settings *Settings, err error) {
 	command = NoneCommand
+	settings = newSettings()
 
 	parser := flags.NewParser(settings, flags.Default)
 	parser.ShortDescription = "Stork Server"
@@ -110,7 +112,7 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 		storkutil.SetupLogging()
 	})
 
-	hookFlags, isHelp, err := appParser.Parse()
+	hookDirSettings, hookFlags, isHelp, err := appParser.Parse()
 	if err != nil {
 		return NoneCommand, nil, err
 	}
@@ -128,7 +130,9 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 	if err != nil {
 		return NoneCommand, nil, err
 	}
+
 	settings.HooksSettings = hookFlags
+	settings.HookDirectory = hookDirSettings.HookDirectory
 
 	return RunCommand, settings, nil
 }

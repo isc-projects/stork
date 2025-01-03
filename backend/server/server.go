@@ -57,6 +57,7 @@ type StorkServer struct {
 	DaemonLocker config.DaemonLocker
 	shutdownOnce sync.Once
 
+	HookDirectory string
 	HookManager   *hookmanager.HookManager
 	hooksSettings map[string]hooks.HookSettings
 
@@ -73,6 +74,7 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 		ss.DBSettings = *settings.DatabaseSettings
 		ss.GeneralSettings = *settings.GeneralSettings
 		ss.RestAPISettings = *settings.RestAPISettings
+		ss.HookDirectory = settings.HookDirectory
 	}
 	return command, err
 }
@@ -97,19 +99,19 @@ func NewStorkServer() (ss *StorkServer, command Command, err error) {
 func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	err = ss.HookManager.RegisterHooksFromDirectory(
 		hooks.HookProgramServer,
-		ss.GeneralSettings.HookDirectory,
+		ss.HookDirectory,
 		ss.hooksSettings,
 	)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.
 				WithError(err).
-				Warnf("The hook directory: '%s' doesn't exist", ss.GeneralSettings.HookDirectory)
+				Warnf("The hook directory: '%s' doesn't exist", ss.HookDirectory)
 		} else {
 			return errors.WithMessagef(
 				err,
 				"failed to load hooks from directory: '%s'",
-				ss.GeneralSettings.HookDirectory,
+				ss.HookDirectory,
 			)
 		}
 	}

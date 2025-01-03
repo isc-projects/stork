@@ -46,7 +46,6 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 	}
 
 	type settings struct {
-		BaseSettings
 		DBHost   string `long:"db-host" description:"The host name, IP address or socket where database is available" env:"STORK_DATABASE_HOST" default:""`
 		RESTHost string `long:"rest-host" description:"The IP to listen on" default:"" env:"STORK_REST_HOST"`
 	}
@@ -58,7 +57,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 	parser := NewCLIParser(flagParser, "server", func() {})
 
 	// Act
-	hookFlags, isHelp, err := parser.Parse()
+	hookDirSettings, hookFlags, isHelp, err := parser.Parse()
 
 	// Assert
 	require.NoError(t, err)
@@ -66,8 +65,7 @@ func TestEnvironmentFileIsLoaded(t *testing.T) {
 	require.Empty(t, hookFlags)
 
 	require.Equal(t, "foo", data.DBHost)
-	// TODO: Fix this test
-	// require.Equal(t, "bar", data.GeneralSettings.HookDirectory)
+	require.Equal(t, "bar", hookDirSettings.HookDirectory)
 	require.Equal(t, "baz", data.RESTHost)
 }
 
@@ -95,12 +93,13 @@ func TestEnvironmentFileIsInvalid(t *testing.T) {
 	parser := NewCLIParser(flagParser, "server", func() {})
 
 	// Act
-	hookSettings, isHelp, err := parser.Parse()
+	hookDirSettings, hookSettings, isHelp, err := parser.Parse()
 
 	// Assert
 	require.Error(t, err)
 	require.False(t, isHelp)
 	require.Empty(t, hookSettings)
+	require.Nil(t, hookDirSettings)
 }
 
 // Test that the CLI arguments take precedence over the environment file and
@@ -133,7 +132,6 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 	}
 
 	type settings struct {
-		BaseSettings
 		DBHost   string `long:"db-host" description:"The host name, IP address or socket where database is available" env:"STORK_DATABASE_HOST" default:""`
 		RESTHost string `long:"rest-host" description:"The IP to listen on" default:"" env:"STORK_REST_HOST"`
 		TLSCert  string `long:"rest-tls-certificate" description:"The path to the TLS certificate" env:"STORK_REST_TLS_CERTIFICATE" default:""`
@@ -143,12 +141,14 @@ func TestParseArgsFromMultipleSources(t *testing.T) {
 
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 	// Act
-	hookSettings, isHelp, err := parser.Parse()
+	hookDirSettings, hookSettings, isHelp, err := parser.Parse()
 
 	// Assert
 	require.NoError(t, err)
 	require.False(t, isHelp)
 	require.Empty(t, hookSettings)
+	require.NotNil(t, hookDirSettings)
+	require.Equal(t, "/usr/lib/stork-server/hooks", hookDirSettings.HookDirectory)
 	require.EqualValues(t, "database-host-envvar", data.DBHost)
 	require.EqualValues(t, "rest-host-envfile", data.RESTHost)
 	require.EqualValues(t, "certificate-envfile", data.TLSCert)
@@ -168,12 +168,13 @@ func TestCLIParserRejectsWrongCLIArguments(t *testing.T) {
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 
 	// Act
-	hookSettings, isHelp, err := parser.Parse()
+	hookDirSettings, hookSettings, isHelp, err := parser.Parse()
 
 	// Assert
 	require.Error(t, err)
 	require.False(t, isHelp)
 	require.Empty(t, hookSettings)
+	require.Nil(t, hookDirSettings)
 }
 
 // Test that the namespaces are correct.
@@ -246,12 +247,13 @@ func TestCollectHookCLIFlagsForNonDirectoryPath(t *testing.T) {
 
 	// Act
 	os.Args = []string{"stork-server", "--hook-directory", path}
-	hookFlags, isHelp, err := parser.Parse()
+	hookDirSettings, hookFlags, isHelp, err := parser.Parse()
 
 	// Assert
 	require.ErrorContains(t, err, "hook directory path is not pointing to a directory")
 	require.False(t, isHelp)
 	require.Empty(t, hookFlags)
+	require.Nil(t, hookDirSettings)
 }
 
 // Test that the no error is returned if the hook directory doesn't exist.
@@ -260,7 +262,7 @@ func TestCollectHookCLIFlagsForMissingDirectory(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 	parser := NewCLIParser(nil, "server", func() {})
-	hookSettings := &hookDirectorySettings{
+	hookSettings := &HookDirectorySettings{
 		path.Join(sb.BasePath, "non-exists-directory"),
 	}
 
@@ -295,10 +297,13 @@ func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 
 	// Act
-	err := parser.parse(hookFlags)
+	mergeErr := parser.mergeHookFlags(hookFlags)
+	parseErr := parser.parse()
 
 	// Assert
-	require.NoError(t, err)
+	require.NoError(t, mergeErr)
+	require.NoError(t, parseErr)
+
 	// ToDO: Fix this test
 	// require.Contains(t, settings.HooksSettings, "baz")
 	require.Equal(t, "fooBar", hookFlags["baz"].(*hookSettings).FooBar)
@@ -325,10 +330,12 @@ func TestParseHookSettingsFromCLI(t *testing.T) {
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 
 	// Act
-	err := parser.parse(hookFlags)
+	mergeErr := parser.mergeHookFlags(hookFlags)
+	parseErr := parser.parse()
 
 	// Assert
-	require.NoError(t, err)
+	require.NoError(t, mergeErr)
+	require.NoError(t, parseErr)
 	// TODO: Fix this test
 	// require.Contains(t, settings.HooksSettings, "baz")
 	require.Equal(t, "fooBar", hookFlags["baz"].(*hookSettings).FooBar)
@@ -357,8 +364,75 @@ func TestPaseHookSettingsDuplicatedNamespace(t *testing.T) {
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
 
 	// Act
-	err := parser.parse(hookFlags)
+	err := parser.mergeHookFlags(hookFlags)
 
 	// Assert
 	require.ErrorContains(t, err, "two hooks using the same configuration namespace")
+}
+
+// Test that the help is properly printed and it includes the hook settings.
+func TestParseHelp(t *testing.T) {
+	// Arrange
+	defer testutil.CreateOsArgsRestorePoint()()
+	os.Args = []string{
+		"program-name",
+		"--help",
+	}
+
+	type hookSettings struct {
+		FooBar string `long:"foo-bar" description:"Lorem ipsum" env:"FOO_BAR"`
+	}
+
+	hookFlags := map[string]hooks.HookSettings{
+		"baz": &hookSettings{},
+	}
+
+	type settings struct {
+		TLSCert string `long:"tls-cert" env:"TLS_CERT" description:"The path to the TLS certificate"`
+	}
+	data := &settings{}
+
+	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
+	_ = parser.mergeHookFlags(hookFlags)
+
+	// Act
+	var isHelp bool
+	var err error
+	stdout, stderr, captureErr := testutil.CaptureOutput(func() {
+		_, _, isHelp, err = parser.Parse()
+	})
+
+	// Assert
+	require.NoError(t, err)
+	require.NoError(t, captureErr)
+	require.True(t, isHelp)
+	require.Empty(t, stderr)
+
+	expectedHelp :=
+		`Usage:
+  program-name [OPTIONS]
+
+Application Options:
+      --tls-cert=       The path to the TLS certificate [$TLS_CERT]
+
+Hook 'baz' Flags:
+      --baz.foo-bar=    Lorem ipsum [$STORK_SERVER_HOOK_BAZ_FOO_BAR]
+
+Environment File Flags:
+      --env-file=       Environment file location; applicable only if the
+                        use-env-file is provided (default:
+                        /etc/stork/server.env)
+      --use-env-file    Read the environment variables from the environment file
+
+Hook Directory Flags:
+      --hook-directory= The path to the hook directory (default:
+                        /usr/lib/stork-server/hooks)
+                        [$STORK_SERVER_HOOK_DIRECTORY]
+
+Help Options:
+  -h, --help            Show this help message
+
+`
+
+	require.Equal(t, expectedHelp, string(stdout))
 }

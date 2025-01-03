@@ -165,7 +165,7 @@ func TestNewStorkServer(t *testing.T) {
 	require.True(t, ss.RestAPISettings.TLS12Enabled)
 	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
 	require.EqualValues(t, 54, ss.GeneralSettings.InitialPullerInterval)
-	require.EqualValues(t, "hookdir", ss.GeneralSettings.HookDirectory)
+	require.EqualValues(t, "hookdir", ss.HookDirectory)
 }
 
 // Test that the Stork Server is constructed if no arguments are provided.
