@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	pkgerrors "github.com/pkg/errors"
@@ -130,7 +131,12 @@ func NewBind9StatsClient() *bind9StatsClient {
 	}
 }
 
-// Creates new createRequest to the particular host and port.
+// Sets custom timeout for REST client requests.
+func (client *bind9StatsClient) SetRequestTimeout(timeout time.Duration) {
+	client.innerClient.SetTimeout(timeout)
+}
+
+// Creates new request to the particular host and port.
 func (client *bind9StatsClient) createRequest(host string, port int64) *bind9StatsClientRequest {
 	return newBind9StatsClientRequest(client.innerClient, host, port)
 }
@@ -142,5 +148,5 @@ func (client *bind9StatsClient) createRequestFromURL(url string) *bind9StatsClie
 
 // Makes a request to retrieve BIND9 views over the stats channel.
 func (client *bind9StatsClient) getViews(host string, port int64) (httpResponse, *bind9stats.Views, error) {
-	return client.request(host, port).getViews()
+	return client.createRequest(host, port).getViews()
 }
