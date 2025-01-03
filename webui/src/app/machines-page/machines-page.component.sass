@@ -1,6 +1,4 @@
-.hiding-column
-  @media all and (max-width: 1350px)
-    display: none
+
 
 // Style group of buttons in a flex container.
 .button-group
@@ -30,5 +28,9 @@
 
 // Set min-width for PrimeNG progressbar value div.
 // For small progressbar values the width of the div is too small and the value cannot be read.
-:host ::ng-deep .p-progressbar-value
-  min-width: 1.5rem
+:host ::ng-deep
+  .p-progressbar-value
+    min-width: 1.5rem
+  .hiding-column
+    @media all and (max-width: 1350px)
+      display: none

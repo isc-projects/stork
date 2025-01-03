@@ -140,7 +140,7 @@ export class AppComponent implements OnInit, OnDestroy {
                         id: 'machines',
                         icon: 'fa fa-server',
                         routerLink: '/machines/all',
-                        queryParams: {'authorized': 'true'}
+                        queryParams: { authorized: 'true' },
                     },
                     {
                         label: 'Grafana',

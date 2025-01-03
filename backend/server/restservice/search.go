@@ -60,9 +60,8 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 		return handleSearchError(err, "Cannot get hosts from the db")
 	}
 
-	// get list of machines
-	authorized := true
-	machines, err := r.getMachines(0, 5, &text, &authorized, "", dbmodel.SortDirAny)
+	// get list of machines no matter if authorized or unauthorized
+	machines, err := r.getMachines(0, 5, &text, nil, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "Cannot get machines from the db")
 	}

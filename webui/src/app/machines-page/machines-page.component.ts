@@ -11,7 +11,6 @@ import { copyToClipboard, getErrorMessage } from '../utils'
 import { Table } from 'primeng/table'
 import { catchError, filter } from 'rxjs/operators'
 import { AuthorizedMachinesTableComponent } from '../authorized-machines-table/authorized-machines-table.component'
-import { UnauthorizedMachinesTableComponent } from '../unauthorized-machines-table/unauthorized-machines-table.component'
 
 interface AppType {
     name: string
@@ -66,12 +65,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     // Indicates if the machines registration is administratively disabled.
     registrationDisabled = false
 
-    get table(): UnauthorizedMachinesTableComponent | AuthorizedMachinesTableComponent | undefined {
-        return this.showUnauthorized ? this.unauthorizedMachinesTable : this.authorizedMachinesTable
+    // get table(): UnauthorizedMachinesTableComponent | AuthorizedMachinesTableComponent | undefined {
+    //     return this.showUnauthorized ? this.unauthorizedMachinesTable : this.authorizedMachinesTable
+    // }
+
+    get showAuthorized(): boolean {
+        console.log('showAuthorized', this.table?.validFilter?.authorized, this.table?.validFilter?.authorized === true ?? true)
+        return this.table?.validFilter?.authorized === true ?? true
     }
 
-    @ViewChild('authorizedMachinesTableComponent') authorizedMachinesTable: AuthorizedMachinesTableComponent
-    @ViewChild('unauthorizedMachinesTableComponent') unauthorizedMachinesTable: UnauthorizedMachinesTableComponent
+    @ViewChild('authorizedMachinesTableComponent') table: AuthorizedMachinesTableComponent
 
     constructor(
         private route: ActivatedRoute,
@@ -122,7 +125,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 const id = paramMap.get('id')
                 if (!id || id === 'all') {
                     // Update the filter only if the target is machine list.
-                    this.showUnauthorized = id === 'unauthorized'
+                    // this.showUnauthorized = id === 'unauthorized'
                     this.table?.updateFilterFromQueryParameters(queryParamMap)
                     this.switchToTab(0)
                     return
@@ -146,20 +149,20 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     // if tab is not opened then search for list of machines if the one is present there,
                     // if so then open it in new tab and switch to it
                     // if (!found) {
-                    for (const m of this.authorizedMachinesTable?.dataCollection || []) {
+                    for (const m of this.table?.dataCollection || []) {
                         if (m.id === numericId) {
                             this.addMachineTab(m)
                             this.switchToTab(this.tabs.length - 1)
                             return
                         }
                     }
-                    for (const m of this.unauthorizedMachinesTable?.dataCollection || []) {
-                        if (m.id === numericId) {
-                            this.addMachineTab(m)
-                            this.switchToTab(this.tabs.length - 1)
-                            return
-                        }
-                    }
+                    // for (const m of this.unauthorizedMachinesTable?.dataCollection || []) {
+                    //     if (m.id === numericId) {
+                    //         this.addMachineTab(m)
+                    //         this.switchToTab(this.tabs.length - 1)
+                    //         return
+                    //     }
+                    // }
                     // }
 
                     // if machine is not loaded in list fetch it individually
@@ -283,6 +286,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         ]
 
         this.openedMachines = []
+
+
 
         // this.subscriptions.add(
         //     this.route.paramMap.subscribe((params: ParamMap) => {
@@ -439,7 +444,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     onSelectMachinesListChange(machinesTable: Table) {
         // this.navigateToMachinesList()
-        this.table?.table?.onLazyLoad.emit(this.table.table.createLazyLoadMetadata())
+        // this.table?.table?.onLazyLoad.emit(this.table.table.createLazyLoadMetadata())
         console.log('onSelectMachinesListChange', machinesTable)
     }
 
@@ -866,5 +871,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             this.tabs[0].routerLink = currentLink
         }
         this.router.navigate([currentLink])
+    }
+
+    onSelectChange(event: any) {
+        console.log('onSelectChange', event)
     }
 }

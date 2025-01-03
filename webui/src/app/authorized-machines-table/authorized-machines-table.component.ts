@@ -10,8 +10,7 @@ import { Location } from '@angular/common'
 
 export interface MachinesFilter {
     text?: string
-    appId?: number
-    authorized?: string
+    authorized?: boolean
 }
 
 @Component({
@@ -39,7 +38,7 @@ export class AuthorizedMachinesTableComponent
     /**
      * Array of all numeric keys that can be used to filter machines.
      */
-    filterNumericKeys: (keyof MachinesFilter)[] = ['appId']
+    filterNumericKeys: (keyof MachinesFilter)[] = []
 
     /**
      * Array of all boolean keys that can be used to filter machines.
@@ -69,12 +68,29 @@ export class AuthorizedMachinesTableComponent
 
     @Output() machineMenuDisplay: EventEmitter<Machine> = new EventEmitter()
 
+    @Output() authorizeMachines: EventEmitter<Machine[]> = new EventEmitter()
+
+    selectedMachines: Machine[] = []
+
     // This counter is used to indicate in UI that there are some
     // unauthorized machines that may require authorization.
     @Input() unauthorizedMachinesCount = 0
 
-    machineMenuDisplayed(machine: Machine) {
+    /**
+     *
+     * @param machine
+     */
+    onMachineMenuDisplay(machine: Machine) {
         this.machineMenuDisplay.emit(machine)
+    }
+
+    /**
+     *
+     * @param machines
+     */
+    onAuthorizeMachines(machines: Machine[]) : void {
+        console.log("onAuthorizeMachines", machines)
+        this.authorizeMachines.emit(machines)
     }
 
     // machines: Machine[] = []
@@ -102,7 +118,6 @@ export class AuthorizedMachinesTableComponent
         super.onInit()
     }
     loadData(event: TableLazyLoadEvent): void {
-        console.log('prefilterValue', this.prefilterValue)
         // Indicate that machines refresh is in progress.
         this.dataLoading = true
         // The goal is to send to backend something as simple as:
@@ -112,7 +127,7 @@ export class AuthorizedMachinesTableComponent
                 event.first,
                 event.rows,
                 this.getTableFilterValue('text', event.filters),
-                this.getTableFilterValue('appId', event.filters),
+                null,
                 this.prefilterValue ?? this.getTableFilterValue('authorized', event.filters)
             )
         )
@@ -132,5 +147,13 @@ export class AuthorizedMachinesTableComponent
             .finally(() => {
                 this.dataLoading = false
             })
+    }
+
+    authorizedMachinesDisplayed(): boolean {
+        return this.dataCollection?.some((m) => m.authorized) || false
+    }
+
+    unauthorizedMachinesDisplayed(): boolean {
+        return this.dataCollection?.some((m) => !m.authorized) || false
     }
 }

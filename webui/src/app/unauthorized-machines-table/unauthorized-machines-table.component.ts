@@ -34,7 +34,7 @@ export class UnauthorizedMachinesTableComponent
     /**
      * Array of all numeric keys that can be used to filter machines.
      */
-    filterNumericKeys: (keyof MachinesFilter)[] = ['appId']
+    filterNumericKeys: (keyof MachinesFilter)[] = []
 
     /**
      * Array of all boolean keys that can be used to filter machines.
@@ -49,7 +49,7 @@ export class UnauthorizedMachinesTableComponent
     /**
      * queryParam keyword of the filter by appId.
      */
-    prefilterKey: keyof MachinesFilter = 'appId'
+    prefilterKey: keyof MachinesFilter = 'authorized'
 
     /**
      * Array of FilterValidators that will be used for validation of filters, which values are limited

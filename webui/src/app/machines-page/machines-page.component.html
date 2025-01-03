@@ -136,7 +136,13 @@ sudo ./stork-install-agent.sh</textarea
 
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
-        <a role="menuitem" pRipple [routerLink]="item.routerLink" [queryParams]="i === 0 ? authorizedMachinesTable?.validFilter : null" class="p-ripple p-element p-menuitem-link">
+        <a
+            role="menuitem"
+            pRipple
+            [routerLink]="item.routerLink"
+            [queryParams]="i === 0 ? table?.validFilter : null"
+            class="p-ripple p-element p-menuitem-link"
+        >
             <div class="flex justify-content-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
@@ -156,70 +162,9 @@ sudo ./stork-install-agent.sh</textarea
 <!-- Machines tab -->
 <div [hidden]="activeTabIdx !== 0">
     <div class="flex flex-wrap gap-2 justify-content-end mb-3">
-        <span class="p-input-icon-left flex min-w-0">
-            <i class="pi pi-search"></i>
-            <input
-                type="text"
-                id="filter-machines-text-field"
-                pInputText
-                placeholder="Search machines"
-                (input)="inputFilterText(machinesTable, $event.target?.value)"
-                (keyup.enter)="inputFilterText(machinesTable, $event.target?.value, true)"
-                [value]="machinesTable.filters?.text?.value || machinesTable.filters?.text?.[0]?.value"
-                class="min-w-0"
-                #searchInput
-            />
-            <app-help-tip subject="filtering" id="filtering-help-button" [target]="searchInput">
-                <p>
-                    Machines in the table below can be filtered by entering a text in the search box; the table shows
-                    all machines matching the filter text. Currently supported fields for such filtering are:
-                </p>
-                <ul>
-                    <li>Address</li>
-                    <li>Agent Version</li>
-                    <li>Hostname</li>
-                    <li>OS</li>
-                    <li>Platform</li>
-                    <li>Platform Family</li>
-                    <li>Platform Version</li>
-                    <li>Kernel Version</li>
-                    <li>Kernel Arch</li>
-                    <li>Virtualization System</li>
-                    <li>Virtualization Role</li>
-                    <li>Host ID</li>
-                </ul>
-                <p>
-                    The search is performed while typing or on pressing Enter. The minimum number of search characters
-                    is 3.
-                </p>
-            </app-help-tip>
-        </span>
-        <button
-            pButton
-            label="Clear"
-            class="ml-2 flex-none"
-            icon="pi pi-filter-slash"
-            (click)="clearFilters(machinesTable)"
-        ></button>
+
         <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
             <div class="flex-auto"></div>
-            <button
-                *ngIf="showUnauthorized && selectedMachines?.length > 0"
-                type="button"
-                pButton
-                label="Authorize selected"
-                id="authorize-selected-button"
-                icon="pi pi-lock"
-                (click)="authorizeSelectedMachines(machinesTable)"
-            ></button>
-            <button
-                type="button"
-                pButton
-                label="Refresh"
-                id="refresh-all-button"
-                icon="pi pi-refresh"
-                (click)="refreshMachinesList(machinesTable)"
-            ></button>
             <button
                 type="button"
                 pButton
@@ -231,15 +176,15 @@ sudo ./stork-install-agent.sh</textarea
 
             <p-selectButton
                 [options]="viewSelectionOptions"
-                [(ngModel)]="showUnauthorized"
-                (onChange)="onSelectMachinesListChange(machinesTable)"
+                [ngModel]="!showAuthorized"
+                (onChange)="onSelectChange($event)"
                 [allowEmpty]="false"
                 id="unauthorized-select-button"
             ></p-selectButton>
         </div>
     </div>
 
-    <p-messages *ngIf="showUnauthorized && registrationDisabled" severity="warn">
+    <p-messages *ngIf="!showAuthorized && registrationDisabled" severity="warn">
         <ng-template pTemplate>
             <span class="pi pi-exclamation-triangle"></span>
             <div class="ml-2">
@@ -251,212 +196,10 @@ sudo ./stork-install-agent.sh</textarea
     </p-messages>
     <app-authorized-machines-table
         #authorizedMachinesTableComponent
-        [hidden]="showUnauthorized"
         [unauthorizedMachinesCount]="unauthorizedMachinesCount"
     ></app-authorized-machines-table>
-    <app-unauthorized-machines-table
-        #unauthorizedMachinesTableComponent
-        [hidden]="!showUnauthorized"
-    ></app-unauthorized-machines-table>
     <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
-    <p-table
-        #machinesTable
-        [value]="machines"
-        [paginator]="true"
-        [rows]="10"
-        [lazy]="true"
-        (onLazyLoad)="loadMachines($event)"
-        [totalRecords]="totalMachines"
-        [rowsPerPageOptions]="[10, 30, 50]"
-        [showCurrentPageReport]="true"
-        [selectionPageOnly]="true"
-        [(selection)]="selectedMachines"
-        [loading]="dataLoading"
-        (onStateRestore)="stateRestored($event)"
-        dataKey="id"
-        stateStorage="session"
-        [stateKey]="stateKey"
-        currentPageReportTemplate="{currentPage} of {totalPages} pages"
-        styleClass="p-datatable-striped"
-    >
-        <ng-template pTemplate="emptymessage" let-columns>
-            <tr>
-                <td [attr.colspan]="showUnauthorized ? 5 : 13" style="padding: 20px 20px 20px 20px; font-size: 1.1em">
-                    <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
-                    No {{ showUnauthorized ? 'unauthorized' : 'authorized' }} machines found.
-                    <span *ngIf="machinesTable.hasFilter()">
-                        Try to clear filtering.
-                        <button
-                            pButton
-                            label="Clear"
-                            class="p-button-outlined"
-                            icon="pi pi-filter-slash"
-                            (click)="clearFilters(machinesTable)"
-                        ></button>
-                    </span>
-                    <div style="margin-top: 15px">
-                        <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
-                        Information about adding new machines to Stork server is available after clicking on the
-                        <b>How to Install Agent to New Machine</b> button at the top.
-                    </div>
-                    <div *ngIf="!showUnauthorized && unauthorizedMachinesCount > 0">
-                        <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
-                        There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
-                        <b class="text-xl text-red-500">{{ unauthorizedMachinesCount }}</b>
-                        unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
-                        {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by selecting <b>Unauthorized</b> button
-                        above.
-                    </div>
-                    <div *ngIf="showUnauthorized">
-                        <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
-                        There are no machines waiting for the authorization. You can now select the <b>Authorized</b>
-                        button above to see all authorized machines.
-                    </div>
-                </td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="header">
-            <tr *ngIf="!showUnauthorized">
-                <th style="width: 8rem">Hostname</th>
-                <th style="width: 10rem">
-                    Location
-                    <app-help-tip subject="Location" id="location-help-button">
-                        <p>
-                            Specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
-                            localhost:8888).
-                        </p></app-help-tip
-                    >
-                </th>
-                <th style="width: 4.5rem">Agent Version</th>
-                <th class="w-4rem">App(s) Version</th>
-                <th style="width: 7rem">Daemons</th>
-                <th style="width: 4rem">CPUs</th>
-                <th style="width: 8rem">
-                    CPU Load
-                    <app-help-tip subject="CPU Load" id="cpu-load-help-button">
-                        <p>
-                            These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes. This
-                            is the usual syntax used by <b>top</b> command.
-                        </p>
 
-                        <p>
-                            High load averages imply that a system is overloaded. A value of 1.00 means one CPU core is
-                            fully utilized. For example, if your system has load of 1.22 and you have only 1 CPU core,
-                            the system is overloaded. However, if there are 4 cores, you system is working at a bit over
-                            30% of its capacity.
-                        </p>
-                    </app-help-tip>
-                </th>
-                <th style="width: 5rem">Total Memory [GB]</th>
-                <th style="width: 7rem">Memory Usage [%]</th>
-                <th class="hiding-column" style="width: 6rem">Uptime</th>
-                <th class="hiding-column" style="width: 6rem">
-                    Last Refreshed
-                    <app-help-tip subject="Last refreshed" id="last-refreshed-help-button"
-                        ><p>
-                            When the machine status was last retrieved. You can refresh it by clicking Refresh in the
-                            Action menu.
-                        </p></app-help-tip
-                    >
-                </th>
-                <th style="width: 13rem">Error</th>
-                <th style="width: 4rem">Action</th>
-            </tr>
-            <tr *ngIf="showUnauthorized">
-                <th style="width: 4rem">
-                    <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-                </th>
-                <th style="width: 8rem">Hostname</th>
-                <th style="width: 10rem">
-                    Location
-                    <app-help-tip subject="Location" id="location-2-help-button">
-                        <p>
-                            Specifies a host name and the TCP port where the server can reach the agent, e.g.
-                            localhost:8888).
-                        </p></app-help-tip
-                    >
-                </th>
-                <th>
-                    Agent Token
-                    <app-help-tip subject="Agent Token" id="agent-token-help-button">
-                        <p>
-                            This is a token generated by an agent during its first start up. Verify if value visible
-                            here is the same as agent token present in its logs or in
-                            <span style="font-family: monospace">/var/lib/stork-agent/tokens/agent-token.txt</span>.
-                        </p>
-                    </app-help-tip>
-                </th>
-                <th style="width: 4rem">Action</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-m>
-            <tr *ngIf="!showUnauthorized">
-                <td>
-                    <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
-                </td>
-                <td>{{ m.address }}:{{ m.agentPort }}</td>
-                <td>
-                    {{ m.agentVersion }}
-                    <app-version-status app="stork" [version]="m.agentVersion"></app-version-status>
-                </td>
-                <td>
-                    <ng-container *ngFor="let a of m.apps"
-                        ><app-version-status
-                            [app]="a.type"
-                            [version]="a.version"
-                            [showAppName]="true"
-                        ></app-version-status
-                    ></ng-container>
-                </td>
-                <td>
-                    <div *ngFor="let a of m.apps">
-                        <app-app-daemons-status [app]="a"></app-app-daemons-status>
-                    </div>
-                </td>
-                <td>{{ m.cpus }}</td>
-                <td>{{ m.cpusLoad }}</td>
-                <td>{{ m.memory }}</td>
-                <td><p-progressBar [value]="m.usedMemory"></p-progressBar></td>
-                <td class="hiding-column">{{ m.uptime || '?' }} days</td>
-                <td class="hiding-column">{{ m.lastVisitedAt | localtime | placeholder: 'never' }}</td>
-                <td>
-                    <p-message *ngIf="m.error" severity="error" text="{{ m.error }}"></p-message>
-                </td>
-                <td>
-                    <button
-                        type="button"
-                        pButton
-                        icon="pi pi-bars"
-                        id="show-machines-menu"
-                        (click)="showMachineMenu($event, machineMenu, m, machinesTable)"
-                    ></button>
-                </td>
-            </tr>
-            <tr *ngIf="showUnauthorized">
-                <td>
-                    <p-tableCheckbox [value]="m"></p-tableCheckbox>
-                </td>
-                <td>
-                    <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
-                </td>
-                <td>{{ m.address }}:{{ m.agentPort }}</td>
-                <td>{{ m.agentToken }}</td>
-                <td>
-                    <button
-                        type="button"
-                        pButton
-                        icon="pi pi-bars"
-                        id="show-machines-menu"
-                        (click)="showMachineMenu($event, machineMenu, m, machinesTable)"
-                    ></button>
-                </td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="paginatorright" let-state>
-            Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
-            {{ state.totalRecords === 1 ? 'machine' : 'machines' }}
-        </ng-template>
-    </p-table>
 </div>
 
 <!-- Single machine tab -->
