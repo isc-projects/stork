@@ -85,12 +85,12 @@
         <p-fieldset
             *ngIf="!state.wizard"
             [formGroup]="state.group.get('userContexts')"
-            legend="User Contexts"
+            legend="Subnet names"
             styleClass="mt-4"
         >
             <div class="flex mt-2 pb-4">
                 <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
-                <div class="flex ml-2 font-semibold">Unlock setting user contexts for individual servers.</div>
+                <div class="flex ml-2 font-semibold">Unlock setting subnet names for individual servers.</div>
             </div>
             <ng-container *ngFor="let userContext of state.group.get('userContexts.names')?.controls; let i = index">
                 <div *ngIf="i === 0 || state.group.get('userContexts.unlocked')?.value" class="mb-3 mt-3">
