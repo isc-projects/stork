@@ -3,7 +3,6 @@ import { ActivatedRoute, ParamMap } from '@angular/router'
 import { Location } from '@angular/common'
 import { Subject, Subscription } from 'rxjs'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { filter, map } from 'rxjs/operators'
 import { TableState } from 'primeng/api'
 
 /**
@@ -108,20 +107,20 @@ export abstract class PrefilteredTable<
     private _subscriptions: Subscription = new Subscription()
 
     /**
-     * The provided filter RxJS Subject.
+     * The provided queryParam filter RxJS Subject.
      */
-    filter$ = new Subject<{ filter: FilterInterface }>()
+    filter$ = new Subject<FilterInterface>()
 
     /**
-     * The recent filter applied to the table data. Only filters that pass the
+     * The recent queryParam filter applied to the table data. Only filters that pass the
      * validation are used.
      */
     validFilter: FilterInterface = {} as FilterInterface
 
     /**
-     * An array of errors found during filter validation.
+     * An array of errors found during queryParam filter validation.
      *
-     * This array holds errors that were found during filter validation.
+     * This array holds errors that were found during queryParam filter validation.
      * The intention is to use it to display feedback about errors in UI.
      */
     filterTextFormatErrors: string[] = []
@@ -177,24 +176,25 @@ export abstract class PrefilteredTable<
     private _restoredTable: Table
 
     /**
-     * Array of all numeric keys of the FilterInterface.
+     * Array of all numeric keys of the FilterInterface. This should be a superset of queryParamNumericKeys.
      */
     abstract filterNumericKeys: (keyof FilterInterface)[]
 
     /**
-     * Array of all boolean keys of the FilterInterface.
+     * Array of all boolean keys of the FilterInterface. This should be a superset of queryParamBooleanKeys.
      */
     abstract filterBooleanKeys: (keyof FilterInterface)[]
 
     /**
      * Array of all numeric keys of the FilterInterface that are supported when filtering via URL queryParams.
      * Note that it doesn't have to contain prefilterKey. prefilterKey by default is considered as a primary
-     * queryParam filter key.
+     * queryParam filter key. This should be a subset of filterNumericKeys.
      */
     abstract queryParamNumericKeys: (keyof FilterInterface)[]
 
     /**
      * Array of all boolean keys of the FilterInterface that are supported when filtering via URL queryParams.
+     * This should be a subset of filterBooleanKeys.
      */
     abstract queryParamBooleanKeys: (keyof FilterInterface)[]
 
@@ -300,7 +300,7 @@ export abstract class PrefilteredTable<
      * Initialization method which should be called at ngOnInit() of derived class.
      *
      * It extracts prefilterKey from ActivatedRoute snapshot queryParams, if it was provided.
-     * Filter validation and filter handler are subscribed.
+     * Filter validation and filter handler is subscribed.
      */
     onInit(): void {
         this.dataLoading = true
@@ -311,13 +311,12 @@ export abstract class PrefilteredTable<
         // Get param id and queryParam value for prefilterKey Id.
         const id = paramMap.get('id')
         if (!id || id === 'all') {
-            this.parseIdFromQueryParam(queryParamMap)
+            this.parsePrefilterValueFromQueryParam(queryParamMap)
             this.stateKey = this.hasPrefilter()
                 ? `${this.stateKeyPrefix}-${this.prefilterValue}`
                 : `${this.stateKeyPrefix}-all`
         }
 
-        this.subscribeFilterValidation()
         this.subscribeFilterHandler()
     }
 
@@ -414,10 +413,9 @@ export abstract class PrefilteredTable<
      * @param params query parameters received from activated route.
      */
     updateFilterFromQueryParameters(params: ParamMap): void {
-        const numericKeys =
-            (this.isPrefilterNumber() && !this.prefilterKey) || this.prefilterKey in this.queryParamNumericKeys
-                ? this.queryParamNumericKeys
-                : [this.prefilterKey, ...this.queryParamNumericKeys]
+        const numericKeys = this.queryParamNumericKeys.includes(this.prefilterKey)
+            ? this.queryParamNumericKeys
+            : [this.isPrefilterNumber() ? (this.prefilterKey ?? null) : null, ...this.queryParamNumericKeys]
 
         const filter: BaseQueryParamFilter = {}
         filter.text = params.get('text')
@@ -433,46 +431,24 @@ export abstract class PrefilteredTable<
 
         const parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
 
-        const booleanKeys =
-            (this.isPrefilterBoolean() && !this.prefilterKey) || this.prefilterKey in this.queryParamBooleanKeys
-                ? this.queryParamBooleanKeys
-                : [this.prefilterKey, ...this.queryParamBooleanKeys]
+        const booleanKeys = this.queryParamBooleanKeys.includes(this.prefilterKey)
+            ? this.queryParamBooleanKeys
+            : [this.isPrefilterBoolean() ? (this.prefilterKey ?? null) : null, ...this.queryParamBooleanKeys]
+
         for (const key of booleanKeys) {
             if (params.has(key as string)) {
                 filter[key as any] = parseBoolean(params.get(key as string))
             }
         }
 
-        this.filter$.next({
-            filter: filter as FilterInterface,
-        })
+        this.filter$.next(filter as FilterInterface)
     }
 
     /**
      * Triggers data load in the table without any filtering applied.
      */
     loadDataWithoutFilter(): void {
-        this.filter$.next({ filter: {} as FilterInterface })
-    }
-
-    /**
-     * Pipes filter validation to the filter$ subject.
-     * @private
-     */
-    private subscribeFilterValidation(): void {
-        // Pipe the valid filter to the filter$ subject.
-        this._subscriptions.add(
-            this.filter$
-                .pipe(
-                    // Valid filter has no validation errors.
-                    filter((f) => this.validateFilter(f.filter).length === 0),
-                    map((f) => f.filter)
-                )
-                .subscribe((filter) => {
-                    // Remember the filter.
-                    this.validFilter = filter
-                })
-        )
+        this.filter$.next({} as FilterInterface)
     }
 
     /**
@@ -482,8 +458,11 @@ export abstract class PrefilteredTable<
     private subscribeFilterHandler(): void {
         // Update the filter representation when the filtering parameters change.
         this._subscriptions.add(
-            this.filter$.subscribe((f) => {
-                this.filterTextFormatErrors = this.validateFilter(f.filter)
+            this.filter$.subscribe((filter) => {
+                this.filterTextFormatErrors = this.validateFilter(filter)
+                if (this.filterTextFormatErrors.length === 0) {
+                    this.validFilter = filter
+                }
 
                 if (this.table) {
                     if (this.validatedFilterAndTableFilterDiffer()) {
@@ -638,17 +617,17 @@ export abstract class PrefilteredTable<
     }
 
     /**
-     * Parses value for the queryParam prefilter keyword and stores this value under tableId.
+     * Parses value for the queryParam prefilter keyword and stores this value under prefilterValue.
      * @param queryParamMap
      * @private
      */
-    private parseIdFromQueryParam(queryParamMap: ParamMap): void {
-        const prefilterValue = queryParamMap.get(this.prefilterKey as string)
+    private parsePrefilterValueFromQueryParam(queryParamMap: ParamMap): void {
+        const queryParamValue = queryParamMap.get(this.prefilterKey as string)
         if (this.isPrefilterNumber()) {
-            const numericId = parseInt(prefilterValue)
+            const numericId = parseInt(queryParamValue)
             this.prefilterValue = isNaN(numericId) ? null : numericId
         } else if (this.isPrefilterBoolean()) {
-            this.prefilterValue = prefilterValue === 'true' || prefilterValue === 'false' ? prefilterValue : null
+            this.prefilterValue = queryParamValue === 'true' || queryParamValue === 'false' ? queryParamValue : null
         }
     }
 
@@ -657,7 +636,7 @@ export abstract class PrefilteredTable<
      * @private
      */
     private isPrefilterNumber(): boolean {
-        return this.prefilterKey in this.filterNumericKeys
+        return this.filterNumericKeys.includes(this.prefilterKey)
     }
 
     /**
@@ -665,7 +644,6 @@ export abstract class PrefilteredTable<
      * @private
      */
     private isPrefilterBoolean(): boolean {
-        console.log('isPrefilterBoolean()', this.prefilterKey in this.filterBooleanKeys, this.prefilterKey, this.filterBooleanKeys)
-        return this.prefilterKey in this.filterBooleanKeys
+        return this.filterBooleanKeys.includes(this.prefilterKey)
     }
 }

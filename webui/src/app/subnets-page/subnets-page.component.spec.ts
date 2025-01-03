@@ -327,7 +327,7 @@ describe('SubnetsPageComponent', () => {
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
         component.table.table.clearFilterValues()
-        component.table.filter$.next({ filter: {} })
+        component.table.filter$.next({})
 
         fixture.detectChanges()
 
@@ -386,7 +386,7 @@ describe('SubnetsPageComponent', () => {
 
     it('should not fail on empty statistics', async () => {
         // Filter by text to get subnet without stats.
-        component.table.filter$.next({ filter: { text: '1.0.0.0/16' } })
+        component.table.filter$.next({ text: '1.0.0.0/16' })
         // Act
         fixture.detectChanges()
         await fixture.whenStable()
@@ -438,7 +438,7 @@ describe('SubnetsPageComponent', () => {
         // Act
         await fixture.whenStable()
 
-        component.table.filter$.next({ filter: { subnetId: 5 } })
+        component.table.filter$.next({ subnetId: 5 })
 
         fixture.detectChanges()
         await fixture.whenStable()

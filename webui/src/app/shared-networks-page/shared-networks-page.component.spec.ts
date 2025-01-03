@@ -359,7 +359,7 @@ describe('SharedNetworksPageComponent', () => {
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
         component.table.table.clearFilterValues()
-        component.table.filter$.next({ filter: {} })
+        component.table.filter$.next({})
 
         fixture.detectChanges()
     }))
