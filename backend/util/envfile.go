@@ -94,13 +94,7 @@ func loadEnvironmentEntries(reader io.Reader) ([]KeyValuePair, error) {
 			continue
 		}
 
-		if _, ok := dataIndex[key]; ok {
-			// Duplicate key. Use the latest value.
-			dataIndex[key] = value
-		} else {
-			// New key.
-			dataIndex[key] = value
-		}
+		dataIndex[key] = value
 	}
 
 	var data []KeyValuePair

@@ -408,8 +408,7 @@ func TestParseHelp(t *testing.T) {
 	require.True(t, isHelp)
 	require.Empty(t, stderr)
 
-	expectedHelp :=
-		`Usage:
+	expectedHelp := `Usage:
   program-name [OPTIONS]
 
 Application Options:

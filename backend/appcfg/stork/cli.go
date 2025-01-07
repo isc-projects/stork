@@ -367,7 +367,7 @@ func getHookNamespaces(application string, hookName string) (flagNamespace, envN
 
 	// Prepend the common prefix for environment variables.
 	envNamespace = fmt.Sprintf("STORK_%s_HOOK_%s", application, hookName)
-	envNamespace = "STORK_SERVER_HOOK_" + strings.ReplaceAll(hookName, "-", "_")
+	envNamespace += strings.ReplaceAll(hookName, "-", "_")
 	envNamespace = strings.ToUpper(envNamespace)
 	return
 }
