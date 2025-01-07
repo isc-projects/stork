@@ -16,7 +16,7 @@ func TestLoadMissingEnvironmentFile(t *testing.T) {
 	// Arrange & Act
 	sb := testutil.NewSandbox()
 	defer sb.Close()
-	data, err := loadEnvironmentFile(path.Join(sb.BasePath, "not-exists.env"))
+	data, err := LoadEnvironmentFile(path.Join(sb.BasePath, "not-exists.env"))
 
 	// Assert
 	require.Error(t, err)
@@ -34,8 +34,8 @@ func TestLoadSingleLineEnvironmentContent(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, data, 1)
-	require.EqualValues(t, "TEST_STORK_KEY", data[0].key)
-	require.EqualValues(t, "VALUE", data[0].value)
+	require.EqualValues(t, "TEST_STORK_KEY", data[0].GetKey())
+	require.EqualValues(t, "VALUE", data[0].GetValue())
 }
 
 // Test that the multi-line environment file content is loaded properly.
@@ -51,12 +51,12 @@ func TestLoadMultiLineEnvironmentContent(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, data, 3)
-	require.EqualValues(t, "TEST_STORK_KEY1", data[0].key)
-	require.EqualValues(t, "VALUE1", data[0].value)
-	require.EqualValues(t, "TEST_STORK_KEY2", data[1].key)
-	require.EqualValues(t, "VALUE2", data[1].value)
-	require.EqualValues(t, "TEST_STORK_KEY3", data[2].key)
-	require.EqualValues(t, "VALUE3", data[2].value)
+	require.EqualValues(t, "TEST_STORK_KEY1", data[0].GetKey())
+	require.EqualValues(t, "VALUE1", data[0].GetValue())
+	require.EqualValues(t, "TEST_STORK_KEY2", data[1].GetKey())
+	require.EqualValues(t, "VALUE2", data[1].GetValue())
+	require.EqualValues(t, "TEST_STORK_KEY3", data[2].GetKey())
+	require.EqualValues(t, "VALUE3", data[2].GetValue())
 }
 
 // Test that the duplicates in the content are overwritten properly.
@@ -72,8 +72,8 @@ func TestLoadEnvironmentContentWithDuplicates(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, data, 1)
-	require.EqualValues(t, "TEST_STORK_KEY1", data[0].key)
-	require.EqualValues(t, "VALUE3", data[0].value)
+	require.EqualValues(t, "TEST_STORK_KEY1", data[0].GetKey())
+	require.EqualValues(t, "VALUE3", data[0].GetValue())
 }
 
 // Test that the empty value in the environment file content is loaded properly.
@@ -87,8 +87,8 @@ func TestLoadEnvironmentContentWithEmptyValue(t *testing.T) {
 	// Assert
 	require.Len(t, data, 1)
 	require.NoError(t, err)
-	require.EqualValues(t, "TEST_STORK_KEY", data[0].key)
-	require.EqualValues(t, "", data[0].value)
+	require.EqualValues(t, "TEST_STORK_KEY", data[0].GetKey())
+	require.EqualValues(t, "", data[0].GetValue())
 }
 
 // Test that the missing value separator in the environment file content
@@ -146,8 +146,8 @@ func TestLoadEnvironmentContentWithComments(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, data, 1)
-	require.EqualValues(t, "TEST_STORK_KEY2", data[0].key)
-	require.EqualValues(t, "VALUE2", data[0].value)
+	require.EqualValues(t, "TEST_STORK_KEY2", data[0].GetKey())
+	require.EqualValues(t, "VALUE2", data[0].GetValue())
 }
 
 // Test that the empty lines are skipped.
@@ -162,10 +162,10 @@ func TestLoadEnvironmentContentWithEmptyLine(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, "TEST_STORK_KEY1", data[0].key)
-	require.EqualValues(t, "VALUE1", data[0].value)
-	require.EqualValues(t, "TEST_STORK_KEY2", data[1].key)
-	require.EqualValues(t, "VALUE2", data[1].value)
+	require.EqualValues(t, "TEST_STORK_KEY1", data[0].GetKey())
+	require.EqualValues(t, "VALUE1", data[0].GetValue())
+	require.EqualValues(t, "TEST_STORK_KEY2", data[1].GetKey())
+	require.EqualValues(t, "VALUE2", data[1].GetValue())
 	require.Len(t, data, 2)
 }
 
@@ -182,8 +182,8 @@ func TestLoadEnvironmentContentWithTrailingCharacters(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, data, 1)
-	require.EqualValues(t, "TEST_STORK_KEY2", data[0].key)
-	require.EqualValues(t, "VALUE2", data[0].value)
+	require.EqualValues(t, "TEST_STORK_KEY2", data[0].GetKey())
+	require.EqualValues(t, "VALUE2", data[0].GetValue())
 }
 
 type setterMock struct {

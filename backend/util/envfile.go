@@ -10,9 +10,16 @@ import (
 )
 
 // Stores key-value of the environment variable.
-type keyValuePair struct {
-	key   string
-	value string
+type KeyValuePair [2]string
+
+// Returns the key of the key-value pair.
+func (p KeyValuePair) GetKey() string {
+	return p[0]
+}
+
+// Returns the value of the key-value pair.
+func (p KeyValuePair) GetValue() string {
+	return p[1]
 }
 
 // Defines an interface that accepts the environment variables.
@@ -37,20 +44,20 @@ func (s *processEnvironmentVariableSetter) Set(key, value string) error {
 
 // Loads all entries from the environment file into one or multiple setters.
 func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSetter) error {
-	data, err := loadEnvironmentFile(path)
+	data, err := LoadEnvironmentFile(path)
 	if err != nil {
 		return err
 	}
 
 	for _, pair := range data {
 		for _, setter := range setters {
-			err = setter.Set(pair.key, pair.value)
+			err = setter.Set(pair.GetKey(), pair.GetValue())
 			if err != nil {
 				err = errors.WithMessagef(
 					err,
 					"cannot set '%s=%s' environment variable",
-					pair.key,
-					pair.value,
+					pair.GetKey(),
+					pair.GetValue(),
 				)
 				return err
 			}
@@ -61,7 +68,7 @@ func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSett
 }
 
 // Loads all entries from the environment file.
-func loadEnvironmentFile(path string) ([]*keyValuePair, error) {
+func LoadEnvironmentFile(path string) ([]KeyValuePair, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open the '%s' environment file", path)
@@ -71,9 +78,8 @@ func loadEnvironmentFile(path string) ([]*keyValuePair, error) {
 }
 
 // Loads all entries from a given reader.
-func loadEnvironmentEntries(reader io.Reader) ([]*keyValuePair, error) {
-	data := []*keyValuePair{}
-	dataIndex := map[string]*keyValuePair{}
+func loadEnvironmentEntries(reader io.Reader) ([]KeyValuePair, error) {
+	dataIndex := map[string]string{}
 	scanner := bufio.NewScanner(reader)
 
 	lineIdx := 0
@@ -88,13 +94,18 @@ func loadEnvironmentEntries(reader io.Reader) ([]*keyValuePair, error) {
 			continue
 		}
 
-		if pair, ok := dataIndex[key]; ok {
-			pair.value = value
+		if _, ok := dataIndex[key]; ok {
+			// Duplicate key. Use the latest value.
+			dataIndex[key] = value
 		} else {
-			pair := &keyValuePair{key, value}
-			data = append(data, pair)
-			dataIndex[key] = pair
+			// New key.
+			dataIndex[key] = value
 		}
+	}
+
+	var data []KeyValuePair
+	for key, value := range dataIndex {
+		data = append(data, [2]string{key, value})
 	}
 
 	return data, nil

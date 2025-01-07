@@ -130,6 +130,11 @@ func (p *CLIParser) bootstrap() (*HookDirectorySettings, GroupedHookCLIFlags, er
 	}
 	p.substitutePlaceholdersInGroup(group)
 
+	err = p.verifyEnvironmentFile(envFileSettings)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return hookDirectorySettings, allHookCLIFlags, nil
 }
 
@@ -254,6 +259,41 @@ func (p *CLIParser) loadEnvironmentFile(envFileSettings *environmentFileSettings
 	p.onLoadEnvironmentFileCallback()
 
 	return nil
+}
+
+// Verifies if all environment variables in the environment file are known.
+// Returns an error if any of the environment variables is unknown.
+func (p *CLIParser) verifyEnvironmentFile(envFileSettings *environmentFileSettings) error {
+	if !envFileSettings.UseEnvFile {
+		// Nothing to do.
+		return nil
+	}
+
+	// Load the environment file content.
+	entries, err := storkutil.LoadEnvironmentFile(envFileSettings.EnvFile)
+	if err != nil {
+		err = errors.WithMessagef(err, "invalid environment file: '%s'", envFileSettings.EnvFile)
+		return err
+	}
+
+	// Collect all known environment variables.
+	knownEnvironmentVariables := make(map[string]bool)
+	for _, group := range p.parser.Groups() {
+		for _, option := range group.Options() {
+			knownEnvironmentVariables[option.EnvKeyWithNamespace()] = true
+		}
+	}
+
+	// Check if all environment variables are known.
+	var errs []error
+	for _, entry := range entries {
+		if _, exist := knownEnvironmentVariables[entry.GetKey()]; !exist {
+			err = errors.Errorf("unknown environment variable: '%s'", entry.GetKey())
+			errs = append(errs, err)
+		}
+	}
+
+	return storkutil.CombineErrors("the environment file contains unknown environment variables", errs)
 }
 
 // Extracts the CLI flags from the hooks.
