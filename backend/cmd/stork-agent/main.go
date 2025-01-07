@@ -17,6 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork"
 	"isc.org/stork/agent"
+	storkconfig "isc.org/stork/appcfg/stork"
 	"isc.org/stork/hooks"
 	"isc.org/stork/profiler"
 	storkutil "isc.org/stork/util"
@@ -432,48 +433,19 @@ func (s *registerSettings) Execute(_ []string) error {
 
 // Parses the command line arguments. Returns the general settings if no command
 // is specified, the register settings if the register command is specified,
-// or an error if the arguments are invalid, the command is unknown, or the
-// help is requested.
-func parseArgs() (*generalSettings, *registerSettings, error) {
-	shortGeneralDescription := "Stork Agent"
-	longGeneralDescription := `This component is required on each machine to be monitored by the Stork Server
-
-Stork logs at INFO level by default. Other levels can be configured using the
-STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
-
-	// Parse environment file settings.
-	envFileSettings := &environmentFileSettings{}
-	parser := flags.NewParser(envFileSettings, flags.IgnoreUnknown)
-	parser.ShortDescription = shortGeneralDescription
-	parser.LongDescription = longGeneralDescription
-
-	if _, err := parser.Parse(); err != nil {
-		err = errors.Wrap(err, "invalid CLI argument")
-		return nil, nil, err
-	}
-
-	// Load environment variables from the environment file.
-	if envFileSettings.UseEnvFile {
-		err := storkutil.LoadEnvironmentFileToSetter(
-			envFileSettings.EnvFile,
-			storkutil.NewProcessEnvironmentVariableSetter(),
-		)
-		if err != nil {
-			err = errors.WithMessagef(err, "invalid environment file: '%s'", envFileSettings.EnvFile)
-			return nil, nil, err
-		}
-
-		// Reconfigures logging using new environment variables.
-		storkutil.SetupLogging()
-	}
-
+// a flag indicating if the help is requested, or an error if the arguments are
+// invalid, the command is unknown, or the help is requested.
+func parseArgs() (*generalSettings, *registerSettings, bool, error) {
 	// Prepare main parser.
 	generalSettings := &generalSettings{}
 	registerSettings := &registerSettings{}
 
-	parser = flags.NewParser(generalSettings, flags.Default)
-	parser.ShortDescription = shortGeneralDescription
-	parser.LongDescription = longGeneralDescription
+	parser := flags.NewParser(generalSettings, flags.Default)
+	parser.ShortDescription = "Stork Agent"
+	parser.LongDescription = `This component is required on each machine to be monitored by the Stork Server
+
+Stork logs at INFO level by default. Other levels can be configured using the
+STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 
 	parser.SubcommandsOptional = true
 	_, err := parser.AddCommand(
@@ -488,14 +460,18 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 	)
 	if err != nil {
 		err = errors.Wrap(err, "invalid CLI 'register' command")
-		return nil, nil, err
+		return nil, nil, false, err
 	}
 
 	// Parse command line arguments.
-	_, err = parser.Parse()
+	appParser := storkconfig.NewCLIParser(parser, "agent", func() {
+		storkutil.SetupLogging()
+	})
+
+	_, _, isHelp, err := appParser.Parse()
 	if err != nil {
 		err = errors.Wrap(err, "invalid CLI argument")
-		return nil, nil, err
+		return nil, nil, false, err
 	}
 
 	if registerSettings.commandSpecified {
@@ -504,18 +480,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 		registerSettings = nil
 	}
 
-	return generalSettings, registerSettings, nil
-}
-
-// Check if a given error is a request to display the help.
-func isHelpRequest(err error) bool {
-	var flagsError *flags.Error
-	if errors.As(err, &flagsError) {
-		if flagsError.Type == flags.ErrHelp {
-			return true
-		}
-	}
-	return false
+	return generalSettings, registerSettings, isHelp, nil
 }
 
 // Parses the command line arguments and runs the specific Stork Agent command.
@@ -523,11 +488,11 @@ func runApp(ctx context.Context, reload bool) error {
 	profilerShutdown := profiler.Start(profiler.AgentProfilerPort)
 	defer profilerShutdown()
 
-	generalSettings, registerSettings, err := parseArgs()
+	generalSettings, registerSettings, isHelp, err := parseArgs()
+	if isHelp {
+		return nil
+	}
 	if err != nil {
-		if isHelpRequest(err) {
-			return nil
-		}
 		return err
 	}
 
