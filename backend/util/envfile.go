@@ -9,19 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Stores key-value of the environment variable.
-type KeyValuePair [2]string
-
-// Returns the key of the key-value pair.
-func (p KeyValuePair) GetKey() string {
-	return p[0]
-}
-
-// Returns the value of the key-value pair.
-func (p KeyValuePair) GetValue() string {
-	return p[1]
-}
-
 // Defines an interface that accepts the environment variables.
 type EnvironmentVariableSetter interface {
 	Set(key, value string) error
@@ -49,15 +36,12 @@ func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSett
 		return err
 	}
 
-	for _, pair := range data {
+	for key, value := range data {
 		for _, setter := range setters {
-			err = setter.Set(pair.GetKey(), pair.GetValue())
+			err = setter.Set(key, value)
 			if err != nil {
 				err = errors.WithMessagef(
-					err,
-					"cannot set '%s=%s' environment variable",
-					pair.GetKey(),
-					pair.GetValue(),
+					err, "cannot set '%s=%s' environment variable", key, value,
 				)
 				return err
 			}
@@ -68,7 +52,7 @@ func LoadEnvironmentFileToSetter(path string, setters ...EnvironmentVariableSett
 }
 
 // Loads all entries from the environment file.
-func LoadEnvironmentFile(path string) ([]KeyValuePair, error) {
+func LoadEnvironmentFile(path string) (map[string]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open the '%s' environment file", path)
@@ -78,8 +62,7 @@ func LoadEnvironmentFile(path string) ([]KeyValuePair, error) {
 }
 
 // Loads all entries from a given reader.
-func loadEnvironmentEntries(reader io.Reader) ([]KeyValuePair, error) {
-	// The order of the entries is important.
+func loadEnvironmentEntries(reader io.Reader) (map[string]string, error) {
 	dataIndex := map[string]string{}
 	scanner := bufio.NewScanner(reader)
 
@@ -98,12 +81,7 @@ func loadEnvironmentEntries(reader io.Reader) ([]KeyValuePair, error) {
 		dataIndex[key] = value
 	}
 
-	var data []KeyValuePair
-	for key, value := range dataIndex {
-		data = append(data, [2]string{key, value})
-	}
-
-	return data, nil
+	return dataIndex, nil
 }
 
 // Parses a line of the environment file.

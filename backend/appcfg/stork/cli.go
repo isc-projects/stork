@@ -289,11 +289,11 @@ func (p *CLIParser) verifyEnvironmentFile(envFileSettings *environmentFileSettin
 	}
 
 	// Check if all environment variables are known.
-	for _, entry := range entries {
-		if _, exist := knownEnvironmentVariables[entry.GetKey()]; !exist {
+	for key, _ := range entries {
+		if _, exist := knownEnvironmentVariables[key]; !exist {
 			log.Warnf(
 				"Unknown environment variable: '%s' in the environment file: '%s'",
-				entry.GetKey(), envFileSettings.EnvFile,
+				key, envFileSettings.EnvFile,
 			)
 		}
 	}
