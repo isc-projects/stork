@@ -1,6 +1,7 @@
 package storkconfig
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -434,4 +435,80 @@ Help Options:
 `
 
 	require.Equal(t, expectedHelp, string(stdout))
+}
+
+// Test that the unknown environment variables from the environment file are
+// logged and ignored.
+func TestVerifyEnvironmentFile(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	envPath, _ := sandbox.Write("file.env", `
+STORK_SERVER_TLS_CERT=tlsCert
+STORK_SERVER_UNKNOWN=unknown
+`)
+
+	type settings struct {
+		TLSCert string `long:"tls-cert" env:"STORK_SERVER_TLS_CERT" description:"The path to the TLS certificate"`
+	}
+	data := &settings{}
+
+	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
+
+	// os.Setenv("STORK_SERVER_UNKNOWN", "unknown")
+	// os.Setenv("STORK_SERVER_TLS_CERT", "tlsCert")
+
+	// Act
+	var err error
+	stdout, _, captureErr := testutil.CaptureOutput(func() {
+		err = parser.verifyEnvironmentFile(&environmentFileSettings{
+			EnvFile:    envPath,
+			UseEnvFile: true,
+		})
+	})
+
+	// Assert
+	require.NoError(t, err)
+	require.NoError(t, captureErr)
+
+	expectedLog := fmt.Sprintf(
+		`Unknown environment variable: 'STORK_SERVER_UNKNOWN' in the environment file: '%s'`,
+		envPath,
+	)
+	require.Contains(t, string(stdout), expectedLog)
+	require.NotContains(t, string(stdout), "TLS_CERT")
+}
+
+// Test that the unknown system-wide environment variables are logged and
+// ignored.
+func TestVerifySystemEnvironmentVariables(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	type settings struct {
+		TLSCert string `long:"tls-cert" env:"STORK_SERVER_TLS_CERT" description:"The path to the TLS certificate"`
+	}
+	data := &settings{}
+
+	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
+
+	os.Setenv("STORK_SERVER_UNKNOWN", "unknown")
+	os.Setenv("STORK_SERVER_TLS_CERT", "tlsCert")
+
+	// Act
+	stdout, _, captureErr := testutil.CaptureOutput(func() {
+		parser.verifySystemEnvironmentVariables()
+	})
+
+	// Assert
+	require.NoError(t, captureErr)
+
+	expectedLog := `Unknown environment variable: 'STORK_SERVER_UNKNOWN' set in a shell`
+	require.Contains(t, string(stdout), expectedLog)
+	require.NotContains(t, string(stdout), "TLS_CERT")
 }

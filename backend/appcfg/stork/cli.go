@@ -7,7 +7,7 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
+	log "github.com/sirupsen/logrus"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooksutil"
 	storkutil "isc.org/stork/util"
