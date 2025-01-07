@@ -78,7 +78,7 @@ func ParseCLIFlags() (command Command, settings *Settings, err error) {
 	command = NoneCommand
 	settings = newSettings()
 
-	parser := flags.NewParser(settings, flags.Default)
+	parser := flags.NewParser(settings.GeneralSettings, flags.Default)
 	parser.ShortDescription = "Stork Server"
 	parser.LongDescription = `Stork Server is a Kea and BIND 9 dashboard
 
