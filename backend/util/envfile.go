@@ -79,6 +79,7 @@ func LoadEnvironmentFile(path string) ([]KeyValuePair, error) {
 
 // Loads all entries from a given reader.
 func loadEnvironmentEntries(reader io.Reader) ([]KeyValuePair, error) {
+	// The order of the entries is important.
 	dataIndex := map[string]string{}
 	scanner := bufio.NewScanner(reader)
 

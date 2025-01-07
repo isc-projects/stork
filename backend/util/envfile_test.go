@@ -242,7 +242,7 @@ func TestLoadEnvironmentVariablesToSetterWithError(t *testing.T) {
 
 	// Assert
 	require.ErrorContains(t, err, "foo")
-	require.NotContains(t, mock.data, "TEST_STORK_KEY2")
+	require.Len(t, mock.data, 1)
 }
 
 // Test that the process setter is constructed properly.
