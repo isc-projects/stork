@@ -162,7 +162,6 @@ sudo ./stork-install-agent.sh</textarea
 <!-- Machines tab -->
 <div [hidden]="activeTabIdx !== 0">
     <div class="flex flex-wrap gap-2 justify-content-end mb-3">
-
         <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
             <div class="flex-auto"></div>
             <button
@@ -176,15 +175,19 @@ sudo ./stork-install-agent.sh</textarea
 
             <p-selectButton
                 [options]="viewSelectionOptions"
-                [ngModel]="!showAuthorized"
+                [ngModel]="showAuthorized"
                 (onChange)="onSelectChange($event)"
-                [allowEmpty]="false"
                 id="unauthorized-select-button"
-            ></p-selectButton>
+            >
+                <ng-template let-item pTemplate>
+                    <span class="p-button-label">{{ item.label }}</span
+                    ><p-badge *ngIf="item.hasBadge" severity="info" [value]="0" styleClass="relative" />
+                </ng-template>
+            </p-selectButton>
         </div>
     </div>
 
-    <p-messages *ngIf="!showAuthorized && registrationDisabled" severity="warn">
+    <p-messages *ngIf="showAuthorized === false && registrationDisabled" severity="warn">
         <ng-template pTemplate>
             <span class="pi pi-exclamation-triangle"></span>
             <div class="ml-2">
@@ -199,7 +202,6 @@ sudo ./stork-install-agent.sh</textarea
         [unauthorizedMachinesCount]="unauthorizedMachinesCount"
     ></app-authorized-machines-table>
     <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
-
 </div>
 
 <!-- Single machine tab -->

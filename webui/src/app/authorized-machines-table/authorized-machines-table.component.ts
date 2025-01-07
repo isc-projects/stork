@@ -88,8 +88,8 @@ export class AuthorizedMachinesTableComponent
      *
      * @param machines
      */
-    onAuthorizeMachines(machines: Machine[]) : void {
-        console.log("onAuthorizeMachines", machines)
+    onAuthorizeMachines(machines: Machine[]): void {
+        console.log('onAuthorizeMachines', machines)
         this.authorizeMachines.emit(machines)
     }
 

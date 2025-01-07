@@ -70,8 +70,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     // }
 
     get showAuthorized(): boolean {
-        console.log('showAuthorized', this.table?.validFilter?.authorized, this.table?.validFilter?.authorized === true ?? true)
-        return this.table?.validFilter?.authorized === true ?? true
+        console.log(
+            'showAuthorized',
+            this.table?.validFilter?.authorized,
+            'undefined?',
+            this.table?.validFilter?.authorized === undefined,
+            'null?',
+            this.table?.validFilter?.authorized === null
+        )
+        return this.table?.validFilter?.authorized ?? null
     }
 
     @ViewChild('authorizedMachinesTableComponent') table: AuthorizedMachinesTableComponent
@@ -277,17 +284,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.viewSelectionOptions = [
             {
                 label: 'Authorized',
-                value: false,
+                value: true,
             },
             {
-                label: 'Unauthorized (0)',
-                value: true,
+                label: 'Unauthorized',
+                value: false,
+                hasBadge: true,
             },
         ]
 
         this.openedMachines = []
-
-
 
         // this.subscriptions.add(
         //     this.route.paramMap.subscribe((params: ParamMap) => {
@@ -875,5 +881,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     onSelectChange(event: any) {
         console.log('onSelectChange', event)
+        this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value } ?? null }).finally()
     }
 }

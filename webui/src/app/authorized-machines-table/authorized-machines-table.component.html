@@ -5,11 +5,11 @@
         </div>
     </div>
     <p-button
-            *ngIf="selectedMachines?.length > 0"
-            label="Authorize selected"
-            icon="pi pi-lock"
-            styleClass="block p-button-primary no-underline"
-            (onClick)="onAuthorizeMachines(selectedMachines)"
+        *ngIf="selectedMachines?.length > 0"
+        label="Authorize selected"
+        icon="pi pi-lock"
+        styleClass="block p-button-primary no-underline"
+        (onClick)="onAuthorizeMachines(selectedMachines)"
     ></p-button>
     <p-button
         label="Refresh List"
@@ -54,8 +54,9 @@
                     ></p-tag>
                     <app-help-tip subject="filtering" id="filtering-help-button">
                         <p>
-                            Machines in the table below can be filtered by entering a text in the search box; the table shows
-                            all machines matching the filter text. Currently supported fields for such filtering are:
+                            Machines in the table below can be filtered by entering a text in the search box; the table
+                            shows all machines matching the filter text. Currently supported fields for such filtering
+                            are:
                         </p>
                         <ul>
                             <li>Address</li>
@@ -72,8 +73,8 @@
                             <li>Host ID</li>
                         </ul>
                         <p>
-                            The search is performed while typing or on pressing Enter. The minimum number of search characters
-                            is 3.
+                            The search is performed while typing or on pressing Enter. The minimum number of search
+                            characters is 3.
                         </p>
                     </app-help-tip>
                 </div>
@@ -89,18 +90,22 @@
                     [disabled]="!hasFilter(machinesTable)"
                 ></button>
                 <div class="flex-auto"></div>
-                <p-columnFilter field="authorized" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
+                <p-columnFilter
+                    field="authorized"
+                    matchMode="equals"
+                    [showMenu]="false"
+                    [showClearButton]="!hasPrefilter()"
+                >
                     <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                        <p-triStateCheckbox
+                            inputId="authorized-input"
+                            (onChange)="filter($event.value)"
+                            [ngModel]="value"
+                            [disabled]="hasPrefilter()"
+                            styleClass="mr-2"
+                        ></p-triStateCheckbox>
 
-                            <p-triStateCheckbox inputId="authorized-input"
-                                                (onChange)="filter($event.value)"
-                                                [ngModel]="value"
-                                                [disabled]="hasPrefilter()"
-                                                styleClass="mr-2"
-                            ></p-triStateCheckbox>
-
-                            <label for="authorized-input">Authorized machines</label>
-
+                        <label for="authorized-input">Authorized machines</label>
                     </ng-template>
                 </p-columnFilter>
 
@@ -257,7 +262,8 @@
                     There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
                     <b class="text-xl text-red-500">{{ unauthorizedMachinesCount }}</b>
                     unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
-                    {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} <a routerLink="/machines/all" [queryParams]="{authorized: 'false'}">here</a>.
+                    {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }}
+                    <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">here</a>.
                 </div>
             </td>
         </tr>
