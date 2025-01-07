@@ -450,6 +450,7 @@ func TestVerifyEnvironmentFile(t *testing.T) {
 	envPath, _ := sandbox.Write("file.env", `
 STORK_SERVER_TLS_CERT=tlsCert
 STORK_SERVER_UNKNOWN=unknown
+FOOBAR=foobar
 `)
 
 	type settings struct {
@@ -458,9 +459,6 @@ STORK_SERVER_UNKNOWN=unknown
 	data := &settings{}
 
 	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
-
-	// os.Setenv("STORK_SERVER_UNKNOWN", "unknown")
-	// os.Setenv("STORK_SERVER_TLS_CERT", "tlsCert")
 
 	// Act
 	var err error
@@ -481,6 +479,7 @@ STORK_SERVER_UNKNOWN=unknown
 	)
 	require.Contains(t, string(stdout), expectedLog)
 	require.NotContains(t, string(stdout), "TLS_CERT")
+	require.Contains(t, string(stdout), "Unknown environment variable: 'FOOBAR'")
 }
 
 // Test that the unknown system-wide environment variables are logged and
@@ -499,6 +498,7 @@ func TestVerifySystemEnvironmentVariables(t *testing.T) {
 
 	os.Setenv("STORK_SERVER_UNKNOWN", "unknown")
 	os.Setenv("STORK_SERVER_TLS_CERT", "tlsCert")
+	os.Setenv("FOOBAR", "foobar")
 
 	// Act
 	stdout, _, captureErr := testutil.CaptureOutput(func() {
@@ -511,4 +511,5 @@ func TestVerifySystemEnvironmentVariables(t *testing.T) {
 	expectedLog := `Unknown environment variable: 'STORK_SERVER_UNKNOWN' set in a shell`
 	require.Contains(t, string(stdout), expectedLog)
 	require.NotContains(t, string(stdout), "TLS_CERT")
+	require.NotContains(t, string(stdout), "FOOBAR")
 }
