@@ -7,6 +7,7 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"isc.org/stork/hooks"
 	"isc.org/stork/hooksutil"
 	storkutil "isc.org/stork/util"
@@ -130,10 +131,13 @@ func (p *CLIParser) bootstrap() (*HookDirectorySettings, GroupedHookCLIFlags, er
 	}
 	p.substitutePlaceholdersInGroup(group)
 
+	// Verify the environment variables.
 	err = p.verifyEnvironmentFile(envFileSettings)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	p.verifySystemEnvironmentVariables()
 
 	return hookDirectorySettings, allHookCLIFlags, nil
 }
@@ -262,7 +266,7 @@ func (p *CLIParser) loadEnvironmentFile(envFileSettings *environmentFileSettings
 }
 
 // Verifies if all environment variables in the environment file are known.
-// Returns an error if any of the environment variables is unknown.
+// Prints a warning if any of the environment variables is unknown.
 func (p *CLIParser) verifyEnvironmentFile(envFileSettings *environmentFileSettings) error {
 	if !envFileSettings.UseEnvFile {
 		// Nothing to do.
@@ -285,15 +289,52 @@ func (p *CLIParser) verifyEnvironmentFile(envFileSettings *environmentFileSettin
 	}
 
 	// Check if all environment variables are known.
-	var errs []error
 	for _, entry := range entries {
 		if _, exist := knownEnvironmentVariables[entry.GetKey()]; !exist {
-			err = errors.Errorf("unknown environment variable: '%s'", entry.GetKey())
-			errs = append(errs, err)
+			log.Warnf(
+				"Unknown environment variable: '%s' in the environment file: '%s'",
+				entry.GetKey(), envFileSettings.EnvFile,
+			)
 		}
 	}
 
-	return storkutil.CombineErrors("the environment file contains unknown environment variables", errs)
+	return nil
+}
+
+// Verifies if the system-wide environment variables doesn't contain any
+// unknown Stork-specific environment variables.
+func (p *CLIParser) verifySystemEnvironmentVariables() {
+	// Collect all known environment variables.
+	knownEnvironmentVariables := make(map[string]bool)
+	for _, group := range p.parser.Groups() {
+		for _, option := range group.Options() {
+			knownEnvironmentVariables[option.EnvKeyWithNamespace()] = true
+		}
+	}
+
+	// The prefix that is used for the Stork-specific environment variables.
+	applicationPrefix := fmt.Sprintf("STORK_%s_", strings.ToUpper(p.application))
+
+	// Iterate over all system-wide environment variables.
+	for _, env := range os.Environ() {
+		key, _, ok := strings.Cut(env, "=")
+		if !ok {
+			// It should never happen.
+			continue
+		}
+
+		if !strings.HasPrefix(key, applicationPrefix) {
+			// Not a Stork-specific environment variable.
+			continue
+		}
+
+		if _, exist := knownEnvironmentVariables[key]; exist {
+			// Known environment variable.
+			continue
+		}
+
+		log.Warnf("Unknown environment variable: '%s' set in a shell", key)
+	}
 }
 
 // Extracts the CLI flags from the hooks.
@@ -371,48 +412,3 @@ func getHookNamespaces(application string, hookName string) (flagNamespace, envN
 	envNamespace = strings.ToUpper(envNamespace)
 	return
 }
-
-// // Parses all CLI flags including the hooks-related ones.
-// func (p *CLIParser) parseSettings(allHooksCLIFlags map[string]hooks.HookSettings) (*Settings, error) {
-// 	settings := newSettings()
-
-// 	parser := flags.NewParser(settings.GeneralSettings, flags.Default)
-// 	parser.ShortDescription = p.shortDescription
-// 	parser.LongDescription = p.longDescription
-
-// 	databaseFlags := &dbops.DatabaseCLIFlags{}
-// 	// Process Database specific args.
-// 	_, err := parser.AddGroup("Database ConnectionFlags", "", databaseFlags)
-// 	if err != nil {
-// 		err = errors.Wrap(err, "cannot add the database group")
-// 		return nil, err
-// 	}
-
-// 	// Process ReST API specific args.
-// 	_, err = parser.AddGroup("HTTP ReST Server Flags", "", settings.RestAPISettings)
-// 	if err != nil {
-// 		err = errors.Wrap(err, "cannot add the ReST group")
-// 		return nil, err
-// 	}
-
-// 	// Process agent comm specific args.
-// 	_, err = parser.AddGroup("Agents Communication Flags", "", settings.AgentsSettings)
-// 	if err != nil {
-// 		err = errors.Wrap(err, "cannot add the agents group")
-// 		return nil, err
-// 	}
-
-// 	// Do args parsing.
-// 	if _, err = parser.Parse(); err != nil {
-// 		err = errors.Wrap(err, "cannot parse the CLI flags")
-// 		return nil, err
-// 	}
-
-// 	settings.DatabaseSettings, err = databaseFlags.ConvertToDatabaseSettings()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	settings.HooksSettings = allHooksCLIFlags
-
-// 	return settings, nil
-// }
