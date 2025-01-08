@@ -2,15 +2,15 @@ import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular
 import { ActivatedRoute, EventType, Router } from '@angular/router'
 
 import { MessageService, MenuItem } from 'primeng/api'
-import { concat, EMPTY, lastValueFrom, Observable, Subscription } from 'rxjs'
+import { BehaviorSubject, concat, EMPTY, lastValueFrom, Observable, Subscription } from 'rxjs'
 import { Machine, Settings } from '../backend'
 
 import { ServicesService, SettingsService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { copyToClipboard, getErrorMessage } from '../utils'
-import { Table } from 'primeng/table'
 import { catchError, filter } from 'rxjs/operators'
 import { AuthorizedMachinesTableComponent } from '../authorized-machines-table/authorized-machines-table.component'
+import { Menu } from 'primeng/menu'
 
 interface AppType {
     name: string
@@ -34,15 +34,26 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     machineMenuItemsAuth: MenuItem[]
     machineMenuItemsUnauth: MenuItem[]
     viewSelectionOptions: any[]
-    showUnauthorized = false
+    // showUnauthorized = false
     serverToken = ''
-    selectedMachines: Machine[] = []
+    // selectedMachines: Machine[] = []
     dataLoading: boolean
-    stateKey = 'machines-table-session'
+    // stateKey = 'machines-table-session'
 
     // This counter is used to indicate in UI that there are some
     // unauthorized machines that may require authorization.
-    unauthorizedMachinesCount = 0
+    _unauthorizedMachinesCount = 0
+
+    unauthorizedMachinesCount$ = new BehaviorSubject<number>(this._unauthorizedMachinesCount)
+
+    get unauthorizedMachinesCount(): number {
+        return this._unauthorizedMachinesCount
+    }
+    //
+    set unauthorizedMachinesCount(c: number) {
+        this._unauthorizedMachinesCount = c
+        this.unauthorizedMachinesCount$.next(c)
+    }
 
     // action panel
     appTypes: AppType[]
@@ -70,18 +81,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     // }
 
     get showAuthorized(): boolean {
-        console.log(
-            'showAuthorized',
-            this.table?.validFilter?.authorized,
-            'undefined?',
-            this.table?.validFilter?.authorized === undefined,
-            'null?',
-            this.table?.validFilter?.authorized === null
-        )
         return this.table?.validFilter?.authorized ?? null
     }
 
     @ViewChild('authorizedMachinesTableComponent') table: AuthorizedMachinesTableComponent
+
+    @ViewChild('machineMenu') machineMenu: Menu
 
     constructor(
         private route: ActivatedRoute,
@@ -94,6 +99,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
+        this.unauthorizedMachinesCount$.complete()
     }
 
     /**
@@ -230,14 +236,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
         this.machines = []
-        this.appTypes = [
-            { name: 'any', value: '', id: 'none-app' },
-            { name: 'Bind9', value: 'bind9', id: 'bind-app' },
-            { name: 'Kea', value: 'kea', id: 'kea-app' },
-        ]
+        // this.appTypes = [
+        //     { name: 'any', value: '', id: 'none-app' },
+        //     { name: 'Bind9', value: 'bind9', id: 'bind-app' },
+        //     { name: 'Kea', value: 'kea', id: 'kea-app' },
+        // ]
         this.machineMenuItemsAuth = [
             {
-                label: 'Refresh',
+                label: 'Refresh machine state information',
                 id: 'refresh-single-machine',
                 icon: 'pi pi-refresh',
             },
@@ -371,7 +377,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.dataLoading = true
 
         // check current number of unauthorized machines
-        this.refreshUnauthorizedMachinesCount()
+        // this.refreshUnauthorizedMachinesCount()
     }
 
     /**
@@ -380,50 +386,50 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * This counter is used to indicate in UI that there are some
      * unauthorized machines that may require authorization.
      */
-    refreshUnauthorizedMachinesCount() {
-        if (this.showUnauthorized) {
-            return
-        }
-        this.servicesApi.getUnauthorizedMachinesCount().subscribe((count: number) => {
-            this.unauthorizedMachinesCount = count
-            this.viewSelectionOptions[1].label = 'Unauthorized (' + count + ')'
-
-            // force refresh in UI
-            this.viewSelectionOptions = [...this.viewSelectionOptions]
-        })
-    }
+    // refreshUnauthorizedMachinesCount() {
+    //     if (!this.showAuthorized) {
+    //         return
+    //     }
+    //     this.servicesApi.getUnauthorizedMachinesCount().subscribe((count: number) => {
+    //         this.unauthorizedMachinesCount = count
+    //         this.viewSelectionOptions[1].label = 'Unauthorized (' + count + ')'
+    //
+    //         // force refresh in UI
+    //         this.viewSelectionOptions = [...this.viewSelectionOptions]
+    //     })
+    // }
 
     /**
      * Handler called by the PrimeNG table to load the machine data.
      * @param event Pagination event
      */
-    loadMachines(event) {
-        this.dataLoading = true
-        let text
-        if (event.filters?.hasOwnProperty('text')) {
-            text = event.filters.text.value
-        }
-
-        let app
-        if (event.filters?.app?.[0]) {
-            app = event.filters.app[0].value
-        }
-
-        this.servicesApi.getMachines(event.first, event.rows, text, app, !this.showUnauthorized).subscribe((data) => {
-            this.machines = data.items ?? []
-            const total = data.total || 0
-            this.totalMachines = total
-            if (this.showUnauthorized) {
-                this.unauthorizedMachinesCount = total
-                this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
-
-                // force refresh in UI
-                this.viewSelectionOptions = [...this.viewSelectionOptions]
-            }
-            this.dataLoading = false
-        })
-        this.refreshUnauthorizedMachinesCount()
-    }
+    // loadMachines(event) {
+    //     this.dataLoading = true
+    //     let text
+    //     if (event.filters?.hasOwnProperty('text')) {
+    //         text = event.filters.text.value
+    //     }
+    //
+    //     let app
+    //     if (event.filters?.app?.[0]) {
+    //         app = event.filters.app[0].value
+    //     }
+    //
+    //     this.servicesApi.getMachines(event.first, event.rows, text, app, !this.showUnauthorized).subscribe((data) => {
+    //         this.machines = data.items ?? []
+    //         const total = data.total || 0
+    //         this.totalMachines = total
+    //         if (this.showUnauthorized) {
+    //             this.unauthorizedMachinesCount = total
+    //             this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
+    //
+    //             // force refresh in UI
+    //             this.viewSelectionOptions = [...this.viewSelectionOptions]
+    //         }
+    //         this.dataLoading = false
+    //     })
+    //     this.refreshUnauthorizedMachinesCount()
+    // }
 
     /** Callback called on canceling the edit machine dialog. */
     cancelMachineDialog() {
@@ -440,19 +446,19 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /** Callback called on clicking the refresh button. */
-    refreshMachinesList(machinesTable: Table) {
-        machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
-    }
+    // refreshMachinesList(machinesTable: Table) {
+    //     machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
+    // }
 
     /**
      * Callback called when toggling between authorized and unauthorized
      * machines.
      */
-    onSelectMachinesListChange(machinesTable: Table) {
-        // this.navigateToMachinesList()
-        // this.table?.table?.onLazyLoad.emit(this.table.table.createLazyLoadMetadata())
-        console.log('onSelectMachinesListChange', machinesTable)
-    }
+    // onSelectMachinesListChange(machinesTable: Table) {
+    //     // this.navigateToMachinesList()
+    //     // this.table?.table?.onLazyLoad.emit(this.table.table.createLazyLoadMetadata())
+    //     console.log('onSelectMachinesListChange', machinesTable)
+    // }
 
     /**
      * Callback called on input event emitted by the filter input box.
@@ -461,13 +467,13 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param filterText text value of the filter input
      * @param force force filtering for shorter lookup keywords
      */
-    inputFilterText(table: Table, filterText: string, force: boolean = false) {
-        if (filterText.length >= 3 || (force && filterText != '')) {
-            table.filter(filterText, 'text', 'contains')
-        } else if (filterText.length == 0) {
-            this.clearFilters(table)
-        }
-    }
+    // inputFilterText(table: Table, filterText: string, force: boolean = false) {
+    //     if (filterText.length >= 3 || (force && filterText != '')) {
+    //         table.filter(filterText, 'text', 'contains')
+    //     } else if (filterText.length == 0) {
+    //         this.clearFilters(table)
+    //     }
+    // }
 
     /**
      * Filters the displayed data by application ID.
@@ -511,20 +517,25 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 }
 
                 // refresh machine in machines list
-                for (let i = 0; i < this.machines.length; i++) {
-                    if (this.machines[i].id === data.id) {
-                        this.machines[i] = data
-                        break
-                    }
-                }
+                this.table.refreshMachineState(machine)
+                // for (let i = 0; i < this.machines.length; i++) {
+                //     if (this.machines[i].id === data.id) {
+                //         this.machines[i] = data
+                //         break
+                //     }
+                // }
 
                 // refresh machine in opened tab if present
-                for (let i = 0; i < this.openedMachines.length; i++) {
-                    if (this.openedMachines[i].machine.id === data.id) {
-                        this.openedMachines[i].machine = data
-                        break
-                    }
+                const idx = this.openedMachines.map((m) => m.machine.id).indexOf(machine.id)
+                if (idx >= 0) {
+                    this.openedMachines.splice(idx, 1, {machine: machine})
                 }
+                // for (let i = 0; i < this.openedMachines.length; i++) {
+                //     if (this.openedMachines[i].machine.id === data.id) {
+                //         this.openedMachines[i].machine = data
+                //         break
+                //     }
+                // }
             },
             (err) => {
                 const msg = getErrorMessage(err)
@@ -552,40 +563,71 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param authorized bool, true or false
      * @param machinesTable table where authorized/unauthorized machine belong
      */
-    _changeMachineAuthorization(machine: Machine, authorized: boolean, machinesTable: Table) {
+    // _changeMachineAuthorization(machine: Machine, authorized: boolean, machinesTable: Table) {
+    //     // Block table UI when machine authorization is in progress.
+    //     this.dataLoading = true
+    //     const stateBackup = machine.authorized
+    //
+    //     machine.authorized = authorized
+    //     const prefix = authorized ? '' : 'un'
+    //     this.servicesApi.updateMachine(machine.id, machine).subscribe({
+    //         next: (m) => {
+    //             this.msgSrv.add({
+    //                 severity: 'success',
+    //                 summary: `Machine ${prefix}authorized`,
+    //                 detail: `Machine ${m.address} ${prefix}authorization succeeded.`,
+    //             })
+    //             this.refreshMachinesList(machinesTable)
+    //             // Force menu adjustments to take into account that there
+    //             // is new machine and apps available.
+    //             this.serverData.forceReloadAppsStats()
+    //         },
+    //         error: (err) => {
+    //             machine.authorized = stateBackup
+    //             this.dataLoading = false
+    //             const msg = getErrorMessage(err)
+    //             this.msgSrv.add({
+    //                 severity: 'error',
+    //                 summary: `Machine ${prefix}authorization failed`,
+    //                 detail: `Machine ${prefix}authorization attempt failed: ${msg}`,
+    //                 life: 10000,
+    //             })
+    //         },
+    //         complete: () => {
+    //             this.dataLoading = false
+    //         },
+    //     })
+    // }
+
+    authorizeMachine(machine: Machine) {
         // Block table UI when machine authorization is in progress.
         this.dataLoading = true
         const stateBackup = machine.authorized
 
-        machine.authorized = authorized
-        const prefix = authorized ? '' : 'un'
-        this.servicesApi.updateMachine(machine.id, machine).subscribe({
-            next: (m) => {
+        machine.authorized = true
+        lastValueFrom(this.servicesApi.updateMachine(machine.id, machine))
+            .then((m) => {
                 this.msgSrv.add({
                     severity: 'success',
-                    summary: `Machine ${prefix}authorized`,
-                    detail: `Machine ${m.address} ${prefix}authorization succeeded.`,
+                    summary: `Machine authorized`,
+                    detail: `Machine ${m.address} authorization succeeded.`,
                 })
-                this.refreshMachinesList(machinesTable)
+                this.table?.loadDataWithValidFilter()
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
-            },
-            error: (err) => {
+            })
+            .catch((err) => {
                 machine.authorized = stateBackup
-                this.dataLoading = false
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: `Machine ${prefix}authorization failed`,
-                    detail: `Machine ${prefix}authorization attempt failed: ${msg}`,
+                    summary: `Machine authorization failed`,
+                    detail: `Machine authorization attempt failed: ${msg}`,
                     life: 10000,
                 })
-            },
-            complete: () => {
-                this.dataLoading = false
-            },
-        })
+            })
+            .finally(() => (this.dataLoading = false))
     }
 
     /**
@@ -599,19 +641,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param machine reference to a machine
      * @param machinesTable reference to the table with machines
      */
-    showMachineMenu(event, machineMenu, machine, machinesTable) {
-        if (this.showUnauthorized) {
+    showMachineMenu(event: Event, machine: Machine) {
+        if (!machine.authorized) {
             this.machineMenuItems = this.machineMenuItemsUnauth
-        } else {
-            this.machineMenuItems = this.machineMenuItemsAuth
-        }
-
-        machineMenu.toggle(event)
-
-        if (this.showUnauthorized) {
             // connect method to authorize machine
             this.machineMenuItems[0].command = () => {
-                this._changeMachineAuthorization(machine, true, machinesTable)
+                this.authorizeMachine(machine)
             }
 
             // connect method to delete machine
@@ -619,6 +654,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.deleteMachine(machine.id)
             }
         } else {
+            this.machineMenuItems = this.machineMenuItemsAuth
             // connect method to refresh machine state
             this.machineMenuItems[0].command = () => {
                 this._refreshMachineState(machine)
@@ -639,6 +675,40 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.deleteMachine(machine.id)
             }
         }
+
+        this.machineMenu.toggle(event)
+
+        // if (!machine.authorized) {
+        //     // connect method to authorize machine
+        //     this.machineMenuItems[0].command = () => {
+        //         this.authorizeMachine(machine)
+        //     }
+        //
+        //     // connect method to delete machine
+        //     this.machineMenuItems[1].command = () => {
+        //         this.deleteMachine(machine.id)
+        //     }
+        // } else {
+        //     // connect method to refresh machine state
+        //     this.machineMenuItems[0].command = () => {
+        //         this._refreshMachineState(machine)
+        //     }
+        //
+        //     // connect method to dump machine configuration
+        //     this.machineMenuItems[1].command = () => {
+        //         this.downloadDump(machine)
+        //     }
+        //
+        //     // connect method to authorize machine
+        //     /*this.machineMenuItems[2].command = () => {
+        //         this._changeMachineAuthorization(machine, false, machinesTable)
+        //     }*/
+        //
+        //     // connect method to delete machine
+        //     this.machineMenuItems[2].command = () => {
+        //         this.deleteMachine(machine.id)
+        //     }
+        // }
     }
 
     /**
@@ -651,27 +721,41 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param machineId ID of machine
      */
     deleteMachine(machineId) {
-        this.servicesApi.deleteMachine(machineId).subscribe((/* data */) => {
-            // reload apps stats to reflect new state (adjust menu content)
-            this.serverData.forceReloadAppsStats()
+        lastValueFrom(this.servicesApi.deleteMachine(machineId)).then(
+            () => {
+                // reload apps stats to reflect new state (adjust menu content)
+                this.serverData.forceReloadAppsStats()
 
-            // remove from list of machines
-            for (let idx = 0; idx < this.machines.length; idx++) {
-                const m = this.machines[idx]
-                if (m.id === machineId) {
-                    this.machines.splice(idx, 1) // TODO: does not work
-                    break
-                }
-            }
-            // remove from opened tabs if present
-            for (let idx = 0; idx < this.openedMachines.length; idx++) {
-                const m = this.openedMachines[idx].machine
-                if (m.id === machineId) {
+                // remove from list of machines
+                this.table.deleteMachine(machineId)
+
+                // remove from opened tabs if present
+                const idx = this.openedMachines?.map((m) => m.machine.id).indexOf(machineId) || -1
+                if (idx >= 0) {
                     this.closeTab(null, idx + 1)
-                    break
                 }
+
             }
+        ).catch((err) => {
+            const msg = getErrorMessage(err)
+            this.msgSrv.add({
+                severity: 'error',
+                summary: 'Deleting machine failed',
+                detail: 'Error deleting machine: ' + msg,
+                life: 10000,
+            })
         })
+        // this.servicesApi.deleteMachine(machineId).subscribe((/* data */) => {
+        //     // reload apps stats to reflect new state (adjust menu content)
+        //     this.serverData.forceReloadAppsStats()
+        //
+        //     // remove from list of machines
+        //     this.table.deleteMachine(machineId)
+        //
+        //     // remove from opened tabs if present
+        //     const idx = this.openedMachines.map((m) => m.machine.id).indexOf(machineId)
+        //     this.closeTab(null, idx + 1)
+        // })
     }
 
     /** Sets the edit form-related members using the value of the current machine. */
@@ -789,12 +873,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      *
      * @param table table where selected machines are to be authorized.
      */
-    authorizeSelectedMachines(table: Table) {
+    authorizeSelectedMachines(machines: any) {
+        console.log('authorizeSelectedMachines machines', machines)
+        const unauthorized = machines?.filter((m) => !m.authorized) ?? []
+        console.log('authorizeSelectedMachines unauthorized', unauthorized)
         // Calling servicesApi.updateMachine() API sequentially for all selected machines.
         // Max expected count of selected machines is max machines per table page,
         // which currently is 50.
         const updateObservables: Observable<Machine>[] = []
-        for (const m of this.selectedMachines) {
+        for (const m of unauthorized) {
             m.authorized = true
             updateObservables.push(this.servicesApi.updateMachine(m.id, m))
         }
@@ -821,14 +908,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
                 this.dataLoading = false
-                this.refreshMachinesList(table)
+                this.table?.loadDataWithValidFilter()
+                // this.refreshMachinesList(table)
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
             },
             complete: () => {
                 this.dataLoading = false
-                this.refreshMachinesList(table)
+                this.table?.loadDataWithValidFilter()
+                // this.refreshMachinesList(table)
                 // Force menu adjustments to take into account that there
                 // is new machine and apps available.
                 this.serverData.forceReloadAppsStats()
@@ -836,12 +925,13 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         })
 
         // Clear selection after.
-        this.selectedMachines = []
+        // this.selectedMachines = []
+        this.table.selectedMachines = []
 
         // Force clear selection in session storage.
-        const state = JSON.parse(sessionStorage.getItem(this.stateKey))
-        state.selection = []
-        sessionStorage.setItem(this.stateKey, JSON.stringify(state))
+        // const state = JSON.parse(sessionStorage.getItem(this.stateKey))
+        // state.selection = []
+        // sessionStorage.setItem(this.stateKey, JSON.stringify(state))
     }
 
     /**
@@ -849,19 +939,19 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      *
      * @param state restored table state
      */
-    stateRestored(state: any) {
-        // Do not restore selection.
-        state.selection = []
-    }
+    // stateRestored(state: any) {
+    //     // Do not restore selection.
+    //     state.selection = []
+    // }
 
     /**
      * Clears filtering on given table.
      *
      * @param table table where filtering is to be cleared
      */
-    clearFilters(table: Table) {
-        table.filter(null, 'text', 'contains')
-    }
+    // clearFilters(table: Table) {
+    //     table.filter(null, 'text', 'contains')
+    // }
 
     /**
      * Navigates to the URL displaying authorized or unauthorized machines.
@@ -871,16 +961,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * link accordingly. It also updates the link of the first tab, so it matches
      * the current router link.
      */
-    navigateToMachinesList() {
-        const currentLink = this.showUnauthorized ? '/machines/unauthorized' : '/machines/authorized'
-        if (this.tabs.length > 0) {
-            this.tabs[0].routerLink = currentLink
-        }
-        this.router.navigate([currentLink])
-    }
+    // navigateToMachinesList() {
+    //     const currentLink = this.showUnauthorized ? '/machines/unauthorized' : '/machines/authorized'
+    //     if (this.tabs.length > 0) {
+    //         this.tabs[0].routerLink = currentLink
+    //     }
+    //     this.router.navigate([currentLink])
+    // }
 
     onSelectChange(event: any) {
         console.log('onSelectChange', event)
-        this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value } ?? null }).finally()
+        this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value } ?? null })
     }
 }

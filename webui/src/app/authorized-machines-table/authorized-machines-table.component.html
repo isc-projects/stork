@@ -232,7 +232,7 @@
                     pButton
                     icon="pi pi-bars"
                     id="show-machines-menu-{{ m.id }}"
-                    (click)="onMachineMenuDisplay(m)"
+                    (click)="onMachineMenuDisplay($event, m)"
                 ></button>
             </td>
         </tr>

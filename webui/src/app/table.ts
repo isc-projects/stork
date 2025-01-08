@@ -150,10 +150,10 @@ export abstract class PrefilteredTable<
     stateKey: string
 
     /**
-     * Keeps value of the pre-filter from queryParam (e.g. by kea app Id).
+     * Keeps value of the pre-filter from queryParam (e.g. kea app Id).
      * If no pre-filtering is used, it will be null.
      */
-    prefilterValue: number | string
+    prefilterValue: number | boolean
 
     /**
      * Table's index of the first row to be displayed, restored from browser's storage.
@@ -382,7 +382,7 @@ export abstract class PrefilteredTable<
         if (table.filters) {
             for (const [filterKey, filterMetadata] of Object.entries(table.filters)) {
                 if (this.hasPrefilter() && filterKey == this.prefilterKey) {
-                    // If this is filtered view by Id from queryParams, don't count it as an active filter.
+                    // If this is filtered view by filter from queryParams, don't count it as an active filter.
                     continue
                 }
 
@@ -429,15 +429,13 @@ export abstract class PrefilteredTable<
             }
         }
 
-        const parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
-
         const booleanKeys = this.queryParamBooleanKeys.includes(this.prefilterKey)
             ? this.queryParamBooleanKeys
             : [this.isPrefilterBoolean() ? (this.prefilterKey ?? null) : null, ...this.queryParamBooleanKeys]
 
         for (const key of booleanKeys) {
             if (params.has(key as string)) {
-                filter[key as any] = parseBoolean(params.get(key as string))
+                filter[key as any] = this.parseBoolean(params.get(key as string))
             }
         }
 
@@ -449,6 +447,13 @@ export abstract class PrefilteredTable<
      */
     loadDataWithoutFilter(): void {
         this.filter$.next({} as FilterInterface)
+    }
+
+    /**
+     * Triggers data load in the table with the valid filter applied.
+     */
+    loadDataWithValidFilter(): void {
+        this.filter$.next(this.validFilter)
     }
 
     /**
@@ -627,7 +632,7 @@ export abstract class PrefilteredTable<
             const numericId = parseInt(queryParamValue)
             this.prefilterValue = isNaN(numericId) ? null : numericId
         } else if (this.isPrefilterBoolean()) {
-            this.prefilterValue = queryParamValue === 'true' || queryParamValue === 'false' ? queryParamValue : null
+            this.prefilterValue = this.parseBoolean(queryParamValue)
         }
     }
 
@@ -646,4 +651,10 @@ export abstract class PrefilteredTable<
     private isPrefilterBoolean(): boolean {
         return this.filterBooleanKeys.includes(this.prefilterKey)
     }
+
+    /**
+     * Parses string into boolean value. Returns boolean or null if it couldn't be parsed.
+     * @param val
+     */
+    private parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
 }

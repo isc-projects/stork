@@ -66,9 +66,9 @@ export class AuthorizedMachinesTableComponent
      */
     @ViewChild('machinesTable') table: Table
 
-    @Output() machineMenuDisplay: EventEmitter<Machine> = new EventEmitter()
+    @Output() machineMenuDisplay = new EventEmitter<{ e: Event; m: Machine }>()
 
-    @Output() authorizeMachines: EventEmitter<Machine[]> = new EventEmitter()
+    @Output() authorizeMachines = new EventEmitter<Machine[]>()
 
     selectedMachines: Machine[] = []
 
@@ -76,12 +76,16 @@ export class AuthorizedMachinesTableComponent
     // unauthorized machines that may require authorization.
     @Input() unauthorizedMachinesCount = 0
 
+    @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
+
+    @Input() dataLoading: boolean
+
     /**
      *
      * @param machine
      */
-    onMachineMenuDisplay(machine: Machine) {
-        this.machineMenuDisplay.emit(machine)
+    onMachineMenuDisplay(event: Event, machine: Machine) {
+        this.machineMenuDisplay.emit({ e: event, m: machine })
     }
 
     /**
@@ -120,6 +124,9 @@ export class AuthorizedMachinesTableComponent
     loadData(event: TableLazyLoadEvent): void {
         // Indicate that machines refresh is in progress.
         this.dataLoading = true
+
+        const authorized = this.prefilterValue ?? this.getTableFilterValue('authorized', event.filters)
+
         // The goal is to send to backend something as simple as:
         // this.someApi.getMachines(JSON.stringify(event))
         lastValueFrom(
@@ -128,12 +135,18 @@ export class AuthorizedMachinesTableComponent
                 event.rows,
                 this.getTableFilterValue('text', event.filters),
                 null,
-                this.prefilterValue ?? this.getTableFilterValue('authorized', event.filters)
+                authorized
             )
         )
             .then((data) => {
                 this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
+                if (!authorized) {
+                    this.unauthorizedMachinesCount = this.totalRecords
+                    this.unauthorizedMachinesCountChange.emit(this.totalRecords)
+                } else {
+                    this.fetchUnauthorizedMachinesCount()
+                }
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -155,5 +168,38 @@ export class AuthorizedMachinesTableComponent
 
     unauthorizedMachinesDisplayed(): boolean {
         return this.dataCollection?.some((m) => !m.authorized) || false
+    }
+
+    private fetchUnauthorizedMachinesCount(): void {
+        lastValueFrom(
+            this.servicesApi.getUnauthorizedMachinesCount()
+        )
+            .then((count) => {
+                this.unauthorizedMachinesCount = count ?? 0
+                this.unauthorizedMachinesCountChange.emit(this.unauthorizedMachinesCount)
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot get Unauthorized Machines count',
+                    detail: 'Error getting Unauthorized Machines count: ' + msg,
+                    life: 10000,
+                })
+            })
+    }
+
+    deleteMachine(machineId: number) {
+        const idx = this.dataCollection?.map((m) => m.id).indexOf(machineId) || -1
+        if (idx >= 0) {
+            this.dataCollection.splice(idx, 1)
+        }
+    }
+
+    refreshMachineState(machine: Machine) {
+        const idx = this.dataCollection?.map((m) => m.id).indexOf(machine.id) || -1
+        if (idx >= 0) {
+            this.dataCollection.splice(idx, 1, machine)
+        }
     }
 }

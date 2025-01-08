@@ -177,11 +177,12 @@ sudo ./stork-install-agent.sh</textarea
                 [options]="viewSelectionOptions"
                 [ngModel]="showAuthorized"
                 (onChange)="onSelectChange($event)"
+                [allowEmpty]="false"
                 id="unauthorized-select-button"
             >
                 <ng-template let-item pTemplate>
                     <span class="p-button-label">{{ item.label }}</span
-                    ><p-badge *ngIf="item.hasBadge" severity="info" [value]="0" styleClass="relative" />
+                    ><p-badge *ngIf="item.hasBadge" severity="info" [value]="unauthorizedMachinesCount$ | async" styleClass="relative" />
                 </ng-template>
             </p-selectButton>
         </div>
@@ -199,7 +200,10 @@ sudo ./stork-install-agent.sh</textarea
     </p-messages>
     <app-authorized-machines-table
         #authorizedMachinesTableComponent
-        [unauthorizedMachinesCount]="unauthorizedMachinesCount"
+        [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"
+        (authorizeMachines)="authorizeSelectedMachines($event)"
+        (machineMenuDisplay)="showMachineMenu($event.e, $event.m)"
+        [dataLoading]="dataLoading"
     ></app-authorized-machines-table>
     <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
 </div>
