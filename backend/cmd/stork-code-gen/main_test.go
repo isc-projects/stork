@@ -27,8 +27,8 @@ func TestMainHelp(t *testing.T) {
 func TestStdOptionDefsHelp(t *testing.T) {
 	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = make([]string, 3)
-	os.Args[1] = "help"
-	os.Args[2] = "std-option-defs"
+	os.Args[1] = "std-option-defs"
+	os.Args[2] = "--help"
 
 	stdoutBytes, _, err := testutil.CaptureOutput(main)
 	require.NoError(t, err)
