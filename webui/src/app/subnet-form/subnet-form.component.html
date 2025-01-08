@@ -94,7 +94,7 @@
             </div>
             <ng-container *ngFor="let userContext of state.group.get('userContexts.names')?.controls; let i = index">
                 <div *ngIf="i === 0 || state.group.get('userContexts.unlocked')?.value" class="mb-3 mt-3">
-                    <div *ngIf="state.group.get('userContexts.unlocked')?.value" class="pb-5">
+                    <div *ngIf="state.group.get('userContexts.unlocked')?.value" class="pb-2">
                         <p-divider *ngIf="state.group.get('userContexts.names')?.length > 1" align="center">
                             <p-tag [severity]="getServerTagSeverity(i)">
                                 {{ state.servers[i] }}
