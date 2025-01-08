@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork"
 	"isc.org/stork/cli"
 	"isc.org/stork/hooksutil"
 	"isc.org/stork/server/certs"
@@ -24,70 +22,29 @@ import (
 // Random hash size in the generated password.
 const passwordGenRandomLength = 24
 
-// It specifies a method that checks if the specific command was specified in
-// the CLI. It is used to create a mapping between the command objects and
-// the command handlers.
-type command interface {
-	isSpecified() bool
-}
-
-// The struct that must be embedded in all structures defining the command
-// settings. It allows to recognize which command was specified in the CLI.
-// It is related to how the go-flags library handles the subcommands.
-//
-// It may be also used to specify arguments of the command that accepts no
-// arguments.
-type cliCommand struct {
-	// It is true if the register command was specified. Otherwise, it is false.
-	commandSpecified bool
-}
-
-// Checks if the struct implement the library interface.
-var _ flags.Commander = (*cliCommand)(nil)
-
-// Implements the tools/golang/gopath/pkg/mod/github.com/jessevdk/go-flags@v1.5.0/command.go Commander interface.
-// It is an only way to recognize which command was specified.
-func (s *cliCommand) Execute(_ []string) error {
-	s.commandSpecified = true
-	return nil
-}
-
-// Indicates if the command was specified.
-func (s *cliCommand) isSpecified() bool {
-	return s.commandSpecified
-}
-
-// The CLI flags not related to any specific command.
-type GeneralCommand struct {
-	cliCommand
-	// If true, the version of the Stork tool is printed. It takes precedence
-	// over all other commands and arguments.
-	Version bool `short:"v" long:"version" description:"Show software version"`
-}
-
 // The CLI flags for the db-create command.
 type DatabaseCreateCommand struct {
-	cliCommand
+	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlagsWithMaintenance
 	Force            bool `long:"force" short:"f" description:"Recreate the database and the user if they exist" env:"STORK_TOOL_DB_FORCE"`
 }
 
 // The CLI flags for the db-init, db-up, db-down, db-reset, db-version commands.
 type DatabaseCommand struct {
-	cliCommand
+	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 }
 
 // The CLI flags for the db-up, db-down, and db-set-version commands.
 type DatabaseVersionCommand struct {
-	cliCommand
+	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Version          string `long:"version" short:"t" description:"Target database schema version (optional)" env:"STORK_TOOL_DB_VERSION"`
 }
 
 // The CLI flags for the cert-import command.
 type CertificateImportCommand struct {
-	cliCommand
+	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Object           string `long:"object" short:"f" description:"The object to import; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
 	File             string `long:"file" short:"i" description:"The file location from which the object should be imported" env:"STORK_TOOL_CERT_FILE"`
@@ -95,7 +52,7 @@ type CertificateImportCommand struct {
 
 // The CLI flags for the cert-export command.
 type CertificateExportCommand struct {
-	cliCommand
+	cli.CLICommand
 	DatabaseSettings dbops.DatabaseCLIFlags
 	Object           string `long:"object" short:"f" description:"The object to dump; it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'" env:"STORK_TOOL_CERT_OBJECT" choice:"cakey" choice:"cacert" choice:"srvkey" choice:"srvcert" choice:"srvtkn"`
 	File             string `long:"file" short:"o" description:"The file location where the object should be saved; if not provided, then object is printed to stdout" env:"STORK_TOOL_CERT_FILE"`
@@ -103,20 +60,20 @@ type CertificateExportCommand struct {
 
 // The CLI flags for the hook-inspect command.
 type HookInspectCommand struct {
-	cliCommand
+	cli.CLICommand
 	HookPath string `long:"hook-path" short:"p" description:"The path to the hook file or directory" env:"STORK_TOOL_HOOK_PATH"`
 }
 
 // The CLI flags for the deploy-login-page-welcome command.
 type LoginScreenWelcomeDeployCommand struct {
-	cliCommand
+	cli.CLICommand
 	File               string `long:"file" short:"i" description:"HTML source file with a custom welcome message" env:"STORK_TOOL_LOGIN_SCREEN_WELCOME_FILE"`
 	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
 }
 
 // The CLI flags for the undeploy-login-page-welcome command.
 type LoginScreenWelcomeUndeployCommand struct {
-	cliCommand
+	cli.CLICommand
 	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
 }
 
@@ -442,45 +399,10 @@ func getOrLocateStaticPageContentDir(restStaticFilesDirectory string) (string, e
 	return directory, nil
 }
 
-// Prints the Stork version.
-func showVersion() {
-	fmt.Println(stork.Version)
-}
-
-// The type describing the command handler.
-// It is a function that takes no arguments and returns no value.
-// Maybe it should an error as a return value. Currently, it is not necessary
-// but it may be useful in the future refactorings for example to unify the
-// error handling in various commands.
-type action = func()
-
-// The main application structure.
-type app struct {
-	commandsToFunctions map[command]action
-	parser              *flags.Parser
-	generalCommand      *GeneralCommand
-}
-
-// Registers a command with the parser and associates it with the action.
-// It shouldn't be called outside of the newApp function.
-func (a *app) registerCommand(command, shortDescription string, data command, action action) {
-	_, err := a.parser.AddCommand(command, shortDescription, "", data)
-	if err != nil {
-		log.WithError(err).Fatal("Failed to add command")
-	}
-	a.commandsToFunctions[data] = action
-}
-
 // Prepare CLI app with all flags and commands defined.
-func newApp() *app {
-	generalCommand := &GeneralCommand{}
-	parser := flags.NewParser(generalCommand, flags.Default)
-
-	app := &app{
-		commandsToFunctions: make(map[command]action),
-		parser:              parser,
-		generalCommand:      generalCommand,
-	}
+func newApp() *cli.App {
+	nothing := struct{}{}
+	parser := flags.NewParser(&nothing, flags.Default)
 
 	parser.Name = "Stork Tool"
 	parser.SubcommandsOptional = true
@@ -500,27 +422,29 @@ func newApp() *app {
    - Static Views Deployment - it allows for setting custom content in selected
      Stork views (e.g., custom welcome message on the login page).`
 
+	app := cli.NewApp(parser)
+
 	// Disclaimer: The previous version grouped the commands into separate
 	// sections. Unfortunately, the go-flags library does not support this
 	// feature.
 
 	// Database creation commands.
 	databaseCreateCommand := &DatabaseCreateCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"db-create", "Create new Stork database", databaseCreateCommand,
 		func() {
 			runDBCreate(databaseCreateCommand)
 		},
 	)
 
-	databasePasswordGenCommand := &cliCommand{}
-	app.registerCommand(
+	databasePasswordGenCommand := &cli.CLICommand{}
+	app.RegisterCommand(
 		"db-password-gen", "Generate random Stork database password",
 		databasePasswordGenCommand, runDBPasswordGen,
 	)
 
 	databaseInitCommand := &DatabaseCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"db-init", "Create schema versioning table in the database",
 		databaseInitCommand, func() {
 			runDBMigrate(databaseInitCommand.DatabaseSettings, "init", "")
@@ -528,7 +452,7 @@ func newApp() *app {
 	)
 
 	databaseUpCommand := &DatabaseVersionCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"db-up", "Run all available migrations or use -t to specify version",
 		databaseUpCommand, func() {
 			runDBMigrate(
@@ -540,7 +464,7 @@ func newApp() *app {
 	)
 
 	databaseDownCommand := &DatabaseVersionCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"db-down", "Revert last migration or use -t to specify version to downgrade to",
 		databaseDownCommand, func() {
 			runDBMigrate(
@@ -552,7 +476,7 @@ func newApp() *app {
 	)
 
 	databaseResetCommand := &DatabaseCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"db-reset", "Reset the database to the initial state",
 		databaseResetCommand, func() {
 			runDBMigrate(databaseResetCommand.DatabaseSettings, "reset", "")
@@ -560,7 +484,7 @@ func newApp() *app {
 	)
 
 	databaseVersionCommand := &DatabaseCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"db-version", "Get the current database schema version",
 		databaseVersionCommand, func() {
 			runDBMigrate(databaseVersionCommand.DatabaseSettings, "version", "")
@@ -568,7 +492,7 @@ func newApp() *app {
 	)
 
 	databaseSetVersionCommand := &DatabaseVersionCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"db-set-version", "Set the database schema version",
 		databaseSetVersionCommand, func() {
 			runDBMigrate(
@@ -581,7 +505,7 @@ func newApp() *app {
 
 	// Certificate management commands.
 	certificateExportCommand := &CertificateExportCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"cert-export", "Export Stork Server keys, certificates, and tokens",
 		certificateExportCommand, func() {
 			err := runCertExport(certificateExportCommand)
@@ -592,7 +516,7 @@ func newApp() *app {
 	)
 
 	certificateImportCommand := &CertificateImportCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"cert-import", "Import Stork Server keys, certificates, and tokens",
 		certificateImportCommand, func() {
 			err := runCertImport(certificateImportCommand)
@@ -604,7 +528,7 @@ func newApp() *app {
 
 	// Hook inspection command.
 	hookInspectCommand := &HookInspectCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"hook-inspect", "Inspect the hook file or directory",
 		hookInspectCommand, func() {
 			err := runHookInspect(hookInspectCommand)
@@ -616,7 +540,7 @@ func newApp() *app {
 
 	// Static views deployment commands.
 	loginScreenWelcomeDeployCommand := &LoginScreenWelcomeDeployCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"deploy-login-page-welcome",
 		"Deploy custom welcome message on the login screen",
 		loginScreenWelcomeDeployCommand, func() {
@@ -631,7 +555,7 @@ func newApp() *app {
 	)
 
 	loginScreenWelcomeUndeployCommand := &LoginScreenWelcomeUndeployCommand{}
-	app.registerCommand(
+	app.RegisterCommand(
 		"undeploy-login-page-welcome",
 		"Undeploy custom welcome message on the login screen",
 		loginScreenWelcomeUndeployCommand, func() {
@@ -648,45 +572,13 @@ func newApp() *app {
 	return app
 }
 
-// Starts the application with the provided arguments.
-func (a *app) run(args []string) error {
-	// Parse command line arguments.
-	appParser := cli.NewCLIParser(a.parser, "tool", func() {
-		storkutil.SetupLogging()
-	})
-
-	_, _, isHelp, err := appParser.Parse(args)
-	if err != nil {
-		return err
-	}
-	if isHelp {
-		return nil
-	}
-
-	// Handle the version argument first.
-	if a.generalCommand.Version {
-		showVersion()
-		return nil
-	}
-
-	// Find the command that was specified.
-	for command, action := range a.commandsToFunctions {
-		if command.isSpecified() {
-			action()
-			return nil
-		}
-	}
-
-	return errors.New("no command specified")
-}
-
 // The main function of the Stork tool.
 func main() {
 	// Setup logging
 	storkutil.SetupLogging()
 
 	app := newApp()
-	err := app.run(os.Args[1:])
+	err := app.Run(os.Args[1:])
 	if err != nil {
 		log.Fatal(err)
 	}

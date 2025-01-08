@@ -471,7 +471,7 @@ func collectKnownEnvironmentVariables(parser *flags.Command) map[string]bool {
 	knownEnvironmentVariables := make(map[string]bool)
 
 	// The options of the main group of the top-level parser.
-	for _, option := range parser.Group.Options() {
+	for _, option := range parser.Options() {
 		knownEnvironmentVariables[option.EnvKeyWithNamespace()] = true
 	}
 
