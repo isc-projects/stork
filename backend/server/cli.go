@@ -5,7 +5,7 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
-	storkconfig "isc.org/stork/appcfg/stork"
+	"isc.org/stork/cli"
 	"isc.org/stork/hooks"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
@@ -110,7 +110,7 @@ STORK_LOG_LEVEL variable. Allowed values are: DEBUG, INFO, WARN, ERROR.`
 	}
 
 	// Parse CLI flags.
-	appParser := storkconfig.NewCLIParser(parser, "server", func() {
+	appParser := cli.NewCLIParser(parser, "server", func() {
 		storkutil.SetupLogging()
 	})
 

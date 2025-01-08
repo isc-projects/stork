@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
-	storkconfig "isc.org/stork/appcfg/stork"
+	"isc.org/stork/cli"
 	"isc.org/stork/hooksutil"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
@@ -651,7 +651,7 @@ func newApp() *app {
 // Starts the application with the provided arguments.
 func (a *app) run(args []string) error {
 	// Parse command line arguments.
-	appParser := storkconfig.NewCLIParser(a.parser, "tool", func() {
+	appParser := cli.NewCLIParser(a.parser, "tool", func() {
 		storkutil.SetupLogging()
 	})
 

@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork"
 	"isc.org/stork/agent"
-	storkconfig "isc.org/stork/appcfg/stork"
+	cli "isc.org/stork/cli"
 	"isc.org/stork/hooks"
 	"isc.org/stork/profiler"
 	storkutil "isc.org/stork/util"
@@ -456,7 +456,7 @@ authorization in the server using either the UI or the ReST API (agent-token-bas
 	}
 
 	// Parse command line arguments.
-	appParser := storkconfig.NewCLIParser(parser, "agent", func() {
+	appParser := cli.NewCLIParser(parser, "agent", func() {
 		storkutil.SetupLogging()
 	})
 

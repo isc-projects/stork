@@ -1,4 +1,4 @@
-package storkconfig
+package cli
 
 import (
 	"fmt"
