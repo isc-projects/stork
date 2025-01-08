@@ -37,6 +37,13 @@ type CLIParser struct {
 }
 
 // Constructs CLI parser.
+// Accepts the main parser. It should be configured with the application
+// settings.
+// The application name is used to construct the namespaces for the CLI flags
+// and environment variables. It should be either 'server' or 'agent'.
+// The callback is called when the environment file is loaded. Its purpose is
+// to allow reconfiguring the logging using the new environment variables as
+// soon as they are available.
 func NewCLIParser(parser *flags.Parser, app string, onLoadEnvironmentFileCallback func()) *CLIParser {
 	if app != "server" && app != "agent" {
 		// Programming error.
@@ -312,8 +319,43 @@ func (p *CLIParser) verifySystemEnvironmentVariables() {
 		}
 	}
 
-	// The prefix that is used for the Stork-specific environment variables.
-	applicationPrefix := fmt.Sprintf("STORK_%s_", strings.ToUpper(p.application))
+	// Contains the prefixes of the Stork-specific environment variables.
+	// Stork environment variables starts with the 'STORK' part and then
+	// the context-specific part e.g.:
+	//
+	// - STORK_SERVER (server-specific environment variable)
+	// - STORK_AGENT (agent-specific environment variable)
+	// - STORK_DATABASE (database-specific environment variable)
+	//
+	// This function analyzes the system-wide environment variables. We cannot
+	// assume that there are only environment variables related to one of the
+	// Stork components. It should be allowed to have the agent, server, and
+	// tool environment variables set in the same shell.
+	//
+	// The below code block allows us to ignore the environment variables from
+	// other Stork components. There is an assumption that all components have
+	// exactly the same environment variables for a given prefix/namespace.
+	// For example, if the application utilizes the environment variables
+	// prefixed with 'STORK_DATABASE_' then its settings specify exactly the
+	// same environment variables as the other components.
+	// I hope it is fair enough.
+	var prefixes []string
+
+	for environmentVariable := range knownEnvironmentVariables {
+		parts := strings.SplitN(environmentVariable, "_", 3)
+		if len(parts) < 3 {
+			// The environment variable doesn't have the context-specific part.
+			// The naming convention is violated.
+			continue
+		}
+		if parts[0] != "STORK" {
+			// The environment variable doesn't start with the 'STORK' part.
+			// The naming convention is violated.
+			continue
+		}
+
+		prefixes = append(prefixes, fmt.Sprintf("%s_%s_", parts[0], parts[1]))
+	}
 
 	// Iterate over all system-wide environment variables.
 	for _, env := range os.Environ() {
@@ -323,7 +365,14 @@ func (p *CLIParser) verifySystemEnvironmentVariables() {
 			continue
 		}
 
-		if !strings.HasPrefix(key, applicationPrefix) {
+		var isApplicationEnvironmentVariable bool
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(key, prefix) {
+				isApplicationEnvironmentVariable = true
+				break
+			}
+		}
+		if !isApplicationEnvironmentVariable {
 			// Not a Stork-specific environment variable.
 			continue
 		}

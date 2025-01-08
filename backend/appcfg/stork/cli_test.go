@@ -491,6 +491,7 @@ func TestVerifySystemEnvironmentVariables(t *testing.T) {
 
 	type settings struct {
 		TLSCert string `long:"tls-cert" env:"STORK_SERVER_TLS_CERT" description:"The path to the TLS certificate"`
+		DBHost  string `long:"db-host" env:"STORK_DATABASE_HOST" description:"The host name, IP address or socket where database is available"`
 	}
 	data := &settings{}
 
@@ -498,7 +499,11 @@ func TestVerifySystemEnvironmentVariables(t *testing.T) {
 
 	os.Setenv("STORK_SERVER_UNKNOWN", "unknown")
 	os.Setenv("STORK_SERVER_TLS_CERT", "tlsCert")
+	os.Setenv("STORK_DATABASE_HOST", "databaseHost")
+	os.Setenv("STORK_DATABASE_UNKNOWN", "databaseUnknown")
 	os.Setenv("FOOBAR", "foobar")
+	// Broken naming convention.
+	os.Setenv("STORK_UNKNOWN", "unknown")
 
 	// Act
 	stdout, _, captureErr := testutil.CaptureOutput(func() {
@@ -510,6 +515,111 @@ func TestVerifySystemEnvironmentVariables(t *testing.T) {
 
 	expectedLog := `Unknown environment variable: 'STORK_SERVER_UNKNOWN' set in a shell`
 	require.Contains(t, string(stdout), expectedLog)
+	require.Contains(t, string(stdout), "Unknown environment variable: 'STORK_DATABASE_UNKNOWN' set in a shell")
 	require.NotContains(t, string(stdout), "TLS_CERT")
 	require.NotContains(t, string(stdout), "FOOBAR")
+	require.NotContains(t, string(stdout), "DATABASE_HOST")
+	require.NotContains(t, string(stdout), "STORK_UNKNOWN")
+}
+
+// Test that the environment variables from another Stork application set in
+// the shell don't raise a warning.
+func TestVerifySystemEnvironmentVariablesFromAnotherApplication(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	type settings struct {
+		TLSCert string `long:"tls-cert" env:"STORK_SERVER_TLS_CERT" description:"The path to the TLS certificate"`
+	}
+	data := &settings{}
+
+	parser := NewCLIParser(flags.NewParser(data, flags.Default), "server", func() {})
+
+	// Act
+	os.Setenv("STORK_AGENT_TLS_CERT", "tlsCert")
+
+	stdout, _, captureErr := testutil.CaptureOutput(func() {
+		parser.verifySystemEnvironmentVariables()
+	})
+
+	// Assert
+	require.NoError(t, captureErr)
+	require.NotContains(t, string(stdout), "TLS_CERT")
+}
+
+// Test that the callback is called when the environment file is loaded.
+func TestOnEnvironmentFileLoadedCallbackIsCalled(t *testing.T) {
+	// Arrange
+	restore := testutil.CreateEnvironmentRestorePoint()
+	defer restore()
+
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	envPath, _ := sandbox.Write("file.env", `
+		STORK_SERVER_TLS_CERT=tlsCert
+	`)
+
+	isCalled := false
+	callback := func() {
+		isCalled = true
+	}
+
+	parser := NewCLIParser(flags.NewParser(&struct{}{}, flags.Default), "server", callback)
+
+	// Act
+	err := parser.loadEnvironmentFile(&environmentFileSettings{
+		EnvFile:    envPath,
+		UseEnvFile: true,
+	})
+
+	// Assert
+	require.NoError(t, err)
+	require.True(t, isCalled)
+}
+
+// Test the callback is called when the environment file is loaded exactly once.
+func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
+	// Arrange
+	restorePoint := testutil.CreateEnvironmentRestorePoint()
+	defer restorePoint()
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	envPath, _ := sandbox.Write("file.env", `
+		STORK_DATABASE_HOST=foo
+		STORK_SERVER_HOOK_DIRECTORY=bar
+		STORK_REST_HOST=baz
+	`)
+
+	defer testutil.CreateOsArgsRestorePoint()()
+	os.Args = []string{
+		"program-name",
+		"--use-env-file",
+		"--env-file", envPath,
+	}
+
+	type settings struct {
+		DBHost   string `long:"db-host" description:"The host name, IP address or socket where database is available" env:"STORK_DATABASE_HOST" default:""`
+		RESTHost string `long:"rest-host" description:"The IP to listen on" default:"" env:"STORK_REST_HOST"`
+	}
+
+	data := &settings{}
+
+	flagParser := flags.NewParser(data, flags.Default)
+
+	parser := NewCLIParser(flagParser, "server", func() {})
+
+	// Act
+	hookDirSettings, hookFlags, isHelp, err := parser.Parse()
+
+	// Assert
+	require.NoError(t, err)
+	require.False(t, isHelp)
+	require.Empty(t, hookFlags)
+
+	require.Equal(t, "foo", data.DBHost)
+	require.Equal(t, "bar", hookDirSettings.HookDirectory)
+	require.Equal(t, "baz", data.RESTHost)
 }
