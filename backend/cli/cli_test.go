@@ -305,7 +305,6 @@ func TestParseHookSettingsFromEnvironmentVariables(t *testing.T) {
 // Test that the hook settings are properly parsed from the CLI arguments.
 func TestParseHookSettingsFromCLI(t *testing.T) {
 	// Arrange
-	defer testutil.CreateOsArgsRestorePoint()()
 	args := []string{"--baz.foo-bar", "fooBar"}
 
 	type hookSettings struct {
@@ -335,7 +334,6 @@ func TestParseHookSettingsFromCLI(t *testing.T) {
 // namespace.
 func TestPaseHookSettingsDuplicatedNamespace(t *testing.T) {
 	// Arrange
-	defer testutil.CreateOsArgsRestorePoint()()
 	os.Args = []string{
 		"program-name",
 		"--baz.foo-bar", "fooBar",
@@ -637,7 +635,6 @@ func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
 		STORK_REST_HOST=baz
 	`)
 
-	defer testutil.CreateOsArgsRestorePoint()()
 	args := []string{
 		"--use-env-file",
 		"--env-file", envPath,
@@ -665,4 +662,79 @@ func TestOnEnvironmentFileLoadedCallbackIsCalledOnce(t *testing.T) {
 	require.Equal(t, "foo", data.DBHost)
 	require.Equal(t, "bar", hookDirSettings.HookDirectory)
 	require.Equal(t, "baz", data.RESTHost)
+}
+
+// Test the hook directory is enabled only for the server and agent applications.
+func TestHookDirectoryDependsOnApplication(t *testing.T) {
+	// Arrange
+	defer testutil.ClearEnvironmentVariables()()
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+
+	args := []string{
+		"--hook-directory", sandbox.BasePath,
+	}
+
+	data := &struct{}{}
+
+	t.Run("server", func(t *testing.T) {
+		parser := NewCLIParser(
+			flags.NewParser(data, flags.Default),
+			"server", func() {},
+		)
+
+		// Act
+		hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
+
+		// Assert
+		require.NoError(t, err)
+		require.False(t, isHelp)
+		require.NotNil(t, hookDirSettings)
+		require.NotNil(t, hookFlags)
+	})
+
+	t.Run("agent", func(t *testing.T) {
+		parser := NewCLIParser(
+			flags.NewParser(data, flags.Default),
+			"agent", func() {},
+		)
+
+		// Act
+		hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
+
+		// Assert
+		require.NoError(t, err)
+		require.False(t, isHelp)
+		require.NotNil(t, hookDirSettings)
+		require.NotNil(t, hookFlags)
+	})
+
+	t.Run("tool", func(t *testing.T) {
+		parser := NewCLIParser(
+			flags.NewParser(data, flags.Default),
+			"tool", func() {},
+		)
+
+		// Act
+		hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
+
+		// Assert
+		require.ErrorContains(t, err, "unknown flag `hook-directory'")
+		require.False(t, isHelp)
+		require.Nil(t, hookDirSettings)
+		require.Nil(t, hookFlags)
+	})
+
+	t.Run("code-gen", func(t *testing.T) {
+		parser := NewCLIParser(flags.NewParser(data, flags.Default), "code-gen", func() {})
+
+		// Act
+		hookDirSettings, hookFlags, isHelp, err := parser.Parse(args)
+
+		// Assert
+		require.ErrorContains(t, err, "unknown flag `hook-directory'")
+		require.False(t, isHelp)
+		require.Nil(t, hookDirSettings)
+		require.Nil(t, hookFlags)
+	})
 }
