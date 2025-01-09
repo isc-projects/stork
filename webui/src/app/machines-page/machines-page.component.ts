@@ -9,7 +9,7 @@ import { ServicesService, SettingsService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { copyToClipboard, getErrorMessage } from '../utils'
 import { catchError, filter } from 'rxjs/operators'
-import { AuthorizedMachinesTableComponent } from '../authorized-machines-table/authorized-machines-table.component'
+import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { Menu } from 'primeng/menu'
 
 @Component({
@@ -65,7 +65,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         return this.table?.validFilter?.authorized ?? null
     }
 
-    @ViewChild('authorizedMachinesTableComponent') table: AuthorizedMachinesTableComponent
+    @ViewChild('machinesTableComponent') table: MachinesTableComponent
 
     @ViewChild('machineMenu') machineMenu: Menu
 

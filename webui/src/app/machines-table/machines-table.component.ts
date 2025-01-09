@@ -14,14 +14,11 @@ export interface MachinesFilter {
 }
 
 @Component({
-    selector: 'app-authorized-machines-table',
-    templateUrl: './authorized-machines-table.component.html',
-    styleUrl: './authorized-machines-table.component.sass',
+    selector: 'app-machines-table',
+    templateUrl: './machines-table.component.html',
+    styleUrl: './machines-table.component.sass',
 })
-export class AuthorizedMachinesTableComponent
-    extends PrefilteredTable<MachinesFilter, Machine>
-    implements OnInit, OnDestroy
-{
+export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Machine> implements OnInit, OnDestroy {
     /**
      * Array of all numeric keys that are supported when filtering machines via URL queryParams.
      * Note that it doesn't have to contain machines prefilterKey, which is 'appId'.
@@ -48,7 +45,7 @@ export class AuthorizedMachinesTableComponent
     /**
      * Prefix of the stateKey. Will be used to evaluate stateKey.
      */
-    stateKeyPrefix: string = 'authorized-machines-table-session'
+    stateKeyPrefix: string = 'machines-table-session'
 
     /**
      * queryParam keyword of the filter by appId.

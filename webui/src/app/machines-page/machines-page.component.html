@@ -203,13 +203,13 @@ sudo ./stork-install-agent.sh</textarea
             </div>
         </ng-template>
     </p-messages>
-    <app-authorized-machines-table
-        #authorizedMachinesTableComponent
+    <app-machines-table
+        #machinesTableComponent
         [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"
         (authorizeMachines)="authorizeSelectedMachines($event)"
         (machineMenuDisplay)="showMachineMenu($event.e, $event.m)"
         [dataLoading]="dataLoading"
-    ></app-authorized-machines-table>
+    ></app-machines-table>
     <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
 </div>
 
