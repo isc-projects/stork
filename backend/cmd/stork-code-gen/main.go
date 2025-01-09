@@ -31,11 +31,12 @@ func generateStdOptionDefs(settings *stdOptionDefinitionsSettings) error {
 func main() {
 	nothing := struct{}{}
 	parser := flags.NewParser(&nothing, flags.Default)
-	parser.Name = "Stork Code Gen"
+	parser.Name = "stork-code-gen"
 	parser.ShortDescription = "Code generator used in Stork development"
 	parser.Usage = "stork-code-gen [command] [options]"
 
 	app := cli.NewApp(parser)
+
 	stdOptionDefinitionsSettings := &stdOptionDefinitionsSettings{}
 	app.RegisterCommand(
 		"std-option-defs",
@@ -49,7 +50,7 @@ func main() {
 		},
 	)
 
-	err := app.Run(os.Args[1:])
+	err := app.Run("code-gen", os.Args[1:])
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

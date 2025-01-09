@@ -153,7 +153,7 @@ func TestVersionStandalone(t *testing.T) {
 			// Act
 			var err error
 			stdout, _, captureErr := testutil.CaptureOutput(func() {
-				err = app.Run(args)
+				err = app.Run("tool", args)
 			})
 
 			// Assert

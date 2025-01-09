@@ -406,16 +406,16 @@ Application Options:
 Hook 'baz' Flags:
       --baz.foo-bar=    Lorem ipsum [$STORK_SERVER_HOOK_BAZ_FOO_BAR]
 
+Hook Directory Flags:
+      --hook-directory= The path to the hook directory (default:
+                        /usr/lib/stork-server/hooks)
+                        [$STORK_SERVER_HOOK_DIRECTORY]
+
 Environment File Flags:
       --env-file=       Environment file location; applicable only if the
                         use-env-file is provided (default:
                         /etc/stork/server.env)
       --use-env-file    Read the environment variables from the environment file
-
-Hook Directory Flags:
-      --hook-directory= The path to the hook directory (default:
-                        /usr/lib/stork-server/hooks)
-                        [$STORK_SERVER_HOOK_DIRECTORY]
 
 Help Options:
   -h, --help            Show this help message

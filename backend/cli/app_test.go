@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -31,18 +32,58 @@ func TestRunVersion(t *testing.T) {
 	// Arrange
 	parser := flags.NewParser(&struct{}{}, flags.Default)
 	app := NewApp(parser)
-	var err error
 
 	for _, arg := range []string{"-v", "--version"} {
-		// Act
-		stdout, _, _ := testutil.CaptureOutput(func() {
-			err = app.Run([]string{arg})
-		})
+		t.Run(arg, func(t *testing.T) {
+			var err error
 
-		// Assert
-		require.NoError(t, err)
-		require.True(t, app.showVersion)
-		require.Equal(t, stork.Version, strings.TrimSpace(string(stdout)))
+			// Act
+			stdout, _, _ := testutil.CaptureOutput(func() {
+				err = app.Run("agent", []string{arg})
+			})
+
+			// Assert
+			require.NoError(t, err)
+			require.True(t, app.showVersion)
+			require.Equal(t, stork.Version, strings.TrimSpace(string(stdout)))
+		})
+	}
+}
+
+// Test that the help printing is handled internally.
+// Check if the hook directory is shown for agent and server.
+func TestRunHelp(t *testing.T) {
+	// Arrange
+	for _, name := range []string{"tool", "agent", "server", "code-gen", "unknown"} {
+		for _, arg := range []string{"-h", "--help"} {
+			parser := flags.NewParser(&struct{}{}, flags.Default)
+			parser.Name = "foo"
+			parser.ShortDescription = "Bar"
+			parser.LongDescription = "Baz"
+			app := NewApp(parser)
+
+			t.Run(fmt.Sprintf("%s/%s", name, arg), func(t *testing.T) {
+				// Act
+				var err error
+				stdout, _, _ := testutil.CaptureOutput(func() {
+					err = app.Run(name, []string{arg})
+				})
+
+				// Assert
+				require.NoError(t, err)
+				require.Contains(t, string(stdout), "foo")
+				require.NotContains(t, string(stdout), "Bar")
+				require.Contains(t, string(stdout), "Baz")
+				require.Contains(t, string(stdout), "--help")
+				require.Contains(t, string(stdout), "--version")
+
+				if name == "agent" || name == "server" {
+					require.Contains(t, string(stdout), "--hook-directory")
+				} else {
+					require.NotContains(t, string(stdout), "--hook-directory")
+				}
+			})
+		}
 	}
 }
 
@@ -53,7 +94,7 @@ func TestRunNoCommand(t *testing.T) {
 	app := NewApp(parser)
 
 	// Act
-	err := app.Run([]string{})
+	err := app.Run("server", []string{})
 
 	// Assert
 	require.ErrorContains(t, err, "no command specified")
@@ -67,7 +108,7 @@ func TestRunUnknownCommand(t *testing.T) {
 	app := NewApp(parser)
 
 	// Act
-	err := app.Run([]string{"unknown"})
+	err := app.Run("agent", []string{"unknown"})
 
 	// Assert
 	require.ErrorContains(t, err, "no command specified")
@@ -90,7 +131,7 @@ func TestRunCommand(t *testing.T) {
 	app.RegisterCommand("bar", "Bar", data, func() {
 		isCalled = true
 	})
-	err := app.Run([]string{"bar", "-f", "baz"})
+	err := app.Run("tool", []string{"bar", "-f", "baz"})
 
 	// Assert
 	require.NoError(t, err)

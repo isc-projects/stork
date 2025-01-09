@@ -98,9 +98,9 @@ func (a *App) RegisterCommand(command, shortDescription string, data command, ac
 
 // Starts the application with the provided arguments.
 // Run requested subcommand or show help or version.
-func (a *App) Run(args []string) error {
+func (a *App) Run(application string, args []string) error {
 	// Parse command line arguments.
-	appParser := NewCLIParser(a.parser, "tool", func() {
+	appParser := NewCLIParser(a.parser, application, func() {
 		storkutil.SetupLogging()
 	})
 

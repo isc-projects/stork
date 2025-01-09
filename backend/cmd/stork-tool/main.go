@@ -404,7 +404,7 @@ func newApp() *cli.App {
 	nothing := struct{}{}
 	parser := flags.NewParser(&nothing, flags.Default)
 
-	parser.Name = "Stork Tool"
+	parser.Name = "stork-tool"
 	parser.SubcommandsOptional = true
 	parser.ShortDescription = "A tool for managing Stork Server."
 	parser.LongDescription = `The tool operates in four areas:
@@ -578,7 +578,7 @@ func main() {
 	storkutil.SetupLogging()
 
 	app := newApp()
-	err := app.Run(os.Args[1:])
+	err := app.Run("tool", os.Args[1:])
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -36,20 +36,20 @@ type CLIParser struct {
 	onLoadEnvironmentFileCallback func()
 }
 
+const (
+	applicationServer = "server"
+	applicationAgent  = "agent"
+)
+
 // Constructs CLI parser.
 // Accepts the main parser. It should be configured with the application
 // settings.
 // The application name is used to construct the namespaces for the CLI flags
-// and environment variables. It should be either 'server', 'agent', 'tool'.
+// and environment variables.
 // The callback is called when the environment file is loaded. Its purpose is
 // to allow reconfiguring the logging using the new environment variables as
 // soon as they are available.
 func NewCLIParser(parser *flags.Parser, app string, onLoadEnvironmentFileCallback func()) *CLIParser {
-	if app != "server" && app != "agent" && app != "tool" {
-		// Programming error.
-		panic("invalid application name")
-	}
-
 	return &CLIParser{
 		parser:                        parser,
 		application:                   strings.ToLower(app),
@@ -110,32 +110,37 @@ func (p *CLIParser) bootstrap(args []string) (*HookDirectorySettings, GroupedHoo
 	}
 
 	// Process the hook directory location.
-	hookDirectorySettings := &HookDirectorySettings{}
-	hookParser := p.createSubParser(hookDirectorySettings)
-	if _, err := hookParser.ParseArgs(args); err != nil {
-		return nil, nil, err
+	var hookDirectorySettings *HookDirectorySettings
+	var allHookCLIFlags GroupedHookCLIFlags
+	if p.application == applicationServer || p.application == applicationAgent {
+		hookDirectorySettings = &HookDirectorySettings{}
+		hookParser := p.createSubParser(hookDirectorySettings)
+		if _, err := hookParser.ParseArgs(args); err != nil {
+			return nil, nil, err
+		}
+
+		allHookCLIFlags, err = p.collectHookCLIFlags(hookDirectorySettings)
+		if err != nil {
+			return nil, nil, err
+		}
+		err = p.mergeHookFlags(allHookCLIFlags)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Append the hook directory-related flags to the main parser.
+		group, err := p.parser.AddGroup("Hook Directory Flags", "", hookDirectorySettings)
+		if err != nil {
+			err = errors.Wrap(err, "cannot add the hook directory group")
+			return nil, nil, err
+		}
+		p.substitutePlaceholdersInGroup(group)
 	}
 
-	allHookCLIFlags, err := p.collectHookCLIFlags(hookDirectorySettings)
-	if err != nil {
-		return nil, nil, err
-	}
-	err = p.mergeHookFlags(allHookCLIFlags)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Append the parser-related flags to the main parser.
+	// Append the environment file-related flags to the main parser.
 	group, err := p.parser.AddGroup("Environment File Flags", "", envFileSettings)
 	if err != nil {
 		err = errors.Wrap(err, "cannot add the environment file group")
-		return nil, nil, err
-	}
-	p.substitutePlaceholdersInGroup(group)
-
-	group, err = p.parser.AddGroup("Hook Directory Flags", "", hookDirectorySettings)
-	if err != nil {
-		err = errors.Wrap(err, "cannot add the hook directory group")
 		return nil, nil, err
 	}
 	p.substitutePlaceholdersInGroup(group)
@@ -388,12 +393,10 @@ func (p *CLIParser) collectHookCLIFlags(hookDirectorySettings *HookDirectorySett
 		hookWalker := hooksutil.NewHookWalker()
 		var program string
 		switch p.application {
-		case "server":
+		case applicationServer:
 			program = hooks.HookProgramServer
-		case "agent":
+		case applicationAgent:
 			program = hooks.HookProgramAgent
-		case "tool":
-			program = hooks.HookProgramTool
 		default:
 			// Programming error.
 			return nil, errors.Errorf("unknown application name: %s", p.application)
