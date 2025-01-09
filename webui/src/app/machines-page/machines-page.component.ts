@@ -12,12 +12,6 @@ import { catchError, filter } from 'rxjs/operators'
 import { AuthorizedMachinesTableComponent } from '../authorized-machines-table/authorized-machines-table.component'
 import { Menu } from 'primeng/menu'
 
-interface AppType {
-    name: string
-    value: string
-    id: string
-}
-
 @Component({
     selector: 'app-machines-page',
     templateUrl: './machines-page.component.html',
@@ -27,18 +21,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'Services' }, { label: 'Machines' }]
 
-    // machines table
-    machines: Machine[]
-    totalMachines: number
     machineMenuItems: MenuItem[]
     machineMenuItemsAuth: MenuItem[]
     machineMenuItemsUnauth: MenuItem[]
     viewSelectionOptions: any[]
-    // showUnauthorized = false
     serverToken = ''
-    // selectedMachines: Machine[] = []
     dataLoading: boolean
-    // stateKey = 'machines-table-session'
 
     // This counter is used to indicate in UI that there are some
     // unauthorized machines that may require authorization.
@@ -49,15 +37,11 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     get unauthorizedMachinesCount(): number {
         return this._unauthorizedMachinesCount
     }
-    //
+
     set unauthorizedMachinesCount(c: number) {
         this._unauthorizedMachinesCount = c
         this.unauthorizedMachinesCount$.next(c)
     }
-
-    // action panel
-    appTypes: AppType[]
-    selectedAppType: AppType
 
     // edit machine address
     changeMachineAddressDlgVisible = false
@@ -68,6 +52,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     activeTabIdx = 0
     tabs: MenuItem[]
     activeItem: MenuItem
+    // TODO: is the object type required?
     openedMachines: { machine: Machine }[]
     machineTab: { machine: Machine }
 
@@ -75,10 +60,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Indicates if the machines registration is administratively disabled.
     registrationDisabled = false
-
-    // get table(): UnauthorizedMachinesTableComponent | AuthorizedMachinesTableComponent | undefined {
-    //     return this.showUnauthorized ? this.unauthorizedMachinesTable : this.authorizedMachinesTable
-    // }
 
     get showAuthorized(): boolean {
         return this.table?.validFilter?.authorized ?? null
@@ -111,98 +92,87 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * especially PrimeNG table in MachinesTableComponent, are initialized.
      */
     ngAfterViewInit(): void {
-        this.router.events
-            .pipe(
-                filter((event, idx) => idx === 0 || event.type === EventType.NavigationEnd),
-                catchError((err) => {
-                    const msg = getErrorMessage(err)
-                    this.msgSrv.add({
-                        severity: 'error',
-                        summary: 'Cannot process the URL query',
-                        detail: msg,
-                        life: 10000,
+        this.subscriptions.add(
+            this.router.events
+                .pipe(
+                    filter((event, idx) => idx === 0 || event.type === EventType.NavigationEnd),
+                    catchError((err) => {
+                        const msg = getErrorMessage(err)
+                        this.msgSrv.add({
+                            severity: 'error',
+                            summary: 'Cannot process the URL query',
+                            detail: msg,
+                            life: 10000,
+                        })
+                        return EMPTY
                     })
-                    return EMPTY
-                })
-            )
-            .subscribe(() => {
-                const paramMap = this.route.snapshot.paramMap
-                const queryParamMap = this.route.snapshot.queryParamMap
+                )
+                .subscribe(() => {
+                    const paramMap = this.route.snapshot.paramMap
+                    const queryParamMap = this.route.snapshot.queryParamMap
 
-                // Apply to the changes of the machine id, e.g. from /machines/authorized to
-                // /machines/1. Those changes are triggered by switching between the
-                // tabs.
+                    // Apply to the changes of the machine id, e.g. from /machines/authorized to
+                    // /machines/1. Those changes are triggered by switching between the
+                    // tabs.
 
-                // Get machine id.
-                // this.showUnauthorized = false
-                const id = paramMap.get('id')
-                if (!id || id === 'all') {
-                    // Update the filter only if the target is machine list.
-                    // this.showUnauthorized = id === 'unauthorized'
-                    this.table?.updateFilterFromQueryParameters(queryParamMap)
-                    this.switchToTab(0)
-                    return
-                }
-                const numericId = parseInt(id, 10)
-                if (!Number.isNaN(numericId)) {
-                    // The path has a numeric id indicating that we should
-                    // open a tab with selected machine information or switch
-                    // to this tab if it has been already opened.
-                    // this.openTabByMachineId(numericId)
-                    // let found = false
-                    // if tab for this machine is already opened then switch to it
-                    for (let idx = 0; idx < this.openedMachines.length; idx++) {
-                        const m = this.openedMachines[idx].machine
-                        if (m.id === numericId) {
-                            this.switchToTab(idx + 1)
-                            return
-                        }
+                    // Get machine id.
+                    // this.showUnauthorized = false
+                    const id = paramMap.get('id')
+                    if (!id || id === 'all') {
+                        // Update the filter only if the target is machine list.
+                        this.table?.updateFilterFromQueryParameters(queryParamMap)
+                        this.switchToTab(0)
+                        return
                     }
+                    const numericId = parseInt(id, 10)
+                    if (!Number.isNaN(numericId)) {
+                        // The path has a numeric id indicating that we should
+                        // open a tab with selected machine information or switch
+                        // to this tab if it has been already opened.
 
-                    // if tab is not opened then search for list of machines if the one is present there,
-                    // if so then open it in new tab and switch to it
-                    // if (!found) {
-                    for (const m of this.table?.dataCollection || []) {
-                        if (m.id === numericId) {
-                            this.addMachineTab(m)
-                            this.switchToTab(this.tabs.length - 1)
-                            return
+                        // if tab for this machine is already opened then switch to it
+                        for (let idx = 0; idx < this.openedMachines.length; idx++) {
+                            const m = this.openedMachines[idx].machine
+                            if (m.id === numericId) {
+                                this.switchToTab(idx + 1)
+                                return
+                            }
                         }
-                    }
-                    // for (const m of this.unauthorizedMachinesTable?.dataCollection || []) {
-                    //     if (m.id === numericId) {
-                    //         this.addMachineTab(m)
-                    //         this.switchToTab(this.tabs.length - 1)
-                    //         return
-                    //     }
-                    // }
-                    // }
 
-                    // if machine is not loaded in list fetch it individually
-                    // if (!found) {
-                    lastValueFrom(this.servicesApi.getMachine(numericId))
-                        .then((machine) => {
-                            this.addMachineTab(machine)
-                            this.switchToTab(this.tabs.length - 1)
-                        })
-                        .catch((err) => {
-                            const msg = getErrorMessage(err)
-                            this.msgSrv.add({
-                                severity: 'error',
-                                summary: 'Cannot get machine',
-                                detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
-                                life: 10000,
+                        // if tab is not opened then search for list of machines if the one is present there,
+                        // if so then open it in new tab and switch to it
+                        for (const m of this.table?.dataCollection || []) {
+                            if (m.id === numericId) {
+                                this.addMachineTab(m)
+                                this.switchToTab(this.tabs.length - 1)
+                                return
+                            }
+                        }
+
+                        // if machine is not loaded in list fetch it individually
+                        lastValueFrom(this.servicesApi.getMachine(numericId))
+                            .then((machine) => {
+                                this.addMachineTab(machine)
+                                this.switchToTab(this.tabs.length - 1)
                             })
-                            this.table?.loadDataWithoutFilter()
-                            this.switchToTab(0)
-                        })
-                    // }
-                } else {
-                    // In case of failed Id parsing, open list tab.
-                    this.table?.loadDataWithoutFilter()
-                    this.switchToTab(0)
-                }
-            })
+                            .catch((err) => {
+                                const msg = getErrorMessage(err)
+                                this.msgSrv.add({
+                                    severity: 'error',
+                                    summary: 'Cannot get machine',
+                                    detail: 'Failed to get machine with ID ' + numericId + ': ' + msg,
+                                    life: 10000,
+                                })
+                                this.table?.loadDataWithoutFilter()
+                                this.switchToTab(0)
+                            })
+                    } else {
+                        // In case of failed Id parsing, open list tab.
+                        this.table?.loadDataWithoutFilter()
+                        this.switchToTab(0)
+                    }
+                })
+        )
     }
 
     /** Switches to tab with the given index. */
@@ -235,12 +205,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     ngOnInit() {
         this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
-        this.machines = []
-        // this.appTypes = [
-        //     { name: 'any', value: '', id: 'none-app' },
-        //     { name: 'Bind9', value: 'bind9', id: 'bind-app' },
-        //     { name: 'Kea', value: 'kea', id: 'kea-app' },
-        // ]
         this.machineMenuItemsAuth = [
             {
                 label: 'Refresh machine state information',
@@ -301,135 +265,23 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.openedMachines = []
 
-        // this.subscriptions.add(
-        //     this.route.paramMap.subscribe((params: ParamMap) => {
-        //         const machineIdStr = params.get('id')
-        //         if (machineIdStr === 'authorized' || machineIdStr === 'unauthorized') {
-        //             this.showUnauthorized = machineIdStr === 'unauthorized'
-        //             this.switchToTab(0)
-        //         } else {
-        //             const machineId = parseInt(machineIdStr, 10)
-        //
-        //             let found = false
-        //             // if tab for this machine is already opened then switch to it
-        //             for (let idx = 0; idx < this.openedMachines.length; idx++) {
-        //                 const m = this.openedMachines[idx].machine
-        //                 if (m.id === machineId) {
-        //                     this.switchToTab(idx + 1)
-        //                     found = true
-        //                 }
-        //             }
-        //
-        //             // if tab is not opened then search for list of machines if the one is present there,
-        //             // if so then open it in new tab and switch to it
-        //             if (!found) {
-        //                 for (const m of this.machines) {
-        //                     if (m.id === machineId) {
-        //                         this.addMachineTab(m)
-        //                         this.switchToTab(this.tabs.length - 1)
-        //                         found = true
-        //                         break
-        //                     }
-        //                 }
-        //             }
-        //
-        //             // if machine is not loaded in list fetch it individually
-        //             if (!found) {
-        //                 this.servicesApi.getMachine(machineId).subscribe(
-        //                     (data) => {
-        //                         this.addMachineTab(data)
-        //                         this.switchToTab(this.tabs.length - 1)
-        //                     },
-        //                     (err) => {
-        //                         const msg = getErrorMessage(err)
-        //                         this.msgSrv.add({
-        //                             severity: 'error',
-        //                             summary: 'Cannot get machine',
-        //                             detail: 'Failed to get machine with ID ' + machineId + ': ' + msg,
-        //                             life: 10000,
-        //                         })
-        //                         this.navigateToMachinesList()
-        //                     }
-        //                 )
-        //             }
-        //         }
-        //     })
-        // )
-
-        // Settings are needed to check whether or not the machines registration is disabled.
-        this.subscriptions.add(
-            this.settingsService.getSettings().subscribe({
-                next: (settings: Settings) => {
-                    this.registrationDisabled = !settings.enableMachineRegistration
-                },
-                error: (err) => {
-                    const msg = getErrorMessage(err)
-                    this.msgSrv.add({
-                        severity: 'error',
-                        summary: 'Cannot get settings',
-                        detail: 'Failed to get settings: ' + msg,
-                        life: 10000,
-                    })
-                },
+        // Settings are needed to check whether the machines registration is disabled.
+        lastValueFrom(this.settingsService.getSettings())
+            .then((settings: Settings) => {
+                this.registrationDisabled = !settings.enableMachineRegistration
             })
-        )
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Cannot get settings',
+                    detail: 'Failed to get settings: ' + msg,
+                    life: 10000,
+                })
+            })
 
         this.dataLoading = true
-
-        // check current number of unauthorized machines
-        // this.refreshUnauthorizedMachinesCount()
     }
-
-    /**
-     * Refresh count of unauthorized machines.
-     *
-     * This counter is used to indicate in UI that there are some
-     * unauthorized machines that may require authorization.
-     */
-    // refreshUnauthorizedMachinesCount() {
-    //     if (!this.showAuthorized) {
-    //         return
-    //     }
-    //     this.servicesApi.getUnauthorizedMachinesCount().subscribe((count: number) => {
-    //         this.unauthorizedMachinesCount = count
-    //         this.viewSelectionOptions[1].label = 'Unauthorized (' + count + ')'
-    //
-    //         // force refresh in UI
-    //         this.viewSelectionOptions = [...this.viewSelectionOptions]
-    //     })
-    // }
-
-    /**
-     * Handler called by the PrimeNG table to load the machine data.
-     * @param event Pagination event
-     */
-    // loadMachines(event) {
-    //     this.dataLoading = true
-    //     let text
-    //     if (event.filters?.hasOwnProperty('text')) {
-    //         text = event.filters.text.value
-    //     }
-    //
-    //     let app
-    //     if (event.filters?.app?.[0]) {
-    //         app = event.filters.app[0].value
-    //     }
-    //
-    //     this.servicesApi.getMachines(event.first, event.rows, text, app, !this.showUnauthorized).subscribe((data) => {
-    //         this.machines = data.items ?? []
-    //         const total = data.total || 0
-    //         this.totalMachines = total
-    //         if (this.showUnauthorized) {
-    //             this.unauthorizedMachinesCount = total
-    //             this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
-    //
-    //             // force refresh in UI
-    //             this.viewSelectionOptions = [...this.viewSelectionOptions]
-    //         }
-    //         this.dataLoading = false
-    //     })
-    //     this.refreshUnauthorizedMachinesCount()
-    // }
 
     /** Callback called on canceling the edit machine dialog. */
     cancelMachineDialog() {
@@ -437,7 +289,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /** Callback called on key pressed in the edit machine dialog. */
-    keyUpMachineDlg(event: KeyboardEvent, machineTab) {
+    keyUpMachineDlg(event: KeyboardEvent, machineTab: any) {
         if (event.key === 'Enter') {
             if (this.changeMachineAddressDlgVisible) {
                 this.saveMachine(machineTab)
@@ -445,45 +297,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    /** Callback called on clicking the refresh button. */
-    // refreshMachinesList(machinesTable: Table) {
-    //     machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
-    // }
-
-    /**
-     * Callback called when toggling between authorized and unauthorized
-     * machines.
-     */
-    // onSelectMachinesListChange(machinesTable: Table) {
-    //     // this.navigateToMachinesList()
-    //     // this.table?.table?.onLazyLoad.emit(this.table.table.createLazyLoadMetadata())
-    //     console.log('onSelectMachinesListChange', machinesTable)
-    // }
-
-    /**
-     * Callback called on input event emitted by the filter input box.
-     *
-     * @param table table on which the filtering will apply
-     * @param filterText text value of the filter input
-     * @param force force filtering for shorter lookup keywords
-     */
-    // inputFilterText(table: Table, filterText: string, force: boolean = false) {
-    //     if (filterText.length >= 3 || (force && filterText != '')) {
-    //         table.filter(filterText, 'text', 'contains')
-    //     } else if (filterText.length == 0) {
-    //         this.clearFilters(table)
-    //     }
-    // }
-
-    /**
-     * Filters the displayed data by application ID.
-     */
-    // filterByApp(machinesTable: Table) {
-    //     machinesTable.filter(this.selectedAppType.value, 'app', 'equals')
-    // }
-
     /** Closes a tab with the given index. */
-    closeTab(event: PointerEvent, idx: number) {
+    closeTab(event: MouseEvent, idx: number) {
         this.openedMachines.splice(idx - 1, 1)
         this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
         if (this.activeTabIdx === idx) {
@@ -498,14 +313,15 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /** Fetches new machine state from API. */
-    _refreshMachineState(machine: Machine) {
-        this.servicesApi.getMachineState(machine.id).subscribe(
-            (data) => {
-                if (data.error) {
+    refreshMachineState(machine: Machine) {
+        this.dataLoading = true
+        lastValueFrom(this.servicesApi.getMachineState(machine.id))
+            .then((m: Machine) => {
+                if (m.error) {
                     this.msgSrv.add({
                         severity: 'error',
                         summary: 'Error getting machine state',
-                        detail: 'Error getting state of machine: ' + data.error,
+                        detail: 'Error getting state of machine: ' + m.error,
                         life: 10000,
                     })
                 } else {
@@ -514,30 +330,19 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         summary: 'Machine refreshed',
                         detail: 'Refreshing succeeded.',
                     })
+                    // TODO should the code below go here?
                 }
 
                 // refresh machine in machines list
-                this.table.refreshMachineState(machine)
-                // for (let i = 0; i < this.machines.length; i++) {
-                //     if (this.machines[i].id === data.id) {
-                //         this.machines[i] = data
-                //         break
-                //     }
-                // }
+                this.table?.refreshMachineState(m)
 
                 // refresh machine in opened tab if present
                 const idx = this.openedMachines.map((m) => m.machine.id).indexOf(machine.id)
                 if (idx >= 0) {
-                    this.openedMachines.splice(idx, 1, {machine: machine})
+                    this.openedMachines.splice(idx, 1, { machine: machine })
                 }
-                // for (let i = 0; i < this.openedMachines.length; i++) {
-                //     if (this.openedMachines[i].machine.id === data.id) {
-                //         this.openedMachines[i].machine = data
-                //         break
-                //     }
-                // }
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
@@ -545,8 +350,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     detail: 'Error getting state of machine: ' + msg,
                     life: 10000,
                 })
-            }
-        )
+            })
+            .finally(() => (this.dataLoading = false))
     }
 
     /**
@@ -557,48 +362,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Authorize or unauthorize machine.
-     *
-     * @param machine machine object
-     * @param authorized bool, true or false
-     * @param machinesTable table where authorized/unauthorized machine belong
+     * Authorize single machine via the updateMachine API.
+     * @param machine machine to be authorized
      */
-    // _changeMachineAuthorization(machine: Machine, authorized: boolean, machinesTable: Table) {
-    //     // Block table UI when machine authorization is in progress.
-    //     this.dataLoading = true
-    //     const stateBackup = machine.authorized
-    //
-    //     machine.authorized = authorized
-    //     const prefix = authorized ? '' : 'un'
-    //     this.servicesApi.updateMachine(machine.id, machine).subscribe({
-    //         next: (m) => {
-    //             this.msgSrv.add({
-    //                 severity: 'success',
-    //                 summary: `Machine ${prefix}authorized`,
-    //                 detail: `Machine ${m.address} ${prefix}authorization succeeded.`,
-    //             })
-    //             this.refreshMachinesList(machinesTable)
-    //             // Force menu adjustments to take into account that there
-    //             // is new machine and apps available.
-    //             this.serverData.forceReloadAppsStats()
-    //         },
-    //         error: (err) => {
-    //             machine.authorized = stateBackup
-    //             this.dataLoading = false
-    //             const msg = getErrorMessage(err)
-    //             this.msgSrv.add({
-    //                 severity: 'error',
-    //                 summary: `Machine ${prefix}authorization failed`,
-    //                 detail: `Machine ${prefix}authorization attempt failed: ${msg}`,
-    //                 life: 10000,
-    //             })
-    //         },
-    //         complete: () => {
-    //             this.dataLoading = false
-    //         },
-    //     })
-    // }
-
     authorizeMachine(machine: Machine) {
         // Block table UI when machine authorization is in progress.
         this.dataLoading = true
@@ -637,9 +403,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      *
      * @param event browser event generated when the button is clicked causing
      *        the menu to be toggled
-     * @param machineMenu reference to the DOM object that represents the machine menu
      * @param machine reference to a machine
-     * @param machinesTable reference to the table with machines
      */
     showMachineMenu(event: Event, machine: Machine) {
         if (!machine.authorized) {
@@ -657,7 +421,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             this.machineMenuItems = this.machineMenuItemsAuth
             // connect method to refresh machine state
             this.machineMenuItems[0].command = () => {
-                this._refreshMachineState(machine)
+                this.refreshMachineState(machine)
             }
 
             // connect method to dump machine configuration
@@ -677,38 +441,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         this.machineMenu.toggle(event)
-
-        // if (!machine.authorized) {
-        //     // connect method to authorize machine
-        //     this.machineMenuItems[0].command = () => {
-        //         this.authorizeMachine(machine)
-        //     }
-        //
-        //     // connect method to delete machine
-        //     this.machineMenuItems[1].command = () => {
-        //         this.deleteMachine(machine.id)
-        //     }
-        // } else {
-        //     // connect method to refresh machine state
-        //     this.machineMenuItems[0].command = () => {
-        //         this._refreshMachineState(machine)
-        //     }
-        //
-        //     // connect method to dump machine configuration
-        //     this.machineMenuItems[1].command = () => {
-        //         this.downloadDump(machine)
-        //     }
-        //
-        //     // connect method to authorize machine
-        //     /*this.machineMenuItems[2].command = () => {
-        //         this._changeMachineAuthorization(machine, false, machinesTable)
-        //     }*/
-        //
-        //     // connect method to delete machine
-        //     this.machineMenuItems[2].command = () => {
-        //         this.deleteMachine(machine.id)
-        //     }
-        // }
     }
 
     /**
@@ -720,42 +452,33 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      *
      * @param machineId ID of machine
      */
-    deleteMachine(machineId) {
-        lastValueFrom(this.servicesApi.deleteMachine(machineId)).then(
-            () => {
+    deleteMachine(machineId: number) {
+        this.dataLoading = true
+        // TODO: add confirmation dialog?
+        lastValueFrom(this.servicesApi.deleteMachine(machineId))
+            .then(() => {
                 // reload apps stats to reflect new state (adjust menu content)
                 this.serverData.forceReloadAppsStats()
 
                 // remove from list of machines
-                this.table.deleteMachine(machineId)
+                this.table?.deleteMachine(machineId)
 
                 // remove from opened tabs if present
-                const idx = this.openedMachines?.map((m) => m.machine.id).indexOf(machineId) || -1
+                const idx = this.openedMachines.map((m) => m.machine.id).indexOf(machineId)
                 if (idx >= 0) {
                     this.closeTab(null, idx + 1)
                 }
-
-            }
-        ).catch((err) => {
-            const msg = getErrorMessage(err)
-            this.msgSrv.add({
-                severity: 'error',
-                summary: 'Deleting machine failed',
-                detail: 'Error deleting machine: ' + msg,
-                life: 10000,
             })
-        })
-        // this.servicesApi.deleteMachine(machineId).subscribe((/* data */) => {
-        //     // reload apps stats to reflect new state (adjust menu content)
-        //     this.serverData.forceReloadAppsStats()
-        //
-        //     // remove from list of machines
-        //     this.table.deleteMachine(machineId)
-        //
-        //     // remove from opened tabs if present
-        //     const idx = this.openedMachines.map((m) => m.machine.id).indexOf(machineId)
-        //     this.closeTab(null, idx + 1)
-        // })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Deleting machine failed',
+                    detail: 'Error deleting machine: ' + msg,
+                    life: 10000,
+                })
+            })
+            .finally(() => (this.dataLoading = false))
     }
 
     /** Sets the edit form-related members using the value of the current machine. */
@@ -772,9 +495,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             return
         }
         const m = { address: this.machineAddress, agentPort: parseInt(this.agentPort, 10) }
-        this.servicesApi.updateMachine(machineTab.machine.id, m).subscribe(
-            (data) => {
-                machineTab.machine = data
+        lastValueFrom(this.servicesApi.updateMachine(machineTab.machine.id, m))
+            .then((m: Machine) => {
+                machineTab.machine = m
                 this.changeMachineAddressDlgVisible = false
                 this.msgSrv.add({
                     severity: 'success',
@@ -782,9 +505,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     detail: 'Machine address update succeeded.',
                 })
 
-                this._refreshMachineState(machineTab.machine)
-            },
-            (err) => {
+                this.refreshMachineState(machineTab.machine)
+            })
+            .catch((err) => {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
@@ -792,15 +515,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     detail: 'Error updating machine address: ' + msg,
                     life: 10000,
                 })
-            }
-        )
-    }
-
-    /**
-     * Callback called on machine tab click.
-     */
-    refreshMachineState(machinesTab) {
-        this._refreshMachineState(machinesTab.machine)
+            })
     }
 
     /**
@@ -808,12 +523,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * stork agent.
      */
     showAgentInstallationInstruction() {
-        this.servicesApi.getMachinesServerToken().subscribe(
-            (data) => {
+        lastValueFrom(this.servicesApi.getMachinesServerToken())
+            .then((data) => {
                 this.serverToken = data.token
                 this.displayAgentInstallationInstruction = true
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
@@ -821,8 +536,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     detail: 'Error getting server token to register machines: ' + msg,
                     life: 10000,
                 })
-            }
-        )
+            })
     }
 
     /**
@@ -837,11 +551,11 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Send request to stork server to regenerate machines server token.
      */
     regenerateServerToken() {
-        this.servicesApi.regenerateMachinesServerToken().subscribe(
-            (data) => {
+        lastValueFrom(this.servicesApi.regenerateMachinesServerToken())
+            .then((data) => {
                 this.serverToken = data.token
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
@@ -849,8 +563,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     detail: 'Error regenerating server token to register machines: ' + msg,
                     life: 10000,
                 })
-            }
-        )
+            })
     }
 
     /**
@@ -871,12 +584,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Authorizes machines stored in selectedMachines.
      *
-     * @param table table where selected machines are to be authorized.
+     * @param machines
      */
-    authorizeSelectedMachines(machines: any) {
-        console.log('authorizeSelectedMachines machines', machines)
+    authorizeSelectedMachines(machines: Machine[]) {
         const unauthorized = machines?.filter((m) => !m.authorized) ?? []
-        console.log('authorizeSelectedMachines unauthorized', unauthorized)
         // Calling servicesApi.updateMachine() API sequentially for all selected machines.
         // Max expected count of selected machines is max machines per table page,
         // which currently is 50.
@@ -925,52 +636,14 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         })
 
         // Clear selection after.
-        // this.selectedMachines = []
-        this.table.selectedMachines = []
-
-        // Force clear selection in session storage.
-        // const state = JSON.parse(sessionStorage.getItem(this.stateKey))
-        // state.selection = []
-        // sessionStorage.setItem(this.stateKey, JSON.stringify(state))
+        this.table?.clearSelection()
     }
 
     /**
-     * Callback called when PrimeNG table state is restored.
-     *
-     * @param state restored table state
+     * Callback called when the Authorized/Unauthorized machines select button changes after user's click.
+     * @param event change event
      */
-    // stateRestored(state: any) {
-    //     // Do not restore selection.
-    //     state.selection = []
-    // }
-
-    /**
-     * Clears filtering on given table.
-     *
-     * @param table table where filtering is to be cleared
-     */
-    // clearFilters(table: Table) {
-    //     table.filter(null, 'text', 'contains')
-    // }
-
-    /**
-     * Navigates to the URL displaying authorized or unauthorized machines.
-     *
-     * Depending on whether a user requested listing authorized or unauthorized
-     * machines the router link is different. This function updates the router
-     * link accordingly. It also updates the link of the first tab, so it matches
-     * the current router link.
-     */
-    // navigateToMachinesList() {
-    //     const currentLink = this.showUnauthorized ? '/machines/unauthorized' : '/machines/authorized'
-    //     if (this.tabs.length > 0) {
-    //         this.tabs[0].routerLink = currentLink
-    //     }
-    //     this.router.navigate([currentLink])
-    // }
-
     onSelectChange(event: any) {
-        console.log('onSelectChange', event)
         this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value } ?? null })
     }
 }

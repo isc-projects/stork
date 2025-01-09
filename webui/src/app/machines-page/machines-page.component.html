@@ -182,7 +182,12 @@ sudo ./stork-install-agent.sh</textarea
             >
                 <ng-template let-item pTemplate>
                     <span class="p-button-label">{{ item.label }}</span
-                    ><p-badge *ngIf="item.hasBadge" severity="info" [value]="unauthorizedMachinesCount$ | async" styleClass="relative" />
+                    ><p-badge
+                        *ngIf="item.hasBadge"
+                        severity="info"
+                        [value]="unauthorizedMachinesCount$ | async"
+                        styleClass="relative"
+                    />
                 </ng-template>
             </p-selectButton>
         </div>
@@ -339,7 +344,7 @@ sudo ./stork-install-agent.sh</textarea
                     id="get-latest-state-button"
                     icon="pi pi-refresh"
                     class="mt-3 mr-2 mb-2"
-                    (click)="refreshMachineState(machineTab)"
+                    (click)="refreshMachineState(machineTab.machine)"
                 ></button>
                 <button
                     *ngIf="machineTab.machine.authorized"

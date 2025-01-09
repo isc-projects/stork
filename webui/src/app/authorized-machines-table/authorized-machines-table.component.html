@@ -241,7 +241,7 @@
         <tr>
             <td colspan="3">
                 <i class="pi pi-info-circle text-2xl text-primary vertical-align-middle font-bold"></i>
-                No authorized machines found.
+                No machines found.
                 <span *ngIf="hasFilter(machinesTable)">
                     Try to clear filtering.
                     <button
@@ -257,13 +257,18 @@
                     Information about adding new machines to Stork server is available after clicking on the
                     <b>How to Install Agent to New Machine</b> button at the top.
                 </div>
-                <div *ngIf="unauthorizedMachinesCount > 0">
+                <div *ngIf="validFilter?.authorized === true && unauthorizedMachinesCount > 0">
                     <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                     There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
                     <b class="text-xl text-red-500">{{ unauthorizedMachinesCount }}</b>
                     unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
                     {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }}
                     <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">here</a>.
+                </div>
+                <div *ngIf="validFilter?.authorized === false">
+                    <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
+                    There are no machines waiting for the authorization. You can see all authorized machines
+                    <a routerLink="/machines/all" [queryParams]="{ authorized: 'true' }">here</a>.
                 </div>
             </td>
         </tr>
