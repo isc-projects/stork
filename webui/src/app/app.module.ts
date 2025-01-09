@@ -145,7 +145,6 @@ import { VersionStatusComponent } from './version-status/version-status.componen
 import { VersionPageComponent } from './version-page/version-page.component'
 import { BadgeModule } from 'primeng/badge'
 import { AuthorizedMachinesTableComponent } from './authorized-machines-table/authorized-machines-table.component'
-import { UnauthorizedMachinesTableComponent } from './unauthorized-machines-table/unauthorized-machines-table.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -242,7 +241,6 @@ export function cfgFactory() {
         VersionStatusComponent,
         VersionPageComponent,
         AuthorizedMachinesTableComponent,
-        UnauthorizedMachinesTableComponent,
     ],
     imports: [
         BrowserModule,

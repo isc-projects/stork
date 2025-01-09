@@ -245,8 +245,7 @@ export class CustomRouteReuseStrategy implements RouteReuseStrategy {
             this.specificComponents.includes(future.component) &&
             future.component === curr.component &&
             (future.queryParamMap.has('gs') ||
-                (curr.paramMap.get('id')?.includes('all') && future.paramMap.get('id')?.includes('all')) ||
-                (curr.paramMap.get('id')?.includes('authorized') && future.paramMap.get('id')?.includes('authorized')))
+                (curr.paramMap.get('id')?.includes('all') && future.paramMap.get('id')?.includes('all')))
         ) {
             // Do not reuse route when navigation happens between two same specific components,
             // (e.g. between two HostsPageComponents)
