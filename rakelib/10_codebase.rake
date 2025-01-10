@@ -289,7 +289,27 @@ CLEAN.append OPEN_API_GENERATOR_PYTHON_DIR, "tests/system/.openapi-generator",
 ### Documentation ###
 #####################
 
-DOC_USER_CODEBASE = FileList["doc/static/**/*", "doc/user/**/*", "backend/version.go"]
+# Collects the documentation of the cloned hooks. It may be empty if no hooks
+# are available in the hooks directory.
+hook_doc_directory = "doc/user/hooks"
+file hook_doc_directory => FileList["hooks/**/doc/**/*"] do
+    sh "rm", "-rf", hook_doc_directory
+    sh "mkdir", "-p", hook_doc_directory
+    Dir.each_child("hooks") do |hook|
+        hook_subdirectory = File.join(hook_doc_directory, hook)
+        sh "mkdir", "-p", hook_subdirectory
+        sh "cp", "-r",
+            *FileList[File.join("hooks", hook, "doc/")],
+            hook_subdirectory
+    end
+end
+
+DOC_USER_CODEBASE = FileList[
+    "doc/static/**/*",
+    "doc/user/**/*",
+    "backend/version.go",
+    hook_doc_directory,
+]
 
 DOC_DEV_CODEBASE = FileList["doc/static/**/*", "doc/dev/**/*", "backend/version.go"]
 

@@ -14,8 +14,7 @@ Manual Pages
 ============
 
 .. toctree::
+   :glob:
    :maxdepth: 1
 
-   man/stork-server.8
-   man/stork-agent.8
-   man/stork-tool.8
+   man/*.8
