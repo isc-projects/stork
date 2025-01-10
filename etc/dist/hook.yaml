@@ -24,4 +24,7 @@ license: "MPL 2.0"
 contents:
 - src: ${STORK_NFPM_HOOK_PATH}
   dst: /usr/lib/stork-${STORK_NFPM_HOOK_KIND}/hooks/${STORK_NFPM_HOOK_FILENAME}
+  expand: true  
+- src: ${STORK_NFPM_HOOK_MAN_PATH}
+  dst: /usr/share/man/man8/stork-${STORK_NFPM_HOOK_KIND}-${STORK_NFPM_HOOK_NAME}.8
   expand: true

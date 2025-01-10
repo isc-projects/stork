@@ -100,4 +100,5 @@ webui/src/app/std-dhcpv6-option-defs.ts
 
 # Hooks
 /doc/user/hooks
+/doc/user/man/hooks
 /hooks/*.so

@@ -23,6 +23,7 @@ http://www.sphinx-doc.org/en/master/config
 
 # to avoid "sphinx.errors.SphinxParallelError: RecursionError: maximum recursion depth exceeded
 # while pickling an object"
+import os
 import sys
 
 sys.setrecursionlimit(5000)
@@ -163,6 +164,18 @@ man_pages = [
     ("man/stork-server.8", "stork-server", "Stork Server", author, 8),
     ("man/stork-tool.8", "stork-tool", "Stork Tool", author, 8),
 ]
+
+# Hook man pages.
+man_pages.extend(
+    (
+        os.path.join("man", "hooks", h[:-4]), # source
+        h[:-6], # name
+        " ".join(s.capitalize() for s in h[:-6].split("-")), # description
+        author, # authors
+        8, # manual section
+    )
+    for h in os.listdir("man/hooks") if h.endswith(".8.rst")
+)
 
 # -- Extension configuration -------------------------------------------------
 

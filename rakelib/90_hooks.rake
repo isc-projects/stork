@@ -167,7 +167,7 @@ namespace :hook do
     desc "Build all hooks and create packages. Remap hooks to use the current codebase.
         DEBUG - build hooks in debug mode, the envvar is passed through to the hook Rakefile - default: false
         HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
-    task :build_pkg => [NFPM, hook_nfpm_config_file, pkg_directory] do
+    task :build_pkg => [NFPM, TOOL_MAN_FILE, hook_nfpm_config_file, pkg_directory] do
         # Suppress (re)building the hook binaries if the SUPPRESS_PREREQUISITES
         # environment variable is set to true.
         if ENV["SUPPRESS_PREREQUISITES"] != "true"
@@ -188,12 +188,19 @@ namespace :hook do
             kind = components[1]
             hook_name = components[2].chomp(".so")
 
+            man_directory = File.dirname(TOOL_MAN_FILE)
+            man_extension = File.extname(TOOL_MAN_FILE)
+            hook_filename_no_ext = File.basename(hook_filename, ".so")
+            hook_man_path = File.join(man_directory, hook_filename_no_ext + man_extension)
+            puts "Hook man path:", hook_man_path
+
             ENV["STORK_NFPM_ARCH"] = arch
             ENV["STORK_NFPM_VERSION"] = "#{STORK_VERSION}.#{TIMESTAMP}"
             ENV["STORK_NFPM_HOOK_KIND"] = kind
             ENV["STORK_NFPM_HOOK_NAME"] = hook_name
             ENV["STORK_NFPM_HOOK_PATH"] = hook_path
             ENV["STORK_NFPM_HOOK_FILENAME"] = hook_filename
+            ENV["STORK_NFPM_HOOK_MAN_PATH"] = hook_man_path
 
             sh NFPM, "package",
                 "--config", hook_nfpm_config_file,

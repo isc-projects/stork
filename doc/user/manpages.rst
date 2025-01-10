@@ -18,3 +18,4 @@ Manual Pages
    :maxdepth: 1
 
    man/*.8
+   man/hooks/*.8

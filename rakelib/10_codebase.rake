@@ -296,6 +296,11 @@ file hook_doc_directory => FileList["hooks/**/doc/**/*"] do
     sh "rm", "-rf", hook_doc_directory
     sh "mkdir", "-p", hook_doc_directory
     Dir.each_child("hooks") do |hook|
+        if !Dir.exist?(File.join("hooks", hook, "doc"))
+            # The hook documentation is not available.
+            next
+        end
+
         hook_subdirectory = File.join(hook_doc_directory, hook)
         sh "mkdir", "-p", hook_subdirectory
         sh "cp", "-r",
@@ -304,11 +309,27 @@ file hook_doc_directory => FileList["hooks/**/doc/**/*"] do
     end
 end
 
+hook_man_directory = "doc/user/man/hooks"
+file hook_man_directory => FileList["hooks/**/man/man.8.rst"] do
+    sh "rm", "-rf", hook_man_directory
+    sh "mkdir", "-p", hook_man_directory
+    Dir.each_child("hooks") do |hook|
+        hook_man_path = File.join("hooks", hook, "man", "man.8.rst")
+        if !File.exist?(File.join(hook_man_path))
+            # The hook man is not available.
+            next
+        end
+
+        sh "cp", hook_man_path, File.join(hook_man_directory, hook + ".8.rst")
+    end
+end
+
 DOC_USER_CODEBASE = FileList[
     "doc/static/**/*",
     "doc/user/**/*",
     "backend/version.go",
     hook_doc_directory,
+    hook_man_directory,
 ]
 
 DOC_DEV_CODEBASE = FileList["doc/static/**/*", "doc/dev/**/*", "backend/version.go"]
