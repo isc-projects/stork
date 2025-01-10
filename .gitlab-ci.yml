@@ -262,11 +262,7 @@ build_ui:
 build_doc:
   extends: .base_build_debian
   script:
-    - tree hooks
     - rake build:doc
-  before_script:
-    - apt-get update
-    - apt-get install -y tree
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   artifacts:
