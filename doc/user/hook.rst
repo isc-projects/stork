@@ -23,9 +23,11 @@ All the hooks must be compiled for the used Stork application (agent or server)
 and its exact version. If the hook directory contains non-hook files or
 out-of-date hooks, then Stork will not run.
 
+List of the Official Hooks
+==========================
+
 .. toctree::
    :glob:
-   :caption: List of the Official Hooks
    :maxdepth: 1
 
    hooks/**/index
