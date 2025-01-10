@@ -26,7 +26,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     machineMenuItemsUnauth: MenuItem[]
     viewSelectionOptions: any[]
     serverToken = ''
-    dataLoading: boolean
 
     // This counter is used to indicate in UI that there are some
     // unauthorized machines that may require authorization.
@@ -111,7 +110,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     const paramMap = this.route.snapshot.paramMap
                     const queryParamMap = this.route.snapshot.queryParamMap
 
-                    // Apply to the changes of the machine id, e.g. from /machines/authorized to
+                    // Apply to the changes of the machine id, e.g. from /machines/all to
                     // /machines/1. Those changes are triggered by switching between the
                     // tabs.
 
@@ -279,8 +278,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
-
-        this.dataLoading = true
     }
 
     /** Callback called on canceling the edit machine dialog. */
@@ -314,7 +311,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /** Fetches new machine state from API. */
     refreshMachineState(machine: Machine) {
-        this.dataLoading = true
+        this.table?.setDataLoading(true)
         lastValueFrom(this.servicesApi.getMachineState(machine.id))
             .then((m: Machine) => {
                 if (m.error) {
@@ -351,7 +348,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
-            .finally(() => (this.dataLoading = false))
+            .finally(() => this.table?.setDataLoading(false))
     }
 
     /**
@@ -367,7 +364,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     authorizeMachine(machine: Machine) {
         // Block table UI when machine authorization is in progress.
-        this.dataLoading = true
+        this.table?.setDataLoading(true)
         const stateBackup = machine.authorized
 
         machine.authorized = true
@@ -393,7 +390,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
-            .finally(() => (this.dataLoading = false))
+            .finally(() => this.table?.setDataLoading(false))
     }
 
     /**
@@ -453,7 +450,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param machineId ID of machine
      */
     deleteMachine(machineId: number) {
-        this.dataLoading = true
+        this.table?.setDataLoading(true)
         // TODO: add confirmation dialog?
         lastValueFrom(this.servicesApi.deleteMachine(machineId))
             .then(() => {
@@ -478,7 +475,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
-            .finally(() => (this.dataLoading = false))
+            .finally(() => this.table?.setDataLoading(false))
     }
 
     /** Sets the edit form-related members using the value of the current machine. */
@@ -601,7 +598,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         const authorizations$: Observable<Machine> = concat(...updateObservables)
 
         // Block table UI when bulk machines authorization is in progress.
-        this.dataLoading = true
+        this.table?.setDataLoading(true)
         authorizations$.subscribe({
             next: (m) => {
                 this.msgSrv.add({
@@ -618,7 +615,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     detail: 'Machine authorization attempt failed: ' + msg,
                     life: 10000,
                 })
-                this.dataLoading = false
+                this.table?.setDataLoading(false)
                 this.table?.loadDataWithValidFilter()
                 // this.refreshMachinesList(table)
                 // Force menu adjustments to take into account that there
@@ -626,7 +623,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.serverData.forceReloadAppsStats()
             },
             complete: () => {
-                this.dataLoading = false
+                this.table?.setDataLoading(false)
                 this.table?.loadDataWithValidFilter()
                 // this.refreshMachinesList(table)
                 // Force menu adjustments to take into account that there

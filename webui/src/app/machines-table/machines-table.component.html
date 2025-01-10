@@ -265,7 +265,7 @@
                     {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }}
                     <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">here</a>.
                 </div>
-                <div *ngIf="validFilter?.authorized === false">
+                <div *ngIf="validFilter?.authorized === false && unauthorizedMachinesCount === 0">
                     <i class="pi pi-info-circle text-xl text-primary-600 vertical-align-middle"></i>
                     There are no machines waiting for the authorization. You can see all authorized machines
                     <a routerLink="/machines/all" [queryParams]="{ authorized: 'true' }">here</a>.

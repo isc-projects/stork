@@ -88,11 +88,6 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
     /**
-     * Input property to drive the table's data loading state.
-     */
-    @Input() dataLoading: boolean
-
-    /**
      * Callback called when the machine's menu was displayed.
      * @param event browser's click event
      * @param machine machine for which the menu was displayed
@@ -157,7 +152,7 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
             .then((data) => {
                 this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
-                if (authorized === false) {
+                if (authorized === false && this.hasFilter(this.table) === false) {
                     this.unauthorizedMachinesCount = this.totalRecords
                     this.unauthorizedMachinesCountChange.emit(this.totalRecords)
                 } else {
@@ -240,5 +235,13 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     clearSelection() {
         this.selectedMachines = []
+    }
+
+    /**
+     * Setter for dataLoading property allowing parent component to enable/disable loading state.
+     * @param loading value to be set
+     */
+    setDataLoading(loading: boolean) {
+        this.dataLoading = loading
     }
 }
