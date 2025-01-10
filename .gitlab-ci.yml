@@ -263,6 +263,8 @@ build_doc:
   extends: .base_build_debian
   script:
     - rake build:doc
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
   artifacts:
     name: "doc"
     expire_in: 1 week
