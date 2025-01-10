@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, EventType, Router } from '@angular/router'
 
-import { MessageService, MenuItem } from 'primeng/api'
+import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 import { BehaviorSubject, concat, EMPTY, lastValueFrom, Observable, Subscription } from 'rxjs'
 import { Machine, Settings } from '../backend'
 
@@ -74,7 +74,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
         private serverData: ServerDataService,
-        private settingsService: SettingsService
+        private settingsService: SettingsService,
+        private confirmationService: ConfirmationService
     ) {}
 
     ngOnDestroy(): void {
@@ -450,32 +451,43 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param machineId ID of machine
      */
     deleteMachine(machineId: number) {
-        this.table?.setDataLoading(true)
-        // TODO: add confirmation dialog?
-        lastValueFrom(this.servicesApi.deleteMachine(machineId))
-            .then(() => {
-                // reload apps stats to reflect new state (adjust menu content)
-                this.serverData.forceReloadAppsStats()
+        this.confirmationService.confirm({
+            message: `Are you sure you want to delete the machine with ID ${machineId}?`,
+            header: 'Confirm',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                this.table?.setDataLoading(true)
+                lastValueFrom(this.servicesApi.deleteMachine(machineId))
+                    .then(() => {
+                        // reload apps stats to reflect new state (adjust menu content)
+                        this.serverData.forceReloadAppsStats()
 
-                // remove from list of machines
-                this.table?.deleteMachine(machineId)
+                        // remove from list of machines
+                        this.table?.deleteMachine(machineId)
 
-                // remove from opened tabs if present
-                const idx = this.openedMachines.map((m) => m.machine.id).indexOf(machineId)
-                if (idx >= 0) {
-                    this.closeTab(null, idx + 1)
-                }
-            })
-            .catch((err) => {
-                const msg = getErrorMessage(err)
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Deleting machine failed',
-                    detail: 'Error deleting machine: ' + msg,
-                    life: 10000,
-                })
-            })
-            .finally(() => this.table?.setDataLoading(false))
+                        // remove from opened tabs if present
+                        const idx = this.openedMachines.map((m) => m.machine.id).indexOf(machineId)
+                        if (idx >= 0) {
+                            this.closeTab(null, idx + 1)
+                        }
+                        this.msgSrv.add({
+                            severity: 'success',
+                            summary: 'Machine deleted',
+                            detail: 'Deletion succeeded.',
+                        })
+                    })
+                    .catch((err) => {
+                        const msg = getErrorMessage(err)
+                        this.msgSrv.add({
+                            severity: 'error',
+                            summary: 'Deleting machine failed',
+                            detail: 'Error deleting machine: ' + msg,
+                            life: 10000,
+                        })
+                    })
+                    .finally(() => this.table?.setDataLoading(false))
+            },
+        })
     }
 
     /** Sets the edit form-related members using the value of the current machine. */
