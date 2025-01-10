@@ -177,6 +177,13 @@ man_pages.extend(
     for h in os.listdir("man/hooks") if h.endswith(".8.rst")
 )
 
+suppress_warnings = [
+    # ToDo: Enable these when
+    # https://github.com/sphinx-doc/sphinx/pull/13230/files is merged and
+    # remove workarounds from the 10_codebase.rake: file.
+    # 'toc.glob_not_matching',
+]
+
 # -- Extension configuration -------------------------------------------------
 
 # -- Options for todo extension ----------------------------------------------

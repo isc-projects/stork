@@ -295,17 +295,33 @@ hook_doc_directory = "doc/user/hooks"
 file hook_doc_directory => FileList["hooks/**/doc/**/*"] do
     sh "rm", "-rf", hook_doc_directory
     sh "mkdir", "-p", hook_doc_directory
-    Dir.each_child("hooks") do |hook|
-        if !Dir.exist?(File.join("hooks", hook, "doc"))
-            # The hook documentation is not available.
-            next
-        end
 
-        hook_subdirectory = File.join(hook_doc_directory, hook)
-        sh "mkdir", "-p", hook_subdirectory
-        sh "cp", "-r",
-            *FileList[File.join("hooks", hook, "doc/")],
-            hook_subdirectory
+    if Dir.exist?("hooks")
+        Dir.each_child("hooks") do |hook|
+            if !Dir.exist?(File.join("hooks", hook, "doc"))
+                # The hook documentation is not available.
+                next
+            end
+
+            hook_subdirectory = File.join(hook_doc_directory, hook)
+            sh "mkdir", "-p", hook_subdirectory
+            sh "cp", "-r",
+                *FileList[File.join("hooks", hook, "doc/")],
+                hook_subdirectory
+        end
+    end
+
+    # Workaround for Sphinx warning that reports the non-matching glob pattern.
+    # It interrupts build when there is no hooks. I reported the issue to the
+    # Sphinx project: https://github.com/sphinx-doc/sphinx/pull/13230
+    if Dir.empty?(hook_doc_directory)
+        sh "mkdir", "-p", File.join(hook_doc_directory, "dummy")
+        File.write(
+            File.join(hook_doc_directory, "dummy", "index.rst"),
+            "########\n" +
+            "No hooks\n" +
+            "########\n\n"
+        )
     end
 end
 
@@ -313,14 +329,29 @@ hook_man_directory = "doc/user/man/hooks"
 file hook_man_directory => FileList["hooks/**/man/man.8.rst"] do
     sh "rm", "-rf", hook_man_directory
     sh "mkdir", "-p", hook_man_directory
-    Dir.each_child("hooks") do |hook|
-        hook_man_path = File.join("hooks", hook, "man", "man.8.rst")
-        if !File.exist?(File.join(hook_man_path))
-            # The hook man is not available.
-            next
-        end
 
-        sh "cp", hook_man_path, File.join(hook_man_directory, hook + ".8.rst")
+    if Dir.exist?("hooks")
+        Dir.each_child("hooks") do |hook|
+            hook_man_path = File.join("hooks", hook, "man", "man.8.rst")
+            if !File.exist?(File.join(hook_man_path))
+                # The hook man is not available.
+                next
+            end
+
+            sh "cp", hook_man_path, File.join(hook_man_directory, hook + ".8.rst")
+        end
+    end
+
+    # Workaround for Sphinx warning that reports the non-matching glob pattern.
+    # It interrupts build when there is no hooks. I reported the issue to the
+    # Sphinx project: https://github.com/sphinx-doc/sphinx/pull/13230
+    if Dir.empty?(hook_man_directory)
+        File.write(
+            File.join(hook_man_directory, "dummy.8.rst"),
+            "########\n" +
+            "No hooks\n" +
+            "########\n\n"
+        )
     end
 end
 
