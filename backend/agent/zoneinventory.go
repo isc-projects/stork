@@ -600,11 +600,13 @@ func (inventory *zoneInventory) populate() (chan zoneInventoryAsyncNotify, error
 			}
 		}
 		if err == nil {
+			log.WithFields(log.Fields{
+				"zones": views.GetZoneCount(),
+				"views": len(views.Views),
+			}).Info("Populated DNS zones for indicated number views")
 			if inventory.storage.hasMemoryStorage() {
-				log.WithFields(log.Fields{
-					"zones": views.GetZoneCount(),
-					"views": len(views.Views),
-				}).Info("Populated DNS zones for indicated number views")
+				inventory.transitionWithViews(newZoneInventoryStatePopulated(), views)
+			} else {
 				inventory.transitionWithViews(newZoneInventoryStatePopulated(), nil)
 			}
 		} else {
