@@ -168,13 +168,14 @@ man_pages = [
 # Hook man pages.
 man_pages.extend(
     (
-        os.path.join("man", "hooks", h[:-4]), # source
-        h[:-6], # name
-        " ".join(s.capitalize() for s in h[:-6].split("-")), # description
-        author, # authors
-        8, # manual section
+        os.path.join("man", "hooks", h[:-4]),  # source
+        h[:-6],  # name
+        " ".join(s.capitalize() for s in h[:-6].split("-")),  # description
+        author,  # authors
+        8,  # manual section
     )
-    for h in os.listdir("man/hooks") if h.endswith(".8.rst")
+    for h in os.listdir("man/hooks")
+    if h.endswith(".8.rst")
 )
 
 suppress_warnings = [
