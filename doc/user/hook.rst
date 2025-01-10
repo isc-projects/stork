@@ -28,4 +28,4 @@ out-of-date hooks, then Stork will not run.
    :caption: List of the Official Hooks
    :maxdepth: 1
 
-   hooks/*/index
+   hooks/**/index
