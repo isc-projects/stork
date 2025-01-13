@@ -312,6 +312,8 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 					storkAgent.ExplicitBind9ConfigPath,
 				)
 				if bind9App != nil {
+					// Check if this app already exists. If it does we want to use
+					// an existing app to preserve its state.
 					if i := slices.IndexFunc(sm.apps, func(app App) bool {
 						return app.GetBaseApp().HasEqualType(bind9App.GetBaseApp()) && app.GetBaseApp().HasEqualAccessPoints(bind9App.GetBaseApp())
 					}); i >= 0 {

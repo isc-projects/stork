@@ -179,24 +179,29 @@ func TestDetectApps(t *testing.T) {
 	defer ctrl.Finish()
 
 	keaProcess := NewMockProcess(ctrl)
-	keaProcess.EXPECT().GetName().Return("kea-ctrl-agent", nil)
-	keaProcess.EXPECT().GetCmdline().Return(fmt.Sprintf(
+	keaProcess.EXPECT().GetName().AnyTimes().Return("kea-ctrl-agent", nil)
+	keaProcess.EXPECT().GetCmdline().AnyTimes().Return(fmt.Sprintf(
 		"kea-ctrl-agent -c %s", keaConfPath,
 	), nil)
-	keaProcess.EXPECT().GetCwd().Return("/etc/kea", nil)
-	keaProcess.EXPECT().GetPid().Return(int32(1234))
+	keaProcess.EXPECT().GetCwd().AnyTimes().Return("/etc/kea", nil)
+	keaProcess.EXPECT().GetPid().AnyTimes().Return(int32(1234))
 
 	bind9Process := NewMockProcess(ctrl)
-	bind9Process.EXPECT().GetName().Return("named", nil)
-	bind9Process.EXPECT().GetCmdline().Return("named -c /etc/named.conf", nil)
-	bind9Process.EXPECT().GetCwd().Return("/etc", nil)
-	bind9Process.EXPECT().GetPid().Return(int32(5678))
+	bind9Process.EXPECT().GetName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().GetCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().GetCwd().AnyTimes().Return("/etc", nil)
+	// Changing the PID should not affect the test result.
+	gomock.InOrder(
+		bind9Process.EXPECT().GetPid().Times(1).Return(int32(5678)),
+		bind9Process.EXPECT().GetPid().Times(1).Return(int32(5679)),
+		bind9Process.EXPECT().GetPid().Times(1).Return(int32(5680)),
+	)
 
 	unknownProcess := NewMockProcess(ctrl)
-	unknownProcess.EXPECT().GetName().Return("unknown", nil)
+	unknownProcess.EXPECT().GetName().AnyTimes().Return("unknown", nil)
 
 	processManager := NewMockProcessManager(ctrl)
-	processManager.EXPECT().ListProcesses().Return([]Process{
+	processManager.EXPECT().ListProcesses().AnyTimes().Return([]Process{
 		keaProcess, bind9Process, unknownProcess,
 	}, nil)
 
@@ -216,13 +221,33 @@ func TestDetectApps(t *testing.T) {
 
 	// Act
 	am.detectApps(sa)
+	apps := am.apps
 
 	// Assert
-	require.Len(t, am.apps, 2)
-	require.Equal(t, AppTypeKea, am.apps[0].GetBaseApp().Type)
-	require.EqualValues(t, 1234, am.apps[0].GetBaseApp().Pid)
-	require.Equal(t, AppTypeBind9, am.apps[1].GetBaseApp().Type)
-	require.EqualValues(t, 5678, am.apps[1].GetBaseApp().Pid)
+	require.Len(t, apps, 2)
+	require.Equal(t, AppTypeKea, apps[0].GetBaseApp().Type)
+	require.EqualValues(t, 1234, apps[0].GetBaseApp().Pid)
+	require.Equal(t, AppTypeBind9, apps[1].GetBaseApp().Type)
+	require.EqualValues(t, 5678, apps[1].GetBaseApp().Pid)
+
+	// Detect tha apps again. The zone inventory should be preserved.
+	am.detectApps(sa)
+	apps2 := am.apps
+	require.Len(t, apps2, 2)
+	require.Equal(t, apps[1].(*Bind9App).zoneInventory, apps2[1].(*Bind9App).zoneInventory)
+
+	// If the app access point changes, the inventory should be recreated.
+	for index, accessPoint := range am.apps[1].(*Bind9App).AccessPoints {
+		if accessPoint.Type == AccessPointControl {
+			// Change the access point port.
+			am.apps[1].(*Bind9App).AccessPoints[index].Port = 5453
+		}
+	}
+	// Redetect apps. It should result in recreating the zone inventory.
+	am.detectApps(sa)
+	apps3 := am.apps
+	require.Len(t, apps3, 2)
+	require.NotEqual(t, apps[1].(*Bind9App).zoneInventory, apps3[1].(*Bind9App).zoneInventory)
 }
 
 // Test that the processes for which the command line cannot be read are
@@ -866,6 +891,7 @@ func TestBaseAppEqual(t *testing.T) {
 	require.False(t, app1.IsEqual(app5))
 }
 
+// Test that the DNS zone inventories are successfully populated.
 func TestPopulateZoneInventories(t *testing.T) {
 	response := map[string]any{
 		"views": map[string]any{
