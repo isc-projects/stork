@@ -502,10 +502,13 @@ def finish(request):
                 f.write(ps_stdout)
 
     def collect_metrics(test_dir: Path):
-        test_dir.mkdir(exist_ok=True)
-
         compose = create_docker_compose()
         service_names = compose.get_created_services()
+
+        if len(service_names) == 0:
+            return
+
+        test_dir.mkdir(exist_ok=True)
 
         report_paths = []
         for service_name in service_names:
@@ -525,20 +528,25 @@ def finish(request):
             )
 
     def collect_logs_and_down_all():
-        tests_dir = Path("test-results")
-        tests_dir.mkdir(exist_ok=True)
         test_name = function_name
         test_name = test_name.replace("[", "__")
         test_name = test_name.replace("/", "_")
         test_name = test_name.replace("]", "")
-        test_dir = tests_dir / test_name
+
+        test_dir = Path("test-results")
+        test_dir = test_dir / test_name
         if test_dir.exists():
             shutil.rmtree(test_dir)
+
+        perf_dir = Path("performance-results")
+        perf_dir = perf_dir / test_name
+        if perf_dir.exists():
+            shutil.rmtree(perf_dir)
 
         # The result directory is not created yet.
 
         collect_logs(test_dir)
-        collect_metrics(test_dir)
+        collect_metrics(perf_dir)
         # Down all containers
         compose = create_docker_compose()
         compose.down()

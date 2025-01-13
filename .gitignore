@@ -68,6 +68,7 @@ docker/config/agent-kea-many-subnets/kea-dhcp4.conf
 # tests venv and pycache
 /tests/system/venv/
 /tests/system/test-results/
+/tests/system/performance-results/
 .vscode/
 /isc-stork-*.deb
 /isc-stork-*.rpm

@@ -87,6 +87,12 @@ def pytest_sessionstart(session):  # pylint: disable=unused-argument
     tests_dir = Path("test-results")
     if tests_dir.exists():
         shutil.rmtree(tests_dir)
+    os.makedirs(tests_dir)
+
+    perf_dir = Path("performance-results")
+    if perf_dir.exists():
+        shutil.rmtree(perf_dir)
+    os.makedirs(perf_dir)
 
 
 def is_debugger_active():
