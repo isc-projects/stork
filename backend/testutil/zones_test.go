@@ -8,13 +8,13 @@ import (
 
 // Test generating random zones.
 func TestGenerateRandomZones(t *testing.T) {
-	zones := GenerateRandomZones(10)
-	require.Len(t, zones, 10)
+	zones := GenerateRandomZones(1000)
+	require.Len(t, zones, 1000)
 
 	// Ensure we got 10 distinct zones.
 	distinctZones := make(map[string]struct{})
 	for _, zone := range zones {
 		distinctZones[zone.Name] = struct{}{}
 	}
-	require.Len(t, distinctZones, 10)
+	require.Len(t, distinctZones, 1000)
 }

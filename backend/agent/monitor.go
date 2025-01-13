@@ -385,7 +385,7 @@ func (sm *appMonitor) populateZoneInventories() {
 				continue
 			}
 			var busyError *zoneInventoryBusyError
-			if _, err := bind9app.zoneInventory.populate(); err != nil {
+			if _, err := bind9app.zoneInventory.populate(false); err != nil {
 				switch {
 				case errors.As(err, &busyError):
 					// Inventory creation is in progress. This is not an error.

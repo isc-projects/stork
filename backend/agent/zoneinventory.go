@@ -46,7 +46,7 @@ type zoneFetcher interface {
 	getViews(host string, port int64) (httpResponse, *bind9stats.Views, error)
 }
 
-// An error indicating that the zone inventory is busy and the requested operation
+// An error indicating that the zone inventory is busy and the requested transition
 // cannot be invoked.
 //
 // The zone inventory is busy when it is running a long lasting operation in
@@ -76,7 +76,7 @@ func (e zoneInventoryBusyError) Error() string {
 }
 
 // An error indicating that the inventory hasn't been populated yet. It means that
-// the agent has not contacted the DNS server yet to fetch the list of zones.
+// the agent has not yet contacted the DNS server to fetch the list of zones.
 type zoneInventoryNotInitedError struct{}
 
 // Instantiates the error.
@@ -101,22 +101,7 @@ func newZoneInventoryNoDiskStorageError() error {
 
 // Returns error string.
 func (e zoneInventoryNoDiskStorageError) Error() string {
-	return "zone inventory cannot be loaded because it has no disk storage"
-}
-
-// An error indicating that no memory storage is configured for the inventory.
-// This is the case when the zoneInventoryStorageDisk is used as a storage. In
-// that case the zones are stored on disk only.
-type zoneInventoryNoMemoryStorageError struct{}
-
-// Instantiates the error.
-func newZoneInventoryNoMemoryStorageError() error {
-	return &zoneInventoryNoMemoryStorageError{}
-}
-
-// Returns error string.
-func (e zoneInventoryNoMemoryStorageError) Error() string {
-	return "zone inventory cannot be loaded because it has no memory storage"
+	return "zone inventory has no persistent storage"
 }
 
 // An interface implemented for all supported storage types:
@@ -217,6 +202,32 @@ func (storage zoneInventoryStorageMemory) hasDiskStorage() bool {
 	return false
 }
 
+// Zone inventory state name type. This type is used instead of a string
+// to ensure that the caller uses state names from the pool defined below.
+// It ensures that the correct state name is used (e.g., prevents typos etc.).
+type zoneInventoryStateName string
+
+const (
+	// Initial state: the zone information was never fetched from DNS server.
+	zoneInventoryStateInitial zoneInventoryStateName = "INITIAL"
+	// The inventory is reading the zones from disk into memory.
+	zoneInventoryStateLoading zoneInventoryStateName = "LOADING"
+	// The inventory finished reading the zones from disk.
+	zoneInventoryStateLoaded zoneInventoryStateName = "LOADED"
+	// Loading the inventory failed.
+	zoneInventoryStateLoadingErred zoneInventoryStateName = "LOADING_ERRED"
+	// The inventory is fetching the zones from a DNS server.
+	zoneInventoryStatePopulating zoneInventoryStateName = "POPULATING"
+	// The inventory finished fetching the zones from the DNS server.
+	zoneInventoryStatePopulated zoneInventoryStateName = "POPULATED"
+	// Fetching the zones from the DNS server and/or saving them failed.
+	zoneInventoryStatePopulatingErred zoneInventoryStateName = "POPULATING_ERRED"
+	// A caller is receiving zones from the inventory.
+	zoneInventoryStateReceivingZones zoneInventoryStateName = "RECEIVING_ZONES"
+	// A caller finished receiving the zones from the inventory.
+	zoneInventoryStateReceivedZones zoneInventoryStateName = "RECEIVED_ZONES"
+)
+
 // Zone inventory state.
 //
 // The inventory is a state machine which internally keeps track
@@ -227,36 +238,18 @@ func (storage zoneInventoryStorageMemory) hasDiskStorage() bool {
 // inventory may signal to the caller that selected operation may
 // not be performed at the given time and should be retried later.
 type zoneInventoryState struct {
-	name      string
+	// State name.
+	name zoneInventoryStateName
+	// State creation time.
 	createdAt time.Time
-	err       error
+	// An error set for the states occurring after a failure.
+	err error
 }
 
-const (
-	// Initial state: the zone information was never fetched from DNS server.
-	zoneInventoryStateInitial = "INITIAL"
-	// The inventory is reading the zones from disk into memory.
-	zoneInventoryStateLoading = "LOADING"
-	// The inventory finished reading the zones from disk.
-	zoneInventoryStateLoaded = "LOADED"
-	// Loading the inventory failed.
-	zoneInventoryStateLoadingErred = "LOADING_ERRED"
-	// The inventory is fetching the zones from a DNS server.
-	zoneInventoryStatePopulating = "POPULATING"
-	// The inventory finished fetching the zones from the DNS server.
-	zoneInventoryStatePopulated = "POPULATED"
-	// Fetching the zones from the DNS server and/or saving them failed.
-	zoneInventoryStatePopulatingErred = "POPULATING_ERRED"
-	// A caller is receiving zones from the inventory.
-	zoneInventoryStateReceivingZones = "RECEIVING_ZONES"
-	// A caller finished receiving the zones from the inventory.
-	zoneInventoryStateReceivedZones = "RECEIVED_ZONES"
-)
-
 // Creates selected inventory state.
-func newZoneInventoryState(zoneInventoryStateName string, createdAt time.Time, err error) *zoneInventoryState {
+func newZoneInventoryState(name zoneInventoryStateName, createdAt time.Time, err error) *zoneInventoryState {
 	state := &zoneInventoryState{
-		name:      zoneInventoryStateName,
+		name:      name,
 		err:       err,
 		createdAt: time.Now(),
 	}
@@ -347,8 +340,11 @@ func (state zoneInventoryState) isErred() bool {
 	}
 }
 
-// Zone inventory metadata stored in the inventory.json file.
+// Metadata describing the zone inventory.
 type ZoneInventoryMeta struct {
+	// A timestamp when the zone inventory was populated.
+	// It can be used to make a decision about updating the
+	// inventory.
 	PopulatedAt time.Time
 }
 
@@ -358,22 +354,25 @@ type ZoneInventoryMeta struct {
 // maintaining this information and exposing to the callers (typically Stork
 // server). It runs long lasting operations in background and ensures that the
 // conflicting calls cannot be invoked. Fetched zones can be stored in memory
-// and/or on disk.
+// and/or on disk, depending on the configuration.
 type zoneInventory struct {
-	storage      zoneInventoryStorage
-	client       zoneFetcher
-	host         string
-	port         int64
-	state        *zoneInventoryState
-	formerStates map[string]*zoneInventoryState
-	views        *bind9stats.Views
-	mutex        sync.RWMutex
-	wg           sync.WaitGroup
+	storage       zoneInventoryStorage
+	client        zoneFetcher
+	host          string
+	port          int64
+	state         zoneInventoryStateName
+	visitedStates map[zoneInventoryStateName]*zoneInventoryState
+	views         *bind9stats.Views
+	mutex         sync.RWMutex
+	wg            sync.WaitGroup
 }
 
 // A message sent over the channels to notify that the long lasting
-// operation has completed.
-type zoneInventoryAsyncNotify struct{}
+// operation has completed. If the operation failed the err field
+// contains the error.
+type zoneInventoryAsyncNotify struct {
+	err error
+}
 
 // A structure encapsulating a zone streamed by the inventory.
 // It includes an optional err field which signals an error during
@@ -383,9 +382,9 @@ type zoneInventoryReceiveZoneResult struct {
 	err  error
 }
 
-// Instantiates an inventory. If the specified storage stores the zone information on
-// disk this function prepares required data structures. An error is returned if creating
-// these data structured fails.
+// Instantiates the inventory. If the specified storage saves the zone information on
+// disk this function prepares required directory structures. An error is returned if
+// creating these structures fails.
 func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host string, port int64) (*zoneInventory, error) {
 	if storage.hasDiskStorage() {
 		// The inventory will store zone information on disk. Create the necessary
@@ -415,8 +414,8 @@ func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host str
 		client:  client,
 		host:    host,
 		port:    port,
-		state:   state,
-		formerStates: map[string]*zoneInventoryState{
+		state:   state.name,
+		visitedStates: map[zoneInventoryStateName]*zoneInventoryState{
 			zoneInventoryStateInitial: state,
 		},
 		mutex: sync.RWMutex{},
@@ -425,12 +424,13 @@ func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host str
 	}, nil
 }
 
-// Removes the inventory metadata.
+// Removes the inventory metadata file if it exists.
 func (inventory *zoneInventory) removeMeta() error {
 	metaFileName := path.Join(inventory.storage.getStorageLocation(), zoneInventoryMetaFileName)
 	err := os.Remove(metaFileName)
 	var pathError *fs.PathError
 	if errors.As(err, &pathError) {
+		// If the file doesn't exist it is not an error.
 		return nil
 	}
 	return errors.Wrapf(err, "failed to remove the inventory metadata file %s", metaFileName)
@@ -476,47 +476,63 @@ func (inventory *zoneInventory) readMeta() (*ZoneInventoryMeta, error) {
 	return &meta, nil
 }
 
-// Transitions the inventory to a new state. A call to this function
-// must be protected by mutex.
-func (inventory *zoneInventory) transitionUnsafe(newState *zoneInventoryState) {
-	inventory.state = newState
-	inventory.formerStates[newState.name] = newState
+// Transitions the inventory to a new state. It returns a zoneInventoryBusyError if the
+// current state does not permit such a transition. A call to this function must be
+// protected by mutex.
+func (inventory *zoneInventory) transitionUnsafe(newState *zoneInventoryState) error {
+	state := inventory.getCurrentStateUnsafe()
+	if inventory.getCurrentStateUnsafe().isLongLasting() && newState.isLongLasting() {
+		return newZoneInventoryBusyError(state, newState)
+	}
+	inventory.state = newState.name
+	inventory.visitedStates[newState.name] = newState
+	return nil
 }
 
 // Transitions the inventory to a new state. It is safe for concurrent use.
-func (inventory *zoneInventory) transition(newState *zoneInventoryState) {
+func (inventory *zoneInventory) transition(newState *zoneInventoryState) error {
 	inventory.mutex.Lock()
 	defer inventory.mutex.Unlock()
-	inventory.transitionUnsafe(newState)
+	return inventory.transitionUnsafe(newState)
 }
 
-// Transitions the inventory to a new state, sets views and clears last
-// error. A call to this function must be protected by mutex.
-func (inventory *zoneInventory) transitionWithViewsUnsafe(newState *zoneInventoryState, views *bind9stats.Views) {
-	inventory.state = newState
+// Transitions the inventory to a new state and sets views. A call to this
+// function must be protected by mutex.
+func (inventory *zoneInventory) transitionWithViewsUnsafe(newState *zoneInventoryState, views *bind9stats.Views) error {
+	if err := inventory.transitionUnsafe(newState); err != nil {
+		return err
+	}
 	inventory.views = views
+	return nil
 }
 
 // Transitions the inventory to a new state, sets views and clears last
 // error. It is safe for concurrent use.
-func (inventory *zoneInventory) transitionWithViews(newState *zoneInventoryState, views *bind9stats.Views) {
+func (inventory *zoneInventory) transitionWithViews(newState *zoneInventoryState, views *bind9stats.Views) error {
 	inventory.mutex.Lock()
 	defer inventory.mutex.Unlock()
-	inventory.transitionWithViewsUnsafe(newState, views)
+	return inventory.transitionWithViewsUnsafe(newState, views)
+}
+
+// Returns current inventory state. A cal to this function must be protected
+// by a mutex.
+func (inventory *zoneInventory) getCurrentStateUnsafe() *zoneInventoryState {
+	return inventory.visitedStates[inventory.state]
 }
 
 // Returns current inventory state. It is safe for concurrent use.
 func (inventory *zoneInventory) getCurrentState() *zoneInventoryState {
 	inventory.mutex.RLock()
 	defer inventory.mutex.RUnlock()
-	return inventory.state
+	return inventory.getCurrentStateUnsafe()
 }
 
-// Returns former inventory state by name.
-func (inventory *zoneInventory) getFormerState(name string) *zoneInventoryState {
+// Returns visited inventory state by name. It returns nil if the state
+// with this name has not been visited.
+func (inventory *zoneInventory) getVisitedState(name zoneInventoryStateName) *zoneInventoryState {
 	inventory.mutex.RLock()
 	defer inventory.mutex.RUnlock()
-	return inventory.formerStates[name]
+	return inventory.visitedStates[name]
 }
 
 // Returns an iterator to the views. Depending on the type of the
@@ -525,6 +541,8 @@ func (inventory *zoneInventory) getViewsIterator(filter *bind9stats.ZoneFilter) 
 	return func(yield func(bind9stats.ZoneIteratorAccessor, error) bool) {
 		switch {
 		case inventory.storage.hasMemoryStorage():
+			// If we have in-memory storage it is way more efficient
+			// to use it than the disk storage.
 			for _, view := range inventory.views.Views {
 				if filter != nil && filter.View != nil && *filter.View != view.Name {
 					continue
@@ -534,6 +552,8 @@ func (inventory *zoneInventory) getViewsIterator(filter *bind9stats.ZoneFilter) 
 				}
 			}
 		case inventory.storage.hasDiskStorage():
+			// If there is no memory storage we have no other way but use
+			// the disk storage.
 			files, err := os.ReadDir(inventory.storage.getStorageLocation())
 			if err != nil {
 				err = errors.Wrapf(err, "failed to read view directory %s", inventory.storage.getStorageLocation())
@@ -551,6 +571,7 @@ func (inventory *zoneInventory) getViewsIterator(filter *bind9stats.ZoneFilter) 
 				}
 			}
 		default:
+			// An impossible condition.
 			return
 		}
 	}
@@ -559,20 +580,20 @@ func (inventory *zoneInventory) getViewsIterator(filter *bind9stats.ZoneFilter) 
 // Contacts a DNS server to fetch views and zones. Then, it processes the received
 // data to group them into collections that are stored in memory and/or on disk.
 // It returns a channel to which the caller can subscribe to receive a notification
-// about completion of populating the inventory.
-func (inventory *zoneInventory) populate() (chan zoneInventoryAsyncNotify, error) {
-	inventory.mutex.RLock()
-	isLongLasting := inventory.state.isLongLasting()
-	inventory.mutex.RUnlock()
-	// Populating the zones is a long lasting operation that must not run together
-	// with any other long lasting operation.
-	if isLongLasting {
-		return nil, newZoneInventoryBusyError(inventory.state, newZoneInventoryStatePopulating())
+// about completion of populating the inventory. The block parameter indicates whether
+// or not the caller will wait for the completion notification.
+func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNotify, error) {
+	// Start populating the zones. This transition may fail if
+	// there is another long lasting operation running.
+	if err := inventory.transition(newZoneInventoryStatePopulating()); err != nil {
+		return nil, err
 	}
-	// Start populating the zones.
-	inventory.transition(newZoneInventoryStatePopulating())
-	// The channel must be buffered to not block write when nobody listens.
-	notifyChannel := make(chan zoneInventoryAsyncNotify, 1)
+	var bufLen int
+	if !block {
+		// The channel must be buffered to not block write when nobody listens.
+		bufLen = 1
+	}
+	notifyChannel := make(chan zoneInventoryAsyncNotify, bufLen)
 	inventory.wg.Add(1)
 	go func() {
 		defer inventory.wg.Done()
@@ -605,17 +626,17 @@ func (inventory *zoneInventory) populate() (chan zoneInventoryAsyncNotify, error
 				"views": len(views.Views),
 			}).Info("Populated DNS zones for indicated number views")
 			if inventory.storage.hasMemoryStorage() {
-				inventory.transitionWithViews(newZoneInventoryStatePopulated(), views)
+				err = inventory.transitionWithViews(newZoneInventoryStatePopulated(), views)
 			} else {
-				inventory.transitionWithViews(newZoneInventoryStatePopulated(), nil)
+				err = inventory.transitionWithViews(newZoneInventoryStatePopulated(), nil)
 			}
 		} else {
-			log.WithError(err).Error("Failed to populate DNS zone views")
-			err = errors.WithMessage(err, "failed to populate DNS zone views")
-			inventory.transition(newZoneInventoryStatePopulatingErred(err))
+			err = inventory.transition(newZoneInventoryStatePopulatingErred(err))
 		}
 		// We are done populating the views. Send notification and close the channel.
-		notifyChannel <- zoneInventoryAsyncNotify{}
+		notifyChannel <- zoneInventoryAsyncNotify{
+			err,
+		}
 		close(notifyChannel)
 	}()
 	return notifyChannel, nil
@@ -623,35 +644,28 @@ func (inventory *zoneInventory) populate() (chan zoneInventoryAsyncNotify, error
 
 // Loads zone inventory from view and zone information files. It returns a channel
 // to which the caller can subscribe to receive a notification about completion of
-// loading the inventory.
-func (inventory *zoneInventory) load() (chan zoneInventoryAsyncNotify, error) {
-	var (
-		hasMemoryStorage bool
-		err              error
-	)
-	// Lock the inventory to check whether or not we can load()
-	// without other calls interfering.
-	inventory.mutex.RLock()
-	switch {
-	case !inventory.storage.hasDiskStorage():
+// loading the inventory. The block parameter indicates whether or not the caller
+// will wait for the completion notification.
+func (inventory *zoneInventory) load(block bool) (chan zoneInventoryAsyncNotify, error) {
+	if !inventory.storage.hasDiskStorage() {
 		// Disk storage is required because we're going to load the data
 		// from disk to memory.
-		err = newZoneInventoryNoDiskStorageError()
-	case inventory.state.isLongLasting():
-		// Loading the zones is a long lasting operation that must not run together
-		// with any other long lasting operation.
-		err = newZoneInventoryBusyError(inventory.state, newZoneInventoryStateLoading())
-	default:
-		hasMemoryStorage = inventory.storage.hasMemoryStorage()
+		return nil, newZoneInventoryNoDiskStorageError()
 	}
-	inventory.mutex.RUnlock()
-	if err != nil {
+	// Start loading the zones. This transition may fail if there is
+	// another long lasting operation running.
+	if err := inventory.transition(newZoneInventoryStateLoading()); err != nil {
 		return nil, err
 	}
-	inventory.transition(newZoneInventoryStateLoading())
-
-	// The channel must be buffered to not block write when nobody listens.
-	notifyChannel := make(chan zoneInventoryAsyncNotify, 1)
+	// This flag will be needed in the goroutine to decide whether or
+	// not to attempt to read the metadata file from the storage.
+	hasMemoryStorage := inventory.storage.hasMemoryStorage()
+	var bufLen int
+	if !block {
+		// The channel must be buffered to not block write when nobody listens.
+		bufLen = 1
+	}
+	notifyChannel := make(chan zoneInventoryAsyncNotify, bufLen)
 	inventory.wg.Add(1)
 	go func() {
 		defer inventory.wg.Done()
@@ -660,12 +674,13 @@ func (inventory *zoneInventory) load() (chan zoneInventoryAsyncNotify, error) {
 		if !hasMemoryStorage {
 			meta, err := inventory.readMeta()
 			if err != nil {
-				err = errors.WithMessage(err, "failed to load DNS zones inventory")
-				inventory.transition(newZoneInventoryStateLoadingErred(err))
+				_ = inventory.transition(newZoneInventoryStateLoadingErred(err))
 			} else {
-				inventory.transition(newZoneInventoryStateLoaded(meta.PopulatedAt))
+				_ = inventory.transition(newZoneInventoryStateLoaded(meta.PopulatedAt))
 			}
-			notifyChannel <- zoneInventoryAsyncNotify{}
+			notifyChannel <- zoneInventoryAsyncNotify{
+				err,
+			}
 			close(notifyChannel)
 			return
 		}
@@ -693,14 +708,14 @@ func (inventory *zoneInventory) load() (chan zoneInventoryAsyncNotify, error) {
 				"zones": views.GetZoneCount(),
 				"views": len(views.Views),
 			}).Info("Loaded DNS zones for indicated number views")
-			inventory.transitionWithViews(newZoneInventoryStateLoaded(time.Now().UTC()), bind9stats.NewViews(viewList))
+			_ = inventory.transitionWithViews(newZoneInventoryStateLoaded(time.Now().UTC()), bind9stats.NewViews(viewList))
 		} else {
-			log.WithError(err).Error("Failed to load DNS zones inventory")
-			err = errors.WithMessage(err, "failed to load DNS zones inventory")
-			inventory.transition(newZoneInventoryStateLoadingErred(err))
+			_ = inventory.transition(newZoneInventoryStateLoadingErred(err))
 		}
 		// We are done loading the views. Send notification and close the channel.
-		notifyChannel <- zoneInventoryAsyncNotify{}
+		notifyChannel <- zoneInventoryAsyncNotify{
+			err,
+		}
 		close(notifyChannel)
 	}()
 	return notifyChannel, nil
@@ -712,26 +727,29 @@ func (inventory *zoneInventory) load() (chan zoneInventoryAsyncNotify, error) {
 // server.
 func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9stats.ZoneFilter) (chan zoneInventoryReceiveZoneResult, error) {
 	var err error
-	inventory.mutex.RLock()
-	switch {
-	case inventory.state.isLongLasting():
-		err = newZoneInventoryBusyError(inventory.state, newZoneInventoryStateReceivingZones())
-	case inventory.state.isInitial(), inventory.state.isErred():
+	inventory.mutex.Lock()
+	state := inventory.getCurrentStateUnsafe()
+	if state.isInitial() || state.isErred() {
 		err = newZoneInventoryNotInitedError()
-	default:
+	} else {
+		// Make an unsafe transition because the mutex is already locked.
+		err = inventory.transitionUnsafe(newZoneInventoryStateReceivingZones())
 	}
-	inventory.mutex.RUnlock()
+	inventory.mutex.Unlock()
 	if err != nil {
 		return nil, err
 	}
-	inventory.transition(newZoneInventoryStateReceivingZones())
 	channel := make(chan zoneInventoryReceiveZoneResult)
 	go func() {
-		inventory.mutex.RLock()
 	OUTER_LOOP:
 		for view, err := range inventory.getViewsIterator(filter) {
 			if err != nil {
-				log.Error(err)
+				result := zoneInventoryReceiveZoneResult{
+					zone: nil,
+					err:  err,
+				}
+				channel <- result
+				// The caller can try another view.
 				continue
 			}
 			zones := view.GetZoneIterator(filter)
@@ -753,8 +771,7 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 				}
 			}
 		}
-		inventory.mutex.RUnlock()
-		inventory.transition(newZoneInventoryStateReceivedZones())
+		_ = inventory.transition(newZoneInventoryStateReceivedZones())
 		close(channel)
 	}()
 	return channel, nil
@@ -764,22 +781,15 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 // inventory storage it finds the zone information in memory or reads it from
 // disk.
 func (inventory *zoneInventory) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
-	var err error
-	inventory.mutex.RLock()
-	switch {
-	case inventory.state.isLongLasting():
-		err = newZoneInventoryBusyError(inventory.state, newZoneInventoryStateReceivingZones())
-	case inventory.state.isInitial(), inventory.state.isErred():
-		err = newZoneInventoryNotInitedError()
-	default:
-	}
-	inventory.mutex.RUnlock()
-	if err != nil {
-		return nil, err
+	state := inventory.getCurrentState()
+	if state.isInitial() || state.isErred() {
+		return nil, newZoneInventoryNotInitedError()
 	}
 	if inventory.storage.hasMemoryStorage() {
 		// If the inventory has a memory storage, let's use it to get the zone info.
+		inventory.mutex.RLock()
 		views := inventory.views
+		inventory.mutex.RUnlock()
 		if views != nil {
 			view := views.GetView(viewName)
 			if view != nil {

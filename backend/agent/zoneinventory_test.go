@@ -97,13 +97,7 @@ func TestZoneInventoryNotInitedError(t *testing.T) {
 // Test zoneInventoryNoDiskStorageError.
 func TestZoneInventoryNoDiskStorageError(t *testing.T) {
 	require.ErrorContains(t, newZoneInventoryNoDiskStorageError(),
-		"zone inventory cannot be loaded because it has no disk storage")
-}
-
-// Test zoneInventoryNoMemoryStorageError.
-func TestZoneInventoryNoMemoryStorageError(t *testing.T) {
-	require.ErrorContains(t, newZoneInventoryNoMemoryStorageError(),
-		"zone inventory cannot be loaded because it has no memory storage")
+		"zone inventory has no persistent storage")
 }
 
 // Test checking that the state is initial.
@@ -197,8 +191,8 @@ func TestNewZoneInventory(t *testing.T) {
 	require.Equal(t, client, inventory.client)
 	require.Equal(t, "myhost", inventory.host)
 	require.EqualValues(t, 1234, inventory.port)
-	require.NotNil(t, inventory.formerStates)
-	require.True(t, inventory.state.isInitial())
+	require.NotNil(t, inventory.visitedStates)
+	require.True(t, inventory.getCurrentState().isInitial())
 	require.Nil(t, inventory.views)
 }
 
@@ -240,26 +234,26 @@ func TestZoneInventoryTransition(t *testing.T) {
 	inventory.transition(newZoneInventoryStateLoaded(time.Time{}))
 	inventory.transition(newZoneInventoryStateLoadingErred(newZoneInventoryNoDiskStorageError()))
 
-	state := inventory.getFormerState(zoneInventoryStateInitial)
+	state := inventory.getVisitedState(zoneInventoryStateInitial)
 	require.NotNil(t, state)
 	require.Equal(t, zoneInventoryStateInitial, state.name)
 	require.Nil(t, state.err)
 	require.NotZero(t, state.createdAt)
 
-	state = inventory.getFormerState(zoneInventoryStateLoaded)
+	state = inventory.getVisitedState(zoneInventoryStateLoaded)
 	require.NotNil(t, state)
 	require.Equal(t, zoneInventoryStateLoaded, state.name)
 	require.Nil(t, state.err)
 	require.NotZero(t, state.createdAt)
 
-	state = inventory.getFormerState(zoneInventoryStateLoadingErred)
+	state = inventory.getVisitedState(zoneInventoryStateLoadingErred)
 	require.NotNil(t, state)
 	require.Equal(t, zoneInventoryStateLoadingErred, state.name)
 	require.NotNil(t, state.err)
 	require.ErrorIs(t, state.err, newZoneInventoryNoDiskStorageError())
 	require.NotZero(t, state.createdAt)
 
-	state = inventory.getFormerState(zoneInventoryStateReceivedZones)
+	state = inventory.getVisitedState(zoneInventoryStateReceivedZones)
 	require.Nil(t, state)
 }
 
@@ -288,8 +282,9 @@ func TestZoneInventoryPopulateMemoryDisk(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
 	}
@@ -334,7 +329,7 @@ func TestZoneInventoryPopulateMemory(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory/memory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -371,7 +366,7 @@ func TestZoneInventoryPopulateDisk(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory/disk.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -417,7 +412,7 @@ func TestZoneInventoryPopulateLongLastingTaskConflict(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory/disk.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -433,14 +428,14 @@ func TestZoneInventoryPopulateLongLastingTaskConflict(t *testing.T) {
 	require.Equal(t, zoneInventoryStateReceivingZones, inventory.getCurrentState().name)
 
 	// Populating the zones should fail because the inventory is busy.
-	_, err = inventory.populate()
+	_, err = inventory.populate(false)
 	require.Error(t, err)
 	var busyError *zoneInventoryBusyError
 	require.ErrorAs(t, err, &busyError)
 	require.Equal(t, zoneInventoryStateReceivingZones, inventory.getCurrentState().name)
 
 	// Loading should fail too.
-	_, err = inventory.load()
+	_, err = inventory.load(false)
 	require.Error(t, err)
 	require.ErrorAs(t, err, &busyError)
 	require.Equal(t, zoneInventoryStateReceivingZones, inventory.getCurrentState().name)
@@ -450,6 +445,44 @@ func TestZoneInventoryPopulateLongLastingTaskConflict(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorAs(t, err, &busyError)
 	require.Equal(t, zoneInventoryStateReceivingZones, inventory.getCurrentState().name)
+}
+
+// Test that shutdown can be called following the zones population.
+func TestZoneInventoryPopulateShutdown(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(5)
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create the inventory.
+	sandbox := testutil.NewSandbox()
+	// Create zone inventory.
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+
+	// Populate the zones into inventory/disk.
+	done, err := inventory.populate(true)
+	require.NoError(t, err)
+
+	go func() {
+		// Complete the operation in background because shutdown()
+		// blocks until the operation is complete. Add a short sleep
+		// to increase the likelihood that the shutdown is called
+		// before the notification is received.
+		time.Sleep(10 * time.Millisecond)
+		result := <-done
+		require.NoError(t, result.err)
+	}()
+	inventory.shutdown()
+	// Make sure that the long lasting operation was finished.
+	require.Equal(t, zoneInventoryStatePopulated, inventory.getCurrentState().name)
 }
 
 // Test loading the inventory from disk to memory.
@@ -477,7 +510,7 @@ func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones into disk.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -490,7 +523,7 @@ func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 	inventory.views.Views = nil
 
 	// Load the zones from disk.
-	done, err = inventory.load()
+	done, err = inventory.load(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStateLoading {
 		<-done
@@ -535,7 +568,7 @@ func TestZoneInventoryLoadMemory(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the views/zones from DNS server to memory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -548,7 +581,7 @@ func TestZoneInventoryLoadMemory(t *testing.T) {
 
 	// Attempting to load the views/zones should fail because there is
 	// no disk storage.
-	_, err = inventory.load()
+	_, err = inventory.load(false)
 	require.Error(t, err)
 	require.ErrorIs(t, err, newZoneInventoryNoDiskStorageError())
 
@@ -581,7 +614,7 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the views/zones from DNS server to disk.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -597,7 +630,7 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 
 	// Load the zones. Technically, it should merely check whether the zones
 	// have been populated and saved on disk, but not load them into memory.
-	done, err = inventory.load()
+	done, err = inventory.load(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStateLoading {
 		<-done
@@ -621,6 +654,121 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 	// the inventory creation time was read from disk.
 	require.Equal(t, zoneInventoryStateLoaded, inventory.getCurrentState().name)
 	require.Equal(t, time.Date(2002, 3, 3, 15, 43, 1, 2, time.UTC), inventory.getCurrentState().createdAt)
+}
+
+// Test that shutdown can be called during the zones loading.
+func TestZoneInventoryLoadShutdown(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(5)
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create the inventory.
+	sandbox := testutil.NewSandbox()
+	// Create zone inventory.
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+
+	// Populate the zones into inventory/disk.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	// Load the inventory.
+	done, err = inventory.load(true)
+	require.NoError(t, err)
+
+	go func() {
+		// Complete the operation in background because shutdown()
+		// blocks until the operation is complete. Add a short sleep
+		// to increase the likelihood that the shutdown is called
+		// before the notification is received.
+		time.Sleep(10 * time.Millisecond)
+		result := <-done
+		require.NoError(t, result.err)
+	}()
+	inventory.shutdown()
+	// Make sure that the long lasting operation was finished.
+	require.Equal(t, zoneInventoryStateLoaded, inventory.getCurrentState().name)
+}
+
+// Test that it is allowed to try to get the zone from a view while
+// a long lasting operation is running.
+func TestGetZoneInViewDuringLongLastingTask(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	bindZones := generateRandomZones(20)
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+			"_bind": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	sandbox := testutil.NewSandbox()
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+	defer inventory.shutdown()
+
+	// Populate the views/zones from DNS server to disk.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+	err = inventory.getCurrentState().err
+	require.NoError(t, err)
+
+	t.Run("populating", func(t *testing.T) {
+		done, err := inventory.populate(false)
+		require.NoError(t, err)
+
+		zone, err := inventory.getZoneInView("_bind", bindZones[0].Name())
+		require.NoError(t, err)
+		require.NotNil(t, zone)
+
+		<-done
+	})
+
+	t.Run("loading", func(t *testing.T) {
+		done, err := inventory.load(false)
+		require.NoError(t, err)
+
+		zone, err := inventory.getZoneInView("_bind", bindZones[0].Name())
+		require.NoError(t, err)
+		require.NotNil(t, zone)
+
+		<-done
+	})
+
+	t.Run("receiving zones", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		_, err := inventory.receiveZones(ctx, nil)
+		require.NoError(t, err)
+
+		zone, err := inventory.getZoneInView("_bind", bindZones[0].Name())
+		require.NoError(t, err)
+		require.NotNil(t, zone)
+	})
 }
 
 // Test that the zone inventory is sent zone by zone to the receiver
@@ -649,7 +797,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -790,7 +938,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -925,7 +1073,7 @@ func TestZoneInventoryReceiveZonesCancel(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -1004,7 +1152,7 @@ func TestZoneInventoryGetZoneInViewMemory(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -1056,7 +1204,7 @@ func TestZoneInventoryGetZoneInViewDisk(t *testing.T) {
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	require.NoError(t, err)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
@@ -1107,7 +1255,7 @@ func BenchmarkZoneInventoryLoad(b *testing.B) {
 			}
 
 			// Populate the zones to disk.
-			done, err := inventory.populate()
+			done, err := inventory.populate(false)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -1122,7 +1270,7 @@ func BenchmarkZoneInventoryLoad(b *testing.B) {
 			// Begin the actual benchmark.
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				done, err := inventory.load()
+				done, err := inventory.load(false)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -1162,7 +1310,7 @@ func BenchmarkZoneInventoryReceiveZonesMemory(b *testing.B) {
 			}
 
 			// Populate the zones from the DNS server to the inventory.
-			done, err := inventory.populate()
+			done, err := inventory.populate(false)
 			if err != nil {
 				b.Fatalf("error populating zone inventory %+v\n", err)
 			}
@@ -1224,7 +1372,7 @@ func BenchmarkZoneInventoryReceiveZonesDisk(b *testing.B) {
 			}
 
 			// Populate the zones from the DNS server to the inventory.
-			done, err := inventory.populate()
+			done, err := inventory.populate(false)
 			if err != nil {
 				b.Fatalf("error populating zone inventory %+v\n", err)
 			}
@@ -1281,7 +1429,7 @@ func BenchmarkZoneInventoryGetZoneInView(b *testing.B) {
 	}
 
 	// Populate the zones from the DNS server to the inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -1329,7 +1477,7 @@ func BenchmarkZoneInventoryGetZoneInViewDiskStorage(b *testing.B) {
 	}
 
 	// Populate the zones into the inventory.
-	done, err := inventory.populate()
+	done, err := inventory.populate(false)
 	if err != nil {
 		b.Fatal(err)
 	}
