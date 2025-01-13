@@ -51,7 +51,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     activeTabIdx = 0
     tabs: MenuItem[]
     activeItem: MenuItem
-    // TODO: is the object type required?
     openedMachines: { machine: Machine }[]
     machineTab: { machine: Machine }
 
@@ -328,7 +327,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         summary: 'Machine refreshed',
                         detail: 'Refreshing succeeded.',
                     })
-                    // TODO should the code below go here?
                 }
 
                 // refresh machine in machines list

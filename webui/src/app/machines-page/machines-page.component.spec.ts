@@ -4,7 +4,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
@@ -28,6 +28,10 @@ import { MessagesModule } from 'primeng/messages'
 import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { MachinesTableComponent } from '../machines-table/machines-table.component'
+import { BadgeModule } from 'primeng/badge'
+import { PanelModule } from 'primeng/panel'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -52,6 +56,7 @@ describe('MachinesPageComponent', () => {
                 ServicesService,
                 UsersService,
                 { provide: VersionService, useValue: versionServiceStub },
+                ConfirmationService,
             ],
             imports: [
                 HttpClientTestingModule,
@@ -76,6 +81,9 @@ describe('MachinesPageComponent', () => {
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 MessagesModule,
+                ConfirmDialogModule,
+                BadgeModule,
+                PanelModule,
             ],
             declarations: [
                 MachinesPageComponent,
@@ -85,6 +93,7 @@ describe('MachinesPageComponent', () => {
                 HelpTipComponent,
                 AppDaemonsStatusComponent,
                 VersionStatusComponent,
+                MachinesTableComponent,
             ],
         }).compileComponents()
 
@@ -96,6 +105,7 @@ describe('MachinesPageComponent', () => {
         router = fixture.debugElement.injector.get(Router)
         route = fixture.debugElement.injector.get(ActivatedRoute)
         fixture.debugElement.injector.get(VersionService)
+        fixture.debugElement.injector.get(ConfirmationService)
 
         fixture.detectChanges()
         tick()
@@ -214,8 +224,8 @@ describe('MachinesPageComponent', () => {
     })
 
     it('should list machines', fakeAsync(() => {
-        expect(component.showUnauthorized).toBeFalse()
-        expect(component.tabs?.[0].routerLink).toBe('/machines/authorized')
+        expect(component.showAuthorized).toBeNull()
+        expect(component.tabs?.[0].routerLink).toBe('/machines/all')
 
         // get references to select buttons
         const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
@@ -237,11 +247,11 @@ describe('MachinesPageComponent', () => {
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
-        expect(component.showUnauthorized).toBeTrue()
-        expect(component.totalMachines).toBe(3)
+        expect(component.showAuthorized).toBeFalse()
+        expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
-        expect(component.tabs?.[0].routerLink).toBe('/machines/unauthorized')
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized')
+        expect(component.tabs?.[0].routerLink).toBe('/machines/all?authorized=false')
 
         // check if hostnames are displayed
         const nativeEl = fixture.nativeElement
@@ -253,11 +263,11 @@ describe('MachinesPageComponent', () => {
         authSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
-        expect(component.showUnauthorized).toBeFalse()
-        expect(component.totalMachines).toBe(2)
+        expect(component.showAuthorized).toBeTrue()
+        expect(component.table.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
-        expect(component.tabs?.[0].routerLink).toBe('/machines/authorized')
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized')
+        expect(component.tabs?.[0].routerLink).toBe('/machines/all?authorized=true')
 
         // check if hostnames are displayed
         expect(nativeEl.textContent).toContain('zzz')
@@ -269,10 +279,10 @@ describe('MachinesPageComponent', () => {
         spyOn(servicesApi, 'getUnauthorizedMachinesCount').and.returnValue(of(4 as any))
         tick()
         fixture.detectChanges()
-        component.refreshUnauthorizedMachinesCount()
+        // component.refreshUnauthorizedMachinesCount()
 
         expect(component.unauthorizedMachinesCount).toBe(4)
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (4)')
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized')
     }))
 
     it('should list unauthorized machines requested via URL', fakeAsync(() => {
@@ -286,11 +296,12 @@ describe('MachinesPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(component.showUnauthorized).toBeTrue()
+        expect(component.showAuthorized).toBeFalse()
     }))
 
     it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - first machine fails', fakeAsync(() => {
-        expect(component.showUnauthorized).toBeFalse()
+        // expect(component.showUnauthorized).toBeFalse()
+        expect(component.showAuthorized).toBeTrue()
 
         // get references to select buttons
         const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
@@ -329,8 +340,9 @@ describe('MachinesPageComponent', () => {
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
-        expect(component.showUnauthorized).toBeTrue()
-        expect(component.totalMachines).toBe(3)
+        // expect(component.showUnauthorized).toBeTrue()
+        expect(component.showAuthorized).toBeFalse()
+        expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
 
@@ -376,8 +388,9 @@ describe('MachinesPageComponent', () => {
         // we expect that unauthorized machines list was not changed due to 502 error
         // 'updateMachine' API was called only once for the first machine
         expect(umSpy).toHaveBeenCalledWith(1, { hostname: 'aaa', id: 1, address: 'addr1', authorized: true })
-        expect(component.showUnauthorized).toBeTrue()
-        expect(component.totalMachines).toBe(3)
+        // expect(component.showUnauthorized).toBeTrue()
+        expect(component.showAuthorized).toBeFalse()
+        expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
 
@@ -390,8 +403,9 @@ describe('MachinesPageComponent', () => {
         authSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
-        expect(component.showUnauthorized).toBeFalse()
-        expect(component.totalMachines).toBe(2)
+        // expect(component.showUnauthorized).toBeFalse()
+        expect(component.showAuthorized).toBeTrue()
+        expect(component.table.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
 
@@ -403,7 +417,8 @@ describe('MachinesPageComponent', () => {
     }))
 
     it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - second machine fails', fakeAsync(() => {
-        expect(component.showUnauthorized).toBeFalse()
+        // expect(component.showUnauthorized).toBeFalse()
+        expect(component.showAuthorized).toBeTrue()
 
         // get references to select buttons
         const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
@@ -453,8 +468,9 @@ describe('MachinesPageComponent', () => {
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
-        expect(component.showUnauthorized).toBeTrue()
-        expect(component.totalMachines).toBe(3)
+        // expect(component.showUnauthorized).toBeTrue()
+        expect(component.showAuthorized).toBeFalse()
+        expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
 
@@ -502,8 +518,9 @@ describe('MachinesPageComponent', () => {
         expect(umSpy).toHaveBeenCalledWith(1, { hostname: 'aaa', id: 1, address: 'addr1', authorized: true })
         expect(umSpy).toHaveBeenCalledWith(2, { hostname: 'bbb', id: 2, address: 'addr2', authorized: true })
 
-        expect(component.showUnauthorized).toBeTrue()
-        expect(component.totalMachines).toBe(2)
+        // expect(component.showUnauthorized).toBeTrue()
+        expect(component.showAuthorized).toBeFalse()
+        expect(component.table.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(2)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (2)')
 
@@ -518,8 +535,9 @@ describe('MachinesPageComponent', () => {
         expect(gmSpy).toHaveBeenCalledTimes(3)
         expect(gumcSpy).toHaveBeenCalledTimes(1)
 
-        expect(component.showUnauthorized).toBeFalse()
-        expect(component.totalMachines).toBe(3)
+        // expect(component.showUnauthorized).toBeFalse()
+        expect(component.showAuthorized).toBeTrue()
+        expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(2)
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (2)')
 
@@ -543,7 +561,7 @@ describe('MachinesPageComponent', () => {
         spyOn(servicesApi, 'getMachines').and.returnValue(of(getAuthorizedMachinesResp))
         // ngOnInit was already called before we prepared the static response.
         // We have to reload the machines list manually.
-        component.loadMachines({ first: 0, rows: 0, filters: {} })
+        component.table.loadDataWithoutFilter()
         flush()
         fixture.detectChanges()
 
@@ -635,7 +653,7 @@ describe('MachinesPageComponent', () => {
         spyOn(servicesApi, 'getMachines').and.returnValue(of(getAuthorizedMachinesResp))
         // ngOnInit was already called before we prepared the static response.
         // We have to reload the machines list manually.
-        component.loadMachines({ first: 0, rows: 0, filters: {} })
+        component.table.loadDataWithoutFilter()
 
         await fixture.whenStable()
         fixture.detectChanges()
@@ -647,7 +665,7 @@ describe('MachinesPageComponent', () => {
         expect(textContent).toContain('named')
 
         // One VersionStatus for Stork agent + one for Kea + one for BIND9.
-        let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
+        const versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
         expect(versionStatus).toBeTruthy()
         expect(versionStatus.length).toEqual(3)
 
@@ -692,14 +710,16 @@ describe('MachinesPageComponent', () => {
         tick()
 
         // Initially, we show authorized machines. In that case we don't show a warning.
-        expect(component.showUnauthorized).toBeFalse()
+        // expect(component.showUnauthorized).toBeFalse()
+        expect(component.showAuthorized).toBeTrue()
         let messages = fixture.debugElement.query(By.css('p-messages'))
         expect(messages).toBeFalsy()
 
         // Show unauthorized machines.
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
-        expect(component.showUnauthorized).toBeTrue()
+        // expect(component.showUnauthorized).toBeTrue()
+        expect(component.showAuthorized).toBeFalse()
 
         // This time we should show the warning that the machines registration is disabled.
         messages = fixture.debugElement.query(By.css('p-messages'))
@@ -728,14 +748,16 @@ describe('MachinesPageComponent', () => {
         tick()
 
         // Showing authorized machines. The warning is never displayed in such a case.
-        expect(component.showUnauthorized).toBeFalse()
+        // expect(component.showUnauthorized).toBeFalse()
+        expect(component.showAuthorized).toBeTrue()
         let messages = fixture.debugElement.query(By.css('p-messages'))
         expect(messages).toBeFalsy()
 
         // Show unauthorized machines.
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
-        expect(component.showUnauthorized).toBeTrue()
+        // expect(component.showUnauthorized).toBeTrue()
+        expect(component.showAuthorized).toBeFalse()
 
         // The warning should not be displayed because the registration is enabled.
         messages = fixture.debugElement.query(By.css('p-messages'))

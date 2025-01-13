@@ -1,6 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { MachinesTableComponent } from './machines-table.component'
+import { RouterModule } from '@angular/router'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { MessageService } from 'primeng/api'
+import { ButtonModule } from 'primeng/button'
+import { TableModule } from 'primeng/table'
+import { PanelModule } from 'primeng/panel'
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { FormsModule } from '@angular/forms'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -8,7 +20,19 @@ describe('MachinesTableComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [MachinesTableComponent],
+            imports: [
+                RouterModule.forRoot([]),
+                HttpClientTestingModule,
+                ButtonModule,
+                TableModule,
+                PanelModule,
+                BrowserAnimationsModule,
+                OverlayPanelModule,
+                TriStateCheckboxModule,
+                FormsModule,
+            ],
+            declarations: [MachinesTableComponent, HelpTipComponent, PluralizePipe],
+            providers: [MessageService],
         }).compileComponents()
 
         fixture = TestBed.createComponent(MachinesTableComponent)
