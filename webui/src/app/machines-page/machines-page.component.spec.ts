@@ -42,6 +42,7 @@ import { BadgeModule } from 'primeng/badge'
 import { PanelModule } from 'primeng/panel'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { TagModule } from 'primeng/tag'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -52,7 +53,8 @@ describe('MachinesPageComponent', () => {
     let router: Router
     let route: ActivatedRoute
     let versionServiceStub: Partial<VersionService>
-    let routerEventSubject: Observable<Event>
+    let routerEventSubject: BehaviorSubject<NavigationEnd>
+    let unauthorizedMachinesCountBadge: HTMLElement
 
     beforeEach(async () => {
         versionServiceStub = {
@@ -97,6 +99,7 @@ describe('MachinesPageComponent', () => {
                 BadgeModule,
                 PanelModule,
                 TriStateCheckboxModule,
+                TagModule,
             ],
             declarations: [
                 MachinesPageComponent,
@@ -125,9 +128,44 @@ describe('MachinesPageComponent', () => {
         router = fixture.debugElement.injector.get(Router)
         routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'machines', 'machines/all'))
         spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
+        unauthorizedMachinesCountBadge = fixture.nativeElement.querySelector('div.p-selectbutton span.p-badge')
 
         fixture.detectChanges()
     })
+
+    /**
+     * Triggers the component handler called when the route changes.
+     * @param params The parameters to pass to the route.
+     * @param queryParams The queryParameters to pass to the route.
+     */
+    function navigate(
+        params: { id?: number | string },
+        queryParams?: { authorized?: 'true' | 'false'; text?: string }
+    ) {
+        route.snapshot = {
+            paramMap: convertToParamMap(params),
+            queryParamMap: convertToParamMap(queryParams || {}),
+        } as ActivatedRouteSnapshot
+
+        const queryParamsList = []
+        for (const k in queryParams) {
+            if (queryParams[k]) {
+                queryParamsList.push(`${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`)
+            }
+        }
+
+        const eid = routerEventSubject.getValue().id + 1
+        routerEventSubject.next(
+            new NavigationEnd(
+                eid,
+                `machines/${params.id}?${queryParamsList.join('&')}`,
+                `machines/${params.id}?${queryParamsList.join('&')}`
+            )
+        )
+
+        flush()
+        fixture.detectChanges()
+    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
@@ -267,9 +305,13 @@ describe('MachinesPageComponent', () => {
         expect(component.tabs?.[0].routerLink).toBe('/machines/all')
 
         // get references to select buttons
-        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
+        const selectButtons = fixture.debugElement.queryAll(By.css('#unauthorized-select-button .p-button'))
+        expect(selectButtons).toBeTruthy()
+        expect(selectButtons.length).toBeGreaterThanOrEqual(2)
         const authSelectBtnEl = selectButtons[0]
         const unauthSelectBtnEl = selectButtons[1]
+        expect(authSelectBtnEl).toBeTruthy()
+        expect(unauthSelectBtnEl).toBeTruthy()
 
         // prepare response for call to getMachines for (un)authorized machines
         const getUnauthorizedMachinesResp: any = {
@@ -283,12 +325,16 @@ describe('MachinesPageComponent', () => {
         gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
 
         // show unauthorized machines
-        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        unauthSelectBtnEl.nativeElement.click()
+        navigate({ id: 'all' }, { authorized: 'false' })
+        tick()
         fixture.detectChanges()
 
+        // expect(gmSpy).toHaveBeenCalledOnceWith(3)
         expect(component.showAuthorized).toBeFalse()
         expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
         expect(component.viewSelectionOptions[1].label).toBe('Unauthorized')
         expect(component.tabs?.[0].routerLink).toBe('/machines/all?authorized=false')
 
@@ -299,7 +345,7 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('ccc')
 
         // show authorized machines
-        authSelectBtnEl.dispatchEvent(new Event('click'))
+        authSelectBtnEl.nativeElement.click()
         fixture.detectChanges()
 
         expect(component.showAuthorized).toBeTrue()
