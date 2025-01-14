@@ -133,31 +133,37 @@ describe('MachinesPageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should not display agent installation instruction if there is an error in getMachinesServerToken', () => {
-        const msgSrvAddSpy = spyOn(msgService, 'add')
+    it('should not display agent installation instruction if there is an error in getMachinesServerToken', fakeAsync(() => {
+        const msgSrvAddSpy = spyOn(msgService, 'add').and.callThrough()
 
         // dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
 
         // prepare error response for call to getMachinesServerToken
         const serverTokenRespErr: any = { statusText: 'some error' }
-        spyOn(servicesApi, 'getMachinesServerToken').and.returnValue(throwError(serverTokenRespErr))
+        spyOn(servicesApi, 'getMachinesServerToken').and.returnValue(throwError(() => serverTokenRespErr))
 
         const showBtnEl = fixture.debugElement.query(By.css('#show-agent-installation-instruction-button'))
-        expect(showBtnEl).toBeDefined()
+        expect(showBtnEl).toBeTruthy()
 
         // show instruction but error should appear, so it should be handled
-        showBtnEl.triggerEventHandler('click', null)
+        showBtnEl.nativeElement.click()
+
+        tick()
 
         // check if it is NOT displayed and server token is still empty
         expect(component.displayAgentInstallationInstruction).toBeFalse()
-        expect(servicesApi.getMachinesServerToken).toHaveBeenCalled()
+        expect(servicesApi.getMachinesServerToken).toHaveBeenCalledTimes(1)
         expect(component.serverToken).toBe('')
 
         // error message should be issued
-        expect(msgSrvAddSpy.calls.count()).toBe(1)
-        expect(msgSrvAddSpy.calls.argsFor(0)[0]['severity']).toBe('error')
-    })
+        expect(msgSrvAddSpy).toHaveBeenCalledOnceWith({
+            severity: 'error',
+            summary: 'Cannot get server token',
+            detail: 'Error getting server token to register machines: some error',
+            life: 10000,
+        })
+    }))
 
     it('should display agent installation instruction if all is ok', async () => {
         // dialog should be hidden
@@ -184,6 +190,8 @@ describe('MachinesPageComponent', () => {
         const regenSpy = spyOn(servicesApi, 'regenerateMachinesServerToken')
         regenSpy.and.returnValue(of(regenerateMachinesServerTokenResp))
         component.regenerateServerToken()
+        await fixture.whenStable()
+        fixture.detectChanges()
 
         // check if server token has changed
         expect(component.serverToken).toBe('DEF')
@@ -197,7 +205,7 @@ describe('MachinesPageComponent', () => {
         expect(component.displayAgentInstallationInstruction).toBeFalse()
     })
 
-    it('should error msg if regenerateServerToken fails', async () => {
+    it('should error msg if regenerateServerToken fails', fakeAsync(() => {
         // dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
 
@@ -206,15 +214,16 @@ describe('MachinesPageComponent', () => {
         spyOn(servicesApi, 'getMachinesServerToken').and.returnValue(of(serverTokenResp))
 
         const showBtnEl = fixture.debugElement.query(By.css('#show-agent-installation-instruction-button'))
+        expect(showBtnEl).toBeTruthy()
 
         // show instruction but error should appear, so it should be handled
-        showBtnEl.triggerEventHandler('click', null)
-        await fixture.whenStable()
+        showBtnEl.nativeElement.click()
+        tick()
         fixture.detectChanges()
 
         // check if it is displayed and server token retrieved
         expect(component.displayAgentInstallationInstruction).toBeTrue()
-        expect(servicesApi.getMachinesServerToken).toHaveBeenCalled()
+        expect(servicesApi.getMachinesServerToken).toHaveBeenCalledTimes(1)
         expect(component.serverToken).toBe('ABC')
 
         const msgSrvAddSpy = spyOn(msgService, 'add')
@@ -222,24 +231,36 @@ describe('MachinesPageComponent', () => {
         // regenerate server token but it returns error, so in UI token should not change
         const regenerateMachinesServerTokenRespErr: any = { statusText: 'some error' }
         const regenSpy = spyOn(servicesApi, 'regenerateMachinesServerToken')
-        regenSpy.and.returnValue(throwError(regenerateMachinesServerTokenRespErr))
-        component.regenerateServerToken()
+        regenSpy.and.returnValue(throwError(() => regenerateMachinesServerTokenRespErr))
+
+        const regenerateBtnDe = fixture.debugElement.query(By.css('#regenerate-server-token-button'))
+        expect(regenerateBtnDe).toBeTruthy()
+        regenerateBtnDe.nativeElement.click()
+        tick()
+        fixture.detectChanges()
 
         // check if server token has NOT changed
         expect(component.serverToken).toBe('ABC')
 
         // error message should be issued
-        expect(msgSrvAddSpy.calls.count()).toBe(1)
-        expect(msgSrvAddSpy.calls.argsFor(0)[0]['severity']).toBe('error')
+        expect(msgSrvAddSpy).toHaveBeenCalledOnceWith({
+            severity: 'error',
+            summary: 'Cannot regenerate server token',
+            detail: 'Error regenerating server token to register machines: some error',
+            life: 10000,
+        })
 
         // close instruction
         const closeBtnEl = fixture.debugElement.query(By.css('#close-agent-installation-instruction-button'))
-        expect(closeBtnEl).toBeDefined()
-        closeBtnEl.triggerEventHandler('click', null)
+        expect(closeBtnEl).toBeTruthy()
+        closeBtnEl.nativeElement.click()
+        tick()
+        fixture.detectChanges()
 
         // now dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
-    })
+        flush()
+    }))
 
     it('should list machines', fakeAsync(() => {
         expect(component.showAuthorized).toBeNull()
