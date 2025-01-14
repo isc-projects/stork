@@ -940,3 +940,9 @@ func TestDetermineDetailsCustomKeyMissingConfigMissingKey(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedBaseCommand, client.BaseCommand)
 }
+
+// Test that the shutdown doesn't panic when zone inventory is nil.
+func TestBind9AppShutdownNilZoneInventory(t *testing.T) {
+	app := &Bind9App{}
+	require.NotPanics(t, app.Shutdown)
+}
