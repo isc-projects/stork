@@ -25,6 +25,7 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
 )
@@ -462,6 +463,58 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 	response.Lines = lines
 
 	return response, nil
+}
+
+// Generate a streaming response returning DNS zones from a specified
+// agent. The response can be filtered or unfiltered, depending on the
+// request.
+func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.ServerStreamingServer[agentapi.Zone]) error {
+	appI := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, req.ControlAddress, req.ControlPort)
+	var inventory *zoneInventory
+	switch app := appI.(type) {
+	case *Bind9App:
+		inventory = app.zoneInventory
+	default:
+		return nil
+	}
+	if inventory == nil {
+		return nil
+	}
+	var filter *bind9stats.ZoneFilter
+	if req.ViewName != "" || req.Limit > 0 || req.LoadedAfter > 0 || req.LowerBound != "" {
+		filter = bind9stats.NewZoneFilter()
+		if req.ViewName != "" {
+			filter.SetView(req.ViewName)
+		}
+		if req.LowerBound != "" && req.Limit > 0 {
+			filter.SetLowerBound(req.LowerBound, int(req.Limit))
+		}
+		if req.LoadedAfter > 0 {
+			filter.SetLoadedAfter(time.Unix(req.LoadedAfter, 0))
+		}
+	}
+	ctx := context.Background()
+	zones, err := inventory.receiveZones(ctx, filter)
+	if err != nil {
+		return err
+	}
+	for result := range zones {
+		if result.err == nil {
+			zone := result.zone
+			apiZone := &agentapi.Zone{
+				Name:   zone.Name(),
+				Class:  zone.Class,
+				Serial: zone.Serial,
+				Type:   zone.Type,
+				Loaded: zone.Loaded.Unix(),
+			}
+			err = server.Send(apiZone)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // Starts the gRPC and HTTP listeners.

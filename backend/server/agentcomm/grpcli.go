@@ -13,6 +13,7 @@ import (
 
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
+	"isc.org/stork/appdata/bind9stats"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -899,4 +900,36 @@ func (agents *connectedAgentsData) TailTextFile(ctx context.Context, machine dbm
 
 	// All ok.
 	return response.Lines, nil
+}
+
+func (agents *connectedAgentsData) ReceiveZones(ctx context.Context, app *dbmodel.App, filter *bind9stats.ZoneFilter, zoneFunc func(zone *bind9stats.ExtendedZone, err error)) error {
+	accessPoint, err := app.GetAccessPoint(dbmodel.AccessPointControl)
+	if err != nil {
+		return err
+	}
+
+	stream, teardown, err := agents.receiveZones(ctx, app.Machine.Address, app.Machine.AgentPort, accessPoint.Address, accessPoint.Port, filter)
+	if err != nil {
+		return err
+	}
+	go func() {
+		for {
+			defer teardown()
+			zone, err := stream.Recv()
+			if err != nil {
+				zoneFunc(nil, err)
+				return
+			}
+			zoneFunc(&bind9stats.ExtendedZone{
+				Zone: bind9stats.Zone{
+					ZoneName: zone.GetName(),
+					Class:    zone.GetClass(),
+					Serial:   zone.GetSerial(),
+					Type:     zone.GetType(),
+					Loaded:   time.Unix(zone.GetLoaded(), 0),
+				},
+			}, nil)
+		}
+	}()
+	return nil
 }

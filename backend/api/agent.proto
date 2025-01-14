@@ -25,6 +25,8 @@ service Agent {
 
   // Get the tail of the specified file, typically a log file.
   rpc TailTextFile(TailTextFileReq) returns (TailTextFileRsp) {}
+
+  rpc ReceiveZones(ReceiveZonesReq) returns (stream Zone) {}
 }
 
 
@@ -195,4 +197,21 @@ message TailTextFileRsp {
 
   // Array of lines.
   repeated string lines = 2;
+}
+
+message ReceiveZonesReq {
+  string controlAddress = 1;
+  int64 controlPort = 2;
+  string viewName = 3;
+  string lowerBound = 4;
+  int64 limit = 5;
+  int64 loadedAfter = 6;
+}
+
+message Zone {
+  string name = 1;
+	string class = 2;
+	int64 serial = 3;
+	string type = 4;
+	int64 loaded = 5;
 }

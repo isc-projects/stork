@@ -2,6 +2,8 @@ package agentcomm
 
 import (
 	"context"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,6 +12,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/appdata/bind9stats"
 )
 
 // Loop that receives requests to agents, sends to them, receives responses
@@ -41,6 +44,36 @@ type commLoopReq struct {
 	AgentAddr string
 	ReqData   interface{}
 	RespChan  chan *channelResp
+}
+
+func (agents *connectedAgentsData) receiveZones(ctx context.Context, agentAddress string, agentPort int64, controlAddress string, controlPort int64, filter *bind9stats.ZoneFilter) (grpc.ServerStreamingClient[agentapi.Zone], func(), error) {
+	agentAddressPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
+
+	client, conn, err := makeGrpcConnection(agentAddressPort, agents.caCertPEM, agents.serverCertPEM, agents.serverKeyPEM)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer conn.Close()
+
+	request := &agentapi.ReceiveZonesReq{
+		ControlAddress: controlAddress,
+		ControlPort:    controlPort,
+	}
+	if filter != nil {
+		if filter.View != nil {
+			request.ViewName = *filter.View
+		}
+		if filter.Limit != nil {
+			request.Limit = int64(*filter.Limit)
+		}
+	}
+	stream, err := client.ReceiveZones(ctx, request)
+	if err != nil {
+		return nil, nil, err
+	}
+	return stream, func() {
+		conn.Close()
+	}, nil
 }
 
 // Send a request to agent and receive response using channel to communication loop.

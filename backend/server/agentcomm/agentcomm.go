@@ -94,32 +94,34 @@ func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials
 	return creds, nil
 }
 
+func makeGrpcConnection(agentAddress string, caCertPEM, serverCertPEM, serverKeyPEM []byte) (agentapi.AgentClient, *grpc.ClientConn, error) {
+	// Prepare TLS credentials
+	creds, err := prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM)
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "problem preparing TLS credentials")
+	}
+
+	// Setup new connection
+	conn, err := grpc.NewClient(
+		agentAddress,
+		grpc.WithTransportCredentials(creds),
+	)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "problem to dial to agent %s", agentAddress)
+	}
+
+	return agentapi.NewAgentClient(conn), conn, nil
+}
+
 // Prepare gRPC connection to agent.
 func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []byte) error {
 	// If there is any old connection then clean it up
 	if agent.GrpcConn != nil {
 		agent.GrpcConn.Close()
 	}
-
-	// Prepare TLS credentials
-	creds, err := prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM)
-	if err != nil {
-		return errors.WithMessagef(err, "problem preparing TLS credentials")
-	}
-
-	// Setup new connection
-	grpcConn, err := grpc.NewClient(
-		agent.Address,
-		grpc.WithTransportCredentials(creds),
-	)
-	if err != nil {
-		return errors.Wrapf(err, "problem with dial to agent %s", agent.Address)
-	}
-
-	agent.Client = agentapi.NewAgentClient(grpcConn)
-	agent.GrpcConn = grpcConn
-
-	return nil
+	var err error
+	agent.Client, agent.GrpcConn, err = makeGrpcConnection(agent.Address, caCertPEM, serverCertPEM, serverKeyPEM)
+	return err
 }
 
 // Interface for interacting with Agents via gRPC.
