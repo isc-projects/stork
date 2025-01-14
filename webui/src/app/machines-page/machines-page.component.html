@@ -136,7 +136,7 @@ sudo ./stork-install-agent.sh</textarea
 
 <p-confirmDialog styleClass="w-28rem" />
 
-<p-tabMenu [model]="tabs" [activeItem]="activeItem" styleClass="mb-2" [scrollable]="true">
+<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIdx]" styleClass="mb-2" [scrollable]="true">
     <ng-template pTemplate="item" let-item let-i="index">
         <a
             role="menuitem"

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, EventType, Router } from '@angular/router'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
@@ -50,7 +50,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     // machine tabs
     activeTabIdx = 0
     tabs: MenuItem[]
-    activeItem: MenuItem
     openedMachines: { machine: Machine }[]
     machineTab: { machine: Machine }
 
@@ -74,7 +73,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private msgSrv: MessageService,
         private serverData: ServerDataService,
         private settingsService: SettingsService,
-        private confirmationService: ConfirmationService
+        private confirmationService: ConfirmationService,
+        private cd: ChangeDetectorRef
     ) {}
 
     ngOnDestroy(): void {
@@ -120,6 +120,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     if (!id || id === 'all') {
                         // Update the filter only if the target is machine list.
                         this.table?.updateFilterFromQueryParameters(queryParamMap)
+                        this.cd.detectChanges()
                         this.switchToTab(0)
                         return
                     }
@@ -180,7 +181,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             return
         }
         this.activeTabIdx = index
-        this.activeItem = this.tabs[index]
         if (index > 0) {
             this.machineTab = this.openedMachines[index - 1]
         }

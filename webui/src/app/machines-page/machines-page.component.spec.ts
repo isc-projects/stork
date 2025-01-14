@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { of, throwError } from 'rxjs'
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
 
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { SelectButtonModule } from 'primeng/selectbutton'
@@ -25,13 +25,23 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { HttpErrorResponse } from '@angular/common/http'
 import anything = jasmine.anything
 import { MessagesModule } from 'primeng/messages'
-import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
+import {
+    ActivatedRoute,
+    ActivatedRouteSnapshot,
+    convertToParamMap,
+    Event,
+    NavigationEnd,
+    Router,
+    RouterModule,
+} from '@angular/router'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { BadgeModule } from 'primeng/badge'
 import { PanelModule } from 'primeng/panel'
+import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -42,15 +52,16 @@ describe('MachinesPageComponent', () => {
     let router: Router
     let route: ActivatedRoute
     let versionServiceStub: Partial<VersionService>
+    let routerEventSubject: Observable<Event>
 
-    beforeEach(fakeAsync(() => {
+    beforeEach(async () => {
         versionServiceStub = {
             sanitizeSemver: () => '1.2.3',
             getCurrentData: () => of({} as AppsVersions),
             getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
         }
 
-        TestBed.configureTestingModule({
+        await TestBed.configureTestingModule({
             providers: [
                 MessageService,
                 ServicesService,
@@ -62,11 +73,12 @@ describe('MachinesPageComponent', () => {
                 HttpClientTestingModule,
                 RouterModule.forRoot([
                     {
-                        path: 'machines/unauthorized',
-                        component: MachinesPageComponent,
+                        path: 'machines',
+                        pathMatch: 'full',
+                        redirectTo: 'machines/all',
                     },
                     {
-                        path: 'machines/authorized',
+                        path: 'machines/:id',
                         component: MachinesPageComponent,
                     },
                 ]),
@@ -84,6 +96,7 @@ describe('MachinesPageComponent', () => {
                 ConfirmDialogModule,
                 BadgeModule,
                 PanelModule,
+                TriStateCheckboxModule,
             ],
             declarations: [
                 MachinesPageComponent,
@@ -94,6 +107,7 @@ describe('MachinesPageComponent', () => {
                 AppDaemonsStatusComponent,
                 VersionStatusComponent,
                 MachinesTableComponent,
+                PluralizePipe,
             ],
         }).compileComponents()
 
@@ -102,14 +116,18 @@ describe('MachinesPageComponent', () => {
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         msgService = fixture.debugElement.injector.get(MessageService)
         settingsService = fixture.debugElement.injector.get(SettingsService)
-        router = fixture.debugElement.injector.get(Router)
-        route = fixture.debugElement.injector.get(ActivatedRoute)
         fixture.debugElement.injector.get(VersionService)
-        fixture.debugElement.injector.get(ConfirmationService)
+        route = fixture.debugElement.injector.get(ActivatedRoute)
+        route.snapshot = {
+            paramMap: convertToParamMap({}),
+            queryParamMap: convertToParamMap({}),
+        } as ActivatedRouteSnapshot
+        router = fixture.debugElement.injector.get(Router)
+        routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'machines', 'machines/all'))
+        spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
 
         fixture.detectChanges()
-        tick()
-    }))
+    })
 
     it('should create', () => {
         expect(component).toBeTruthy()
