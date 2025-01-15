@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -471,17 +472,25 @@ func TestZoneInventoryPopulateShutdown(t *testing.T) {
 	done, err := inventory.populate(true)
 	require.NoError(t, err)
 
+	mutex := &sync.Mutex{}
+	cond := sync.NewCond(mutex)
 	go func() {
-		// Complete the operation in background because shutdown()
-		// blocks until the operation is complete. Add a short sleep
-		// to increase the likelihood that the shutdown is called
-		// before the notification is received.
-		time.Sleep(10 * time.Millisecond)
+		// Begin shutdown before finishing up populating the zones.
+		// It should block until zones are populated.
+		inventory.shutdown()
+		cond.Broadcast()
+	}()
+
+	mutex.Lock()
+	go func() {
+		// Finish populating the zones.
 		result := <-done
 		require.NoError(t, result.err)
 	}()
-	inventory.shutdown()
-	// Make sure that the long lasting operation was finished.
+	// Wait for the shutdown to return.
+	cond.Wait()
+
+	// Make sure the zones have been populated.
 	require.Equal(t, zoneInventoryStatePopulated, inventory.getCurrentState().name)
 }
 
