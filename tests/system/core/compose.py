@@ -651,6 +651,25 @@ class DockerCompose:
         if not state.is_operational():
             raise ContainerNotRunningException(str(state))
 
+    def get_build_arguments(self, service_name):
+        """Returns custom build arguments for the service. If there are no
+        arguments, it returns an empty dictionary."""
+        config = self._read_config_yaml()
+        services_config = config["services"]
+        service_config = services_config.get(service_name)
+        if service_config is None:
+            return {}
+
+        build_config = service_config.get("build")
+        if build_config is None:
+            return {}
+
+        build_args = build_config.get("args")
+        if build_args is None:
+            return {}
+
+        return build_args
+
     def is_enabled(self, service_name):
         """Checks if the given service is enabled. The service is enabled if
         it has no profiles or has at least one profile provided by the --profile

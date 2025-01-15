@@ -820,6 +820,67 @@ def test_is_enabled_for_unknown_service():
     assert not compose.is_enabled("foo")
 
 
+def test_get_build_arguments_no_arguments():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {"services": { "foo": { "build": {} }}}
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act & Assert
+    assert compose.get_build_arguments("foo") == {}
+
+
+def test_get_build_arguments_no_build():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {"services": { "foo": {} }}
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act & Assert
+    assert compose.get_build_arguments("foo") == {}
+
+
+def test_get_build_arguments_for_unknown_service():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {"services": {}}
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act & Assert
+    assert compose.get_build_arguments("foo") == {}
+
+
+def test_get_build_arguments():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {
+        "services": {
+            "foo": {
+                "build": {
+                    "args": {
+                        "bar": "baz",
+                        "biz": 42,
+                    }
+                }
+            }
+        }
+    }
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act
+    args = compose.get_build_arguments("foo")
+    # Assert
+    assert args == {"bar": "baz", "biz": 42}
+
+
 @patch("subprocess.run")
 def test_call_command_passes_command(subprocess_run_mock: MagicMock):
     compose = DockerCompose("project-dir")
