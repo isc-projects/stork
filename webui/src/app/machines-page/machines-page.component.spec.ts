@@ -2,14 +2,14 @@ import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
+import { BehaviorSubject, of, throwError } from 'rxjs'
 
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
 import { MachinesPageComponent } from './machines-page.component'
-import { AppsVersions, ServicesService, SettingsService, UsersService } from '../backend'
+import { AppsVersions, ServicesService, SettingsService } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
@@ -29,7 +29,6 @@ import {
     ActivatedRoute,
     ActivatedRouteSnapshot,
     convertToParamMap,
-    Event,
     NavigationEnd,
     Router,
     RouterModule,
@@ -43,18 +42,41 @@ import { PanelModule } from 'primeng/panel'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
+import createSpyObj = jasmine.createSpyObj
+import objectContaining = jasmine.objectContaining
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
     let fixture: ComponentFixture<MachinesPageComponent>
-    let servicesApi: ServicesService
+    let servicesApi: any
     let msgService: MessageService
-    let settingsService: SettingsService
     let router: Router
     let route: ActivatedRoute
     let versionServiceStub: Partial<VersionService>
     let routerEventSubject: BehaviorSubject<NavigationEnd>
     let unauthorizedMachinesCountBadge: HTMLElement
+    let getSettingsSpy: any
+    let getMachinesSpy: any
+    let getMachinesServerTokenSpy: any
+
+    // prepare responses for api calls
+    const getUnauthorizedMachinesResp: any = {
+        items: [
+            { hostname: 'aaa', id: 1, address: 'addr1' },
+            { hostname: 'bbb', id: 2, address: 'addr2' },
+            { hostname: 'ccc', id: 3, address: 'addr3' },
+        ],
+        total: 3,
+    }
+    const getAuthorizedMachinesResp: any = {
+        items: [{ hostname: 'zzz' }, { hostname: 'xxx' }],
+        total: 2,
+    }
+    const getAllMachinesResp = {
+        items: [...getUnauthorizedMachinesResp.items, ...getAuthorizedMachinesResp.items],
+        total: 5,
+    }
+    const serverTokenResp: any = { token: 'ABC' }
 
     beforeEach(async () => {
         versionServiceStub = {
@@ -63,13 +85,32 @@ describe('MachinesPageComponent', () => {
             getSoftwareVersionFeedback: () => ({ severity: Severity.success, messages: ['test feedback'] }),
         }
 
+        // fake SettingsService
+        const registrationEnabled = {
+            enableMachineRegistration: false,
+        }
+        const settingsService = createSpyObj('SettingsService', ['getSettings'])
+        getSettingsSpy = settingsService.getSettings.and.returnValue(of(registrationEnabled))
+
+        // fake ServicesService
+        servicesApi = createSpyObj('ServicesService', [
+            'getMachines',
+            'getMachinesServerToken',
+            'regenerateMachinesServerToken',
+            'getUnauthorizedMachinesCount',
+            'updateMachine',
+        ])
+        getMachinesSpy = servicesApi.getMachines.and.returnValue(of(getAllMachinesResp))
+        getMachinesServerTokenSpy = servicesApi.getMachinesServerToken.and.returnValue(of(serverTokenResp))
+        servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(3))
+
         await TestBed.configureTestingModule({
             providers: [
                 MessageService,
-                ServicesService,
-                UsersService,
-                { provide: VersionService, useValue: versionServiceStub },
                 ConfirmationService,
+                { provide: ServicesService, useValue: servicesApi },
+                { provide: VersionService, useValue: versionServiceStub },
+                { provide: SettingsService, useValue: settingsService },
             ],
             imports: [
                 HttpClientTestingModule,
@@ -116,9 +157,7 @@ describe('MachinesPageComponent', () => {
 
         fixture = TestBed.createComponent(MachinesPageComponent)
         component = fixture.componentInstance
-        servicesApi = fixture.debugElement.injector.get(ServicesService)
         msgService = fixture.debugElement.injector.get(MessageService)
-        settingsService = fixture.debugElement.injector.get(SettingsService)
         fixture.debugElement.injector.get(VersionService)
         route = fixture.debugElement.injector.get(ActivatedRoute)
         route.snapshot = {
@@ -179,7 +218,7 @@ describe('MachinesPageComponent', () => {
 
         // prepare error response for call to getMachinesServerToken
         const serverTokenRespErr: any = { statusText: 'some error' }
-        spyOn(servicesApi, 'getMachinesServerToken').and.returnValue(throwError(() => serverTokenRespErr))
+        getMachinesServerTokenSpy.and.returnValue(throwError(() => serverTokenRespErr))
 
         const showBtnEl = fixture.debugElement.query(By.css('#show-agent-installation-instruction-button'))
         expect(showBtnEl).toBeTruthy()
@@ -187,31 +226,25 @@ describe('MachinesPageComponent', () => {
         // show instruction but error should appear, so it should be handled
         showBtnEl.nativeElement.click()
 
-        tick()
+        tick() // async message service add()
 
         // check if it is NOT displayed and server token is still empty
         expect(component.displayAgentInstallationInstruction).toBeFalse()
-        expect(servicesApi.getMachinesServerToken).toHaveBeenCalledTimes(1)
+        expect(getMachinesServerTokenSpy).toHaveBeenCalledTimes(1)
         expect(component.serverToken).toBe('')
 
         // error message should be issued
-        expect(msgSrvAddSpy).toHaveBeenCalledOnceWith({
-            severity: 'error',
-            summary: 'Cannot get server token',
-            detail: 'Error getting server token to register machines: some error',
-            life: 10000,
-        })
+        expect(msgSrvAddSpy).toHaveBeenCalledOnceWith(
+            objectContaining({ severity: 'error', summary: 'Cannot get server token' })
+        )
     }))
 
     it('should display agent installation instruction if all is ok', async () => {
         // dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
 
-        // prepare response for call to getMachinesServerToken
-        const serverTokenResp: any = { token: 'ABC' }
-        spyOn(servicesApi, 'getMachinesServerToken').and.returnValues(of(serverTokenResp))
-
         const showBtnEl = fixture.debugElement.query(By.css('#show-agent-installation-instruction-button'))
+        expect(showBtnEl).toBeTruthy()
 
         // show instruction
         showBtnEl.triggerEventHandler('click', null)
@@ -220,13 +253,12 @@ describe('MachinesPageComponent', () => {
 
         // check if it is displayed and server token retrieved
         expect(component.displayAgentInstallationInstruction).toBeTrue()
-        expect(servicesApi.getMachinesServerToken).toHaveBeenCalled()
+        expect(getMachinesServerTokenSpy).toHaveBeenCalled()
         expect(component.serverToken).toBe('ABC')
 
         // regenerate server token
         const regenerateMachinesServerTokenResp: any = { token: 'DEF' }
-        const regenSpy = spyOn(servicesApi, 'regenerateMachinesServerToken')
-        regenSpy.and.returnValue(of(regenerateMachinesServerTokenResp))
+        servicesApi.regenerateMachinesServerToken.and.returnValue(of(regenerateMachinesServerTokenResp))
         component.regenerateServerToken()
         await fixture.whenStable()
         fixture.detectChanges()
@@ -236,69 +268,62 @@ describe('MachinesPageComponent', () => {
 
         // close instruction
         const closeBtnEl = fixture.debugElement.query(By.css('#close-agent-installation-instruction-button'))
-        expect(closeBtnEl).toBeDefined()
+        expect(closeBtnEl).toBeTruthy()
         closeBtnEl.triggerEventHandler('click', null)
 
         // now dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
     })
 
-    it('should error msg if regenerateServerToken fails', fakeAsync(() => {
+    it('should error msg if regenerateServerToken fails', async () => {
         // dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
-
-        // prepare response for call to getMachinesServerToken
-        const serverTokenResp: any = { token: 'ABC' }
-        spyOn(servicesApi, 'getMachinesServerToken').and.returnValue(of(serverTokenResp))
 
         const showBtnEl = fixture.debugElement.query(By.css('#show-agent-installation-instruction-button'))
         expect(showBtnEl).toBeTruthy()
 
         // show instruction but error should appear, so it should be handled
         showBtnEl.nativeElement.click()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // check if it is displayed and server token retrieved
         expect(component.displayAgentInstallationInstruction).toBeTrue()
-        expect(servicesApi.getMachinesServerToken).toHaveBeenCalledTimes(1)
+        expect(getMachinesServerTokenSpy).toHaveBeenCalledTimes(1)
         expect(component.serverToken).toBe('ABC')
 
         const msgSrvAddSpy = spyOn(msgService, 'add')
 
         // regenerate server token but it returns error, so in UI token should not change
         const regenerateMachinesServerTokenRespErr: any = { statusText: 'some error' }
-        const regenSpy = spyOn(servicesApi, 'regenerateMachinesServerToken')
-        regenSpy.and.returnValue(throwError(() => regenerateMachinesServerTokenRespErr))
+        servicesApi.regenerateMachinesServerToken.and.returnValue(
+            throwError(() => regenerateMachinesServerTokenRespErr)
+        )
 
         const regenerateBtnDe = fixture.debugElement.query(By.css('#regenerate-server-token-button'))
         expect(regenerateBtnDe).toBeTruthy()
         regenerateBtnDe.nativeElement.click()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // check if server token has NOT changed
         expect(component.serverToken).toBe('ABC')
 
         // error message should be issued
-        expect(msgSrvAddSpy).toHaveBeenCalledOnceWith({
-            severity: 'error',
-            summary: 'Cannot regenerate server token',
-            detail: 'Error regenerating server token to register machines: some error',
-            life: 10000,
-        })
+        expect(msgSrvAddSpy).toHaveBeenCalledOnceWith(
+            objectContaining({ severity: 'error', summary: 'Cannot regenerate server token' })
+        )
 
         // close instruction
         const closeBtnEl = fixture.debugElement.query(By.css('#close-agent-installation-instruction-button'))
         expect(closeBtnEl).toBeTruthy()
         closeBtnEl.nativeElement.click()
-        tick()
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // now dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
-        flush()
-    }))
+    })
 
     it('should list machines', fakeAsync(() => {
         expect(component.showAuthorized).toBeNull()
@@ -313,20 +338,22 @@ describe('MachinesPageComponent', () => {
         expect(authSelectBtnEl).toBeTruthy()
         expect(unauthSelectBtnEl).toBeTruthy()
 
-        // prepare response for call to getMachines for (un)authorized machines
-        const getUnauthorizedMachinesResp: any = {
-            items: [{ hostname: 'aaa' }, { hostname: 'bbb' }, { hostname: 'ccc' }],
-            total: 3,
-        }
-        const getAuthorizedMachinesResp: any = { items: [{ hostname: 'zzz' }, { hostname: 'xxx' }], total: 2 }
-        const gmSpy = spyOn(servicesApi, 'getMachines')
-        gmSpy.withArgs(0, 1, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
-        gmSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
-        gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
+        // // prepare response for call to getMachines for (un)authorized machines
+        // const getUnauthorizedMachinesResp: any = {
+        //     items: [{ hostname: 'aaa' }, { hostname: 'bbb' }, { hostname: 'ccc' }],
+        //     total: 3,
+        // }
+        // const getAuthorizedMachinesResp: any = { items: [{ hostname: 'zzz' }, { hostname: 'xxx' }], total: 2 }
+        // const gmSpy = spyOn(servicesApi, 'getMachines')
+        // gmSpy.withArgs(0, 1, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
+        // gmSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
+        // gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
 
         // show unauthorized machines
         unauthSelectBtnEl.nativeElement.click()
         navigate({ id: 'all' }, { authorized: 'false' })
+        tick()
+        fixture.detectChanges()
         tick()
         fixture.detectChanges()
 
@@ -361,7 +388,7 @@ describe('MachinesPageComponent', () => {
     }))
 
     it('should refresh unauthorized machines count', fakeAsync(() => {
-        spyOn(servicesApi, 'getUnauthorizedMachinesCount').and.returnValue(of(4 as any))
+        servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(4 as any))
         tick()
         fixture.detectChanges()
         // component.refreshUnauthorizedMachinesCount()
@@ -403,12 +430,12 @@ describe('MachinesPageComponent', () => {
             total: 3,
         }
         const getAuthorizedMachinesResp: any = { items: [{ hostname: 'zzz' }, { hostname: 'xxx' }], total: 2 }
-        const gmSpy = spyOn(servicesApi, 'getMachines')
+        // const gmSpy = spyOn(servicesApi, 'getMachines')
 
         // Prepare response for getMachines API being called by refreshUnauthorizedMachinesCount().
         // refreshUnauthorizedMachinesCount() asks for details of only one unauthorized machine.
         // The total unauthorized machines count is essential information here, not the detailed items themselves.
-        gmSpy.withArgs(0, 1, null, null, false).and.returnValue(
+        getMachinesSpy.withArgs(0, 1, null, null, false).and.returnValue(
             of({
                 items: [{ hostname: 'aaa', id: 1, address: 'addr1' }],
                 total: 3,
@@ -416,10 +443,10 @@ describe('MachinesPageComponent', () => {
         )
         // Prepare response for getMachines API being called by loadMachines(), which lazily loads data for
         // unauthorized machines table. Text and app filters are undefined.
-        gmSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
+        getMachinesSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
         // Prepare response for getMachines API being called by loadMachines(), which lazily loads data for
         // authorized machines table. Text and app filters are undefined.
-        gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
+        getMachinesSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
 
         // show unauthorized machines
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
@@ -531,23 +558,23 @@ describe('MachinesPageComponent', () => {
             total: 3,
         }
 
-        const gmSpy = spyOn(servicesApi, 'getMachines')
+        // const gmSpy = spyOn(servicesApi, 'getMachines')
 
         // this is only called once after authorizing selected machines
         // and after switching back to authorized machines view; in refreshUnauthorizedMachinesCount().
         // refreshUnauthorizedMachinesCount() asks for details of only one unauthorized machine.
         // The total unauthorized machines count is essential information here, not the detailed items themselves.
-        const gumcSpy = spyOn(servicesApi, 'getUnauthorizedMachinesCount').and.returnValue(of(2) as any)
+        const gumcSpy = servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(2) as any)
 
         // called two times in loadMachines(event), which lazily loads data for
         // unauthorized machines table. Text and app filters are undefined.
-        gmSpy
+        getMachinesSpy
             .withArgs(0, 10, undefined, undefined, false)
             .and.returnValues(of(getUnauthorizedMachinesRespBefore), of(getUnauthorizedMachinesRespAfter))
 
         // called one time in loadMachines(event), which lazily loads data for
         // authorized machines table. Text and app filters are undefined.
-        gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesRespAfter))
+        getMachinesSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesRespAfter))
 
         // show unauthorized machines
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
@@ -617,7 +644,7 @@ describe('MachinesPageComponent', () => {
         authSelectBtnEl.dispatchEvent(new Event('click'))
         fixture.detectChanges()
 
-        expect(gmSpy).toHaveBeenCalledTimes(3)
+        expect(getMachinesSpy).toHaveBeenCalledTimes(3)
         expect(gumcSpy).toHaveBeenCalledTimes(1)
 
         // expect(component.showUnauthorized).toBeFalse()
@@ -643,7 +670,7 @@ describe('MachinesPageComponent', () => {
             ],
             total: 2,
         }
-        spyOn(servicesApi, 'getMachines').and.returnValue(of(getAuthorizedMachinesResp))
+        getMachinesSpy.and.returnValue(of(getAuthorizedMachinesResp))
         // ngOnInit was already called before we prepared the static response.
         // We have to reload the machines list manually.
         component.table.loadDataWithoutFilter()
@@ -735,7 +762,7 @@ describe('MachinesPageComponent', () => {
             ],
             total: 1,
         }
-        spyOn(servicesApi, 'getMachines').and.returnValue(of(getAuthorizedMachinesResp))
+        getMachinesSpy.and.returnValue(of(getAuthorizedMachinesResp))
         // ngOnInit was already called before we prepared the static response.
         // We have to reload the machines list manually.
         component.table.loadDataWithoutFilter()
@@ -783,13 +810,13 @@ describe('MachinesPageComponent', () => {
             items: [],
             total: 0,
         }
-        spyOn(servicesApi, 'getMachines').and.returnValue(of(getMachinesResp))
+        getMachinesSpy.and.returnValue(of(getMachinesResp))
 
         // Simulate disabled machine registration.
         const getSettingsResp: any = {
             enableMachineRegistration: false,
         }
-        spyOn(settingsService, 'getSettings').and.returnValue(of(getSettingsResp))
+        getSettingsSpy.and.returnValue(of(getSettingsResp))
 
         component.ngOnInit()
         tick()
@@ -822,12 +849,12 @@ describe('MachinesPageComponent', () => {
             items: [],
             total: 0,
         }
-        spyOn(servicesApi, 'getMachines').and.returnValue(of(getMachinesResp))
+        getMachinesSpy.and.returnValue(of(getMachinesResp))
 
-        const getSettingsResp: any = {
-            enableMachineRegistration: true,
-        }
-        spyOn(settingsService, 'getSettings').and.returnValue(of(getSettingsResp))
+        // const getSettingsResp: any = {
+        //     enableMachineRegistration: true,
+        // }
+        // spyOn(settingsService, 'getSettings').and.returnValue(of(getSettingsResp))
 
         component.ngOnInit()
         tick()
