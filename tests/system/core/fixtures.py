@@ -511,80 +511,88 @@ def postgres_service():
     return wrapper
 
 
+def collect_logs(test_dir: Path):
+    """
+    Retries the logs from all created Docker services and write them down into
+    the host disk.
+
+    Collects:
+
+    - stdout and stderr of the containers
+    - inspect command output for non-operational services
+    - ps command output if there is any non-operational service
+    """
+    compose = create_docker_compose()
+    service_names = compose.get_created_services()
+
+    # Collect logs only for docker-compose services
+    if len(service_names) == 0:
+        return
+
+    # prepare test directory for logs, etc
+    test_dir.mkdir(exist_ok=True)
+
+    # Collect logs
+    stdout, stderr = compose.logs()
+
+    # Write logs
+    with open(test_dir / "stdout.log", "wt", encoding="utf-8") as f:
+        f.write(stdout)
+
+    with open(test_dir / "stderr.log", "wt", encoding="utf-8") as f:
+        f.write(stderr)
+
+    # Collect inspect for non-operational services
+    has_non_operational_service = False
+    for service_name in service_names:
+        if compose.is_operational(service_name):
+            continue
+        has_non_operational_service = True
+        inspect_stdout = compose.inspect_raw(service_name)
+        filename = f"inspect-{service_name}.json"
+        with open(test_dir / filename, "wt", encoding="utf-8") as f:
+            f.write(inspect_stdout)
+
+    if has_non_operational_service:
+        # Collect service statuses
+        ps_stdout = compose.ps()
+        with open(test_dir / "ps.out", "wt", encoding="utf-8") as f:
+            f.write(ps_stdout)
+
+
+def collect_metrics(test_dir: Path):
+    """Collects the performance reports from all created Docker services and
+    generates the performance charts."""
+    compose = create_docker_compose()
+    service_names = compose.get_created_services()
+
+    if len(service_names) == 0:
+        return
+
+    test_dir.mkdir(exist_ok=True)
+
+    report_paths = []
+    for service_name in service_names:
+        try:
+            report_path = test_dir.resolve() / f"performance-report-{service_name}"
+            compose.copy_to_host(
+                service_name, "/var/log/supervisor/performance-report", report_path
+            )
+            report_paths.append(report_path)
+        except FileNotFoundError:
+            # The container doesn't generate the performance report.
+            pass
+
+    if len(report_paths) != 0:
+        performance_chart.plot_reports(
+            report_paths, test_dir / "performance-charts.html"
+        )
+
+
 @pytest.fixture(autouse=True)
 def finish(request):
     """Save all logs to file and down all used containers."""
     function_name = request.function.__name__
-
-    def collect_logs(test_dir: Path):
-        # Collect logs only for failed cases
-        # If the test fails due to non-assertion error then the call status is
-        # unavailable.
-        if hasattr(request.node, "rep_call") and not request.node.rep_call.failed:
-            return
-
-        compose = create_docker_compose()
-        service_names = compose.get_created_services()
-
-        # Collect logs only for docker-compose services
-        if len(service_names) == 0:
-            return
-
-        # prepare test directory for logs, etc
-        test_dir.mkdir(exist_ok=True)
-
-        # Collect logs
-        stdout, stderr = compose.logs()
-
-        # Write logs
-        with open(test_dir / "stdout.log", "wt", encoding="utf-8") as f:
-            f.write(stdout)
-
-        with open(test_dir / "stderr.log", "wt", encoding="utf-8") as f:
-            f.write(stderr)
-
-        # Collect inspect for non-operational services
-        has_non_operational_service = False
-        for service_name in service_names:
-            if compose.is_operational(service_name):
-                continue
-            has_non_operational_service = True
-            inspect_stdout = compose.inspect_raw(service_name)
-            filename = f"inspect-{service_name}.json"
-            with open(test_dir / filename, "wt", encoding="utf-8") as f:
-                f.write(inspect_stdout)
-
-        if has_non_operational_service:
-            # Collect service statuses
-            ps_stdout = compose.ps()
-            with open(test_dir / "ps.out", "wt", encoding="utf-8") as f:
-                f.write(ps_stdout)
-
-    def collect_metrics(test_dir: Path):
-        compose = create_docker_compose()
-        service_names = compose.get_created_services()
-
-        if len(service_names) == 0:
-            return
-
-        test_dir.mkdir(exist_ok=True)
-
-        report_paths = []
-        for service_name in service_names:
-            try:
-                report_path = test_dir.resolve() / f"performance-report-{service_name}"
-                compose.copy_to_host(
-                    service_name, "/var/log/supervisor/performance-report", report_path
-                )
-                report_paths.append(report_path)
-            except FileNotFoundError:
-                # The container doesn't generate the performance report.
-                pass
-
-        if len(report_paths) != 0:
-            performance_chart.plot_reports(
-                report_paths, test_dir / "performance-charts.html"
-            )
 
     def collect_logs_and_down_all():
         test_name = function_name
@@ -592,6 +600,7 @@ def finish(request):
         test_name = test_name.replace("/", "_")
         test_name = test_name.replace("]", "")
 
+        # The result directory is not created yet.
         test_dir = Path("test-results")
         test_dir = test_dir / test_name
         if test_dir.exists():
@@ -602,10 +611,14 @@ def finish(request):
         if perf_dir.exists():
             shutil.rmtree(perf_dir)
 
-        # The result directory is not created yet.
-
-        collect_logs(test_dir)
+        # Collect logs only for failed cases
         collect_metrics(perf_dir)
+
+        # If the test fails due to non-assertion error then the call status is
+        # unavailable.
+        if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
+            collect_logs(test_dir)
+
         # Down all containers
         compose = create_docker_compose()
         compose.down()
