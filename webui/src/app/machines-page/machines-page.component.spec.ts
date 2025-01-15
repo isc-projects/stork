@@ -213,9 +213,9 @@ describe('MachinesPageComponent', () => {
 
         // Normal navigation is causing onInit due to custom route reuse strategy. Simulate it here.
         component.table?.ngOnInit()
-        fixture.detectChanges()
 
         flush()
+        fixture.detectChanges()
     }
 
     it('should create', () => {
