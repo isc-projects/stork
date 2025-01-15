@@ -100,7 +100,11 @@ describe('MachinesPageComponent', () => {
             'getUnauthorizedMachinesCount',
             'updateMachine',
         ])
+
         getMachinesSpy = servicesApi.getMachines.and.returnValue(of(getAllMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getAuthorizedMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
+
         getMachinesServerTokenSpy = servicesApi.getMachinesServerToken.and.returnValue(of(serverTokenResp))
         servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(3))
 
@@ -167,8 +171,13 @@ describe('MachinesPageComponent', () => {
         router = fixture.debugElement.injector.get(Router)
         routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'machines', 'machines/all'))
         spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
-        unauthorizedMachinesCountBadge = fixture.nativeElement.querySelector('div.p-selectbutton span.p-badge')
 
+        fixture.detectChanges()
+        unauthorizedMachinesCountBadge = fixture.nativeElement.querySelector('div.p-selectbutton span.p-badge')
+        component.table.clearFilters(component.table.table)
+
+        // Wait until table's data loading is finished.
+        await fixture.whenStable()
         fixture.detectChanges()
     })
 
@@ -202,7 +211,8 @@ describe('MachinesPageComponent', () => {
             )
         )
 
-        flush()
+        // Normal navigation is causing onInit due to custom route reuse strategy. Simulate it here.
+        component.table?.ngOnInit()
         fixture.detectChanges()
     }
 
@@ -326,10 +336,20 @@ describe('MachinesPageComponent', () => {
     })
 
     it('should list machines', fakeAsync(() => {
-        expect(component.showAuthorized).toBeNull()
-        expect(component.tabs?.[0].routerLink).toBe('/machines/all')
+        // Data loading should be done by now.
+        expect(component.table.dataLoading).toBeFalse()
 
-        // get references to select buttons
+        // There is no authorized/unauthorized machines filter applied - all authorized and unauthorized machines are visible.
+        expect(component.showAuthorized).toBeNull()
+        expect(component.table.hasPrefilter()).toBeFalse()
+        expect(component.table.hasFilter(component.table.table)).toBeFalse()
+        expect(component.tabs?.[0].routerLink).toBe('/machines/all')
+        expect(component.tabs?.[0].queryParams).toBeUndefined()
+        expect(component.table.totalRecords).toBe(5)
+        expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
+
+        // Get references to select buttons.
         const selectButtons = fixture.debugElement.queryAll(By.css('#unauthorized-select-button .p-button'))
         expect(selectButtons).toBeTruthy()
         expect(selectButtons.length).toBeGreaterThanOrEqual(2)
@@ -337,51 +357,50 @@ describe('MachinesPageComponent', () => {
         const unauthSelectBtnEl = selectButtons[1]
         expect(authSelectBtnEl).toBeTruthy()
         expect(unauthSelectBtnEl).toBeTruthy()
+        expect(authSelectBtnEl.nativeElement.childNodes[0].innerText).toBe('Authorized')
+        expect(unauthSelectBtnEl.nativeElement.childNodes[0].innerText).toBe('Unauthorized')
+        expect(authSelectBtnEl.nativeElement).withContext('should not be highlighted').not.toHaveClass('p-highlight')
+        expect(unauthSelectBtnEl.nativeElement).withContext('should not be highlighted').not.toHaveClass('p-highlight')
 
-        // // prepare response for call to getMachines for (un)authorized machines
-        // const getUnauthorizedMachinesResp: any = {
-        //     items: [{ hostname: 'aaa' }, { hostname: 'bbb' }, { hostname: 'ccc' }],
-        //     total: 3,
-        // }
-        // const getAuthorizedMachinesResp: any = { items: [{ hostname: 'zzz' }, { hostname: 'xxx' }], total: 2 }
-        // const gmSpy = spyOn(servicesApi, 'getMachines')
-        // gmSpy.withArgs(0, 1, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
-        // gmSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
-        // gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
-
-        // show unauthorized machines
-        unauthSelectBtnEl.nativeElement.click()
+        // Navigate to Unauthorized machines only view.
         navigate({ id: 'all' }, { authorized: 'false' })
-        tick()
-        fixture.detectChanges()
-        tick()
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
 
-        // expect(gmSpy).toHaveBeenCalledOnceWith(3)
+        // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
+        expect(component.table.hasPrefilter()).toBeTrue()
+        expect(component.table.hasFilter(component.table.table)).toBeFalse()
         expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized')
-        expect(component.tabs?.[0].routerLink).toBe('/machines/all?authorized=false')
 
-        // check if hostnames are displayed
+        expect(authSelectBtnEl.nativeElement).withContext('should not be highlighted').not.toHaveClass('p-highlight')
+        expect(unauthSelectBtnEl.nativeElement).withContext('should be highlighted').toHaveClass('p-highlight')
+
+        // Check if hostnames are displayed.
         const nativeEl = fixture.nativeElement
         expect(nativeEl.textContent).toContain('aaa')
         expect(nativeEl.textContent).toContain('bbb')
         expect(nativeEl.textContent).toContain('ccc')
 
-        // show authorized machines
-        authSelectBtnEl.nativeElement.click()
+        // Navigate to Authorized machines only view.
+        navigate({ id: 'all' }, { authorized: 'true' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
 
+        // There is authorized machines filter applied - only authorized machines are visible.
         expect(component.showAuthorized).toBeTrue()
+        expect(component.table.hasPrefilter()).toBeTrue()
+        expect(component.table.hasFilter(component.table.table)).toBeFalse()
         expect(component.table.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized')
-        expect(component.tabs?.[0].routerLink).toBe('/machines/all?authorized=true')
+        expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
-        // check if hostnames are displayed
+        expect(authSelectBtnEl.nativeElement).withContext('should be highlighted').toHaveClass('p-highlight')
+        expect(unauthSelectBtnEl.nativeElement).withContext('should not be highlighted').not.toHaveClass('p-highlight')
+
+        // Check if hostnames are displayed.
         expect(nativeEl.textContent).toContain('zzz')
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).not.toContain('aaa')
