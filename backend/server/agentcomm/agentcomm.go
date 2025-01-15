@@ -17,6 +17,7 @@ import (
 
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
+	"isc.org/stork/appdata/bind9stats"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
 )
@@ -135,6 +136,7 @@ type ConnectedAgents interface {
 	ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
 	ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
 	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
+	ReceiveZones(ctx context.Context, app *dbmodel.App, filter *bind9stats.ZoneFilter, zoneFunc func(zone *bind9stats.ExtendedZone, err error)) error
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.

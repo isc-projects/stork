@@ -69,7 +69,7 @@ type MachineTag interface {
 }
 
 // Add new machine to database.
-func AddMachine(db *pg.DB, machine *Machine) error {
+func AddMachine(db pg.DBI, machine *Machine) error {
 	_, err := db.Model(machine).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem inserting machine %+v", machine)

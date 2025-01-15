@@ -4,6 +4,7 @@ import (
 	"context"
 
 	keactrl "isc.org/stork/appctrl/kea"
+	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -185,4 +186,10 @@ func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.Cont
 // Mimics tailing text file.
 func (fa *FakeAgents) TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error) {
 	return []string{"lorem ipsum"}, nil
+}
+
+// FakeAgents specific implementation of the function which gathers the zones from the
+// agents one by one.
+func (agents *FakeAgents) ReceiveZones(ctx context.Context, app *dbmodel.App, filter *bind9stats.ZoneFilter, zoneFunc func(zone *bind9stats.ExtendedZone, err error)) error {
+	return nil
 }
