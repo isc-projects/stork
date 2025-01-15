@@ -26,11 +26,11 @@ def test_kea_only_fixture_with_minimum_version_satisfied(kea_service: Kea):
 
 @kea_parametrize(suppress_registration=True, min_version="999.999.999")
 def test_kea_only_fixture_with_minimum_version_not_satisfied(kea_service: Kea):
-    '''This test should not be executed because the minimum Kea version is too
-    high.'''
+    """This test should not be executed because the minimum Kea version is too
+    high."""
     pytest.fail(
-        "This test should not be executed because it should be skipped due to"+
-        " insufficient Kea version"
+        "This test should not be executed because it should be skipped due to"
+        + " insufficient Kea version"
     )
 
 

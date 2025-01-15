@@ -824,7 +824,7 @@ def test_get_build_arguments_no_arguments():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    config = {"services": { "foo": { "build": {} }}}
+    config = {"services": {"foo": {"build": {}}}}
     config_yaml = yaml.safe_dump(config)
     mock.return_value = (0, config_yaml, "")
     compose._call_command = mock
@@ -836,7 +836,7 @@ def test_get_build_arguments_no_build():
     # Arrange
     compose = DockerCompose("project-dir")
     mock = MagicMock()
-    config = {"services": { "foo": {} }}
+    config = {"services": {"foo": {}}}
     config_yaml = yaml.safe_dump(config)
     mock.return_value = (0, config_yaml, "")
     compose._call_command = mock

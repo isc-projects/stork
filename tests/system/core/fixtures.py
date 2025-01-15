@@ -14,7 +14,9 @@ from core.version import parse_version_info
 logger = setup_logger(__name__)
 
 
-def _agent_parametrize(fixture_name, service_name, suppress_registration=False, min_kea_version=None):
+def _agent_parametrize(
+    fixture_name, service_name, suppress_registration=False, min_kea_version=None
+):
     """
     Helper for parametrizing the agent fixtures.
 
@@ -49,7 +51,9 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False, 
     )
 
 
-def kea_parametrize(service_name="agent-kea", suppress_registration=False, min_version=None):
+def kea_parametrize(
+    service_name="agent-kea", suppress_registration=False, min_version=None
+):
     """
     Helper for parametrizing the Kea fixture.
 
@@ -75,7 +79,7 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False, min_v
         suppress_registration=suppress_registration,
         min_kea_version=min_version,
     )
- 
+
 
 def ha_pair_parametrize(
     first_service_name="agent-kea-ha1",
@@ -317,7 +321,7 @@ def _prepare_kea_wrapper(
         Minimum version of Kea to use, by default None. The test is skipped if
         the Kea version provided in the KEA_VERSION environment variable is
         lower than the minimum version.
-        
+
     Returns
     -------
     core.wrappers.Kea

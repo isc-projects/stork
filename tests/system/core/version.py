@@ -24,7 +24,7 @@ def parse_version_info(version):
     """
     Parses the version string to version tuple. Returns a tuple of integers
     and a version suffix if it exists. Otherwise, None.
-    
+
     Accepted values:
     - Major only: "1" -> (1,), None
     - Major, minor: "1.2" -> (1, 2), None
@@ -35,14 +35,14 @@ def parse_version_info(version):
     - Version with suffix and wildcard: "1.2.*-dev" -> (1, 2), "dev"
     """
     parts = version.split(".")
-    
+
     # The last part may contain a suffix after a dash.
     last_part = parts[-1]
     suffix = None
     if "-" in str(last_part):
         last_part, suffix = last_part.split("-", 1)
         parts[-1] = last_part
-    
+
     # The last version part may be a wildcard. We skip it.
     if last_part == "*":
         parts = parts[:-1]
