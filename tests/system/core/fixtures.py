@@ -9,11 +9,12 @@ from core import wrappers
 from core.utils import setup_logger
 from core import lease_generators
 from core import performance_chart
+from core.version import parse_version_info
 
 logger = setup_logger(__name__)
 
 
-def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
+def _agent_parametrize(fixture_name, service_name, suppress_registration=False, min_kea_version=None):
     """
     Helper for parametrizing the agent fixtures.
 
@@ -25,6 +26,10 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
         Name of docker-compose service
     suppress_registration : bool, optional
         Suppress the Stork Agent registration in a server, by default False
+    min_kea_version : str, optional
+        Minimum version of Kea to use, by default None. The test is skipped if
+        the Kea version provided in the KEA_VERSION environment variable is
+        lower than the minimum version.
 
     Returns
     -------
@@ -37,13 +42,14 @@ def _agent_parametrize(fixture_name, service_name, suppress_registration=False):
             {
                 "service_name": service_name,
                 "suppress_registration": suppress_registration,
+                "min_kea_version": min_kea_version,
             }
         ],
         indirect=True,
     )
 
 
-def kea_parametrize(service_name="agent-kea", suppress_registration=False):
+def kea_parametrize(service_name="agent-kea", suppress_registration=False, min_version=None):
     """
     Helper for parametrizing the Kea fixture.
 
@@ -53,18 +59,28 @@ def kea_parametrize(service_name="agent-kea", suppress_registration=False):
         Name of docker-compose service of the Kea, by default "agent-kea"
     suppress_registration : bool, optional
         Suppress the Stork Agent registration in a server, by default False
+    min_version : str, optional
+        Minimum version of Kea to use, by default None. The test is skipped if
+        the Kea version provided in the KEA_VERSION environment variable is
+        lower than the minimum version.
 
     Returns
     -------
     _ParametrizeMarkDecorator
         the Pytest decorator ready to use
     """
-    return _agent_parametrize("kea_service", service_name, suppress_registration)
-
+    return _agent_parametrize(
+        fixture_name="kea_service",
+        service_name=service_name,
+        suppress_registration=suppress_registration,
+        min_kea_version=min_version,
+    )
+ 
 
 def ha_pair_parametrize(
     first_service_name="agent-kea-ha1",
     second_service_name="agent-kea-ha2",
+    min_version=None,
     suppress_registration=False,
 ):
     """
@@ -78,6 +94,10 @@ def ha_pair_parametrize(
         Name of docker-compose service of the second Kea instance, by default "agent-kea-ha2"
     suppress_registration : bool, optional
         Suppress the Stork Agent registration in a server, by default False
+    min_version : str, optional
+        Minimum version of Kea to use, by default None. The test is skipped if
+        the Kea version provided in the KEA_VERSION environment variable is
+        lower than the minimum version.
 
     Returns
     -------
@@ -91,6 +111,7 @@ def ha_pair_parametrize(
                 "first_service_name": first_service_name,
                 "second_service_name": second_service_name,
                 "suppress_registration": suppress_registration,
+                "min_kea_version": min_version,
             }
         ],
         indirect=True,
@@ -211,6 +232,7 @@ def kea_service(request):
     param = {
         "service_name": "agent-kea",
         "suppress_registration": False,
+        "min_kea_version": None,
     }
 
     if hasattr(request, "param"):
@@ -220,6 +242,7 @@ def kea_service(request):
         request=request,
         service_name=param["service_name"],
         suppress_registration=param["suppress_registration"],
+        min_kea_version=param["min_kea_version"],
     )
 
 
@@ -247,16 +270,24 @@ def ha_pair_service(request):
         "first_service_name": "agent-kea-ha1",
         "second_service_name": "agent-kea-ha2",
         "suppress_registration": False,
+        "min_kea_version": None,
     }
 
     if hasattr(request, "param"):
         param.update(request.param)
 
     first_wrapper = _prepare_kea_wrapper(
-        request, param["first_service_name"], param["suppress_registration"]
+        request=request,
+        service_name=param["first_service_name"],
+        suppress_registration=param["suppress_registration"],
+        min_kea_version=param.get("min_kea_version"),
     )
     second_wrapper = _prepare_kea_wrapper(
-        request, param["second_service_name"], param["suppress_registration"], "kea-ha2"
+        request=request,
+        service_name=param["second_service_name"],
+        suppress_registration=param["suppress_registration"],
+        config_dirname="kea-ha2",
+        min_kea_version=param["min_kea_version"],
     )
     return first_wrapper, second_wrapper
 
@@ -266,6 +297,7 @@ def _prepare_kea_wrapper(
     service_name: str,
     suppress_registration: bool,
     config_dirname="kea",
+    min_kea_version=None,
 ):
     """
     The helper function setting up the Kea Server service and guarantees that
@@ -281,7 +313,11 @@ def _prepare_kea_wrapper(
         Indicates the registration in the server should be suppressed.
     config_dirname : str, optional
         The target directory for auto-generated configurations, by default "kea"
-
+    min_kea_version : str, optional
+        Minimum version of Kea to use, by default None. The test is skipped if
+        the Kea version provided in the KEA_VERSION environment variable is
+        lower than the minimum version.
+        
     Returns
     -------
     core.wrappers.Kea
@@ -293,7 +329,28 @@ def _prepare_kea_wrapper(
     if suppress_registration:
         env_vars["STORK_SERVER_URL"] = ""
         env_vars["STORK_AGENT_LISTEN_PROMETHEUS_ONLY"] = "true"
-    else:
+
+    # Setup wrapper
+    compose = create_docker_compose(extra_env_vars=env_vars)
+
+    # Check the Kea version
+    if min_kea_version is not None:
+        min_kea_version_info = parse_version_info(min_kea_version)
+        build_args = compose.get_build_arguments(service_name)
+        # We expect all Kea-related services to have the KEA_VERSION build
+        # argument.
+        kea_version = build_args["KEA_VERSION"]
+        kea_version_info = parse_version_info(kea_version)
+
+        if kea_version_info < min_kea_version_info:
+            pytest.skip(
+                f"Kea version {kea_version} is lower than the required"
+                f" version {min_kea_version} for the test."
+            )
+            return None
+
+    # Prepare the server fixture if necessary
+    if not suppress_registration:
         # We need the Server to perform the registration
         server_service_instance = request.getfixturevalue("server_service")
 
@@ -305,8 +362,6 @@ def _prepare_kea_wrapper(
     with open(os.path.join(config_dir, "kea-leases6.csv"), "wt", encoding="utf-8") as f:
         lease_generators.gen_dhcp6_lease_file(f)
 
-    # Setup wrapper
-    compose = create_docker_compose(extra_env_vars=env_vars)
     compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Kea(compose, service_name, server_service_instance)
