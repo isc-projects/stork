@@ -339,12 +339,12 @@ def _prepare_kea_wrapper(
 
     # Check the Kea version
     if min_kea_version is not None:
-        min_kea_version_info = parse_version_info(min_kea_version)
+        min_kea_version_info, _ = parse_version_info(min_kea_version)
         build_args = compose.get_build_arguments(service_name)
         # We expect all Kea-related services to have the KEA_VERSION build
         # argument.
         kea_version = build_args["KEA_VERSION"]
-        kea_version_info = parse_version_info(kea_version)
+        kea_version_info, _ = parse_version_info(kea_version)
 
         if kea_version_info < min_kea_version_info:
             pytest.skip(

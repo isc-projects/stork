@@ -78,6 +78,41 @@ def test_communication_with_kea_over_secure_protocol_require_trusted_cert(
     assert kea_service.has_failed_tls_handshake_log_entry()
 
 
+@kea_parametrize("agent-kea-hsts-header-over-insecure-protocol", min_version="2.7.5")
+def test_communication_with_kea_over_http_with_hsts_header_in_response(
+    server_service: Server, kea_service: Kea
+):
+    """Check if Stork agent communicates with Kea over HTTP correctly when
+    the Kea sends HSTS header in the response."""
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    state, *_ = server_service.wait_for_next_machine_states()
+
+    assert not state.apps[0].access_points[0].use_secure_protocol
+    leases = server_service.list_leases("192.0.2.1")
+    assert leases.total == 1
+
+
+@kea_parametrize("agent-kea-hsts-header-over-secure-protocol", min_version="2.7.5")
+def test_communication_with_kea_over_https_with_hsts_header_in_response(
+    server_service: Server, kea_service: Kea
+):
+    """
+    Check if Stork agent communicates with Kea over HTTPS correctly when
+    the Kea sends HSTS header in the response.
+
+    In this test the Kea doesn't require TLS certificate on the client side, so
+    the Stork agent can establish the connection.
+    """
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    state, *_ = server_service.wait_for_next_machine_states()
+
+    assert state.apps[0].access_points[0].use_secure_protocol
+    leases = server_service.list_leases("192.0.2.1")
+    assert leases.total == 1
+
+
 @kea_parametrize("agent-kea-basic-auth-no-credentials")
 def test_communication_with_kea_using_basic_auth_no_credentials(
     server_service: Server, kea_service: Kea

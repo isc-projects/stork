@@ -132,6 +132,7 @@ services:
       - $PWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - $PWD/tests/system/config/kea-multi-threading/multi-threading-disabled.json:/etc/kea/multi-threading.json
       - $PWD/tests/system/config/kea-multi-threading/ha-multi-threading-disabled.json:/etc/kea/ha-multi-threading.json
+      - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-ctrl-agent-http-headers.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-hostcmds.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-subnetcmds.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp4.json
@@ -212,6 +213,16 @@ services:
     extends: agent-kea-tls-optional-client-cert-no-verify
     environment:
       STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "false"
+
+  agent-kea-hsts-header-over-insecure-protocol:
+    extends: agent-kea
+    volumes:
+      - $PWD/tests/system/config/kea-hsts-header/kea-ctrl-agent-http-headers.json:/etc/kea/kea-ctrl-agent-http-headers.json
+
+  agent-kea-hsts-header-over-secure-protocol:
+    extends: agent-kea-tls-optional-client-cert-no-verify
+    volumes:
+      - $PWD/tests/system/config/kea-hsts-header/kea-ctrl-agent-http-headers.json:/etc/kea/kea-ctrl-agent-http-headers.json
 
   agent-kea-config-review:
     extends: agent-kea
