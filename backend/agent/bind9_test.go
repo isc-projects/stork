@@ -941,8 +941,8 @@ func TestDetermineDetailsCustomKeyMissingConfigMissingKey(t *testing.T) {
 	require.Equal(t, expectedBaseCommand, client.BaseCommand)
 }
 
-// Test that the shutdown doesn't panic when zone inventory is nil.
-func TestBind9AppShutdownNilZoneInventory(t *testing.T) {
+// Test that awaiting background tasks doesn't panic when zone inventory is nil.
+func TestBind9AppAwaitBackgroundTasksNilZoneInventory(t *testing.T) {
 	app := &Bind9App{}
-	require.NotPanics(t, app.Shutdown)
+	require.NotPanics(t, app.AwaitBackgroundTasks)
 }

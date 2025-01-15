@@ -215,6 +215,10 @@ namespace :unittest do
                         'prepareTLS', 'handleRequest', 'pullerLoop', 'Collect',
                         'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
 
+                        # Test function is currently no-op for Kea and thus it is sometimes reported
+                        # as untested even though the actual test exists.
+                        'AwaitBackgroundTasks',
+
                         # The Output method of the "systemCommandExecutor" structure encapsulates the
                         # "exec.Command" call to allow mocking of the system response in unit tests. The
                         # "exec.Command" cannot be directly mocked, so it is impossible to test the "Output"

@@ -94,7 +94,7 @@ func (ba *BaseApp) IsEqual(other *BaseApp) bool {
 type App interface {
 	GetBaseApp() *BaseApp
 	DetectAllowedLogs() ([]string, error)
-	Shutdown()
+	AwaitBackgroundTasks()
 }
 
 // Currently supported types are: "kea" and "bind9".
@@ -345,7 +345,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 
 	// Wait for the zone inventories to complete pending operations.
 	for _, app := range sm.apps {
-		app.Shutdown()
+		app.AwaitBackgroundTasks()
 	}
 
 	// Remember detected apps.
@@ -427,7 +427,7 @@ func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
 // Shut down monitor. Stop background goroutines.
 func (sm *appMonitor) Shutdown() {
 	for _, app := range sm.GetApps() {
-		app.Shutdown()
+		app.AwaitBackgroundTasks()
 	}
 	sm.quit <- true
 	sm.wg.Wait()

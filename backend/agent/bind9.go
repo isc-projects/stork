@@ -62,8 +62,8 @@ func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
 }
 
-// Shuts down BIND9 zone inventory.
-func (ba *Bind9App) Shutdown() {
+// Waits for the zone inventory to complete background tasks.
+func (ba *Bind9App) AwaitBackgroundTasks() {
 	if ba.zoneInventory != nil {
 		ba.zoneInventory.shutdown()
 	}

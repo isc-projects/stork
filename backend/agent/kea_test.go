@@ -343,3 +343,9 @@ func TestKeaAllowedLogsFewerResponses(t *testing.T) {
 	_, err = ka.DetectAllowedLogs()
 	require.Error(t, err)
 }
+
+// Test that awaiting background tasks doesn't panic.
+func TestKeaAppAwaitBackgroundTasks(t *testing.T) {
+	app := &KeaApp{}
+	require.NotPanics(t, app.AwaitBackgroundTasks)
+}

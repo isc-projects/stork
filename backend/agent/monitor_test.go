@@ -211,11 +211,11 @@ func TestDetectApps(t *testing.T) {
 	httpClient := NewHTTPClient()
 	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
 
-	// Create fake app to test that the shutdown is called when the apps
-	// are detected.
+	// Create fake app to test that the monitor awaits background tasks
+	// when new apps are detected.
 	fakeApp := NewMockApp(ctrl)
 	fakeApp.EXPECT().GetBaseApp().AnyTimes().Return(&BaseApp{})
-	fakeApp.EXPECT().Shutdown().Times(1)
+	fakeApp.EXPECT().AwaitBackgroundTasks().Times(1)
 
 	am.apps = append(am.apps, fakeApp)
 

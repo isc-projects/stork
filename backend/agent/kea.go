@@ -175,7 +175,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 }
 
 // Currently it does nothing.
-func (ka *KeaApp) Shutdown() {}
+func (ka *KeaApp) AwaitBackgroundTasks() {}
 
 // Reads the Kea configuration file, resolves the includes, and parses the content.
 func readKeaConfig(path string) (*keaconfig.Config, error) {
