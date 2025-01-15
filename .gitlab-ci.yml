@@ -453,6 +453,7 @@ build_apks_arm64:
     expire_in: 1 hour
 
 packages:
+  extends: .base_build_debian
   stage: build
   rules:
     - when: on_success
@@ -754,6 +755,7 @@ build_hooks_legacy_arm64:
     ARCH: arm64
 
 unittest_hooks:
+  extends: build_hooks_amd64
   stage: hooks
   when: always
   needs: []
@@ -763,6 +765,7 @@ unittest_hooks:
     - rake hook:unittest
 
 tarball_hooks:
+  extends: build_hooks_amd64
   stage: hooks
   when: always
   needs: []
@@ -880,6 +883,7 @@ build_hooks_apks_arm64:
     expire_in: 1 hour
 
 packages_hooks:
+  extends: build_hooks_amd64
   stage: hooks
   rules:
     - when: on_success
