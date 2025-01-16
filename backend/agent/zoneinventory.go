@@ -355,6 +355,9 @@ type ZoneInventoryMeta struct {
 // server). It runs long lasting operations in background and ensures that the
 // conflicting calls cannot be invoked. Fetched zones can be stored in memory
 // and/or on disk, depending on the configuration.
+//
+// Please consult https://gitlab.isc.org/isc-projects/stork/-/wikis/designs/bind-zone-view#zone-inventory
+// for the state diagram.
 type zoneInventory struct {
 	storage       zoneInventoryStorage
 	client        zoneFetcher
