@@ -42,7 +42,7 @@ type StorkAgent struct {
 	// Creates an HTTP client to communicate with Kea Control Agent.
 	// If the agent is registered, it will use the GRPC credentials obtained
 	// from the server as TLS client certificate.
-	KeaHTTPClientCloner HTTPClientCloner
+	KeaHTTPClientCloner httpClientCloner
 	server              *grpc.Server
 	logTailer           *logTailer
 	keaInterceptor      *keaInterceptor

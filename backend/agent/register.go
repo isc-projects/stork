@@ -154,7 +154,7 @@ func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, a
 // is established. This case is used when agent automatically tries to register
 // during startup.
 // If the agent is already registered then only ID is returned, the certificates are empty.
-func registerAgentInServer(client *HTTPClient, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (machineID int64, serverCACert []byte, agentCert []byte, serverCertFingerprint [32]byte, err error) {
+func registerAgentInServer(client *httpClient, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (machineID int64, serverCACert []byte, agentCert []byte, serverCertFingerprint [32]byte, err error) {
 	url, _ := baseSrvURL.Parse("api/machines")
 	var resp *http.Response
 	for {
@@ -297,7 +297,7 @@ func checkAndStoreCerts(certStore *CertStore, serverCACert, agentCert []byte, se
 
 // Ping Stork Agent service via Stork Server. It is used during manual registration
 // to confirm that TLS connection between agent and server can be established.
-func pingAgentViaServer(client *HTTPClient, baseSrvURL *url.URL, machineID int64, serverToken, agentToken string) error {
+func pingAgentViaServer(client *httpClient, baseSrvURL *url.URL, machineID int64, serverToken, agentToken string) error {
 	urlSuffix := fmt.Sprintf("api/machines/%d/ping", machineID)
 	url, err := baseSrvURL.Parse(urlSuffix)
 	if err != nil {
@@ -366,7 +366,7 @@ func pingAgentViaServer(client *HTTPClient, baseSrvURL *url.URL, machineID int64
 // in the server. If server token is empty (in automatic registration or
 // when it is not provided in manual registration) then agent is added to
 // server but requires manual authorization in web UI.
-func Register(serverURL, serverToken, agentHost string, agentPort int, regenCerts bool, retry bool, httpClient *HTTPClient) error {
+func Register(serverURL, serverToken, agentHost string, agentPort int, regenCerts bool, retry bool, httpClient *httpClient) error {
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil {

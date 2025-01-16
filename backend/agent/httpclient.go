@@ -14,7 +14,7 @@ import (
 )
 
 // Basic auth credentials.
-type BasicAuthCredentials struct {
+type basicAuthCredentials struct {
 	User     string
 	Password string
 }
@@ -22,10 +22,10 @@ type BasicAuthCredentials struct {
 // Default HTTP client timeout.
 const DefaultHTTPClientTimeout = 10 * time.Second
 
-// HTTPClient is a normal http client.
-type HTTPClient struct {
+// httpClient is a normal http client.
+type httpClient struct {
 	client    *http.Client
-	basicAuth *BasicAuthCredentials
+	basicAuth *basicAuthCredentials
 }
 
 // A cloner interface for HTTP client.
@@ -44,19 +44,19 @@ type HTTPClient struct {
 //
 // The interface ensures that the base client is not accidentally used or
 // modified as it allows only creating new instances.
-type HTTPClientCloner interface {
-	Clone() *HTTPClient
+type httpClientCloner interface {
+	Clone() *httpClient
 }
 
 // Returns the reference to the http.Transport object of the underlying
 // http.Client. The changes performed on the transport object will be
 // reflected in the client.
-func (c *HTTPClient) getTransport() *http.Transport {
+func (c *httpClient) getTransport() *http.Transport {
 	return c.client.Transport.(*http.Transport)
 }
 
 // Creates a client to contact with Kea Control Agent or named statistics-channel.
-func NewHTTPClient() *HTTPClient {
+func NewHTTPClient() *httpClient {
 	transport := &http.Transport{}
 	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
 		transport = defaultTransport.Clone()
@@ -78,7 +78,7 @@ func NewHTTPClient() *HTTPClient {
 	// In fact the not-nil TLSClientConfig disables HTTP/2 anyway but it is
 	// not documented strictly.
 	transport.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
-	return &HTTPClient{
+	return &httpClient{
 		client: &http.Client{
 			Transport: transport,
 			Timeout:   DefaultHTTPClientTimeout,
@@ -88,14 +88,14 @@ func NewHTTPClient() *HTTPClient {
 
 // Clones the HTTP client instance. The cloned client has the same TLS
 // configuration and credentials as the original client.
-func (c *HTTPClient) Clone() *HTTPClient {
-	var basicAuth *BasicAuthCredentials
+func (c *httpClient) Clone() *httpClient {
+	var basicAuth *basicAuthCredentials
 	if c.basicAuth != nil {
 		basicAuthCopy := *c.basicAuth
 		basicAuth = &basicAuthCopy
 	}
 
-	return &HTTPClient{
+	return &httpClient{
 		client: &http.Client{
 			Transport: c.getTransport().Clone(),
 		},
@@ -110,7 +110,7 @@ func (c *HTTPClient) SetRequestTimeout(timeout time.Duration) {
 
 // If true then it doesn't verify the server credentials
 // over HTTPS. It may be useful when Kea uses a self-signed certificate.
-func (c *HTTPClient) SetSkipTLSVerification(skipTLSVerification bool) {
+func (c *httpClient) SetSkipTLSVerification(skipTLSVerification bool) {
 	c.getTransport().TLSClientConfig.InsecureSkipVerify = skipTLSVerification
 }
 
@@ -120,7 +120,7 @@ func (c *HTTPClient) SetSkipTLSVerification(skipTLSVerification bool) {
 // will be rejected if the server verifies the client credentials.
 // Returns true if the certificates have been loaded successfully. Returns
 // false if the certificates file does not exist.
-func (c *HTTPClient) LoadGRPCCertificates() (bool, error) {
+func (c *httpClient) LoadGRPCCertificates() (bool, error) {
 	tlsCertStore := NewCertStoreDefault()
 	isEmpty, err := tlsCertStore.IsEmpty()
 	if err != nil {
@@ -153,8 +153,8 @@ func (c *HTTPClient) LoadGRPCCertificates() (bool, error) {
 
 // Set the basic auth credentials to the client. The credentials will be
 // attached to all sent requests.
-func (c *HTTPClient) SetBasicAuth(user, password string) {
-	c.basicAuth = &BasicAuthCredentials{
+func (c *httpClient) SetBasicAuth(user, password string) {
+	c.basicAuth = &basicAuthCredentials{
 		User:     user,
 		Password: password,
 	}
@@ -164,7 +164,7 @@ func (c *HTTPClient) SetBasicAuth(user, password string) {
 // must contain the valid JSON. If the authentication credentials or TLS
 // certificates are provided in the application configuration, they are added
 // to the request.
-func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error) {
+func (c *httpClient) Call(url string, payload io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
 	if err != nil {
 		err = errors.Wrapf(err, "problem creating POST request to %s", url)
@@ -189,6 +189,6 @@ func (c *HTTPClient) Call(url string, payload io.Reader) (*http.Response, error)
 
 // Indicates if the Stork Agent attaches the authentication credentials to
 // the requests.
-func (c *HTTPClient) HasAuthenticationCredentials() bool {
+func (c *httpClient) HasAuthenticationCredentials() bool {
 	return c.basicAuth != nil
 }

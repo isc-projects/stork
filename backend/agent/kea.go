@@ -20,7 +20,7 @@ var _ App = (*KeaApp)(nil)
 // It holds common and Kea specific runtime information.
 type KeaApp struct {
 	BaseApp
-	HTTPClient *HTTPClient // to communicate with Kea Control Agent
+	HTTPClient *httpClient // to communicate with Kea Control Agent
 	// Active daemons are those which are running and can be communicated with.
 	// Nil value means that the active daemons have not been detected yet.
 	// An empty list means that no daemons are running.
@@ -242,7 +242,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // in the Kea CA configuration. See @readClientCredentials for details about
 // how the credentials are selected. The user name of the selected credentials
 // is used as a key of the application's access point.
-func detectKeaApp(match []string, cwd string, httpClientCloner HTTPClientCloner) (*KeaApp, error) {
+func detectKeaApp(match []string, cwd string, httpClientCloner httpClientCloner) (*KeaApp, error) {
 	if len(match) < 3 {
 		return nil, errors.Errorf("problem parsing Kea cmdline: %s", match[0])
 	}
