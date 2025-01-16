@@ -89,11 +89,17 @@ func NewHTTPClient() *HTTPClient {
 // Clones the HTTP client instance. The cloned client has the same TLS
 // configuration and credentials as the original client.
 func (c *HTTPClient) Clone() *HTTPClient {
+	var basicAuth *BasicAuthCredentials
+	if c.basicAuth != nil {
+		basicAuthCopy := *c.basicAuth
+		basicAuth = &basicAuthCopy
+	}
+
 	return &HTTPClient{
 		client: &http.Client{
 			Transport: c.getTransport().Clone(),
 		},
-		basicAuth: c.basicAuth,
+		basicAuth: basicAuth,
 	}
 }
 

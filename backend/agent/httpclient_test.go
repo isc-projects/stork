@@ -258,3 +258,32 @@ func TestCallTimeout(t *testing.T) {
 	require.NotNil(t, err)
 	require.ErrorContains(t, err, "context deadline exceeded")
 }
+
+// Test that the HTTP client can be cloned and the cloned instances differ from
+// the original one.
+func TestHTTPClientClone(t *testing.T) {
+	// Arrange
+	httpClient := NewHTTPClient()
+	httpClient.SetSkipTLSVerification(true)
+	httpClient.SetBasicAuth("foo", "bar")
+
+	// Act
+	clonedHTTPClient := httpClient.Clone()
+
+	// Assert
+	require.NotNil(t, clonedHTTPClient)
+	require.NotEqual(t, httpClient, clonedHTTPClient)
+	require.NotEqual(t, httpClient.client, clonedHTTPClient.client)
+
+	require.Equal(t, httpClient.basicAuth, clonedHTTPClient.basicAuth)
+	require.NotSame(t, httpClient.basicAuth, clonedHTTPClient.basicAuth)
+	require.Equal(t, "foo", clonedHTTPClient.basicAuth.User)
+	require.Equal(t, "bar", clonedHTTPClient.basicAuth.Password)
+
+	originalTransport := httpClient.getTransport()
+	clonedTransport := clonedHTTPClient.getTransport()
+	require.NotEqual(t, originalTransport, clonedTransport)
+	require.Equal(t, originalTransport.TLSClientConfig, clonedTransport.TLSClientConfig)
+	require.NotSame(t, originalTransport.TLSClientConfig, clonedTransport.TLSClientConfig)
+	require.True(t, clonedTransport.TLSClientConfig.InsecureSkipVerify)
+}
