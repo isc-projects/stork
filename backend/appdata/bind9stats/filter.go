@@ -21,7 +21,7 @@ type NameAccessor interface {
 // function assumes that the zones are sorted in a DNS order. It returns a
 // subslice with the first zone matching the specified name or the next zone
 // ordered by the specified name.
-func ApplyZoneLowerBoundFilter[ZoneI NameAccessor](zones []ZoneI, filter *ZoneFilter) []ZoneI {
+func ApplyZoneLowerBoundFilter[TZone NameAccessor](zones []TZone, filter *ZoneFilter) []TZone {
 	// There is nothing to do, if filtering is disabled.
 	if filter == nil || filter.LowerBound == nil || *filter.LowerBound == "" {
 		return zones
@@ -32,7 +32,7 @@ func ApplyZoneLowerBoundFilter[ZoneI NameAccessor](zones []ZoneI, filter *ZoneFi
 		start += 1
 	}
 	if start < 0 || start >= len(zones) {
-		return []ZoneI{}
+		return []TZone{}
 	}
 	return zones[start:]
 }
