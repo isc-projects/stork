@@ -899,7 +899,7 @@ or ``.apk`` extension. It is recommended to keep the original filenames.
 
 Open Stork in the web browser and log in as a user from the "super admin" group.
 Select ``Services`` and then ``Machines`` from the menu. Click on the
-``How to Install Agent on New Machine`` button to display the agent
+``Installing Stork Agent on a New Machine`` button to display the agent
 installation instructions. Copy and paste the commands from the displayed
 window into the terminal on the machine where the agent is installed.
 These commands are also provided here for convenience:
@@ -923,7 +923,7 @@ In the agent machine's terminal, a prompt for a server token is presented:
     >>>> Server access token (optional):
 
 The server token is available for a super admin user after clicking on the
-``How to Install Agent on New Machine`` button in the ``Services -> Machines`` page.
+``Installing Stork Agent on a New Machine`` button in the ``Services -> Machines`` page.
 Copy the server token from the dialog box and paste it in at the prompt
 displayed on the agent machine.
 
@@ -1091,7 +1091,7 @@ the uncontrolled registration of new agents. Regeneration of the token
 does not affect already-registered agents. The new token must be used
 for any new registrations.
 
-The server token can be regenerated in the ``How to Install Agent on New Machine``
+The server token can be regenerated in the ``Installing Stork Agent on a New Machine``
 dialog box available after navigating to the ``Services -> Machines`` page.
 
 Agent Setup Summary

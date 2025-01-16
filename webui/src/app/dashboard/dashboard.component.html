@@ -18,14 +18,14 @@
                 </p>
 
                 <p class="pb-3">
-                    Currently, there are no machines to monitor defined in Stork. To add a new machine visit the
-                    <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">machines page</a>.
+                    Currently, no machines are specified for monitoring in Stork. To add a new machine, visit the
+                    <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">machines page</a> (under the
+                    Services menu in the top bar).
                 </p>
 
                 <p>
-                    Stork uses the status-get command to collect information about Kea status. This command was
-                    introduced in Kea 1.7.3 and backported to 1.6.3. As such, Stork is not able to fully interact with
-                    older Kea versions.
+                    Stork uses the "status-get" command to collect Kea status information. This command is only
+                    available in Kea 1.6.3 and later, so Stork cannot fully interact with older Kea versions.
                 </p>
             </p-panel>
         </div>
@@ -370,7 +370,7 @@
                 </p-table>
             </p-panel>
         </div>
-        <!-- TODO: for now do not show empty DNS dashboard. Maybe a panel with links to bind9 machines to have anything?
+        <!-- TODO: for now do not show empty DNS dashboard. Maybe a panel with links to BIND 9 machines to have anything?
 <div class="col-6" *ngIf="appsStats.bind9AppsTotal > 0">
     <p-panel header="DNS">
         TODO
