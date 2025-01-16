@@ -44,6 +44,26 @@ func TestSendCommand(t *testing.T) {
 	require.Len(t, responses, 1)
 }
 
+// Test the case that the command is not successfully sent to Kea because
+// there is no control access point.
+func TestSendCommandNoAccessPoint(t *testing.T) {
+	httpClient := NewHTTPClient()
+
+	command := keactrl.NewCommandBase(keactrl.ListCommands)
+
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointStatistics, "localhost", "", 45634, false),
+		},
+		HTTPClient: httpClient,
+	}
+
+	responses := keactrl.ResponseList{}
+	err := ka.sendCommand(command, &responses)
+	require.ErrorContains(t, err, "no control access point")
+}
+
 // Test the case when Kea returns invalid response to the command.
 func TestSendCommandInvalidResponse(t *testing.T) {
 	httpClient := NewHTTPClient()

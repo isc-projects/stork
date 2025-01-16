@@ -54,8 +54,22 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 
 // Sends a serialized command to Kea and returns a serialized response.
 func (ka *KeaApp) sendCommandRaw(command []byte) ([]byte, error) {
-	ap := &ka.BaseApp.AccessPoints[0]
-	caURL := storkutil.HostWithPortURL(ap.Address, ap.Port, ap.UseSecureProtocol)
+	var accessPoint *AccessPoint
+	for _, ap := range ka.BaseApp.AccessPoints {
+		if ap.Type == AccessPointControl {
+			accessPoint = &ap
+			break
+		}
+	}
+	if accessPoint == nil {
+		return nil, errors.New("no control access point found")
+	}
+
+	caURL := storkutil.HostWithPortURL(
+		accessPoint.Address,
+		accessPoint.Port,
+		accessPoint.UseSecureProtocol,
+	)
 
 	// Send the command to the Kea server.
 	response, err := ka.HTTPClient.Call(caURL, bytes.NewBuffer(command))
