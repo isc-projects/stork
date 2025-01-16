@@ -783,6 +783,26 @@ If the Kea CA is configured to use Basic Auth, the Stork agent will read the cre
 file. The Stork agent chooses credentials with user name beginning with ``stork``. If there is no such user, the agent
 will use the first user from the list.
 
+For example, set the following in the Kea CA configuration file, and save the
+password in the ``/etc/kea/stork-api-password`` file:
+
+.. code-block:: json
+
+   "authentication": {
+     "type": "basic",
+      "realm": "Kea Control Agent",
+      "directory": "/etc/kea",
+      "clients": [
+        {
+          "user": "stork-api",
+          "password-file": "stork-api-password"
+        }
+      ]
+    }
+
+The Stork agent will use the credentials with the user name ``stork-api`` because it starts with ``stork``. Please
+remember that the system user that runs the Stork agent must have read access to the password file.
+
 .. warning::
 
    Basic HTTP authentication is weak on its own as there are known dictionary attacks,
