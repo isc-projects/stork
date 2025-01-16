@@ -474,6 +474,7 @@ func TestZoneInventoryPopulateShutdown(t *testing.T) {
 
 	mutex := &sync.Mutex{}
 	cond := sync.NewCond(mutex)
+	mutex.Lock()
 	go func() {
 		// Begin shutdown before finishing up populating the zones.
 		// It should block until zones are populated.
@@ -481,7 +482,6 @@ func TestZoneInventoryPopulateShutdown(t *testing.T) {
 		cond.Broadcast()
 	}()
 
-	mutex.Lock()
 	go func() {
 		// Finish populating the zones.
 		result := <-done
