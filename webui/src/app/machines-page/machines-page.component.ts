@@ -7,7 +7,7 @@ import { Machine, Settings } from '../backend'
 
 import { ServicesService, SettingsService } from '../backend'
 import { ServerDataService } from '../server-data.service'
-import { copyToClipboard, getErrorMessage } from '../utils'
+import { copyToClipboard, deepCopy, getErrorMessage } from '../utils'
 import { catchError, filter } from 'rxjs/operators'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { Menu } from 'primeng/menu'
@@ -594,7 +594,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param machines
      */
     authorizeSelectedMachines(machines: Machine[]) {
-        const unauthorized = machines?.filter((m) => !m.authorized) ?? []
+        const unauthorized = deepCopy(machines?.filter((m) => !m.authorized)) ?? []
         // Calling servicesApi.updateMachine() API sequentially for all selected machines.
         // Max expected count of selected machines is max machines per table page,
         // which currently is 50.

@@ -63,14 +63,17 @@ describe('MachinesPageComponent', () => {
     // prepare responses for api calls
     const getUnauthorizedMachinesResp: any = {
         items: [
-            { hostname: 'aaa', id: 1, address: 'addr1' },
-            { hostname: 'bbb', id: 2, address: 'addr2' },
-            { hostname: 'ccc', id: 3, address: 'addr3' },
+            { hostname: 'aaa', id: 1, address: 'addr1', authorized: false },
+            { hostname: 'bbb', id: 2, address: 'addr2', authorized: false },
+            { hostname: 'ccc', id: 3, address: 'addr3', authorized: false },
         ],
         total: 3,
     }
     const getAuthorizedMachinesResp: any = {
-        items: [{ hostname: 'zzz' }, { hostname: 'xxx' }],
+        items: [
+            { hostname: 'zzz', id: 4, authorized: true },
+            { hostname: 'xxx', id: 5, authorized: true },
+        ],
         total: 2,
     }
     const getAllMachinesResp = {
@@ -88,7 +91,7 @@ describe('MachinesPageComponent', () => {
 
         // fake SettingsService
         const registrationEnabled = {
-            enableMachineRegistration: false,
+            enableMachineRegistration: true,
         }
         const settingsService = createSpyObj('SettingsService', ['getSettings'])
         getSettingsSpy = settingsService.getSettings.and.returnValue(of(registrationEnabled))
@@ -631,34 +634,25 @@ describe('MachinesPageComponent', () => {
     }))
 
     it('should button menu click trigger the download handler', fakeAsync(() => {
-        // Prepare the data
-        const getAuthorizedMachinesResp: any = {
-            items: [
-                { id: 1, hostname: 'zzz' },
-                { id: 2, hostname: 'xxx' },
-            ],
-            total: 2,
-        }
-        getMachinesSpy.and.returnValue(of(getAuthorizedMachinesResp))
-        // ngOnInit was already called before we prepared the static response.
-        // We have to reload the machines list manually.
-        component.table.loadDataWithoutFilter()
-        flush()
+        // Navigate to Authorized machines only view.
+        navigate({ id: 'all' }, { authorized: 'true' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
 
-        // Show the menu.
-        const menuButton = fixture.debugElement.query(By.css('#show-machines-menu'))
+        expect(component.showAuthorized).toBeTrue()
+        expect(component.table.totalRecords).toBe(2)
+
+        // Show the menu for the machine with ID=4.
+        const menuButton = fixture.debugElement.query(By.css('#show-machines-menu-4'))
         expect(menuButton).not.toBeNull()
 
-        menuButton.triggerEventHandler('click', { currentTarget: menuButton.nativeElement })
+        menuButton.nativeElement.click()
         flush()
         fixture.detectChanges()
 
         // Check the dump button.
         // The menu items don't render the IDs in PrimeNG >= 16.
-        const dumpButton = fixture.debugElement.query(
-            By.css('[title="Download data archive for troubleshooting purposes"]')
-        )
+        const dumpButton = fixture.debugElement.query(By.css('#dump-single-machine a'))
         expect(dumpButton).not.toBeNull()
 
         const downloadSpy = spyOn(component, 'downloadDump').and.returnValue()
@@ -668,8 +662,7 @@ describe('MachinesPageComponent', () => {
         flush()
         fixture.detectChanges()
 
-        expect(downloadSpy).toHaveBeenCalledTimes(1)
-        expect(downloadSpy.calls.first().args[0].id).toBe(1)
+        expect(downloadSpy).toHaveBeenCalledOnceWith(objectContaining({ id: 4 }))
     }))
 
     it('should have breadcrumbs', () => {
@@ -682,12 +675,13 @@ describe('MachinesPageComponent', () => {
         expect(breadcrumbsComponent.items[1].label).toEqual('Machines')
     })
 
-    it('should display status of all daemons from all applications', async () => {
+    it('should display status of all daemons from all applications', fakeAsync(() => {
         // Prepare the data
-        const getAuthorizedMachinesResp: any = {
+        const getMachinesResp: any = {
             items: [
                 {
                     id: 1,
+                    authorized: true,
                     hostname: 'zzz',
                     apps: [
                         {
@@ -731,15 +725,14 @@ describe('MachinesPageComponent', () => {
             ],
             total: 1,
         }
-        getMachinesSpy.and.returnValue(of(getAuthorizedMachinesResp))
-        // ngOnInit was already called before we prepared the static response.
-        // We have to reload the machines list manually.
-        component.table.loadDataWithoutFilter()
+        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getMachinesResp))
 
-        await fixture.whenStable()
+        // Navigate to Authorized machines only view.
+        navigate({ id: 'all' }, { authorized: 'true' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
 
-        const textContent = (fixture.debugElement.nativeElement as HTMLElement).textContent
+        const textContent = fixture.nativeElement.innerText
 
         expect(textContent).toContain('DHCPv4')
         expect(textContent).toContain('CA')
@@ -767,19 +760,16 @@ describe('MachinesPageComponent', () => {
         expect(versionStatus[1].properties.outerHTML).toContain('test feedback')
         expect(versionStatus[2].properties.outerHTML).toContain('text-green-500')
         expect(versionStatus[2].properties.outerHTML).toContain('test feedback')
-    })
+    }))
 
     it('should display a warning about disabled registration', fakeAsync(() => {
-        // Get references to select buttons
-        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
-        const unauthSelectBtnEl = selectButtons[1]
-
         // Prepare response for the call to getMachines().
         const getMachinesResp: any = {
             items: [],
             total: 0,
         }
-        getMachinesSpy.and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getMachinesResp))
 
         // Simulate disabled machine registration.
         const getSettingsResp: any = {
@@ -788,18 +778,24 @@ describe('MachinesPageComponent', () => {
         getSettingsSpy.and.returnValue(of(getSettingsResp))
 
         component.ngOnInit()
-        tick()
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        fixture.detectChanges()
+
+        // Navigate to Authorized machines only view.
+        navigate({ id: 'all' }, { authorized: 'true' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        fixture.detectChanges()
 
         // Initially, we show authorized machines. In that case we don't show a warning.
-        // expect(component.showUnauthorized).toBeFalse()
         expect(component.showAuthorized).toBeTrue()
         let messages = fixture.debugElement.query(By.css('p-messages'))
         expect(messages).toBeFalsy()
 
         // Show unauthorized machines.
-        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        navigate({ id: 'all' }, { authorized: 'false' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
-        // expect(component.showUnauthorized).toBeTrue()
+
         expect(component.showAuthorized).toBeFalse()
 
         // This time we should show the warning that the machines registration is disabled.
@@ -809,35 +805,29 @@ describe('MachinesPageComponent', () => {
     }))
 
     it('should not display a warning about disabled registration', fakeAsync(() => {
-        // Get references to select buttons
-        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
-        const unauthSelectBtnEl = selectButtons[1]
-
         // Prepare response for the call to getMachines().
         const getMachinesResp: any = {
             items: [],
             total: 0,
         }
-        getMachinesSpy.and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getMachinesResp))
+        getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getMachinesResp))
 
-        // const getSettingsResp: any = {
-        //     enableMachineRegistration: true,
-        // }
-        // spyOn(settingsService, 'getSettings').and.returnValue(of(getSettingsResp))
-
-        component.ngOnInit()
-        tick()
+        // Navigate to Authorized machines only view.
+        navigate({ id: 'all' }, { authorized: 'true' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        fixture.detectChanges()
 
         // Showing authorized machines. The warning is never displayed in such a case.
-        // expect(component.showUnauthorized).toBeFalse()
         expect(component.showAuthorized).toBeTrue()
         let messages = fixture.debugElement.query(By.css('p-messages'))
         expect(messages).toBeFalsy()
 
         // Show unauthorized machines.
-        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        navigate({ id: 'all' }, { authorized: 'false' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
-        // expect(component.showUnauthorized).toBeTrue()
+
         expect(component.showAuthorized).toBeFalse()
 
         // The warning should not be displayed because the registration is enabled.
