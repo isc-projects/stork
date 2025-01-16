@@ -22,12 +22,6 @@ type basicAuthCredentials struct {
 // Default HTTP client timeout.
 const DefaultHTTPClientTimeout = 10 * time.Second
 
-// httpClient is a normal http client.
-type httpClient struct {
-	client    *http.Client
-	basicAuth *basicAuthCredentials
-}
-
 // A cloner interface for HTTP client.
 // The Clone() methods creates a new instance of the HTTP client with the same
 // configuration as the original client. The cloned client doesn't depend on
@@ -47,6 +41,14 @@ type httpClient struct {
 type httpClientCloner interface {
 	Clone() *httpClient
 }
+
+// httpClient is a normal http client.
+type httpClient struct {
+	client    *http.Client
+	basicAuth *basicAuthCredentials
+}
+
+var _ httpClientCloner = (*httpClient)(nil)
 
 // Returns the reference to the http.Transport object of the underlying
 // http.Client. The changes performed on the transport object will be
