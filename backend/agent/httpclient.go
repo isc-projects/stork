@@ -29,6 +29,21 @@ type HTTPClient struct {
 }
 
 // A cloner interface for HTTP client.
+// The Clone() methods creates a new instance of the HTTP client with the same
+// configuration as the original client. The cloned client doesn't depend on
+// the original client and can be configured independently.
+//
+// The main motivation of creating it was allowing preparing a client with the
+// general configuration that acts as a template for creating new clients that
+// will be tweaked for specific purposes.
+//
+// For example, the first application is the HTTP client for Kea. The original
+// client is created at the startup and configured by the CLI flags. Then, we
+// clone this client for each detected Kea application and set the specific
+// authentication credentials.
+//
+// The interface ensures that the base client is not accidentally used or
+// modified as it allows only creating new instances.
 type HTTPClientCloner interface {
 	Clone() *HTTPClient
 }
