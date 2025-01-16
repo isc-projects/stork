@@ -938,7 +938,7 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "pd_pools_exhausted_by_reservations", ExtendDefaultTriggers(DBHostsModified), delegatedPrefixPoolsExhaustedByReservations)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_cmds_and_cb_mutual_exclusion", GetDefaultTriggers(), subnetCmdsAndConfigBackendMutualExclusion)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "statistics_unavailable_due_to_number_overflow", GetDefaultTriggers(), gatheringStatisticsUnavailableDueToNumberOverflow)
-	dispatcher.RegisterChecker(KeaCADaemon, "agent_credentials_over_https", ExtendDefaultTriggers(StorkAgentConfigModified), credentialsOverHTTPS)
+	dispatcher.RegisterChecker(KeaCADaemon, "agent_credentials_over_https", GetDefaultTriggers(), credentialsOverHTTPS)
 	dispatcher.RegisterChecker(KeaCADaemon, "ca_control_sockets", GetDefaultTriggers(), controlSocketsCA)
 }
 
