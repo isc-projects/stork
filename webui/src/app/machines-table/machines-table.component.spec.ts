@@ -13,6 +13,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { FormsModule } from '@angular/forms'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { TagModule } from 'primeng/tag'
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -30,6 +31,7 @@ describe('MachinesTableComponent', () => {
                 OverlayPanelModule,
                 TriStateCheckboxModule,
                 FormsModule,
+                TagModule,
             ],
             declarations: [MachinesTableComponent, HelpTipComponent, PluralizePipe],
             providers: [MessageService],
