@@ -4,7 +4,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { BehaviorSubject, of, throwError } from 'rxjs'
 
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, Message, MessageService } from 'primeng/api'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
@@ -58,6 +58,7 @@ describe('MachinesPageComponent', () => {
     let getSettingsSpy: any
     let getMachinesSpy: any
     let getMachinesServerTokenSpy: any
+    let msgSrvAddSpy: jasmine.Spy<(message: Message) => void>
 
     // prepare responses for api calls
     const getUnauthorizedMachinesResp: any = {
@@ -171,6 +172,7 @@ describe('MachinesPageComponent', () => {
         router = fixture.debugElement.injector.get(Router)
         routerEventSubject = new BehaviorSubject(new NavigationEnd(1, 'machines', 'machines/all'))
         spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
+        msgSrvAddSpy = spyOn(msgService, 'add')
 
         fixture.detectChanges()
         unauthorizedMachinesCountBadge = fixture.nativeElement.querySelector('div.p-selectbutton span.p-badge')
@@ -223,8 +225,6 @@ describe('MachinesPageComponent', () => {
     })
 
     it('should not display agent installation instruction if there is an error in getMachinesServerToken', fakeAsync(() => {
-        const msgSrvAddSpy = spyOn(msgService, 'add').and.callThrough()
-
         // dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
 
@@ -303,8 +303,6 @@ describe('MachinesPageComponent', () => {
         expect(component.displayAgentInstallationInstruction).toBeTrue()
         expect(getMachinesServerTokenSpy).toHaveBeenCalledTimes(1)
         expect(component.serverToken).toBe('ABC')
-
-        const msgSrvAddSpy = spyOn(msgService, 'add')
 
         // regenerate server token but it returns error, so in UI token should not change
         const regenerateMachinesServerTokenRespErr: any = { statusText: 'some error' }
@@ -445,7 +443,7 @@ describe('MachinesPageComponent', () => {
         // get references to rows' checkboxes
         const checkboxes = fixture.nativeElement.querySelectorAll('table .p-checkbox')
         expect(checkboxes).toBeTruthy()
-        expect(checkboxes.length).toBeGreaterThanOrEqual(3)
+        expect(checkboxes.length).toBeGreaterThanOrEqual(4)
         // checkboxes[0] is "select all" checkbox, skipped on purpose in this test
         const firstCheckbox = checkboxes[1]
         const secondCheckbox = checkboxes[2]
@@ -511,23 +509,17 @@ describe('MachinesPageComponent', () => {
     }))
 
     it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - second machine fails', fakeAsync(() => {
-        // expect(component.showUnauthorized).toBeFalse()
-        expect(component.showAuthorized).toBeTrue()
+        // prepare 502 error response for the second machine of the bulk of machines to be authorized
+        // first machine authorization shall succeed, third shall be skipped because it was after the 502 error
+        const fakeError = new HttpErrorResponse({ status: 502 })
+        servicesApi.updateMachine
+            .withArgs(1, anything())
+            .and.returnValue(of({ hostname: 'aaa', id: 1, address: 'addr1', authorized: true } as any))
+        servicesApi.updateMachine.withArgs(2, anything()).and.returnValue(throwError(() => fakeError))
+        servicesApi.updateMachine
+            .withArgs(3, anything())
+            .and.returnValue(of({ hostname: 'ccc', id: 3, address: 'addr3', authorized: true } as any))
 
-        // get references to select buttons
-        const selectButtons = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
-        const authSelectBtnEl = selectButtons[0]
-        const unauthSelectBtnEl = selectButtons[1]
-
-        // prepare response for call to getMachines for (un)authorized machines
-        const getUnauthorizedMachinesRespBefore: any = {
-            items: [
-                { hostname: 'aaa', id: 1, address: 'addr1' },
-                { hostname: 'bbb', id: 2, address: 'addr2' },
-                { hostname: 'ccc', id: 3, address: 'addr3' },
-            ],
-            total: 3,
-        }
         const getUnauthorizedMachinesRespAfter: any = {
             items: [
                 { hostname: 'bbb', id: 2, address: 'addr2' },
@@ -540,33 +532,21 @@ describe('MachinesPageComponent', () => {
             total: 3,
         }
 
-        // const gmSpy = spyOn(servicesApi, 'getMachines')
-
-        // this is only called once after authorizing selected machines
-        // and after switching back to authorized machines view; in refreshUnauthorizedMachinesCount().
-        // refreshUnauthorizedMachinesCount() asks for details of only one unauthorized machine.
-        // The total unauthorized machines count is essential information here, not the detailed items themselves.
-        const gumcSpy = servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(2) as any)
-
-        // called two times in loadMachines(event), which lazily loads data for
-        // unauthorized machines table. Text and app filters are undefined.
-        getMachinesSpy
-            .withArgs(0, 10, undefined, undefined, false)
-            .and.returnValues(of(getUnauthorizedMachinesRespBefore), of(getUnauthorizedMachinesRespAfter))
-
         // called one time in loadMachines(event), which lazily loads data for
         // authorized machines table. Text and app filters are undefined.
-        getMachinesSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesRespAfter))
+        getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getAuthorizedMachinesRespAfter))
 
-        // show unauthorized machines
-        unauthSelectBtnEl.dispatchEvent(new Event('click'))
+        // Navigate to Unauthorized machines only view.
+        navigate({ id: 'all' }, { authorized: 'false' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
 
-        // expect(component.showUnauthorized).toBeTrue()
+        // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
+        expect(component.table.hasPrefilter()).toBeTrue()
         expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
+        expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
         // check if hostnames are displayed
         const nativeEl = fixture.nativeElement
@@ -575,9 +555,9 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('ccc')
 
         // get references to rows' checkboxes
-        const checkboxes = fixture.nativeElement.querySelectorAll('.p-checkbox')
+        const checkboxes = fixture.nativeElement.querySelectorAll('table .p-checkbox')
         expect(checkboxes).toBeTruthy()
-        expect(checkboxes.length).toBeGreaterThanOrEqual(1)
+        expect(checkboxes.length).toBeGreaterThanOrEqual(4)
         const selectAllCheckbox = checkboxes[0]
 
         // select all unauthorized machines
@@ -585,55 +565,62 @@ describe('MachinesPageComponent', () => {
         fixture.detectChanges()
 
         // get reference to "Authorize selected" button
-        const bulkAuthorizeBtnNodeList = fixture.nativeElement.querySelectorAll('#authorize-selected-button')
+        const bulkAuthorizeBtnNodeList = fixture.nativeElement.querySelectorAll('#authorize-selected-button button')
         expect(bulkAuthorizeBtnNodeList).toBeTruthy()
         expect(bulkAuthorizeBtnNodeList.length).toEqual(1)
 
         const bulkAuthorizeBtn = bulkAuthorizeBtnNodeList[0]
         expect(bulkAuthorizeBtn).toBeTruthy()
 
-        // prepare 502 error response for the second machine of the bulk of machines to be authorized
-        // first machine authorization shall succeed, third shall be skipped because it was after the 502 error
-        const umSpy = spyOn(servicesApi, 'updateMachine')
-        const fakeError = new HttpErrorResponse({ status: 502 })
-        umSpy
-            .withArgs(1, anything())
-            .and.returnValue(of({ hostname: 'aaa', id: 1, address: 'addr1', authorized: true } as any))
-        umSpy.withArgs(2, anything()).and.returnValue(throwError(() => fakeError))
-        umSpy
-            .withArgs(3, anything())
-            .and.returnValue(of({ hostname: 'ccc', id: 3, address: 'addr3', authorized: true } as any))
+        getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getUnauthorizedMachinesRespAfter))
+        servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(2))
 
         // click "Authorize selected" button
         bulkAuthorizeBtn.dispatchEvent(new Event('click'))
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
 
         // we expect that first machine of the bulk was authorized but second and third were not due to 502 error
-        expect(umSpy).toHaveBeenCalledWith(1, { hostname: 'aaa', id: 1, address: 'addr1', authorized: true })
-        expect(umSpy).toHaveBeenCalledWith(2, { hostname: 'bbb', id: 2, address: 'addr2', authorized: true })
-
-        // expect(component.showUnauthorized).toBeTrue()
+        expect(servicesApi.updateMachine).toHaveBeenCalledWith(1, {
+            hostname: 'aaa',
+            id: 1,
+            address: 'addr1',
+            authorized: true,
+        })
+        expect(servicesApi.updateMachine).toHaveBeenCalledWith(2, {
+            hostname: 'bbb',
+            id: 2,
+            address: 'addr2',
+            authorized: true,
+        })
+        // First machine should be authorized and second failed to authorize.
+        expect(msgSrvAddSpy).toHaveBeenCalledTimes(2)
+        expect(msgSrvAddSpy).toHaveBeenCalledWith(
+            objectContaining({ severity: 'success', summary: 'Machine authorized' })
+        )
+        expect(msgSrvAddSpy).toHaveBeenCalledWith(
+            objectContaining({ severity: 'error', summary: 'Machine authorization failed' })
+        )
         expect(component.showAuthorized).toBeFalse()
         expect(component.table.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(2)
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (2)')
+        expect(unauthorizedMachinesCountBadge.textContent).toBe('2')
 
         // check if hostnames are displayed
         expect(nativeEl.textContent).toContain('bbb')
         expect(nativeEl.textContent).toContain('ccc')
+        expect(nativeEl.textContent).not.toContain('aaa')
 
-        // show authorized machines
-        authSelectBtnEl.dispatchEvent(new Event('click'))
+        // Navigate to Authorized machines only view.
+        navigate({ id: 'all' }, { authorized: 'true' })
+        tick(300) // Wait 300ms due to debounceTime applied in the table component.
         fixture.detectChanges()
 
-        expect(getMachinesSpy).toHaveBeenCalledTimes(3)
-        expect(gumcSpy).toHaveBeenCalledTimes(1)
-
-        // expect(component.showUnauthorized).toBeFalse()
+        expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalled()
         expect(component.showAuthorized).toBeTrue()
         expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(2)
-        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (2)')
+        expect(unauthorizedMachinesCountBadge.textContent).toBe('2')
 
         // check if hostnames are displayed
         expect(nativeEl.textContent).toContain('zzz')
