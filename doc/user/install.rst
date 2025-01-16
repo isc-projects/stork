@@ -780,7 +780,7 @@ is set to ``true`` in the Kea CA configuration file. In this case, the Stork age
 certificates; it cannot use self-signed certificates created during Stork agent registration.
 
 If the Kea CA is configured to use Basic Auth, the Stork agent will read the credentials from the Kea CA configuration
-file. The Stork agent chooses credentials which user name begins with ``stork``. If there is no such user, the agent
+file. The Stork agent chooses credentials with user name beginning with ``stork``. If there is no such user, the agent
 will use the first user from the list.
 
 .. warning::

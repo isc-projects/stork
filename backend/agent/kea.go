@@ -234,7 +234,7 @@ func detectKeaApp(match []string, cwd string, httpClientCloner HTTPClientCloner)
 	// Credentials
 	httpClient := httpClientCloner.Clone()
 	authentication := config.GetBasicAuthenticationDetails()
-	// Key is an user name that Stork uses to authenticate with Kea.
+	// Key is a user name that Stork uses to authenticate with Kea.
 	var key string
 	if authentication != nil {
 		allCredentials, err := readClientCredentials(authentication)
@@ -389,7 +389,7 @@ func readClientCredentials(authentication *keaconfig.Authentication) ([]ClientCr
 		default:
 			// Missing user.
 			return nil, errors.New(
-				"invalid client credentials - user or user-file is not provided",
+				"invalid client credentials: neither user nor user-file provided",
 			)
 		}
 

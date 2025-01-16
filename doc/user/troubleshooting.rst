@@ -134,7 +134,7 @@ This section describes the solutions for some common issues with the Stork agent
               ``authentication`` node.
 :Explanation: The Kea Control Agent can be configured to use Basic Authentication. If it is enabled, Stork agent will
               read the credentials from the Kea CA configuration file and use them to authenticate. The Stork agent
-              chooses credentials which user name begins with ``stork``. If there is no such user, the agent will use
+              chooses credentials with user name beginning with ``stork``. If there is no such user, the agent will use
               the first user from the list.
 
 --------------
