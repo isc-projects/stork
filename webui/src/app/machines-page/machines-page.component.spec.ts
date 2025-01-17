@@ -179,7 +179,9 @@ describe('MachinesPageComponent', () => {
 
         fixture.detectChanges()
         unauthorizedMachinesCountBadge = fixture.nativeElement.querySelector('div.p-selectbutton span.p-badge')
-        component.table.clearFilters(component.table.table)
+
+        // Do not save table state between tests, because that makes tests unstable.
+        spyOn(component.table.table, 'saveState').and.callFake(() => {})
 
         // Wait until table's data loading is finished.
         await fixture.whenStable()
@@ -215,12 +217,6 @@ describe('MachinesPageComponent', () => {
                 `machines/${params.id}?${queryParamsList.join('&')}`
             )
         )
-
-        // Normal navigation is causing onInit due to custom route reuse strategy. Simulate it here.
-        component.table?.ngOnInit()
-
-        flush()
-        fixture.detectChanges()
     }
 
     it('should create', () => {
@@ -338,7 +334,7 @@ describe('MachinesPageComponent', () => {
         expect(component.displayAgentInstallationInstruction).toBeFalse()
     })
 
-    it('should list machines', fakeAsync(() => {
+    it('should list machines', async () => {
         // Data loading should be done by now.
         expect(component.table.dataLoading).toBeFalse()
 
@@ -367,13 +363,13 @@ describe('MachinesPageComponent', () => {
 
         // Navigate to Unauthorized machines only view.
         navigate({ id: 'all' }, { authorized: 'false' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.hasPrefilter()).toBeTrue()
-        expect(component.table.hasFilter(component.table.table)).toBeFalse()
+        expect(component.table.hasPrefilter()).toBeFalse()
+        expect(component.table.hasFilter(component.table.table)).toBeTrue()
         expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
@@ -389,13 +385,13 @@ describe('MachinesPageComponent', () => {
 
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // There is authorized machines filter applied - only authorized machines are visible.
         expect(component.showAuthorized).toBeTrue()
-        expect(component.table.hasPrefilter()).toBeTrue()
-        expect(component.table.hasFilter(component.table.table)).toBeFalse()
+        expect(component.table.hasPrefilter()).toBeFalse()
+        expect(component.table.hasFilter(component.table.table)).toBeTrue()
         expect(component.table.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
@@ -407,7 +403,7 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('zzz')
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).not.toContain('aaa')
-    }))
+    })
 
     it('should refresh unauthorized machines count', fakeAsync(() => {
         component.table.unauthorizedMachinesCountChange.emit(4)
@@ -421,21 +417,22 @@ describe('MachinesPageComponent', () => {
     it('should list unauthorized machines requested via URL', fakeAsync(() => {
         // Navigate to Unauthorized machines only view.
         navigate({ id: 'all' }, { authorized: 'false' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         expect(component.showAuthorized).toBeFalse()
     }))
 
-    it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - first machine fails', fakeAsync(() => {
+    it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - first machine fails', async () => {
         // Navigate to Unauthorized machines only view.
         navigate({ id: 'all' }, { authorized: 'false' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.hasPrefilter()).toBeTrue()
+        expect(component.table.hasPrefilter()).toBeFalse()
+        expect(component.table.hasFilter(component.table.table)).toBeTrue()
 
         // check if hostnames are displayed
         const nativeEl = fixture.nativeElement
@@ -495,7 +492,7 @@ describe('MachinesPageComponent', () => {
 
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // There is authorized machines filter applied - only authorized machines are visible.
@@ -509,9 +506,9 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).not.toContain('aaa')
         expect(nativeEl.textContent).not.toContain('bbb')
-    }))
+    })
 
-    it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - second machine fails', fakeAsync(() => {
+    it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - second machine fails', async () => {
         // prepare 502 error response for the second machine of the bulk of machines to be authorized
         // first machine authorization shall succeed, third shall be skipped because it was after the 502 error
         const fakeError = new HttpErrorResponse({ status: 502 })
@@ -541,12 +538,13 @@ describe('MachinesPageComponent', () => {
 
         // Navigate to Unauthorized machines only view.
         navigate({ id: 'all' }, { authorized: 'false' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.hasPrefilter()).toBeTrue()
+        expect(component.table.hasPrefilter()).toBeFalse()
+        expect(component.table.hasFilter(component.table.table)).toBeTrue()
         expect(component.table.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
@@ -580,7 +578,7 @@ describe('MachinesPageComponent', () => {
 
         // click "Authorize selected" button
         bulkAuthorizeBtn.dispatchEvent(new Event('click'))
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        await fixture.whenStable()
         fixture.detectChanges()
 
         // we expect that first machine of the bulk was authorized but second and third were not due to 502 error
@@ -616,7 +614,7 @@ describe('MachinesPageComponent', () => {
 
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        await fixture.whenStable()
         fixture.detectChanges()
 
         expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalled()
@@ -631,12 +629,12 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('aaa')
         expect(nativeEl.textContent).not.toContain('bbb')
         expect(nativeEl.textContent).not.toContain('ccc')
-    }))
+    })
 
     it('should button menu click trigger the download handler', fakeAsync(() => {
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         expect(component.showAuthorized).toBeTrue()
@@ -729,7 +727,7 @@ describe('MachinesPageComponent', () => {
 
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         const textContent = fixture.nativeElement.innerText
@@ -778,12 +776,12 @@ describe('MachinesPageComponent', () => {
         getSettingsSpy.and.returnValue(of(getSettingsResp))
 
         component.ngOnInit()
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         // Initially, we show authorized machines. In that case we don't show a warning.
@@ -793,7 +791,7 @@ describe('MachinesPageComponent', () => {
 
         // Show unauthorized machines.
         navigate({ id: 'all' }, { authorized: 'false' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         expect(component.showAuthorized).toBeFalse()
@@ -815,7 +813,7 @@ describe('MachinesPageComponent', () => {
 
         // Navigate to Authorized machines only view.
         navigate({ id: 'all' }, { authorized: 'true' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         // Showing authorized machines. The warning is never displayed in such a case.
@@ -825,7 +823,7 @@ describe('MachinesPageComponent', () => {
 
         // Show unauthorized machines.
         navigate({ id: 'all' }, { authorized: 'false' })
-        tick(300) // Wait 300ms due to debounceTime applied in the table component.
+        tick()
         fixture.detectChanges()
 
         expect(component.showAuthorized).toBeFalse()
