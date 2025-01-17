@@ -155,37 +155,340 @@ func TestZoneInventoryStateIsErred(t *testing.T) {
 
 // Test storage configuration when memory and persistent storage is in use.
 func TestZoneInventoryMemoryDiskStorage(t *testing.T) {
-	storage := newZoneInventoryStorageMemoryDisk("/tmp/foo")
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
+	require.NoError(t, err)
 	require.NotNil(t, storage)
-	require.True(t, storage.hasMemoryStorage())
-	require.True(t, storage.hasDiskStorage())
-	require.Equal(t, "/tmp/foo", storage.getStorageLocation())
+	require.Equal(t, sandbox.BasePath, storage.disk.location)
 }
 
-// Test storage configuration when memory storage is in use.
+// Test that an error is returned while creating a memory/disk storage under
+// invalid path - a path to a file not a directory.
+func TestZoneInventoryMemoryDiskStorageError(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	_, err := sandbox.Write("file.txt", "")
+	require.NoError(t, err)
+	storage, err := newZoneInventoryStorageMemoryDisk(path.Join(sandbox.BasePath, "file.txt"))
+	require.Error(t, err)
+	require.Nil(t, storage)
+}
+
+// Test zone inventory storage that saves data to disk and memory.
+func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
+	require.NoError(t, err)
+	require.NotNil(t, storage)
+
+	// Save example zones on disk.
+	views := bind9stats.NewViews([]*bind9stats.View{
+		bind9stats.NewView("_default", []*bind9stats.Zone{
+			{
+				ZoneName: "zone1.example.org",
+			},
+			{
+				ZoneName: "zone2.example.org",
+			},
+		}),
+		bind9stats.NewView("_bind", []*bind9stats.Zone{
+			{
+				ZoneName: "zone2.example.org",
+			},
+		}),
+	})
+	err = storage.saveViews(views)
+	require.NoError(t, err)
+
+	// Replace the population time with some arbitrary time in the past.
+	meta := ZoneInventoryMeta{
+		PopulatedAt: time.Date(2002, 1, 1, 10, 15, 23, 0, time.UTC),
+	}
+	err = storage.disk.saveMeta(&meta)
+	require.NoError(t, err)
+
+	// Load the data into another zone inventory.
+	loadedStorage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
+	require.NoError(t, err)
+	require.NotNil(t, loadedStorage)
+
+	populatedAt, err := loadedStorage.loadViews()
+	require.NoError(t, err)
+	require.Equal(t, time.Date(2002, 1, 1, 10, 15, 23, 0, time.UTC), populatedAt)
+
+	// Get the views and zones and ensure we get the same set of data.
+	iterator := loadedStorage.getViewsIterator(nil)
+	var capturedViews []bind9stats.ZoneIteratorAccessor
+	for view, err := range iterator {
+		require.NoError(t, err)
+		capturedViews = append(capturedViews, view)
+	}
+	require.Equal(t, "_bind", capturedViews[0].GetViewName())
+	var zones []*bind9stats.Zone
+	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
+		require.NoError(t, err)
+		zones = append(zones, zone)
+	}
+	require.Len(t, zones, 1)
+	require.Equal(t, "zone2.example.org", zones[0].Name())
+
+	require.Equal(t, "_default", capturedViews[1].GetViewName())
+	zones = []*bind9stats.Zone{}
+	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
+		require.NoError(t, err)
+		zones = append(zones, zone)
+	}
+	require.Len(t, zones, 2)
+	require.Equal(t, "zone1.example.org", zones[0].Name())
+	require.Equal(t, "zone2.example.org", zones[1].Name())
+
+	// Try selectively getting a zone.
+	zone, err := loadedStorage.getZoneInView("_bind", "zone2.example.org")
+	require.NoError(t, err)
+	require.NotNil(t, zone)
+	require.Equal(t, "zone2.example.org", zone.Name())
+
+	// Try getting a non-existing zone.
+	zone, err = loadedStorage.getZoneInView("_bind", "non-existing.example.org")
+	require.NoError(t, err)
+	require.Nil(t, zone)
+}
+
+// Test that the iterator returns an empty set of views when there are
+// no views initialized.
+func TestZoneInventoryMemoryDiskStorageGetViewsIteratorNoViews(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
+	require.NoError(t, err)
+
+	iterator := storage.getViewsIterator(nil)
+	var count int
+	for range iterator {
+		count++
+	}
+	require.Zero(t, count)
+}
+
+// Test storage creation when memory storage is in use.
 func TestZoneInventoryMemoryStorage(t *testing.T) {
 	storage := newZoneInventoryStorageMemory()
 	require.NotNil(t, storage)
-	require.True(t, storage.hasMemoryStorage())
-	require.False(t, storage.hasDiskStorage())
-	require.Empty(t, storage.getStorageLocation())
+	require.Nil(t, storage.views)
+}
+
+// Test zone inventory storage that stores data in memory.
+func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
+	storage := newZoneInventoryStorageMemory()
+	require.NotNil(t, storage)
+
+	// Save example zones in the storage.
+	views := bind9stats.NewViews([]*bind9stats.View{
+		bind9stats.NewView("_default", []*bind9stats.Zone{
+			{
+				ZoneName: "zone1.example.org",
+			},
+			{
+				ZoneName: "zone2.example.org",
+			},
+		}),
+		bind9stats.NewView("_bind", []*bind9stats.Zone{
+			{
+				ZoneName: "zone2.example.org",
+			},
+		}),
+	})
+	err := storage.saveViews(views)
+	require.NoError(t, err)
+
+	// Loading should fail because there is no persistent storage.
+	_, err = storage.loadViews()
+	require.Error(t, err)
+	expectedError := &zoneInventoryNoDiskStorageError{}
+	require.ErrorAs(t, err, &expectedError)
+
+	// Get the views and zones.
+	iterator := storage.getViewsIterator(nil)
+	var capturedViews []bind9stats.ZoneIteratorAccessor
+	for view, err := range iterator {
+		require.NoError(t, err)
+		capturedViews = append(capturedViews, view)
+	}
+	require.Equal(t, "_bind", capturedViews[0].GetViewName())
+	var zones []*bind9stats.Zone
+	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
+		require.NoError(t, err)
+		zones = append(zones, zone)
+	}
+	require.Len(t, zones, 1)
+	require.Equal(t, "zone2.example.org", zones[0].Name())
+
+	require.Equal(t, "_default", capturedViews[1].GetViewName())
+	zones = []*bind9stats.Zone{}
+	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
+		require.NoError(t, err)
+		zones = append(zones, zone)
+	}
+	require.Len(t, zones, 2)
+	require.Equal(t, "zone1.example.org", zones[0].Name())
+	require.Equal(t, "zone2.example.org", zones[1].Name())
+
+	// Try selectively getting a zone.
+	zone, err := storage.getZoneInView("_bind", "zone2.example.org")
+	require.NoError(t, err)
+	require.NotNil(t, zone)
+	require.Equal(t, "zone2.example.org", zone.Name())
+
+	// Try getting a non-existing zone.
+	zone, err = storage.getZoneInView("_bind", "non-existing.example.org")
+	require.NoError(t, err)
+	require.Nil(t, zone)
+}
+
+// Test that the iterator returns an empty set of views when there are
+// no views initialized.
+func TestZoneInventoryMemoryStorageGetViewsIteratorNoViews(t *testing.T) {
+	storage := newZoneInventoryStorageMemory()
+
+	iterator := storage.getViewsIterator(nil)
+	var count int
+	for range iterator {
+		count++
+	}
+	require.Zero(t, count)
 }
 
 // Test storage configuration when disk storage is in use.
 func TestZoneInventoryDiskStorage(t *testing.T) {
-	storage := newZoneInventoryStorageDisk("/tmp/bar")
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
+	require.NoError(t, err)
 	require.NotNil(t, storage)
-	require.False(t, storage.hasMemoryStorage())
-	require.True(t, storage.hasDiskStorage())
-	require.Equal(t, "/tmp/bar", storage.getStorageLocation())
+	require.Equal(t, sandbox.BasePath, storage.location)
+}
+
+// Test that an error is returned while creating a disk storage under
+// invalid path - a path to a file not a directory.
+func TestZoneInventoryDiskStorageError(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	_, err := sandbox.Write("file.txt", "")
+	require.NoError(t, err)
+	storage, err := newZoneInventoryStorageDisk(path.Join(sandbox.BasePath, "file.txt"))
+	require.Error(t, err)
+	require.Nil(t, storage)
+}
+
+// Test zone inventory storage that saves data to disk and not in memory.
+func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
+	require.NoError(t, err)
+	require.NotNil(t, storage)
+
+	// Save example zones on disk.
+	views := bind9stats.NewViews([]*bind9stats.View{
+		bind9stats.NewView("_default", []*bind9stats.Zone{
+			{
+				ZoneName: "zone1.example.org",
+			},
+			{
+				ZoneName: "zone2.example.org",
+			},
+		}),
+		bind9stats.NewView("_bind", []*bind9stats.Zone{
+			{
+				ZoneName: "zone2.example.org",
+			},
+		}),
+	})
+	err = storage.saveViews(views)
+	require.NoError(t, err)
+
+	// Replace the population time with some arbitrary time in the past.
+	meta := ZoneInventoryMeta{
+		PopulatedAt: time.Date(2002, 1, 1, 10, 15, 23, 0, time.UTC),
+	}
+	err = storage.saveMeta(&meta)
+	require.NoError(t, err)
+
+	// Load the data into another zone inventory.
+	loadedStorage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
+	require.NoError(t, err)
+	require.NotNil(t, loadedStorage)
+
+	populatedAt, err := loadedStorage.loadViews()
+	require.NoError(t, err)
+	require.Equal(t, time.Date(2002, 1, 1, 10, 15, 23, 0, time.UTC), populatedAt)
+
+	// Get the views and zones and ensure we get the same set of data.
+	iterator := loadedStorage.getViewsIterator(nil)
+	var capturedViews []bind9stats.ZoneIteratorAccessor
+	for view, err := range iterator {
+		require.NoError(t, err)
+		capturedViews = append(capturedViews, view)
+	}
+	require.Equal(t, "_bind", capturedViews[0].GetViewName())
+	var zones []*bind9stats.Zone
+	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
+		require.NoError(t, err)
+		zones = append(zones, zone)
+	}
+	require.Len(t, zones, 1)
+	require.Equal(t, "zone2.example.org", zones[0].Name())
+
+	require.Equal(t, "_default", capturedViews[1].GetViewName())
+	zones = []*bind9stats.Zone{}
+	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
+		require.NoError(t, err)
+		zones = append(zones, zone)
+	}
+	require.Len(t, zones, 2)
+	require.Equal(t, "zone1.example.org", zones[0].Name())
+	require.Equal(t, "zone2.example.org", zones[1].Name())
+
+	// Try selectively getting a zone.
+	zone, err := loadedStorage.getZoneInView("_bind", "zone2.example.org")
+	require.NoError(t, err)
+	require.NotNil(t, zone)
+	require.Equal(t, "zone2.example.org", zone.Name())
+
+	// Try getting a non-existing zone.
+	zone, err = loadedStorage.getZoneInView("_bind", "non-existing.example.org")
+	require.NoError(t, err)
+	require.Nil(t, zone)
+}
+
+// Test that an error is captured when there is an error reading from disk.
+func TestZoneInventoryDiskStorageGetViewsIteratorError(t *testing.T) {
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
+	require.NoError(t, err)
+	// Close the sandbox so the files are no longer accessible.
+	sandbox.Close()
+
+	// Get the iterator. The first attempt to read the data should return
+	// an error.
+	iterator := storage.getViewsIterator(nil)
+	var errs []error
+	for zone, err := range iterator {
+		require.Nil(t, zone)
+		errs = append(errs, err)
+		require.Error(t, err)
+	}
+	require.Len(t, errs, 1)
 }
 
 // Test instantiating zone inventory.
 func TestNewZoneInventory(t *testing.T) {
 	storage := newZoneInventoryStorageMemory()
 	client := NewBind9StatsClient()
-	inventory, err := newZoneInventory(storage, client, "myhost", 1234)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, client, "myhost", 1234)
 	defer inventory.shutdown()
 	require.NotNil(t, inventory)
 	require.Equal(t, storage, inventory.storage)
@@ -194,31 +497,31 @@ func TestNewZoneInventory(t *testing.T) {
 	require.EqualValues(t, 1234, inventory.port)
 	require.NotNil(t, inventory.visitedStates)
 	require.True(t, inventory.getCurrentState().isInitial())
-	require.Nil(t, inventory.views)
 }
 
 // Test saving, reading and removing the inventory meta file.
-func TestZoneInventoryMeta(t *testing.T) {
+func TestZoneInventoryStorageDiskMeta(t *testing.T) {
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageDisk(sandbox.BasePath), nil, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
 	require.NoError(t, err)
-	require.NotNil(t, inventory)
+	require.NotNil(t, storage)
 
-	err = inventory.removeMeta()
+	err = storage.removeMeta()
 	require.NoError(t, err)
 
 	meta := &ZoneInventoryMeta{
 		PopulatedAt: time.Date(2002, 10, 2, 15, 11, 23, 0, time.UTC),
 	}
-	err = inventory.saveMeta(meta)
+	err = storage.saveMeta(meta)
 	require.NoError(t, err)
 
-	meta, err = inventory.readMeta()
+	meta, err = storage.readMeta()
 	require.NoError(t, err)
 	require.NotNil(t, meta)
 	require.Equal(t, time.Date(2002, 10, 2, 15, 11, 23, 0, time.UTC), meta.PopulatedAt)
 
-	err = inventory.removeMeta()
+	err = storage.removeMeta()
 	require.NoError(t, err)
 
 	require.NoFileExists(t, path.Join(sandbox.BasePath, zoneInventoryMetaFileName))
@@ -228,8 +531,7 @@ func TestZoneInventoryMeta(t *testing.T) {
 func TestZoneInventoryTransition(t *testing.T) {
 	storage := newZoneInventoryStorageMemory()
 	client := NewBind9StatsClient()
-	inventory, err := newZoneInventory(storage, client, "myhost", 1234)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, client, "myhost", 1234)
 	defer inventory.shutdown()
 
 	inventory.transition(newZoneInventoryStateLoaded(time.Time{}))
@@ -278,8 +580,10 @@ func TestZoneInventoryPopulateMemoryDisk(t *testing.T) {
 
 	// Create zone inventory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory.
@@ -325,8 +629,7 @@ func TestZoneInventoryPopulateMemory(t *testing.T) {
 	defer off()
 
 	// Create zone inventory with memory only.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory/memory.
@@ -362,8 +665,10 @@ func TestZoneInventoryPopulateDisk(t *testing.T) {
 
 	// Create zone inventory with disk storage only.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory/disk.
@@ -407,9 +712,11 @@ func TestZoneInventoryPopulateLongLastingTaskConflict(t *testing.T) {
 
 	// Create the inventory.
 	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
 	// Create zone inventory.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones into inventory/disk.
@@ -464,9 +771,11 @@ func TestZoneInventoryPopulateShutdown(t *testing.T) {
 
 	// Create the inventory.
 	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
 	// Create zone inventory.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones into inventory/disk.
 	done, err := inventory.populate(true)
@@ -514,8 +823,10 @@ func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 
 	// Create zone inventory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones into disk.
@@ -529,7 +840,7 @@ func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 
 	// Remove the zones from memory. That way we will be able to test if
 	// the zones are reloaded.
-	inventory.views.Views = nil
+	storage.memory.views.Views = nil
 
 	// Load the zones from disk.
 	done, err = inventory.load(false)
@@ -541,11 +852,11 @@ func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the views have been reloaded and contain zones.
-	defaultView := inventory.views.GetView("_default")
+	defaultView := storage.memory.views.GetView("_default")
 	require.NotNil(t, defaultView)
 	require.Len(t, defaultView.GetZoneNames(), 10)
 
-	bindView := inventory.views.GetView("_bind")
+	bindView := storage.memory.views.GetView("_bind")
 	require.NotNil(t, bindView)
 	require.Len(t, bindView.GetZoneNames(), 20)
 
@@ -572,8 +883,8 @@ func TestZoneInventoryLoadMemory(t *testing.T) {
 	defer off()
 
 	// Create zone inventory without persistent storage.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	storage := newZoneInventoryStorageMemory()
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the views/zones from DNS server to memory.
@@ -586,7 +897,7 @@ func TestZoneInventoryLoadMemory(t *testing.T) {
 	require.NoError(t, err)
 
 	// Reset the views/zones in memory.
-	inventory.views.Views = nil
+	storage.views.Views = nil
 
 	// Attempting to load the views/zones should fail because there is
 	// no disk storage.
@@ -618,8 +929,10 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 
 	// Create zone inventory with persistent storage only.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the views/zones from DNS server to disk.
@@ -632,7 +945,7 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 	require.NoError(t, err)
 
 	// Replace the meta file to point way to the past.
-	err = inventory.saveMeta(&ZoneInventoryMeta{
+	err = storage.saveMeta(&ZoneInventoryMeta{
 		PopulatedAt: time.Date(2002, 3, 3, 15, 43, 1, 2, time.UTC),
 	})
 	require.NoError(t, err)
@@ -646,9 +959,6 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 	}
 	err = inventory.getCurrentState().err
 	require.NoError(t, err)
-
-	// The in-memory views must not be updated.
-	require.Nil(t, inventory.views)
 
 	// Make sure that the views have been reloaded and contain zones.
 	zone, err := inventory.getZoneInView("_default", defaultZones[0].Name())
@@ -681,9 +991,11 @@ func TestZoneInventoryLoadShutdown(t *testing.T) {
 
 	// Create the inventory.
 	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
 	// Create zone inventory.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones into inventory/disk.
 	done, err := inventory.populate(false)
@@ -732,8 +1044,10 @@ func TestGetZoneInViewDuringLongLastingTask(t *testing.T) {
 
 	// Create zone inventory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the views/zones from DNS server to disk.
@@ -801,8 +1115,10 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 
 	// Create the inventory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -942,8 +1258,10 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 
 	// Create the inventory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1077,8 +1395,10 @@ func TestZoneInventoryReceiveZonesCancel(t *testing.T) {
 
 	// Create the zone inventory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1129,12 +1449,11 @@ func TestZoneInventoryReceiveZonesCancel(t *testing.T) {
 // the inventory wasn't populated.
 func TestZoneInventoryReceiveZonesNotInited(t *testing.T) {
 	// Create the inventory.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), nil, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), nil, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Collect the received zones in this slice.
-	_, err = inventory.receiveZones(context.Background(), nil)
+	_, err := inventory.receiveZones(context.Background(), nil)
 	require.Error(t, err)
 	var notInitedError *zoneInventoryNotInitedError
 	require.ErrorAs(t, err, &notInitedError)
@@ -1156,8 +1475,7 @@ func TestZoneInventoryGetZoneInViewMemory(t *testing.T) {
 	defer off()
 
 	// Create zone inventory in memory.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1208,8 +1526,10 @@ func TestZoneInventoryGetZoneInViewDisk(t *testing.T) {
 
 	// Create zone inventory in memory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 	defer inventory.shutdown()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1258,10 +1578,12 @@ func BenchmarkZoneInventoryLoad(b *testing.B) {
 
 			// Create the inventory.
 			sandbox := testutil.NewSandbox()
-			inventory, err := newZoneInventory(newZoneInventoryStorageMemoryDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+			defer sandbox.Close()
+			storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 			if err != nil {
 				b.Fatal(err)
 			}
+			inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 
 			// Populate the zones to disk.
 			done, err := inventory.populate(false)
@@ -1313,10 +1635,7 @@ func BenchmarkZoneInventoryReceiveZonesMemory(b *testing.B) {
 			defer off()
 
 			// Create the inventory.
-			inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
-			if err != nil {
-				b.Fatalf("error creating new zone inventory %+v\n", err)
-			}
+			inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
 
 			// Populate the zones from the DNS server to the inventory.
 			done, err := inventory.populate(false)
@@ -1375,10 +1694,12 @@ func BenchmarkZoneInventoryReceiveZonesDisk(b *testing.B) {
 
 			// Create the inventory.
 			sandbox := testutil.NewSandbox()
-			inventory, err := newZoneInventory(newZoneInventoryStorageDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+			defer sandbox.Close()
+			storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
 			if err != nil {
-				b.Fatalf("error creating new zone inventory %+v\n", err)
+				b.Fatal(err)
 			}
+			inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 
 			// Populate the zones from the DNS server to the inventory.
 			done, err := inventory.populate(false)
@@ -1432,10 +1753,7 @@ func BenchmarkZoneInventoryGetZoneInView(b *testing.B) {
 	defer off()
 
 	// Create zone inventory in memory.
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
-	if err != nil {
-		b.Fatal(err)
-	}
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones from the DNS server to the inventory.
 	done, err := inventory.populate(false)
@@ -1480,10 +1798,12 @@ func BenchmarkZoneInventoryGetZoneInViewDiskStorage(b *testing.B) {
 
 	// Create the inventory.
 	sandbox := testutil.NewSandbox()
-	inventory, err := newZoneInventory(newZoneInventoryStorageDisk(sandbox.BasePath), bind9StatsClient, "localhost", 5380)
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
 	if err != nil {
 		b.Fatal(err)
 	}
+	inventory := newZoneInventory(storage, bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones into the inventory.
 	done, err := inventory.populate(false)

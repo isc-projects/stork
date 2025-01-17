@@ -109,97 +109,312 @@ func (e zoneInventoryNoDiskStorageError) Error() string {
 // - a storage that holds the zones on disk only,
 // - a storage that holds the zones in memory only.
 //
-// This interface is intended to return storage capabilities so the inventory
-// implementation can decide how to access the requested information. For example:
-// when getting a zone from a storage that holds zone information in memory and on
-// disk the inventory will return the zone information held in memory because it
-// is faster.
+// This interface is a layer between the zone inventory and the actual storage
+// for fetching views and zones. Concrete implementations save and read the zones
+// from memory, persistent storage or both.
 type zoneInventoryStorage interface {
-	// Returns a path to the views and zones stored on disk.
-	getStorageLocation() string
-	// Returns true if the storage holds zone information in memory.
-	hasMemoryStorage() bool
-	// Returns true if the storage holds zone information on disk.
-	hasDiskStorage() bool
+	// Returns an iterator to the views in the storage.
+	getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error]
+	// Returns a zone within a specified view.
+	getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error)
+	// Loads views and zones from the storage making them accessible for reading.
+	loadViews() (time.Time, error)
+	// Saves views and zones in the storage.
+	saveViews(views *bind9stats.Views) error
 }
 
 // A storage holding the zone information in memory and on disk.
+// This storage uses two other storage types internally (i.e., in-memory
+// and disk storage).
 type zoneInventoryStorageMemoryDisk struct {
-	// Path to the disk storage.
-	location string
+	disk   *zoneInventoryStorageDisk
+	memory *zoneInventoryStorageMemory
 }
 
 // Instantiates the storage. The parameter specifies the disk storage path.
-func newZoneInventoryStorageMemoryDisk(location string) *zoneInventoryStorageMemoryDisk {
-	return &zoneInventoryStorageMemoryDisk{
-		location,
+// Instantiating this storage may fail and return an error if instantiating
+// the underlying disk storage fails.
+func newZoneInventoryStorageMemoryDisk(location string) (*zoneInventoryStorageMemoryDisk, error) {
+	disk, err := newZoneInventoryStorageDisk(location)
+	if err != nil {
+		return nil, err
 	}
+	return &zoneInventoryStorageMemoryDisk{
+		disk:   disk,
+		memory: newZoneInventoryStorageMemory(),
+	}, nil
 }
 
-// Returns a path to the views and zones stored on disk.
-func (storage zoneInventoryStorageMemoryDisk) getStorageLocation() string {
-	return storage.location
+// Returns an iterator to the views in the storage. This access to the
+// views is fast because they are read from the in-memory storage.
+func (storage *zoneInventoryStorageMemoryDisk) getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error] {
+	return storage.memory.getViewsIterator(filter)
 }
 
-// Indicates that the storage holds zone information in memory.
-func (storage zoneInventoryStorageMemoryDisk) hasMemoryStorage() bool {
-	return true
+// Returns a selected zone from a view. The access to the data is fast
+// because it is read from the in-memory storage.
+func (storage *zoneInventoryStorageMemoryDisk) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
+	return storage.memory.getZoneInView(viewName, zoneName)
 }
 
-// Indicates that the storage holds zone information on disk.
-func (storage zoneInventoryStorageMemoryDisk) hasDiskStorage() bool {
-	return true
+// Reads the views and zones from disk into memory. If loading is successful
+// the views and zones can be efficiently accessed from the in-memory storage.
+func (storage *zoneInventoryStorageMemoryDisk) loadViews() (time.Time, error) {
+	// Begin with loading the inventory population time from the disk storage.
+	populatedAt, err := storage.disk.loadViews()
+	if err != nil {
+		return populatedAt, err
+	}
+	var viewList []*bind9stats.View
+	// Get the list of files/directories.
+	files, err := os.ReadDir(storage.disk.location)
+	if err != nil {
+		return time.Time{}, err
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			// If it is a directory it should hold the view information.
+			vio := newViewIO(storage.disk.location, file.Name())
+			view, err := vio.loadView()
+			if err != nil {
+				return time.Time{}, err
+			}
+			// View and its zones loaded from file. Let's store it in memory.
+			viewList = append(viewList, view)
+		}
+	}
+	views := bind9stats.NewViews(viewList)
+
+	log.WithFields(log.Fields{
+		"zones": views.GetZoneCount(),
+		"views": len(views.Views),
+	}).Info("Loaded DNS zones for indicated number views")
+
+	storage.memory.mutex.Lock()
+	defer storage.memory.mutex.Unlock()
+	storage.memory.views = views
+	return populatedAt, nil
 }
 
-// A storage holding the zone information in on disk.
+// Saves specified views on disk and in-memory effectively replacing the
+// entire inventory.
+func (storage *zoneInventoryStorageMemoryDisk) saveViews(views *bind9stats.Views) error {
+	for _, s := range []zoneInventoryStorage{storage.disk, storage.memory} {
+		if err := s.saveViews(views); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// A storage holding the zone information on disk.
 type zoneInventoryStorageDisk struct {
 	// Path to the disk storage.
 	location string
 }
 
 // Instantiates the storage. The parameter specifies the disk storage path.
-func newZoneInventoryStorageDisk(location string) *zoneInventoryStorageDisk {
+// Instantiating the storage  return an error when disk IO operations fail.
+// This is the case when the specified location is not a directory, doesn't
+// exist, or creating the inventory directory structure fails for any other
+// reason.
+func newZoneInventoryStorageDisk(location string) (*zoneInventoryStorageDisk, error) {
+	// The inventory will store zone information on disk. Create the necessary
+	// data structures.
+	fileInfo, err := os.Stat(location)
+	switch {
+	case err == nil:
+		if !fileInfo.IsDir() {
+			// The specified location exists but it is not a directory.
+			return nil, errors.Errorf("failed to create zone inventory because %s is not a directory", location)
+		}
+	case errors.Is(err, os.ErrNotExist):
+		// This directory does not exist. Try to create it.
+		if err = os.MkdirAll(location, 0o755); err != nil {
+			return nil, errors.Wrapf(err, "failed to create a zone inventory directory structure %s", location)
+		}
+	default:
+		// Other error.
+		return nil, errors.Wrapf(err, "failed to create zone inventory in %s", location)
+	}
+
 	return &zoneInventoryStorageDisk{
 		location,
+	}, nil
+}
+
+// Returns an iterator to the views in the storage. This access to the
+// views is slower than in case of the zoneInventoryStorageMemoryDisk
+// storage because the iterator reads the views and zones from disk
+// while the caller iterates over the returned views.
+func (storage *zoneInventoryStorageDisk) getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error] {
+	return func(yield func(bind9stats.ZoneIteratorAccessor, error) bool) {
+		files, err := os.ReadDir(storage.location)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to read view directory %s", storage.location)
+			if !yield(nil, err) {
+				return
+			}
+		}
+		for _, file := range files {
+			if !file.IsDir() || filter != nil && filter.View != nil && *filter.View != file.Name() {
+				continue
+			}
+			vio := newViewIO(storage.location, file.Name())
+			if !yield(vio, nil) {
+				return
+			}
+		}
 	}
 }
 
-// Returns a path to the views and zones stored on disk.
-func (storage zoneInventoryStorageDisk) getStorageLocation() string {
-	return storage.location
+// Returns a selected zone from a view. The access to the data is slower
+// than for other storage types because it is searched and read from disk.
+func (storage *zoneInventoryStorageDisk) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
+	vio := newViewIO(storage.location, viewName)
+	zone, err := vio.loadZone(zoneName)
+	if err != nil {
+		return nil, err
+	}
+	return zone, nil
 }
 
-// Indicates that the storage does not hold the zone information in memory.
-func (storage zoneInventoryStorageDisk) hasMemoryStorage() bool {
-	return false
+// Reads the time when the inventory was populated and returns. Unlike other
+// storages it doesn't read the zones from disk because it lacks in-memory
+// storage for zones. The views and zones are read from disk on demand using
+// iterators.
+func (storage *zoneInventoryStorageDisk) loadViews() (time.Time, error) {
+	meta, err := storage.readMeta()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return meta.PopulatedAt, nil
 }
 
-// Indicates that the storage holds zone information on disk.
-func (storage zoneInventoryStorageDisk) hasDiskStorage() bool {
-	return true
+// Saves specified views on disk replacing the entire inventory.
+func (storage *zoneInventoryStorageDisk) saveViews(views *bind9stats.Views) error {
+	err := storage.removeMeta()
+	if err != nil {
+		return err
+	}
+	for _, view := range views.Views {
+		vio := newViewIO(storage.location, view.Name)
+		err = vio.recreateView(view)
+		if err != nil {
+			break
+		}
+	}
+	err = storage.saveMeta(&ZoneInventoryMeta{
+		PopulatedAt: time.Now().UTC(),
+	})
+	return err
+}
+
+// Removes the inventory metadata file if it exists.
+func (storage *zoneInventoryStorageDisk) removeMeta() error {
+	metaFileName := path.Join(storage.location, zoneInventoryMetaFileName)
+	err := os.Remove(metaFileName)
+	var pathError *fs.PathError
+	if errors.As(err, &pathError) {
+		// If the file doesn't exist it is not an error.
+		return nil
+	}
+	return errors.Wrapf(err, "failed to remove the inventory metadata file %s", metaFileName)
+}
+
+// Saves the inventory metadata.
+func (storage *zoneInventoryStorageDisk) saveMeta(meta *ZoneInventoryMeta) error {
+	metaFileName := path.Join(storage.location, zoneInventoryMetaFileName)
+	metaFile, err := os.OpenFile(metaFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o640)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save inventory metadata file %s", metaFileName)
+	}
+	defer metaFile.Close()
+	encoder := json.NewEncoder(metaFile)
+	err = encoder.Encode(meta)
+	if err != nil {
+		return errors.Wrapf(err, "failed to encode inventory metadata into file %s", metaFileName)
+	}
+	return nil
+}
+
+// Reads the inventory metadata.
+func (storage *zoneInventoryStorageDisk) readMeta() (*ZoneInventoryMeta, error) {
+	metaFileName := path.Join(storage.location, zoneInventoryMetaFileName)
+	content, err := os.ReadFile(metaFileName)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "failed to read the inventory metadata file %s", metaFileName)
+	}
+	var meta ZoneInventoryMeta
+	err = json.Unmarshal(content, &meta)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse the inventory metadata file %s", metaFileName)
+	}
+	return &meta, nil
 }
 
 // A storage holding the zone information in memory only.
-type zoneInventoryStorageMemory struct{}
+type zoneInventoryStorageMemory struct {
+	mutex sync.RWMutex
+	views *bind9stats.Views
+}
 
 // Instantiates the storage.
 func newZoneInventoryStorageMemory() *zoneInventoryStorageMemory {
-	return &zoneInventoryStorageMemory{}
+	return &zoneInventoryStorageMemory{
+		mutex: sync.RWMutex{},
+	}
 }
 
-// Stub function returning empty storage location.
-func (storage zoneInventoryStorageMemory) getStorageLocation() string {
-	return ""
+// Returns an iterator to the views in the storage. This access to the
+// views is fast because they are read from the in-memory storage.
+func (storage *zoneInventoryStorageMemory) getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error] {
+	return func(yield func(bind9stats.ZoneIteratorAccessor, error) bool) {
+		if storage.views == nil {
+			return
+		}
+		for _, view := range storage.views.Views {
+			if filter != nil && filter.View != nil && *filter.View != view.Name {
+				continue
+			}
+			if !yield(view, nil) {
+				return
+			}
+		}
+	}
 }
 
-// Indicates that the storage holds zone information in memory.
-func (storage zoneInventoryStorageMemory) hasMemoryStorage() bool {
-	return true
+// Returns a selected zone from a view. The access to the data is fast
+// because it is read from the in-memory storage.
+func (storage *zoneInventoryStorageMemory) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
+	storage.mutex.RLock()
+	views := storage.views
+	storage.mutex.RUnlock()
+	if views != nil {
+		view := views.GetView(viewName)
+		if view != nil {
+			zone := view.GetZone(zoneName)
+			return zone, nil
+		}
+	}
+	return nil, nil
 }
 
-// Indicates that the storage does not hold zone information on disk.
-func (storage zoneInventoryStorageMemory) hasDiskStorage() bool {
-	return false
+// Always returns zoneInventoryNoDiskStorageError because there is no persistent
+// storage to read the views from.
+func (storage *zoneInventoryStorageMemory) loadViews() (time.Time, error) {
+	return time.Time{}, newZoneInventoryNoDiskStorageError()
+}
+
+// Replaces the inventory with a new collection of views.
+func (storage *zoneInventoryStorageMemory) saveViews(views *bind9stats.Views) error {
+	storage.mutex.Lock()
+	defer storage.mutex.Unlock()
+	storage.views = views
+	return nil
 }
 
 // Zone inventory state name type. This type is used instead of a string
@@ -365,7 +580,6 @@ type zoneInventory struct {
 	port          int64
 	state         zoneInventoryStateName
 	visitedStates map[zoneInventoryStateName]*zoneInventoryState
-	views         *bind9stats.Views
 	mutex         sync.RWMutex
 	wg            sync.WaitGroup
 }
@@ -388,28 +602,7 @@ type zoneInventoryReceiveZoneResult struct {
 // Instantiates the inventory. If the specified storage saves the zone information on
 // disk this function prepares required directory structures. An error is returned if
 // creating these structures fails.
-func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host string, port int64) (*zoneInventory, error) {
-	if storage.hasDiskStorage() {
-		// The inventory will store zone information on disk. Create the necessary
-		// data structures.
-		storageLocation := storage.getStorageLocation()
-		fileInfo, err := os.Stat(storageLocation)
-		switch {
-		case err == nil:
-			if !fileInfo.IsDir() {
-				// The specified location exists but it is not a directory.
-				return nil, errors.Errorf("failed to create zone inventory because %s is not a directory", storageLocation)
-			}
-		case errors.Is(err, os.ErrNotExist):
-			// This directory does not exist. Try to create it.
-			if err = os.MkdirAll(storageLocation, 0o755); err != nil {
-				return nil, errors.Wrapf(err, "failed to create a zone inventory directory structure %s", storageLocation)
-			}
-		default:
-			// Other error.
-			return nil, errors.Wrapf(err, "failed to create zone inventory in %s", storageLocation)
-		}
-	}
+func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host string, port int64) *zoneInventory {
 	// Everything OK.
 	state := newZoneInventoryStateInitial()
 	return &zoneInventory{
@@ -423,60 +616,7 @@ func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host str
 		},
 		mutex: sync.RWMutex{},
 		wg:    sync.WaitGroup{},
-		views: nil,
-	}, nil
-}
-
-// Removes the inventory metadata file if it exists.
-func (inventory *zoneInventory) removeMeta() error {
-	metaFileName := path.Join(inventory.storage.getStorageLocation(), zoneInventoryMetaFileName)
-	err := os.Remove(metaFileName)
-	var pathError *fs.PathError
-	if errors.As(err, &pathError) {
-		// If the file doesn't exist it is not an error.
-		return nil
 	}
-	return errors.Wrapf(err, "failed to remove the inventory metadata file %s", metaFileName)
-}
-
-// Saves the inventory metadata.
-func (inventory *zoneInventory) saveMeta(meta *ZoneInventoryMeta) error {
-	if !inventory.storage.hasDiskStorage() {
-		return newZoneInventoryNoDiskStorageError()
-	}
-	metaFileName := path.Join(inventory.storage.getStorageLocation(), zoneInventoryMetaFileName)
-	metaFile, err := os.OpenFile(metaFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o640)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save inventory metadata file %s", metaFileName)
-	}
-	defer metaFile.Close()
-	encoder := json.NewEncoder(metaFile)
-	err = encoder.Encode(meta)
-	if err != nil {
-		return errors.Wrapf(err, "failed to encode inventory metadata into file %s", metaFileName)
-	}
-	return nil
-}
-
-// Readds the inventory metadata.
-func (inventory *zoneInventory) readMeta() (*ZoneInventoryMeta, error) {
-	if !inventory.storage.hasDiskStorage() {
-		return nil, newZoneInventoryNoDiskStorageError()
-	}
-	metaFileName := path.Join(inventory.storage.getStorageLocation(), zoneInventoryMetaFileName)
-	content, err := os.ReadFile(metaFileName)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, nil
-		}
-		return nil, errors.Wrapf(err, "failed to read the inventory metadata file %s", metaFileName)
-	}
-	var meta ZoneInventoryMeta
-	err = json.Unmarshal(content, &meta)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse the inventory metadata file %s", metaFileName)
-	}
-	return &meta, nil
 }
 
 // Transitions the inventory to a new state. It returns a zoneInventoryBusyError if the
@@ -499,24 +639,6 @@ func (inventory *zoneInventory) transition(newState *zoneInventoryState) error {
 	return inventory.transitionUnsafe(newState)
 }
 
-// Transitions the inventory to a new state and sets views. A call to this
-// function must be protected by mutex.
-func (inventory *zoneInventory) transitionWithViewsUnsafe(newState *zoneInventoryState, views *bind9stats.Views) error {
-	if err := inventory.transitionUnsafe(newState); err != nil {
-		return err
-	}
-	inventory.views = views
-	return nil
-}
-
-// Transitions the inventory to a new state, sets views and clears last
-// error. It is safe for concurrent use.
-func (inventory *zoneInventory) transitionWithViews(newState *zoneInventoryState, views *bind9stats.Views) error {
-	inventory.mutex.Lock()
-	defer inventory.mutex.Unlock()
-	return inventory.transitionWithViewsUnsafe(newState, views)
-}
-
 // Returns current inventory state. A cal to this function must be protected
 // by a mutex.
 func (inventory *zoneInventory) getCurrentStateUnsafe() *zoneInventoryState {
@@ -536,48 +658,6 @@ func (inventory *zoneInventory) getVisitedState(name zoneInventoryStateName) *zo
 	inventory.mutex.RLock()
 	defer inventory.mutex.RUnlock()
 	return inventory.visitedStates[name]
-}
-
-// Returns an iterator to the views. Depending on the type of the
-// storage the views are returned from memory or disk.
-func (inventory *zoneInventory) getViewsIterator(filter *bind9stats.ZoneFilter) iter.Seq2[bind9stats.ZoneIteratorAccessor, error] {
-	return func(yield func(bind9stats.ZoneIteratorAccessor, error) bool) {
-		switch {
-		case inventory.storage.hasMemoryStorage():
-			// If we have in-memory storage it is way more efficient
-			// to use it than the disk storage.
-			for _, view := range inventory.views.Views {
-				if filter != nil && filter.View != nil && *filter.View != view.Name {
-					continue
-				}
-				if !yield(view, nil) {
-					return
-				}
-			}
-		case inventory.storage.hasDiskStorage():
-			// If there is no memory storage we have no other way but use
-			// the disk storage.
-			files, err := os.ReadDir(inventory.storage.getStorageLocation())
-			if err != nil {
-				err = errors.Wrapf(err, "failed to read view directory %s", inventory.storage.getStorageLocation())
-				if !yield(nil, err) {
-					return
-				}
-			}
-			for _, file := range files {
-				if !file.IsDir() || filter != nil && filter.View != nil && *filter.View != file.Name() {
-					continue
-				}
-				vio := newViewIO(inventory.storage.getStorageLocation(), file.Name())
-				if !yield(vio, nil) {
-					return
-				}
-			}
-		default:
-			// An impossible condition.
-			return
-		}
-	}
 }
 
 // Contacts a DNS server to fetch views and zones. Then, it processes the received
@@ -605,22 +685,8 @@ func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNot
 		if err == nil {
 			if response.IsError() {
 				err = errors.Errorf("DNS server returned error status code %d with message: %s", response.StatusCode(), response.String())
-			} else if inventory.storage.hasDiskStorage() {
-				// The inventory has a persistent storage. Let's go over the
-				// views and zones and store them.
-				err = inventory.removeMeta()
-				if err == nil {
-					for _, view := range views.Views {
-						vio := newViewIO(inventory.storage.getStorageLocation(), view.Name)
-						err = vio.recreateView(view)
-						if err != nil {
-							break
-						}
-					}
-					err = inventory.saveMeta(&ZoneInventoryMeta{
-						PopulatedAt: time.Now().UTC(),
-					})
-				}
+			} else {
+				err = inventory.storage.saveViews(views)
 			}
 		}
 		if err == nil {
@@ -628,11 +694,7 @@ func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNot
 				"zones": views.GetZoneCount(),
 				"views": len(views.Views),
 			}).Info("Populated DNS zones for indicated number views")
-			if inventory.storage.hasMemoryStorage() {
-				err = inventory.transitionWithViews(newZoneInventoryStatePopulated(), views)
-			} else {
-				err = inventory.transitionWithViews(newZoneInventoryStatePopulated(), nil)
-			}
+			err = inventory.transition(newZoneInventoryStatePopulated())
 		} else {
 			err = inventory.transition(newZoneInventoryStatePopulatingErred(err))
 		}
@@ -650,7 +712,7 @@ func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNot
 // loading the inventory. The block parameter indicates whether or not the caller
 // will wait for the completion notification.
 func (inventory *zoneInventory) load(block bool) (chan zoneInventoryAsyncNotify, error) {
-	if !inventory.storage.hasDiskStorage() {
+	if _, ok := inventory.storage.(*zoneInventoryStorageMemory); ok {
 		// Disk storage is required because we're going to load the data
 		// from disk to memory.
 		return nil, newZoneInventoryNoDiskStorageError()
@@ -660,9 +722,6 @@ func (inventory *zoneInventory) load(block bool) (chan zoneInventoryAsyncNotify,
 	if err := inventory.transition(newZoneInventoryStateLoading()); err != nil {
 		return nil, err
 	}
-	// This flag will be needed in the goroutine to decide whether or
-	// not to attempt to read the metadata file from the storage.
-	hasMemoryStorage := inventory.storage.hasMemoryStorage()
 	var bufLen int
 	if !block {
 		// The channel must be buffered to not block write when nobody listens.
@@ -672,48 +731,11 @@ func (inventory *zoneInventory) load(block bool) (chan zoneInventoryAsyncNotify,
 	inventory.wg.Add(1)
 	go func() {
 		defer inventory.wg.Done()
-		// If there is no memory storage we merely need to check if the inventory
-		// has been populated and saved on disk.
-		if !hasMemoryStorage {
-			meta, err := inventory.readMeta()
-			if err != nil {
-				_ = inventory.transition(newZoneInventoryStateLoadingErred(err))
-			} else {
-				_ = inventory.transition(newZoneInventoryStateLoaded(meta.PopulatedAt))
-			}
-			notifyChannel <- zoneInventoryAsyncNotify{
-				err,
-			}
-			close(notifyChannel)
-			return
-		}
-		// Store the viewList here.
-		var viewList []*bind9stats.View
-		// Get the list of files/directories.
-		files, err := os.ReadDir(inventory.storage.getStorageLocation())
-		if err == nil {
-			for _, file := range files {
-				if file.IsDir() {
-					// If it is a directory it should hold the view information.
-					vio := newViewIO(inventory.storage.getStorageLocation(), file.Name())
-					view, err := vio.loadView()
-					if err != nil {
-						break
-					}
-					// View and its zones loaded from file. Let's store it in memory.
-					viewList = append(viewList, view)
-				}
-			}
-		}
-		if err == nil {
-			views := bind9stats.NewViews(viewList)
-			log.WithFields(log.Fields{
-				"zones": views.GetZoneCount(),
-				"views": len(views.Views),
-			}).Info("Loaded DNS zones for indicated number views")
-			_ = inventory.transitionWithViews(newZoneInventoryStateLoaded(time.Now().UTC()), bind9stats.NewViews(viewList))
-		} else {
+		populatedAt, err := inventory.storage.loadViews()
+		if err != nil {
 			_ = inventory.transition(newZoneInventoryStateLoadingErred(err))
+		} else {
+			_ = inventory.transition(newZoneInventoryStateLoaded(populatedAt))
 		}
 		// We are done loading the views. Send notification and close the channel.
 		notifyChannel <- zoneInventoryAsyncNotify{
@@ -745,7 +767,7 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 	channel := make(chan zoneInventoryReceiveZoneResult)
 	go func() {
 	OUTER_LOOP:
-		for view, err := range inventory.getViewsIterator(filter) {
+		for view, err := range inventory.storage.getViewsIterator(filter) {
 			if err != nil {
 				result := zoneInventoryReceiveZoneResult{
 					zone: nil,
@@ -788,28 +810,7 @@ func (inventory *zoneInventory) getZoneInView(viewName, zoneName string) (*bind9
 	if state.isInitial() || state.isErred() {
 		return nil, newZoneInventoryNotInitedError()
 	}
-	if inventory.storage.hasMemoryStorage() {
-		// If the inventory has a memory storage, let's use it to get the zone info.
-		inventory.mutex.RLock()
-		views := inventory.views
-		inventory.mutex.RUnlock()
-		if views != nil {
-			view := views.GetView(viewName)
-			if view != nil {
-				zone := view.GetZone(zoneName)
-				return zone, nil
-			}
-		}
-	} else if inventory.storage.hasDiskStorage() {
-		// If disk storage available, read the zone information from file.
-		vio := newViewIO(inventory.storage.getStorageLocation(), viewName)
-		zone, err := vio.loadZone(zoneName)
-		if err != nil {
-			return nil, err
-		}
-		return zone, nil
-	}
-	return nil, nil
+	return inventory.storage.getZoneInView(viewName, zoneName)
 }
 
 // This function waits for the asynchronous operations to complete.
