@@ -98,10 +98,10 @@
                     [showMenu]="false"
                     [showClearButton]="!hasPrefilter()"
                 >
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                         <p-triStateCheckbox
                             inputId="authorized-input"
-                            (onChange)="filter($event.value)"
+                            (onChange)="filterTable($event.value, filterConstraint)"
                             [ngModel]="value"
                             [disabled]="hasPrefilter()"
                             styleClass="mr-2"
@@ -112,13 +112,13 @@
                 </p-columnFilter>
 
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input
                                 pInputText
                                 type="text"
-                                (input)="filter($event.target.value)"
+                                (input)="filterTable($event.target.value, filterConstraint)"
                                 [ngModel]="value"
                                 placeholder="Search machines"
                             />

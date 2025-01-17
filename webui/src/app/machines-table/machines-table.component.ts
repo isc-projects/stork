@@ -4,10 +4,9 @@ import { Machine, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
-import { debounceTime, lastValueFrom, Subject } from 'rxjs'
+import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Location } from '@angular/common'
-import { switchMap, tap } from 'rxjs/operators'
 
 export interface MachinesFilter {
     text?: string
@@ -89,12 +88,6 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
     /**
-     * RxJS Subjects emitting next TableLazyLoadEvent when PrimeNG table requests to lazily load the data.
-     * @private
-     */
-    private _lazyLoad = new Subject<TableLazyLoadEvent>()
-
-    /**
      * Callback called when the machine's menu was displayed.
      * @param event browser's click event
      * @param machine machine for which the menu was displayed
@@ -125,7 +118,6 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     ngOnDestroy(): void {
         super.onDestroy()
-        this._lazyLoad.complete()
     }
 
     /**
@@ -133,44 +125,6 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     ngOnInit(): void {
         super.onInit()
-        this._lazyLoad
-            .pipe(
-                debounceTime(300),
-                tap(() => (this.dataLoading = true)),
-                switchMap((e) =>
-                    this.servicesApi.getMachines(
-                        e.first,
-                        e.rows,
-                        this.getTableFilterValue('text', e.filters),
-                        null,
-                        this.prefilterValue ?? this.getTableFilterValue('authorized', e.filters)
-                    )
-                )
-            )
-            .subscribe({
-                next: (data) => {
-                    this.dataCollection = data.items ?? []
-                    this.totalRecords = data.total ?? 0
-                    const authorized = this.prefilterValue ?? this.getTableFilterValue('authorized')
-                    if (authorized === false && this.hasFilter(this.table) === false) {
-                        this.unauthorizedMachinesCount = this.totalRecords
-                        this.unauthorizedMachinesCountChange.emit(this.totalRecords)
-                    } else {
-                        this.fetchUnauthorizedMachinesCount()
-                    }
-                    this.dataLoading = false
-                },
-                error: (err) => {
-                    const msg = getErrorMessage(err)
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Cannot get machine list',
-                        detail: 'Error getting machine list: ' + msg,
-                        life: 10000,
-                    })
-                    this.dataLoading = false
-                },
-            })
         this.clearSelection()
     }
 
@@ -180,7 +134,44 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      * number of rows to be returned and machines filters.
      */
     loadData(event: TableLazyLoadEvent): void {
-        this._lazyLoad.next(event)
+        // Indicate that machines refresh is in progress.
+        this.dataLoading = true
+
+        const authorized = this.prefilterValue ?? this.getTableFilterValue('authorized', event.filters)
+
+        // The goal is to send to backend something as simple as:
+        // this.someApi.getMachines(JSON.stringify(event))
+        lastValueFrom(
+            this.servicesApi.getMachines(
+                event.first,
+                event.rows,
+                this.getTableFilterValue('text', event.filters),
+                null,
+                authorized
+            )
+        )
+            .then((data) => {
+                this.dataCollection = data.items ?? []
+                this.totalRecords = data.total ?? 0
+                if (authorized === false && this.hasFilter(this.table) === false) {
+                    this.unauthorizedMachinesCount = this.totalRecords
+                    this.unauthorizedMachinesCountChange.emit(this.totalRecords)
+                } else {
+                    this.fetchUnauthorizedMachinesCount()
+                }
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot get machine list',
+                    detail: 'Error getting machine list: ' + msg,
+                    life: 10000,
+                })
+            })
+            .finally(() => {
+                this.dataLoading = false
+            })
     }
 
     /**
