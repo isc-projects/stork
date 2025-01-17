@@ -814,7 +814,7 @@ func (inventory *zoneInventory) getZoneInView(viewName, zoneName string) (*bind9
 }
 
 // This function waits for the asynchronous operations to complete.
-func (inventory *zoneInventory) shutdown() {
+func (inventory *zoneInventory) awaitBackgroundTasks() {
 	inventory.wg.Wait()
 }
 
