@@ -846,31 +846,35 @@ func (vio *viewIO) GetZoneIterator(filter *bind9stats.ZoneFilter) iter.Seq2[*bin
 	return func(yield func(*bind9stats.Zone, error) bool) {
 		files, err := os.ReadDir(vio.viewLocation)
 		if err != nil {
-			_ = yield(nil, err)
+			_ = yield(nil, errors.Wrapf(err, "failed to read the DNS view directory %s", vio.viewLocation))
 			return
 		}
+		// The files must be sorted in DNS order.
 		slices.SortFunc(files, func(file1, file2 os.DirEntry) int {
 			return storkutil.CompareNames(file1.Name(), file2.Name())
 		})
 		files = bind9stats.ApplyZoneLowerBoundFilter(files, filter)
-
 		var count int
 		for _, file := range files {
-			content, err := os.ReadFile(path.Join(vio.viewLocation, file.Name()))
+			filePath := path.Join(vio.viewLocation, file.Name())
+			// Read the JSON file with zone information.
+			content, err := os.ReadFile(filePath)
 			if err != nil {
-				if !yield(nil, err) {
+				if !yield(nil, errors.Wrapf(err, "failed to read file containing zone information %s", filePath)) {
 					return
 				}
 				continue
 			}
+			// Parse the JSON file with zone information.
 			var zone bind9stats.Zone
 			err = json.Unmarshal(content, &zone)
 			if err != nil {
-				if !yield(nil, err) {
+				if !yield(nil, errors.Wrapf(err, "failed to parse file containing zone information %s", filePath)) {
 					return
 				}
 				continue
 			}
+			// Filter out unwanted zones.
 			if filter != nil {
 				if filter.LoadedAfter != nil && !zone.Loaded.After(*filter.LoadedAfter) {
 					continue
