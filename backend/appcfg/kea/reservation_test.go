@@ -197,7 +197,9 @@ func TestCreateHostCmdsReservation(t *testing.T) {
 // reservation from Kea.
 func TestCreateHostCmdsDeletedReservation(t *testing.T) {
 	host := createDefaultTestHost()
-	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(1, host)
+	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(
+		1, host, keaconfig.HostCmdsOperationTargetDefault,
+	)
 	require.NoError(t, err)
 	require.NotNil(t, reservation)
 
@@ -215,7 +217,9 @@ func TestCreateHostCmdsDeletedReservationNoIdentfiers(t *testing.T) {
 		Type  string
 		Value []byte
 	}{}
-	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(1, host)
+	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(
+		1, host, keaconfig.HostCmdsOperationTargetDefault,
+	)
 	require.Error(t, err)
 	require.Nil(t, reservation)
 }
@@ -225,7 +229,9 @@ func TestCreateHostCmdsDeletedReservationNoIdentfiers(t *testing.T) {
 func TestCreateHostCmdsDeletedReservationSubnetIDError(t *testing.T) {
 	host := createDefaultTestHost()
 	host.subnetIDTuple.err = errors.New("error getting subnet ID")
-	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(1, host)
+	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(
+		1, host, keaconfig.HostCmdsOperationTargetDefault,
+	)
 	require.Error(t, err)
 	require.Nil(t, reservation)
 }

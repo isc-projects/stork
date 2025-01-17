@@ -437,7 +437,9 @@ func (module *ConfigModule) ApplyHostUpdate(ctx context.Context, host *dbmodel.H
 			return ctx, errors.Errorf("updated host %d is associated with nil app", host.ID)
 		}
 		// Convert the host information to Kea reservation.
-		deleteArguments, err := keaconfig.CreateHostCmdsDeletedReservation(lh.DaemonID, existingHost)
+		deleteArguments, err := keaconfig.CreateHostCmdsDeletedReservation(
+			lh.DaemonID, existingHost, keaconfig.HostCmdsOperationTargetDefault,
+		)
 		if err != nil {
 			return ctx, err
 		}
@@ -537,7 +539,9 @@ func (module *ConfigModule) ApplyHostDelete(ctx context.Context, host *dbmodel.H
 			return ctx, errors.Errorf("deleted host %d is associated with nil app", host.ID)
 		}
 		// Convert the host information to Kea reservation.
-		reservation, err := keaconfig.CreateHostCmdsDeletedReservation(lh.DaemonID, host)
+		reservation, err := keaconfig.CreateHostCmdsDeletedReservation(
+			lh.DaemonID, host, keaconfig.HostCmdsOperationTargetDefault,
+		)
 		if err != nil {
 			return ctx, err
 		}
