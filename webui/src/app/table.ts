@@ -1,9 +1,10 @@
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { ActivatedRoute, ParamMap } from '@angular/router'
 import { Location } from '@angular/common'
-import { Subject, Subscription } from 'rxjs'
+import { debounceTime, Subject, Subscription } from 'rxjs'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { TableState } from 'primeng/api'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 
 /**
  * Interface containing base properties that are supported when filtering table via URL queryParams.
@@ -110,6 +111,12 @@ export abstract class PrefilteredTable<
      * The provided queryParam filter RxJS Subject.
      */
     filter$ = new Subject<FilterInterface>()
+
+    /**
+     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * @private
+     */
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
      * The recent queryParam filter applied to the table data. Only filters that pass the
@@ -293,6 +300,7 @@ export abstract class PrefilteredTable<
      */
     onDestroy(): void {
         this.filter$.complete()
+        this._tableFilter$.complete()
         this._subscriptions.unsubscribe()
     }
 
@@ -317,7 +325,7 @@ export abstract class PrefilteredTable<
                 : `${this.stateKeyPrefix}-all`
         }
 
-        this.subscribeFilterHandler()
+        this.subscribeFilterHandlers()
     }
 
     /**
@@ -457,10 +465,20 @@ export abstract class PrefilteredTable<
     }
 
     /**
-     * Subscribes handler to the filter$ observable.
+     * Emits next value and filterConstraint for the table's filter,
+     * which in the end will result in applying the filter on the table's data.
+     * @param value value of the filter
+     * @param filterConstraint filter field which will be filtered
+     */
+    filterTable(value: any, filterConstraint: FilterMetadata): void {
+        this._tableFilter$.next({ value, filterConstraint })
+    }
+
+    /**
+     * Subscribes handlers to the filter$ and _tableFilter$ observables.
      * @private
      */
-    private subscribeFilterHandler(): void {
+    private subscribeFilterHandlers(): void {
         // Update the filter representation when the filtering parameters change.
         this._subscriptions.add(
             this.filter$.subscribe((filter) => {
@@ -493,6 +511,19 @@ export abstract class PrefilteredTable<
                     })
                 }
             })
+        )
+
+        this._subscriptions.add(
+            this._tableFilter$
+                .pipe(
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    map((f) => {
+                        f.filterConstraint.value = f.value
+                        this.table._filter()
+                    })
+                )
+                .subscribe()
         )
     }
 
