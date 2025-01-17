@@ -1,4 +1,4 @@
-import { Component, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
 import { PrefilteredTable } from '../table'
 import { Machine, ServicesService } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
@@ -8,7 +8,6 @@ import { debounceTime, lastValueFrom, Subject } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Location } from '@angular/common'
 import { switchMap, tap } from 'rxjs/operators'
-import { NG_VALUE_ACCESSOR } from '@angular/forms'
 
 export interface MachinesFilter {
     text?: string
@@ -19,7 +18,6 @@ export interface MachinesFilter {
     selector: 'app-machines-table',
     templateUrl: './machines-table.component.html',
     styleUrl: './machines-table.component.sass',
-    providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => MachinesTableComponent), multi: true }],
 })
 export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Machine> implements OnInit, OnDestroy {
     /**
