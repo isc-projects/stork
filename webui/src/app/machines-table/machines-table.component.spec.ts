@@ -111,13 +111,7 @@ describe('MachinesTableComponent', () => {
         }
 
         // fake ServicesService
-        servicesApi = createSpyObj('ServicesService', [
-            'getMachines',
-            'getMachinesServerToken',
-            'regenerateMachinesServerToken',
-            'getUnauthorizedMachinesCount',
-            'updateMachine',
-        ])
+        servicesApi = createSpyObj('ServicesService', ['getMachines', 'getUnauthorizedMachinesCount'])
 
         getMachinesSpy = servicesApi.getMachines.and.returnValue(of(getAllMachinesResp))
         getMachinesSpy.withArgs(0, 10, null, null, true).and.returnValue(of(getAuthorizedMachinesResp))
@@ -435,8 +429,10 @@ describe('MachinesTableComponent', () => {
         // Arrange
         component.dataCollection = deepCopy(getUnauthorizedMachinesResp.items)
 
-        // Act & Assert
+        // Act
         component.deleteMachine(1)
+
+        // Assert
         expect(component.dataCollection.length).toBe(2)
         expect(component.dataCollection).toContain({ hostname: 'bbb', id: 2, address: 'addr2', authorized: false })
         expect(component.dataCollection).toContain({ hostname: 'ccc', id: 3, address: 'addr3', authorized: false })
@@ -447,8 +443,10 @@ describe('MachinesTableComponent', () => {
         // Arrange
         component.dataCollection = getUnauthorizedMachinesResp.items
 
-        // Act & Assert
+        // Act
         component.deleteMachine(4)
+
+        // Assert
         expect(component.dataCollection.length).toBe(3)
         expect(component.dataCollection).toBe(getUnauthorizedMachinesResp.items)
         expect(servicesApi.getUnauthorizedMachinesCount).not.toHaveBeenCalled()
@@ -465,8 +463,10 @@ describe('MachinesTableComponent', () => {
         // Arrange
         component.dataCollection = deepCopy(getAuthorizedMachinesResp.items)
 
-        // Act & Assert
+        // Act
         component.refreshMachineState(refreshed)
+
+        // Assert
         const changedMachine = component.dataCollection.find((m) => m.id === 4)
         expect(changedMachine).toBeTruthy()
         expect(changedMachine).toEqual(refreshed)
@@ -476,8 +476,10 @@ describe('MachinesTableComponent', () => {
         // Arrange
         component.dataCollection = getUnauthorizedMachinesResp.items
 
-        // Act & Assert
+        // Act
         component.refreshMachineState(refreshed)
+
+        // Assert
         const changedMachine = component.dataCollection.find((m) => m.id === 4)
         expect(changedMachine).toBeUndefined()
         expect(component.dataCollection).toEqual(getUnauthorizedMachinesResp.items)
@@ -505,11 +507,12 @@ describe('MachinesTableComponent', () => {
         fixture.detectChanges()
         expect(component.dataLoading).withContext('data loading done').toBeFalse()
 
-        // Act & Assert
+        // Act
         component.refreshMachineState(refreshed)
         await fixture.whenStable()
         fixture.detectChanges()
 
+        // Assert
         const textContent = fixture.nativeElement.innerText
 
         expect(textContent).toContain('DHCPv4')
@@ -538,5 +541,55 @@ describe('MachinesTableComponent', () => {
         expect(versionStatus[1].properties.outerHTML).toContain('test feedback')
         expect(versionStatus[2].properties.outerHTML).toContain('text-green-500')
         expect(versionStatus[2].properties.outerHTML).toContain('test feedback')
+    })
+
+    it('should set data loading state', () => {
+        // Arrange & Act & Assert
+        component.setDataLoading(true)
+        expect(component.dataLoading).toBeTrue()
+        component.setDataLoading(false)
+        expect(component.dataLoading).toBeFalse()
+    })
+
+    it('should clear selected machines', async () => {
+        // Arrange
+        component.loadData({ first: 0, rows: 10, filters: {} })
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data is loading').toBeTrue()
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data loading done').toBeFalse()
+
+        const checkboxes = fixture.debugElement.queryAll(By.css('table .p-checkbox .p-checkbox-box'))
+        expect(checkboxes).toBeTruthy()
+        expect(checkboxes.length)
+            .withContext('there should be 1 "select all" checkbox and 5 checkboxes for each machine')
+            .toEqual(6)
+        const selectAllCheckbox = checkboxes[0]
+        expect(selectAllCheckbox).toBeTruthy()
+
+        selectAllCheckbox.nativeElement.click()
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.selectedMachines.length).toEqual(5)
+        expect(component.selectedMachines).toEqual(getAllMachinesResp.items)
+        expect(
+            checkboxes.filter((de) => de.classes.hasOwnProperty('p-highlight') && !!de.classes['p-highlight']).length
+        ).toEqual(6)
+
+        // Act
+        component.clearSelection()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // Assert
+        expect(component.selectedMachines.length).toEqual(0)
+        expect(
+            checkboxes.filter((de) => de.classes.hasOwnProperty('p-highlight') && !!de.classes['p-highlight']).length
+        ).toEqual(0)
     })
 })
