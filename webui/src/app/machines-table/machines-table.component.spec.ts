@@ -15,7 +15,7 @@ import { FormsModule } from '@angular/forms'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
 import { AppsVersions, ServicesService } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
@@ -24,6 +24,7 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TooltipModule } from 'primeng/tooltip'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { deepCopy } from '../utils'
+import objectContaining = jasmine.objectContaining
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -32,6 +33,7 @@ describe('MachinesTableComponent', () => {
     let servicesApi: any
     let getMachinesSpy: any
     let unauthorizedMachinesCountChangeSpy: any
+    let msgService: MessageService
 
     // prepare responses for api calls
     const getUnauthorizedMachinesResp: any = {
@@ -106,6 +108,7 @@ describe('MachinesTableComponent', () => {
 
         fixture = TestBed.createComponent(MachinesTableComponent)
         component = fixture.componentInstance
+        msgService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
 
         // Do not save table state between tests, because that makes tests unstable.
@@ -181,6 +184,7 @@ describe('MachinesTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
+        expect(component.prefilterValue).toBeNull()
         expect(getMachinesSpy).toHaveBeenCalledOnceWith(100, 30, 'foo', null, true)
         expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
         expect(component.unauthorizedMachinesCount).toBe(5)
@@ -273,7 +277,6 @@ describe('MachinesTableComponent', () => {
         // Assert
         expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, true)
         expect(component.hasFilter(component.table)).toBeFalse()
-        // In case unauthorized machines view is loaded, unauthorized machines count is extracted from getMachines api response.
         expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountChangeSpy).toHaveBeenCalledOnceWith(3)
@@ -288,5 +291,64 @@ describe('MachinesTableComponent', () => {
         expect(nativeEl.textContent).not.toContain('ccc')
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).toContain('zzz')
+    })
+
+    it('should respect queryParam filter value when table was filtered by other value', async () => {
+        // Arrange
+        component.prefilterValue = false
+        const filter: { [k: string]: FilterMetadata } = {
+            authorized: { value: true, matchMode: 'equals' },
+            text: { value: null, matchMode: 'contains' },
+        }
+        component.table.filters = filter
+        getMachinesSpy.and.returnValue(of(getUnauthorizedMachinesResp))
+
+        // Act
+        component.loadData({ first: 0, rows: 10, filters: filter })
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // Assert
+        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, false)
+        expect(component.hasFilter(component.table)).toBeFalse()
+        expect(servicesApi.getUnauthorizedMachinesCount).not.toHaveBeenCalled()
+        expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(unauthorizedMachinesCountChangeSpy).toHaveBeenCalledOnceWith(3)
+        expect(component.dataLoading).toBeTrue()
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).toBeFalse()
+        const nativeEl = fixture.nativeElement
+        expect(nativeEl.textContent).toContain('aaa')
+        expect(nativeEl.textContent).toContain('bbb')
+        expect(nativeEl.textContent).toContain('ccc')
+        expect(nativeEl.textContent).not.toContain('xxx')
+        expect(nativeEl.textContent).not.toContain('zzz')
+    })
+
+    it('should display error when api call fails', async () => {
+        // Arrange
+        const msgSpy = spyOn(msgService, 'add')
+        getMachinesSpy.and.returnValue(throwError(() => new Error('test error')))
+
+        // Act
+        component.loadData({ first: 0, rows: 10, filters: {} })
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // Assert
+        expect(getMachinesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null)
+        expect(component.dataCollection).toBeFalsy()
+        expect(component.totalRecords).toBe(0)
+        expect(msgSpy).toHaveBeenCalledOnceWith(
+            objectContaining({ severity: 'error', summary: 'Cannot get machine list' })
+        )
+        expect(servicesApi.getUnauthorizedMachinesCount).not.toHaveBeenCalled()
+        expect(component.dataLoading).toBeTrue()
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).toBeFalse()
     })
 })
