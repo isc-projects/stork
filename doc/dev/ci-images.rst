@@ -146,6 +146,14 @@ Changelog
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
+**Tag: 6**
+
+    - ``alpine.Dockerfile``:
+
+        Introduced in the #1676 ticket to upgrade Go to 1.23.5. Python has
+        been upgraded to 3.12 because the 3.11 version is no longer available
+        in the Alpine repository.
+
 **Tag: 5**
 
     - ``alpine.Dockerfile``:
