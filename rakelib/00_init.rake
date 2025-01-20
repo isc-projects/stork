@@ -743,7 +743,7 @@ DOCKER_COMPOSE = docker_plugin("docker-compose", "compose")
 DOCKER_BUILDX = docker_plugin("docker-buildx", "buildx")
 
 # Toolkits
-BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
+BUNDLE = File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundle")
 file BUNDLE => [RUBY, GEM, ruby_tools_dir, ruby_tools_bin_dir] do
     sh "rm", "-rf", File.join(ruby_tools_dir, "*")
 
@@ -754,15 +754,8 @@ file BUNDLE => [RUBY, GEM, ruby_tools_dir, ruby_tools_bin_dir] do
             "--install-dir", ruby_tools_dir,
             "bundler:#{bundler_ver}"
 
-    if !File.exist? BUNDLE
-        # Workaround for old Ruby versions
-        sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundler"), File.join(ruby_tools_bin_dir, "bundler")
-        sh "ln", "-s", File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundle"), BUNDLE
-    end
-
     sh BUNDLE, "--version"
 end
-add_version_guard(BUNDLE, bundler_ver)
 add_hash_guard(BUNDLE, RUBY)
 
 danger_gemfile = File.expand_path("init_deps/danger/Gemfile", __dir__)

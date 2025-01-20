@@ -1094,6 +1094,13 @@ namespace :update do
 
     desc 'Update all Ruby dependencies'
     task :ruby_gemfiles => [BUNDLE] do
+        # Remove the bundle directories because it may preserve the out-of-date
+        # build configurations.
+        bundle_directories = FileList["rakelib/init_deps/*/.bundle"]
+        bundle_directories.each do |d|
+            FileUtils.rm_rf d
+        end
+
         gemfiles = FileList["rakelib/init_deps/*/Gemfile"]
             .exclude(FileList["rakelib/init_deps/*/Gemfile.lock"])
         # List all Gemfiles.
