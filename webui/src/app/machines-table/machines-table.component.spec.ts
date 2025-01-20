@@ -16,7 +16,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
 import { of, throwError } from 'rxjs'
-import { AppsVersions, ServicesService } from '../backend'
+import { AppsVersions, Machine, ServicesService } from '../backend'
 import { Severity, VersionService } from '../version.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
@@ -25,6 +25,8 @@ import { TooltipModule } from 'primeng/tooltip'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { deepCopy } from '../utils'
 import objectContaining = jasmine.objectContaining
+import { By } from '@angular/platform-browser'
+import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -54,6 +56,50 @@ describe('MachinesTableComponent', () => {
     const getAllMachinesResp = {
         items: [...getUnauthorizedMachinesResp.items, ...getAuthorizedMachinesResp.items],
         total: 5,
+    }
+    const refreshed: Machine = {
+        id: 4,
+        address: 'addr zzz',
+        authorized: true,
+        hostname: 'new zzz',
+        apps: [
+            {
+                id: 1,
+                name: 'kea@localhost',
+                type: 'kea',
+                details: {
+                    daemons: [
+                        {
+                            active: true,
+                            extendedVersion: '2.2.0',
+                            id: 1,
+                            name: 'dhcp4',
+                        },
+                        {
+                            active: false,
+                            extendedVersion: '2.3.0',
+                            id: 2,
+                            name: 'ca',
+                        },
+                    ],
+                },
+                version: '2.2.0',
+            },
+            {
+                id: 2,
+                name: 'bind9@localhost',
+                type: 'bind9',
+                details: {
+                    daemon: {
+                        active: true,
+                        id: 3,
+                        name: 'named',
+                    },
+                },
+                version: '9.18.30',
+            },
+        ],
+        agentVersion: '1.19.0',
     }
 
     beforeEach(async () => {
@@ -98,6 +144,7 @@ describe('MachinesTableComponent', () => {
                 VersionStatusComponent,
                 LocaltimePipe,
                 PlaceholderPipe,
+                AppDaemonsStatusComponent,
             ],
             providers: [
                 MessageService,
@@ -350,5 +397,146 @@ describe('MachinesTableComponent', () => {
         await fixture.whenStable()
         fixture.detectChanges()
         expect(component.dataLoading).toBeFalse()
+    })
+
+    it('should return authorized machines displayed', () => {
+        // Arrange
+        component.dataCollection = getAllMachinesResp.items
+
+        // Act & Assert
+        expect(component.authorizedMachinesDisplayed()).toBeTrue()
+    })
+
+    it('should not return authorized machines displayed', () => {
+        // Arrange
+        component.dataCollection = getUnauthorizedMachinesResp.items
+
+        // Act & Assert
+        expect(component.authorizedMachinesDisplayed()).toBeFalse()
+    })
+
+    it('should return unauthorized machines displayed', () => {
+        // Arrange
+        component.dataCollection = getAllMachinesResp.items
+
+        // Act & Assert
+        expect(component.unauthorizedMachinesDisplayed()).toBeTrue()
+    })
+
+    it('should not return unauthorized machines displayed', () => {
+        // Arrange
+        component.dataCollection = getAuthorizedMachinesResp.items
+
+        // Act & Assert
+        expect(component.unauthorizedMachinesDisplayed()).toBeFalse()
+    })
+
+    it('should delete a machine from data collection', () => {
+        // Arrange
+        component.dataCollection = deepCopy(getUnauthorizedMachinesResp.items)
+
+        // Act & Assert
+        component.deleteMachine(1)
+        expect(component.dataCollection.length).toBe(2)
+        expect(component.dataCollection).toContain({ hostname: 'bbb', id: 2, address: 'addr2', authorized: false })
+        expect(component.dataCollection).toContain({ hostname: 'ccc', id: 3, address: 'addr3', authorized: false })
+        expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not delete a machine from data collection', () => {
+        // Arrange
+        component.dataCollection = getUnauthorizedMachinesResp.items
+
+        // Act & Assert
+        component.deleteMachine(4)
+        expect(component.dataCollection.length).toBe(3)
+        expect(component.dataCollection).toBe(getUnauthorizedMachinesResp.items)
+        expect(servicesApi.getUnauthorizedMachinesCount).not.toHaveBeenCalled()
+    })
+
+    it('should not fail when trying to delete a machine when data collection is undefined', () => {
+        // Arrange & Act & Assert
+        component.deleteMachine(4)
+        expect(component.dataCollection).toBeFalsy()
+        expect(servicesApi.getUnauthorizedMachinesCount).not.toHaveBeenCalled()
+    })
+
+    it('should refresh machine state', () => {
+        // Arrange
+        component.dataCollection = deepCopy(getAuthorizedMachinesResp.items)
+
+        // Act & Assert
+        component.refreshMachineState(refreshed)
+        const changedMachine = component.dataCollection.find((m) => m.id === 4)
+        expect(changedMachine).toBeTruthy()
+        expect(changedMachine).toEqual(refreshed)
+    })
+
+    it('should not refresh machine state', () => {
+        // Arrange
+        component.dataCollection = getUnauthorizedMachinesResp.items
+
+        // Act & Assert
+        component.refreshMachineState(refreshed)
+        const changedMachine = component.dataCollection.find((m) => m.id === 4)
+        expect(changedMachine).toBeUndefined()
+        expect(component.dataCollection).toEqual(getUnauthorizedMachinesResp.items)
+    })
+
+    it('should not fail when trying to refresh a machine when data collection is undefined', () => {
+        // Arrange & Act & Assert
+        component.refreshMachineState(refreshed)
+        expect(component.dataCollection).toBeFalsy()
+    })
+
+    it('should display status of all daemons from all applications', async () => {
+        // Arrange
+        const oneMachineResponse = {
+            items: [{ hostname: 'zzz', id: 4, authorized: true }],
+            total: 1,
+        }
+        getMachinesSpy.and.returnValue(of(oneMachineResponse))
+        component.loadData({ first: 0, rows: 10, filters: {} })
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data is loading').toBeTrue()
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data loading done').toBeFalse()
+
+        // Act & Assert
+        component.refreshMachineState(refreshed)
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const textContent = fixture.nativeElement.innerText
+
+        expect(textContent).toContain('DHCPv4')
+        expect(textContent).toContain('CA')
+        expect(textContent).toContain('named')
+
+        // One VersionStatus for Stork agent + one for Kea + one for BIND9.
+        const versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
+        expect(versionStatus).toBeTruthy()
+        expect(versionStatus.length).toEqual(3)
+
+        // Check if versions and apps match.
+        expect(versionStatus[0].properties.outerHTML).toContain('1.19.0')
+        expect(versionStatus[0].properties.outerHTML).toContain('stork')
+
+        expect(versionStatus[1].properties.outerHTML).toContain('2.2.0')
+        expect(versionStatus[1].properties.outerHTML).toContain('kea')
+
+        expect(versionStatus[2].properties.outerHTML).toContain('9.18.30')
+        expect(versionStatus[2].properties.outerHTML).toContain('bind9')
+
+        // All VersionStatus components got Severity.success and 'test feedback' message from Version Service stub
+        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
+        expect(versionStatus[1].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[1].properties.outerHTML).toContain('test feedback')
+        expect(versionStatus[2].properties.outerHTML).toContain('text-green-500')
+        expect(versionStatus[2].properties.outerHTML).toContain('test feedback')
     })
 })
