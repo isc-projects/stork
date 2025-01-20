@@ -51,6 +51,14 @@ func TestSearchRecords(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
+	unauthorized := &dbmodel.Machine{
+		Address:    "localhost",
+		AgentPort:  8980,
+		Authorized: false,
+	}
+	err = dbmodel.AddMachine(db, unauthorized)
+	require.NoError(t, err)
+
 	// add app kea with dhcp4 to machine
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114, true)
@@ -347,7 +355,7 @@ func TestSearchRecords(t *testing.T) {
 	require.Len(t, okRsp.Payload.Users.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Users.Total)
 
-	// search for 'localhost' - machine is expected
+	// search for 'localhost' - 2 machines are expected; one authorized and one unauthorized
 	text = "localhost"
 	params = search.SearchRecordsParams{
 		Text: &text,
@@ -361,8 +369,8 @@ func TestSearchRecords(t *testing.T) {
 	require.Zero(t, okRsp.Payload.Groups.Total)
 	require.Len(t, okRsp.Payload.Hosts.Items, 0)
 	require.Zero(t, okRsp.Payload.Hosts.Total)
-	require.Len(t, okRsp.Payload.Machines.Items, 1)
-	require.EqualValues(t, 1, okRsp.Payload.Machines.Total)
+	require.Len(t, okRsp.Payload.Machines.Items, 2)
+	require.EqualValues(t, 2, okRsp.Payload.Machines.Total)
 	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
 	require.Zero(t, okRsp.Payload.SharedNetworks.Total)
 	require.Len(t, okRsp.Payload.Subnets.Items, 0)
