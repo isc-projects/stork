@@ -717,7 +717,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.EqualValues(t, 2, dispatcher.groups[KeaCADaemon].triggerRefCounts[ManualRun])
 	require.EqualValues(t, 2, dispatcher.groups[KeaCADaemon].triggerRefCounts[ConfigModified])
 	require.EqualValues(t, 0, dispatcher.groups[KeaCADaemon].triggerRefCounts[DBHostsModified])
-	require.EqualValues(t, 1, dispatcher.groups[KeaCADaemon].triggerRefCounts[StorkAgentConfigModified])
+	require.EqualValues(t, 0, dispatcher.groups[KeaCADaemon].triggerRefCounts[StorkAgentConfigModified])
 }
 
 // Verifies that registering new checkers and bumping up the
