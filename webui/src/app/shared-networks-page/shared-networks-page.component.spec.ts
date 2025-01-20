@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser'
-import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, flush, tick, waitForAsync } from '@angular/core/testing'
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
@@ -395,6 +395,8 @@ describe('SharedNetworksPageComponent', () => {
 
         expect(component.openedTabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
+
+        flush()
     }))
 
     it('should cancel transaction for new shared network when cancel button is clicked', fakeAsync(() => {
@@ -571,5 +573,7 @@ describe('SharedNetworksPageComponent', () => {
 
         // The main shared network tab should only be left.
         expect(component.openedTabs.length).toBe(1)
+
+        flush()
     }))
 })

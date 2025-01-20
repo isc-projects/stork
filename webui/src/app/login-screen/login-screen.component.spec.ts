@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
@@ -173,5 +173,7 @@ describe('LoginScreenComponent', () => {
 
         // Check if AuthService login() was called with expected values.
         expect(loginSpy).toHaveBeenCalledOnceWith('ldapId', 'login', 'passwd', '/')
+
+        flush()
     }))
 })

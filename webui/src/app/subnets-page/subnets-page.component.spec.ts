@@ -725,6 +725,8 @@ describe('SubnetsPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
 
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
+
+        flush()
     }))
 
     it('should cancel an update transaction when a tab is closed', fakeAsync(() => {
@@ -767,6 +769,8 @@ describe('SubnetsPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
 
         expect(dhcpService.updateSubnetDelete).toHaveBeenCalled()
+
+        flush()
     }))
 
     it('should cancel a new subnet transaction when cancel button is clicked', fakeAsync(() => {
@@ -817,6 +821,8 @@ describe('SubnetsPageComponent', () => {
         expect(component.openedTabs[0].tabType).toBe(TabType.List)
 
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
+
+        flush()
     }))
 
     it('should cancel transaction when cancel button is clicked', fakeAsync(() => {
@@ -903,6 +909,8 @@ describe('SubnetsPageComponent', () => {
 
         expect(dhcpService.createSubnetDelete).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
+
+        flush()
     }))
 
     it('should show error message when transaction canceling fails second', fakeAsync(() => {
@@ -983,5 +991,7 @@ describe('SubnetsPageComponent', () => {
 
         // The main subnet tab should only be left.
         expect(component.openedTabs.length).toBe(1)
+
+        flush()
     }))
 })
