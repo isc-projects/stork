@@ -1030,7 +1030,7 @@ namespace :update do
     desc 'Update all npm dependencies to the "Wanted" versions (mainly updates to the latest minor).'
     task :ui_deps => [NPM] do
         Dir.chdir("webui") do
-            sh NPM, "update"
+            sh NPM, "update", "--save"
             # Prints possible manual updates.
             sh NPM, "outdated"
         end
