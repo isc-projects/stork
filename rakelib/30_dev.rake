@@ -937,7 +937,7 @@ namespace :gen do
         end
 
         desc 'Generate all Go mocks'
-        task :mocks => [GO, MOCKGEN, MOCKERY] + go_codebase do
+        task :mocks => [GO, MOCKGEN] + go_codebase do
             Dir.chdir("backend") do
                 sh GO, "generate", "./..."
             end

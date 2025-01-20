@@ -545,7 +545,6 @@ go_junit_report_ver = 'v2.1.0'
 gocover_cobertura_ver = 'v1.3.0'
 go_live_pprof_ver = 'v1.0.8'
 govulncheck_ver = 'v1.1.4'
-mockery_ver = 'v2.51.0'
 mockgen_ver = 'v0.5.0'
 dlv_ver = 'v1.24.0'
 gdlv_ver = 'v1.13.1'
@@ -991,13 +990,6 @@ file GOCOVER_COBERTURA => [GO] do
         fail
     end
 end
-
-MOCKERY = File.join(gobin, "mockery")
-file MOCKERY => [GO] do
-    sh GO, "install", "github.com/vektra/mockery/v2@#{mockery_ver}"
-    sh MOCKERY, "--version"
-end
-add_version_guard(MOCKERY, mockery_ver)
 
 MOCKGEN = File.join(gobin, "mockgen")
 file MOCKGEN => [GO] do

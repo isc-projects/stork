@@ -122,14 +122,29 @@ file swagger_server_dir => [GOSWAGGER, SWAGGER_FILE] do
     sh "touch", "-c", swagger_server_dir
 
     # The Stratoscale template generates the go generate directives for mockery.
-    # Mockery library changed the arguments in version 2 but Stratoscale
-    # produces directives for Mockery V1. This workaround changes the argument
-    # style. It will be not necessary after merge https://github.com/go-swagger/go-swagger/pull/2796.
+    # These directives are obsolete because the mockery recommends now using
+    # the packages config.
+    # However, we don't use these mocks in the project, so we strip the
+    # directives to avoid the warnings.
+    #
+    # The following warnings are printed by the mockery tool multiple times:
+    #
+    # WRN DEPRECATION: use of the packages config will be the only way to
+    # generate mocks in v3. Please migrate your config to use the packages
+    # feature. deprecation-name=packages
+    # migration=https://vektra.github.io/mockery/v2.51/migrating_to_packages/
+    # url=https://vektra.github.io/mockery/v2.51/features/#packages-configuration version=v2.51.0
+    #
+    # WRN DEPRECATION: issue-845-fix must be set to True to remove this
+    # warning. Visit the link for more details. deprecation-name=issue-845-fix
+    # url=https://vektra.github.io/mockery/v2.51/deprecations/#issue-845-fix
+    # version=v2.51.0
+
     swagger_server_configure_file = File.join(swagger_server_dir, "restapi/configure_stork.go")
     text = File.read(swagger_server_configure_file)
     new_contents = text.gsub(
-        /\/\/go:generate mockery -name (.*) -inpkg/,
-        '//go:generate mockery --name \1 --inpackage')
+        /\/\/go:generate mockery .*/,
+        '')
     File.open(swagger_server_configure_file, "w") {|file| file.puts new_contents }
 end
 CLEAN.append swagger_server_dir
