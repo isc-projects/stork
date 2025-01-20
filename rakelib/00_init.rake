@@ -743,6 +743,10 @@ DOCKER_COMPOSE = docker_plugin("docker-compose", "compose")
 DOCKER_BUILDX = docker_plugin("docker-buildx", "buildx")
 
 # Toolkits
+# We use the executable located in the "gems" directory instead of the one in
+# the "bin" directory because the binary in the "bin" directory is the same as
+# installed in the system. It isn't an executable installed by the below
+# "gem install" command.
 BUNDLE = File.join(ruby_tools_gems_dir, "bundler-#{bundler_ver}", "exe", "bundle")
 file BUNDLE => [RUBY, GEM, ruby_tools_dir, ruby_tools_bin_dir] do
     sh "rm", "-rf", File.join(ruby_tools_dir, "*")
@@ -754,6 +758,7 @@ file BUNDLE => [RUBY, GEM, ruby_tools_dir, ruby_tools_bin_dir] do
             "--install-dir", ruby_tools_dir,
             "bundler:#{bundler_ver}"
 
+    sh "touch", "-c", BUNDLE
     sh BUNDLE, "--version"
 end
 add_hash_guard(BUNDLE, RUBY)
