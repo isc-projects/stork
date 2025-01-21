@@ -264,18 +264,9 @@ func BytesToHex(bytesArray []byte) string {
 
 // Convert a string of hexadecimal digits to bytes array.
 func HexToBytes(hexString string) []byte {
-	// Remove all non-hex characters.
-	var hexChars []rune
-	for _, c := range hexString {
-		switch c {
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f',
-			'A', 'B', 'C', 'D', 'E', 'F':
-			hexChars = append(hexChars, c)
-		}
-	}
-
-	decoded, _ := hex.DecodeString(string(hexChars))
+	replacer := strings.NewReplacer(" ", "", ":", "", "-", "")
+	hexString = replacer.Replace(hexString)
+	decoded, _ := hex.DecodeString(hexString)
 	return decoded
 }
 

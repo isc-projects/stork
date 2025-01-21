@@ -57,51 +57,40 @@ def test_add_host_reservation(kea_service: Kea, server_service: Server):
 
 
 @kea_parametrize("agent-kea-premium-host-database")
-def test_add_host_reservation_with_custom_delimiter(
+def test_add_host_reservation_with_dash_delimiter(
     kea_service: Kea, server_service: Server
 ):
     """Tests that the new host reservation is inserted properly even if the
-    hex identifier has been provided with non-colon delimiter.."""
+    hex identifier has been provided with dash delimiter.."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     server_service.wait_for_next_machine_states()
     server_service.wait_for_host_reservation_pulling()
 
     # Add host - dash delimiter
-    raw_host_dash = {
+    raw_host = {
         "host_identifiers": [
             {"id_type": "flex-id", "id_hex_value": "01-02-03-04-05-06"}
-        ],
-        "address_reservations": [{"address": "10.42.42.41"}],
-        "hostname": "foobar",
-        "local_hosts": [],
-    }
-
-    # Add host - hash delimiter
-    raw_host_hash = {
-        "host_identifiers": [
-            {"id_type": "flex-id", "id_hex_value": "02#02#03#04#05#06"}
         ],
         "address_reservations": [{"address": "10.42.42.42"}],
         "hostname": "foobar",
         "local_hosts": [],
     }
 
-    for raw_host in [raw_host_dash, raw_host_hash]:
-        with server_service.transaction_create_host_reservation() as (ctx, submit, _):
-            daemon = [d for d in ctx.daemons if d.name == "dhcp4"][0]
-            raw_host["local_hosts"].append({"daemon_id": daemon.id})
-            submit(raw_host)
+    with server_service.transaction_create_host_reservation() as (ctx, submit, _):
+        daemon = [d for d in ctx.daemons if d.name == "dhcp4"][0]
+        raw_host["local_hosts"].append({"daemon_id": daemon.id})
+        submit(raw_host)
 
     server_service.wait_for_host_reservation_pulling()
-    hosts = server_service.list_hosts("10.42.42.4")
-    assert hosts.total == 2
-    for i, host in enumerate(hosts.items, 1):
-        assert host.hostname == "foobar"
-        assert host.address_reservations[0].address == f"10.42.42.4{i}"
-        identifier = host.host_identifiers[0]
-        assert identifier.id_type == "flex-id"
-        assert identifier.id_hex_value == f"0{i}:02:03:04:05:06"
+    hosts = server_service.list_hosts("10.42.42.42")
+    host = hosts.items[0]
+    assert hosts.total == 1
+    assert host.hostname == "foobar"
+    assert host.address_reservations[0].address == f"10.42.42.42"
+    identifier = host.host_identifiers[0]
+    assert identifier.id_type == "flex-id"
+    assert identifier.id_hex_value == f"01:02:03:04:05:06"
 
 
 @kea_parametrize("agent-kea-premium-host-database")

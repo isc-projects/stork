@@ -125,11 +125,9 @@ func TestBytesToHex(t *testing.T) {
 func TestHexToBytes(t *testing.T) {
 	require.EqualValues(t, HexToBytes("00:01:02:03:04:05:06"), []byte{0, 1, 2, 3, 4, 5, 6})
 	require.EqualValues(t, HexToBytes("00-01-02-03-04-05-06"), []byte{0, 1, 2, 3, 4, 5, 6})
-	require.EqualValues(t, HexToBytes("00@01@02@03@04@05@06"), []byte{0, 1, 2, 3, 4, 5, 6})
-	require.EqualValues(t, HexToBytes("00w01w02w03w04w05w06"), []byte{0, 1, 2, 3, 4, 5, 6})
 	require.EqualValues(t, HexToBytes("00 01 02 03 04 05 06"), []byte{0, 1, 2, 3, 4, 5, 6})
 	require.EqualValues(t,
-		HexToBytes("aaBB cC:Dd-Ee#Ff"),
+		HexToBytes("aaBB cC:Dd-Ee Ff"),
 		[]byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
 	)
 	require.EqualValues(t, HexToBytes("ffeeaa"), []byte{0xff, 0xee, 0xaa})
