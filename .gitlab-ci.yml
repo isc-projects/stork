@@ -224,7 +224,6 @@ unittest_backend:
     when: always
     paths:
       - backend/junit.xml
-      - backend/coverage.out
       - backend/coverage.cobertura.xml
     reports:
       junit: backend/junit.xml
