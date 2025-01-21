@@ -234,6 +234,11 @@ export abstract class PrefilteredTable<
      * @param table table which state was saved
      */
     stateSaved(table: Table): void {
+        // Do not store selection as part of the table state.
+        const state = JSON.parse(sessionStorage.getItem(this.stateKey))
+        state.selection = []
+        sessionStorage.setItem(this.stateKey, JSON.stringify(state))
+
         if (table.restoringFilter) {
             // Force set this flag to false.
             // This is a workaround of the issue in PrimeNG,
