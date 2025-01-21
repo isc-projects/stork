@@ -8,11 +8,18 @@ import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Location } from '@angular/common'
 
+/**
+ * Interface defining fields for Machines filter.
+ */
 export interface MachinesFilter {
     text?: string
     authorized?: boolean
 }
 
+/**
+ * This component is dedicated to display the table of Machines. It supports
+ * lazy data loading from the backend and machines filtering.
+ */
 @Component({
     selector: 'app-machines-table',
     templateUrl: './machines-table.component.html',
@@ -21,14 +28,11 @@ export interface MachinesFilter {
 export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Machine> implements OnInit, OnDestroy {
     /**
      * Array of all numeric keys that are supported when filtering machines via URL queryParams.
-     * Note that it doesn't have to contain machines prefilterKey, which is 'appId'.
-     * prefilterKey by default is considered as a primary queryParam filter key.
      */
     queryParamNumericKeys: (keyof MachinesFilter)[] = []
 
     /**
      * Array of all boolean keys that are supported when filtering machines via URL queryParams.
-     * Currently, no boolean key is supported in queryParams filtering.
      */
     queryParamBooleanKeys: (keyof MachinesFilter)[] = ['authorized']
 
@@ -48,7 +52,7 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     stateKeyPrefix: string = 'machines-table-session'
 
     /**
-     * queryParam keyword of the filter by appId.
+     * queryParam keyword of the prefilter.
      */
     prefilterKey: keyof MachinesFilter = 'authorized'
 
@@ -78,8 +82,10 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     selectedMachines: Machine[] = []
 
-    // This counter is used to indicate in UI that there are some
-    // unauthorized machines that may require authorization.
+    /**
+     * This counter is used to indicate in UI that there are some
+     * unauthorized machines that may require authorization.
+     */
     @Input() unauthorizedMachinesCount = 0
 
     /**
@@ -88,9 +94,9 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
     /**
-     * Callback called when the machine's menu was displayed.
+     * Callback called when Show machine's menu button was clicked by user.
      * @param event browser's click event
-     * @param machine machine for which the menu was displayed
+     * @param machine machine for which the menu is about to be displayed
      */
     onMachineMenuDisplayClicked(event: Event, machine: Machine) {
         this.machineMenuDisplay.emit({ e: event, m: machine })
@@ -104,6 +110,13 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
         this.authorizeSelectedMachines.emit(machines)
     }
 
+    /**
+     * Component constructor.
+     * @param route ActivatedRoute used to get params from provided URL.
+     * @param servicesApi Services API used to fetch machines from backend.
+     * @param messageService Message service used to display feedback messages in UI.
+     * @param location Location service used to update queryParams.
+     */
     constructor(
         private route: ActivatedRoute,
         private servicesApi: ServicesService,
@@ -129,7 +142,7 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     }
 
     /**
-     * Lazy loads machines table data.
+     * Lazily loads machines table data.
      * @param event Event object containing an index of the first row, maximum
      * number of rows to be returned and machines filters.
      */
@@ -139,8 +152,6 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
 
         const authorized = this.prefilterValue ?? this.getTableFilterValue('authorized', event.filters)
 
-        // The goal is to send to backend something as simple as:
-        // this.someApi.getMachines(JSON.stringify(event))
         lastValueFrom(
             this.servicesApi.getMachines(
                 event.first,
