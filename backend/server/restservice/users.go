@@ -634,13 +634,7 @@ func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) m
 func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.GetAuthenticationMethodsParams) middleware.Responder {
 	metadata := r.HookManager.GetAuthenticationMetadata()
 
-	methods := []*models.AuthenticationMethod{{
-		ID:                  "internal",
-		Name:                "Internal",
-		Description:         "Internal Stork authentication based on credentials from the internal database",
-		FormLabelIdentifier: "Email/Login",
-		FormLabelSecret:     "Password",
-	}}
+	var methods []*models.AuthenticationMethod
 
 	for _, meta := range metadata {
 		method := &models.AuthenticationMethod{
@@ -656,6 +650,14 @@ func (r *RestAPI) GetAuthenticationMethods(ctx context.Context, params users.Get
 
 		methods = append(methods, method)
 	}
+
+	methods = append(methods, &models.AuthenticationMethod{
+		ID:                  "internal",
+		Name:                "Internal",
+		Description:         "Internal Stork authentication based on credentials from the internal database",
+		FormLabelIdentifier: "Email/Login",
+		FormLabelSecret:     "Password",
+	})
 
 	return users.NewGetAuthenticationMethodsOK().WithPayload(&models.AuthenticationMethods{
 		Items: methods,
