@@ -12,60 +12,212 @@ import { catchError, filter } from 'rxjs/operators'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { Menu } from 'primeng/menu'
 
+/**
+ * This component implements a page which displays authorized
+ * and unauthorized machines. The list of machines is
+ * paged and can be filtered by provided URL queryParams or by
+ * using form inputs responsible for filtering.
+ *
+ * This component is also responsible for viewing given machine
+ * details in tab view, switching between tabs, closing them etc.
+ */
 @Component({
     selector: 'app-machines-page',
     templateUrl: './machines-page.component.html',
     styleUrls: ['./machines-page.component.sass'],
 })
 export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
+    /**
+     * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
+     * at once onDestroy.
+     * @private
+     */
     private subscriptions = new Subscription()
+
+    /**
+     * View breadcrumbs menu items.
+     */
     breadcrumbs = [{ label: 'Services' }, { label: 'Machines' }]
 
+    /**
+     * Machine popup menu items.
+     */
     machineMenuItems: MenuItem[]
-    machineMenuItemsAuth: MenuItem[]
-    machineMenuItemsUnauth: MenuItem[]
-    viewSelectionOptions: any[]
+
+    /**
+     * Authorized machine popup menu items.
+     */
+    machineMenuItemsAuthorized: MenuItem[] = [
+        {
+            label: 'Refresh machine state information',
+            id: 'refresh-single-machine',
+            icon: 'pi pi-refresh',
+        },
+        {
+            label: 'Dump troubleshooting data',
+            id: 'dump-single-machine',
+            icon: 'pi pi-download',
+            title: 'Download data archive for troubleshooting purposes',
+        },
+        /* Temporarily disable unauthorization until we find an
+           actual use case for it. Also, if we allow unauthorization
+           we will have to fix several things, e.g. apps belonging
+           to an unauthorized machine will have to disappear.
+           For now, a user can simply remove a machine.
+        {
+            label: 'Unauthorize',
+            id: 'unauthorize-single-machine',
+            icon: 'pi pi-minus-circle',
+        }, */
+        {
+            label: 'Remove',
+            id: 'remove-single-machine',
+            icon: 'pi pi-times',
+            title: 'Remove machine from Stork Server',
+        },
+    ]
+
+    /**
+     * Unauthorized machine menu items.
+     */
+    machineMenuItemsUnauthorized: MenuItem[] = [
+        {
+            label: 'Authorize',
+            id: 'authorize-single-machine',
+            icon: 'pi pi-check',
+        },
+        {
+            label: 'Remove',
+            id: 'remove-single-machine',
+            icon: 'pi pi-times',
+            title: 'Remove machine from Stork Server',
+        },
+    ]
+
+    /**
+     * Options for SelectButton component used to switch between Authorized/Unauthorized Machines view.
+     */
+    selectButtonOptions = [
+        {
+            label: 'Authorized',
+            value: true,
+        },
+        {
+            label: 'Unauthorized',
+            value: false,
+            hasBadge: true,
+        },
+    ]
+
+    /**
+     * Server token used for machine registration.
+     */
     serverToken = ''
 
-    // This counter is used to indicate in UI that there are some
-    // unauthorized machines that may require authorization.
-    _unauthorizedMachinesCount = 0
+    /**
+     * This counter is used to indicate in UI that there are some
+     * unauthorized machines that may require authorization.
+     * @private
+     */
+    private _unauthorizedMachinesCount = 0
 
-    unauthorizedMachinesCount$ = new BehaviorSubject<number>(this._unauthorizedMachinesCount)
-
+    /**
+     * Getter of the _unauthorizedMachinesCount property.
+     */
     get unauthorizedMachinesCount(): number {
         return this._unauthorizedMachinesCount
     }
 
+    /**
+     * Setter of the _unauthorizedMachinesCount property.
+     * Also triggers emitting next value by unauthorizedMachinesCount$ RxJS Subject.
+     * @param c count to be set
+     */
     set unauthorizedMachinesCount(c: number) {
         this._unauthorizedMachinesCount = c
         this.unauthorizedMachinesCount$.next(c)
     }
 
-    // edit machine address
+    /**
+     * RxJS subject used to keep up-to-date count of Unauthorized machines.
+     */
+    unauthorizedMachinesCount$ = new BehaviorSubject<number>(this._unauthorizedMachinesCount)
+
+    /**
+     * Boolean flag keeping state whether the Change Machine address Dialog is visible or not.
+     */
     changeMachineAddressDlgVisible = false
+
+    /**
+     * Machine's address.
+     */
     machineAddress = 'localhost'
+
+    /**
+     * Machine's agent port.
+     */
     agentPort = ''
 
-    // machine tabs
+    /**
+     * Index of active tab in the TabMenu.
+     */
     activeTabIdx = 0
+
+    /**
+     * TabMenu menu items.
+     */
     tabs: MenuItem[]
+
+    /**
+     * Keeps state of open TabMenu tabs.
+     */
     openedMachines: { machine: Machine }[]
+
+    /**
+     * Keeps active machine tab with machine's details.
+     */
     machineTab: { machine: Machine }
 
+    /**
+     * Boolean flag keeping state whether the Agent Installation Instructions Dialog is visible or not.
+     */
     displayAgentInstallationInstruction = false
 
-    // Indicates if the machines registration is administratively disabled.
+    /**
+     * Indicates if the machines registration is administratively disabled.
+     */
     registrationDisabled = false
 
-    get showAuthorized(): boolean {
+    /**
+     * Getter returning true if only Authorized machines are to be displayed,
+     * false if only Unauthorized machines are to be displayed,
+     * or null if both Authorized and Unauthorized machines are to be displayed.
+     */
+    get showAuthorized(): boolean | null {
         return this.table?.validFilter?.authorized ?? null
     }
 
+    /**
+     * Machines table component.
+     */
     @ViewChild('machinesTable') table: MachinesTableComponent
 
+    /**
+     * Machines popup menu component.
+     */
     @ViewChild('machineMenu') machineMenu: Menu
 
+    /**
+     * Component's constructor.
+     * @param route activated route used to gather parameters from the URL.
+     * @param router router used to navigate between tabs.
+     * @param servicesApi services API to do all CRUD machine related operations
+     * @param msgSrv Message service used to display feedback messages in UI.
+     * @param serverData Server Data service used to reload Apps stats whenever machines registration state changes.
+     * @param settingsService Settings service used to retrieve global settings.
+     * @param confirmationService Confirmation used to handle confirmation dialogs.
+     * @param cd Change detection used to manually detect changes to avoid error NG0100: ExpressionChangedAfterItHasBeenCheckedError
+     */
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -204,64 +356,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     ngOnInit() {
         this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
-        this.machineMenuItemsAuth = [
-            {
-                label: 'Refresh machine state information',
-                id: 'refresh-single-machine',
-                icon: 'pi pi-refresh',
-            },
-            {
-                label: 'Dump troubleshooting data',
-                id: 'dump-single-machine',
-                icon: 'pi pi-download',
-                title: 'Download data archive for troubleshooting purposes',
-            },
-            /* Temporarily disable unauthorization until we find an
-               actual use case for it. Also, if we allow unauthorization
-               we will have to fix several things, e.g. apps belonging
-               to an unauthorized machine will have to disappear.
-               For now, a user can simply remove a machine.
-            {
-                label: 'Unauthorize',
-                id: 'unauthorize-single-machine',
-                icon: 'pi pi-minus-circle',
-            }, */
-            {
-                label: 'Remove',
-                id: 'remove-single-machine',
-                icon: 'pi pi-times',
-                title: 'Remove machine from Stork Server',
-            },
-        ]
-        this.machineMenuItemsUnauth = [
-            {
-                label: 'Authorize',
-                id: 'authorize-single-machine',
-                icon: 'pi pi-check',
-            },
-            {
-                label: 'Remove',
-                id: 'remove-single-machine',
-                icon: 'pi pi-times',
-                title: 'Remove machine from Stork Server',
-            },
-        ]
-        this.machineMenuItems = this.machineMenuItemsAuth
-
-        // Add a select button to switch between authorized and
-        // unauthorized machines.
-        this.viewSelectionOptions = [
-            {
-                label: 'Authorized',
-                value: true,
-            },
-            {
-                label: 'Unauthorized',
-                value: false,
-                hasBadge: true,
-            },
-        ]
-
+        this.machineMenuItems = this.machineMenuItemsAuthorized
         this.openedMachines = []
 
         // Settings are needed to check whether the machines registration is disabled.
@@ -278,11 +373,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
-    }
-
-    /** Callback called on canceling the edit machine dialog. */
-    cancelMachineDialog() {
-        this.changeMachineAddressDlgVisible = false
     }
 
     /** Callback called on key pressed in the edit machine dialog. */
@@ -403,7 +493,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     onMachineMenuDisplay(event: Event, machine: Machine) {
         if (!machine.authorized) {
-            this.machineMenuItems = this.machineMenuItemsUnauth
+            this.machineMenuItems = this.machineMenuItemsUnauthorized
             // connect method to authorize machine
             this.machineMenuItems[0].command = () => {
                 this.authorizeMachine(machine)
@@ -414,7 +504,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.deleteMachine(machine.id)
             }
         } else {
-            this.machineMenuItems = this.machineMenuItemsAuth
+            this.machineMenuItems = this.machineMenuItemsAuthorized
             // connect method to refresh machine state
             this.machineMenuItems[0].command = () => {
                 this.refreshMachineState(machine)

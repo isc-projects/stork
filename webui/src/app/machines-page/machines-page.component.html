@@ -51,7 +51,7 @@
     <p-footer>
         <button
             type="button"
-            (click)="cancelMachineDialog()"
+            (click)="changeMachineAddressDlgVisible = false"
             pButton
             icon="pi pi-times"
             label="Cancel"
@@ -131,7 +131,7 @@ sudo ./stork-install-agent.sh</textarea
             pButton
             icon="pi pi-times"
             label="Close"
-            (click)="closeAgentInstallationInstruction()"
+            (click)="displayAgentInstallationInstruction = false"
             id="close-agent-installation-instruction-button"
         ></button>
     </div>
@@ -179,7 +179,7 @@ sudo ./stork-install-agent.sh</textarea
             ></button>
 
             <p-selectButton
-                [options]="viewSelectionOptions"
+                [options]="selectButtonOptions"
                 [ngModel]="showAuthorized"
                 (onChange)="onSelectButtonChange($event)"
                 [allowEmpty]="false"
