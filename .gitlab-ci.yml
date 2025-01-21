@@ -214,6 +214,7 @@ unittest_backend:
   variables:
     # CGO is required by the race detector.
     CGO_ENABLED: 1
+    PRESERVE_COVERAGE: "true"
   script:
     - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
     - chmod 600 ~/.pgpass
@@ -222,8 +223,13 @@ unittest_backend:
     when: always
     paths:
       - backend/junit.xml
+      - backend/coverage.out
+      - backend/coverage.cobertura.xml
     reports:
       junit: backend/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: backend/coverage.cobertura.xml
 
 lint_ui:
   extends: .base_build_debian
@@ -669,6 +675,8 @@ system_test:
       - tests/system/test-results/**/performance-charts.html
     expire_in: 6 months
     when: always
+    reports:
+      junit: tests/system/test-results/junit.xml
 
 ### hooks ###
 build_hooks_amd64:
