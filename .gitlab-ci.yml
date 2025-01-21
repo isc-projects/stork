@@ -218,6 +218,12 @@ unittest_backend:
     - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
     - chmod 600 ~/.pgpass
     - rake unittest:backend
+  artifacts:
+    when: always
+    paths:
+      - backend/junit.xml
+    reports:
+      junit: backend/junit.xml
 
 lint_ui:
   extends: .base_build_debian
@@ -230,6 +236,12 @@ unittest_ui:
   stage: checks
   script:
     - rake unittest:ui
+  artifacts:
+    when: always
+    paths:
+      - webui/junit.xml
+    reports:
+      junit: webui/junit.xml
 
 build_ui:
   extends: .base_build_debian
