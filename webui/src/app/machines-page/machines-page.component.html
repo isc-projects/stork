@@ -5,9 +5,13 @@
             as well as removing them.
         </p>
         <p>
-            If <em>Show Unauthorized</em> is toggled on, the list will show unauthorized machines. They were registered
-            using the agent token-based registration method. To authorize a machine, click action menu button and then
-            <em>Authorize</em>.
+            There is a <em>Authorized</em> / <em>Unauthorized</em> switch button to show authorized and unauthorized
+            Machines respectively.
+            <ng-container *ngIf="!showAuthorized && unauthorizedMachinesCount > 0"
+                >Unauthorized machines were registered using the agent token-based registration method. To authorize a
+                machine, click action menu button and then <em>Authorize</em>, or select the machine with the checkbox
+                and click the <em>Authorize selected</em> button.</ng-container
+            >
         </p>
     </div>
 </app-breadcrumbs>
@@ -17,7 +21,7 @@
     [(visible)]="changeMachineAddressDlgVisible"
     [style]="{ 'max-width': '100rem' }"
 >
-    <p style="padding-bottom: 1em">
+    <p class="pb-3">
         Stork server will be using the new address and/or port to communicate with this machine. Please ensure that the
         agent running on the machine is using this new address and/or port to avoid communication problems.
     </p>
@@ -25,18 +29,18 @@
         Address:
         <input
             type="text"
-            style="width: 100%"
+            class="w-full"
             pInputText
             [(ngModel)]="machineAddress"
             id="change-machine-address"
             (keyup)="keyUpMachineDlg($event, machineTab)"
         />
     </div>
-    <div style="margin-top: 10px">
+    <div class="mt-2">
         Port:
         <input
             type="text"
-            style="width: 100%"
+            class="w-full"
             placeholder="8080"
             pInputText
             [(ngModel)]="agentPort"
@@ -66,7 +70,7 @@
 </p-dialog>
 
 <p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
-    <p style="margin: 10px 10px 10px 0; max-width: 38em">
+    <p class="max-w-40rem my-2 mr-2">
         Copy these commands and paste them into a terminal on a machine where Stork Agent is going to be installed.
         <br />
         For more details check
@@ -74,7 +78,7 @@
             >the Stork Agent Installation instructions <i class="pi pi-external-link"></i></a
         >.
     </p>
-    <div style="display: flex; align-items: flex-start; margin-bottom: 10px">
+    <div class="flex align-items-start mb-2">
         <textarea class="monospace agent-install-cmds" readonly="" rows="3" #agentInstallationText>
 wget {{ getBaseUrl() }}/stork-install-agent.sh
 chmod a+x stork-install-agent.sh
@@ -89,10 +93,8 @@ sudo ./stork-install-agent.sh</textarea
             class="flex-none"
         ></button>
     </div>
-    <p style="margin: 10px 10px 10px 0; max-width: 38em">
-        During agent installation you will be prompted for a server token.
-    </p>
-    <p style="margin: 10px 10px 10px 0; max-width: 40em">
+    <p class="max-w-40rem my-2 mr-2">During agent installation you will be prompted for a server token.</p>
+    <p class="max-w-40rem my-2 mr-2">
         <b>Server token</b> value is
         <input [value]="serverToken" class="monospace server-token" size="32" readonly="" #serverTokenInput />
 
@@ -102,7 +104,7 @@ sudo ./stork-install-agent.sh</textarea
             pButton
             icon="pi pi-copy"
             pTooltip="Copy server token to clipboard"
-            style="margin-right: 6px"
+            class="mr-1"
         ></button>
 
         <button
@@ -116,23 +118,23 @@ sudo ./stork-install-agent.sh</textarea
             id="regenerate-server-token-button"
         ></button>
     </p>
-    <p style="margin: 0 10px 10px 0; max-width: 38em">
+    <p class="max-w-40rem mb-2 mr-2">
         Providing the token will cause the new machine to be automatically added and authorized in the Stork Server.
     </p>
-    <p style="margin: 0 10px 10px 0; max-width: 38em">
+    <p class="max-w-40rem mb-2 mr-2">
         If no token value is provided (just Enter is hit) then this new machine will be waiting for authorization. To
         see unauthorized machines select the <b>Unauthorized</b> button at the top right.
     </p>
-
-    <button
-        type="button"
-        pButton
-        icon="pi pi-times"
-        label="Close"
-        (click)="closeAgentInstallationInstruction()"
-        style="float: right"
-        id="close-agent-installation-instruction-button"
-    ></button>
+    <div class="flex justify-content-end">
+        <button
+            type="button"
+            pButton
+            icon="pi pi-times"
+            label="Close"
+            (click)="closeAgentInstallationInstruction()"
+            id="close-agent-installation-instruction-button"
+        ></button>
+    </div>
 </p-dialog>
 
 <p-confirmDialog styleClass="w-28rem" />
@@ -179,7 +181,7 @@ sudo ./stork-install-agent.sh</textarea
             <p-selectButton
                 [options]="viewSelectionOptions"
                 [ngModel]="showAuthorized"
-                (onChange)="onSelectChange($event)"
+                (onChange)="onSelectButtonChange($event)"
                 [allowEmpty]="false"
                 id="unauthorized-select-button"
             >
@@ -207,7 +209,7 @@ sudo ./stork-install-agent.sh</textarea
         </ng-template>
     </p-messages>
     <app-machines-table
-        #machinesTableComponent
+        #machinesTable
         [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"
         (authorizeSelectedMachines)="onAuthorizeSelectedMachines($event)"
         (machineMenuDisplay)="onMachineMenuDisplay($event.e, $event.m)"
@@ -217,7 +219,7 @@ sudo ./stork-install-agent.sh</textarea
 
 <!-- Single machine tab -->
 <div *ngIf="activeTabIdx !== 0" class="p-component">
-    <div class="grid" style="width: 100%">
+    <div class="grid w-full">
         <div class="col-12 flex gap-3 column-gap-8 row-gap-3 flex-wrap">
             <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
                 <i class="fa fa-server pr-2"></i> {{ machineTab.machine.address
@@ -232,7 +234,8 @@ sudo ./stork-install-agent.sh</textarea
             <div>
                 <p-message
                     *ngIf="machineTab.machine.error"
-                    severity="error"
+                    severity="danger"
+                    styleClass="p-inline-message-error"
                     text="{{ machineTab.machine.error }}"
                 ></p-message>
             </div>

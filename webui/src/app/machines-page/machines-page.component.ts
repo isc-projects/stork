@@ -62,7 +62,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         return this.table?.validFilter?.authorized ?? null
     }
 
-    @ViewChild('machinesTableComponent') table: MachinesTableComponent
+    @ViewChild('machinesTable') table: MachinesTableComponent
 
     @ViewChild('machineMenu') machineMenu: Menu
 
@@ -650,7 +650,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Callback called when the Authorized/Unauthorized machines select button changes after user's click.
      * @param event change event
      */
-    onSelectChange(event: any) {
+    onSelectButtonChange(event: any) {
         this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value } ?? null })
     }
 }
