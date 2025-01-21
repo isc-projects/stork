@@ -87,10 +87,10 @@ def test_add_host_reservation_with_dash_delimiter(
     host = hosts.items[0]
     assert hosts.total == 1
     assert host.hostname == "foobar"
-    assert host.address_reservations[0].address == f"10.42.42.42"
+    assert host.address_reservations[0].address == "10.42.42.42"
     identifier = host.host_identifiers[0]
     assert identifier.id_type == "flex-id"
-    assert identifier.id_hex_value == f"01:02:03:04:05:06"
+    assert identifier.id_hex_value == "01:02:03:04:05:06"
 
 
 @kea_parametrize("agent-kea-premium-host-database")
