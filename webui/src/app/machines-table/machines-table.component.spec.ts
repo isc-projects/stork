@@ -27,7 +27,6 @@ import { deepCopy } from '../utils'
 import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
-import any = jasmine.any
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -618,7 +617,7 @@ describe('MachinesTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(eventEmitterSpy).toHaveBeenCalledOnceWith(objectContaining({ e: any(Event), m: machine }))
+        expect(eventEmitterSpy).toHaveBeenCalledOnceWith(objectContaining({ e: jasmine.any(Event), m: machine }))
     })
 
     it('should emit on authorize selected machines', async () => {
