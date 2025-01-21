@@ -1432,12 +1432,14 @@ func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
 	// Assert
 	require.IsType(t, &users.GetAuthenticationMethodsOK{}, response)
 	responseOk := response.(*users.GetAuthenticationMethodsOK)
+	items := responseOk.Payload.Items
 	require.EqualValues(t, 4, responseOk.Payload.Total)
 	require.Len(t, responseOk.Payload.Items, 4)
 
-	require.EqualValues(t, "internal", responseOk.Payload.Items[0].ID)
+	// The internal method should be the last one.
+	require.EqualValues(t, "internal", items[len(items)-1].ID)
 
-	for i, method := range responseOk.Payload.Items[1:] {
+	for i, method := range items[:len(items)-1] {
 		require.EqualValues(t, fmt.Sprintf("mock-%d", i), method.ID)
 	}
 }
