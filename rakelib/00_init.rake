@@ -987,7 +987,9 @@ add_version_guard(GO_JUNIT_REPORT, go_junit_report_ver)
 GOCOVER_COBERTURA = "#{gobin}/gocover-cobertura"
 file GOCOVER_COBERTURA => [GO] do
     sh GO, "install", "github.com/boumenot/gocover-cobertura@#{gocover_cobertura_ver}"
-    sh GOCOVER_COBERTURA, "--version"
+    if !File.file?(GOCOVER_COBERTURA)
+        fail
+    end
 end
 
 MOCKERY = File.join(gobin, "mockery")
