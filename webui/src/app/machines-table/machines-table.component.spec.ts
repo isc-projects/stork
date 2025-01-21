@@ -27,6 +27,7 @@ import { deepCopy } from '../utils'
 import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
+import any = jasmine.any
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -577,9 +578,9 @@ describe('MachinesTableComponent', () => {
 
         expect(component.selectedMachines.length).toEqual(5)
         expect(component.selectedMachines).toEqual(getAllMachinesResp.items)
-        expect(
-            checkboxes.filter((de) => de.classes.hasOwnProperty('p-highlight') && !!de.classes['p-highlight']).length
-        ).toEqual(6)
+        for (const ch of checkboxes) {
+            expect(ch.nativeElement).withContext('checkbox should be selected').toHaveClass('p-highlight')
+        }
 
         // Act
         component.clearSelection()
@@ -588,8 +589,72 @@ describe('MachinesTableComponent', () => {
 
         // Assert
         expect(component.selectedMachines.length).toEqual(0)
-        expect(
-            checkboxes.filter((de) => de.classes.hasOwnProperty('p-highlight') && !!de.classes['p-highlight']).length
-        ).toEqual(0)
+        for (const ch of checkboxes) {
+            expect(ch.nativeElement).withContext('checkbox should not be selected').not.toHaveClass('p-highlight')
+        }
+    })
+
+    it('should emit on machine menu display', async () => {
+        // Arrange
+        const eventEmitterSpy = spyOn(component.machineMenuDisplay, 'emit')
+        component.loadData({ first: 0, rows: 10, filters: {} })
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data is loading').toBeTrue()
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data loading done').toBeFalse()
+
+        const buttonDe = fixture.debugElement.query(By.css('#show-machines-menu-1'))
+        expect(buttonDe).toBeTruthy()
+
+        const machine = getAllMachinesResp.items.find((m) => m.id === 1)
+        expect(machine).toBeTruthy()
+
+        // Act
+        buttonDe.nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // Assert
+        expect(eventEmitterSpy).toHaveBeenCalledOnceWith(objectContaining({ e: any(Event), m: machine }))
+    })
+
+    it('should emit on authorize selected machines', async () => {
+        // Arrange
+        const eventEmitterSpy = spyOn(component.authorizeSelectedMachines, 'emit')
+        component.loadData({ first: 0, rows: 10, filters: {} })
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data is loading').toBeTrue()
+
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.dataLoading).withContext('data loading done').toBeFalse()
+
+        const checkboxes = fixture.debugElement.queryAll(By.css('table .p-checkbox .p-checkbox-box'))
+        expect(checkboxes).toBeTruthy()
+        expect(checkboxes.length)
+            .withContext('there should be 1 "select all" checkbox and 5 checkboxes for each machine')
+            .toEqual(6)
+        const selectAllCheckbox = checkboxes[0]
+        expect(selectAllCheckbox).toBeTruthy()
+
+        selectAllCheckbox.nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const authorizeBtnDe = fixture.debugElement.query(By.css('#authorize-selected-button button'))
+        expect(authorizeBtnDe).toBeTruthy()
+        expect(authorizeBtnDe.nativeElement).not.toHaveClass('p-disabled')
+
+        // Act
+        authorizeBtnDe.nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // Assert
+        expect(eventEmitterSpy).toHaveBeenCalledOnceWith(getAllMachinesResp.items)
     })
 })

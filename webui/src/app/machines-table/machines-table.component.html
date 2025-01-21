@@ -10,7 +10,7 @@
         label="Authorize selected"
         icon="pi pi-lock"
         styleClass="block p-button-primary no-underline"
-        (onClick)="onAuthorizeMachines(selectedMachines)"
+        (onClick)="onAuthorizeSelectedMachinesClicked(selectedMachines)"
         id="authorize-selected-button"
     ></p-button>
     <p-button
@@ -234,7 +234,7 @@
                     pButton
                     icon="pi pi-bars"
                     id="show-machines-menu-{{ m.id }}"
-                    (click)="onMachineMenuDisplay($event, m)"
+                    (click)="onMachineMenuDisplayClicked($event, m)"
                 ></button>
             </td>
         </tr>

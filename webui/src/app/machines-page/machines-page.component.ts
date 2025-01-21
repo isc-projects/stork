@@ -401,7 +401,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      *        the menu to be toggled
      * @param machine reference to a machine
      */
-    showMachineMenu(event: Event, machine: Machine) {
+    onMachineMenuDisplay(event: Event, machine: Machine) {
         if (!machine.authorized) {
             this.machineMenuItems = this.machineMenuItemsUnauth
             // connect method to authorize machine
@@ -593,7 +593,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      *
      * @param machines
      */
-    authorizeSelectedMachines(machines: Machine[]) {
+    onAuthorizeSelectedMachines(machines: Machine[]) {
         const unauthorized = deepCopy(machines?.filter((m) => !m.authorized)) ?? []
         // Calling servicesApi.updateMachine() API sequentially for all selected machines.
         // Max expected count of selected machines is max machines per table page,

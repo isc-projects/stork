@@ -209,8 +209,8 @@ sudo ./stork-install-agent.sh</textarea
     <app-machines-table
         #machinesTableComponent
         [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"
-        (authorizeMachines)="authorizeSelectedMachines($event)"
-        (machineMenuDisplay)="showMachineMenu($event.e, $event.m)"
+        (authorizeSelectedMachines)="onAuthorizeSelectedMachines($event)"
+        (machineMenuDisplay)="onMachineMenuDisplay($event.e, $event.m)"
     ></app-machines-table>
     <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
 </div>

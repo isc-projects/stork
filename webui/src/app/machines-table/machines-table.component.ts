@@ -71,7 +71,7 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     /**
      * Output property emitting events to parent component when Authorize selected machines button was clicked by user.
      */
-    @Output() authorizeMachines = new EventEmitter<Machine[]>()
+    @Output() authorizeSelectedMachines = new EventEmitter<Machine[]>()
 
     /**
      * Array of selected machines.
@@ -92,7 +92,7 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      * @param event browser's click event
      * @param machine machine for which the menu was displayed
      */
-    onMachineMenuDisplay(event: Event, machine: Machine) {
+    onMachineMenuDisplayClicked(event: Event, machine: Machine) {
         this.machineMenuDisplay.emit({ e: event, m: machine })
     }
 
@@ -100,8 +100,8 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      * Callback called when the Authorize selected machines button was clicked.
      * @param machines array of machines to be authorized
      */
-    onAuthorizeMachines(machines: Machine[]): void {
-        this.authorizeMachines.emit(machines)
+    onAuthorizeSelectedMachinesClicked(machines: Machine[]): void {
+        this.authorizeSelectedMachines.emit(machines)
     }
 
     constructor(
