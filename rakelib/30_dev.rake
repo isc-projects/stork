@@ -293,6 +293,11 @@ namespace :unittest do
                     end
                 end
 
+                # Print the original total coverage.
+                if match = /total:\s+\(statements\)\s+(\d+\.\d+%)/.match(out)
+                    puts "Total coverage: #{match[1]}"
+                end
+
                 if problem
                     fail("\nFAIL: Tests coverage is too low, add some tests\n\n")
                 end

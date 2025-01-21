@@ -215,6 +215,7 @@ unittest_backend:
     # CGO is required by the race detector.
     CGO_ENABLED: 1
     PRESERVE_COVERAGE: "true"
+  coverage: '/Total coverage:\s+\d+.\d+%/'
   script:
     - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
     - chmod 600 ~/.pgpass
