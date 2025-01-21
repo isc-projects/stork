@@ -11,6 +11,7 @@ import { copyToClipboard, deepCopy, getErrorMessage } from '../utils'
 import { catchError, filter } from 'rxjs/operators'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { Menu } from 'primeng/menu'
+import { SelectButtonChangeEvent } from 'primeng/selectbutton'
 
 /**
  * This component implements a page which displays authorized
@@ -229,6 +230,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private cd: ChangeDetectorRef
     ) {}
 
+    /**
+     * Component lifecycle hook called to perform clean-up when destroying the component.
+     */
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
         this.unauthorizedMachinesCount$.complete()
@@ -267,7 +271,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     // tabs.
 
                     // Get machine id.
-                    // this.showUnauthorized = false
                     const id = paramMap.get('id')
                     if (!id || id === 'all') {
                         // Update the filter only if the target is machine list.
@@ -281,8 +284,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         // The path has a numeric id indicating that we should
                         // open a tab with selected machine information or switch
                         // to this tab if it has been already opened.
-
-                        // if tab for this machine is already opened then switch to it
                         for (let idx = 0; idx < this.openedMachines.length; idx++) {
                             const m = this.openedMachines[idx].machine
                             if (m.id === numericId) {
@@ -327,18 +328,25 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         )
     }
 
-    /** Switches to tab with the given index. */
+    /**
+     * Switches to tab with the given index.
+     * @param index tab index to switch to
+     */
     switchToTab(index: number) {
         if (this.activeTabIdx === index) {
             return
         }
+
         this.activeTabIdx = index
         if (index > 0) {
             this.machineTab = this.openedMachines[index - 1]
         }
     }
 
-    /** Add a new machine tab. */
+    /**
+     * Adds new tab with machine details.
+     * @param machine machine for which the tab is added
+     */
     addMachineTab(machine: Machine) {
         this.openedMachines.push({
             machine,
@@ -353,6 +361,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         ]
     }
 
+    /**
+     * Component lifecycle hook called upon initialization.
+     * It configures initial state of PrimeNG Menu tabs and fetches global settings.
+     */
     ngOnInit() {
         this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
@@ -375,8 +387,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             })
     }
 
-    /** Callback called on key pressed in the edit machine dialog. */
-    keyUpMachineDlg(event: KeyboardEvent, machineTab: any) {
+    /**
+     * Callback called on key up in the edit machine dialog.
+     * @param event keyboard event
+     * @param machineTab machine tab where the event happened
+     */
+    onEditMachineDialogKeyUp(event: KeyboardEvent, machineTab: { machine: Machine }) {
         if (event.key === 'Enter') {
             if (this.changeMachineAddressDlgVisible) {
                 this.saveMachine(machineTab)
@@ -384,7 +400,11 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    /** Closes a tab with the given index. */
+    /**
+     * Closes a tab with the given index.
+     * @param event mouse click event
+     * @param idx index of the tab to be closed
+     */
     closeTab(event: MouseEvent, idx: number) {
         this.openedMachines.splice(idx - 1, 1)
         this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
@@ -394,12 +414,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         } else if (this.activeTabIdx > idx) {
             this.activeTabIdx = this.activeTabIdx - 1
         }
+
         if (event) {
             event.preventDefault()
         }
     }
 
-    /** Fetches new machine state from API. */
+    /**
+     * Fetches new machine state from API.
+     * @param machine machine to be refreshed
+     */
     refreshMachineState(machine: Machine) {
         this.table?.setDataLoading(true)
         lastValueFrom(this.servicesApi.getMachineState(machine.id))
@@ -442,6 +466,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Start downloading the dump file.
+     * @param machine machine for which the download is expected
      */
     downloadDump(machine: Machine) {
         window.location.href = `api/machines/${machine.id}/dump`
@@ -483,9 +508,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Shows menu with actions possible on a given machine. Currently this is
-     * authorize/unauthorize or delete. It is called every time the user switches
-     * between authorized/unauthorized view.
+     * Shows popup menu with actions possible on a given machine.
      *
      * @param event browser event generated when the button is clicked causing
      *        the menu to be toggled
@@ -637,14 +660,6 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Close the dialog with instructions about installing
-     * stork agent.
-     */
-    closeAgentInstallationInstruction() {
-        this.displayAgentInstallationInstruction = false
-    }
-
-    /**
      * Send request to stork server to regenerate machines server token.
      */
     regenerateServerToken() {
@@ -740,7 +755,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Callback called when the Authorized/Unauthorized machines select button changes after user's click.
      * @param event change event
      */
-    onSelectButtonChange(event: any) {
+    onSelectButtonChange(event: SelectButtonChangeEvent) {
         this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value } ?? null })
     }
 }

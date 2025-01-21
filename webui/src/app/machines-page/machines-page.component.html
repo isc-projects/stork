@@ -33,7 +33,7 @@
             pInputText
             [(ngModel)]="machineAddress"
             id="change-machine-address"
-            (keyup)="keyUpMachineDlg($event, machineTab)"
+            (keyup)="onEditMachineDialogKeyUp($event, machineTab)"
         />
     </div>
     <div class="mt-2">
@@ -45,7 +45,7 @@
             pInputText
             [(ngModel)]="agentPort"
             id="change-machine-port"
-            (keyup)="keyUpMachineDlg($event, machineTab)"
+            (keyup)="onEditMachineDialogKeyUp($event, machineTab)"
         />
     </div>
     <p-footer>
