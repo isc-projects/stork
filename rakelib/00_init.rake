@@ -542,6 +542,7 @@ protoc_gen_go_ver = 'v1.34.2'
 protoc_gen_go_grpc_ver = 'v1.5.1'
 tparse_ver = 'v0.15.0'
 go_junit_report_ver = 'v2.1.0'
+gocover_cobertura_ver = 'v1.3.0'
 go_live_pprof_ver = 'v1.0.8'
 govulncheck_ver = 'v1.1.3'
 mockery_ver = 'v2.46.0'
@@ -982,6 +983,12 @@ file GO_JUNIT_REPORT => [GO] do
     sh GO_JUNIT_REPORT, "--version"
 end
 add_version_guard(GO_JUNIT_REPORT, go_junit_report_ver)
+
+GOCOVER_COBERTURA = "#{gobin}/gocover-cobertura"
+file GOCOVER_COBERTURA => [GO] do
+    sh GO, "install", "github.com/boumenot/gocover-cobertura@#{gocover_cobertura_ver}"
+    sh GOCOVER_COBERTURA, "--version"
+end
 
 MOCKERY = File.join(gobin, "mockery")
 file MOCKERY => [GO] do

@@ -198,7 +198,7 @@ go_tool_codebase = FileList[
 ]
 
 go_common_codebase = FileList["backend/**/*"]
-    .exclude("backend/coverage.out")
+    .exclude("backend/coverage.*")
     .exclude(swagger_server_dir + "/**/*")
     .exclude(go_server_codebase)
     .exclude(go_agent_codebase)

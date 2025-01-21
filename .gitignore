@@ -28,6 +28,7 @@
 
 # output from backend unit tests
 /backend/coverage.out
+/backend/coverage.cobertura.xml
 /backend/junit.xml
 
 # output from UI unit tests

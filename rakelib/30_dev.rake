@@ -144,9 +144,10 @@ namespace :unittest do
         SHORT - Run short test routine - default: false
         HEADLESS - Run in headless mode - default: false
         VERBOSE - Print results for successful cases - default: false
+        PRESERVE_COVERAGE - Do not remove the coverage file after the tests - default: false
         See "db:migrate" task for the database-related parameters
     '
-    task :backend => [GO, TPARSE, GO_JUNIT_REPORT, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
+    task :backend => [GO, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA, "db:remove_remaining", "db:migrate", "gen:backend:mocks"] + go_codebase do
         scope = ENV["SCOPE"] || "./..."
         benchmark = ENV["BENCHMARK"] || "false"
         short = ENV["SHORT"] || "false"
@@ -175,9 +176,12 @@ namespace :unittest do
         if with_cov_tests
             opts += ["-coverprofile=coverage.out"]
 
-            at_exit {
-                sh "rm -f backend/coverage.out"
-            }
+            if ENV["PRESERVE_COVERAGE"] != "true"
+                at_exit {
+                    sh "rm -f backend/coverage.out"
+                    sh "rm -f backend/coverage.cobertura.xml"
+                }
+            end
         end
 
         tparse_otps = []
@@ -194,6 +198,11 @@ namespace :unittest do
 
             if with_cov_tests
                 out, _ = Open3.capture2 GO, "tool", "cover", "-func=coverage.out"
+
+                # Convert the coverage to the Cobertura format.
+                Open3.pipeline_w(GOCOVER_COBERTURA, :out=>"coverage.cobertura.xml") do |i|
+                    i.write File.read("coverage.out")
+                end
 
                 problem = false
                 out.each_line do |line|
@@ -315,12 +324,8 @@ namespace :unittest do
         desc 'Show backend coverage of unit tests in web browser
             See "db:migrate" task for the database-related parameters'
         task :cov => [GO, "unittest:backend"] do
-            if !ENV["SCOPE"].nil?
-                fail "Environment variable SCOPE cannot be specified"
-            end
-
-            if !ENV["TEST"].nil?
-                fail "Environment variable TEST cannot be specified"
+            if !File.exist? "coverage.out"
+                fail "Coverage file not found, probably provided envvars that suppress coverage"
             end
 
             puts "Warning: Coverage may not work under Chrome-like browsers; use Firefox if any problems occur."
