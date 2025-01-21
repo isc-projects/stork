@@ -68,17 +68,34 @@ func (m *hostMigrator) Migrate() map[int64]error {
 				continue
 			}
 
-			// To do group local hosts by daemon ID.
+			// There is a unique index on the local host table that forces
+			// there is only one local host for the same daemon ID, host ID,
+			// and data source.
+			localHosts := map[dbmodel.HostDataSource]dbmodel.LocalHost{}
 			for _, localHost := range host.LocalHosts {
 				if localHost.DaemonID != daemonID {
 					continue
 				}
-				if !localHost.DataSource.IsConfig() {
-					continue
-				}
 
-				// Add the reservation to the Kea host database.
-				// TODO: Check if the host is already in the Kea database.
+				localHosts[localHost.DataSource] = localHost
+			}
+
+			if len(localHosts) == 0 {
+				// Nothing to migrate. The daemon is not related to the host.
+				continue
+			}
+			if _, ok := localHosts[dbmodel.HostDataSourceConfig]; !ok {
+				// Nothing to migrate. The host is not stored in the JSON
+				// configuration.
+				continue
+			}
+
+			// Add the reservation to the Kea host database.
+			// Skip if the host is already in the database.
+			// Disclaimer: We expect all conflicts to be resolved before the
+			// migration.
+			var commandAdd *keactrl.Command
+			if _, ok := localHosts[dbmodel.HostDataSourceAPI]; !ok {
 				reservationAdd, err := keaconfig.CreateHostCmdsReservation(
 					daemonID,
 					m.dhcpOptionLookup,
@@ -90,23 +107,25 @@ func (m *hostMigrator) Migrate() map[int64]error {
 					break
 				}
 
-				commandAdd := keactrl.NewCommandReservationAdd(reservationAdd, daemon.Name)
-
-				// Remove the reservation from the Kea configuration.
-				reservationDel, err := keaconfig.CreateHostCmdsDeletedReservation(
-					daemonID, host, keaconfig.HostCmdsOperationTargetMemory,
-				)
-
-				if err != nil {
-					errs[host.ID] = err
-					break
-				}
-
-				commandDel := keactrl.NewCommandReservationDel(reservationDel, daemon.Name)
-
-				commands = append(commands, commandAdd)
-				commands = append(commands, commandDel)
+				commandAdd = keactrl.NewCommandReservationAdd(reservationAdd, daemon.Name)
 			}
+
+			// Remove the reservation from the Kea configuration.
+			reservationDel, err := keaconfig.CreateHostCmdsDeletedReservation(
+				daemonID, host, keaconfig.HostCmdsOperationTargetMemory,
+			)
+
+			if err != nil {
+				errs[host.ID] = err
+				break
+			}
+
+			commandDel := keactrl.NewCommandReservationDel(reservationDel, daemon.Name)
+
+			if commandAdd != nil {
+				commands = append(commands, commandAdd)
+			}
+			commands = append(commands, commandDel)
 		}
 
 		// Write the changes to the Kea configuration.
