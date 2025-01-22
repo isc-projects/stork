@@ -720,7 +720,7 @@ describe('MachinesPageComponent', () => {
         // This time we should show the warning that the machines registration is disabled.
         messages = fixture.debugElement.query(By.css('p-messages'))
         expect(messages).toBeTruthy()
-        expect(messages.nativeElement.innerText).toContain('Registration of the new machines is disabled')
+        expect(messages.nativeElement.innerText).toContain('Registration of new machines is disabled')
     }))
 
     it('should not display a warning about disabled registration', fakeAsync(() => {
