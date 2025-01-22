@@ -313,7 +313,7 @@ export abstract class PrefilteredTable<
      * Initialization method which should be called at ngOnInit() of derived class.
      *
      * It extracts prefilterKey from ActivatedRoute snapshot queryParams, if it was provided.
-     * Filter validation and filter handler is subscribed.
+     * Filter handlers are subscribed.
      */
     onInit(): void {
         this.dataLoading = true
@@ -395,7 +395,7 @@ export abstract class PrefilteredTable<
         if (table.filters) {
             for (const [filterKey, filterMetadata] of Object.entries(table.filters)) {
                 if (this.hasPrefilter() && filterKey == this.prefilterKey) {
-                    // If this is filtered view by filter from queryParams, don't count it as an active filter.
+                    // If this is filtered view by the queryParams prefilter, don't count it as an active filter.
                     continue
                 }
 
