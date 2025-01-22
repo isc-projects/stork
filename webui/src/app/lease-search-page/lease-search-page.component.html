@@ -1,13 +1,13 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
         <p>
-            This page offers a simple DHCP leases search engine. It utilizes Kea control channel to find leases by an IP
-            address, delegated prefix, client identifier, DHCPv6 DUID, or hostname. Type one of these parameters in the
-            search box and press Enter. To find all declined leases, type <i class="monospace">state:declined</i> in the
-            search box. The engine will find all matching leases on the monitored Kea servers running
+            This page offers a simple search engine for DHCP leases. It uses the Kea control channel to find leases by an IP
+            address, delegated prefix, client identifier, DHCPv6 DUID, or hostname. To search, type one of these parameters into the
+            search box and press Enter, or to find all declined leases, type <span style="font-family: monospace">state:declined</span> in the
+            search box. The engine will find all matching leases on the monitored Kea servers running the
             <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands"
-                >lease_cmds hooks library</a
-            >. The Kea servers not running this hooks library are excluded from the search.
+                >lease_cmds hook library</a
+            >. Any Kea servers not running this hook library are excluded from the search.
         </p>
     </div>
 </app-breadcrumbs>
@@ -29,9 +29,9 @@
                 #searchInput
             />
         </span>
-        <app-help-tip subject="leases search" id="leases-search-help-button" width="40vw" [target]="searchInput">
+        <app-help-tip subject="Lease Search" id="leases-search-help-button" width="40vw" [target]="searchInput">
             <p>
-                Use the input box to specify a searched lease. You can search the lease by one of the following lease
+                Use the input box to specify a lease for searching, using one of the following lease
                 properties:
             </p>
             <p-table
@@ -60,7 +60,7 @@
                     </tr>
                 </ng-template>
             </p-table>
-            <p>MAC address, client identifier and DUID can be specified in the following formats:</p>
+            <p>MAC address, client identifier, and DUID can be specified in the following formats:</p>
             <ul>
                 <li>01:02:03:04:05</li>
                 <li>01 02 03 04 05</li>
@@ -68,14 +68,16 @@
             </ul>
             <p>
                 The specified text must match exactly one of the lease properties. Searching for leases using partial
-                value, e.g. <i class="monospace">192.0.</i>, is currently not supported.
+                values, e.g. <span style="font-family: monospace">192.0.</span>, is currently not supported.
             </p>
-            <p>To find all declined leases, type <i class="monospace">state:declined</i> in the search box.</p>
+            <p>To find all declined leases, type <span style="font-family: monospace">state:declined</span> in the search box.</p>
             <p>
-                The search engine will look for the specified lease on all monitored Kea servers having the lease_cmds
-                hooks library loaded. It may return multiple leases for the same IP address or delegated prefix when Kea
-                servers are configured to share the lease information via High Availability hooks library or shared
-                lease database.
+                The search engine looks for the specified lease on all monitored Kea servers that have the
+                <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands"
+                   >lease_cmds hook library</a
+                >. loaded. If the Kea servers are configured to share lease information via the High Availability hook
+                library or a shared lease database, the search may return multiple leases for the same IP address or
+                delegated prefix.
             </p>
         </app-help-tip>
     </div>
@@ -88,7 +90,7 @@
         <ng-template pTemplate>
             <div>
                 Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
-                error in response to the control commands. The results presented in the table below may not comprise all
+                error in response to the control commands. The results presented in the table below may not include all
                 leases matching the query because some matching leases may reside on the servers, which returned an
                 error. Issues were found for the following Kea servers:
                 <ul style="list-style-type: disc">
