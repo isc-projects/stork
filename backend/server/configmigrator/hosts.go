@@ -69,6 +69,12 @@ func (m *hostMigrator) Migrate() map[int64]error {
 	daemonsByIDs := make(map[int64]*dbmodel.Daemon)
 	for _, host := range m.items {
 		for _, localHost := range host.LocalHosts {
+			daemon := localHost.Daemon
+			if !daemon.Active {
+				// Skip inactive daemons.
+				continue
+			}
+
 			daemonsByIDs[localHost.DaemonID] = localHost.Daemon
 		}
 	}
@@ -167,6 +173,11 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 			}
 
 			localHosts[localHost.DataSource] = &localHost
+		}
+
+		if len(localHosts) == 0 {
+			// Skip hosts that don't belong to the daemon.
+			continue
 		}
 
 		command, err := f(&host, localHosts)
