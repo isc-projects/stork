@@ -1,13 +1,13 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <p>This page displays a list of subnets.</p>
+        <p>This page displays a list of the subnets defined in the Kea instance.</p>
         <p>
             Stork retrieves subnet information using the
             <a href="https://kea.readthedocs.io/en/latest/api.html#config-get">config-get</a>
-            command. This command returns all subnets configured in your configuration file. If you are using
+            command, which returns all subnets configured in your configuration file. If you are using
             <a href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#configuration-backend-in-dhcpv4"
                 >config backend</a
-            >, the subnets Kea retrieves from the database are listed here as well.
+            >, the subnets that Kea retrieves from the database are listed here as well.
         </p>
     </div>
 </app-breadcrumbs>

@@ -6,41 +6,42 @@
         <div>
             <app-help-tip subject="Shared Network View" width="40vw">
                 <p>
-                    Multiple DHCP servers can share a shared network when they run in High Availability mode or when
-                    they are connected to a shared lease database. In this case, the servers typically have the same
-                    shared network configuration (i.e., the same subnets, DHCP options, and other DHCP-specific
-                    parameters). However, there are valid cases when the shared network configurations differ on
-                    individual servers. For example, interfaces used for subnet selection may have a different names.
+                    Multiple DHCP servers can share a shared network when they run in High Availability (HA) mode or
+                    when they are connected to a shared lease database. Servers in HA mode or with a shared lease
+                    database typically have the same shared network configuration (i.e. the same subnets, DHCP options,
+                    and other DHCP-specific parameters); however, there are valid cases when the shared network
+                    configurations differ on individual servers. For example, interfaces used for subnet selection may
+                    have different names.
                 </p>
                 <p>The detailed address utilization statistics use the following naming conventions:</p>
                 <ul>
                     <li><span class="monospace">total</span> - the number of addresses in a shared network.</li>
                     <li>
-                        <span class="monospace">assigned</span> - the number of allocated leases including declined
+                        <span class="monospace">assigned</span> - the number of allocated leases, including declined
                         leases.
                     </li>
                     <li>
-                        <span class="monospace">used</span> - the number of allocated leases excluding declined leases.
+                        <span class="monospace">used</span> - the number of allocated leases, excluding declined leases.
                     </li>
                     <li><span class="monospace">declined</span> - the number of declined leases.</li>
                     <li>
-                        <span class="monospace">uncertain</span> - optional statistics only presented when the number of
-                        declined leases is greater than assigned (see below).
+                        <span class="monospace">uncertain</span> - optional statistics, only presented when the number of
+                        declined leases is greater than the number assigned (see below).
                     </li>
                 </ul>
                 <p>
                     There are rare cases when a Kea server can return inconsistent statistics, with the number of
-                    declined leases greater than assigned leases. It may happen when some of the DHCP clients decline
-                    already released or expired leases. These leases are not counted as assigned, but the declined
-                    statistics is affected. Stork deals with such cases by introducing the uncertain leases count. It
-                    holds an estimated number of leases for which it is unclear whether they are allocated, declined or
+                    declined leases greater than the number of assigned leases. This may happen when some DHCP
+                    clients decline leases that are already released or expired; these leases are not counted as assigned, but
+                    the declined statistics are affected. Stork deals with such cases via the "uncertain leases" count, which
+                    holds the estimated number of leases for which it is unclear whether they are allocated, declined, or
                     free. This statistic is only computed and presented when the number of declined leases is greater
                     than assigned.
                 </p>
                 <p>
-                    The DHCP parameters can be specified at global and shared network levels. The list below contains
+                    The DHCP parameters can be specified at global and shared-network levels. The list below contains
                     all parameters configured for all servers owning the shared network, and at both configuration
-                    levels. An effective value is displayed next to a parameter name. You can expand a parameter by
+                    levels. An effective value is displayed next to the parameter name. You can expand a parameter by
                     clicking the button to the left of the parameter name to view the values specified at the different
                     levels for each server. The shared network-level value takes precedence over the global value.
                 </p>

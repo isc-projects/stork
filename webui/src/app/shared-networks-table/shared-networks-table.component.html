@@ -55,24 +55,24 @@
                     ></p-tag>
                     <app-help-tip subject="filtering" id="filtering-help-button">
                         <p>
-                            Shared networks in the table below can be filtered by entering a text in the search box; the
-                            table shows all shared networks matching the filter text. Currently supported field for such
-                            filtering is:
+                            The table below can be filtered by entering text in the search box; the
+                            table shows all shared networks matching the filter text. The only field currently
+                            supported for such filtering is:
                         </p>
                         <ul>
                             <li>Name</li>
                         </ul>
                         <p>
-                            The table presents shared networks that meet certain criteria, e.g. <b>alpha</b> shows all
+                            The table can present shared networks that meet certain criteria, e.g. "alpha" shows all
                             shared networks that contain "alpha" in their names.
                         </p>
                         <p>
-                            In addition, shared networks can be filtered by an explicitly selected field using text
-                            input and dropdown filters. Currently supported fields for explicit filtering are:
+                            Shared networks can also be filtered by an explicitly selected field, using text
+                            input and dropdown filters. The currently supported fields for explicit filtering are:
                         </p>
                         <ul>
-                            <li class="monospace">appId</li>
-                            <li class="monospace">DHCP version 4/6</li>
+                            <li>Kea App ID</li>
+                            <li>DHCP Version</li>
                         </ul>
                     </app-help-tip>
                 </div>
@@ -99,7 +99,7 @@
                                 [ngModel]="value"
                                 [disabled]="hasPrefilter()"
                             ></p-inputNumber>
-                            <label for="app-id">Kea App Id</label>
+                            <label for="app-id">Kea App ID</label>
                         </span>
                     </ng-template>
                 </p-columnFilter>
@@ -118,7 +118,7 @@
                                 [ngModel]="value"
                                 styleClass="w-10rem"
                             ></p-dropdown>
-                            <label for="dhcp-version">Dhcp version</label>
+                            <label for="dhcp-version">DHCP Version</label>
                         </span>
                     </ng-template>
                 </p-columnFilter>
@@ -214,7 +214,7 @@
             <td colspan="6">
                 No shared networks found.
                 <span *ngIf="hasFilter(networksTable)">
-                    Try to clear filtering.
+                    Clear filtering and try again.
                     <button
                         pButton
                         label="Clear"
