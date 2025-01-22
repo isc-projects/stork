@@ -11,7 +11,7 @@
             <span
                 *ngIf="node.data?.agentCommErrors"
                 class="ml-2 pi pi-exclamation-triangle"
-                pTooltip="Stork server reports that there are communication issues with the Stork Agent on this machine. It may be a failure of the Stork Agent or the machine can be down. Other apps on this machine may be operational but there may be no communication with them due to the issues with the Stork Agent."
+                pTooltip="The Stork server reports that there are communication issues with the Stork agent on this machine. It may be a failure of the Stork agent or the machine may be down. Other apps on this machine may be operational, but communication with them may not be possible due to the issues with the Stork agent."
             ></span>
         </div>
     </ng-template>
@@ -27,7 +27,7 @@
             <span
                 *ngIf="node.data?.caCommErrors"
                 class="ml-2 pi pi-exclamation-triangle"
-                pTooltip="There are communication issues with the Kea Control Agent. The Stork Agent may be responding but it is unable to forward commands to Kea daemons via the Kea Control Agent."
+                pTooltip="There are communication issues with the Kea Control Agent. The Stork agent may be responding, but it is unable to forward commands to Kea daemons via the Kea Control Agent."
             ></span>
         </div>
     </ng-template>
