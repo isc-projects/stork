@@ -6,8 +6,12 @@
                 added and removed.
             </p>
             <p>
-                There is a <em>Authorized</em> / <em>Unauthorized</em> switch button to show authorized and unauthorized
-                Machines respectively.
+                The <em>Unauthorized</em> and <em>Authorized</em> buttons toggle between the machines that have been
+                registered using the agent token-based registration method, and those that have been authorized in
+                Stork. To authorize a machine on the <em>Unauthorized</em> list, either select the checkbox to the left
+                of the machine name and press the <em>Authorize selected</em> button, or click the blue button in the
+                Action column and select <em>Authorize</em>.
+
                 <ng-container *ngIf="!showAuthorized && unauthorizedMachinesCount > 0"
                     >Unauthorized machines were registered using the agent token-based registration method. This view
                     allows to authorize one or more machines at once. Before authorizing a machine, ensure that the
@@ -112,7 +116,7 @@ sudo ./stork-install-agent.sh</textarea
     </div>
     <p class="max-w-40rem my-2 mr-2">During agent installation, you will be prompted for a server token.</p>
     <p class="max-w-40rem my-2 mr-2">
-        <b>Server token</b> value is
+        The <b>Server token</b> value is
         <input [value]="serverToken" class="monospace server-token" size="32" readonly="" #serverTokenInput />
 
         <button
@@ -136,7 +140,7 @@ sudo ./stork-install-agent.sh</textarea
         ></button>
     </p>
     <p class="max-w-40rem mb-2 mr-2">
-        Providing the token will cause the new machine to be automatically added and authorized in the Stork server.
+        Providing the token will cause the new machine to be automatically added to the Stork server and authorized.
     </p>
     <p class="max-w-40rem mb-2 mr-2">
         If Enter is pressed with no token value provided, this new machine will wait for authorization. To see
@@ -299,7 +303,7 @@ sudo ./stork-install-agent.sh</textarea
                                     High load averages imply that a system is overloaded. A value of 1.00 means one CPU
                                     core is fully utilized. For example, if your system has load of 1.22 and you have
                                     only one CPU core, the system is overloaded. However, if the load is 1.22 with four
-                                    cores, your system is working at a bit over 30% of its capacity.
+                                    cores, your system is working at slightly over 30% of its capacity.
                                 </p>
                             </app-help-tip>
                         </td>

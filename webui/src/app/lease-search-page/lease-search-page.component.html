@@ -1,10 +1,11 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
         <p>
-            This page offers a simple search engine for DHCP leases. It uses the Kea control channel to find leases by an IP
-            address, delegated prefix, client identifier, DHCPv6 DUID, or hostname. To search, type one of these parameters into the
-            search box and press Enter, or to find all declined leases, type <span style="font-family: monospace">state:declined</span> in the
-            search box. The engine will find all matching leases on the monitored Kea servers running the
+            This page offers a simple search engine for DHCP leases. It uses the Kea control channel to find leases by
+            an IP address, delegated prefix, client identifier, DHCPv6 DUID, or hostname. To search, type one of these
+            parameters into the search box and press Enter, or to find all declined leases, type
+            <span style="font-family: monospace">state:declined</span> in the search box. The engine will find all
+            matching leases on the monitored Kea servers running the
             <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands"
                 >lease_cmds hook library</a
             >. Any Kea servers not running this hook library are excluded from the search.
@@ -30,10 +31,7 @@
             />
         </span>
         <app-help-tip subject="Lease Search" id="leases-search-help-button" width="40vw" [target]="searchInput">
-            <p>
-                Use the input box to specify a lease for searching, using one of the following lease
-                properties:
-            </p>
+            <p>Use the input box to specify a lease for searching, using one of the following lease properties:</p>
             <p-table
                 styleClass="p-datatable-striped p-datatable-sm"
                 [value]="[
@@ -70,11 +68,14 @@
                 The specified text must match exactly one of the lease properties. Searching for leases using partial
                 values, e.g. <span style="font-family: monospace">192.0.</span>, is currently not supported.
             </p>
-            <p>To find all declined leases, type <span style="font-family: monospace">state:declined</span> in the search box.</p>
+            <p>
+                To find all declined leases, type <span style="font-family: monospace">state:declined</span> in the
+                search box.
+            </p>
             <p>
                 The search engine looks for the specified lease on all monitored Kea servers that have the
                 <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands"
-                   >lease_cmds hook library</a
+                    >lease_cmds hook library</a
                 >. loaded. If the Kea servers are configured to share lease information via the High Availability hook
                 library or a shared lease database, the search may return multiple leases for the same IP address or
                 delegated prefix.
