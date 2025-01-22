@@ -1,18 +1,32 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <p>
-            This page displays a list of all machines that have been configured in Stork. It allows adding new machines
-            as well as removing them.
-        </p>
-        <p>
-            There is a <em>Authorized</em> / <em>Unauthorized</em> switch button to show authorized and unauthorized
-            Machines respectively.
-            <ng-container *ngIf="!showAuthorized && unauthorizedMachinesCount > 0"
-                >Unauthorized machines were registered using the agent token-based registration method. To authorize a
-                machine, click action menu button and then <em>Authorize</em>, or select the machine with the checkbox
-                and click the <em>Authorize selected</em> button.</ng-container
-            >
-        </p>
+        <ng-container *ngIf="activeTabIdx === 0">
+            <p>
+                This page displays a list of all machines that have been configured in Stork. It allows adding new
+                machines as well as removing them.
+            </p>
+            <p>
+                There is a <em>Authorized</em> / <em>Unauthorized</em> switch button to show authorized and unauthorized
+                Machines respectively.
+                <ng-container *ngIf="!showAuthorized && unauthorizedMachinesCount > 0"
+                    >Unauthorized machines were registered using the agent token-based registration method. To authorize
+                    a machine, click action menu button and then <em>Authorize</em>, or select the machine with the
+                    checkbox and click the <em>Authorize selected</em> button.</ng-container
+                >
+            </p>
+        </ng-container>
+        <ng-container *ngIf="activeTabIdx > 0">
+            <p>
+                This page displays details about {{ !!machineTab?.authorized === false ? 'un' : '' }}authorized machine
+                <span class="font-semibold">{{ machineTab?.hostname || machineTab?.address }}</span
+                >.
+            </p>
+            <p *ngIf="machineTab?.authorized">
+                You can retrieve the latest machine's data from the Stork server by clicking
+                <em>Get Latest State</em> button. It is possible to download data archive for machine's troubleshooting
+                purposes by clicking <em>Dump Troubleshooting Data</em> button.
+            </p>
+        </ng-container>
     </div>
 </app-breadcrumbs>
 
