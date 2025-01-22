@@ -371,7 +371,7 @@ export function daemonStatusIconTooltip(daemon: KeaDaemon & Bind9Daemon) {
  *
  * @param textEl instance of the DOM entity the text will be copied from.
  */
-export function copyToClipboard(textEl: HTMLInputElement) {
+export function copyToClipboard(textEl: HTMLInputElement | HTMLTextAreaElement) {
     textEl.select()
     document.execCommand('copy')
     textEl.setSelectionRange(0, 0)

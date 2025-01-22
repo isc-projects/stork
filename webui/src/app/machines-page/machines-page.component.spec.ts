@@ -181,7 +181,7 @@ describe('MachinesPageComponent', () => {
         unauthorizedMachinesCountBadge = fixture.nativeElement.querySelector('div.p-selectbutton span.p-badge')
 
         // Do not save table state between tests, because that makes tests unstable.
-        spyOn(component.table.table, 'saveState').and.callFake(() => {})
+        spyOn(component.machinesTable.table, 'saveState').and.callFake(() => {})
 
         // Wait until table's data loading is finished.
         await fixture.whenStable()
@@ -336,15 +336,15 @@ describe('MachinesPageComponent', () => {
 
     it('should list machines', async () => {
         // Data loading should be done by now.
-        expect(component.table.dataLoading).toBeFalse()
+        expect(component.machinesTable.dataLoading).toBeFalse()
 
         // There is no authorized/unauthorized machines filter applied - all authorized and unauthorized machines are visible.
         expect(component.showAuthorized).toBeNull()
-        expect(component.table.hasPrefilter()).toBeFalse()
-        expect(component.table.hasFilter(component.table.table)).toBeFalse()
+        expect(component.machinesTable.hasPrefilter()).toBeFalse()
+        expect(component.machinesTable.hasFilter(component.machinesTable.table)).toBeFalse()
         expect(component.tabs?.[0].routerLink).toBe('/machines/all')
         expect(component.tabs?.[0].queryParams).toBeUndefined()
-        expect(component.table.totalRecords).toBe(5)
+        expect(component.machinesTable.totalRecords).toBe(5)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
@@ -368,9 +368,9 @@ describe('MachinesPageComponent', () => {
 
         // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.hasPrefilter()).toBeFalse()
-        expect(component.table.hasFilter(component.table.table)).toBeTrue()
-        expect(component.table.totalRecords).toBe(3)
+        expect(component.machinesTable.hasPrefilter()).toBeFalse()
+        expect(component.machinesTable.hasFilter(component.machinesTable.table)).toBeTrue()
+        expect(component.machinesTable.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
@@ -390,9 +390,9 @@ describe('MachinesPageComponent', () => {
 
         // There is authorized machines filter applied - only authorized machines are visible.
         expect(component.showAuthorized).toBeTrue()
-        expect(component.table.hasPrefilter()).toBeFalse()
-        expect(component.table.hasFilter(component.table.table)).toBeTrue()
-        expect(component.table.totalRecords).toBe(2)
+        expect(component.machinesTable.hasPrefilter()).toBeFalse()
+        expect(component.machinesTable.hasFilter(component.machinesTable.table)).toBeTrue()
+        expect(component.machinesTable.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
@@ -406,7 +406,7 @@ describe('MachinesPageComponent', () => {
     })
 
     it('should refresh unauthorized machines count', fakeAsync(() => {
-        component.table.unauthorizedMachinesCountChange.emit(4)
+        component.machinesTable.unauthorizedMachinesCountChange.emit(4)
         tick()
         fixture.detectChanges()
 
@@ -431,8 +431,8 @@ describe('MachinesPageComponent', () => {
 
         // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.hasPrefilter()).toBeFalse()
-        expect(component.table.hasFilter(component.table.table)).toBeTrue()
+        expect(component.machinesTable.hasPrefilter()).toBeFalse()
+        expect(component.machinesTable.hasFilter(component.machinesTable.table)).toBeTrue()
 
         // check if hostnames are displayed
         const nativeEl = fixture.nativeElement
@@ -481,7 +481,7 @@ describe('MachinesPageComponent', () => {
             authorized: true,
         })
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.totalRecords).toBe(3)
+        expect(component.machinesTable.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
@@ -497,7 +497,7 @@ describe('MachinesPageComponent', () => {
 
         // There is authorized machines filter applied - only authorized machines are visible.
         expect(component.showAuthorized).toBeTrue()
-        expect(component.table.totalRecords).toBe(2)
+        expect(component.machinesTable.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
@@ -543,9 +543,9 @@ describe('MachinesPageComponent', () => {
 
         // There is unauthorized machines filter applied - only unauthorized machines are visible.
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.hasPrefilter()).toBeFalse()
-        expect(component.table.hasFilter(component.table.table)).toBeTrue()
-        expect(component.table.totalRecords).toBe(3)
+        expect(component.machinesTable.hasPrefilter()).toBeFalse()
+        expect(component.machinesTable.hasFilter(component.machinesTable.table)).toBeTrue()
+        expect(component.machinesTable.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(3)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('3')
 
@@ -603,7 +603,7 @@ describe('MachinesPageComponent', () => {
             objectContaining({ severity: 'error', summary: 'Machine authorization failed' })
         )
         expect(component.showAuthorized).toBeFalse()
-        expect(component.table.totalRecords).toBe(2)
+        expect(component.machinesTable.totalRecords).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(2)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('2')
 
@@ -619,7 +619,7 @@ describe('MachinesPageComponent', () => {
 
         expect(servicesApi.getUnauthorizedMachinesCount).toHaveBeenCalled()
         expect(component.showAuthorized).toBeTrue()
-        expect(component.table.totalRecords).toBe(3)
+        expect(component.machinesTable.totalRecords).toBe(3)
         expect(component.unauthorizedMachinesCount).toBe(2)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('2')
 
@@ -638,7 +638,7 @@ describe('MachinesPageComponent', () => {
         fixture.detectChanges()
 
         expect(component.showAuthorized).toBeTrue()
-        expect(component.table.totalRecords).toBe(2)
+        expect(component.machinesTable.totalRecords).toBe(2)
 
         // Show the menu for the machine with ID=4.
         const menuButton = fixture.debugElement.query(By.css('#show-machines-menu-4'))

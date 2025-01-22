@@ -18,7 +18,7 @@
 
 <p-dialog
     header="Change Machine Address"
-    [(visible)]="changeMachineAddressDlgVisible"
+    [(visible)]="changeMachineAddressDialogVisible"
     [style]="{ 'max-width': '100rem' }"
 >
     <p class="pb-3">
@@ -51,7 +51,7 @@
     <p-footer>
         <button
             type="button"
-            (click)="changeMachineAddressDlgVisible = false"
+            (click)="changeMachineAddressDialogVisible = false"
             pButton
             icon="pi pi-times"
             label="Cancel"
@@ -145,7 +145,7 @@ sudo ./stork-install-agent.sh</textarea
             role="menuitem"
             pRipple
             [routerLink]="item.routerLink"
-            [queryParams]="i === 0 ? table?.validFilter : null"
+            [queryParams]="i === 0 ? machinesTable?.validFilter : null"
             class="p-ripple p-element p-menuitem-link"
         >
             <div class="flex justify-content-between">
@@ -218,12 +218,12 @@ sudo ./stork-install-agent.sh</textarea
 </div>
 
 <!-- Single machine tab -->
-<div *ngIf="activeTabIdx !== 0" class="p-component">
+<div *ngIf="activeTabIdx > 0" class="p-component">
     <div class="grid w-full">
         <div class="col-12 flex gap-3 column-gap-8 row-gap-3 flex-wrap">
             <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
-                <i class="fa fa-server pr-2"></i> {{ machineTab.machine.address
-                }}<span class="text-primary-200">:{{ machineTab.machine.agentPort }}</span>
+                <i class="fa fa-server pr-2"></i> {{ machineTab?.address
+                }}<span class="text-primary-200">:{{ machineTab?.agentPort }}</span>
                 <i
                     class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
                     id="edit-machine-icon"
@@ -233,10 +233,10 @@ sudo ./stork-install-agent.sh</textarea
 
             <div>
                 <p-message
-                    *ngIf="machineTab.machine.error"
+                    *ngIf="machineTab?.error"
                     severity="danger"
                     styleClass="p-inline-message-error"
-                    text="{{ machineTab.machine.error }}"
+                    text="{{ machineTab?.error }}"
                 ></p-message>
             </div>
         </div>
@@ -244,29 +244,29 @@ sudo ./stork-install-agent.sh</textarea
         <div class="col-12 xl:col-7 grid">
             <div class="col-12 md:col-6">
                 <h3>System Information</h3>
-                <table [class.text-color-secondary]="machineTab.machine.error">
+                <table [class.text-color-secondary]="machineTab?.error">
                     <tr>
                         <td>Address</td>
-                        <td>{{ machineTab.machine.address }}:{{ machineTab.machine.agentPort }}</td>
+                        <td>{{ machineTab?.address }}:{{ machineTab?.agentPort }}</td>
                     </tr>
                     <tr>
                         <td>Hostname</td>
-                        <td>{{ machineTab.machine.hostname }}</td>
+                        <td>{{ machineTab?.hostname }}</td>
                     </tr>
                     <tr>
                         <td>Agent Version</td>
                         <td>
-                            {{ machineTab.machine.agentVersion }}
+                            {{ machineTab?.agentVersion }}
                             <app-version-status
-                                *ngIf="machineTab.machine.authorized"
+                                *ngIf="machineTab?.authorized"
                                 app="stork"
-                                [version]="machineTab.machine.agentVersion"
+                                [version]="machineTab?.agentVersion"
                             ></app-version-status>
                         </td>
                     </tr>
                     <tr>
                         <td>CPUs</td>
-                        <td>{{ machineTab.machine.cpus }}</td>
+                        <td>{{ machineTab?.cpus }}</td>
                     </tr>
                     <tr>
                         <td class="flex align-items-center justify-content-between">
@@ -285,74 +285,74 @@ sudo ./stork-install-agent.sh</textarea
                                 </p>
                             </app-help-tip>
                         </td>
-                        <td>{{ machineTab.machine.cpusLoad }}</td>
+                        <td>{{ machineTab?.cpusLoad }}</td>
                     </tr>
                     <tr>
                         <td>Memory</td>
-                        <td>{{ machineTab.machine.memory || '?' }} GiB</td>
+                        <td>{{ machineTab?.memory || '?' }} GiB</td>
                     </tr>
                     <tr>
                         <td>Used Memory</td>
-                        <td>{{ machineTab.machine.usedMemory }} %</td>
+                        <td>{{ machineTab?.usedMemory }} %</td>
                     </tr>
                     <tr>
                         <td>Uptime</td>
-                        <td>{{ machineTab.machine.uptime || '?' }} days</td>
+                        <td>{{ machineTab?.uptime || '?' }} days</td>
                     </tr>
                     <tr>
                         <td>OS</td>
-                        <td>{{ machineTab.machine.os }}</td>
+                        <td>{{ machineTab?.os }}</td>
                     </tr>
                     <tr>
                         <td>Platform Family</td>
-                        <td>{{ machineTab.machine.platformFamily }}</td>
+                        <td>{{ machineTab?.platformFamily }}</td>
                     </tr>
                     <tr>
                         <td>Platform</td>
-                        <td>{{ machineTab.machine.platform }}</td>
+                        <td>{{ machineTab?.platform }}</td>
                     </tr>
                     <tr>
                         <td>Platform Version</td>
-                        <td>{{ machineTab.machine.platformVersion }}</td>
+                        <td>{{ machineTab?.platformVersion }}</td>
                     </tr>
                     <tr>
                         <td>Kernel Version</td>
-                        <td>{{ machineTab.machine.kernelVersion }}</td>
+                        <td>{{ machineTab?.kernelVersion }}</td>
                     </tr>
                     <tr>
                         <td>Kernel Arch</td>
-                        <td>{{ machineTab.machine.kernelArch }}</td>
+                        <td>{{ machineTab?.kernelArch }}</td>
                     </tr>
                     <tr>
                         <td>Virtualization Role</td>
-                        <td>{{ machineTab.machine.virtualizationRole }}</td>
+                        <td>{{ machineTab?.virtualizationRole }}</td>
                     </tr>
-                    <tr *ngIf="machineTab.machine.virtualizationRole === 'guest'">
+                    <tr *ngIf="machineTab?.virtualizationRole === 'guest'">
                         <td>Virtualization System</td>
-                        <td>{{ machineTab.machine.virtualizationSystem }}</td>
+                        <td>{{ machineTab?.virtualizationSystem }}</td>
                     </tr>
                     <tr>
                         <td>Host ID</td>
-                        <td>{{ machineTab.machine.hostID }}</td>
+                        <td>{{ machineTab?.hostID }}</td>
                     </tr>
                     <tr>
                         <td>Last Visited</td>
-                        <td>{{ machineTab.machine.lastVisitedAt | localtime | placeholder: 'never' }}</td>
+                        <td>{{ machineTab?.lastVisitedAt | localtime | placeholder: 'never' }}</td>
                     </tr>
                 </table>
 
                 <button
-                    *ngIf="machineTab.machine.authorized"
+                    *ngIf="machineTab?.authorized"
                     type="button"
                     pButton
                     label="Get Latest State"
                     id="get-latest-state-button"
                     icon="pi pi-refresh"
                     class="mt-3 mr-2 mb-2"
-                    (click)="refreshMachineState(machineTab.machine)"
+                    (click)="refreshMachineState(machineTab)"
                 ></button>
                 <button
-                    *ngIf="machineTab.machine.authorized"
+                    *ngIf="machineTab?.authorized"
                     type="button"
                     pButton
                     label="Dump Troubleshooting Data"
@@ -360,12 +360,12 @@ sudo ./stork-install-agent.sh</textarea
                     icon="pi pi-download"
                     title="Download data archive for troubleshooting purposes"
                     class="mt-3 mr-2 mb-2 p-button-secondary"
-                    (click)="downloadDump(machineTab.machine)"
+                    (click)="downloadDump(machineTab)"
                 ></button>
             </div>
             <div class="col-12 md:col-6">
                 <h3>Applications</h3>
-                <div *ngFor="let app of machineTab.machine.apps">
+                <div *ngFor="let app of machineTab?.apps">
                     <h4 *ngIf="app.type === 'kea'">Kea App ({{ app.name }})</h4>
                     <h4 *ngIf="app.type === 'bind9'">BIND 9 App</h4>
                     <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
@@ -377,7 +377,7 @@ sudo ./stork-install-agent.sh</textarea
         </div>
         <div class="col-12 xl:col-5">
             <h3>Events</h3>
-            <app-events-panel #eventsTable [filter]="{ machine: machineTab.machine.id }"></app-events-panel>
+            <app-events-panel #eventsTable [filter]="{ machine: machineTab?.id }"></app-events-panel>
         </div>
     </div>
 </div>
