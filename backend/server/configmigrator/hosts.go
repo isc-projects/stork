@@ -194,11 +194,19 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		commandHostIDs = append(commandHostIDs, host.ID)
 	}
 
+	if len(commands) == 0 {
+		// Nothing to send.
+		return
+	}
+
 	// Send the command.
 	var response keactrl.ResponseList
 	result, err := m.connectedAgents.ForwardToKeaOverHTTP(
 		context.Background(), daemon.App, commands, &response,
 	)
+	if err == nil {
+		err = result.Error
+	}
 	if err != nil {
 		// Communication error between the server and the agent.
 		// Mark all related hosts as errored.

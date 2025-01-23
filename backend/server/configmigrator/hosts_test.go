@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	keaconfig "isc.org/stork/appcfg/kea"
@@ -31,7 +32,7 @@ func TestMigrate(t *testing.T) {
 	).(*hostMigrator)
 
 	// Assertion helpers.
-	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult, hosts ...dbmodel.Host) {
+	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult, err error, hosts ...dbmodel.Host) {
 		var reservations []keactrl.SerializableCommand
 		for _, host := range hosts {
 			reservation, _ := keaconfig.CreateHostCmdsReservation(
@@ -47,11 +48,11 @@ func TestMigrate(t *testing.T) {
 			gomock.Eq(daemon.App),   // App.
 			gomock.Eq(reservations), // Commands.
 			gomock.Any(),            // Responses.
-		).Return(result, nil)
+		).Return(result, err)
 	}
 
 	expectReservationAddCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
-		expectReservationAddCommandWithError(daemon, &agentcomm.KeaCmdsResult{}, hosts...)
+		expectReservationAddCommandWithError(daemon, &agentcomm.KeaCmdsResult{}, nil, hosts...)
 	}
 
 	expectReservationDelCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult, hosts ...dbmodel.Host) {
@@ -147,6 +148,14 @@ func TestMigrate(t *testing.T) {
 		App:    &dbmodel.App{},
 		Active: true,
 	}
+
+	daemon3 := &dbmodel.Daemon{
+		ID:     3,
+		Name:   dbmodel.DaemonNameDHCPv4,
+		App:    &dbmodel.App{},
+		Active: true,
+	}
+
 	_ = daemon2
 
 	// Tests migrating a single host with no errors.
@@ -171,6 +180,17 @@ func TestMigrate(t *testing.T) {
 		host := createHost(inactiveDaemon)
 
 		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Empty(t, errs)
+	})
+
+	// Tests that the migration doesn't fail for no hosts.
+	t.Run("no hosts", func(t *testing.T) {
+		migrator.items = []dbmodel.Host{}
 
 		// Act
 		errs := migrator.Migrate()
@@ -231,4 +251,55 @@ func TestMigrate(t *testing.T) {
 		require.Empty(t, errs)
 	})
 
+	// Test that if the error occurs during adding a reservation to the
+	// database, it isn't removed from the configuration.
+	t.Run("error adding reservation", func(t *testing.T) {
+		host1 := createHost(daemon1)
+		host2 := createHost(daemon1)
+		host3 := createHost(daemon2)
+		host4 := createHost(daemon2)
+		host5 := createHost(daemon3)
+		host6 := createHost(daemon3)
+
+		// Kea CA returns an error.
+		expectReservationAddCommandWithError(daemon1, &agentcomm.KeaCmdsResult{
+			Error: errors.Errorf("error adding reservation"),
+		}, nil, host1, host2)
+		expectConfigWriteCommandNoError(daemon1)
+
+		// The Stork agent return an error.
+		expectReservationAddCommandWithError(daemon2,
+			&agentcomm.KeaCmdsResult{},
+			errors.Errorf("error transferring reservation"),
+			host3, host4,
+		)
+		expectConfigWriteCommandNoError(daemon2)
+
+		// The Kea daemon returns an error while processing the add command.
+		expectReservationAddCommandWithError(daemon3, &agentcomm.KeaCmdsResult{
+			CmdsErrors: []error{nil, errors.Errorf("error executing command")},
+		}, nil, host5, host6)
+		expectReservationDelCommandNoError(daemon3, host5)
+		expectConfigWriteCommandNoError(daemon3)
+
+		migrator.items = []dbmodel.Host{host1, host2, host3, host4, host5, host6}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host1.ID)
+		require.ErrorContains(t, errs[host1.ID], "error adding reservation")
+		require.Contains(t, errs, host2.ID)
+		require.ErrorContains(t, errs[host2.ID], "error adding reservation")
+
+		require.Contains(t, errs, host3.ID)
+		require.ErrorContains(t, errs[host3.ID], "error transferring reservation")
+		require.Contains(t, errs, host4.ID)
+		require.ErrorContains(t, errs[host4.ID], "error transferring reservation")
+
+		require.NotContains(t, errs, host5.ID)
+		require.Contains(t, errs, host6.ID)
+		require.ErrorContains(t, errs[host6.ID], "error executing command")
+	})
 }
