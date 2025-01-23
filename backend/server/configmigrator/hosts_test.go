@@ -31,45 +31,51 @@ func TestMigrate(t *testing.T) {
 	).(*hostMigrator)
 
 	// Assertion helpers.
-	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, host *dbmodel.Host, result *agentcomm.KeaCmdsResult) {
-		reservation, _ := keaconfig.CreateHostCmdsReservation(
-			daemon.ID, lookup, host,
-		)
+	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult, hosts ...dbmodel.Host) {
+		var reservations []keactrl.SerializableCommand
+		for _, host := range hosts {
+			reservation, _ := keaconfig.CreateHostCmdsReservation(
+				daemon.ID, lookup, host,
+			)
+			reservations = append(reservations, keactrl.NewCommandReservationAdd(
+				reservation, daemon.Name,
+			))
+		}
 
 		agentMock.EXPECT().ForwardToKeaOverHTTP(
-			gomock.Any(),          // Context.
-			gomock.Eq(daemon.App), // App.
-			gomock.Eq([]keactrl.SerializableCommand{
-				keactrl.NewCommandReservationAdd(
-					reservation, daemon.Name,
-				),
-			}), // Commands.
-			gomock.Any(), // Responses.
+			gomock.Any(),            // Context.
+			gomock.Eq(daemon.App),   // App.
+			gomock.Eq(reservations), // Commands.
+			gomock.Any(),            // Responses.
 		).Return(result, nil)
 	}
 
-	expectReservationAddCommandNoError := func(daemon *dbmodel.Daemon, host *dbmodel.Host) {
-		expectReservationAddCommandWithError(daemon, host, &agentcomm.KeaCmdsResult{})
+	expectReservationAddCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
+		expectReservationAddCommandWithError(daemon, &agentcomm.KeaCmdsResult{}, hosts...)
 	}
 
-	expectReservationDelCommandWithError := func(daemon *dbmodel.Daemon, host *dbmodel.Host, result *agentcomm.KeaCmdsResult) {
-		deletedReservation, _ := keaconfig.CreateHostCmdsDeletedReservation(
-			daemon.ID, host, keaconfig.HostCmdsOperationTargetMemory,
-		)
+	expectReservationDelCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult, hosts ...dbmodel.Host) {
+		var reservations []keactrl.SerializableCommand
+
+		for _, host := range hosts {
+			deletedReservation, _ := keaconfig.CreateHostCmdsDeletedReservation(
+				daemon.ID, host, keaconfig.HostCmdsOperationTargetMemory,
+			)
+			reservations = append(reservations, keactrl.NewCommandReservationDel(
+				deletedReservation, daemon.Name,
+			))
+		}
+
 		agentMock.EXPECT().ForwardToKeaOverHTTP(
-			gomock.Any(),          // Context.
-			gomock.Eq(daemon.App), // App.
-			gomock.Eq([]keactrl.SerializableCommand{
-				keactrl.NewCommandReservationDel(
-					deletedReservation, daemon.Name,
-				),
-			}), // Commands.
-			gomock.Any(), // Responses.
+			gomock.Any(),            // Context.
+			gomock.Eq(daemon.App),   // App.
+			gomock.Eq(reservations), // Commands.
+			gomock.Any(),            // Responses.
 		).Return(result, nil)
 	}
 
-	expectReservationDelCommandNoError := func(daemon *dbmodel.Daemon, host *dbmodel.Host) {
-		expectReservationDelCommandWithError(daemon, host, &agentcomm.KeaCmdsResult{})
+	expectReservationDelCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
+		expectReservationDelCommandWithError(daemon, &agentcomm.KeaCmdsResult{}, hosts...)
 	}
 
 	expectConfigWriteCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult) {
@@ -91,7 +97,7 @@ func TestMigrate(t *testing.T) {
 	nextHostID := int64(1)
 	nextLocalHostID := int64(1)
 
-	createHost := func(daemons ...*dbmodel.Daemon) *dbmodel.Host {
+	createHost := func(daemons ...*dbmodel.Daemon) dbmodel.Host {
 		var localHosts []dbmodel.LocalHost
 		for _, daemon := range daemons {
 			localHosts = append(localHosts, dbmodel.LocalHost{
@@ -106,7 +112,7 @@ func TestMigrate(t *testing.T) {
 		var identifier bytes.Buffer
 		_ = binary.Write(&identifier, binary.LittleEndian, 1024+nextHostID)
 
-		host := &dbmodel.Host{
+		host := dbmodel.Host{
 			ID: nextHostID,
 			HostIdentifiers: []dbmodel.HostIdentifier{{
 				ID:     nextHostID,
@@ -143,6 +149,7 @@ func TestMigrate(t *testing.T) {
 	}
 	_ = daemon2
 
+	// Tests migrating a single host with no errors.
 	t.Run("single host, single daemon, all OK", func(t *testing.T) {
 		host := createHost(daemon1)
 
@@ -150,7 +157,7 @@ func TestMigrate(t *testing.T) {
 		expectReservationDelCommandNoError(daemon1, host)
 		expectConfigWriteCommandNoError(daemon1)
 
-		migrator.items = []dbmodel.Host{*host}
+		migrator.items = []dbmodel.Host{host}
 
 		// Act
 		errs := migrator.Migrate()
@@ -159,10 +166,35 @@ func TestMigrate(t *testing.T) {
 		require.Empty(t, errs)
 	})
 
+	// Tests that the inactive daemon is skipped and generates no API calls.
 	t.Run("inactive daemon", func(t *testing.T) {
 		host := createHost(inactiveDaemon)
 
-		migrator.items = []dbmodel.Host{*host}
+		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Empty(t, errs)
+	})
+
+	// Tests migrating multiple hosts belonging to a single daemon. The hosts
+	// should be added to host database and deleted from the configuration in
+	// a single batch.
+	t.Run("multiple hosts, single daemons, all OK", func(t *testing.T) {
+		hosts := []dbmodel.Host{
+			createHost(daemon1),
+			createHost(daemon1),
+			createHost(daemon1),
+			createHost(daemon1),
+		}
+
+		expectReservationAddCommandNoError(daemon1, hosts...)
+		expectReservationDelCommandNoError(daemon1, hosts...)
+		expectConfigWriteCommandNoError(daemon1)
+
+		migrator.items = hosts
 
 		// Act
 		errs := migrator.Migrate()
