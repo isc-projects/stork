@@ -455,7 +455,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 // refresh machine in opened tab if present
                 const idx = this.openedMachines.map((m) => m.id).indexOf(machine.id)
                 if (idx >= 0) {
-                    this.openedMachines.splice(idx, 1, machine)
+                    this.openedMachines.splice(idx, 1, m)
                 }
             })
             .catch((err) => {
@@ -663,13 +663,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 machine = m
 
                 // refresh machine in machines list
-                this.machinesTable?.refreshMachineState(m)
-
-                // refresh machine in opened tab if present
-                const idx = this.openedMachines.map((m) => m.id).indexOf(machine.id)
-                if (idx >= 0) {
-                    this.openedMachines.splice(idx, 1, machine)
-                }
+                this.refreshMachineState(machine)
 
                 // refresh opened tab title
                 const tabMenuItem = this.tabs.find((tab) => tab.machineId === machine.id)
