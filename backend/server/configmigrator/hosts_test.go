@@ -211,14 +211,15 @@ func TestMigrate(t *testing.T) {
 			createHost(daemon1),
 			createHost(daemon2),
 			createHost(daemon2),
+			createHost(daemon1, daemon2),
 		}
 
-		expectReservationAddCommandNoError(daemon1, hosts[:2]...)
-		expectReservationDelCommandNoError(daemon1, hosts[:2]...)
+		expectReservationAddCommandNoError(daemon1, hosts[0], hosts[1], hosts[4])
+		expectReservationDelCommandNoError(daemon1, hosts[0], hosts[1], hosts[4])
 		expectConfigWriteCommandNoError(daemon1)
 
-		expectReservationAddCommandNoError(daemon2, hosts[2:]...)
-		expectReservationDelCommandNoError(daemon2, hosts[2:]...)
+		expectReservationAddCommandNoError(daemon2, hosts[2], hosts[3], hosts[4])
+		expectReservationDelCommandNoError(daemon2, hosts[2], hosts[3], hosts[4])
 		expectConfigWriteCommandNoError(daemon2)
 
 		migrator.items = hosts
@@ -229,4 +230,5 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.Empty(t, errs)
 	})
+
 }
