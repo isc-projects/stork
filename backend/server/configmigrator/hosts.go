@@ -8,6 +8,7 @@ import (
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 type hostMigrator struct {
@@ -24,6 +25,8 @@ var _ Migrator = &hostMigrator{}
 
 // Creates a new host migrator.
 func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgents agentcomm.ConnectedAgents, dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup) Migrator {
+	// Migrating the conflicted hosts is not supported.
+	filter.DHCPDataConflict = storkutil.Ptr(false)
 	return &hostMigrator{
 		db:               db,
 		filter:           filter,
@@ -214,7 +217,7 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		return
 	}
 
-	// Communication error between the agent and the command handler.
+	// Communication error between the Kea CA and the Kea DHCP daemon.
 	for i, err := range result.CmdsErrors {
 		hostID := commandHostIDs[i]
 		if m.errs[hostID] != nil {

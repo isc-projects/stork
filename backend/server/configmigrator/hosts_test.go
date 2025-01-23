@@ -253,6 +253,11 @@ func TestMigrate(t *testing.T) {
 
 	// Test that if the error occurs during adding a reservation to the
 	// database, it isn't removed from the configuration.
+	// Test considers three error reasons: an error occurred in the Stork
+	// agent, an error occurred in the Kea CA, and an error occurred in the
+	// DHCP daemon. The errors occurred in the Stork agent and the Kea CA
+	// should cause all hosts from a given daemon to be marked as failed with
+	// the same error.
 	t.Run("error adding reservation", func(t *testing.T) {
 		host1 := createHost(daemon1)
 		host2 := createHost(daemon1)
@@ -276,6 +281,7 @@ func TestMigrate(t *testing.T) {
 		expectConfigWriteCommandNoError(daemon2)
 
 		// The Kea daemon returns an error while processing the add command.
+		// The 6th host should be still processed.
 		expectReservationAddCommandWithError(daemon3, &agentcomm.KeaCmdsResult{
 			CmdsErrors: []error{nil, errors.Errorf("error executing command")},
 		}, nil, host5, host6)
@@ -301,5 +307,110 @@ func TestMigrate(t *testing.T) {
 		require.NotContains(t, errs, host5.ID)
 		require.Contains(t, errs, host6.ID)
 		require.ErrorContains(t, errs[host6.ID], "error executing command")
+	})
+
+	// Test that if the error occurs for a host that belongs to multiple
+	// daemons, the next commands for this host are no longer created for
+	// further processed daemons.
+	t.Run("error adding reservation - multiple daemons", func(t *testing.T) {
+		host := createHost(daemon1, daemon2, daemon3)
+
+		expectReservationAddCommandWithError(daemon1, &agentcomm.KeaCmdsResult{
+			CmdsErrors: []error{errors.Errorf("error adding reservation")},
+		}, nil, host)
+
+		expectConfigWriteCommandNoError(daemon1)
+		expectConfigWriteCommandNoError(daemon2)
+		expectConfigWriteCommandNoError(daemon3)
+
+		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host.ID)
+		require.ErrorContains(t, errs[host.ID], "error adding reservation")
+	})
+
+	// The host to migrate exists only in the database. The host should not be
+	// added to the database again nor removed from the configuration.
+	t.Run("host only in the database", func(t *testing.T) {
+		host := createHost(daemon1)
+		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
+
+		expectConfigWriteCommandNoError(daemon1)
+
+		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Empty(t, errs)
+	})
+
+	// The host to migrate is duplicated in the configuration file and the
+	// database. The host should not be added to the database again but removed
+	// from the configuration.
+	t.Run("host in the database and the configuration", func(t *testing.T) {
+		host := createHost(daemon1, daemon1)
+		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
+
+		expectReservationDelCommandNoError(daemon1, host)
+		expectConfigWriteCommandNoError(daemon1)
+
+		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Empty(t, errs)
+	})
+
+	// Host cannot be converted to the GRPC API format that interrupts the
+	// command preparation.
+	t.Run("invalid host", func(t *testing.T) {
+		// The host has assigned a subnet that is not assigned to any daemon.
+		host := createHost(daemon1)
+		host.Subnet = &dbmodel.Subnet{ID: 42}
+
+		expectConfigWriteCommandNoError(daemon1)
+
+		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host.ID)
+		require.ErrorContains(t,
+			errs[host.ID],
+			"local subnet id not found in host",
+		)
+	})
+
+	// Host belonging to multiple daemons cannot be converted to the GRPC API
+	// format that interrupts the command preparation.
+	t.Run("invalid host - multiple daemons", func(t *testing.T) {
+		// The host has assigned a subnet that is not assigned to any daemon.
+		host := createHost(daemon1, daemon2)
+		host.Subnet = &dbmodel.Subnet{ID: 42}
+
+		expectConfigWriteCommandNoError(daemon1)
+		expectConfigWriteCommandNoError(daemon2)
+
+		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host.ID)
+		require.ErrorContains(t,
+			errs[host.ID],
+			"local subnet id not found in host",
+		)
 	})
 }
