@@ -333,9 +333,25 @@ func TestMigrate(t *testing.T) {
 		require.ErrorContains(t, errs[host.ID], "error adding reservation")
 	})
 
+	t.Run("error deleting reservation", func(t *testing.T) {
+		t.Fatal("not implemented")
+	})
+
+	t.Run("error deleting reservation - multiple daemons", func(t *testing.T) {
+		t.Fatal("not implemented")
+	})
+
+	t.Run("error writing configuration", func(t *testing.T) {
+		t.Fatal("not implemented")
+	})
+
+	t.Run("error writing configuration - multiple daemons", func(t *testing.T) {
+		t.Fatal("not implemented")
+	})
+
 	// The host to migrate exists only in the database. The host should not be
 	// added to the database again nor removed from the configuration.
-	t.Run("host only in the database", func(t *testing.T) {
+	t.Run("host exists only in the database", func(t *testing.T) {
 		host := createHost(daemon1)
 		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
 
@@ -353,7 +369,7 @@ func TestMigrate(t *testing.T) {
 	// The host to migrate is duplicated in the configuration file and the
 	// database. The host should not be added to the database again but removed
 	// from the configuration.
-	t.Run("host in the database and the configuration", func(t *testing.T) {
+	t.Run("host exists in the database and the configuration", func(t *testing.T) {
 		host := createHost(daemon1, daemon1)
 		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
 
