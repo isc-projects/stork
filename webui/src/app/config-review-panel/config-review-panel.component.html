@@ -83,7 +83,7 @@
                 >
                 </span>
                 <span class="font-italic text-sm text-color">
-                    <app-event-text [text]="report.content ?? 'No issue found.'"></app-event-text>
+                    <app-event-text [text]="report.content ?? 'No issues found.'"></app-event-text>
                 </span>
             </div>
         </div>
@@ -94,7 +94,7 @@
                 >An error occurred while fetching the configuration review reports.</ng-container
             >
             <ng-container *ngIf="!refreshFailed && !!review"
-                >No configuration issues found for this daemon.</ng-container
+                >No configuration issues were found for this daemon.</ng-container
             >
             <ng-container *ngIf="!refreshFailed && !review"
                 >Configuration review was not performed for this daemon.</ng-container

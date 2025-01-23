@@ -7,11 +7,11 @@
             [addOnBlur]="true"
             [formControl]="classFormControl"
             styleClass="adaptive-chips-background w-full"
-            placeholder="{{ floatingPlaceholder ? null : 'Type or pick from List' }}"
-            title="Type or Select Class Names from List"
+            placeholder="{{ floatingPlaceholder ? null : 'Type or Pick From List' }}"
+            title="Type or Select Class Names From List"
         >
         </p-chips>
-        <label *ngIf="floatingPlaceholder" for="{{ inputId }}">Type or pick from List</label>
+        <label *ngIf="floatingPlaceholder" for="{{ inputId }}">Type or Pick From List</label>
     </span>
     <p-overlayPanel #op [dismissable]="false">
         <ng-template pTemplate>
@@ -34,9 +34,9 @@
                             Class Name
                             <app-help-tip subject="client classes selection">
                                 <p>
-                                    The list contains client classes configured on the monitored DHCP servers. Check one
-                                    or more classes you want to assign to the host reservation and click the Insert
-                                    button. The list can be opened several times. The already selected classes are
+                                    This list displays the client classes configured on the monitored DHCP servers.
+                                    Check one or more classes you want to assign to the host reservation and click the
+                                    Insert button. The list can be opened multiple times. The already selected classes are
                                     checked and cannot be unchecked in this list. To remove a class from a host
                                     reservation, remove its tag from the input box.
                                 </p>
@@ -45,8 +45,8 @@
                                     box.
                                 </p>
                                 <p>
-                                    If the list is long, use the filtering box to find desired classes. Click on the
-                                    filter button to select the search mode.
+                                    If the list is too long, use the filtering box to find desired classes. Click on
+                                    the Filter button to select the search mode.
                                 </p>
                             </app-help-tip>
                         </th>

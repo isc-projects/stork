@@ -19,7 +19,7 @@
 
                 <p class="pb-3">
                     Currently, no machines are specified for monitoring in Stork. To add a new machine, visit the
-                    <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">machines page</a> (under the
+                    <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">Machines page</a> (under the
                     Services menu in the top bar).
                 </p>
 
@@ -50,8 +50,8 @@
                             Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
                             <app-help-tip subject="subnets listed" id="subnets4-help-button">
                                 <p>
-                                    This list shows the 5 DHCPv4 subnets with the highest utilization. The total number
-                                    of subnets is {{ overview.subnets4.total ? overview.subnets4.total : '0' }}.
+                                    This list shows the five DHCPv4 subnets with the highest utilization. The total
+                                    number of subnets is {{ overview.subnets4.total ? overview.subnets4.total : '0' }}.
                                 </p>
                             </app-help-tip>
                         </h2>
@@ -106,8 +106,8 @@
                             Shared Networks: {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}
                             <app-help-tip subject="networks listed" id="networks4-help-button">
                                 <p>
-                                    This list shows the 5 shared networks with the highest utilization. The total number
-                                    of networks is
+                                    This list shows the five shared networks with the highest utilization. The total
+                                    number of networks is
                                     {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}.
                                 </p>
                             </app-help-tip>
@@ -174,8 +174,8 @@
                             Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
                             <app-help-tip subject="subnets listed" id="subnets6-help-button">
                                 <p>
-                                    This list shows the 5 DHCPv6 subnets with the highest utilization. The total number
-                                    of subnets is {{ overview.subnets6.total ? overview.subnets6.total : '0' }}.
+                                    This list shows the five DHCPv6 subnets with the highest utilization. The total
+                                    number of subnets is {{ overview.subnets6.total ? overview.subnets6.total : '0' }}.
                                 </p>
                             </app-help-tip>
                         </h2>
@@ -230,8 +230,8 @@
                             Shared Networks: {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}
                             <app-help-tip subject="networks listed" id="networks6-help-button">
                                 <p>
-                                    This list shows the 5 shared networks with the highest utilization. The total number
-                                    of networks is
+                                    This list shows the five shared networks with the highest utilization. The total
+                                    number of networks is
                                     {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}.
                                 </p>
                             </app-help-tip>
@@ -297,7 +297,7 @@
                     </div>
                 </div>
 
-                <h1 class="section-heading">Services Status</h1>
+                <h1 class="section-heading">Service Status</h1>
 
                 <p-table
                     [value]="overview.dhcpDaemons"

@@ -9,25 +9,25 @@
             Checkers list
             <app-help-tip subject="Checkers list">
                 <p>
-                    The table lists available review checkers. Each of them is responsible for analyzing the daemon
-                    configuration to detect some particular issue. The table contains the checker states,
+                    The table lists the available review checkers. Each of them is responsible for analyzing the daemon
+                    configuration to detect a particular issue. The table contains the checker states
                     <span *ngIf="minimal"> and names.</span>
-                    <span *ngIf="!minimal">names, descriptions, selectors, and triggers.</span>
+                    <span *ngIf="!minimal">, names, descriptions, selectors, and triggers.</span>
                 </p>
                 <p>
-                    The state indicates if the checker is enabled or disabled.
+                    The state indicates whether the checker is enabled or disabled.
                     <span *ngIf="allowInheritState">
                         The state may also be inherited from the global settings. In this case, the actual state is
-                        presented in the brackets.
+                        presented in brackets.
                     </span>
-                    The state changes must be confirmed by clicking the submit button.
+                    The state changes must be confirmed by clicking the Submit button.
                 </p>
                 <p *ngIf="!minimal">
-                    The selectors define the daemon groups for which the specific configuration checker runs.
+                    The selectors define the daemon groups where the specific configuration checker runs.
                 </p>
                 <p *ngIf="!minimal">
-                    The triggers designate the condition that fires the checker (e.g., when configuration or host
-                    reservation change has been detected, manually etc.).
+                    The triggers designate the condition that fires the checker (e.g. when a configuration or host
+                    reservation change has been detected, manually, etc.).
                 </p>
             </app-help-tip>
         </div>
@@ -89,7 +89,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <tr class="picker__empty">
-            <td colspan="100%">There are no checkers.</td>
+            <td colspan="100%">There are no checkers enabled.</td>
         </tr>
     </ng-template>
     <ng-template pTemplate="summary">

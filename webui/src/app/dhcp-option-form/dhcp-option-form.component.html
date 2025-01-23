@@ -11,7 +11,7 @@
                 styleClass="w-full"
                 [options]="v6 ? optionsService.getStandardDhcpv6Options() : optionsService.getStandardDhcpv4Options()"
                 formControlName="optionCode"
-                pTooltip="Use the dropdown to select an option from the list of standard options. If the option is not in the list, simply type its code (a number) in the box. When using the dropdown, it is possible to filter by option name or code."
+                pTooltip="Use the dropdown to select an option from the list of standard options. If the desired option is not in the list, simply type its code (a number) in the box. When using the dropdown, it is possible to filter by option name or code."
                 (onChange)="onOptionCodeChange($event)"
             >
             </p-dropdown>
@@ -49,7 +49,7 @@
                     This option can comprise an array of the
                     <span class="font-semibold">{{ optionDef.optionType }}</span>
                     option fields. By default, it has only one option field, but more fields of the same type can be
-                    added as necessary.
+                    added as needed.
                 </div>
             </ng-container>
             <ng-container *ngIf="!optionDef.array">
@@ -79,14 +79,14 @@
                 formControlName="alwaysSend"
                 [binary]="true"
                 inputId="{{ alwaysSendCheckboxId }}"
-                pTooltip="When checked, the option will always be returned to a DHCP client, regardless whether it is requested or not."
+                pTooltip="When checked, the option will always be returned to a DHCP client, regardless of whether it is requested."
             ></p-checkbox>
             <label for="{{ alwaysSendCheckboxId }}">Always Send</label>
         </div>
         <p-splitButton
             label="{{ 'Add ' + lastFieldType }}"
             [model]="fieldTypes"
-            pTooltip="Adds a new option field - a binary field or last added field type by default. Use the dropdown to select other type, if desired."
+            pTooltip="Adds a new option field - a binary field or last-added field type by default. Use the dropdown to select another type, if desired."
             styleClass="p-button-secondary p-button-sm p-button-text"
             (onClick)="lastFieldCommand()"
         >
@@ -342,18 +342,18 @@
                         subject="binary Option Field"
                     >
                         <p>
-                            Option value can be specified as a string of the hexadecimal digits. The following formats
+                            The option value can be specified as a string of hexadecimal digits. The following formats
                             are accepted:
                         </p>
                         <ul>
-                            <li>Capital letters, e.g., 1F:1E:AB:CE</li>
-                            <li>Non-capital letters, e.g., 8f:6a:bc:78</li>
-                            <li>Space as a separator, e.g., 87 68 af b8</li>
+                            <li>Capital letters, e.g. 1F:1E:AB:CE</li>
+                            <li>Lowercase letters, e.g. 8f:6a:bc:78</li>
+                            <li>Space as a separator, e.g. 87 68 af b8</li>
                             <li>Colon as a separator (see above)</li>
-                            <li>No separator, e.g., 05F74FA6</li>
+                            <li>No separator, e.g. 05F74FA6</li>
                         </ul>
                         <p>
-                            The specified value must have even number of hexadecimal digits. Please prepend a leading
+                            The specified value must have an even number of hexadecimal digits, with a leading
                             zero when necessary.
                         </p>
                     </app-help-tip>
@@ -366,7 +366,7 @@
             <p-tag
                 icon="pi pi-info-circle"
                 value="Empty Option"
-                pTooltip="This option carries no data in its payload. It is fine for some options but most of them require some payload. You can use Add Payload button to add option fields."
+                pTooltip="This option carries no data in its payload. This is acceptable for some options, but most require some payload. You can use the Add Payload button to add option fields."
                 styleClass="empty-option-tag"
             ></p-tag>
         </div>

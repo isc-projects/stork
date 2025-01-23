@@ -27,7 +27,7 @@
             <span
                 *ngIf="node.data?.caCommErrors"
                 class="ml-2 pi pi-exclamation-triangle"
-                pTooltip="There are communication issues with the Kea Control Agent. The Stork agent may be responding, but it is unable to forward commands to Kea daemons via the Kea Control Agent."
+                pTooltip="There are communication issues with the Kea Control Agent. The Stork agent may be responding, but it is unable to forward commands to the Kea daemons via the Kea Control Agent."
             ></span>
         </div>
     </ng-template>
@@ -61,7 +61,7 @@
             <span
                 *ngIf="node.data?.monitored && node.data?.channelCommErrors"
                 class="ml-2 pi pi-exclamation-triangle"
-                pTooltip="The named daemon has different communication channels for control and statistics. If only one of the channels is failing, the daemon is still operational. If both are failing, it may be an indication that the daemon is down."
+                pTooltip="The named daemon has two communication channels for control and statistics. If only one of the channels is failing, the daemon is still operational. If both are failing, it may be an indication that the daemon is down."
             ></span>
             <span *ngIf="!node.data?.monitored" class="ml-2 pi pi-ban" pTooltip="This daemon is not monitored."> </span>
         </div>
