@@ -202,4 +202,31 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.Empty(t, errs)
 	})
+
+	// Tests migrating multiple hosts belonging to multiple daemons. The hosts
+	// should be processed in separate batches for each daemon.
+	t.Run("multiple hosts, multiple daemons, all OK", func(t *testing.T) {
+		hosts := []dbmodel.Host{
+			createHost(daemon1),
+			createHost(daemon1),
+			createHost(daemon2),
+			createHost(daemon2),
+		}
+
+		expectReservationAddCommandNoError(daemon1, hosts[:2]...)
+		expectReservationDelCommandNoError(daemon1, hosts[:2]...)
+		expectConfigWriteCommandNoError(daemon1)
+
+		expectReservationAddCommandNoError(daemon2, hosts[2:]...)
+		expectReservationDelCommandNoError(daemon2, hosts[2:]...)
+		expectConfigWriteCommandNoError(daemon2)
+
+		migrator.items = hosts
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Empty(t, errs)
+	})
 }
