@@ -412,10 +412,13 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.openedMachines.splice(idx - 1, 1)
         this.tabs = [...this.tabs.slice(0, idx), ...this.tabs.slice(idx + 1)]
         if (this.activeTabIdx === idx) {
+            // Closing the tab which is currently active.
             this.switchToTab(idx - 1)
-            this.router.navigate(this.tabs[idx - 1].routerLink)
+            this.router.navigate([this.tabs[this.activeTabIdx].routerLink])
         } else if (this.activeTabIdx > idx) {
-            this.activeTabIdx = this.activeTabIdx - 1
+            // Closing the tab which is to the left from currently active tab.
+            this.switchToTab(this.activeTabIdx - 1)
+            this.router.navigate([this.tabs[this.activeTabIdx].routerLink])
         }
 
         event?.preventDefault()
