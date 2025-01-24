@@ -137,7 +137,7 @@ func TestMigrate(t *testing.T) {
 		expectReservationDelCommandWithError(daemon, mockErrors{}, hosts...)
 	}
 
-	expectConfigWriteCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult) {
+	expectConfigWriteCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors) {
 		agentMock.EXPECT().ForwardToKeaOverHTTP(
 			gomock.Any(),          // Context.
 			gomock.Eq(daemon.App), // App.
@@ -145,16 +145,38 @@ func TestMigrate(t *testing.T) {
 				keactrl.NewCommandBase(keactrl.ConfigWrite, daemon.Name),
 			}), // Commands.
 			gomock.Any(), // Responses.
-		).Return(result, nil)
+		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
+			for i := range cmdResponses {
+				if i >= len(err.executionErrs) || err.executionErrs[i] == nil {
+					continue
+				}
+
+				r := cmdResponses[i].(*keactrl.ResponseList)
+				require.Empty(t, *r)
+
+				(*r) = append(*r, keactrl.Response{
+					ResponseHeader: keactrl.ResponseHeader{
+						Result: keactrl.ResponseError,
+						Text:   err.executionErrs[i].Error(),
+					},
+				})
+			}
+		}).Return(&agentcomm.KeaCmdsResult{
+			Error:      err.keaErr,
+			CmdsErrors: err.cmdErrs,
+		}, err.grpcErr)
 	}
 
 	expectConfigWriteCommandNoError := func(daemon *dbmodel.Daemon) {
-		expectConfigWriteCommandWithError(daemon, &agentcomm.KeaCmdsResult{})
+		expectConfigWriteCommandWithError(daemon, mockErrors{})
 	}
 
 	// Entities.
+	// Each sub-test must have separate entities to avoid calling the mock
+	// handlers from the previous test.
 	nextHostID := int64(1)
 	nextLocalHostID := int64(1)
+	nextDaemonID := int64(1)
 
 	createHost := func(daemons ...*dbmodel.Daemon) dbmodel.Host {
 		var localHosts []dbmodel.LocalHost
@@ -186,37 +208,25 @@ func TestMigrate(t *testing.T) {
 		return host
 	}
 
-	daemonInactive := &dbmodel.Daemon{
-		ID:     0,
-		Name:   dbmodel.DaemonNameDHCPv4,
-		App:    &dbmodel.App{},
-		Active: false,
-	}
-
-	var daemons []*dbmodel.Daemon
-
-	for i := 0; i < 4; i++ {
+	createDaemon := func() *dbmodel.Daemon {
 		daemon := &dbmodel.Daemon{
-			ID:     int64(i + 1),
+			ID:     nextDaemonID,
 			Name:   dbmodel.DaemonNameDHCPv4,
-			App:    &dbmodel.App{},
+			App:    &dbmodel.App{ID: nextDaemonID},
 			Active: true,
 		}
-		daemons = append(daemons, daemon)
+		nextDaemonID++
+		return daemon
 	}
-
-	daemon1 := daemons[0]
-	daemon2 := daemons[1]
-	daemon3 := daemons[2]
-	daemon4 := daemons[3]
 
 	// Tests migrating a single host with no errors.
 	t.Run("single host, single daemon, all OK", func(t *testing.T) {
-		host := createHost(daemon1)
+		daemon := createDaemon()
+		host := createHost(daemon)
 
-		expectReservationAddCommandNoError(daemon1, host)
-		expectReservationDelCommandNoError(daemon1, host)
-		expectConfigWriteCommandNoError(daemon1)
+		expectReservationAddCommandNoError(daemon, host)
+		expectReservationDelCommandNoError(daemon, host)
+		expectConfigWriteCommandNoError(daemon)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -225,10 +235,13 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.Empty(t, errs)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Tests that the inactive daemon is skipped and generates no API calls.
 	t.Run("inactive daemon", func(t *testing.T) {
+		daemonInactive := createDaemon()
+		daemonInactive.Active = false
 		host := createHost(daemonInactive)
 
 		migrator.items = []dbmodel.Host{host}
@@ -238,6 +251,7 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.Empty(t, errs)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Tests that the migration doesn't fail for no hosts.
@@ -249,22 +263,24 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.Empty(t, errs)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Tests migrating multiple hosts belonging to a single daemon. The hosts
 	// should be added to host database and deleted from the configuration in
 	// a single batch.
 	t.Run("multiple hosts, single daemons, all OK", func(t *testing.T) {
+		daemon := createDaemon()
 		hosts := []dbmodel.Host{
-			createHost(daemon1),
-			createHost(daemon1),
-			createHost(daemon1),
-			createHost(daemon1),
+			createHost(daemon),
+			createHost(daemon),
+			createHost(daemon),
+			createHost(daemon),
 		}
 
-		expectReservationAddCommandNoError(daemon1, hosts...)
-		expectReservationDelCommandNoError(daemon1, hosts...)
-		expectConfigWriteCommandNoError(daemon1)
+		expectReservationAddCommandNoError(daemon, hosts...)
+		expectReservationDelCommandNoError(daemon, hosts...)
+		expectConfigWriteCommandNoError(daemon)
 
 		migrator.items = hosts
 
@@ -273,11 +289,14 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.Empty(t, errs)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Tests migrating multiple hosts belonging to multiple daemons. The hosts
 	// should be processed in separate batches for each daemon.
 	t.Run("multiple hosts, multiple daemons, all OK", func(t *testing.T) {
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
 		hosts := []dbmodel.Host{
 			createHost(daemon1),
 			createHost(daemon1),
@@ -301,6 +320,7 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.Empty(t, errs)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Test that if the error occurs during adding a reservation to the
@@ -311,6 +331,11 @@ func TestMigrate(t *testing.T) {
 	// occurred in the Stork agent and the Kea CA should cause all hosts from
 	// a given daemon to be marked as failed with the same error.
 	t.Run("error adding reservation", func(t *testing.T) {
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
+		daemon3 := createDaemon()
+		daemon4 := createDaemon()
+
 		host1 := createHost(daemon1)
 		host2 := createHost(daemon1)
 		host3 := createHost(daemon2)
@@ -373,6 +398,8 @@ func TestMigrate(t *testing.T) {
 		require.NotContains(t, errs, host7.ID)
 		require.Contains(t, errs, host8.ID)
 		require.ErrorContains(t, errs[host8.ID], "error as result")
+
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Test that if the error occurs during deleting a reservation from the
@@ -383,6 +410,11 @@ func TestMigrate(t *testing.T) {
 	// occurred in the Stork agent and the Kea CA should cause all hosts from
 	// a given daemon to be marked as failed with the same error.
 	t.Run("error deleting reservation", func(t *testing.T) {
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
+		daemon3 := createDaemon()
+		daemon4 := createDaemon()
+
 		host1 := createHost(daemon1)
 		host2 := createHost(daemon1)
 		host3 := createHost(daemon2)
@@ -447,12 +479,18 @@ func TestMigrate(t *testing.T) {
 		require.NotContains(t, errs, host7.ID)
 		require.Contains(t, errs, host8.ID)
 		require.ErrorContains(t, errs[host8.ID], "error is result")
+
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Test that if the error occurs for a host that belongs to multiple
 	// daemons, the next commands for this host are no longer created for
 	// further processed daemons.
 	t.Run("error adding reservation - multiple daemons", func(t *testing.T) {
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
+		daemon3 := createDaemon()
+
 		host := createHost(daemon1, daemon2, daemon3)
 
 		expectReservationAddCommandWithError(daemon1, mockErrors{
@@ -471,12 +509,18 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.Contains(t, errs, host.ID)
 		require.ErrorContains(t, errs[host.ID], "error adding reservation")
+
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Test that if the error occurs for a host that belongs to multiple
 	// daemons, the next commands for this host are no longer created for
 	// further processed daemons.
 	t.Run("error removing reservation - multiple daemons", func(t *testing.T) {
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
+		daemon3 := createDaemon()
+
 		host := createHost(daemon1, daemon2, daemon3)
 
 		expectReservationAddCommandNoError(daemon1, host)
@@ -496,15 +540,160 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.Contains(t, errs, host.ID)
 		require.ErrorContains(t, errs[host.ID], "error adding reservation")
+
+		require.True(t, ctrl.Satisfied())
+	})
+
+	// Test that if the error occurs during saving the configuration, the
+	// migration continues but all hosts from a given daemon to be marked as
+	// failed with the same error.
+	t.Run("error saving configuration", func(t *testing.T) {
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
+		daemon3 := createDaemon()
+		daemon4 := createDaemon()
+
+		host1 := createHost(daemon1)
+		host2 := createHost(daemon1)
+		host3 := createHost(daemon2)
+		host4 := createHost(daemon2)
+		host5 := createHost(daemon3)
+		host6 := createHost(daemon3)
+		host7 := createHost(daemon4)
+		host8 := createHost(daemon4)
+
+		expectReservationAddCommandNoError(daemon1, host1, host2)
+		expectReservationDelCommandNoError(daemon1, host1, host2)
+		expectConfigWriteCommandWithError(daemon1, mockErrors{
+			grpcErr: errors.Errorf("error GRPC"),
+		})
+
+		expectReservationAddCommandNoError(daemon2, host3, host4)
+		expectReservationDelCommandNoError(daemon2, host3, host4)
+		expectConfigWriteCommandWithError(daemon2, mockErrors{
+			keaErr: errors.Errorf("error Kea"),
+		})
+
+		expectReservationAddCommandNoError(daemon3, host5, host6)
+		expectReservationDelCommandNoError(daemon3, host5, host6)
+		expectConfigWriteCommandWithError(daemon3, mockErrors{
+			cmdErrs: []error{errors.Errorf("error command")},
+		})
+
+		expectReservationAddCommandNoError(daemon4, host7, host8)
+		expectReservationDelCommandNoError(daemon4, host7, host8)
+		expectConfigWriteCommandWithError(daemon4, mockErrors{
+			executionErrs: []error{errors.Errorf("error execution")},
+		})
+
+		migrator.items = []dbmodel.Host{
+			host1, host2, host3, host4, host5, host6, host7, host8,
+		}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host1.ID)
+		require.ErrorContains(t, errs[host1.ID], "error GRPC")
+		require.Contains(t, errs, host2.ID)
+		require.ErrorContains(t, errs[host2.ID], "error GRPC")
+
+		require.Contains(t, errs, host3.ID)
+		require.ErrorContains(t, errs[host3.ID], "error Kea")
+		require.Contains(t, errs, host4.ID)
+		require.ErrorContains(t, errs[host4.ID], "error Kea")
+
+		require.Contains(t, errs, host5.ID)
+		require.ErrorContains(t, errs[host5.ID], "error command")
+		require.Contains(t, errs, host6.ID)
+		require.ErrorContains(t, errs[host6.ID], "error command")
+
+		require.Contains(t, errs, host7.ID)
+		require.ErrorContains(t, errs[host7.ID], "error execution")
+		require.Contains(t, errs, host8.ID)
+		require.ErrorContains(t, errs[host8.ID], "error execution")
+
+		require.True(t, ctrl.Satisfied())
+	})
+
+	// Test that the migration keeps the first occurred error for a host.
+	t.Run("multiple errors for a host", func(t *testing.T) {
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
+		daemon3 := createDaemon()
+		daemon4 := createDaemon()
+
+		host1 := createHost(daemon1, daemon2, daemon3)
+		host2 := createHost(daemon1, daemon2, daemon3)
+		host3 := createHost(daemon1, daemon2, daemon3, daemon4)
+		host4 := createHost(daemon1, daemon2, daemon4)
+
+		// The first error is returned as a response to the command.
+		expectReservationAddCommandWithError(daemon1, mockErrors{
+			executionErrs: []error{
+				errors.Errorf("response error"),
+				nil,
+				nil,
+				nil,
+			},
+		}, host1, host2, host3, host4)
+		expectReservationDelCommandNoError(daemon1, host2, host3, host4)
+		expectConfigWriteCommandNoError(daemon1)
+
+		// The second error is returned as a command error.
+		expectReservationAddCommandWithError(daemon2, mockErrors{
+			cmdErrs: []error{
+				errors.Errorf("command error"),
+				nil,
+				nil,
+			},
+		}, host2, host3, host4)
+		expectReservationDelCommandNoError(daemon2, host3, host4)
+		expectConfigWriteCommandNoError(daemon2)
+
+		// The third error is returned as a Kea CA error.
+		expectReservationAddCommandWithError(daemon3, mockErrors{
+			keaErr: errors.Errorf("Kea CA error"),
+		}, host3)
+		expectConfigWriteCommandNoError(daemon3)
+
+		// The fourth error is returned as a Stork agent error.
+		expectReservationAddCommandWithError(daemon4, mockErrors{
+			grpcErr: errors.Errorf("Stork agent error"),
+		}, host4)
+		expectConfigWriteCommandNoError(daemon4)
+
+		migrator.items = []dbmodel.Host{host1, host2, host3, host4}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host1.ID)
+		require.ErrorContains(t, errs[host1.ID], "response error")
+
+		require.Contains(t, errs, host2.ID)
+		require.ErrorContains(t, errs[host2.ID], "command error")
+
+		require.Contains(t, errs, host3.ID)
+		require.ErrorContains(t, errs[host3.ID], "Kea CA error")
+
+		require.Contains(t, errs, host4.ID)
+		require.ErrorContains(t, errs[host4.ID], "Stork agent error")
+
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// The host to migrate exists only in the database. The host should not be
 	// added to the database again nor removed from the configuration.
 	t.Run("host exists only in the database", func(t *testing.T) {
-		host := createHost(daemon1)
+		daemon := createDaemon()
+
+		host := createHost(daemon)
 		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
 
-		expectConfigWriteCommandNoError(daemon1)
+		expectConfigWriteCommandNoError(daemon)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -513,17 +702,20 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.Empty(t, errs)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// The host to migrate is duplicated in the configuration file and the
 	// database. The host should not be added to the database again but removed
 	// from the configuration.
 	t.Run("host exists in the database and the configuration", func(t *testing.T) {
-		host := createHost(daemon1, daemon1)
+		daemon := createDaemon()
+
+		host := createHost(daemon, daemon)
 		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
 
-		expectReservationDelCommandNoError(daemon1, host)
-		expectConfigWriteCommandNoError(daemon1)
+		expectReservationDelCommandNoError(daemon, host)
+		expectConfigWriteCommandNoError(daemon)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -532,16 +724,18 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.Empty(t, errs)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Host cannot be converted to the GRPC API format that interrupts the
 	// command preparation.
 	t.Run("invalid host", func(t *testing.T) {
 		// The host has assigned a subnet that is not assigned to any daemon.
-		host := createHost(daemon1)
+		daemon := createDaemon()
+		host := createHost(daemon)
 		host.Subnet = &dbmodel.Subnet{ID: 42}
 
-		expectConfigWriteCommandNoError(daemon1)
+		expectConfigWriteCommandNoError(daemon)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -554,12 +748,16 @@ func TestMigrate(t *testing.T) {
 			errs[host.ID],
 			"local subnet id not found in host",
 		)
+		require.True(t, ctrl.Satisfied())
 	})
 
 	// Host belonging to multiple daemons cannot be converted to the GRPC API
 	// format that interrupts the command preparation.
 	t.Run("invalid host - multiple daemons", func(t *testing.T) {
 		// The host has assigned a subnet that is not assigned to any daemon.
+		daemon1 := createDaemon()
+		daemon2 := createDaemon()
+
 		host := createHost(daemon1, daemon2)
 		host.Subnet = &dbmodel.Subnet{ID: 42}
 
@@ -577,5 +775,6 @@ func TestMigrate(t *testing.T) {
 			errs[host.ID],
 			"local subnet id not found in host",
 		)
+		require.True(t, ctrl.Satisfied())
 	})
 }
