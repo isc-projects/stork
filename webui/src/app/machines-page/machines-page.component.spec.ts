@@ -2,14 +2,14 @@ import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
-import { BehaviorSubject, of, throwError } from 'rxjs'
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
 
 import { ConfirmationService, Message, MessageService } from 'primeng/api'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
 import { MachinesPageComponent } from './machines-page.component'
-import { AppsVersions, ServicesService, SettingsService } from '../backend'
+import { AppsVersions, GetMachinesServerToken200Response, Machines, ServicesService, SettingsService } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
@@ -55,9 +55,11 @@ describe('MachinesPageComponent', () => {
     let versionServiceStub: Partial<VersionService>
     let routerEventSubject: BehaviorSubject<NavigationEnd>
     let unauthorizedMachinesCountBadge: HTMLElement
-    let getSettingsSpy: any
-    let getMachinesSpy: any
-    let getMachinesServerTokenSpy: any
+    let getSettingsSpy: jasmine.Spy<() => Observable<any>>
+    let getMachinesSpy: jasmine.Spy<
+        (start?: number, limit?: number, text?: string, app?: string, authorized?: boolean) => Observable<Machines>
+    >
+    let getMachinesServerTokenSpy: jasmine.Spy<() => Observable<GetMachinesServerToken200Response>>
     let msgSrvAddSpy: jasmine.Spy<(message: Message) => void>
 
     // prepare responses for api calls
