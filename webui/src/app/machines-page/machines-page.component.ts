@@ -440,8 +440,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 if (m.error) {
                     this.msgSrv.add({
                         severity: 'error',
-                        summary: 'Error getting machine state',
-                        detail: 'Error getting state of machine: ' + m.error,
+                        summary: 'Error getting machine state from Stork agent',
+                        detail:
+                            'State of the machine was retrieved from Stork server, but the server had problems communicating with Stork agent on the machine: ' +
+                            m.error,
                         life: 10000,
                     })
                 } else {
@@ -465,7 +467,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Error getting machine state',
+                    summary: 'Error getting machine state from Stork server',
                     detail: 'Error getting state of machine: ' + msg,
                     life: 10000,
                 })
