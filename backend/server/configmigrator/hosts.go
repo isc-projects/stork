@@ -203,9 +203,18 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 	}
 
 	// Send the command.
-	var response keactrl.ResponseList
+	responses := make([]*keactrl.ResponseList, 0, len(commands))
+	for range commands {
+		responses = append(responses, &keactrl.ResponseList{})
+	}
+
+	responsesAny := make([]any, 0, len(responses))
+	for i := range responses {
+		responsesAny = append(responsesAny, responses[i])
+	}
+
 	result, err := m.connectedAgents.ForwardToKeaOverHTTP(
-		context.Background(), daemon.App, commands, &response,
+		context.Background(), daemon.App, commands, responsesAny...,
 	)
 	if err == nil {
 		err = result.Error
@@ -231,11 +240,17 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 	}
 
 	// Execution error of the command.
-	for i, response := range response {
+	for i, responsePerDaemon := range responses {
 		hostID := commandHostIDs[i]
 		if m.errs[hostID] != nil {
 			continue
 		}
+
+		if len(*responsePerDaemon) == 0 {
+			// Should not happen.
+			continue
+		}
+		response := (*responsePerDaemon)[0]
 
 		if err := response.GetError(); err != nil {
 			m.errs[hostID] = err

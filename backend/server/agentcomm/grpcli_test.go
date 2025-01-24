@@ -254,7 +254,7 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 			Key:     "",
 		}},
 	}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command, command}, &actualResponse)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 	require.NoError(t, cmdsResult.Error)

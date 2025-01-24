@@ -297,7 +297,7 @@ func (agents *connectedAgentsImpl) Ping(ctx context.Context, machine dbmodel.Mac
 	}
 
 	// If there was an error in communication with the agent, there is no need
-	// to check the response because it is probably nil anyway. Return an derror.
+	// to check the response because it is probably nil anyway. Return an error.
 	if err != nil {
 		return errors.Wrapf(err, "failed to ping the Stork agent %s", addrPort)
 	}

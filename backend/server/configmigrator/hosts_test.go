@@ -2,6 +2,7 @@ package configmigrator
 
 import (
 	"bytes"
+	context "context"
 	"encoding/binary"
 	"testing"
 
@@ -32,7 +33,26 @@ func TestMigrate(t *testing.T) {
 	).(*hostMigrator)
 
 	// Assertion helpers.
-	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult, err error, hosts ...dbmodel.Host) {
+	// The errors in communication between the Stork server and Kea DHCP daemon
+	// may occur in many places. Every case generates a different error object.
+	type mockErrors struct {
+		// The error occurred in GRPC communication between the Stork server
+		// and Stork agent.
+		grpcErr error
+		// The error occurred in communication between the Kea CA and Kea DHCP
+		// daemon.
+		keaErr error
+		// The errors occurred in the Kea DHCP daemon before or after executing
+		// the command. It must have the same length as the number of commands
+		// sent to the Kea DHCP daemon.
+		cmdErrs []error
+		// The errors occurred in the Kea DHCP daemon in executing the command
+		// handler. It must have the same length as the number of commands sent
+		// to the Kea DHCP daemon.
+		executionErrs []error
+	}
+
+	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) {
 		var reservations []keactrl.SerializableCommand
 		for _, host := range hosts {
 			reservation, _ := keaconfig.CreateHostCmdsReservation(
@@ -48,14 +68,33 @@ func TestMigrate(t *testing.T) {
 			gomock.Eq(daemon.App),   // App.
 			gomock.Eq(reservations), // Commands.
 			gomock.Any(),            // Responses.
-		).Return(result, err)
+		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
+			for i := range cmdResponses {
+				if i >= len(err.executionErrs) || err.executionErrs[i] == nil {
+					continue
+				}
+
+				r := cmdResponses[i].(*keactrl.ResponseList)
+				require.Empty(t, *r)
+
+				(*r) = append(*r, keactrl.Response{
+					ResponseHeader: keactrl.ResponseHeader{
+						Result: keactrl.ResponseError,
+						Text:   err.executionErrs[i].Error(),
+					},
+				})
+			}
+		}).Return(&agentcomm.KeaCmdsResult{
+			Error:      err.keaErr,
+			CmdsErrors: err.cmdErrs,
+		}, err.grpcErr)
 	}
 
 	expectReservationAddCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
-		expectReservationAddCommandWithError(daemon, &agentcomm.KeaCmdsResult{}, nil, hosts...)
+		expectReservationAddCommandWithError(daemon, mockErrors{}, hosts...)
 	}
 
-	expectReservationDelCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult, hosts ...dbmodel.Host) {
+	expectReservationDelCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) {
 		var reservations []keactrl.SerializableCommand
 
 		for _, host := range hosts {
@@ -72,11 +111,24 @@ func TestMigrate(t *testing.T) {
 			gomock.Eq(daemon.App),   // App.
 			gomock.Eq(reservations), // Commands.
 			gomock.Any(),            // Responses.
-		).Return(result, nil)
+		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
+			for i := range cmdResponses {
+				if len(err.executionErrs) <= i || err.executionErrs[i] == nil {
+					continue
+				}
+
+				r := cmdResponses[i].(*keactrl.Response)
+				r.Result = keactrl.ResponseError
+				r.Text = err.executionErrs[i].Error()
+			}
+		}).Return(&agentcomm.KeaCmdsResult{
+			Error:      err.keaErr,
+			CmdsErrors: err.cmdErrs,
+		}, err.grpcErr)
 	}
 
 	expectReservationDelCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
-		expectReservationDelCommandWithError(daemon, &agentcomm.KeaCmdsResult{}, hosts...)
+		expectReservationDelCommandWithError(daemon, mockErrors{}, hosts...)
 	}
 
 	expectConfigWriteCommandWithError := func(daemon *dbmodel.Daemon, result *agentcomm.KeaCmdsResult) {
@@ -128,35 +180,29 @@ func TestMigrate(t *testing.T) {
 		return host
 	}
 
-	inactiveDaemon := &dbmodel.Daemon{
+	daemonInactive := &dbmodel.Daemon{
 		ID:     0,
 		Name:   dbmodel.DaemonNameDHCPv4,
 		App:    &dbmodel.App{},
 		Active: false,
 	}
 
-	daemon1 := &dbmodel.Daemon{
-		ID:     1,
-		Name:   dbmodel.DaemonNameDHCPv4,
-		App:    &dbmodel.App{},
-		Active: true,
+	var daemons []*dbmodel.Daemon
+
+	for i := 0; i < 4; i++ {
+		daemon := &dbmodel.Daemon{
+			ID:     int64(i + 1),
+			Name:   dbmodel.DaemonNameDHCPv4,
+			App:    &dbmodel.App{},
+			Active: true,
+		}
+		daemons = append(daemons, daemon)
 	}
 
-	daemon2 := &dbmodel.Daemon{
-		ID:     2,
-		Name:   dbmodel.DaemonNameDHCPv4,
-		App:    &dbmodel.App{},
-		Active: true,
-	}
-
-	daemon3 := &dbmodel.Daemon{
-		ID:     3,
-		Name:   dbmodel.DaemonNameDHCPv4,
-		App:    &dbmodel.App{},
-		Active: true,
-	}
-
-	_ = daemon2
+	daemon1 := daemons[0]
+	daemon2 := daemons[1]
+	daemon3 := daemons[2]
+	daemon4 := daemons[3]
 
 	// Tests migrating a single host with no errors.
 	t.Run("single host, single daemon, all OK", func(t *testing.T) {
@@ -177,7 +223,7 @@ func TestMigrate(t *testing.T) {
 
 	// Tests that the inactive daemon is skipped and generates no API calls.
 	t.Run("inactive daemon", func(t *testing.T) {
-		host := createHost(inactiveDaemon)
+		host := createHost(daemonInactive)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -265,30 +311,41 @@ func TestMigrate(t *testing.T) {
 		host4 := createHost(daemon2)
 		host5 := createHost(daemon3)
 		host6 := createHost(daemon3)
+		host7 := createHost(daemon4)
+		host8 := createHost(daemon4)
 
 		// Kea CA returns an error.
-		expectReservationAddCommandWithError(daemon1, &agentcomm.KeaCmdsResult{
-			Error: errors.Errorf("error adding reservation"),
-		}, nil, host1, host2)
+		expectReservationAddCommandWithError(daemon1, mockErrors{
+			grpcErr: errors.Errorf("error adding reservation"),
+		}, host1, host2)
 		expectConfigWriteCommandNoError(daemon1)
 
 		// The Stork agent return an error.
-		expectReservationAddCommandWithError(daemon2,
-			&agentcomm.KeaCmdsResult{},
-			errors.Errorf("error transferring reservation"),
-			host3, host4,
-		)
+		expectReservationAddCommandWithError(daemon2, mockErrors{
+			keaErr: errors.Errorf("error transferring reservation"),
+		}, host3, host4)
 		expectConfigWriteCommandNoError(daemon2)
 
 		// The Kea daemon returns an error while processing the add command.
 		// The 6th host should be still processed.
-		expectReservationAddCommandWithError(daemon3, &agentcomm.KeaCmdsResult{
-			CmdsErrors: []error{nil, errors.Errorf("error executing command")},
-		}, nil, host5, host6)
+		expectReservationAddCommandWithError(daemon3, mockErrors{
+			cmdErrs: []error{nil, errors.Errorf("error executing command")},
+		}, host5, host6)
 		expectReservationDelCommandNoError(daemon3, host5)
 		expectConfigWriteCommandNoError(daemon3)
 
-		migrator.items = []dbmodel.Host{host1, host2, host3, host4, host5, host6}
+		// The Kea daemon processed the commands but a result of one of them
+		// is an error.
+		expectReservationAddCommandWithError(daemon4, mockErrors{
+			executionErrs: []error{nil, errors.Errorf("error as result")},
+			// cmdErrs: []error{nil, errors.Errorf("error as result")},
+		}, host7, host8)
+		expectReservationDelCommandNoError(daemon4, host7)
+		expectConfigWriteCommandNoError(daemon4)
+
+		migrator.items = []dbmodel.Host{
+			host1, host2, host3, host4, host5, host6, host7, host8,
+		}
 
 		// Act
 		errs := migrator.Migrate()
@@ -307,6 +364,10 @@ func TestMigrate(t *testing.T) {
 		require.NotContains(t, errs, host5.ID)
 		require.Contains(t, errs, host6.ID)
 		require.ErrorContains(t, errs[host6.ID], "error executing command")
+
+		require.NotContains(t, errs, host7.ID)
+		require.Contains(t, errs, host8.ID)
+		require.ErrorContains(t, errs[host8.ID], "error as result")
 	})
 
 	// Test that if the error occurs for a host that belongs to multiple
@@ -315,9 +376,9 @@ func TestMigrate(t *testing.T) {
 	t.Run("error adding reservation - multiple daemons", func(t *testing.T) {
 		host := createHost(daemon1, daemon2, daemon3)
 
-		expectReservationAddCommandWithError(daemon1, &agentcomm.KeaCmdsResult{
-			CmdsErrors: []error{errors.Errorf("error adding reservation")},
-		}, nil, host)
+		expectReservationAddCommandWithError(daemon1, mockErrors{
+			cmdErrs: []error{errors.Errorf("error adding reservation")},
+		}, host)
 
 		expectConfigWriteCommandNoError(daemon1)
 		expectConfigWriteCommandNoError(daemon2)
