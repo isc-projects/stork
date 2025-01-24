@@ -113,13 +113,19 @@ func TestMigrate(t *testing.T) {
 			gomock.Any(),            // Responses.
 		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
 			for i := range cmdResponses {
-				if len(err.executionErrs) <= i || err.executionErrs[i] == nil {
+				if i >= len(err.executionErrs) || err.executionErrs[i] == nil {
 					continue
 				}
 
-				r := cmdResponses[i].(*keactrl.Response)
-				r.Result = keactrl.ResponseError
-				r.Text = err.executionErrs[i].Error()
+				r := cmdResponses[i].(*keactrl.ResponseList)
+				require.Empty(t, *r)
+
+				(*r) = append(*r, keactrl.Response{
+					ResponseHeader: keactrl.ResponseHeader{
+						Result: keactrl.ResponseError,
+						Text:   err.executionErrs[i].Error(),
+					},
+				})
 			}
 		}).Return(&agentcomm.KeaCmdsResult{
 			Error:      err.keaErr,
@@ -299,11 +305,11 @@ func TestMigrate(t *testing.T) {
 
 	// Test that if the error occurs during adding a reservation to the
 	// database, it isn't removed from the configuration.
-	// Test considers three error reasons: an error occurred in the Stork
-	// agent, an error occurred in the Kea CA, and an error occurred in the
-	// DHCP daemon. The errors occurred in the Stork agent and the Kea CA
-	// should cause all hosts from a given daemon to be marked as failed with
-	// the same error.
+	// Test considers all error reasons: an error occurred in the Stork
+	// agent, an error occurred in the Kea CA, an error occurred in the
+	// DHCP daemon, and an error returned as a command response. The errors
+	// occurred in the Stork agent and the Kea CA should cause all hosts from
+	// a given daemon to be marked as failed with the same error.
 	t.Run("error adding reservation", func(t *testing.T) {
 		host1 := createHost(daemon1)
 		host2 := createHost(daemon1)
@@ -314,20 +320,20 @@ func TestMigrate(t *testing.T) {
 		host7 := createHost(daemon4)
 		host8 := createHost(daemon4)
 
-		// Kea CA returns an error.
+		// Stork agent returns an error.
 		expectReservationAddCommandWithError(daemon1, mockErrors{
 			grpcErr: errors.Errorf("error adding reservation"),
 		}, host1, host2)
 		expectConfigWriteCommandNoError(daemon1)
 
-		// The Stork agent return an error.
+		// The Kea CA return an error.
 		expectReservationAddCommandWithError(daemon2, mockErrors{
 			keaErr: errors.Errorf("error transferring reservation"),
 		}, host3, host4)
 		expectConfigWriteCommandNoError(daemon2)
 
 		// The Kea daemon returns an error while processing the add command.
-		// The 6th host should be still processed.
+		// One host should be still processed.
 		expectReservationAddCommandWithError(daemon3, mockErrors{
 			cmdErrs: []error{nil, errors.Errorf("error executing command")},
 		}, host5, host6)
@@ -338,7 +344,6 @@ func TestMigrate(t *testing.T) {
 		// is an error.
 		expectReservationAddCommandWithError(daemon4, mockErrors{
 			executionErrs: []error{nil, errors.Errorf("error as result")},
-			// cmdErrs: []error{nil, errors.Errorf("error as result")},
 		}, host7, host8)
 		expectReservationDelCommandNoError(daemon4, host7)
 		expectConfigWriteCommandNoError(daemon4)
@@ -368,6 +373,80 @@ func TestMigrate(t *testing.T) {
 		require.NotContains(t, errs, host7.ID)
 		require.Contains(t, errs, host8.ID)
 		require.ErrorContains(t, errs[host8.ID], "error as result")
+	})
+
+	// Test that if the error occurs during deleting a reservation from the
+	// the configuration, the migration continues.
+	// Test considers all error reasons: an error occurred in the Stork
+	// agent, an error occurred in the Kea CA, an error occurred in the
+	// DHCP daemon, and an error returned as a command response. The errors
+	// occurred in the Stork agent and the Kea CA should cause all hosts from
+	// a given daemon to be marked as failed with the same error.
+	t.Run("error deleting reservation", func(t *testing.T) {
+		host1 := createHost(daemon1)
+		host2 := createHost(daemon1)
+		host3 := createHost(daemon2)
+		host4 := createHost(daemon2)
+		host5 := createHost(daemon3)
+		host6 := createHost(daemon3)
+		host7 := createHost(daemon4)
+		host8 := createHost(daemon4)
+
+		// Stork agent returns an error.
+		expectReservationAddCommandNoError(daemon1, host1, host2)
+		expectReservationDelCommandWithError(daemon1, mockErrors{
+			grpcErr: errors.Errorf("error GRPC"),
+		}, host1, host2)
+		expectConfigWriteCommandNoError(daemon1)
+
+		// The Kea CA return an error.
+		expectReservationAddCommandNoError(daemon2, host3, host4)
+		expectReservationDelCommandWithError(daemon2, mockErrors{
+			keaErr: errors.Errorf("error Kea CA"),
+		}, host3, host4)
+		expectConfigWriteCommandNoError(daemon2)
+
+		// The Kea daemon returns an error while processing the add command.
+		// One host should be still processed.
+		expectReservationAddCommandNoError(daemon3, host5, host6)
+		expectReservationDelCommandWithError(daemon3, mockErrors{
+			cmdErrs: []error{nil, errors.Errorf("error Kea daemon")},
+		}, host5, host6)
+		expectConfigWriteCommandNoError(daemon3)
+
+		// The Kea daemon processed the commands but a result of one of them
+		// is an error.
+		expectReservationAddCommandNoError(daemon4, host7, host8)
+		expectReservationDelCommandWithError(daemon4, mockErrors{
+			executionErrs: []error{nil, errors.Errorf("error is result")},
+		}, host7, host8)
+		expectConfigWriteCommandNoError(daemon4)
+
+		migrator.items = []dbmodel.Host{
+			host1, host2, host3, host4, host5, host6, host7, host8,
+		}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host1.ID)
+		require.ErrorContains(t, errs[host1.ID], "error GRPC")
+		require.Contains(t, errs, host2.ID)
+		require.ErrorContains(t, errs[host2.ID], "error GRPC")
+
+		require.Contains(t, errs, host3.ID)
+		require.ErrorContains(t, errs[host3.ID], "error Kea CA")
+		require.Contains(t, errs, host4.ID)
+		require.ErrorContains(t, errs[host4.ID], "error Kea CA")
+
+		require.NotContains(t, errs, host5.ID)
+		require.Contains(t, errs, host6.ID)
+		require.ErrorContains(t, errs[host6.ID], "error Kea daemon")
+
+		require.NotContains(t, errs, host7.ID)
+		require.Contains(t, errs, host8.ID)
+		require.ErrorContains(t, errs[host8.ID], "error is result")
 	})
 
 	// Test that if the error occurs for a host that belongs to multiple
