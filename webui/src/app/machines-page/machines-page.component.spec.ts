@@ -9,7 +9,7 @@ import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
 
 import { MachinesPageComponent } from './machines-page.component'
-import { AppsVersions, GetMachinesServerToken200Response, Machines, ServicesService, SettingsService } from '../backend'
+import { AppsVersions, GetMachinesServerToken200Response, Machine, ServicesService, SettingsService } from '../backend'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
@@ -57,13 +57,19 @@ describe('MachinesPageComponent', () => {
     let unauthorizedMachinesCountBadge: HTMLElement
     let getSettingsSpy: jasmine.Spy<() => Observable<any>>
     let getMachinesSpy: jasmine.Spy<
-        (start?: number, limit?: number, text?: string, app?: string, authorized?: boolean) => Observable<Machines>
+        (
+            start?: number,
+            limit?: number,
+            text?: string,
+            app?: string,
+            authorized?: boolean
+        ) => Observable<{ items?: Array<Partial<Machine>>; total?: number }>
     >
     let getMachinesServerTokenSpy: jasmine.Spy<() => Observable<GetMachinesServerToken200Response>>
     let msgSrvAddSpy: jasmine.Spy<(message: Message) => void>
 
     // prepare responses for api calls
-    const getUnauthorizedMachinesResp: any = {
+    const getUnauthorizedMachinesResp = {
         items: [
             { hostname: 'aaa', id: 1, address: 'addr1', authorized: false },
             { hostname: 'bbb', id: 2, address: 'addr2', authorized: false },
@@ -71,7 +77,7 @@ describe('MachinesPageComponent', () => {
         ],
         total: 3,
     }
-    const getAuthorizedMachinesResp: any = {
+    const getAuthorizedMachinesResp = {
         items: [
             { hostname: 'zzz', id: 4, authorized: true },
             { hostname: 'xxx', id: 5, authorized: true },
@@ -82,7 +88,7 @@ describe('MachinesPageComponent', () => {
         items: [...getUnauthorizedMachinesResp.items, ...getAuthorizedMachinesResp.items],
         total: 5,
     }
-    const serverTokenResp: any = { token: 'ABC' }
+    const serverTokenResp = { token: 'ABC' }
 
     beforeEach(async () => {
         versionServiceStub = {
