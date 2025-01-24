@@ -9,9 +9,12 @@
                 There is a <em>Authorized</em> / <em>Unauthorized</em> switch button to show authorized and unauthorized
                 Machines respectively.
                 <ng-container *ngIf="!showAuthorized && unauthorizedMachinesCount > 0"
-                    >Unauthorized machines were registered using the agent token-based registration method. To authorize
-                    a machine, click action menu button and then <em>Authorize</em>, or select the machine with the
-                    checkbox and click the <em>Authorize selected</em> button.</ng-container
+                    >Unauthorized machines were registered using the agent token-based registration method. This view
+                    allows to authorize one or more machines at once. Before authorizing a machine, ensure that the
+                    agent token displayed on this list is the same as the agent token in the agent’s logs or the
+                    <code>/var/lib/stork-agent/tokens/agent-token.txt</code> file. If they match, click on the
+                    <em>Action</em> menu button on the right and then <em>Authorize</em>, or select the machine with the
+                    checkbox on the left and click the <em>Authorize selected</em> button.</ng-container
                 >
             </p>
         </ng-container>
