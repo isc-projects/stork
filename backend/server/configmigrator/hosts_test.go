@@ -473,20 +473,29 @@ func TestMigrate(t *testing.T) {
 		require.ErrorContains(t, errs[host.ID], "error adding reservation")
 	})
 
-	t.Run("error deleting reservation", func(t *testing.T) {
-		t.Fatal("not implemented")
-	})
+	// Test that if the error occurs for a host that belongs to multiple
+	// daemons, the next commands for this host are no longer created for
+	// further processed daemons.
+	t.Run("error removing reservation - multiple daemons", func(t *testing.T) {
+		host := createHost(daemon1, daemon2, daemon3)
 
-	t.Run("error deleting reservation - multiple daemons", func(t *testing.T) {
-		t.Fatal("not implemented")
-	})
+		expectReservationAddCommandNoError(daemon1, host)
+		expectReservationDelCommandWithError(daemon1, mockErrors{
+			cmdErrs: []error{errors.Errorf("error adding reservation")},
+		}, host)
 
-	t.Run("error writing configuration", func(t *testing.T) {
-		t.Fatal("not implemented")
-	})
+		expectConfigWriteCommandNoError(daemon1)
+		expectConfigWriteCommandNoError(daemon2)
+		expectConfigWriteCommandNoError(daemon3)
 
-	t.Run("error writing configuration - multiple daemons", func(t *testing.T) {
-		t.Fatal("not implemented")
+		migrator.items = []dbmodel.Host{host}
+
+		// Act
+		errs := migrator.Migrate()
+
+		// Assert
+		require.Contains(t, errs, host.ID)
+		require.ErrorContains(t, errs[host.ID], "error adding reservation")
 	})
 
 	// The host to migrate exists only in the database. The host should not be
