@@ -41,7 +41,8 @@ func TestViewGetZoneCount(t *testing.T) {
 	}
 	view := NewView("foo", zones)
 	require.NotNil(t, view)
-	require.EqualValues(t, 2, view.GetZoneCount())
+	zoneCount, _ := view.GetZoneCount()
+	require.EqualValues(t, 2, zoneCount)
 }
 
 // Test instantiating views.

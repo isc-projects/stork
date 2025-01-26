@@ -210,8 +210,9 @@ message ReceiveZonesReq {
 
 message Zone {
   string name = 1;
-	string class = 2;
-	int64 serial = 3;
-	string type = 4;
-	int64 loaded = 5;
+  string class = 2;
+  int64 serial = 3;
+  string type = 4;
+  int64 loaded = 5;string view = 6;
+  int64 viewZoneCount = 7;
 }

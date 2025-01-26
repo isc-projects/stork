@@ -192,23 +192,23 @@ H/Njg8CqtOWDeTVICuUq60wkbEkxYg==
 func TestConnectingToAgent(t *testing.T) {
 	settings := AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}
-	agents := NewConnectedAgents(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM)
+	agents := newConnectedAgentsImpl(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM)
 	defer agents.Shutdown()
 
 	// connect one agent and check if it is in agents map
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
-	_, ok := agents.AgentsMap["127.0.0.1:8080"]
+	_, ok := agents.agentsStates["127.0.0.1:8080"]
 	require.True(t, ok)
 
 	// Initially, there should be no stats.
 	require.NotNil(t, agent)
-	require.Empty(t, agent.Stats.agentCommErrors)
-	require.Empty(t, agent.Stats.keaCommErrors)
-	require.Empty(t, agent.Stats.bind9CommErrors)
+	require.Empty(t, agent.stats.agentCommErrors)
+	require.Empty(t, agent.stats.keaCommErrors)
+	require.Empty(t, agent.stats.bind9CommErrors)
 
 	// Let's modify some stats.
-	agent.Stats.agentCommErrors["foo"] = 1
+	agent.stats.agentCommErrors["foo"] = 1
 
 	// We should be able to get pointer to stats via the convenience
 	// function.
@@ -259,4 +259,11 @@ func TestVerifyPeerCorrectCertificate(t *testing.T) {
 	// Assert
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
+}
+
+// Test that the agent client can be instantiated.
+func TestConnectedAgentsConnectorCreateClient(t *testing.T) {
+	connectedAgentsConnector := &connectedAgentsConnectorImpl{}
+	client := connectedAgentsConnector.createClient()
+	require.NotNil(t, client)
 }

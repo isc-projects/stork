@@ -2,6 +2,7 @@ package storkutil
 
 import (
 	"bytes"
+	"slices"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -50,6 +51,14 @@ func CompareNames(name1, name2 string) int {
 		// name. It is a child zone.
 		return 1
 	}
+}
+
+// Converts DNS name to the name with labels ordered backwards. For example:
+// zone.example.org is converted to org.example.zone.
+func ConvertNameToRname(name string) string {
+	labels := dns.SplitDomainName(name)
+	slices.Reverse(labels)
+	return strings.Join(labels, ".")
 }
 
 // Represents Fully Qualified Domain Name (FQDN).

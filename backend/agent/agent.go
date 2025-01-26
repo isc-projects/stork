@@ -16,8 +16,11 @@ import (
 	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/security/advancedtls"
+	"google.golang.org/grpc/status"
 
 	// Registers the gzip compression in the internal init() call.
 	// The server chooses the compression algorithm based on the client's request.
@@ -480,6 +483,7 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 	if inventory == nil {
 		return nil
 	}
+	// Set filtering rules based on the request.
 	var filter *bind9stats.ZoneFilter
 	if req.ViewName != "" || req.Limit > 0 || req.LoadedAfter > 0 || req.LowerBound != "" {
 		filter = bind9stats.NewZoneFilter()
@@ -493,24 +497,54 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 			filter.SetLoadedAfter(time.Unix(req.LoadedAfter, 0))
 		}
 	}
-	ctx := context.Background()
-	zones, err := inventory.receiveZones(ctx, filter)
+	var (
+		notInitedError *zoneInventoryNotInitedError
+		busyError      *zoneInventoryBusyError
+	)
+	zones, err := inventory.receiveZones(context.Background(), filter)
 	if err != nil {
-		return err
+		// Some of the errors require special handling so the client can
+		// interpret them and take specific actions (e.g., try later).
+		switch {
+		case errors.As(err, &notInitedError):
+			st := status.New(codes.FailedPrecondition, err.Error())
+			ds, err := st.WithDetails(&errdetails.ErrorInfo{
+				Reason: "ZONE_INVENTORY_NOT_INITED",
+			})
+			if err != nil {
+				return st.Err()
+			}
+			return ds.Err()
+		case errors.As(err, &busyError):
+			st := status.New(codes.Unavailable, err.Error())
+			ds, err := st.WithDetails(&errdetails.ErrorInfo{
+				Reason: "ZONE_INVENTORY_BUSY_ERROR",
+			})
+			if err != nil {
+				return st.Err()
+			}
+			return ds.Err()
+		default:
+			return status.Error(codes.Internal, err.Error())
+		}
 	}
+	// Return the zones over the channel.
 	for result := range zones {
 		if result.err == nil {
 			zone := result.zone
 			apiZone := &agentapi.Zone{
-				Name:   zone.Name(),
-				Class:  zone.Class,
-				Serial: zone.Serial,
-				Type:   zone.Type,
-				Loaded: zone.Loaded.Unix(),
+				Name:          zone.Name(),
+				Class:         zone.Class,
+				Serial:        zone.Serial,
+				Type:          zone.Type,
+				Loaded:        zone.Loaded.Unix(),
+				View:          zone.ViewName,
+				ViewZoneCount: zone.TotalZoneCount,
 			}
 			err = server.Send(apiZone)
 			if err != nil {
-				return err
+				st := status.New(codes.Aborted, err.Error())
+				return st.Err()
 			}
 		}
 	}

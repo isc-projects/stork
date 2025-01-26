@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"iter"
 	"net"
 	"strconv"
 	"sync"
@@ -22,16 +23,214 @@ import (
 	"isc.org/stork/server/eventcenter"
 )
 
+var _ connectedAgentsConnector = (*connectedAgentsConnectorImpl)(nil)
+
 // Settings specific to communication with Agents.
 type AgentsSettings struct{}
 
-// Runtime information about the agent, e.g. connection, communication
-// statistics.
-type Agent struct {
-	Address  string
-	Client   agentapi.AgentClient
-	GrpcConn *grpc.ClientConn
-	Stats    *AgentCommStats
+// Interface for interacting with Agents via gRPC.
+type ConnectedAgents interface {
+	Shutdown()
+	GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper
+	Ping(ctx context.Context, machine dbmodel.MachineTag) error
+	GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error)
+	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
+	ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
+	ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
+	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
+	ReceiveZones(ctx context.Context, app ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error]
+}
+
+// Interface representing a connector to a selected agent over gRPC.
+// The connectedAgentsConnectorImpl is a default implementation for this
+// interface used by the connectedAgentsImpl. The connector can be replaced
+// with a mock in the unit tests to eliminate actual gRPC communication.
+type connectedAgentsConnector interface {
+	// Attempts to establish connection with the agent. The connection
+	// should be cached by the connector and reused when possible.
+	connect() error
+	// Closes established connection with the agent.
+	close()
+	// Creates and returns a gRPC client using the established connection.
+	// The client typically is not cached for future use because it is
+	// created using a lightweight call with an already established connection.
+	// Several clients can use the same underlying connection.
+	createClient() agentapi.AgentClient
+}
+
+// Default implementation of the connector.
+type connectedAgentsConnectorImpl struct {
+	agentAddress  string
+	serverCertPEM []byte
+	serverKeyPEM  []byte
+	caCertPEM     []byte
+	conn          *grpc.ClientConn
+}
+
+// Connects or re-connects using specified agent address, certs and keys.
+// It stores the established connection.
+func (impl *connectedAgentsConnectorImpl) connect() error {
+	impl.close()
+
+	// Prepare TLS credentials.
+	creds, err := prepareTLSCreds(impl.caCertPEM, impl.serverCertPEM, impl.serverKeyPEM)
+	if err != nil {
+		return errors.WithMessage(err, "problem preparing TLS credentials")
+	}
+
+	// Setup new connection.
+	conn, err := grpc.NewClient(
+		impl.agentAddress,
+		grpc.WithTransportCredentials(creds),
+	)
+	if err != nil {
+		return errors.Wrapf(err, "problem to dial to agent %s", impl.agentAddress)
+	}
+	impl.conn = conn
+	return nil
+}
+
+// Closes an existing connection if it exists.
+func (impl *connectedAgentsConnectorImpl) close() {
+	if impl.conn != nil {
+		impl.conn.Close()
+		impl.conn = nil
+	}
+}
+
+// Instantiates gRPC client using established connection.
+func (impl *connectedAgentsConnectorImpl) createClient() agentapi.AgentClient {
+	return agentapi.NewAgentClient(impl.conn)
+}
+
+// Runtime information about the connected agent.
+type agentState struct {
+	address   string
+	connector connectedAgentsConnector
+	stats     *AgentCommStats
+}
+
+// Agents management map. It tracks Agents currently connected to the Server.
+type connectedAgentsImpl struct {
+	settings           *AgentsSettings
+	eventCenter        eventcenter.EventCenter
+	agentsStates       map[string]*agentState
+	commLoopReqs       chan *commLoopReq
+	doneCommLoop       chan bool
+	connectorFactoryFn func(string) connectedAgentsConnector
+	wg                 *sync.WaitGroup
+	mutex              sync.RWMutex
+}
+
+// Returns an exported interface of ConnectedAgents with the underlying
+// connectedAgentsImpl instance. This interface is to be used from other
+// packages in the Stork server that need to communicate with the agents.
+// This interface hides implementation details from external packages.
+func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM []byte) ConnectedAgents {
+	return newConnectedAgentsImpl(settings, eventCenter, caCertPEM, serverCertPEM, serverKeyPEM)
+}
+
+// Instantiates connectedAgentsImpl. It is used by the NewConnectedAgents
+// function and by the unit tests of the agentcomm package.
+func newConnectedAgentsImpl(settings *AgentsSettings, eventCenter eventcenter.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM []byte) *connectedAgentsImpl {
+	agents := connectedAgentsImpl{
+		settings:     settings,
+		eventCenter:  eventCenter,
+		agentsStates: make(map[string]*agentState),
+		commLoopReqs: make(chan *commLoopReq),
+		doneCommLoop: make(chan bool),
+		connectorFactoryFn: func(agentAddress string) connectedAgentsConnector {
+			return &connectedAgentsConnectorImpl{
+				agentAddress:  agentAddress,
+				caCertPEM:     caCertPEM,
+				serverCertPEM: serverCertPEM,
+				serverKeyPEM:  serverKeyPEM,
+			}
+		},
+		wg:    &sync.WaitGroup{},
+		mutex: sync.RWMutex{},
+	}
+
+	agents.wg.Add(1)
+	go agents.communicationLoop()
+
+	return &agents
+}
+
+// Replaces the default connector factory with a custom one. It can be
+// used to mock gRPC calls.
+func (agents *connectedAgentsImpl) withConnectorFactory(factory func(string) connectedAgentsConnector) *connectedAgentsImpl {
+	agents.connectorFactoryFn = factory
+	return agents
+}
+
+// Stops communication with all agents.
+func (agents *connectedAgentsImpl) Shutdown() {
+	log.Printf("Stopping communication with agents")
+	for _, agent := range agents.agentsStates {
+		agent.connector.close()
+	}
+
+	close(agents.commLoopReqs)
+	agents.doneCommLoop <- true
+	agents.wg.Wait()
+	log.Printf("Stopped communication with agents")
+}
+
+// Get Agent object by its address.
+func (agents *connectedAgentsImpl) getConnectedAgent(address string) (*agentState, error) {
+	// Look for agent in Agents map and if found then return it
+	agent, ok := agents.agentsStates[address]
+	if ok {
+		return agent, nil
+	}
+	// Agent not found so allocate agent and prepare connection
+	agent = &agentState{
+		address:   address,
+		stats:     NewAgentStats(),
+		connector: agents.connectorFactoryFn(address),
+	}
+	// Avoid a race with GetConnectedAgentStats().
+	agents.mutex.Lock()
+	agents.agentsStates[address] = agent
+	agents.mutex.Unlock()
+
+	err := agent.connector.connect()
+	if err != nil {
+		return nil, err
+	}
+
+	log.WithFields(log.Fields{
+		"address": address,
+	}).Info("Connecting to new agent")
+
+	return agent, nil
+}
+
+// Returns statistics for the connected agent. The statistics include number
+// of errors to communicate with the agent and the number of errors to
+// communicate with the apps behind the agent.
+func (agents *connectedAgentsImpl) getConnectedAgentStats(address string, port int64) *AgentCommStats {
+	if port != 0 {
+		address = net.JoinHostPort(address, strconv.FormatInt(port, 10))
+	}
+	// Avoid a race with GetConnectedAgent().
+	agents.mutex.RLock()
+	defer agents.mutex.RUnlock()
+	if agent, ok := agents.agentsStates[address]; ok {
+		return agent.stats
+	}
+	return nil
+}
+
+// Returns a wrapper for statistics. The wrapper can be used to safely
+// access the returned statistics for reading in other packages.
+func (agents *connectedAgentsImpl) GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper {
+	stats := agents.getConnectedAgentStats(address, port)
+	if stats == nil {
+		return nil
+	}
+	return NewAgentCommStatsWrapper(stats)
 }
 
 // The GRPC client callback to perform extra verification of the peer
@@ -93,151 +292,4 @@ func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials
 	}
 
 	return creds, nil
-}
-
-func makeGrpcConnection(agentAddress string, caCertPEM, serverCertPEM, serverKeyPEM []byte) (agentapi.AgentClient, *grpc.ClientConn, error) {
-	// Prepare TLS credentials
-	creds, err := prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM)
-	if err != nil {
-		return nil, nil, errors.WithMessage(err, "problem preparing TLS credentials")
-	}
-
-	// Setup new connection
-	conn, err := grpc.NewClient(
-		agentAddress,
-		grpc.WithTransportCredentials(creds),
-	)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "problem to dial to agent %s", agentAddress)
-	}
-
-	return agentapi.NewAgentClient(conn), conn, nil
-}
-
-// Prepare gRPC connection to agent.
-func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []byte) error {
-	// If there is any old connection then clean it up
-	if agent.GrpcConn != nil {
-		agent.GrpcConn.Close()
-	}
-	var err error
-	agent.Client, agent.GrpcConn, err = makeGrpcConnection(agent.Address, caCertPEM, serverCertPEM, serverKeyPEM)
-	return err
-}
-
-// Interface for interacting with Agents via gRPC.
-type ConnectedAgents interface {
-	Shutdown()
-	GetConnectedAgent(address string) (*Agent, error)
-	GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper
-	Ping(ctx context.Context, machine dbmodel.MachineTag) error
-	GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error)
-	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
-	ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
-	ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
-	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
-	ReceiveZones(ctx context.Context, app *dbmodel.App, filter *bind9stats.ZoneFilter, zoneFunc func(zone *bind9stats.ExtendedZone, err error)) error
-}
-
-// Agents management map. It tracks Agents currently connected to the Server.
-type connectedAgentsData struct {
-	Settings      *AgentsSettings
-	EventCenter   eventcenter.EventCenter
-	AgentsMap     map[string]*Agent
-	CommLoopReqs  chan *commLoopReq
-	DoneCommLoop  chan bool
-	Wg            *sync.WaitGroup
-	serverCertPEM []byte
-	serverKeyPEM  []byte
-	caCertPEM     []byte
-	mutex         sync.RWMutex
-}
-
-// Create new ConnectedAgents objects.
-func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM []byte) *connectedAgentsData {
-	agents := connectedAgentsData{
-		Settings:      settings,
-		EventCenter:   eventCenter,
-		AgentsMap:     make(map[string]*Agent),
-		CommLoopReqs:  make(chan *commLoopReq),
-		DoneCommLoop:  make(chan bool),
-		Wg:            &sync.WaitGroup{},
-		caCertPEM:     caCertPEM,
-		serverCertPEM: serverCertPEM,
-		serverKeyPEM:  serverKeyPEM,
-		mutex:         sync.RWMutex{},
-	}
-
-	agents.Wg.Add(1)
-	go agents.communicationLoop()
-
-	return &agents
-}
-
-// Shutdown agents in agents map.
-func (agents *connectedAgentsData) Shutdown() {
-	log.Printf("Stopping communication with agents")
-	for _, agent := range agents.AgentsMap {
-		agent.GrpcConn.Close()
-	}
-
-	close(agents.CommLoopReqs)
-	agents.DoneCommLoop <- true
-	agents.Wg.Wait()
-	log.Printf("Stopped communication with agents")
-}
-
-// Get Agent object by its address.
-func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, error) {
-	// Look for agent in Agents map and if found then return it
-	agent, ok := agents.AgentsMap[address]
-	if ok {
-		return agent, nil
-	}
-	// Agent not found so allocate agent and prepare connection
-	agent = &Agent{
-		Address: address,
-		Stats:   NewAgentStats(),
-	}
-	// Avoid a race with GetConnectedAgentStats().
-	agents.mutex.Lock()
-	agents.AgentsMap[address] = agent
-	agents.mutex.Unlock()
-
-	err := agent.MakeGrpcConnection(agents.caCertPEM, agents.serverCertPEM, agents.serverKeyPEM)
-	if err != nil {
-		return nil, err
-	}
-
-	log.WithFields(log.Fields{
-		"address": address,
-	}).Info("Connecting to new agent")
-
-	return agent, nil
-}
-
-// Returns statistics for the connected agent. The statistics include number
-// of errors to communicate with the agent and the number of errors to
-// communicate with the apps behind the agent.
-func (agents *connectedAgentsData) getConnectedAgentStats(address string, port int64) *AgentCommStats {
-	if port != 0 {
-		address = net.JoinHostPort(address, strconv.FormatInt(port, 10))
-	}
-	// Avoid a race with GetConnectedAgent().
-	agents.mutex.RLock()
-	defer agents.mutex.RUnlock()
-	if agent, ok := agents.AgentsMap[address]; ok {
-		return agent.Stats
-	}
-	return nil
-}
-
-// Returns a wrapper for statistics. The wrapper can be used to safely
-// access the returned statistics for reading in other packages.
-func (agents *connectedAgentsData) GetConnectedAgentStatsWrapper(address string, port int64) *AgentCommStatsWrapper {
-	stats := agents.getConnectedAgentStats(address, port)
-	if stats == nil {
-		return nil
-	}
-	return NewAgentCommStatsWrapper(stats)
 }

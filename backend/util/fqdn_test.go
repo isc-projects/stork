@@ -19,6 +19,12 @@ func TestCompareNames(t *testing.T) {
 	require.Zero(t, CompareNames("", ""))
 }
 
+// Tests converting names to a the names with labels ordered backwards.
+func TestConvertNameToRname(t *testing.T) {
+	require.Equal(t, "org.example.zone", ConvertNameToRname("zone.example.org"))
+	require.Empty(t, ConvertNameToRname(""))
+}
+
 // Test parsing a full FQDN.
 func TestParseFullFqdn(t *testing.T) {
 	fqdn, err := ParseFqdn("foo.example.org.")

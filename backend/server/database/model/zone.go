@@ -1,77 +1,57 @@
 package dbmodel
 
 import (
+	"context"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/go-pg/pg/v10"
+	"github.com/miekg/dns"
+	"github.com/pkg/errors"
+	"isc.org/stork/appdata/bind9stats"
+	dbops "isc.org/stork/server/database"
+	storkutil "isc.org/stork/util"
 )
 
-type BatchUpsert[T any] struct {
-	db        pg.DBI
-	items     *[]T
-	maxLength int
-	upsertFn  func(pg.DBI, ...T) error
-}
-
-func NewBatchUpsert[T any](db pg.DBI, maxLength int, upsertFn func(pg.DBI, ...T) error) (batch *BatchUpsert[T]) {
-	return &BatchUpsert[T]{
-		db:        db,
-		items:     &[]T{},
-		maxLength: maxLength,
-		upsertFn:  upsertFn,
-	}
-}
-
-func (buffer *BatchUpsert[T]) Add(item T, done bool) error {
-	*buffer.items = append(*buffer.items, item)
-	if (done || len(*buffer.items) >= buffer.maxLength) && len(*buffer.items) > 0 {
-		if err := buffer.upsertFn(buffer.db, *buffer.items...); err != nil {
-			return err
-		}
-		*buffer.items = []T{}
-	}
-	return nil
-}
-
+// Represents a zone in a database. The same zone can be shared between
+// many DNS servers. Associations with different servers is are created
+// by adding LocalZone instances to the zone.
 type Zone struct {
 	ID         int64
 	Name       string
+	Rname      string
 	LocalZones []*LocalZone `pg:"rel:has-many"`
 }
 
+// Represents association between a server and a zone. The server
+// specific zone information is held in this structure.
 type LocalZone struct {
 	ID       int64
 	ZoneID   int64
 	DaemonID int64
-	Daemon   *Daemon `pg:"rel:has-one"`
-	Zone     *Zone   `pg:"rel:has-one"`
+	View     string
+
+	Class    string
+	Serial   int64
+	Type     string
+	LoadedAt time.Time
+
+	Daemon *Daemon `pg:"rel:has-one"`
+	Zone   *Zone   `pg:"rel:has-one"`
 }
 
-type FlatZone struct {
-	ID       int64
-	Name     string
-	ZoneID   int64
-	DaemonID int64
-}
-
-func AddZone(dbi pg.DBI, zone *Zone) error {
-	_, err := dbi.Model(zone).Insert()
+// Upserts multiple zones in a transaction into the database.
+func addZones(tx *pg.Tx, zones ...*Zone) error {
+	// First insert zones into the zone table.
+	_, err := tx.Model(&zones).OnConflict("(name) DO UPDATE").
+		Set("name = EXCLUDED.name").
+		Set("rname = EXCLUDED.rname").
+		Insert()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to insert %d zones into the database", len(zones))
 	}
-	for _, localZone := range zone.LocalZones {
-		localZone.ZoneID = zone.ID
-		_, err = dbi.Model(localZone).Insert()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func AddZones(dbi pg.DBI, zones ...*Zone) error {
-	_, err := dbi.Model(&zones).Insert()
-	if err != nil {
-		return err
-	}
+	// Next, insert all local zones .
 	localZones := []*LocalZone{}
 	for _, zone := range zones {
 		for _, localZone := range zone.LocalZones {
@@ -79,28 +59,94 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 			localZones = append(localZones, localZone)
 		}
 	}
-	_, err = dbi.Model(&localZones).Insert()
+	_, err = tx.Model(&localZones).OnConflict("(zone_id, daemon_id, view) DO UPDATE").
+		Set("class = EXCLUDED.class").
+		Set("serial = EXCLUDED.serial").
+		Set("type = EXCLUDED.type").
+		Set("loaded_at = EXCLUDED.loaded_at").
+		Insert()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to insert %d local zones into the database", len(localZones))
 	}
-
 	return nil
 }
 
-func GetZones(db pg.DBI) ([]*Zone, error) {
-	//	var flatZones []*FlatZone
-	var zones []*Zone
-	//_, err := db.Query(&flatZones, "SELECT z.id, z.name, d.id as daemon_id, lz.zone_id as zone_id FROM zone AS z INNER JOIN local_zone AS lz ON z.id = lz.zone_id INNER JOIN daemon AS d ON d.id = lz.daemon_id")
-	err := db.Model(&zones).Relation("LocalZones").Select()
-	if err != nil {
-		return nil, err
+// Upserts multiple zones into the database. It creates new transaction if the
+// transaction has not been started yet. Otherwise, it uses an existing transaction.
+func AddZones(dbi pg.DBI, zones ...*Zone) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addZones(tx, zones...)
+		})
 	}
-	/*	for _, fz := range flatZones {
-		zone := &Zone{
-			Name: fz.Name,
-		}
-		zones = append(zones, zone)
-	} */
+	return addZones(dbi.(*pg.Tx), zones...)
+}
 
+// Retrieves a list of zones from the database.
+func GetZones(db pg.DBI, filter *bind9stats.ZoneFilter) ([]*Zone, error) {
+	var zones []*Zone
+	q := db.Model(&zones).Relation("LocalZones").OrderExpr("rname ASC")
+
+	// Filtering is optional.
+	if filter != nil {
+		// Limit the number of zones returned.
+		if filter.Limit != nil {
+			q = q.Limit(*filter.Limit)
+		}
+		// Paging from the last returned zone name.
+		if filter.LowerBound != nil {
+			labels := dns.SplitDomainName(*filter.LowerBound)
+			slices.Reverse(labels)
+			lowerBound := strings.Join(labels, ".")
+			q = q.Where("rname > ?", lowerBound)
+		}
+		// Filter by view.
+		if filter.View != nil {
+			q = q.Join("JOIN local_zone AS lz ON lz.zone_id = zone.id").Where("lz.view = ?", filter.View)
+		}
+	}
+	err := q.Select()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to select zones from the database")
+	}
 	return zones, nil
+}
+
+// Deletes zones which are not associated with any daemons. Returns deleted zone
+// count and an error.
+func DeleteOrphanedZones(dbi dbops.DBI) (int64, error) {
+	subquery := dbi.Model(&[]LocalZone{}).
+		Column("id").
+		Limit(1).
+		Where("zone.id = local_zone.zone_id")
+	result, err := dbi.Model(&[]Zone{}).
+		Where("(?) IS NULL", subquery).
+		Delete()
+	if err != nil {
+		err = errors.Wrapf(err, "failed to delete orphaned zones")
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
+}
+
+// Deletes associations between a daemon and the zones.
+func DeleteLocalZones(db pg.DBI, daemonID int64) error {
+	_, err := db.Model((*LocalZone)(nil)).Where("daemon_id = ?", daemonID).Delete()
+	return errors.Wrapf(err, "failed to delete local zones for daemon id %d", daemonID)
+}
+
+// go-pg hook triggered before zone insert into the database. It sets the
+// rname from name. The rname column is used for ordering the zones in DNS
+// order.
+func (zone *Zone) BeforeInsert(ctx context.Context) (context.Context, error) {
+	zone.Rname = storkutil.ConvertNameToRname(zone.Name)
+	return ctx, nil
+}
+
+// go-pg hook triggered before zone update in the database. It sets the
+// rname from name. The rname column is used for ordering the zones in DNS
+// order.
+func (zone *Zone) BeforeUpdate(ctx context.Context) (context.Context, error) {
+	zone.Rname = storkutil.ConvertNameToRname(zone.Name)
+	return ctx, nil
 }

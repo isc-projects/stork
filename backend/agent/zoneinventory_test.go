@@ -30,6 +30,7 @@ func generateRandomZones(num int) []*bind9stats.Zone {
 			Class:    generatedZone.Class,
 			Serial:   generatedZone.Serial,
 			Type:     generatedZone.Type,
+			Loaded:   time.Date(2025, 1, 1, 15, 19, 20, 0, time.UTC),
 		})
 	}
 	return zones
@@ -226,6 +227,9 @@ func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
 		capturedViews = append(capturedViews, view)
 	}
 	require.Equal(t, "_bind", capturedViews[0].GetViewName())
+	zoneCount, err := capturedViews[0].GetZoneCount()
+	require.NoError(t, err)
+	require.EqualValues(t, 1, zoneCount)
 	var zones []*bind9stats.Zone
 	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
 		require.NoError(t, err)
@@ -235,6 +239,9 @@ func TestZoneInventoryMemoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	require.Equal(t, "zone2.example.org", zones[0].Name())
 
 	require.Equal(t, "_default", capturedViews[1].GetViewName())
+	zoneCount, err = capturedViews[1].GetZoneCount()
+	require.NoError(t, err)
+	require.EqualValues(t, 2, zoneCount)
 	zones = []*bind9stats.Zone{}
 	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
 		require.NoError(t, err)
@@ -317,6 +324,9 @@ func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
 		capturedViews = append(capturedViews, view)
 	}
 	require.Equal(t, "_bind", capturedViews[0].GetViewName())
+	zoneCount, err := capturedViews[0].GetZoneCount()
+	require.NoError(t, err)
+	require.EqualValues(t, 1, zoneCount)
 	var zones []*bind9stats.Zone
 	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
 		require.NoError(t, err)
@@ -326,6 +336,9 @@ func TestZoneInventoryMemoryStorageSaveGetViews(t *testing.T) {
 	require.Equal(t, "zone2.example.org", zones[0].Name())
 
 	require.Equal(t, "_default", capturedViews[1].GetViewName())
+	zoneCount, err = capturedViews[1].GetZoneCount()
+	require.NoError(t, err)
+	require.EqualValues(t, 2, zoneCount)
 	zones = []*bind9stats.Zone{}
 	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
 		require.NoError(t, err)
@@ -433,6 +446,9 @@ func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
 		capturedViews = append(capturedViews, view)
 	}
 	require.Equal(t, "_bind", capturedViews[0].GetViewName())
+	zoneCount, err := capturedViews[0].GetZoneCount()
+	require.NoError(t, err)
+	require.EqualValues(t, 1, zoneCount)
 	var zones []*bind9stats.Zone
 	for zone, err := range capturedViews[0].GetZoneIterator(nil) {
 		require.NoError(t, err)
@@ -442,6 +458,9 @@ func TestZoneInventoryDiskStorageSaveLoadGetViews(t *testing.T) {
 	require.Equal(t, "zone2.example.org", zones[0].Name())
 
 	require.Equal(t, "_default", capturedViews[1].GetViewName())
+	zoneCount, err = capturedViews[1].GetZoneCount()
+	require.NoError(t, err)
+	require.EqualValues(t, 2, zoneCount)
 	zones = []*bind9stats.Zone{}
 	for zone, err := range capturedViews[1].GetZoneIterator(nil) {
 		require.NoError(t, err)
@@ -1161,6 +1180,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 			} else {
 				require.Equal(t, "_default", zone.ViewName)
 			}
+			require.EqualValues(t, 30, zone.TotalZoneCount)
 		}
 		// Make sure that the inventory is in the correct state.
 		require.Equal(t, zoneInventoryStateReceivedZones, inventory.getCurrentState().name)
@@ -1186,8 +1206,8 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		// Make sure that all zones from the _bind view have been received.
 		require.Len(t, receivedZones, 20)
 		for _, zone := range receivedZones {
-			// Views should be sorted by name, so _bind goes first.
 			require.Equal(t, "_bind", zone.ViewName)
+			require.EqualValues(t, 20, zone.TotalZoneCount)
 		}
 		// Make sure that the inventory is in the correct state.
 		require.Equal(t, zoneInventoryStateReceivedZones, inventory.getCurrentState().name)
@@ -1215,6 +1235,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		require.Len(t, receivedZones, 5)
 		for index, zone := range receivedZones {
 			require.Equal(t, "_bind", zone.ViewName)
+			require.EqualValues(t, 20, zone.TotalZoneCount)
 			require.Equal(t, getOrderedZoneByIndex(bindZones, index+15).Name(), zone.Name())
 		}
 		// Make sure that the inventory is in the correct state.
@@ -1304,6 +1325,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 			} else {
 				require.Equal(t, "_default", zone.ViewName)
 			}
+			require.EqualValues(t, 30, zone.TotalZoneCount)
 		}
 		// Make sure that the inventory is in the correct state.
 		require.Equal(t, zoneInventoryStateReceivedZones, inventory.getCurrentState().name)
@@ -1331,6 +1353,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 		for _, zone := range receivedZones {
 			// Views should be sorted by name, so _bind goes first.
 			require.Equal(t, "_bind", zone.ViewName)
+			require.EqualValues(t, 20, zone.TotalZoneCount)
 		}
 		// Make sure that the inventory is in the correct state.
 		require.Equal(t, zoneInventoryStateReceivedZones, inventory.getCurrentState().name)
@@ -1358,6 +1381,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 		require.Len(t, receivedZones, 5)
 		for index, zone := range receivedZones {
 			require.Equal(t, "_bind", zone.ViewName)
+			require.EqualValues(t, 20, zone.TotalZoneCount)
 			require.Equal(t, getOrderedZoneByIndex(bindZones, index+15).Name(), zone.Name())
 		}
 		// Make sure that the inventory is in the correct state.

@@ -22,6 +22,7 @@ type View struct {
 // views in memory or on disk.
 type ZoneIteratorAccessor interface {
 	GetViewName() string
+	GetZoneCount() (int64, error)
 	GetZoneIterator(filter *ZoneFilter) iter.Seq2[*Zone, error]
 }
 
@@ -45,8 +46,8 @@ func (view *View) GetZoneNames() []string {
 }
 
 // Returns the number of zones in the view.
-func (view *View) GetZoneCount() int64 {
-	return view.Zones.GetZoneCount()
+func (view *View) GetZoneCount() (int64, error) {
+	return view.Zones.GetZoneCount(), nil
 }
 
 // Returns a zone by name.
@@ -150,7 +151,8 @@ func (views *Views) GetViewNames() (viewNames []string) {
 func (views *Views) GetZoneCount() int64 {
 	var zoneCount int64
 	for _, view := range views.Views {
-		zoneCount += view.GetZoneCount()
+		currentCount, _ := view.GetZoneCount()
+		zoneCount += currentCount
 	}
 	return zoneCount
 }

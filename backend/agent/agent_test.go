@@ -9,18 +9,27 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"slices"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/security/advancedtls"
+	"google.golang.org/grpc/status"
 	"gopkg.in/h2non/gock.v1"
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/hooks"
 	"isc.org/stork/testutil"
+	storkutil "isc.org/stork/util"
 )
+
+//go:generate mockgen -package=agent -destination=serverstreamingservermock_test.go google.golang.org/grpc ServerStreamingServer
 
 type FakeAppMonitor struct {
 	Apps       []App
@@ -910,4 +919,401 @@ func TestVerifyPeerCorrectCertificate(t *testing.T) {
 	// Assert
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
+}
+
+// Test receiving a stream of zones filtered by view name.
+func TestReceiveZonesFilterByView(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(20)
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+			"_bind": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	// Populate the zones into inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// The zones from the _default view should be returned in order.
+	var mocks []any
+	for _, zone := range defaultZones {
+		apiZone := &agentapi.Zone{
+			Name:          zone.Name(),
+			Class:         zone.Class,
+			Serial:        zone.Serial,
+			Type:          zone.Type,
+			Loaded:        zone.Loaded.Unix(),
+			View:          "_default",
+			ViewZoneCount: 10,
+		}
+		mocks = append(mocks, mock.EXPECT().Send(apiZone).Return(nil))
+	}
+	gomock.InOrder(mocks...)
+
+	// Run the actual test.
+	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ViewName:       "_default",
+		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+	}, mock)
+	require.NoError(t, err)
+}
+
+// Test receiving a stream of zones filtered by loading time.
+func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	// Populate the zones into inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// Run the actual test.
+	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		LoadedAfter:    time.Date(2025, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+	}, mock)
+	require.NoError(t, err)
+}
+
+// Test receiving a stream of zones filtered by lower bound and limit.
+func TestReceiveZonesFilterLowerBound(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	// Populate the zones into inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// The zones from the _default view should be returned in order
+	// starting from 6th zones up to 9th.
+	var mocks []any
+	for _, zone := range defaultZones[6:9] {
+		apiZone := &agentapi.Zone{
+			Name:          zone.Name(),
+			Class:         zone.Class,
+			Serial:        zone.Serial,
+			Type:          zone.Type,
+			Loaded:        zone.Loaded.Unix(),
+			View:          "_default",
+			ViewZoneCount: 10,
+		}
+		mocks = append(mocks, mock.EXPECT().Send(apiZone).Return(nil))
+	}
+	gomock.InOrder(mocks...)
+
+	// Receive 3 zones ordered after 5th zone.
+	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		LowerBound:     defaultZones[5].Name(),
+		Limit:          3,
+	}, mock)
+	require.NoError(t, err)
+}
+
+// Test that no zones are returned when zone inventory is nil.
+func TestReceiveZonesNilZoneInventory(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app without zone inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: nil,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// Run the actual test.
+	err := sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ViewName:       "_default",
+		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+	}, mock)
+	require.NoError(t, err)
+}
+
+// Test that specific error is returned when the zone inventory was not initialized
+// while trying to receive the zones.
+func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(20)
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+			"_bind": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// Run the actual test.
+	err := sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ViewName:       "_default",
+		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+	}, mock)
+	require.Error(t, err)
+	require.Equal(t, "rpc error: code = FailedPrecondition desc = zone inventory has not been initialized yet", err.Error())
+
+	// The zone inventory was not initialized so we expect that it is returned
+	// as an error over gRPC.
+	s := status.Convert(err)
+	details := s.Details()
+	require.Len(t, details, 1)
+	info, ok := details[0].(*errdetails.ErrorInfo)
+	require.True(t, ok)
+	require.Equal(t, "ZONE_INVENTORY_NOT_INITED", info.Reason)
+}
+
+// Test that specific error is returned when the zone inventory was busy
+// while trying to receive the zones.
+func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(20)
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+			"_bind": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	// Start receiving zones but don't complete it. It turns the inventory
+	// into "busy" state.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	_, err = inventory.receiveZones(ctx, nil)
+	require.NoError(t, err)
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// Run the actual test.
+	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ViewName:       "_default",
+		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+	}, mock)
+	require.Error(t, err)
+	require.Equal(t, "rpc error: code = Unavailable desc = cannot transition to the RECEIVING_ZONES state while the zone inventory is in RECEIVING_ZONES state", err.Error())
+
+	// The zone inventory was busy so we expect that it is returned as an
+	// error over gRPC.
+	s := status.Convert(err)
+	details := s.Details()
+	require.Len(t, details, 1)
+	info, ok := details[0].(*errdetails.ErrorInfo)
+	require.True(t, ok)
+	require.Equal(t, "ZONE_INVENTORY_BUSY_ERROR", info.Reason)
 }

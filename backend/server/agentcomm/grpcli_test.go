@@ -2,17 +2,32 @@ package agentcomm
 
 import (
 	"context"
+	"io"
 	"testing"
+	"time"
 
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
+	"isc.org/stork/appdata/bind9stats"
 	dbmodel "isc.org/stork/server/database/model"
 	storktest "isc.org/stork/server/test/dbmodel"
+	testutil "isc.org/stork/testutil"
 )
+
+// Stub error used in tests.
+type testError struct{}
+
+// Converts the error to string.
+func (err *testError) Error() string {
+	return "test error"
+}
 
 // makeAccessPoint is an utility to make single element app access point slice.
 func makeAccessPoint(tp, address, key string, port int64) (ap []*agentapi.AccessPoint) {
@@ -24,27 +39,22 @@ func makeAccessPoint(tp, address, key string, port int64) (ap []*agentapi.Access
 	})
 }
 
-// Setup function for the unit tests. It creates a fake agent running at
-// 127.0.0.1:8080. The returned function performs a test teardown and
-// should be invoked when the unit test finishes.
-func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, ConnectedAgents, func()) {
+// Setup function for the unit tests.
+func setupGrpcliTestCase(ctrl *gomock.Controller) (*MockAgentClient, *connectedAgentsImpl) {
+	mockAgentClient := NewMockAgentClient(ctrl)
+	mockAgentsConnector := NewMockconnectedAgentsConnector(ctrl)
+	mockAgentsConnector.EXPECT().connect().AnyTimes().Return(nil)
+	mockAgentsConnector.EXPECT().close().AnyTimes()
+	mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+
 	settings := AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}
-	agents := NewConnectedAgents(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM)
+	agents := newConnectedAgentsImpl(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM).
+		withConnectorFactory(func(string) connectedAgentsConnector {
+			return mockAgentsConnector
+		})
 
-	// pre-add an agent
-	addr := "127.0.0.1:8080"
-	agent, err := agents.GetConnectedAgent(addr)
-	require.NoError(t, err)
-
-	// create mock AgentClient and patch agent to point to it
-	ctrl := gomock.NewController(t)
-	mockAgentClient := NewMockAgentClient(ctrl)
-	agent.Client = mockAgentClient
-
-	return mockAgentClient, agents, func() {
-		ctrl.Finish()
-	}
+	return mockAgentClient, agents
 }
 
 // Gomock-compatible matcher that asserts the GRPC call options. The assertion
@@ -88,11 +98,14 @@ func (*gzipMatcher) String() string {
 }
 
 //go:generate mockgen -package=agentcomm -destination=apimock_test.go -source=../../api/agent_grpc.pb.go isc.org/stork/api AgentClient
+//go:generate mockgen -package=agentcomm -destination=agentcommmock_test.go -source=agentcomm.go isc.org/stork/server/agentcomm -mock_names=connectedAgentsConnector=MockConnectedAgentsConnector connectedAgentsConnector
+//go:generate mockgen -package=agentcomm -destination=serverstreamingclientmock_test.go google.golang.org/grpc ServerStreamingClient
 
 // Check if Ping works.
 func TestPing(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	// prepare expectations
 	rsp := agentapi.PingRsp{}
@@ -110,11 +123,12 @@ func TestPing(t *testing.T) {
 
 // Test an error case for Ping.
 func TestPingError(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	// prepare expectations
-	mockAgentClient.EXPECT().Ping(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().Ping(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(nil, pkgerrors.Errorf("ping failed"))
 
 	// call ping
@@ -125,16 +139,17 @@ func TestPingError(t *testing.T) {
 	})
 	require.Error(t, err)
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.EqualValues(t, 1, agent.Stats.GetTotalErrorCount())
+	require.EqualValues(t, 1, agent.stats.GetTotalErrorCount())
 }
 
 // Check if GetState works.
 func TestGetState(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	// prepare expectations
 	expVer := "123"
@@ -164,12 +179,13 @@ func TestGetState(t *testing.T) {
 
 // Test error case for GetState.
 func TestGetStateError(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	// prepare expectations
 	mockAgentClient.EXPECT().
-		GetState(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		GetState(gomock.Any(), gomock.Any(), newGZIPMatcher()).AnyTimes().
 		Return(nil, pkgerrors.New("get state error"))
 
 	// call get state
@@ -180,17 +196,18 @@ func TestGetStateError(t *testing.T) {
 	})
 	require.Error(t, err)
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.EqualValues(t, 1, agent.Stats.GetTotalErrorCount())
+	require.EqualValues(t, 1, agent.stats.GetTotalErrorCount())
 }
 
 // Test that a command can be successfully forwarded to Kea and the response
 // can be parsed.
 func TestForwardToKeaOverHTTP(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	data := []byte(`[
 		{
@@ -257,11 +274,11 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	require.Len(t, *responseList[1].Arguments, 1)
 	require.Contains(t, *responseList[1].Arguments, "success")
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.Zero(t, agent.Stats.GetTotalErrorCount())
-	keaCommErrors := agent.Stats.GetKeaCommErrorStats(0)
+	require.Zero(t, agent.stats.GetTotalErrorCount())
+	keaCommErrors := agent.stats.GetKeaCommErrorStats(0)
 	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonCA))
 	require.EqualValues(t, 1, keaCommErrors.GetErrorCount(KeaDaemonDHCPv4))
 	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv6))
@@ -271,8 +288,9 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 // Test that two commands can be successfully forwarded to Kea and the response
 // can be parsed.
 func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	rsp := agentapi.ForwardToKeaOverHTTPRsp{
 		Status: &agentapi.Status{
@@ -359,11 +377,11 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	require.Equal(t, "operation failed", responseList[0].Text)
 	require.Nil(t, responseList[0].Arguments)
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.Zero(t, 0, agent.Stats.GetTotalErrorCount())
-	keaCommErrors := agent.Stats.GetKeaCommErrorStats(0)
+	require.Zero(t, 0, agent.stats.GetTotalErrorCount())
+	keaCommErrors := agent.stats.GetKeaCommErrorStats(0)
 	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonCA))
 	require.EqualValues(t, 2, keaCommErrors.GetErrorCount(KeaDaemonDHCPv4))
 	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv6))
@@ -373,8 +391,9 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 // Test that the error is returned when the response to the forwarded Kea command
 // is malformed.
 func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	rsp := agentapi.ForwardToKeaOverHTTPRsp{
 		Status: &agentapi.Status{
@@ -418,11 +437,11 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	// and now for our command we get an error
 	require.Error(t, cmdsResult.CmdsErrors[0])
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.Zero(t, agent.Stats.GetTotalErrorCount())
-	keaCommErrors := agent.Stats.GetKeaCommErrorStats(0)
+	require.Zero(t, agent.stats.GetTotalErrorCount())
+	keaCommErrors := agent.stats.GetKeaCommErrorStats(0)
 	require.EqualValues(t, 1, keaCommErrors.GetErrorCount(KeaDaemonCA))
 	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv4))
 	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv6))
@@ -432,8 +451,9 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 // Test that a statistics request can be successfully forwarded to named
 // statistics-channel and the output can be parsed.
 func TestForwardToNamedStats(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	rsp := agentapi.ForwardToNamedStatsRsp{
 		Status: &agentapi.Status{
@@ -480,11 +500,11 @@ func TestForwardToNamedStats(t *testing.T) {
 	require.Len(t, *actualResponse.Views, 1)
 	require.Contains(t, *actualResponse.Views, "_default")
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.Zero(t, agent.Stats.GetTotalErrorCount())
-	bind9CommErrors := agent.Stats.GetBind9CommErrorStats(1)
+	require.Zero(t, agent.stats.GetTotalErrorCount())
+	bind9CommErrors := agent.stats.GetBind9CommErrorStats(1)
 	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelRNDC))
 	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelStats))
 }
@@ -492,8 +512,9 @@ func TestForwardToNamedStats(t *testing.T) {
 // Test that the error is returned when the response to the forwarded
 // named statistics request is malformed.
 func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	rsp := agentapi.ForwardToNamedStatsRsp{
 		Status: &agentapi.Status{
@@ -526,11 +547,11 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
 		}, "localhost", 8000, "", &actualResponse)
 	require.Error(t, err)
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.Zero(t, agent.Stats.GetTotalErrorCount())
-	bind9CommErrors := agent.Stats.GetBind9CommErrorStats(1)
+	require.Zero(t, agent.stats.GetTotalErrorCount())
+	bind9CommErrors := agent.stats.GetBind9CommErrorStats(1)
 	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelRNDC))
 	require.EqualValues(t, 1, bind9CommErrors.GetErrorCount(Bind9ChannelStats))
 }
@@ -538,8 +559,9 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
 // Test that a command can be successfully forwarded to rndc and the response
 // can be parsed.
 func TestForwardRndcCommand(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	rsp := agentapi.ForwardRndcCommandRsp{
 		Status: &agentapi.Status{
@@ -575,19 +597,20 @@ func TestForwardRndcCommand(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, out.Output, "all good")
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.Zero(t, agent.Stats.GetTotalErrorCount())
-	bind9CommErrors := agent.Stats.GetBind9CommErrorStats(0)
+	require.Zero(t, agent.stats.GetTotalErrorCount())
+	bind9CommErrors := agent.stats.GetBind9CommErrorStats(0)
 	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelRNDC))
 	require.Zero(t, bind9CommErrors.GetErrorCount(Bind9ChannelStats))
 }
 
 // Test the gRPC call which fetches the tail of the specified text file.
 func TestTailTextFile(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	rsp := agentapi.TailTextFileRsp{
 		Status: &agentapi.Status{
@@ -618,11 +641,12 @@ func TestTailTextFile(t *testing.T) {
 // Test the error case for the gRPC call fetching the tail of the
 // specified text file.
 func TestTailTextFileError(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
 
 	mockAgentClient.EXPECT().
-		TailTextFile(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		TailTextFile(gomock.Any(), gomock.Any(), newGZIPMatcher()).AnyTimes().
 		Return(nil, pkgerrors.New("tail error"))
 
 	ctx := context.Background()
@@ -632,10 +656,10 @@ func TestTailTextFileError(t *testing.T) {
 	}, "/tmp/log.txt", 2)
 	require.Error(t, err)
 
-	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
 	require.NotNil(t, agent)
-	require.EqualValues(t, 1, agent.Stats.GetTotalErrorCount())
+	require.EqualValues(t, 1, agent.stats.GetTotalErrorCount())
 }
 
 // Check MakeAccessPoint.
@@ -682,4 +706,287 @@ func TestKeaCmdsResultGetFirstError(t *testing.T) {
 	result.CmdsErrors[1] = nil
 	first = result.GetFirstError()
 	require.ErrorContains(t, first, "third error")
+}
+
+// Test that an error is returned when specified access point does not exist.
+func TestReceiveZonesNonExistingAccessPoint(t *testing.T) {
+	// Create an app without the access point.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(0)
+
+	// The iterator should return an error that there is no access point available
+	// for this app.
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		require.ErrorContains(t, err, "access point")
+		require.Nil(t, zone)
+	}
+}
+
+// Test that an error is returned when establishing connection fails.
+func TestReceiveZonesConnectionError(t *testing.T) {
+	// Create an app.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockAgentClient := NewMockAgentClient(ctrl)
+	mockAgentsConnector := NewMockconnectedAgentsConnector(ctrl)
+	mockAgentsConnector.EXPECT().connect().AnyTimes().Return(&testError{})
+	mockAgentsConnector.EXPECT().close().AnyTimes()
+	mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+
+	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, CACertPEM, ServerCertPEM, ServerKeyPEM).
+		withConnectorFactory(func(string) connectedAgentsConnector {
+			return mockAgentsConnector
+		})
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(0)
+
+	// The iterator should return an error during an attempt to connect.
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		var testError *testError
+		require.ErrorAs(t, err, &testError)
+		require.Nil(t, zone)
+	}
+}
+
+// Test that an error is returned when getting a gRPC stream fails.
+func TestReceiveZonesGetStreamError(t *testing.T) {
+	// Create an app.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, &testError{})
+
+	// The iterator should return an error returned by ReceiveZones().
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		require.ErrorContains(t, err, "test error")
+		require.Nil(t, zone)
+	}
+}
+
+// Test that it is explicitly communicated via an error that the zone
+// inventory hasn't been initialized.
+func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
+	// Create an app.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+
+	// Create an error returned over gRPC indicating that the zone inventory
+	// hasn't been initialized.
+	st := status.New(codes.FailedPrecondition, "zone inventory not initialized")
+	ds, err := st.WithDetails(&errdetails.ErrorInfo{
+		Reason: "ZONE_INVENTORY_NOT_INITED",
+	})
+	require.NoError(t, err)
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+
+	// The iterator should return ZoneInventoryNotInitedError.
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		var zoneInventoryNotInitedError *ZoneInventoryNotInitedError
+		require.ErrorAs(t, err, &zoneInventoryNotInitedError)
+		require.Nil(t, zone)
+	}
+}
+
+// Test that it is explicitly communicated via an error that the zone
+// inventory is busy.
+func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
+	// Create an app.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+
+	// Create an error returned over gRPC indicating that the zone inventory
+	// hasn't been initialized.
+	st := status.New(codes.Unavailable, "zone inventory busy")
+	ds, err := st.WithDetails(&errdetails.ErrorInfo{
+		Reason: "ZONE_INVENTORY_BUSY",
+	})
+	require.NoError(t, err)
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+
+	// The iterator should return ZoneInventoryBusyError.
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		var zoneInventoryBusyError *ZoneInventoryBusyError
+		require.ErrorAs(t, err, &zoneInventoryBusyError)
+		require.Nil(t, zone)
+	}
+}
+
+// Test that an error is returned when getting a zone over the stream fails.
+func TestReceiveZonesZoneInventoryReceiveZoneError(t *testing.T) {
+	// Create an app.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	mockStreamingClient.EXPECT().Recv().Times(1).Return(nil, &testError{})
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(1).Return(mockStreamingClient, nil)
+
+	// The iterator should return an error returned by Recv().
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		var testError *testError
+		require.ErrorAs(t, err, &testError)
+		require.Nil(t, zone)
+	}
+}
+
+// Test successful reception of all zones over the stream.
+func TestReceiveZones(t *testing.T) {
+	// Create an app.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Generate a bunch of zones to be returned over the stream.
+	generatedZones := testutil.GenerateRandomZones(100)
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	// Create the client mock.
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// The mock will return a sequence of zones.
+	var mocks []any
+	for _, zone := range generatedZones {
+		zone := &agentapi.Zone{
+			Name:          zone.Name,
+			Class:         zone.Class,
+			Serial:        zone.Serial,
+			Type:          zone.Type,
+			Loaded:        time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC).Unix(),
+			View:          "_default",
+			ViewZoneCount: 100,
+		}
+		mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(zone, nil))
+	}
+	// The last item returned by the mock must be io.EOF indicating the
+	// end of the stream.
+	mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF))
+
+	// Make sure the zones are returned in order.
+	gomock.InOrder(mocks...)
+
+	// Return the mocked client when ReceiveZones() called.
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).AnyTimes().Return(mockStreamingClient, nil)
+
+	// Collect the zones returned over the stream.
+	var zones []*bind9stats.ExtendedZone
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		require.NoError(t, err)
+		require.NotNil(t, zone)
+		zones = append(zones, zone)
+	}
+	// Make sure all zones have been returned.
+	require.Len(t, zones, len(generatedZones))
+
+	// Validate returned zones.
+	for i, zone := range zones {
+		require.Equal(t, generatedZones[i].Name, zone.Name())
+		require.Equal(t, generatedZones[i].Class, zone.Class)
+		require.Equal(t, generatedZones[i].Serial, zone.Serial)
+		require.Equal(t, generatedZones[i].Type, zone.Type)
+		require.Equal(t, time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC), zone.Loaded)
+		require.Equal(t, "_default", zone.ViewName)
+		require.EqualValues(t, 100, zone.TotalZoneCount)
+	}
 }

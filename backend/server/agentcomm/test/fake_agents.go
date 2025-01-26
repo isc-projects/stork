@@ -2,6 +2,7 @@ package agentcommtest
 
 import (
 	"context"
+	"iter"
 
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
@@ -84,11 +85,6 @@ func (fa *FakeAgents) Ping(ctx context.Context, machine dbmodel.MachineTag) erro
 
 // Do nothing.
 func (fa *FakeAgents) Shutdown() {}
-
-// Do nothing. Always returns nils.
-func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error) {
-	return nil, nil
-}
 
 // Returns fake statistics for the selected connected agent.
 func (fa *FakeAgents) GetConnectedAgentStatsWrapper(address string, port int64) *agentcomm.AgentCommStatsWrapper {
@@ -190,6 +186,6 @@ func (fa *FakeAgents) TailTextFile(ctx context.Context, machine dbmodel.MachineT
 
 // FakeAgents specific implementation of the function which gathers the zones from the
 // agents one by one.
-func (agents *FakeAgents) ReceiveZones(ctx context.Context, app *dbmodel.App, filter *bind9stats.ZoneFilter, zoneFunc func(zone *bind9stats.ExtendedZone, err error)) error {
+func (fa *FakeAgents) ReceiveZones(ctx context.Context, app agentcomm.ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 	return nil
 }

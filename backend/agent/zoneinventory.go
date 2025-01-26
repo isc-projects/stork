@@ -764,16 +764,25 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 	if err != nil {
 		return nil, err
 	}
+	var totalZoneCount int64
+	for view, err := range inventory.storage.getViewsIterator(filter) {
+		if err != nil {
+			return nil, err
+		}
+		zoneCount, err := view.GetZoneCount()
+		if err != nil {
+			return nil, err
+		}
+		totalZoneCount += zoneCount
+	}
 	channel := make(chan zoneInventoryReceiveZoneResult)
 	go func() {
 	OUTER_LOOP:
 		for view, err := range inventory.storage.getViewsIterator(filter) {
 			if err != nil {
-				result := zoneInventoryReceiveZoneResult{
-					zone: nil,
-					err:  err,
+				channel <- zoneInventoryReceiveZoneResult{
+					err: err,
 				}
-				channel <- result
 				// The caller can try another view.
 				continue
 			}
@@ -788,8 +797,9 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 						result.err = err
 					} else {
 						result.zone = &bind9stats.ExtendedZone{
-							Zone:     *zone,
-							ViewName: view.GetViewName(),
+							Zone:           *zone,
+							ViewName:       view.GetViewName(),
+							TotalZoneCount: totalZoneCount,
 						}
 					}
 					channel <- result
@@ -891,6 +901,15 @@ func (vio *viewIO) GetZoneIterator(filter *bind9stats.ZoneFilter) iter.Seq2[*bin
 			}
 		}
 	}
+}
+
+// Returns number of zones for a given view name.
+func (vio *viewIO) GetZoneCount() (int64, error) {
+	files, err := os.ReadDir(vio.viewLocation)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to read the DNS view directory %s", vio.viewLocation)
+	}
+	return int64(len(files)), nil
 }
 
 // Removes the view directory.
