@@ -2,6 +2,7 @@ package configmigrator
 
 import (
 	"context"
+	"slices"
 
 	"github.com/go-pg/pg/v10"
 	keaconfig "isc.org/stork/appcfg/kea"
@@ -44,13 +45,13 @@ func (m *hostMigrator) CountTotal() (int64, error) {
 
 // Loads a chunk of hosts from the database.
 func (m *hostMigrator) LoadItems(offset int64) (int64, error) {
-	items, count, err := dbmodel.GetHostsByPage(m.db, offset, m.limit, m.filter, "id", dbmodel.SortDirAsc)
+	items, _, err := dbmodel.GetHostsByPage(m.db, offset, m.limit, m.filter, "id", dbmodel.SortDirAsc)
 	if err != nil {
 		// Returns the number of items tried to load.
 		return m.limit, err
 	}
 	m.items = items
-	return count, nil
+	return int64(len(m.items)), nil
 }
 
 // Adds the hosts to the database and removes them from the Kea configuration.
@@ -82,7 +83,15 @@ func (m *hostMigrator) Migrate() map[int64]error {
 		}
 	}
 
-	for daemonID, daemon := range daemonsByIDs {
+	// Iterate over the daemons in the ascending order of their IDs.
+	daemonIDs := make([]int64, 0, len(daemonsByIDs))
+	for daemonID := range daemonsByIDs {
+		daemonIDs = append(daemonIDs, daemonID)
+	}
+	slices.Sort(daemonIDs)
+
+	for _, daemonID := range daemonIDs {
+		daemon := daemonsByIDs[daemonID]
 		// Insert the reservations to the host database.
 		m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
 			if _, ok := localHosts[dbmodel.HostDataSourceConfig]; !ok {
