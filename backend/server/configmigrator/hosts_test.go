@@ -13,6 +13,8 @@ import (
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
 //go:generate mockgen -package=configmigrator -destination=agentcommmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
