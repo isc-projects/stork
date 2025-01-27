@@ -14,6 +14,7 @@ import (
 	keaconfig "isc.org/stork/appcfg/kea"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/config"
+	"isc.org/stork/server/configmigrator"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -626,5 +627,53 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	}
 	// Send OK to the client.
 	rsp := dhcp.NewDeleteHostOK()
+	return rsp
+}
+
+// Implements the POST call to migrate host reservations from Kea configuration
+// to the database. Runs a migration of host reservations from Kea configuration
+// to the database. It works in the foreground and returns the results of the
+// migration to the client.
+func (r *RestAPI) MigrateHosts(ctx context.Context, params dhcp.MigrateHostsParams) middleware.Responder {
+	// Create a new host migrator.
+	migrator := configmigrator.NewHostMigrator(
+		dbmodel.HostsByPageFilters{
+			AppID:             params.AppID,
+			SubnetID:          params.SubnetID,
+			LocalSubnetID:     params.LocalSubnetID,
+			FilterText:        params.Text,
+			Global:            params.Global,
+			DHCPDataConflict:  storkutil.Ptr(false),
+			DHCPDataDuplicate: storkutil.Ptr(false),
+		},
+		r.DB,
+		r.Agents,
+		r.DHCPOptionDefinitionLookup,
+	)
+	// Run the migration.
+	errs, err := configmigrator.RunMigration(migrator)
+	if err != nil {
+		msg := "Problem with migrating host reservations"
+		log.WithError(err).Error(msg)
+		rsp := dhcp.NewMigrateHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Convert the errors to the REST API format.
+	migrationErrors := []*models.MigrationError{}
+	for id, err := range errs {
+		migrationError := &models.MigrationError{
+			HostID: id,
+			Error:  err.Error(),
+		}
+		migrationErrors = append(migrationErrors, migrationError)
+	}
+
+	// Send the results to the client.
+	rsp := dhcp.NewMigrateHostsOK().WithPayload(&models.MigrationErrors{
+		Items: migrationErrors,
+		Total: int64(len(migrationErrors)),
+	})
 	return rsp
 }

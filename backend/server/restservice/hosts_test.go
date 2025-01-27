@@ -5,9 +5,13 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
+	agentcomm "isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
 	appstest "isc.org/stork/server/apps/test"
@@ -1701,4 +1705,136 @@ func TestDHCPOptionsHash(t *testing.T) {
 
 	// Assert
 	require.Equal(t, hash1, hash2)
+}
+
+// Test that the migration of hosts is triggered correctly. The filter on the
+// subnet ID must be applied. Sending commands to the second Kea server fails,
+// so the migration error is returned.
+func TestMigrateHosts(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	require.NotNil(t, lookup)
+
+	fa := NewMockConnectedAgents(ctrl)
+	require.NotNil(t, fa)
+
+	rapi, err := NewRestAPI(dbSettings, db, lookup, fa)
+	require.NoError(t, err)
+
+	hosts, apps := storktestdbmodel.AddTestHosts(t, db)
+
+	// Expected commands.
+	fa.EXPECT().ForwardToKeaOverHTTP(
+		gomock.Any(), // Context
+		gomock.Cond(func(x any) bool {
+			return x.(*dbmodel.App).ID == apps[0].ID
+		}), // App
+		gomock.Cond(func(x any) bool {
+			cmds := x.([]keactrl.SerializableCommand)
+			if len(cmds) != 1 {
+				return false
+			}
+			cmd := cmds[0].(*keactrl.Command)
+
+			if cmd.GetCommand() != keactrl.ReservationAdd {
+				return false
+			}
+
+			daemons := cmd.GetDaemonsList()
+			if len(daemons) != 1 || daemons[0] != dbmodel.DaemonNameDHCPv6 {
+				return false
+			}
+
+			arguments := cmd.Arguments.(map[string]any)
+			reservation := arguments["reservation"].(*keaconfig.HostCmdsReservation)
+			return reservation.SubnetID == 222 && reservation.HWAddress == "010203040506"
+		}), // Commands
+		gomock.Any(), // Responses
+	).Return(&agentcomm.KeaCmdsResult{}, nil)
+
+	fa.EXPECT().ForwardToKeaOverHTTP(
+		gomock.Any(), // Context
+		gomock.Cond(func(x any) bool {
+			return x.(*dbmodel.App).ID == apps[0].ID
+		}), // App
+		gomock.Cond(func(x any) bool {
+			cmds := x.([]keactrl.SerializableCommand)
+			if len(cmds) != 1 {
+				return false
+			}
+			cmd := cmds[0].(*keactrl.Command)
+
+			if cmd.GetCommand() != keactrl.ReservationDel {
+				return false
+			}
+
+			daemons := cmd.GetDaemonsList()
+			if len(daemons) != 1 || daemons[0] != dbmodel.DaemonNameDHCPv6 {
+				return false
+			}
+
+			reservation := cmd.Arguments.(*keaconfig.HostCmdsDeletedReservation)
+			return reservation.SubnetID == 222 &&
+				reservation.IdentifierType == "hw-address" &&
+				reservation.Identifier == "010203040506" &&
+				reservation.OperationTarget == keaconfig.HostCmdsOperationTargetMemory
+		}), // Commands
+		gomock.Any(), // Responses
+	).Return(&agentcomm.KeaCmdsResult{}, nil)
+
+	fa.EXPECT().ForwardToKeaOverHTTP(
+		gomock.Any(), // Context
+		gomock.Cond(func(x any) bool {
+			return x.(*dbmodel.App).ID == apps[0].ID
+		}), // App
+		gomock.Cond(func(x any) bool {
+			cmds := x.([]keactrl.SerializableCommand)
+			cmd := cmds[0]
+			return cmd.GetCommand() == keactrl.ConfigWrite
+		}), // Commands
+		gomock.Any(), // Responses
+	).Return(&agentcomm.KeaCmdsResult{}, nil)
+
+	fa.EXPECT().ForwardToKeaOverHTTP(
+		gomock.Any(), // Context
+		gomock.Cond(func(x any) bool {
+			return x.(*dbmodel.App).ID == apps[1].ID
+		}), // App
+		gomock.Cond(func(x any) bool {
+			cmds := x.([]keactrl.SerializableCommand)
+			cmd := cmds[0]
+			return cmd.GetCommand() == keactrl.ConfigWrite
+		}), // Commands
+		gomock.Any(), // Responses
+	).Return(&agentcomm.KeaCmdsResult{
+		Error: errors.New("unable to communicate with the daemon"),
+	}, nil)
+
+	// Act
+	rsp := rapi.MigrateHosts(context.Background(), dhcp.MigrateHostsParams{
+		SubnetID: storkutil.Ptr(hosts[2].SubnetID),
+	})
+
+	// Assert
+	require.IsType(t, &dhcp.MigrateHostsOK{}, rsp)
+	okRsp := rsp.(*dhcp.MigrateHostsOK)
+
+	// This error is related to the second Kea server. The migration on the
+	// first server should be successful.
+	require.Len(t, okRsp.Payload.Items, 1)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
+	require.EqualValues(t, 3, okRsp.Payload.Items[0].HostID)
+	require.Contains(t, "unable to communicate with the daemon", okRsp.Payload.Items[0].Error)
+
+	// Check that the database host hasn't been updated.
+	host, err := dbmodel.GetHost(db, 3)
+	require.NoError(t, err)
+	require.Len(t, host.LocalHosts, 2)
+	require.Equal(t, dbmodel.HostDataSourceConfig, host.LocalHosts[0].DataSource)
 }

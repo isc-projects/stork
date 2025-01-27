@@ -609,7 +609,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, filters HostsByPageFilte
 	// Only join the subnet if querying all hosts or hosts belonging to a
 	// given subnet.
 	if filters.SubnetID == nil || *filters.SubnetID > 0 {
-		q = q.Relation("Subnet")
+		q = q.Relation("Subnet.LocalSubnets")
 	}
 
 	// Prepare sorting expression, offset and limit.
