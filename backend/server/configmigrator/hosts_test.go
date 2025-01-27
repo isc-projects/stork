@@ -54,22 +54,12 @@ func TestMigrate(t *testing.T) {
 		executionErrs []error
 	}
 
-	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) {
-		var reservations []keactrl.SerializableCommand
-		for _, host := range hosts {
-			reservation, _ := keaconfig.CreateHostCmdsReservation(
-				daemon.ID, lookup, host,
-			)
-			reservations = append(reservations, keactrl.NewCommandReservationAdd(
-				reservation, daemon.Name,
-			))
-		}
-
+	expectForwardToKeaOverHTTP := func(daemon *dbmodel.Daemon, cmds []keactrl.SerializableCommand, err mockErrors) {
 		agentMock.EXPECT().ForwardToKeaOverHTTP(
-			gomock.Any(),            // Context.
-			gomock.Eq(daemon.App),   // App.
-			gomock.Eq(reservations), // Commands.
-			gomock.Any(),            // Responses.
+			gomock.Any(),          // Context.
+			gomock.Eq(daemon.App), // App.
+			gomock.Eq(cmds),       // Commands.
+			gomock.Any(),          // Responses.
 		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
 			for i := range cmdResponses {
 				if i >= len(err.executionErrs) || err.executionErrs[i] == nil {
@@ -90,6 +80,20 @@ func TestMigrate(t *testing.T) {
 			Error:      err.keaErr,
 			CmdsErrors: err.cmdErrs,
 		}, err.grpcErr)
+	}
+
+	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) {
+		var reservations []keactrl.SerializableCommand
+		for _, host := range hosts {
+			reservation, _ := keaconfig.CreateHostCmdsReservation(
+				daemon.ID, lookup, host,
+			)
+			reservations = append(reservations, keactrl.NewCommandReservationAdd(
+				reservation, daemon.Name,
+			))
+		}
+
+		expectForwardToKeaOverHTTP(daemon, reservations, err)
 	}
 
 	expectReservationAddCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
@@ -108,31 +112,7 @@ func TestMigrate(t *testing.T) {
 			))
 		}
 
-		agentMock.EXPECT().ForwardToKeaOverHTTP(
-			gomock.Any(),            // Context.
-			gomock.Eq(daemon.App),   // App.
-			gomock.Eq(reservations), // Commands.
-			gomock.Any(),            // Responses.
-		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
-			for i := range cmdResponses {
-				if i >= len(err.executionErrs) || err.executionErrs[i] == nil {
-					continue
-				}
-
-				r := cmdResponses[i].(*keactrl.ResponseList)
-				require.Empty(t, *r)
-
-				(*r) = append(*r, keactrl.Response{
-					ResponseHeader: keactrl.ResponseHeader{
-						Result: keactrl.ResponseError,
-						Text:   err.executionErrs[i].Error(),
-					},
-				})
-			}
-		}).Return(&agentcomm.KeaCmdsResult{
-			Error:      err.keaErr,
-			CmdsErrors: err.cmdErrs,
-		}, err.grpcErr)
+		expectForwardToKeaOverHTTP(daemon, reservations, err)
 	}
 
 	expectReservationDelCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
@@ -140,33 +120,9 @@ func TestMigrate(t *testing.T) {
 	}
 
 	expectConfigWriteCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors) {
-		agentMock.EXPECT().ForwardToKeaOverHTTP(
-			gomock.Any(),          // Context.
-			gomock.Eq(daemon.App), // App.
-			gomock.Eq([]keactrl.SerializableCommand{
-				keactrl.NewCommandBase(keactrl.ConfigWrite, daemon.Name),
-			}), // Commands.
-			gomock.Any(), // Responses.
-		).Do(func(ctx context.Context, app *dbmodel.App, cmds []keactrl.SerializableCommand, cmdResponses ...any) {
-			for i := range cmdResponses {
-				if i >= len(err.executionErrs) || err.executionErrs[i] == nil {
-					continue
-				}
-
-				r := cmdResponses[i].(*keactrl.ResponseList)
-				require.Empty(t, *r)
-
-				(*r) = append(*r, keactrl.Response{
-					ResponseHeader: keactrl.ResponseHeader{
-						Result: keactrl.ResponseError,
-						Text:   err.executionErrs[i].Error(),
-					},
-				})
-			}
-		}).Return(&agentcomm.KeaCmdsResult{
-			Error:      err.keaErr,
-			CmdsErrors: err.cmdErrs,
-		}, err.grpcErr)
+		expectForwardToKeaOverHTTP(daemon, []keactrl.SerializableCommand{
+			keactrl.NewCommandBase(keactrl.ConfigWrite, daemon.Name),
+		}, err)
 	}
 
 	expectConfigWriteCommandNoError := func(daemon *dbmodel.Daemon) {
