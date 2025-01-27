@@ -259,6 +259,25 @@
         items:
           type: string
 
+  MigrationError:
+    type: object
+    properties:
+      hostId:
+        type: integer
+        format: int64
+      error:
+        type: string
+
+  MigrationErrors:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/MigrationError'
+      total:
+        type: integer
+
 # Pool
 
   Pool:

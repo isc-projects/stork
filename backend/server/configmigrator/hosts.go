@@ -58,6 +58,8 @@ func (m *hostMigrator) LoadItems(offset int64) (int64, error) {
 //
 // Algorithm.
 //
+// TODO: Check the transaction lock for a given daemon. Lock it before the
+// migration and unlock it after the migration.
 // TODO: 0. Check if the config is writable.
 // 1. Send the reservation-add command
 // TODO: 2. Detect unexpected changes in the Kea JSON configuration (before config-set)

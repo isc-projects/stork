@@ -289,6 +289,51 @@
           schema:
             $ref: '#/definitions/ApiError'
 
+  /hosts/migration:
+    post:
+      summary: Starts a new migration of host reservations.
+      description: >-
+        This call starts a new migration of host reservations from Kea JSON
+        configuration(s) to the hosts database. The migration is performed
+        synchronously and the call returns the result of the migration.
+      operationId: migrateHosts
+      tags:
+        - DHCP
+      parameters:
+        - name: appId
+          in: query
+          description: Limit returned list of hosts to these which are served by given app ID.
+          type: integer
+        - name: subnetId
+          in: query
+          description: Limit returned list of hosts to these which belong to a given subnet.
+          type: integer
+        - name: localSubnetId
+          in: query
+          description: >-
+            Limit returned list of hosts to these which belong to a subnet having
+            a specified subnet ID in the Kea configuration.
+          type: integer
+        - name: text
+          in: query
+          description: Limit returned list of hosts to the ones containing the given text.
+          type: string
+        - name: global
+          in: query
+          description: >-
+            If true then return only reservations from global scope, if false then return
+            only reservations from subnets, if null then both types of hosts are return.
+          type: boolean
+      responses:
+        200:
+          description: Migration result.
+          schema:
+            $ref: '#/definitions/MigrationErrors'
+        default:
+          description: Generic error message.
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /subnets:
     get:
       summary: Get list of DHCP subnets.
