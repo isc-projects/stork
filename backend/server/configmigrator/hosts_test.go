@@ -775,6 +775,182 @@ func TestMigrate(t *testing.T) {
 			errs[host.ID],
 			"local subnet id not found in host",
 		)
-		require.True(t, ctrl.Satisfied())
+	})
+}
+
+// Test that the hosts are loaded and counted correctly.
+func TestLoadAndCountItems(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	agentMock := NewMockConnectedAgents(ctrl)
+
+	// Add 20 hosts to the database.
+	for i := 0; i < 22; i++ {
+		host := &dbmodel.Host{
+			HostIdentifiers: []dbmodel.HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{byte(i)},
+				},
+			},
+		}
+
+		err := dbmodel.AddHost(db, host)
+		require.NoError(t, err)
+	}
+
+	migrator := NewHostMigrator(
+		dbmodel.HostsByPageFilters{},
+		db, agentMock, lookup,
+	).(*hostMigrator)
+
+	migrator.limit = 5
+
+	t.Run("count total", func(t *testing.T) {
+		// Act
+		total, err := migrator.CountTotal()
+
+		// Assert
+		require.NoError(t, err)
+		require.EqualValues(t, 22, total)
+	})
+
+	t.Run("load items", func(t *testing.T) {
+		// Act
+		loaded, err := migrator.LoadItems(0)
+
+		// Assert
+		require.NoError(t, err)
+		require.EqualValues(t, 5, loaded)
+		require.Len(t, migrator.items, 5)
+		for i, host := range migrator.items {
+			require.EqualValues(t, i, host.HostIdentifiers[0].Value[0])
+		}
+	})
+
+	t.Run("paginate", func(t *testing.T) {
+		var allLoaded []dbmodel.Host
+
+		// Act
+		offset := int64(0)
+		for {
+			loaded, err := migrator.LoadItems(offset)
+			require.NoError(t, err)
+
+			if loaded == 0 {
+				break
+			}
+
+			require.EqualValues(t, loaded, len(migrator.items))
+			allLoaded = append(allLoaded, migrator.items...)
+			offset += loaded
+		}
+
+		// Assert
+		require.EqualValues(t, 22, len(allLoaded))
+		for i, host := range allLoaded {
+			require.EqualValues(t, i, host.HostIdentifiers[0].Value[0])
+		}
+	})
+}
+
+// Test that the hosts are loaded and counted correctly when the filter is
+// applied.
+func TestLoadAndCountItemsWithFilter(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+
+	agentMock := NewMockConnectedAgents(ctrl)
+
+	// Even hosts belong to the subnet, odd hosts don't.
+	subnet := &dbmodel.Subnet{Prefix: "10.0.0.0/8"}
+	err := dbmodel.AddSubnet(db, subnet)
+	require.NoError(t, err)
+
+	// Add 20 hosts to the database.
+	for i := 0; i < 22; i++ {
+		host := &dbmodel.Host{
+			HostIdentifiers: []dbmodel.HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{byte(i)},
+				},
+			},
+		}
+		if i%2 == 0 {
+			host.SubnetID = subnet.ID
+		}
+
+		err := dbmodel.AddHost(db, host)
+		require.NoError(t, err)
+	}
+
+	migrator := NewHostMigrator(
+		dbmodel.HostsByPageFilters{
+			SubnetID: storkutil.Ptr(subnet.ID),
+		},
+		db, agentMock, lookup,
+	).(*hostMigrator)
+
+	migrator.limit = 5
+
+	t.Run("count total", func(t *testing.T) {
+		// Act
+		total, err := migrator.CountTotal()
+
+		// Assert
+		require.NoError(t, err)
+		require.EqualValues(t, 11, total)
+	})
+
+	t.Run("load items", func(t *testing.T) {
+		// Act
+		loaded, err := migrator.LoadItems(0)
+
+		// Assert
+		require.NoError(t, err)
+		require.EqualValues(t, 5, loaded)
+		require.Len(t, migrator.items, 5)
+		for i, host := range migrator.items {
+			require.EqualValues(t, 2*i, host.HostIdentifiers[0].Value[0])
+		}
+	})
+
+	t.Run("paginate", func(t *testing.T) {
+		var allLoaded []dbmodel.Host
+
+		// Act
+		offset := int64(0)
+		for {
+			loaded, err := migrator.LoadItems(offset)
+			require.NoError(t, err)
+
+			if loaded == 0 {
+				break
+			}
+
+			require.EqualValues(t, loaded, len(migrator.items))
+			allLoaded = append(allLoaded, migrator.items...)
+			offset += loaded
+		}
+
+		// Assert
+		require.EqualValues(t, 11, len(allLoaded))
+		for i, host := range allLoaded {
+			require.EqualValues(t, 2*i, host.HostIdentifiers[0].Value[0])
+		}
 	})
 }
