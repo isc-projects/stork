@@ -63,7 +63,7 @@
                     (formGroup.controls['selectedSubnet'].dirty || formGroup.controls['selectedSubnet'].touched)
                 "
                 class="p-error block"
-                >Subnet must be selected if the reservation is not global.
+                >A subnet must be selected if the reservation is not global.
             </small>
         </div>
     </p-fieldset>
@@ -144,7 +144,7 @@
                     (formGroup.get('hostname').dirty || formGroup.get('hostname').touched)
                 "
                 class="p-error block"
-                >Please specify a valid hostname (e.g., alice-laptop or bob.example.org.).
+                >Please specify a valid hostname (e.g. alice-laptop or bob.example.org.).
             </small>
         </div>
         <div class="grid">
@@ -333,7 +333,7 @@
                                 getBootFieldsGroup(i).get('serverHostname').touched)
                         "
                         class="p-error block"
-                        >Please specify a valid hostname (e.g., alice-laptop or bob.example.org.).
+                        >Please specify a valid hostname (e.g. alice-laptop or bob.example.org.).
                     </small>
                 </div>
                 <div>
@@ -404,8 +404,8 @@
         <p-button label="Submit" [disabled]="formGroup.invalid" (onClick)="onSubmit()"></p-button>
         <app-help-tip subject="Host Reservation Submission">
             <p>
-                Submitted host reservation is created in Kea and may appear in Stork with a delay. Try to refresh the
-                list of host reservations after submission to see the new reservation.
+                The submitted host reservation is created in Kea but may not appear in Stork immediately. Refresh the
+                list of host reservations to see the new reservation.
             </p>
         </app-help-tip>
     </div>
@@ -418,9 +418,9 @@
                     <div class="flex flex-column">
                         <div class="flex align-items-center m-4">
                             In order to apply configuration changes, the server should begin a transaction between the
-                            user and the server. The server should also return current data required in the form where
-                            the host information is specified. Unfortunately, starting the new transaction failed with
-                            the following error:
+                            user and the server. The server should also return the current data required, in the form
+                            where the host information is specified. Unfortunately, starting the new transaction failed
+                            with the following error:
                         </div>
                         <div class="flex align-items-center m-4 font-italic">
                             {{ form.initError }}

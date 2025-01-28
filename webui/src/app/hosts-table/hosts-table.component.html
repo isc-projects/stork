@@ -55,8 +55,8 @@
                     ></p-tag>
                     <app-help-tip subject="filtering" id="filtering-help-button" width="40vw">
                         <p>
-                            Hosts in the table below can be filtered by entering a text in the search box; the table
-                            shows all hosts matching the filter text. Currently supported fields for such filtering are:
+                            Hosts in the table below can be filtered by entering text in the search box; the table
+                            shows all hosts matching the filter text. The currently supported fields for filtering are:
                         </p>
                         <ul>
                             <li>Identifier</li>
@@ -66,7 +66,7 @@
                         </ul>
                         <p>
                             Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of
-                            the identifier (e.g. filter by the initial 3 bytes of a MAC address that denotes OUI, a
+                            the identifier (e.g. the initial three bytes of a MAC address that denotes OUI, a
                             unique identifier of the vendor, effectively showing all devices produced by the same
                             vendor); or identifier type (e.g. <b>hw-address</b> to show all reservations made by a MAC
                             address).
@@ -77,28 +77,31 @@
                             <b>192.0.2</b> as the filter text.
                         </p>
                         <p>
-                            Global hosts, i.e. the hosts valid for all subnets, can be filtered out by using
-                            <b>Global checkbox</b> filter. Setting it to <b>false</b> state will cause all other hosts
-                            to be returned, i.e. those that are associated with certain subnets.
+                            The <b>Global</b> checkbox allows users to see global hosts (i.e. the hosts valid for all
+                            subnets), hosts associated with specific subnets, or all hosts. When the box is clicked
+                            once, the results show all DHCP identifiers set at the global level; when clicked a second
+                            time, it excludes the global hosts and shows only hosts that are associated with defined
+                            subnets.
                         </p>
                         <p>
-                            Hosts with inconsistent DHCP configurations can be filtered by using
-                            <b>Conflict checkbox</b> filter. It returns the hosts whose configurations are repeated in
-                            the configuration file and host database with some differences. Conversely, to display all
-                            hosts lacking the configuration conflicts, set the checkbox to <b>false</b> state.
+                            Hosts with inconsistent DHCP configurations can be filtered using the
+                            <b>Conflict</b> checkbox. When the box is clicked once, the filter returns all hosts whose
+                            configurations contain conflicts between the configuration file and host database.
+                            When clicked a second time, the results exclude any hosts with configuration
+                            conflicts.
                         </p>
                         <p>
                             In addition, hosts can be filtered by an explicitly selected field using text input filters.
-                            Currently supported fields for explicit filtering are:
+                            The currently supported fields for explicit filtering are:
                         </p>
                         <ul>
-                            <li>Kea App Id - the ID of the Kea App used by Stork.</li>
-                            <li>Subnet Id - the subnet ID used by Stork.</li>
-                            <li>Kea Subnet Id - the subnet ID assigned to the subnet in the Kea configuration.</li>
+                            <li>Kea App ID - the ID of the Kea App used by Stork.</li>
+                            <li>Subnet ID - the subnet ID used by Stork.</li>
+                            <li>Kea Subnet ID - the subnet ID assigned to the subnet in the Kea configuration.</li>
                         </ul>
                         <p>
-                            It is possible to filter the hosts by multiple fields. Currently, all provided filtering
-                            conditions are joined using logical AND.
+                            Hosts can be filtered by multiple fields. Currently, all provided filtering
+                            conditions are joined using a logical AND.
                         </p>
                     </app-help-tip>
                 </div>
@@ -125,7 +128,7 @@
                                 [ngModel]="value"
                                 [disabled]="hasPrefilter()"
                             ></p-inputNumber>
-                            <label for="app-id">Kea App Id</label>
+                            <label for="app-id">Kea App ID</label>
                         </span>
                     </ng-template>
                 </p-columnFilter>
@@ -139,7 +142,7 @@
                                 (onInput)="filter($event.value)"
                                 [ngModel]="value"
                             ></p-inputNumber>
-                            <label for="subnet-id">Subnet Id</label>
+                            <label for="subnet-id">Subnet ID</label>
                         </span>
                     </ng-template>
                 </p-columnFilter>
@@ -153,7 +156,7 @@
                                 (onInput)="filter($event.value)"
                                 [ngModel]="value"
                             ></p-inputNumber>
-                            <label for="kea-subnet-id">Kea Subnet Id</label>
+                            <label for="kea-subnet-id">Kea Subnet ID</label>
                         </span>
                     </ng-template>
                 </p-columnFilter>
@@ -197,7 +200,7 @@
             <td colspan="6">
                 No hosts found.
                 <span *ngIf="hasFilter(hostsTable)">
-                    Try to clear filtering.
+                    Clear filtering and try again.
                     <button
                         pButton
                         label="Clear"
@@ -268,7 +271,7 @@
                         class="ml-2 mt-1"
                         value="conflict"
                         severity="danger"
-                        pTooltip="The host is configured differently in the configuration file and host database."
+                        pTooltip="The host's configurations are different in the configuration file and the host database."
                     ></p-tag>
                     <!-- Duplicate label -->
                     <p-tag
@@ -290,7 +293,7 @@
             <td colspan="6">
                 No hosts found.
                 <span *ngIf="hasFilter(hostsTable)">
-                    Try to clear filtering.
+                    Clear filtering and try again.
                     <button
                         pButton
                         label="Clear"
