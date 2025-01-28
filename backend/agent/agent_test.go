@@ -40,8 +40,8 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	bind9StatsClient := NewBind9StatsClient()
 	gock.InterceptClient(bind9StatsClient.innerClient.GetClient())
 
-	httpClient := NewHTTPClient()
-	httpClient.SetSkipTLSVerification(true)
+	httpClientConfig := HTTPClientConfig{SkipTLSVerification: true}
+	httpClient := NewHTTPClient(httpClientConfig)
 	gock.InterceptClient(httpClient.client)
 
 	cleanupCerts, _ := GenerateSelfSignedCerts()
@@ -69,7 +69,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	sa := &StorkAgent{
 		AppMonitor:          &fam,
 		bind9StatsClient:    bind9StatsClient,
-		KeaHTTPClientCloner: httpClient,
+		KeaHTTPClientConfig: httpClientConfig,
 		logTailer:           newLogTailer(),
 		keaInterceptor:      newKeaInterceptor(),
 		hookManager:         NewHookManager(),
@@ -125,13 +125,13 @@ func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	bind9StatsClient := NewBind9StatsClient()
-	keaHTTPClient := NewHTTPClient()
+	keaHTTPClientConfig := HTTPClientConfig{}
 	sa := NewStorkAgent(
-		"foo", 42, fam, bind9StatsClient, keaHTTPClient, NewHookManager(), "",
+		"foo", 42, fam, bind9StatsClient, keaHTTPClientConfig, NewHookManager(), "",
 	)
 	require.NotNil(t, sa.AppMonitor)
 	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)
-	require.Equal(t, keaHTTPClient, sa.KeaHTTPClientCloner)
+	require.Equal(t, keaHTTPClientConfig, sa.KeaHTTPClientConfig)
 }
 
 // Check if an agent returns a response to a ping message..
@@ -165,7 +165,7 @@ func TestGetState(t *testing.T) {
 			Type:         AppTypeKea,
 			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, false),
 		},
-		HTTPClient: NewHTTPClient(),
+		HTTPClient: newHTTPClientWithDefaults(),
 	})
 
 	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345, true)
@@ -221,8 +221,10 @@ func TestGetState(t *testing.T) {
 	sa, ctx, teardown = setupAgentTest()
 	defer teardown()
 
-	fam.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234).(*KeaApp).
-		HTTPClient.SetBasicAuth("foo", "bar")
+	app := fam.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234).(*KeaApp)
+	app.HTTPClient = NewHTTPClient(HTTPClientConfig{
+		BasicAuth: basicAuthCredentials{User: "foo", Password: "bar"},
+	})
 
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)

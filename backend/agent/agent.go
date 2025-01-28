@@ -39,10 +39,11 @@ type StorkAgent struct {
 	AppMonitor              AppMonitor
 	// BIND9 HTTP stats client.
 	bind9StatsClient *bind9StatsClient
-	// Creates an HTTP client to communicate with Kea Control Agent.
+	// An HTTP client configuration used to create the HTTP clients for
+	// particular Kea applications.
 	// If the agent is registered, it will use the GRPC credentials obtained
 	// from the server as TLS client certificate.
-	KeaHTTPClientCloner httpClientCloner
+	KeaHTTPClientConfig HTTPClientConfig
 	server              *grpc.Server
 	logTailer           *logTailer
 	keaInterceptor      *keaInterceptor
@@ -53,7 +54,7 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClientCloner HTTPClientCloner, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
+func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClient *bind9StatsClient, keaHTTPClientConfig HTTPClientConfig, hookManager *HookManager, explicitBind9ConfigPath string) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
@@ -62,7 +63,7 @@ func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClien
 		ExplicitBind9ConfigPath: explicitBind9ConfigPath,
 		AppMonitor:              appMonitor,
 		bind9StatsClient:        bind9StatsClient,
-		KeaHTTPClientCloner:     keaHTTPClientCloner,
+		KeaHTTPClientConfig:     keaHTTPClientConfig,
 		logTailer:               logTailer,
 		keaInterceptor:          newKeaInterceptor(),
 		hookManager:             hookManager,

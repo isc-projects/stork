@@ -242,7 +242,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // in the Kea CA configuration. See @readClientCredentials for details about
 // how the credentials are selected. The user name of the selected credentials
 // is used as a key of the application's access point.
-func detectKeaApp(match []string, cwd string, httpClientCloner httpClientCloner) (*KeaApp, error) {
+func detectKeaApp(match []string, cwd string, httpClientConfig HTTPClientConfig) (*KeaApp, error) {
 	if len(match) < 3 {
 		return nil, errors.Errorf("problem parsing Kea cmdline: %s", match[0])
 	}
@@ -268,7 +268,6 @@ func detectKeaApp(match []string, cwd string, httpClientCloner httpClientCloner)
 	address, _ := config.GetHTTPHost()
 
 	// Credentials
-	httpClient := httpClientCloner.Clone()
 	authentication := config.GetBasicAuthenticationDetails()
 	// Key is a user name that Stork uses to authenticate with Kea.
 	var key string
@@ -290,9 +289,7 @@ func detectKeaApp(match []string, cwd string, httpClientCloner httpClientCloner)
 				}
 			}
 
-			httpClient.SetBasicAuth(
-				credentials.User, credentials.Password,
-			)
+			httpClientConfig.BasicAuth = basicAuthCredentials(credentials)
 			key = credentials.User
 		}
 	}
@@ -311,7 +308,7 @@ func detectKeaApp(match []string, cwd string, httpClientCloner httpClientCloner)
 			Type:         AppTypeKea,
 			AccessPoints: accessPoints,
 		},
-		HTTPClient: httpClient,
+		HTTPClient: NewHTTPClient(httpClientConfig),
 		// Set active daemons to nil, because we do not know them yet.
 		ActiveDaemons:     nil,
 		ConfiguredDaemons: config.GetControlSockets().GetConfiguredDaemonNames(),

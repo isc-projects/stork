@@ -77,11 +77,11 @@ func runAgent(settings *generalSettings, reload bool) error {
 		}
 	}
 
-	skipTLSCertVerification := settings.SkipTLSCertVerification
 	// Prepare the general HTTP client. It has no HTTP credentials or TLS
 	// certificates.
-	httpClient := agent.NewHTTPClient()
-	httpClient.SetSkipTLSVerification(skipTLSCertVerification)
+	httpClient := agent.NewHTTPClient(agent.HTTPClientConfig{
+		SkipTLSVerification: settings.SkipTLSCertVerification,
+	})
 
 	// Try registering the agent in the server using the agent token.
 	if settings.ServerURL != "" {
@@ -98,10 +98,11 @@ func runAgent(settings *generalSettings, reload bool) error {
 
 	// A base HTTP client. It may use the certificates obtained during
 	// the registration and GRPC credentials as TLS credentials.
-	keaHTTPClient := agent.NewHTTPClient()
-	keaHTTPClient.SetSkipTLSVerification(skipTLSCertVerification)
+	keaHTTPClientConfig := agent.HTTPClientConfig{
+		SkipTLSVerification: settings.SkipTLSCertVerification,
+	}
 
-	ok, err := keaHTTPClient.LoadGRPCCertificates()
+	ok, err := keaHTTPClientConfig.LoadGRPCCertificates()
 	switch {
 	case err != nil:
 		log.WithError(err).Error("Could not load the GRPC credentials")
@@ -117,7 +118,7 @@ func runAgent(settings *generalSettings, reload bool) error {
 		settings.Port,
 		appMonitor,
 		bind9StatsClient,
-		keaHTTPClient,
+		keaHTTPClientConfig,
 		hookManager,
 		settings.Bind9Path,
 	)
@@ -305,8 +306,9 @@ func runRegister(settings *registerSettings) {
 	}
 
 	// Run registration.
-	httpClient := agent.NewHTTPClient()
-	httpClient.SetSkipTLSVerification(settings.SkipTLSCertVerification)
+	httpClient := agent.NewHTTPClient(agent.HTTPClientConfig{
+		SkipTLSVerification: settings.SkipTLSCertVerification,
+	})
 
 	if err := agent.Register(settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient); err != nil {
 		log.WithError(err).Fatalf("Registration failed")

@@ -16,7 +16,7 @@ import (
 
 // Fake app monitor that returns some predefined list of apps.
 func newFakeMonitorWithDefaults() *FakeAppMonitor {
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	fam := &FakeAppMonitor{
 		Apps: []App{
 			&KeaApp{

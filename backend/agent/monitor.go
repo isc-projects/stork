@@ -277,7 +277,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			m := keaPattern.FindStringSubmatch(cmdline)
 			if m != nil {
 				// Detect the app.
-				keaApp, err := detectKeaApp(m, cwd, storkAgent.KeaHTTPClientCloner)
+				keaApp, err := detectKeaApp(m, cwd, storkAgent.KeaHTTPClientConfig)
 				if err != nil {
 					log.WithError(err).Warn("Failed to detect Kea app")
 					continue
@@ -317,7 +317,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 					if i := slices.IndexFunc(sm.apps, func(app App) bool {
 						return app.GetBaseApp().IsEqual(bind9App.GetBaseApp())
 					}); i >= 0 {
-						bind9App = sm.apps[i]
+						bind9App = sm.apps[i].(*Bind9App)
 					}
 					bind9App.GetBaseApp().Pid = p.GetPid()
 					apps = append(apps, bind9App)

@@ -16,16 +16,22 @@ import (
 	"isc.org/stork/testutil"
 )
 
+// Creates a new HTTP client with the default configuration.
+// It is intended to be used in the tests.
+func newHTTPClientWithDefaults() *httpClient {
+	return NewHTTPClient(HTTPClientConfig{})
+}
+
 // Check that HTTP client can be created.
 func TestNewHTTPClient(t *testing.T) {
 	// Arrange & Act
-	client := NewHTTPClient()
+	client := newHTTPClientWithDefaults()
 
 	// Assert
 	require.NotNil(t, client)
-	require.Nil(t, client.basicAuth)
+	require.Zero(t, client.basicAuth)
 	require.NotNil(t, client.client)
-	require.EqualValues(t, DefaultHTTPClientTimeout, client.client.Timeout)
+	require.EqualValues(t, defaultHTTPClientTimeout, client.client.Timeout)
 	transport := client.getTransport()
 	require.NotNil(t, transport)
 	require.NotNil(t, transport.TLSClientConfig)
@@ -41,10 +47,10 @@ func TestLoadGRPCCertificates(t *testing.T) {
 	cleanup, _ := GenerateSelfSignedCerts()
 	defer cleanup()
 
-	client := NewHTTPClient()
-
 	// Act
-	ok, err := client.LoadGRPCCertificates()
+	config := HTTPClientConfig{}
+	ok, err := config.LoadGRPCCertificates()
+	client := NewHTTPClient(config)
 
 	// Assert
 	require.NoError(t, err)
@@ -60,7 +66,7 @@ func TestLoadGRPCCertificates(t *testing.T) {
 	require.NotNil(t, transportConfig.RootCAs)
 	require.NotNil(t, transportConfig.Certificates)
 
-	require.Nil(t, client.basicAuth)
+	require.Zero(t, client.basicAuth)
 	require.False(t, client.HasAuthenticationCredentials())
 }
 
@@ -79,10 +85,11 @@ func TestLoadGRPCCertificatesMissingCerts(t *testing.T) {
 	AgentTokenFile = path.Join(sb.BasePath, "agentToken-not-exists")
 	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
 
-	client := NewHTTPClient()
+	config := HTTPClientConfig{}
 
 	// Act
-	ok, err := client.LoadGRPCCertificates()
+	ok, err := config.LoadGRPCCertificates()
+	client := NewHTTPClient(config)
 
 	// Assert
 	require.NoError(t, err)
@@ -102,11 +109,9 @@ func TestLoadGRPCCertificatesMissingCerts(t *testing.T) {
 // Check that HTTP client may be set to skip a server
 // credentials validation.
 func TestCreateHTTPClientSkipVerification(t *testing.T) {
-	// Arrange
-	client := NewHTTPClient()
-
-	// Act
-	client.SetSkipTLSVerification(true)
+	// Arrange & Act
+	config := HTTPClientConfig{SkipTLSVerification: true}
+	client := NewHTTPClient(config)
 
 	// Assert
 	transport := client.client.Transport.(*http.Transport)
@@ -137,11 +142,12 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Create HTTP Client
-	client := NewHTTPClient()
+	// Create HTTP Client Configuration with credentials.
+	config := HTTPClientConfig{
+		BasicAuth: basicAuthCredentials{User: "foo", Password: "bar"},
+	}
+	client := NewHTTPClient(config)
 
-	// Load credentials
-	client.SetBasicAuth("foo", "bar")
 	require.NotNil(t, client.basicAuth)
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
@@ -158,8 +164,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewHTTPClient()
-	client.SetSkipTLSVerification(true)
+	client := NewHTTPClient(HTTPClientConfig{SkipTLSVerification: true})
 
 	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
@@ -173,7 +178,7 @@ func TestCallWithMissingBody(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewHTTPClient()
+	client := newHTTPClientWithDefaults()
 	res, err := client.Call(ts.URL, nil)
 	require.NoError(t, err)
 	defer res.Body.Close()
@@ -188,16 +193,14 @@ func TestHasAuthenticationCredentials(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "reg")
 	defer os.RemoveAll(tmpDir)
 
-	client := NewHTTPClient()
+	clientWithoutCredentials := NewHTTPClient(HTTPClientConfig{})
+	clientWithCredentials := NewHTTPClient(HTTPClientConfig{
+		BasicAuth: basicAuthCredentials{User: "foo", Password: "bar"},
+	})
 
 	// Act & Assert
-	require.False(t, client.HasAuthenticationCredentials())
-
-	// Load credentials.
-	client.SetBasicAuth("foo", "bar")
-
-	// Act & Assert
-	require.True(t, client.HasAuthenticationCredentials())
+	require.False(t, clientWithoutCredentials.HasAuthenticationCredentials())
+	require.True(t, clientWithCredentials.HasAuthenticationCredentials())
 }
 
 // Test that the client returns with a timeout if the server doesn't
@@ -215,9 +218,10 @@ func TestCallTimeout(t *testing.T) {
 		ts.Close()
 	}()
 
-	client := NewHTTPClient()
-	// Set very short timeout for the testing purposes.
-	client.SetRequestTimeout(100 * time.Millisecond)
+	client := NewHTTPClient(HTTPClientConfig{
+		// Set very short timeout for the testing purposes.
+		Timeout: 100 * time.Millisecond,
+	})
 	var (
 		res        *http.Response
 		err        error
@@ -225,7 +229,7 @@ func TestCallTimeout(t *testing.T) {
 		mutex      sync.RWMutex
 		wgClient   sync.WaitGroup
 	)
-	// Ensyre that the client returned before we check an error code.
+	// Ensure that the client returned before we check an error code.
 	wgClient.Add(1)
 	go func() {
 		// Use HTTP client to communicate with the server. This call
@@ -259,31 +263,33 @@ func TestCallTimeout(t *testing.T) {
 	require.ErrorContains(t, err, "context deadline exceeded")
 }
 
-// Test that the HTTP client can be cloned and the cloned instances differ from
-// the original one.
-func TestHTTPClientClone(t *testing.T) {
+// Test that the HTTP client configuration can be copied and the copied
+// instances differ from the original one.
+func TestHTTPClientConfigCopy(t *testing.T) {
 	// Arrange
-	httpClient := NewHTTPClient()
-	httpClient.SetSkipTLSVerification(true)
-	httpClient.SetBasicAuth("foo", "bar")
+	original := HTTPClientConfig{
+		SkipTLSVerification: true,
+		BasicAuth: basicAuthCredentials{
+			User: "foo", Password: "bar",
+		},
+	}
 
 	// Act
-	clonedHTTPClient := httpClient.Clone()
+	copy := original
 
 	// Assert
-	require.NotNil(t, clonedHTTPClient)
-	require.NotEqual(t, httpClient, clonedHTTPClient)
-	require.NotEqual(t, httpClient.client, clonedHTTPClient.client)
+	require.NotNil(t, copy)
+	require.Equal(t, original, copy)
+	require.NotSame(t, original, copy)
 
-	require.Equal(t, httpClient.basicAuth, clonedHTTPClient.basicAuth)
-	require.NotSame(t, httpClient.basicAuth, clonedHTTPClient.basicAuth)
-	require.Equal(t, "foo", clonedHTTPClient.basicAuth.User)
-	require.Equal(t, "bar", clonedHTTPClient.basicAuth.Password)
+	require.Equal(t, original.BasicAuth, copy.BasicAuth)
+	require.NotSame(t, original.BasicAuth, original.BasicAuth)
 
-	originalTransport := httpClient.getTransport()
-	clonedTransport := clonedHTTPClient.getTransport()
-	require.NotEqual(t, originalTransport, clonedTransport)
-	require.Equal(t, originalTransport.TLSClientConfig, clonedTransport.TLSClientConfig)
-	require.NotSame(t, originalTransport.TLSClientConfig, clonedTransport.TLSClientConfig)
-	require.True(t, clonedTransport.TLSClientConfig.InsecureSkipVerify)
+	require.Equal(t, original.TLSCert, copy.TLSCert)
+	require.Same(t, original.TLSCert, copy.TLSCert)
+
+	require.Equal(t, original.TLSRootCA, copy.TLSRootCA)
+	require.Same(t, original.TLSRootCA, copy.TLSRootCA)
+
+	require.Equal(t, original.SkipTLSVerification, copy.SkipTLSVerification)
 }

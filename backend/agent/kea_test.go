@@ -15,7 +15,7 @@ import (
 
 // Test the case that the command is successfully sent to Kea.
 func TestSendCommand(t *testing.T) {
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	gock.InterceptClient(httpClient.client)
 
 	// Expect appropriate content type and the body. If they are not matched
@@ -47,7 +47,7 @@ func TestSendCommand(t *testing.T) {
 // Test the case that the command is not successfully sent to Kea because
 // there is no control access point.
 func TestSendCommandNoAccessPoint(t *testing.T) {
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 
 	command := keactrl.NewCommandBase(keactrl.ListCommands)
 
@@ -66,7 +66,7 @@ func TestSendCommandNoAccessPoint(t *testing.T) {
 
 // Test the case when Kea returns invalid response to the command.
 func TestSendCommandInvalidResponse(t *testing.T) {
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	gock.InterceptClient(httpClient.client)
 
 	// Return invalid response. Arguments must be a map not an integer.
@@ -95,7 +95,7 @@ func TestSendCommandInvalidResponse(t *testing.T) {
 // Test the case when Kea server is unreachable.
 func TestSendCommandNoKea(t *testing.T) {
 	command := keactrl.NewCommandBase(keactrl.ListCommands)
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
@@ -112,7 +112,7 @@ func TestSendCommandNoKea(t *testing.T) {
 // application by sending the request to the Kea Control Agent and the
 // daemons behind it.
 func TestKeaAllowedLogs(t *testing.T) {
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	gock.InterceptClient(httpClient.client)
 
 	// The first config-get command should go to the Kea Control Agent.
@@ -222,7 +222,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 // daemons behind it. This test variant uses output-options alias for
 // logger configuration.
 func TestKeaAllowedLogsOutputOptionsWithDash(t *testing.T) {
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	gock.InterceptClient(httpClient.client)
 
 	// The first config-get command should go to the Kea Control Agent.
@@ -331,7 +331,7 @@ func TestKeaAllowedLogsOutputOptionsWithDash(t *testing.T) {
 // from the Kea daemons is lower than the number of services specified in the
 // command.
 func TestKeaAllowedLogsFewerResponses(t *testing.T) {
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	gock.InterceptClient(httpClient.client)
 
 	defer gock.Off()

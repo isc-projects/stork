@@ -24,8 +24,8 @@ func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
-	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
+	httpClientConfig := HTTPClientConfig{}
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClientConfig, hm, "")
 	am.Start(sa)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
@@ -215,8 +215,8 @@ func TestDetectApps(t *testing.T) {
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
-	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
+	httpConfig := HTTPClientConfig{}
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
 
 	// Create fake app to test that the monitor awaits background tasks
 	// when new apps are detected.
@@ -279,8 +279,8 @@ func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
-	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
+	httpConfig := HTTPClientConfig{}
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -317,8 +317,8 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
-	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
+	httpConfig := HTTPClientConfig{}
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -353,8 +353,8 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 	am := &appMonitor{processManager: processManager, commander: executor}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
-	httpClient := NewHTTPClient()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
+	httpConfig := HTTPClientConfig{}
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
 
 	// Act
 	am.detectApps(sa)
@@ -367,7 +367,8 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{}
 	bind9StatsClient := NewBind9StatsClient()
-	httpClient := NewHTTPClient()
+	httpConfig := HTTPClientConfig{}
+	httpClient := NewHTTPClient(httpConfig)
 	am.apps = append(am.apps, &KeaApp{
 		BaseApp: BaseApp{
 			Type: AppTypeKea,
@@ -383,7 +384,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	})
 
 	hm := NewHookManager()
-	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpClient, hm, "")
+	sa := NewStorkAgent("foo", 42, am, bind9StatsClient, httpConfig, hm, "")
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
@@ -494,20 +495,20 @@ func TestDetectKeaApp(t *testing.T) {
 		require.Nil(t, app.ActiveDaemons)
 	}
 
-	httpClient := NewHTTPClient()
+	httpClientConfig := HTTPClientConfig{}
 
 	t.Run("config file without include statement", func(t *testing.T) {
 		tmpFilePath, clean := makeKeaConfFile()
 		defer clean()
 
 		// check kea app detection
-		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 
 		// check kea app detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
-		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 	})
@@ -518,13 +519,13 @@ func TestDetectKeaApp(t *testing.T) {
 		defer clean()
 
 		// check kea app detection
-		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
+		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 
 		// check kea app detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
-		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClient)
+		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 	})
@@ -664,7 +665,7 @@ func TestDetectActiveDaemons(t *testing.T) {
 	var buffer bytes.Buffer
 	logrus.SetOutput(&buffer)
 
-	httpClient := NewHTTPClient()
+	httpClient := newHTTPClientWithDefaults()
 	gock.InterceptClient(httpClient.client)
 
 	defer gock.Off()
