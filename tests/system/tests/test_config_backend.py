@@ -61,7 +61,7 @@ def test_add_host_reservation_with_dash_delimiter(
     kea_service: Kea, server_service: Server
 ):
     """Tests that the new host reservation is inserted properly even if the
-    hex identifier has been provided with dash delimiter.."""
+    hex identifier has been provided with a dash delimiter."""
     server_service.log_in_as_admin()
     server_service.authorize_all_machines()
     server_service.wait_for_next_machine_states()
