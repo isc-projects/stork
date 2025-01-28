@@ -40,7 +40,7 @@ export class StorkValidators {
      * @returns validator function.
      */
     static hexIdentifier(): ValidatorFn {
-        return Validators.pattern('^([0-9A-Fa-f]{2}[:-]{0,1})+([0-9A-Fa-f]{2})')
+        return Validators.pattern('^([0-9A-Fa-f]{2}[ :-]{0,1})+([0-9A-Fa-f]{2})')
     }
 
     /**
@@ -60,7 +60,7 @@ export class StorkValidators {
                 return null
             }
             let s = control.value
-            s = s.replace(/\s|:|-/gi, '')
+            s = s.replace(/\s|:|-| /gi, '')
             if (s.length > maxLength) {
                 return { maxlength: `The number of hexadecimal digits exceeds the maximum value of ${maxLength}.` }
             }

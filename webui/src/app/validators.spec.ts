@@ -19,8 +19,8 @@ describe('StorkValidators', () => {
         expect(StorkValidators.hexIdentifier()(formBuilder.control('01:02:03'))).toBeFalsy()
         // Good identifier with dashes as a separator.
         expect(StorkValidators.hexIdentifier()(formBuilder.control('ca-fe-03'))).toBeFalsy()
-        // Spaces as separator are not supported.
-        expect(StorkValidators.hexIdentifier()(formBuilder.control('ca fe 03'))).toBeTruthy()
+        // Spaces as separator are supported.
+        expect(StorkValidators.hexIdentifier()(formBuilder.control('ca fe 03'))).toBeFalsy()
         // Empty string is fine for this validator.
         expect(StorkValidators.hexIdentifier()(formBuilder.control(''))).toBeFalsy()
     })
@@ -29,10 +29,12 @@ describe('StorkValidators', () => {
         expect(StorkValidators.hexIdentifierLength(6)(formBuilder.control('01:02:03'))).toBeFalsy()
         expect(StorkValidators.hexIdentifierLength(8)(formBuilder.control('112233'))).toBeFalsy()
         expect(StorkValidators.hexIdentifierLength(10)(formBuilder.control('ac-de-aa'))).toBeFalsy()
+        expect(StorkValidators.hexIdentifierLength(10)(formBuilder.control('ac de aa'))).toBeFalsy()
 
         expect(StorkValidators.hexIdentifierLength(4)(formBuilder.control('ab-cd-ef'))).toBeTruthy()
         expect(StorkValidators.hexIdentifierLength(2)(formBuilder.control('ee:02:90'))).toBeTruthy()
         expect(StorkValidators.hexIdentifierLength(6)(formBuilder.control('01020389'))).toBeTruthy()
+        expect(StorkValidators.hexIdentifierLength(4)(formBuilder.control('ab cd ef'))).toBeTruthy()
     })
 
     it('validates IPv4 address', () => {
