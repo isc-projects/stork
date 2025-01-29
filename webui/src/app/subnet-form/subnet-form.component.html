@@ -27,13 +27,13 @@
                     >At least one server must be selected.
                 </small>
                 <div *ngIf="state.group.get('selectedDaemons')?.disabled" class="flex align-items-center">
-                    <div>Servers selection is disabled</div>
+                    <div>Server selection is disabled</div>
                     <div class="ml-2">
                         <app-help-tip subject="disabled servers selection">
-                            When a subnet belongs to a shared network it is not allowed to change the assignments of the
-                            subnet to servers. These assignments can only be controlled in the shared network form for
-                            the entire shared network. The subnet assignments can be directly controlled only when the
-                            subnet does not belong to a shared network.
+                            When a subnet belongs to a shared network, it is not allowed to change the assignments of
+                            the subnet to servers. These assignments can only be controlled in the shared network form,
+                            for the entire shared network. The subnet assignments can be directly controlled only when
+                            the subnet does not belong to a shared network.
                         </app-help-tip>
                     </div>
                 </div>
@@ -273,9 +273,9 @@
                 <div class="flex flex-column">
                     <div class="flex align-items-center m-4">
                         In order to apply configuration changes, the server should begin a transaction between the user
-                        and the server. The server should also return current data required in the form where the subnet
-                        information is specified. Unfortunately, starting the new transaction failed with the following
-                        error:
+                        and the server. The server should also return the current data required, in the form where the
+                        subnet information is specified. Unfortunately, starting the new transaction failed with the
+                        following error:
                     </div>
                     <div class="flex align-items-center m-4 font-italic">
                         {{ state.initError }}

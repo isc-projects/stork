@@ -11,60 +11,60 @@
         <div>
             <app-help-tip subject="Subnet View" width="40vw">
                 <p>
-                    Multiple DHCP servers can share a subnet when they run in High Availability mode or when they are
-                    connected to a shared lease database. In this case, the servers typically have the same subnet
-                    configuration (i.e., the same pools, DHCP options, and other DHCP-specific parameters). However,
-                    there are valid cases when the subnet configurations differ on individual servers. For example,
-                    interfaces used for subnet selection may have a different names. The servers may use distinct pools
-                    within the subnet for the address assignment. The subnet configurations may even use different
-                    subnet identifiers for the same subnet.
+                    Multiple DHCP servers can share a subnet when they run in High Availability (HA) mode or when they
+                    are connected to a shared lease database. In this case, the servers typically have the same subnet
+                    configuration (i.e. the same pools, DHCP options, and other DHCP-specific parameters). However,
+                    there are valid cases when the subnet configurations differ on individual servers. For example, the
+                    interfaces used for subnet selection may have different names; servers may use distinct pools within
+                    the subnet for the address assignment; or the subnet configurations may even use different subnet
+                    identifiers for the same subnet.
                 </p>
                 <p>
                     The <span class="font-bold">Configured Subnet ID</span> column below lists the subnet identifiers
-                    used to identify the subnet on the different servers.
+                    used to identify each subnet on different servers.
                 </p>
                 <p>
                     If the configured pools differ on the servers, they are displayed individually for each server.
                     Otherwise, they are combined in a single box.
                 </p>
                 <p>
-                    Finally, each server maintains its own lease utilization statistics. The first pie charts show the
-                    total address and/or prefix utilizations. The remaining pie charts show the utilizations reported by
-                    the individual servers. The individual statistics are not displayed if there is only one server
-                    serving leases in this subnet.
+                    Each server maintains its own lease utilization statistics. The first pie charts show the total
+                    address and/or prefix utilizations, and the other pie charts show the utilizations reported by the
+                    individual servers. The individual statistics are not displayed if there is only one server serving
+                    leases in this subnet.
                 </p>
                 <p>The detailed address utilization statistics use the following naming conventions:</p>
                 <ul>
                     <li><span class="monospace">total</span> - the number of addresses in a subnet.</li>
                     <li>
-                        <span class="monospace">assigned</span> - the number of allocated leases including declined
+                        <span class="monospace">assigned</span> - the number of allocated leases, including declined
                         leases.
                     </li>
                     <li>
-                        <span class="monospace">used</span> - the number of allocated leases excluding declined leases.
+                        <span class="monospace">used</span> - the number of allocated leases, excluding declined leases.
                     </li>
                     <li><span class="monospace">declined</span> - the number of declined leases.</li>
                     <li>
-                        <span class="monospace">uncertain</span> - optional statistics only presented when the number of
-                        declined leases is greater than assigned (see below).
+                        <span class="monospace">uncertain</span> - optional statistics, only presented when the number
+                        of declined leases is greater than the number assigned (see below).
                     </li>
                 </ul>
                 <p>
                     There are rare cases when a Kea server can return inconsistent statistics, with the number of
-                    declined leases greater than assigned leases. It may happen when some of the DHCP clients decline
-                    already released or expired leases. These leases are not counted as assigned, but the declined
-                    statistics is affected. Stork deals with such cases by introducing the uncertain leases count. It
-                    holds an estimated number of leases for which it is unclear whether they are allocated, declined or
-                    free. This statistic is only computed and presented when the number of declined leases is greater
-                    than assigned.
+                    declined leases greater than the number of assigned leases. It may happen when some DHCP clients
+                    decline leases that are already released or expired; these leases are not counted as assigned, but
+                    the declined statistics are affected. Stork deals with such cases via the "uncertain leases" count,
+                    which holds the estimated number of leases for which it is unclear whether they are allocated,
+                    declined, or free. This statistic is only computed and presented when the number of declined leases
+                    is greater than the number assigned.
                 </p>
                 <p>
-                    The DHCP parameters can be specified at different configuration levels and the subnet configuration
-                    can inherit them from the global and/or shared network level. The list below contains all parameters
-                    configured for all servers sharing the subnet, and at all configuration levels. An effective value
-                    is displayed next to a parameter name. You can expand a parameter by clicking the button to the left
-                    of the parameter name to view the values specified at the different levels for each server. The
-                    subnet-level value takes precedence over the shared network-level and the global values.
+                    The DHCP parameters can be specified at different configuration levels, and the subnet configuration
+                    can inherit them from the global and/or shared-network level. The list below contains all parameters
+                    configured for all servers sharing the subnet, and at all configuration levels, with an effective
+                    value displayed next to the parameter name. Click the button to the left of the parameter name to
+                    view the values specified at the different levels for each server. The subnet-level value takes
+                    precedence over the shared network-level and global values.
                 </p>
             </app-help-tip>
         </div>
@@ -75,7 +75,7 @@
                 <ng-template pTemplate="header">
                     <tr>
                         <th>Server</th>
-                        <th>Configured subnet ID</th>
+                        <th>Configured Subnet ID</th>
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-l>
