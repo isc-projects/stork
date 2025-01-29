@@ -1,5 +1,5 @@
 [func] slawek
 
-    The authentication methods loaded from hooks are presented on the
-    login page before the internal method.
+    The authentication methods provided by hooks are presented before
+    the internal method on the login page.
     (Gitlab #1648)
