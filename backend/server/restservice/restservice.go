@@ -33,6 +33,7 @@ import (
 	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
+	"isc.org/stork/server/dnsop"
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/gen/restapi"
 	"isc.org/stork/server/gen/restapi/operations"
@@ -78,6 +79,7 @@ type RestAPI struct {
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
 	HookManager                *hookmanager.HookManager
 	EndpointControl            *EndpointControl
+	DNSManager                 dnsop.Manager
 
 	Agents agentcomm.ConnectedAgents
 
@@ -112,6 +114,7 @@ type RestAPI struct {
 // - configreview.Dispatcher
 // - eventcenter.EventCenter,
 // - metrics.Collector
+// - dnsop.Manager
 //
 // The only mandatory parameter is the *dbops.DatabaseSettings because it
 // is used to instantiate the Session Manager. Other parameters are
@@ -173,6 +176,10 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 		if argType.Implements(reflect.TypeOf((*keaconfig.DHCPOptionDefinitionLookup)(nil)).Elem()) {
 			api.DHCPOptionDefinitionLookup = arg.(keaconfig.DHCPOptionDefinitionLookup)
+			continue
+		}
+		if argType.Implements(reflect.TypeOf((*dnsop.Manager)(nil)).Elem()) {
+			api.DNSManager = arg.(dnsop.Manager)
 			continue
 		}
 
@@ -453,6 +460,7 @@ func (r *RestAPI) Serve() (err error) {
 		SettingsAPI:     r,
 		SearchAPI:       r,
 		EventsAPI:       r,
+		DNSAPI:          r,
 		Logger:          log.Infof,
 		InnerMiddleware: r.InnerMiddleware,
 		Authorizer:      r.Authorizer,

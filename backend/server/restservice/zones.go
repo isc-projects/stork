@@ -1,0 +1,134 @@
+package restservice
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"isc.org/stork/appdata/bind9stats"
+	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/dnsop"
+	"isc.org/stork/server/gen/models"
+	"isc.org/stork/server/gen/restapi/operations/dns"
+)
+
+// Returns a list DNS zones with paging.
+func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middleware.Responder {
+	// Set paging parameters.
+	var offset int
+	if params.Start != nil {
+		offset = int(*params.Start)
+	}
+	limit := 10
+	if params.Limit != nil {
+		limit = int(*params.Limit)
+	}
+	// Apply paging parameters.
+	filter := bind9stats.NewZoneFilter()
+	filter.SetOffsetLimit(offset, limit)
+
+	// Get the zones from the database.
+	zones, total, err := dbmodel.GetZones(r.DB, filter, dbmodel.ZoneRelationLocalZonesApp)
+	if err != nil {
+		msg := "Failed to get zones from the database"
+		log.WithError(err).Error(msg)
+		rsp := dns.NewGetZonesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// Convert the zones to the REST API format.
+	var restZones []*models.Zone
+	for _, zone := range zones {
+		var restLocalZones []*models.LocalZone
+		for _, localZone := range zone.LocalZones {
+			restLocalZones = append(restLocalZones, &models.LocalZone{
+				AppID:    localZone.Daemon.App.ID,
+				AppName:  localZone.Daemon.App.Name,
+				Class:    localZone.Class,
+				DaemonID: localZone.DaemonID,
+				LoadedAt: strfmt.DateTime(localZone.LoadedAt),
+				Serial:   localZone.Serial,
+				View:     localZone.View,
+				ZoneType: localZone.Type,
+			})
+		}
+		restZones = append(restZones, &models.Zone{
+			ID:         zone.ID,
+			Name:       zone.Name,
+			Rname:      zone.Rname,
+			LocalZones: restLocalZones,
+		})
+	}
+	// Return the zones.
+	payload := models.Zones{
+		Items: restZones,
+		Total: int64(total),
+	}
+	rsp := dns.NewGetZonesOK().WithPayload(&payload)
+	return rsp
+}
+
+// Get the states of fetching the DNS zone information from the remote zone inventories.
+func (r *RestAPI) GetZoneInventoryStates(ctx context.Context, params dns.GetZoneInventoryStatesParams) middleware.Responder {
+	isFetching, appsCount, completedAppsCount := r.DNSManager.GetFetchZonesProgress()
+	if isFetching {
+		payload := models.ZonesFetchStatus{
+			CompletedAppsCount: int64(completedAppsCount),
+			AppsCount:          int64(appsCount),
+		}
+		rsp := dns.NewGetZoneInventoryStatesAccepted().WithPayload(&payload)
+		return rsp
+	}
+	states, count, err := dbmodel.GetZoneInventoryStates(r.DB, dbmodel.ZoneInventoryStateRelationApp)
+	if err != nil {
+		msg := "Cannot get zones fetch states from the database"
+		log.WithError(err).Error(msg)
+		rsp := dns.NewGetZoneInventoryStatesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if count == 0 {
+		rsp := dns.NewGetZoneInventoryStatesNoContent()
+		return rsp
+	}
+	var restStates []*models.ZoneInventoryState
+	for _, state := range states {
+		restStates = append(restStates, &models.ZoneInventoryState{
+			AppID:     state.Daemon.AppID,
+			AppName:   state.Daemon.App.Name,
+			DaemonID:  state.DaemonID,
+			Error:     state.State.Error,
+			Status:    string(state.State.Status),
+			ZoneCount: state.State.ZoneCount,
+		})
+	}
+	payload := models.ZoneInventoryStates{
+		Items: restStates,
+		Total: int64(count),
+	}
+	rsp := dns.NewGetZoneInventoryStatesOK().WithPayload(&payload)
+	return rsp
+}
+
+// Begins fetching the zones from the zone inventories into the Stork server.
+func (r *RestAPI) PutZonesFetch(ctx context.Context, params dns.PutZonesFetchParams) middleware.Responder {
+	var alreadyFetchingError *dnsop.ManagerAlreadyFetchingError
+	_, err := r.DNSManager.FetchZones(10, 1000, false)
+	switch {
+	case err == nil, errors.As(err, &alreadyFetchingError):
+		return dns.NewPutZonesFetchAccepted()
+	default:
+		msg := fmt.Sprintf("Cannot start fetching the zones: %s", err.Error())
+		rsp := dns.NewPutZonesFetchDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+}

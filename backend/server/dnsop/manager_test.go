@@ -134,8 +134,9 @@ func TestFetchZonesInventoryBusyError(t *testing.T) {
 	require.Nil(t, state.State.ZoneCount)
 
 	// Make sure that no zones have been added to the database.
-	zones, err := dbmodel.GetZones(db, nil)
+	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
+	require.Zero(t, total)
 	require.Empty(t, zones)
 }
 
@@ -205,8 +206,9 @@ func TestFetchZonesInventoryNotInitedError(t *testing.T) {
 	require.Nil(t, state.State.ZoneCount)
 
 	// Make sure that no zones have been added to the database.
-	zones, err := dbmodel.GetZones(db, nil)
+	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
+	require.Zero(t, total)
 	require.Empty(t, zones)
 }
 
@@ -276,8 +278,9 @@ func TestFetchZonesInventoryOtherError(t *testing.T) {
 	require.Nil(t, state.State.ZoneCount)
 
 	// Make sure that no zones have been added to the database.
-	zones, err := dbmodel.GetZones(db, nil)
+	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
+	require.Zero(t, total)
 	require.Empty(t, zones)
 }
 
@@ -363,8 +366,9 @@ func TestFetchZones(t *testing.T) {
 
 	// Get all the zones from the database to make sure that all zones
 	// have been inserted.
-	zones, err := dbmodel.GetZones(db, nil)
+	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
+	require.Equal(t, 1000, total)
 	require.Len(t, zones, 1000)
 
 	for _, zone := range zones {
@@ -403,6 +407,25 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
 	controller := gomock.NewController(t)
 	mock := NewMockConnectedAgents(controller)
 
@@ -419,20 +442,36 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 
 	// Begin first fetch but do not receive the result from the notifyChannel.
 	// This should keep the fetch active.
-	notifyChannel, err := manager.FetchZones(10, 1000, true)
+	notifyChannel, err := manager.FetchZones(1, 1000, true)
 	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
+		return isFetching && appsNum == 1 && completedAppsNum == 1
+	}, time.Second, time.Millisecond)
 
 	// Begin the second fetch. It should return an error.
 	_, err = manager.FetchZones(10, 1000, true)
 	var alreadyFetching *ManagerAlreadyFetchingError
 	require.ErrorAs(t, err, &alreadyFetching)
+	require.Eventually(t, func() bool {
+		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
+		return isFetching && appsNum == 1 && completedAppsNum == 1
+	}, time.Second, time.Millisecond)
 
 	// Complete the fetch.
 	<-notifyChannel
+	require.Eventually(t, func() bool {
+		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
+		return !isFetching && appsNum == 1 && completedAppsNum == 1
+	}, time.Second, time.Millisecond)
 
 	// This time the new attempt should succeed.
 	notifyChannel, err = manager.FetchZones(10, 1000, true)
 	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
+		return isFetching && appsNum == 1 && completedAppsNum == 1
+	}, time.Second, time.Millisecond)
 
 	// Complete the fetch.
 	<-notifyChannel

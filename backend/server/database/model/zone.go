@@ -14,6 +14,13 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+type ZoneRelation string
+
+const (
+	ZoneRelationLocalZones    = "LocalZones"
+	ZoneRelationLocalZonesApp = "LocalZones.Daemon.App"
+)
+
 // Represents a zone in a database. The same zone can be shared between
 // many DNS servers. Associations with different servers is are created
 // by adding LocalZone instances to the zone.
@@ -33,7 +40,7 @@ type LocalZone struct {
 	View     string
 
 	Class    string
-	Serial   int64
+	Serial   int64 `pg:",use_zero"`
 	Type     string
 	LoadedAt time.Time
 
@@ -59,6 +66,7 @@ func addZones(tx *pg.Tx, zones ...*Zone) error {
 			localZones = append(localZones, localZone)
 		}
 	}
+
 	_, err = tx.Model(&localZones).OnConflict("(zone_id, daemon_id, view) DO UPDATE").
 		Set("class = EXCLUDED.class").
 		Set("serial = EXCLUDED.serial").
@@ -83,9 +91,15 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 }
 
 // Retrieves a list of zones from the database.
-func GetZones(db pg.DBI, filter *bind9stats.ZoneFilter) ([]*Zone, error) {
+func GetZones(db pg.DBI, filter *bind9stats.ZoneFilter, relations ...ZoneRelation) ([]*Zone, int, error) {
 	var zones []*Zone
-	q := db.Model(&zones).Relation("LocalZones").OrderExpr("rname ASC")
+	q := db.Model(&zones)
+	// Add relations.
+	for _, relation := range relations {
+		q = q.Relation(string(relation))
+	}
+	// Order expression.
+	q = q.OrderExpr("rname ASC")
 
 	// Filtering is optional.
 	if filter != nil {
@@ -100,16 +114,20 @@ func GetZones(db pg.DBI, filter *bind9stats.ZoneFilter) ([]*Zone, error) {
 			lowerBound := strings.Join(labels, ".")
 			q = q.Where("rname > ?", lowerBound)
 		}
+		// Paging from offset.
+		if filter.Offset != nil {
+			q = q.Offset(*filter.Offset)
+		}
 		// Filter by view.
 		if filter.View != nil {
 			q = q.Join("JOIN local_zone AS lz ON lz.zone_id = zone.id").Where("lz.view = ?", filter.View)
 		}
 	}
-	err := q.Select()
+	count, err := q.SelectAndCount()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to select zones from the database")
+		return nil, count, errors.Wrapf(err, "failed to select zones from the database")
 	}
-	return zones, nil
+	return zones, count, nil
 }
 
 // Deletes zones which are not associated with any daemons. Returns deleted zone

@@ -1,0 +1,89 @@
+  # ZonesFetchStatus
+  ZonesFetchStatus:
+    type: object
+    properties:
+      completedAppsCount:
+        type: integer
+      appsCount:
+        type: integer
+
+  # ZoneInventoryState
+  ZoneInventoryState:
+    type: object
+    properties:
+      appId:
+        type: integer
+      appName:
+        type: string
+      createdAt:
+        type: string
+        format: date-time
+      daemonId:
+        type: integer
+      error:
+        type: string
+        x-nullable: true
+      status:
+        type: string
+      zoneCount:
+        type: integer
+        x-nullable: true
+
+  # ZoneInventoryStates
+  ZoneInventoryStates:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ZoneInventoryState'
+      total:
+        type: integer
+
+  # LocalZone
+  LocalZone:
+    type: object
+    properties:
+      appId:
+        type: integer
+      appName:
+        type: string
+      class:
+        type: string
+      daemonId:
+        type: integer
+      loadedAt:
+        type: string
+        format: date-time
+      serial:
+        type: integer
+      view:
+        type: string
+      zoneType:
+        type: string
+
+  # Zone
+  Zone:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      rname:
+        type: string
+      localZones:
+        type: array
+        items:
+          $ref: '#/definitions/LocalZone'
+
+  # Zones
+  Zones:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Zone'
+      total:
+        type: integer

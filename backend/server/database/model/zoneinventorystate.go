@@ -8,6 +8,10 @@ import (
 	pkgerrors "github.com/pkg/errors"
 )
 
+type ZoneInventoryStateRelation string
+
+const ZoneInventoryStateRelationApp ZoneInventoryStateRelation = "Daemon.App"
+
 // Represents a status returned by a zone inventory on an agent.
 // When server attempts to fetch the zone information from the
 // agents it collects status codes they return. The agents may
@@ -40,6 +44,7 @@ type ZoneInventoryState struct {
 	DaemonID  int64
 	CreatedAt time.Time
 	State     *ZoneInventoryStateDetails
+	Daemon    *Daemon `pg:"rel:has-one"`
 }
 
 // Represents a zone inventory state in the database for a daemon. It is
@@ -97,7 +102,7 @@ func AddZoneInventoryState(db pg.DBI, state *ZoneInventoryState) error {
 }
 
 // Returns zone inventory state for a daemon or nil if it doesn't exist.
-func GetZoneInventoryState(db pg.DBI, daemonID int64) (*ZoneInventoryState, error) {
+func GetZoneInventoryState(db pg.DBI, daemonID int64, relations ...ZoneInventoryStateRelation) (*ZoneInventoryState, error) {
 	state := &ZoneInventoryState{}
 	err := db.Model(state).
 		Where("daemon_id = ?", daemonID).
@@ -106,8 +111,26 @@ func GetZoneInventoryState(db pg.DBI, daemonID int64) (*ZoneInventoryState, erro
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "failed to get zone inventory staate for daemon %d", daemonID)
+		err = pkgerrors.Wrapf(err, "failed to get zone inventory state for daemon %d", daemonID)
 		return nil, err
 	}
 	return state, err
+}
+
+// Returns zone inventory states for all daemons.
+func GetZoneInventoryStates(db pg.DBI, relations ...ZoneInventoryStateRelation) ([]ZoneInventoryState, int, error) {
+	var states []ZoneInventoryState
+	q := db.Model(&states)
+	for _, relation := range relations {
+		q.Relation(string(relation))
+	}
+	count, err := q.SelectAndCount()
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return nil, count, nil
+		}
+		err = pkgerrors.Wrap(err, "failed to get zone inventory states")
+		return nil, count, err
+	}
+	return states, count, nil
 }

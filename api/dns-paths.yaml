@@ -1,0 +1,74 @@
+  /dns-management/zones-fetch:
+    put:
+      summary: Begin fetching zones from the agents with DNS servers.
+      description: >-
+        The Stork agents running on the machines where DNS servers are installed
+        fetch the zones from these servers and store in the "zone inventories".
+        This operation instructs the Stork server to communicate with the zone
+        inventories on the respective agents to receive all zones. The received zones
+        are fetched in the Stork server's database. This operation is a background
+        task that may take significant amount of time, depending on the number of
+        zones and DNS servers. Subsequent calls to this endpoint while this operation
+        is still in progress are no-op.
+      operationId: putZonesFetch
+      tags:
+        - DNS
+      responses:
+        202:
+          description: >-
+            Zone fetch has successfully started or is still in progress.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /dns-management/zone-inventory-states:
+    get:
+      summary: Returns states of fetching zones from the zone inventories to the Stork server.
+      description: >-
+        This call returns the state of fetching the zones from the zone inventories to
+        the Stork server for multiple DNS servers.
+      operationId: getZoneInventoryStates
+      tags:
+        - DNS
+      responses:
+        200:
+          description: Zones fetch status successfully returned.
+          schema:
+            $ref: "#/definitions/ZoneInventoryStates"
+        202:
+          description: >-
+            Zones fetch is still in progress but the returned structure contains the
+            number of apps from which the fetch has completed.
+          schema:
+            $ref: "#/definitions/ZonesFetchStatus"
+        204:
+          description: No state is currently available, presumably because the zones have not been fetched.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /zones:
+    get:
+      summary: Get list of DNS zones.
+      description: >-
+        A list of zones is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
+        parameters.
+      operationId: getZones
+      tags:
+        - DNS
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+      responses:
+        200:
+          description: List of zones.
+          schema:
+            $ref: "#/definitions/Zones"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+

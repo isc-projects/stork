@@ -65,8 +65,9 @@ func TestAddZonesOverlap(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the zones have been added and are associated with one server.
-	zones, err = GetZones(db, nil)
+	zones, total, err := GetZones(db, nil, ZoneRelationLocalZones)
 	require.NoError(t, err)
+	require.Equal(t, 100, total)
 	require.Len(t, zones, 100)
 	for _, zone := range zones {
 		require.Len(t, zone.LocalZones, 1)
@@ -95,8 +96,9 @@ func TestAddZonesOverlap(t *testing.T) {
 
 	// Retrieve the zones and their associations. They should be now associated
 	// with two servers.
-	zones, err = GetZones(db, nil)
+	zones, total, err = GetZones(db, nil, ZoneRelationLocalZones)
 	require.NoError(t, err)
+	require.Equal(t, 100, total)
 	require.Len(t, zones, 100)
 	for _, zone := range zones {
 		require.Len(t, zone.LocalZones, 2)
@@ -121,7 +123,7 @@ func TestGetZones(t *testing.T) {
 	app := &App{
 		ID:        0,
 		MachineID: machine.ID,
-		Type:      AppTypeKea,
+		Type:      AppTypeBind9,
 		Daemons: []*Daemon{
 			NewBind9Daemon(true),
 		},
@@ -154,24 +156,41 @@ func TestGetZones(t *testing.T) {
 
 	t.Run("no filtering", func(t *testing.T) {
 		// Without filtering we should get all zones.
-		zones, err = GetZones(db, nil)
+		zones, total, err := GetZones(db, nil, ZoneRelationLocalZones)
 		require.NoError(t, err)
+		require.Equal(t, 100, total)
 		require.Len(t, zones, 100)
+	})
+
+	t.Run("relations", func(t *testing.T) {
+		// Include daemon and app tables.
+		zones, total, err := GetZones(db, nil, ZoneRelationLocalZonesApp)
+		require.NoError(t, err)
+		require.Equal(t, 100, total)
+		require.Len(t, zones, 100)
+
+		for _, zone := range zones {
+			require.Len(t, zone.LocalZones, 1)
+			require.NotNil(t, zone.LocalZones[0].Daemon)
+			require.NotNil(t, zone.LocalZones[0].Daemon.App)
+		}
 	})
 
 	t.Run("filter by existing view", func(t *testing.T) {
 		filter := bind9stats.NewZoneFilter()
 		filter.SetView("_default")
-		zones, err = GetZones(db, filter)
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
+		require.Equal(t, 100, total)
 		require.Len(t, zones, 100)
 	})
 
 	t.Run("filter by non-existing view", func(t *testing.T) {
 		filter := bind9stats.NewZoneFilter()
 		filter.SetView("_bind")
-		zones, err = GetZones(db, filter)
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
+		require.Zero(t, total)
 		require.Empty(t, zones)
 	})
 
@@ -179,14 +198,16 @@ func TestGetZones(t *testing.T) {
 		// Get first 30 zones ordered by DNS name.
 		filter := bind9stats.NewZoneFilter()
 		filter.SetLowerBound("", 30)
-		zones1, err := GetZones(db, filter)
+		zones1, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
+		require.Equal(t, 100, total)
 		require.Len(t, zones1, 30)
 
 		// Use the 29th zone as a start (lower bound) for another fetch.
 		filter.SetLowerBound(zones1[28].Name, 20)
-		zones2, err := GetZones(db, filter)
+		zones2, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
+		require.Equal(t, 71, total)
 		require.Len(t, zones2, 20)
 
 		// The first returned zone should overlap with the last zone
@@ -194,10 +215,32 @@ func TestGetZones(t *testing.T) {
 		require.Equal(t, zones1[29].Name, zones2[0].Name)
 	})
 
+	t.Run("offset", func(t *testing.T) {
+		// Get first 20 zones ordered by DNS name.
+		filter := bind9stats.NewZoneFilter()
+		filter.SetOffsetLimit(0, 20)
+		zones1, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 100, total)
+		require.Len(t, zones1, 20)
+
+		// Use the 20th zone as a start for another fetch.
+		filter.SetOffsetLimit(19, 20)
+		zones2, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 100, total)
+		require.Len(t, zones2, 20)
+
+		// The first returned zone should overlap with the last zone
+		// returned during the first fetch.
+		require.Equal(t, zones1[19].Name, zones2[0].Name)
+	})
+
 	t.Run("sort", func(t *testing.T) {
 		filter := bind9stats.NewZoneFilter()
-		zones, err = GetZones(db, filter)
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
+		require.Equal(t, 100, total)
 		require.Len(t, zones, 100)
 		for i := range zones {
 			if i > 0 {
@@ -271,8 +314,9 @@ func TestDeleteOrphanedZones(t *testing.T) {
 	require.EqualValues(t, 100, affectedRows)
 
 	// No zones present.
-	zones, err = GetZones(db, nil)
+	zones, total, err := GetZones(db, nil, ZoneRelationLocalZones)
 	require.NoError(t, err)
+	require.Zero(t, total)
 	require.Empty(t, zones)
 }
 
@@ -454,7 +498,7 @@ func BenchmarkGetZones(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		zones, err := GetZones(db, nil)
+		zones, _, err := GetZones(db, nil, ZoneRelationLocalZones)
 		if err != nil {
 			b.Fatal(err)
 		}

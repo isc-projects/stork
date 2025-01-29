@@ -98,3 +98,17 @@ func TestZoneFilterSetLowerBound(t *testing.T) {
 	require.EqualValues(t, "example.org", *filter.LowerBound)
 	require.EqualValues(t, 3, *filter.Limit)
 }
+
+// Test setting the limit and offset.
+func TestZoneFilterLimit(t *testing.T) {
+	filter := NewZoneFilter()
+	require.Nil(t, filter.LowerBound)
+	require.Nil(t, filter.Limit)
+
+	filter.SetOffsetLimit(1, 3)
+	require.EqualValues(t, 1, *filter.Offset)
+	require.EqualValues(t, 3, *filter.Limit)
+	filter.SetOffsetLimit(2, 5)
+	require.EqualValues(t, 2, *filter.Offset)
+	require.EqualValues(t, 5, *filter.Limit)
+}

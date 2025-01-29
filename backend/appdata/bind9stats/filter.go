@@ -43,6 +43,7 @@ type ZoneFilter struct {
 	LowerBound  *string
 	Limit       *int
 	LoadedAfter *time.Time
+	Offset      *int
 }
 
 // Instantiates zone filter with all filters disabled.
@@ -64,5 +65,11 @@ func (filter *ZoneFilter) SetLoadedAfter(loadedAfter time.Time) {
 // Enables getting the zones page by page.
 func (filter *ZoneFilter) SetLowerBound(lowerBound string, limit int) {
 	filter.LowerBound = &lowerBound
+	filter.Limit = &limit
+}
+
+// Sets the limit on the number of zones.
+func (filter *ZoneFilter) SetOffsetLimit(offset, limit int) {
+	filter.Offset = &offset
 	filter.Limit = &limit
 }

@@ -67,6 +67,7 @@ paths:
   $include: settings-paths.yaml
   $include: search-paths.yaml
   $include: events-paths.yaml
+  $include: dns-paths.yaml
 
 
 parameters:
@@ -193,3 +194,4 @@ definitions:
   $include: settings-defs.yaml
   $include: search-defs.yaml
   $include: events-defs.yaml
+  $include: dns-defs.yaml

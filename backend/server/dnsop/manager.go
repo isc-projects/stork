@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"sync/atomic"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/panjf2000/ants/v2"
@@ -55,6 +54,56 @@ type Manager interface {
 	// this flag to true is helpful in the unit tests to ensure that specific sequence
 	// of calls is executed.
 	FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error)
+	// Checks if the DNS Manager is currently fetching the zones and returns progress.
+	// The first boolean flag indicates whether or not fetch is in progress. The int
+	// parameters indicate the number of apps from which the zones are fetched and the
+	// number of apps from which the zones have been fetched already.
+	GetFetchZonesProgress() (bool, int, int)
+}
+
+// A zones fetching state including the flag whether or not the fetch
+// is in progress, and other data useful to track fetch progress.
+type fetchingState struct {
+	fetching           bool
+	completedAppsCount int
+	appsCount          int
+	mutex              sync.RWMutex
+}
+
+func (state *fetchingState) startFetching() bool {
+	state.mutex.Lock()
+	defer state.mutex.Unlock()
+	if state.fetching {
+		return false
+	}
+	state.fetching = true
+	state.appsCount = 0
+	state.completedAppsCount = 0
+	return true
+}
+
+func (state *fetchingState) stopFetching() {
+	state.mutex.Lock()
+	defer state.mutex.Unlock()
+	state.fetching = false
+}
+
+func (state *fetchingState) get() (bool, int, int) {
+	state.mutex.RLock()
+	defer state.mutex.RUnlock()
+	return state.fetching, state.appsCount, state.completedAppsCount
+}
+
+func (state *fetchingState) setAppsCount(appsCount int) {
+	state.mutex.Lock()
+	defer state.mutex.Unlock()
+	state.appsCount = appsCount
+}
+
+func (state *fetchingState) increaseCompletedAppsCount() {
+	state.mutex.Lock()
+	defer state.mutex.Unlock()
+	state.completedAppsCount += 1
 }
 
 // DNS Manager implementation. The Manager is responsible for coordinating all
@@ -64,9 +113,8 @@ type managerImpl struct {
 	db *pg.DB
 	// Interface to the connected agents.
 	agents agentcomm.ConnectedAgents
-	// A boolean flag indicating that the manager is fetching the zones and another
-	// attempt to start the fetch should return ManagerAlreadyFetchingError error.
-	fetching atomic.Bool
+	// A state of fetching zones from the DNS servers by the manager.
+	fetchingState *fetchingState
 }
 
 // A structure returned over the channel when Manager completes asynchronous task.
@@ -79,9 +127,9 @@ type ManagerDoneNotify struct {
 // Instantiates DNS Manager.
 func NewManager(owner ManagerAccessors) Manager {
 	return &managerImpl{
-		db:       owner.GetDB(),
-		agents:   owner.GetConnectedAgents(),
-		fetching: atomic.Bool{},
+		db:            owner.GetDB(),
+		agents:        owner.GetConnectedAgents(),
+		fetchingState: &fetchingState{},
 	}
 }
 
@@ -90,7 +138,7 @@ func NewManager(owner ManagerAccessors) Manager {
 func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error) {
 	// Only swap if the flag is currently set to false. If it is set to
 	// true it means that there is another fetch still in progress.
-	if !manager.fetching.CompareAndSwap(false, true) {
+	if !manager.fetchingState.startFetching() {
 		return nil, &ManagerAlreadyFetchingError{}
 	}
 	// Get the list of monitored DNS servers. We're going to communicate
@@ -98,9 +146,10 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 	// list of zones.
 	apps, err := dbmodel.GetAppsByType(manager.db, dbmodel.AppTypeBind9)
 	if err != nil {
-		manager.fetching.Store(false)
+		manager.fetchingState.stopFetching()
 		return nil, err
 	}
+	manager.fetchingState.setAppsCount(len(apps))
 	// Use the channel to communicate when the fetch has finished.
 	// By default the channel is non-blocking in case the caller doesn't
 	// want to wait for the completion. The buffer length of 1 ensures
@@ -121,7 +170,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		pool, _ := ants.NewPool(poolSize)
 		defer pool.Release()
 		// Indicate that the fetch is done and another fetch can be started.
-		defer manager.fetching.Store(false)
+		defer manager.fetchingState.stopFetching()
 		// Wait group is used to ensure we wait for zone fetch from all DNS servers.
 		wg := sync.WaitGroup{}
 		wg.Add(len(apps))
@@ -205,6 +254,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 				// Store the inventory state in the common map, so it can be returned
 				// to a caller.
 				storeResult(&mutex, results, app.Daemons[0].ID, state)
+				manager.fetchingState.increaseCompletedAppsCount()
 			})
 			if err != nil {
 				// In an unlikely event that submitting a task to the pool failed let's
@@ -219,8 +269,14 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		notifyChannel <- ManagerDoneNotify{
 			results,
 		}
+		manager.fetchingState.stopFetching()
 	}()
 	return notifyChannel, nil
+}
+
+// Checks if the DNS Manager is currently fetching the zones.
+func (manager *managerImpl) GetFetchZonesProgress() (bool, int, int) {
+	return manager.fetchingState.get()
 }
 
 // Convenience function storing a value in a map with mutex protection.

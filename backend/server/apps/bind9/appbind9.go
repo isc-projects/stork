@@ -106,6 +106,9 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	}
 
 	bind9Daemon := dbmodel.NewBind9Daemon(false)
+	if len(dbApp.Daemons) > 0 && dbApp.Daemons[0].ID != 0 {
+		bind9Daemon = dbApp.Daemons[0]
+	}
 
 	// Get version
 	pattern := regexp.MustCompile(`version:\s+(.+)\n`)
@@ -121,6 +124,8 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	up := pattern.FindString(out.Output)
 	if up != "" {
 		bind9Daemon.Active = true
+	} else {
+		bind9Daemon.Active = false
 	}
 
 	// Up time

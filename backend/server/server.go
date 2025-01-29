@@ -20,6 +20,7 @@ import (
 	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/dnsop"
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/hookmanager"
 	"isc.org/stork/server/metrics"
@@ -222,11 +223,15 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	endpointControl := restservice.NewEndpointControl()
 	endpointControl.SetEnabled(restservice.EndpointOpCreateNewMachine, enableMachineRegistration)
 
+	// Create DNS Manager.
+	dnsManager := dnsop.NewManager(ss)
+
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
 		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
-		ss.DHCPOptionDefinitionLookup, ss.HookManager, endpointControl)
+		ss.DHCPOptionDefinitionLookup, ss.HookManager, endpointControl,
+		dnsManager)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
