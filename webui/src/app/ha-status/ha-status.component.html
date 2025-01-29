@@ -62,10 +62,10 @@
                                 <ng-container [ngSwitch]="statusRow.title">
                                     <app-help-tip *ngSwitchCase="'Status time'" [subject]="statusRow.title | lowercase">
                                         <p>
-                                            This is the time when the server last reported its state; it is
-                                            not necessarily the time when the state information was refreshed in the UI.
-                                            The presented state information is typically delayed by 10 to 30 seconds
-                                            because it is cached by both the Kea servers and the Stork backend. Caching
+                                            This is the time when the server last reported its state; it is not
+                                            necessarily the time when the state information was refreshed in the UI. The
+                                            presented state information is typically delayed by 10 to 30 seconds because
+                                            it is cached by both the Kea servers and the Stork backend. Caching
                                             minimizes the performance impact on the DHCP servers reporting their states
                                             over the control channel.
                                         </p>
@@ -91,8 +91,8 @@
                                             server is not responding and may be down.
                                         </p>
                                         <p>
-                                            The <b>unknown</b> control status may appear during the server's
-                                            startup, when the information about its actual status is not yet available.
+                                            The <b>unknown</b> control status may appear during the server's startup,
+                                            when the information about its actual status is not yet available.
                                         </p>
                                     </app-help-tip>
                                     <app-help-tip
@@ -112,18 +112,17 @@
                                         </p>
                                         <p>
                                             A <span class="font-bold">failed</span> status occurs when the most recent
-                                            attempt to send a heartbeat to the server fails. In this case,
-                                            the partners enter the
-                                            <span class="font-italic">communication-interrupted</span> state. They may
-                                            recover from this state if the communication problem is transient. If
-                                            communication is interrupted for a longer period, the failover procedure
+                                            attempt to send a heartbeat to the server fails. In this case, the partners
+                                            enter the <span class="font-italic">communication-interrupted</span> state.
+                                            They may recover from this state if the communication problem is transient.
+                                            If communication is interrupted for a longer period, the failover procedure
                                             is triggered, resulting in the partner's transition to the
                                             <span class="font-bold">partner-down</span>
                                             state.
                                         </p>
                                         <p>
-                                            An <span class="font-bold">unknown</span> status may occur when
-                                            the servers have not yet tried to exchange heartbeats.
+                                            An <span class="font-bold">unknown</span> status may occur when the servers
+                                            have not yet tried to exchange heartbeats.
                                         </p>
                                     </app-help-tip>
                                     <app-help-tip
@@ -190,13 +189,13 @@
                                             <span class="font-bold">secondary</span> in the
                                             <span class="font-bold white-space-nowrap">load-balancing</span> mode or as
                                             a <span class="font-bold">primary</span> in the
-                                            <span class="font-bold white-space-nowrap">hot-standby</span> mode, there
-                                            is typically a single scope shown. Two scopes may be shown if a
+                                            <span class="font-bold white-space-nowrap">hot-standby</span> mode, there is
+                                            typically a single scope shown. Two scopes may be shown if a
                                             <span class="font-bold white-space-nowrap">load-balancing</span> server is
                                             currently serving all DHCP clients while its partner is down. There may be
-                                            no scopes shown when a <span class="font-bold">standby</span> server is
-                                            in <span class="font-bold white-space-nowrap">hot-standby</span> mode,
-                                            because such a server is not responding to any DHCP queries; instead, it is
+                                            no scopes shown when a <span class="font-bold">standby</span> server is in
+                                            <span class="font-bold white-space-nowrap">hot-standby</span> mode, because
+                                            such a server is not responding to any DHCP queries; instead, it is
                                             passively receiving lease updates from the
                                             <span class="font-bold">primary</span>. The
                                             <span class="font-bold">standby</span> server will start serving the
@@ -226,8 +225,8 @@
                                             server is responding to DHCP traffic. The unacked number indicates clients
                                             that have been trying to get leases from this server longer than the time
                                             specified by the
-                                            <span class="font-bold white-space-nowrap">max-ack-delay</span> configuration
-                                            parameter.
+                                            <span class="font-bold white-space-nowrap">max-ack-delay</span>
+                                            configuration parameter.
                                         </p>
                                     </app-help-tip>
                                     <app-help-tip
@@ -262,8 +261,8 @@
                                         [subject]="statusRow.title | lowercase"
                                     >
                                         <p>
-                                            This shows a progress bar for the failover procedure. When it hits 100%,
-                                            the server considers its partner offline, and transitions to the
+                                            This shows a progress bar for the failover procedure. When it hits 100%, the
+                                            server considers its partner offline, and transitions to the
                                             <span class="font-bold white-space-nowrap">partner-down</span>
                                             state. The progress is calculated from the number of unacked clients
                                             relative to the maximum number of unacked clients.

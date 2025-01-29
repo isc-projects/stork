@@ -129,34 +129,34 @@
                                     <i class="pi pi-exclamation-triangle"></i>
                                     <div class="ml-2">
                                         <p>
-                                            This daemon is currently not monitored by Stork. The daemon was never
-                                            running correctly (was never active) since it was added to Stork server. The
-                                            configuration for this daemon was detected in the Kea Control Agent's
-                                            configuration file. That's why it appears on the list of daemons.
+                                            This daemon is currently not monitored by Stork. The daemon has not been
+                                            active since being added to the Stork server. This daemon appears in the
+                                            list because its configuration was detected in the Kea Control Agent's
+                                            configuration file.
                                         </p>
                                         <p>
-                                            If the daemon is operational (e.g., it allocates leases), make sure it has
+                                            If the daemon is operational (e.g. it allocates leases), make sure it has
                                             the <code>control-socket</code> entry in its configuration file.
                                             <!-- The daemon version is unknown. -->
                                             <a
                                                 *ngIf="daemon.name === 'dhcp4'"
                                                 href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#management-api-for-the-dhcpv4-server"
                                                 target="_blank"
-                                                >See Kea ARM</a
+                                                >See the Kea ARM</a
                                             >
                                             <a
                                                 *ngIf="daemon.name === 'dhcp6'"
                                                 href="https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#management-api-for-the-dhcpv6-server"
                                                 target="_blank"
-                                                >See Kea ARM</a
+                                                >See the Kea ARM</a
                                             >
                                             <a
                                                 *ngIf="daemon.name === 'd2'"
                                                 href="https://kea.readthedocs.io/en/latest/arm/ddns.html#management-api-for-the-d2-server"
                                                 target="_blank"
-                                                >See Kea ARM</a
+                                                >See the Kea ARM</a
                                             >
-                                            .
+                                            for details.
                                         </p>
                                     </div>
                                 </ng-template>
@@ -172,7 +172,7 @@
                             <p-message
                                 *ngIf="daemon.monitored"
                                 severity="error"
-                                text="There is observed issue in communication with the daemon."
+                                text="There is a communication issue with the daemon."
                             >
                             </p-message>
                         </div>
@@ -331,20 +331,20 @@
                                     Configuration Review Reports
                                     <app-help-tip subject="daemon configuration review section">
                                         <p>
-                                            Stork server reviews the monitored servers' configurations. It flags
-                                            potential configuration issues and suggests changes to these configurations
-                                            to improve Stork monitoring capabilities. The review is performed using
+                                            The Stork server reviews the monitored servers' configurations, flags
+                                            potential configuration issues, and suggests changes to these configurations
+                                            to improve Stork's monitoring capabilities. The review is performed using
                                             different checkers built into the Stork server. Each checker is responsible
-                                            for examining a different part or aspect of the configuration. The checkers
-                                            have unique names displayed in the list below as blue badges before each
-                                            issue text.
+                                            for examining a different part or aspect of the configuration. Each checker
+                                            has a unique name, which is shown in the blue badge before the text of each
+                                            issue in the list below.
                                         </p>
                                         <p>
-                                            It is possible to silence specific checkers by name if their review reports
-                                            are not desired in the particular deployment.
+                                            Each checker can be disabled if its review report is not desired in a
+                                            particular deployment.
                                         </p>
                                         <p>
-                                            By default, only reports that found an issue are visible. Use the toggle
+                                            By default, only reports that discover an issue are visible. Use the toggle
                                             button to display reports from all executed checkers for a given daemon.
                                         </p>
                                     </app-help-tip>

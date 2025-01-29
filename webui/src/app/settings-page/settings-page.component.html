@@ -3,7 +3,7 @@
         <div class="flex align-items-top">
             <div class="pi pi-info-circle p-message-icon"></div>
             <div class="ml-2">
-                To add or remove machines go to
+                To add or remove machines, go to the
                 <a routerLink="/machines/all" [queryParams]="{ authorized: 'true' }">machines page</a>
             </div>
             .
@@ -13,18 +13,17 @@
             <div class="pi pi-info-circle p-message-icon"></div>
             <div class="ml-2" id="intervals-config-msg">
                 <p class="mt-0">
-                    Using the settings in the Intervals section it is possible to configure the intervals at which the
-                    Stork server fetches various types of information from the monitored machines and applications. Each
-                    configured value designates a time period between completion of the previous attempt to fetch some
-                    type of information from the machines and the beginning of the next attempt to fetch new
-                    information.
+                    Using the settings in the Intervals section, you can configure the intervals at which the Stork
+                    server fetches various types of information from the monitored machines and applications. Each
+                    configured value designates the time period between completion of the previous attempt to fetch
+                    certain information from the machines, and the beginning of the next attempt.
                 </p>
                 <p class="mb-0">
-                    For example, if the Kea Hosts Puller Interval is set to 10 seconds and it takes 5 seconds to pull
-                    the hosts information, the time period between the beginnings of the two consecutive attempts to
-                    pull the hosts information will be equal to 15 seconds. The pull time varies between deployments and
-                    depends on the amount of information pulled, network congestion and other factors. The setting
-                    specified here guarantees that there is a constant idle time between any two attempts.
+                    For example, if the Kea Hosts Puller Interval is set to 10 seconds and it takes five seconds to pull
+                    the hosts information, the time period between the start of two consecutive attempts to pull the
+                    hosts information will be 15 seconds. The pull time varies between deployments and depends on the
+                    amount of information pulled, network congestion, and other factors. The setting specified here
+                    guarantees that there is a constant idle time between any two attempts.
                 </p>
             </div>
         </div>
@@ -44,16 +43,16 @@
                         />
                         <label class="ml-2" for="machine-registration-checkbox">Enable machine registration</label>
                         <app-help-tip subject="Enable Machine Registration">
-                            New machines begin registration in the Stork server using a dedicated REST API endpoint. The
-                            same endpoint is used for re-registering already connected machines when they are restarted.
-                            Since new machines are registered rarely it is practical to disable this option to prevent
-                            malicious registration attempts of the fake machines. An administrator can re-enable it at
-                            any time when new registrations are expected. Disabling this option does not affect an
-                            ability to re-register existing machines.
+                            New machines begin registration in the Stork server using a dedicated REST API endpoint, and
+                            the same endpoint is used for re-registering already-connected machines when they are
+                            restarted. Since new machines are not registered often, it is practical to disable this
+                            option to prevent malicious registration attempts of fake machines; an administrator can
+                            re-enable it at any time when new registrations are expected. Disabling this option does not
+                            affect the ability to re-register existing machines.
                         </app-help-tip>
                     </div>
                 </p-fieldset>
-                <p-fieldset legend="Automatic software updates checking">
+                <p-fieldset legend="Automatic software update checking">
                     <div class="flex align-items-center">
                         <p-checkbox
                             formControlName="enableOnlineSoftwareVersions"
@@ -61,15 +60,15 @@
                             inputId="online-versions-checkbox"
                         />
                         <label class="ml-2" for="online-versions-checkbox"
-                            >Enable online software updates checking</label
+                            >Enable online checking for software updates</label
                         >
-                        <app-help-tip subject="Online Software Updates Checking Setting">
-                            Stork can automatically check for software updates available for Kea, BIND 9 and Stork
-                            itself. To be able to do that, Stork server downloads a
+                        <app-help-tip subject="Online Software Update Checking Setting">
+                            Stork can automatically check for software updates available for Kea, BIND 9, and Stork
+                            itself. To do that, the Stork server downloads a
                             <a href="https://www.isc.org/versions.json" target="_blank">JSON file</a> with the latest
-                            software releases metadata. This feature can be disabled using this setting. When disabled,
-                            all the feedback displayed regarding software versions detected by Stork will be generated
-                            based on offline built-in information stored as a JSON file.
+                            software-release metadata. This feature can be disabled using this setting. When disabled,
+                            all feedback displayed regarding software versions detected by Stork is generated based on
+                            offline built-in information stored as a JSON file.
                         </app-help-tip>
                     </div>
                 </p-fieldset>
@@ -119,7 +118,7 @@
             class="mt-2 ml-1"
         ></button>
 
-        <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues in the form values. </span>
+        <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues with the form values. </span>
     </ng-container>
     <ng-container *ngSwitchCase="'fail'">
         <div class="text-lg">Fetching current settings from the server failed. Click the button to retry.</div>

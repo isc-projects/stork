@@ -92,11 +92,11 @@
 
 <p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
     <p class="max-w-40rem my-2 mr-2">
-        Copy these commands and paste them into a terminal on the machine where the Stork Agent is being installed.
+        Copy these commands and paste them into a terminal on the machine where the Stork agent is being installed.
         <br />
         For more details, see
         <a target="_blank" routerLink="/assets/arm/install.html#installing-from-packages"
-            >the Stork Agent Installation instructions <i class="pi pi-external-link"></i></a
+            >the Stork agent installation instructions <i class="pi pi-external-link"></i></a
         >.
     </p>
     <div class="flex align-items-start mb-2">
@@ -116,7 +116,7 @@ sudo ./stork-install-agent.sh</textarea
     </div>
     <p class="max-w-40rem my-2 mr-2">During agent installation, you will be prompted for a server token.</p>
     <p class="max-w-40rem my-2 mr-2">
-        The <b>Server token</b> value is
+        The <b>server token</b> value is
         <input [value]="serverToken" class="monospace server-token" size="32" readonly="" #serverTokenInput />
 
         <button
@@ -143,7 +143,7 @@ sudo ./stork-install-agent.sh</textarea
         Providing the token will cause the new machine to be automatically added to the Stork server and authorized.
     </p>
     <p class="max-w-40rem mb-2 mr-2">
-        If Enter is pressed with no token value provided, this new machine will wait for authorization. To see
+        If Enter is pressed with no token value provided, this new machine will wait for authorization. To see all
         unauthorized machines, select the <b>Unauthorized</b> button at the top right.
     </p>
     <div class="flex justify-content-end">
@@ -295,7 +295,7 @@ sudo ./stork-install-agent.sh</textarea
                             <span>CPUs Load</span>
                             <app-help-tip subject="CPU Load" id="cpu-load-2-help-button">
                                 <p>
-                                    These three numbers are CPU load averages for last 1 minute, 5 minutes, and 15
+                                    These three numbers are CPU load averages for the last 1 minute, 5 minutes, and 15
                                     minutes. This is the usual syntax used by the <b>top</b> command.
                                 </p>
 

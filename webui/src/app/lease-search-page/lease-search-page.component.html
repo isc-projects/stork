@@ -65,8 +65,8 @@
                 <li>0102030405</li>
             </ul>
             <p>
-                The specified text must match exactly one of the lease properties. Searching for leases using partial
-                values, e.g. <span style="font-family: monospace">192.0.</span>, is currently not supported.
+                The specified text must exactly match one of the lease properties. Searching for leases using partial
+                values, e.g. <span style="font-family: monospace">192.0.</span>, is not currently supported.
             </p>
             <p>
                 To find all declined leases, type <span style="font-family: monospace">state:declined</span> in the
@@ -92,8 +92,8 @@
             <div>
                 Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
                 error in response to the control commands. The results presented in the table below may not include all
-                leases matching the query because some matching leases may reside on the servers, which returned an
-                error. Issues were found for the following Kea servers:
+                leases matching the query because some matching leases may reside on a server that returned an error.
+                Issues were found for the following Kea servers:
                 <ul style="list-style-type: disc">
                     <li *ngFor="let erredApp of erredApps">
                         <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>

@@ -25,18 +25,18 @@
                     </li>
                     <li><span class="monospace">declined</span> - the number of declined leases.</li>
                     <li>
-                        <span class="monospace">uncertain</span> - optional statistics, only presented when the number of
-                        declined leases is greater than the number assigned (see below).
+                        <span class="monospace">uncertain</span> - optional statistics, only presented when the number
+                        of declined leases is greater than the number assigned (see below).
                     </li>
                 </ul>
                 <p>
                     There are rare cases when a Kea server can return inconsistent statistics, with the number of
-                    declined leases greater than the number of assigned leases. This may happen when some DHCP
-                    clients decline leases that are already released or expired; these leases are not counted as assigned, but
-                    the declined statistics are affected. Stork deals with such cases via the "uncertain leases" count, which
-                    holds the estimated number of leases for which it is unclear whether they are allocated, declined, or
-                    free. This statistic is only computed and presented when the number of declined leases is greater
-                    than assigned.
+                    declined leases greater than the number of assigned leases. This may happen when some DHCP clients
+                    decline leases that are already released or expired; these leases are not counted as assigned, but
+                    the declined statistics are affected. Stork deals with such cases via the "uncertain leases" count,
+                    which holds the estimated number of leases for which it is unclear whether they are allocated,
+                    declined, or free. This statistic is only computed and presented when the number of declined leases
+                    is greater than assigned.
                 </p>
                 <p>
                     The DHCP parameters can be specified at global and shared-network levels. The list below contains
