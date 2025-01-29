@@ -678,6 +678,15 @@ system_test:
     reports:
       junit: tests/system/test-results/junit.xml
 
+system_test_kea_2.7.5:
+  extends: system_test
+  variables:
+    KEA_VERSION: 2.7.5-isc20241206195208
+    ONLY_KEA_TESTS: "true"
+  script:
+    - rake systemtest
+  artifacts: {}
+
 ### hooks ###
 build_hooks_amd64:
   extends: .base_build_debian
