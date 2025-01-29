@@ -24,6 +24,10 @@ from core.fixtures import (  # noqa: F401
 )
 from core.compose_factory import create_docker_compose
 
+# List of fixtures that run the Kea executables.
+KEA_FIXTURE_NAMES = set([kea_service.__name__, ha_pair_service.__name__,
+                         perfdhcp_service.__name__, register_service.__name__])
+
 # In case of xdist the output is hidden by default.
 # The redirection below forces output to screen.
 if os.environ.get("PYTEST_XDIST_WORKER", False):
@@ -127,18 +131,26 @@ def pytest_collection_modifyitems(
             if item.get_closest_marker("timeout") is None:
                 item.add_marker(pytest.mark.timeout(default_timeout.total_seconds()))
 
-    # Skip all tests using the disabled services.
     compose = create_docker_compose()
-    skip = pytest.mark.skip(reason="Skip due to not set the docker-compose profile.")
+
+    # Skip tests using the disabled services due to missing docker-compose
+    # profile.
+    skip_missing_tag = pytest.mark.skip(reason="Skip due to not set the docker-compose profile.")
+    # Skip tests non-Kea related tests if the Kea-only environment variable is
+    # set.
+    skip_kea_only = pytest.mark.skip(reason="Skip because test is not related to Kea.")
+    execute_only_kea_tests = os.environ.get("ONLY_KEA_TESTS", "false").lower() == "true"
 
     for item in items:
+        if execute_only_kea_tests and not any(n in KEA_FIXTURE_NAMES for n in item.fixturenames):
+            item.add_marker(skip_kea_only)
+            continue
         if not hasattr(item, "callspec"):
+            # Only test cases with a parametrize decorator have callspec.
             continue
         callspec = item.callspec
         for _, fixture_args in callspec.params.items():
             service_name = fixture_args.get("service_name")
-            if service_name is None:
-                continue
-            if not compose.is_enabled(service_name):
-                item.add_marker(skip)
+            if service_name is not None and not compose.is_enabled(service_name):
+                item.add_marker(skip_missing_tag)
                 break
