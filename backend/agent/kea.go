@@ -240,7 +240,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // HTTP client configuration from the Stork agent configuration and
 // additionally sets the basic authentication credentials if they are provided
 // in the Kea CA configuration. It picks the first credentials with the user
-// name "stork" or starts with "stork." If there are no such credentials, it
+// name "stork" or starting with "stork." If there are no such credentials, it
 // picks the first one. See @readClientCredentials for details.
 // The user name of the selected credentials is used as a key of the
 // application's access point.
