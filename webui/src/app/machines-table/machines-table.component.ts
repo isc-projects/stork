@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
 import { PrefilteredTable } from '../table'
 import { Machine, ServicesService } from '../backend'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
+import { Table, TableLazyLoadEvent, TableSelectAllChangeEvent } from 'primeng/table'
 import { ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
@@ -94,6 +94,17 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     @Output() unauthorizedMachinesCountChange = new EventEmitter<number>()
 
     /**
+     * Keeps state of the Select All checkbox in the table's header.
+     */
+    selectAll: boolean = false
+
+    /**
+     * Keeps count of unauthorized machines in the Machines data collection returned from backend.
+     * @private
+     */
+    private _unauthorizedInDataCollectionCount: number = 0
+
+    /**
      * Callback called when Show machine's menu button was clicked by user.
      * @param event browser's click event
      * @param machine machine for which the menu is about to be displayed
@@ -138,7 +149,6 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     ngOnInit(): void {
         super.onInit()
-        this.clearSelection()
     }
 
     /**
@@ -164,11 +174,18 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
             .then((data) => {
                 this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
+                this._unauthorizedInDataCollectionCount = this.dataCollection?.filter((m) => !m.authorized).length ?? 0
                 if (authorized === false && this.hasFilter(this.table) === false) {
                     this.unauthorizedMachinesCount = this.totalRecords
                     this.unauthorizedMachinesCountChange.emit(this.totalRecords)
                 } else {
                     this.fetchUnauthorizedMachinesCount()
+                }
+
+                if (this.selectedMachines.length > 0) {
+                    // Clear selection on any lazy data load.
+                    // This is to prevent confusion when selected machines could be out of filtered results.
+                    this.clearSelection()
                 }
             })
             .catch((err) => {
@@ -248,6 +265,7 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     clearSelection() {
         this.selectedMachines = []
+        this.selectAll = false
     }
 
     /**
@@ -256,5 +274,28 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
      */
     setDataLoading(loading: boolean) {
         this.dataLoading = loading
+    }
+
+    /**
+     * Callback called when any single machine is selected or deselected.
+     * @param selection current selection state
+     */
+    onSelectionChange(selection: Machine[]) {
+        this.selectAll = selection.length > 0 && selection.length === this._unauthorizedInDataCollectionCount
+    }
+
+    /**
+     * Callback called after click event on the Select all checkbox.
+     * @param event change event containing 'checked' boolean flag and the original Click event
+     */
+    onSelectAllChange(event: TableSelectAllChangeEvent) {
+        if (event.checked) {
+            this.selectAll = true
+            // Custom select all behavior: select only unauthorized machines visible on current table page.
+            this.selectedMachines = this.dataCollection.filter((m) => !m.authorized)
+            return
+        }
+
+        this.clearSelection()
     }
 }

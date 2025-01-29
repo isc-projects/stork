@@ -40,6 +40,9 @@
     [currentPageReportTemplate]="currentPageReportTemplate"
     styleClass="p-datatable-striped"
     [(selection)]="selectedMachines"
+    (selectionChange)="onSelectionChange($event)"
+    [selectAll]="selectAll"
+    (selectAllChange)="onSelectAllChange($event)"
 >
     <ng-template pTemplate="caption">
         <p-panel [toggleable]="true">
@@ -193,7 +196,7 @@
     <ng-template pTemplate="body" let-m>
         <tr>
             <td *ngIf="unauthorizedMachinesDisplayed()">
-                <p-tableCheckbox [value]="m"></p-tableCheckbox>
+                <p-tableCheckbox [value]="m" [disabled]="m.authorized"></p-tableCheckbox>
             </td>
             <td>
                 <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
