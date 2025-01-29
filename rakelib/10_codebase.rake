@@ -312,7 +312,7 @@ file hook_doc_directory => FileList["hooks/**/doc/**/*"] do
     end
 
     # Workaround for Sphinx warning that reports the non-matching glob pattern.
-    # It interrupts build when there is no hooks. I reported the issue to the
+    # It interrupts build when there are no hooks. I reported the issue to the
     # Sphinx project: https://github.com/sphinx-doc/sphinx/pull/13230
     if Dir.empty?(hook_doc_directory)
         sh "mkdir", "-p", File.join(hook_doc_directory, "dummy")
