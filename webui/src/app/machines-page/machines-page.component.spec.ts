@@ -514,8 +514,6 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).not.toContain('aaa')
         expect(nativeEl.textContent).not.toContain('bbb')
-
-        flush()
     })
 
     it('should not list machine as authorized when there was an http status 502 during authorization - bulk authorize - second machine fails', async () => {
@@ -639,8 +637,6 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('aaa')
         expect(nativeEl.textContent).not.toContain('bbb')
         expect(nativeEl.textContent).not.toContain('ccc')
-
-        flush()
     })
 
     it('should button menu click trigger the download handler', fakeAsync(() => {

@@ -150,6 +150,7 @@ describe('LoginScreenComponent', () => {
         expect(listItems[1].nativeElement.innerText).toContain('ldap')
 
         listItems[1].nativeElement.click()
+        tick()
         fixture.detectChanges()
 
         // Provide login and password.

@@ -29,7 +29,7 @@ import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { HttpEvent } from '@angular/common/http'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { TabMenuModule } from 'primeng/tabmenu'
+import { TabMenu, TabMenuModule } from 'primeng/tabmenu'
 import { SharedNetworkTabComponent } from '../shared-network-tab/shared-network-tab.component'
 import { FieldsetModule } from 'primeng/fieldset'
 import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
@@ -356,6 +356,13 @@ describe('SharedNetworksPageComponent', () => {
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
+
+        // PrimeNG TabMenu is using setTimeout() logic when scrollable property is set to true.
+        // This makes testing in fakeAsync zone unexpected, so disable 'scrollable' feature in tests.
+        const m = fixture.debugElement.query(By.directive(TabMenu))
+        if (m?.context) {
+            m.context.scrollable = false
+        }
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
         component.table.table.clearFilterValues()

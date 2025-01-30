@@ -18,7 +18,7 @@ import {
 import { By } from '@angular/platform-browser'
 import { of, throwError, BehaviorSubject } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { TabMenuModule } from 'primeng/tabmenu'
+import { TabMenu, TabMenuModule } from 'primeng/tabmenu'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { HostTabComponent } from '../host-tab/host-tab.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -137,6 +137,13 @@ describe('HostsPageComponent', () => {
         spyOnProperty(router, 'events').and.returnValue(routerEventSubject)
 
         fixture.detectChanges()
+
+        // PrimeNG TabMenu is using setTimeout() logic when scrollable property is set to true.
+        // This makes testing in fakeAsync zone unexpected, so disable 'scrollable' feature in tests.
+        const m = fixture.debugElement.query(By.directive(TabMenu))
+        if (m?.context) {
+            m.context.scrollable = false
+        }
 
         // PrimeNG table is stateful in the component, so clear stored filter between tests.
         component.table.table.clearFilterValues()

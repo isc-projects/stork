@@ -574,6 +574,8 @@ describe('MachinesTableComponent', () => {
 
         await fixture.whenStable()
         fixture.detectChanges()
+        await fixture.whenStable() // Wait for PrimeNG to react on Select all change
+        fixture.detectChanges()
 
         expect(component.selectedMachines.length).toEqual(3)
         expect(component.selectedMachines).toEqual(getUnauthorizedMachinesResp.items)
@@ -584,6 +586,8 @@ describe('MachinesTableComponent', () => {
         // Act
         component.clearSelection()
         await fixture.whenStable()
+        fixture.detectChanges()
+        await fixture.whenStable() // Wait for PrimeNG to react on Select all change
         fixture.detectChanges()
 
         // Assert
@@ -686,6 +690,8 @@ describe('MachinesTableComponent', () => {
         selectAllCheckbox.nativeElement.click() // select All unauthorized
         await fixture.whenStable()
         fixture.detectChanges()
+        await fixture.whenStable() // Wait for PrimeNG to react on Select all change
+        fixture.detectChanges()
 
         expect(component.selectedMachines.length).toEqual(3)
         expect(component.selectedMachines).toEqual(getUnauthorizedMachinesResp.items)
@@ -695,6 +701,8 @@ describe('MachinesTableComponent', () => {
 
         selectAllCheckbox.nativeElement.click() // deselect All unauthorized
         await fixture.whenStable()
+        fixture.detectChanges()
+        await fixture.whenStable() // Wait for PrimeNG to react on Select all change
         fixture.detectChanges()
 
         expect(component.selectedMachines.length).toEqual(0)
