@@ -7,8 +7,8 @@ ARG KEA_VERSION=2.7.0-isc20240624090938
 # Indicates if the premium packages should be installed.
 # Valid values: "premium" or empty.
 ARG KEA_PREMIUM=""
-# Indicates if the Kea legacy packages (prior 2.3) should be installed.
-ARG KEA_LEGACY_PKGS="false"
+# Indicates if the Kea packages prior 2.3 should be installed.
+ARG KEA_PRIOR_2_3_0="false"
 ARG BIND9_VERSION=9.18
 
 ###################
@@ -247,10 +247,10 @@ RUN apt-get update \
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 ARG KEA_REPO
 ARG KEA_VERSION
-ARG KEA_LEGACY_PKGS
+ARG KEA_PRIOR_2_3_0
 RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
-        && if [ ${KEA_LEGACY_PKGS} == "true" ]; then \
+        && if [ ${KEA_PRIOR_2_3_0} == "true" ]; then \
                 apt-get install \
                         --no-install-recommends \
                         -y \
@@ -260,6 +260,18 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
                         isc-kea-dhcp6-server=${KEA_VERSION} \
                         isc-kea-admin=${KEA_VERSION} \
                         isc-kea-common=${KEA_VERSION} \
+                        ;\
+           elif [ ${KEA_PRIOR_2_7_5} == "true" ]; then \
+                apt-get install \
+                        --no-install-recommends \
+                        -y \
+                        isc-kea-ctrl-agent=${KEA_VERSION} \
+                        isc-kea-dhcp4=${KEA_VERSION} \
+                        isc-kea-dhcp6=${KEA_VERSION} \
+                        isc-kea-admin=${KEA_VERSION} \
+                        isc-kea-common=${KEA_VERSION} \
+                        isc-kea-hooks=${KEA_VERSION} \
+                        isc-kea-perfdhcp=${KEA_VERSION} \
                         ;\
            else \
                 apt-get install \
@@ -272,6 +284,8 @@ RUN wget --no-verbose -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.de
                         isc-kea-common=${KEA_VERSION} \
                         isc-kea-hooks=${KEA_VERSION} \
                         isc-kea-perfdhcp=${KEA_VERSION} \
+                        isc-kea-mysql=${KEA_VERSION} \
+                        isc-kea-pgsql=${KEA_VERSION} \
                         ;\
         fi \
         && apt-get clean \

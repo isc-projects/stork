@@ -199,38 +199,36 @@ namespace :systemtest do
         if !ENV["KEA_VERSION"].nil?
             kea_version = ENV["KEA_VERSION"]
 
-            # Extract major and minor components from version.
-            kea_version_major = ""
-            kea_version_minor = ""
-
             # Reject packages for Kea prior to 2.0.0
-            kea_eol_major="1"
-            kea_eol_minor="9"
+            kea_eol_major=1
+            kea_eol_minor=9
 
-            # Enable legacy packages for Kea prior to 2.3.0
-            kea_legacy_pkgs = "false"
-            kea_legacy_major = "2"
-            kea_legacy_minor = "2"
-
-            major_separator_index = kea_version.index('.')
-            if major_separator_index.nil?
-                fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable - missing dot separator"
+            # Split the version on dash and get the first part. Split it by dots.
+            components = kea_version.split('-')[0].split('.')
+            if components.length < 2
+                fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable"
             end
-            kea_version_major = kea_version[0..major_separator_index-1]
-
-            minor_separator_index = kea_version[major_separator_index+1..-1].index('.')
-            if !minor_separator_index.nil?
-                minor_separator_index += major_separator_index + 1
-                kea_version_minor = kea_version[major_separator_index+1..minor_separator_index-1]
-            else
-                kea_version_minor = kea_version[major_separator_index+1..-1]
+            if components.length >= 3
+                kea_version_patch = components[2]
             end
-            if kea_version_minor == ""
-                fail "You need to specify at least MAJOR.MINOR components of KEA_VERSION variable - empty minor component"
+            if components.length > 3
+                warn "KEA_VERSION variable contains more than 3 components - ignoring the rest"
+            end
+
+            components.each do |c|
+                if c.nil?
+                    next
+                end
+                if c == ""
+                    fail "KEA_VERSION variable contains an empty component"
+                end
+                if c !~ /^\d+$/
+                    fail "KEA_VERSION variable contains a non-numeric component"
+                end
             end
 
             # Enhance the Kea version with wildcard if the full package is not provided.
-            if minor_separator_index.nil?
+            if components.length == 2
                 # Add patch wildcard if not provided.
                 kea_version += ".*"
             elsif !kea_version.include? '-'
@@ -238,26 +236,46 @@ namespace :systemtest do
                 kea_version += "-*"
             end
 
-            if Integer(kea_version_major + kea_version_minor) <= Integer(kea_eol_major + kea_eol_minor) then
+            kea_version_info = components.map { |x| x.to_i }
+            if kea_version_info.length == 2
+                # If the patch is not provided explicitly, the recent patch
+                # version is used. We assume it is always bigger than the
+                # version thresholds below.
+                kea_version_info.append 1000
+            end
+
+            # Set the environment variables indicating the versions that
+            # changed the package structure.
+            if (kea_version_info <=> [kea_eol_major, kea_eol_minor]) <= 0  then
                 fail "You need to specify a newer version than #{kea_eol_major}.#{kea_eol_minor} which is EOL."
             end
 
+            kea_prior_2_3_0 = false
+            kea_prior_2_7_5 = false
+
             # Enable legacy packages for Kea prior to 2.3.0
-            if Integer(kea_version_major + kea_version_minor) <= Integer(kea_legacy_major + kea_legacy_minor) then
-                kea_legacy_pkgs = "true"
-                puts "Use the Kea legacy packages"
+            if (kea_version_info <=> [2, 3]) < 0 then
+                kea_prior_2_3_0 = true
+                puts "Use the Kea legacy packages prior to 2.3.0"
+            end
+            if kea_prior_2_3_0
+                kea_prior_2_7_5 = true
+            elsif (kea_version_info <=> [2, 7, 5]) < 0 then
+                kea_prior_2_7_5 = true
+                puts "Use the Kea legacy packages prior to 2.7.5"
             end
 
             # Use single development repository for Kea 2.7.0 and newer.
-            ENV["KEA_REPO"] = "isc/kea-#{kea_version_major}-#{kea_version_minor}"
-            is_development_version = Integer(kea_version_minor) % 2 == 1
+            ENV["KEA_REPO"] = "isc/kea-#{kea_version_info[0]}-#{kea_version_info[1]}"
+            is_development_version = kea_version_info[1] % 2 == 1
             if is_development_version &&
-                ((Integer(kea_version_major) >= 3) || (Integer(kea_version_major) == 2 && Integer(kea_version_minor) >= 7)) then
+                (kea_version_info <=> [2, 7]) >= 0 then
                 ENV["KEA_REPO"] = "isc/kea-dev"
             end
 
             ENV["KEA_VERSION"] = kea_version
-            ENV["KEA_LEGACY_PKGS"] = kea_legacy_pkgs
+            ENV["KEA_PRIOR_2_3_0"] = kea_prior_2_3_0 ? "true" : "false"
+            ENV["KEA_PRIOR_2_7_5"] = kea_prior_2_7_5 ? "true" : "false"
         end
     end
 

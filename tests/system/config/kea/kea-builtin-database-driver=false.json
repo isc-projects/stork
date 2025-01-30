@@ -1,0 +1,4 @@
+// In Kea 2.7.5 and later, the database driver is a separate library.
+{
+    "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_pgsql.so"
+},

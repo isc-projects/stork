@@ -89,7 +89,7 @@ services:
       args:
         KEA_REPO: public/${KEA_REPO:-isc/kea-dev}
         KEA_VERSION: ${KEA_VERSION:-2.7.0-isc20240624090938}
-        KEA_LEGACY_PKGS: ${KEA_LEGACY_PKGS:-false}
+        KEA_PRIOR_2_3_0: ${KEA_PRIOR_2_3_0:-false}
 
   agent-kea:
     extends: agent-kea-base
@@ -138,6 +138,7 @@ services:
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp4.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp6.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-host-database.json
+      - $PWD/tests/system/config/kea/kea-builtin-database-driver=${KEA_PRIOR_2_7_5-true}.json:/etc/kea/hook-database-driver.json
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
       - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
