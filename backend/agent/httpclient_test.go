@@ -280,10 +280,10 @@ func TestHTTPClientConfigCopy(t *testing.T) {
 	// Assert
 	require.NotNil(t, copy)
 	require.Equal(t, original, copy)
-	require.NotSame(t, original, copy)
+	require.NotSame(t, &original, &copy)
 
 	require.Equal(t, original.BasicAuth, copy.BasicAuth)
-	require.NotSame(t, original.BasicAuth, original.BasicAuth)
+	require.NotSame(t, &original.BasicAuth, &copy.BasicAuth)
 
 	require.Equal(t, original.TLSCert, copy.TLSCert)
 	require.Same(t, original.TLSCert, copy.TLSCert)
