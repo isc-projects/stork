@@ -1,5 +1,5 @@
 {
-  "date": "2024-12-09",
+  "date": "2025-01-30",
   "kea": {
     "currentStable": [
       {
@@ -14,8 +14,8 @@
       }
     ],
     "latestDev": {
-      "version": "2.7.5",
-      "releaseDate": "2024-12-11"
+      "version": "2.7.6",
+      "releaseDate": "2025-01-29"
     }
   },
   "stork": {
@@ -27,8 +27,8 @@
       }
     ],
     "latestDev": {
-      "version": "2.1.0",
-      "releaseDate": "2024-12-11"
+      "version": "2.1.1",
+      "releaseDate": "2025-02-05"
     },
     "latestSecure": [
       {
@@ -40,20 +40,20 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.18.31",
-        "releaseDate": "2024-10-16",
+        "version": "9.18.33",
+        "releaseDate": "2025-01-29",
         "eolDate": "2026-07-01",
         "ESV": "true"
       },
       {
-        "version": "9.20.3",
-        "releaseDate": "2024-10-16",
+        "version": "9.20.5",
+        "releaseDate": "2025-01-29",
         "eolDate": "2028-07-01"
       }
     ],
     "latestDev": {
-      "version": "9.21.2",
-      "releaseDate": "2024-10-16"
+      "version": "9.21.4",
+      "releaseDate": "2025-01-29"
     }
   }
 }
