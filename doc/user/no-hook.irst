@@ -1,0 +1,14 @@
+..
+    This file is included in docs if there is no hooks.
+    It has `.`
+
+#######################################
+No hook documentation has been embedded
+#######################################
+
+This Stork compilation contains no hook documentation. To embedd the hook
+documentation, please re-compile Stork with the hook repositories placed in to
+the ``/hooks`` directory.
+
+See the developer documentation for more information on how to build and work
+with hooks.

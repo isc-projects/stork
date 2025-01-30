@@ -289,10 +289,15 @@ CLEAN.append OPEN_API_GENERATOR_PYTHON_DIR, "tests/system/.openapi-generator",
 ### Documentation ###
 #####################
 
+# File used in the below workarounds when there are no hooks. It describes the
+# reason why there is no entries and provides a title for the placeholder
+# entry.
+dummy_hook_doc_file = "doc/user/no-hook.irst"
+
 # Collects the documentation of the cloned hooks. It may be empty if no hooks
 # are available in the hooks directory.
 hook_doc_directory = "doc/user/hooks"
-file hook_doc_directory => FileList["hooks/**/doc/**/*"] do
+file hook_doc_directory => [dummy_hook_doc_file] + FileList["hooks/**/doc/**/*"] do
     sh "rm", "-rf", hook_doc_directory
     sh "mkdir", "-p", hook_doc_directory
 
@@ -316,17 +321,12 @@ file hook_doc_directory => FileList["hooks/**/doc/**/*"] do
     # Sphinx project: https://github.com/sphinx-doc/sphinx/pull/13230
     if Dir.empty?(hook_doc_directory)
         sh "mkdir", "-p", File.join(hook_doc_directory, "dummy")
-        File.write(
-            File.join(hook_doc_directory, "dummy", "index.rst"),
-            "########\n" +
-            "No hooks\n" +
-            "########\n\n"
-        )
+        sh "cp", dummy_hook_doc_file, File.join(hook_doc_directory, "dummy", "index.rst")
     end
 end
 
 hook_man_directory = "doc/user/man/hooks"
-file hook_man_directory => FileList["hooks/**/man/man.8.rst"] do
+file hook_man_directory => [dummy_hook_doc_file] + FileList["hooks/**/man/man.8.rst"] do
     sh "rm", "-rf", hook_man_directory
     sh "mkdir", "-p", hook_man_directory
 
@@ -346,12 +346,7 @@ file hook_man_directory => FileList["hooks/**/man/man.8.rst"] do
     # It interrupts build when there is no hooks. I reported the issue to the
     # Sphinx project: https://github.com/sphinx-doc/sphinx/pull/13230
     if Dir.empty?(hook_man_directory)
-        File.write(
-            File.join(hook_man_directory, "dummy.8.rst"),
-            "########\n" +
-            "No hooks\n" +
-            "########\n\n"
-        )
+        sh "cp", dummy_hook_doc_file, File.join(hook_man_directory, "dummy.8.rst")
     end
 end
 
