@@ -303,15 +303,15 @@ the ``hook-inspect`` command of the Stork tool.
 The ``-p`` or ``--path`` flag indicates the path to the hook directory or
 single hook file.
 
-Work with multiple hooks
+Working with Hooks
 ------------------------
 
-All Stork hooks need to build using the same Stork core version, compilation
-flags, and directory structure. It is important to process all hooks in the
-same way. The Stork build system provides some tasks to help with this.
+All Stork hooks must be built using the same Stork core version, compilation
+flags, and directory structure. The Stork build system provides some tasks
+to help with this.
 
 The ``hook:sync`` Rake task clones all official Stork hooks into the ``hooks``
-directory and check out them on proper commits. Any third-party hooks should be
+directory and checks out them on proper commits. Any third-party hooks should be
 placed in the ``hooks`` directory manually.
 
 The ``hook:lint`` Rake task runs the linter on all hooks using the rules of the
@@ -320,7 +320,7 @@ by executing their internal ``unittest`` tasks.
 
 The ``hook:build`` task compiles all hooks from the repositories located in the
 hook directory using the current Stork core codebase. The compiled plugins
-copied to the hook directory.
+are copied to the hook directory.
 The ``hook:build_pkg`` task creates a package with all compiled hooks.
 
 For development purposes, the ``run:server_hooks`` task builds all hooks and
@@ -329,13 +329,13 @@ runs the Stork server with them.
 Documentation
 ~~~~~~~~~~~~~
 
-The documentation of the hooks from the ``hooks`` directory are embedded in the
+The documentation of the hooks from the ``hooks`` directory is embedded in the
 Stork ARM when the ``build:doc`` task is executed. The documentation of the
 hook must be placed in the ``doc`` directory of the hook project and be written
 in the reStructuredText format. The entry point of the documentation should be
 the ``index.rst`` file.
 
-The man pages should be placed in the ``man`` directory of the hook project and
+The man pages must be placed in the ``man`` directory of the hook project and
 be written in the reStructuredText format. The build system expects a single
 ``man.8.rst`` file here. The compiled man pages are included in the Stork ARM
 and the hook package.
