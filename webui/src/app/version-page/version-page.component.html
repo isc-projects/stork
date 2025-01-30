@@ -11,8 +11,8 @@
             the versions that are running, with messages that show how critical those updates are.<br />
             The table also includes whether the machine's <i>Stork agent</i> version matches the
             <i>Stork server</i> version.<br />
-            <i>Stork server</i>'s version is also checked. If an update is available, the notification message is
-            displayed right above the Summary table.<br />
+            The <i>Stork server</i>'s version is also checked. If an update is available, the notification message is
+            displayed above the Summary table.<br />
             The version of the <i>Stork server</i> and all <i>Stork agents</i> should match; e.g. if the
             <i>Stork server</i> version is <i>2.0.0</i>, all Stork agents should also be version <i>2.0.0</i>.<br />
 
@@ -25,7 +25,7 @@
             <i>2.6.1</i>.<br />
 
             The table includes color-coded notices about the importance of upgrading the Kea, BIND 9, or Stork software,
-            based on the software version checks performed. The summary table groups the machines by severity and sorts
+            based on the software version checks performed. The summary table groups the notices by severity and sorts
             them in descending order.<br />
 
             ISC advises reviewing the summaries for machines with red and yellow severity and updating those software
@@ -35,7 +35,7 @@
         <p>
             These tables show the currently available versions of ISC's Kea, BIND 9, and Stork software. There are links
             to the software documentation and release notes, as well as to packages and tarball downloads. The table
-            also indicates the version release dates and an EoL (End-of-Life) date for stable releases.<br />
+            also indicates the version release dates and an EOL (End-of-Life) date for stable releases.<br />
 
             The tables may include different types of releases described with the following terms:
         </p>
@@ -43,15 +43,14 @@
             <li>
                 <b>Development</b> - These releases introduce new and updated features and may not be
                 backward-compatible with their immediate predecessor. Development versions are suitable for those
-                interested in experimenting with and providing feedback to ISC but are not recommended for production
-                use.
+                interested in experimenting and providing feedback to ISC but are not recommended for production use.
             </li>
             <li><b>Stable</b> - These versions are fully supported and meant for production use.</li>
             <li>
                 <b>ESV</b> - (only for the BIND 9 Extended Support version) - These versions are suitable for those
                 needing long-term stability.
             </li>
-            <li><b>EoL date</b> - the release will no longer be supported after that date.</li>
+            <li><b>EOL date</b> - the release will no longer be supported after that date.</li>
         </ul>
         <p>
             For details about ISC's Software Support Policy and Version Numbering, please refer to this
@@ -61,20 +60,20 @@
         <p>The information about ISC software releases shown on this page may come from different sources:</p>
         <ul>
             <li>
-                <b>Online JSON file</b> -
+                <b>Online JSON file</b> - A
                 <a target="_blank" href="https://www.isc.org/versions.json">JSON file</a> available online. This data is
                 intended to be always up-to-date.
             </li>
             <li>
                 <b>Offline JSON file</b> - This data is updated with every Stork release. Of course, the more time has
                 passed since a given release date, the more outdated this data may be. ISC advises regularly checking
-                the <a target="_blank" href="https://isc.org/download">ISC software download page</a> for up-to-date
+                the <a target="_blank" href="https://isc.org/download">ISC software download page</a> for current
                 information.
             </li>
         </ul>
         <p>
-            <i>Stork server</i> tries to retrieve the data from the <i>Online source</i> first. If for any reason this
-            data cannot be retrieved, there is a fallback mechanism that reads the <i>Offline JSON file</i>.
+            The <i>Stork server</i> tries to retrieve the data from the online source first. If for any reason this data
+            cannot be retrieved, there is a fallback mechanism that reads the offline JSON file.
         </p>
     </div>
 </app-breadcrumbs>
@@ -91,7 +90,7 @@
                     {
                         summary: 'Action required',
                         severity: 'warn',
-                        detail: 'Stork has detected ISC software version in use that requires your attention. Please review below Summary table.',
+                        detail: 'Stork has detected an ISC software version in use that requires your attention. Please review the Summary table, below.',
                     },
                 ]"
             ></p-messages>
@@ -105,9 +104,9 @@
                         summary: 'Note',
                         severity: 'info',
                         detail:
-                            'Below information about ISC software versions relies on an offline built-in JSON file that was generated on ' +
+                            'The information below about ISC software versions relies on an offline built-in JSON file that was generated on ' +
                             (dataDate$ | async) +
-                            '. To see up-to-date information, please visit the <a target=\'_blank\' href=\'https:\/\/www.isc.org\/download\/\'>ISC webpage</a>.',
+                            '. To see up-to-date information, please visit the <a target=\'_blank\' href=\'https:\/\/www.isc.org\/download\/\'>ISC website</a>.',
                     },
                 ]"
             ></p-messages>
@@ -118,7 +117,7 @@
                     {
                         summary: 'Error while fetching data!',
                         severity: 'error',
-                        detail: 'Error occurred while retrieving software versions data from Stork server!',
+                        detail: 'An error occurred while retrieving software version data from the Stork server!',
                     },
                 ]"
                 [enableService]="false"
@@ -148,7 +147,7 @@
                         (storkServerUpdateAvailable$ | async).feedback?.severity === Severity.error ? 'error' : 'warn',
                     detail:
                         (storkServerUpdateAvailable$ | async)?.feedback?.messages?.[0] ||
-                        'Stork server version update is available.',
+                        'A Stork server version update is available.',
                 },
             ]"
         ></p-messages>
@@ -237,14 +236,14 @@
                                 <p-messages
                                     [value]="[
                                         {
-                                            summary: 'Kea daemons versions mismatch!',
+                                            summary: 'Kea daemons version mismatch!',
                                             severity: 'error',
                                             detail:
-                                                'Kea <a href=\'/apps/kea/' +
+                                                'The Kea <a href=\'/apps/kea/' +
                                                 a.id +
                                                 '\'>' +
                                                 a.name +
-                                                '</a> daemons use mismatching versions:<br>' +
+                                                '</a> daemons are using mismatching versions:<br>' +
                                                 (getDaemonsVersions(a) | uppercase) +
                                                 '.<br>All daemons should have the same version!',
                                         },
@@ -276,7 +275,7 @@
             <ng-template pTemplate="emptymessage">
                 <tr>
                     <td colspan="5">
-                        No data retrieved from Stork server (this may be due to no authorized machines being found).
+                        No data retrieved from the Stork server (this may be due to no authorized machines being found).
                     </td>
                 </tr>
             </ng-template>
@@ -335,7 +334,7 @@
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="6">No data retrieved from Stork server.</td>
+                    <td colspan="6">No data retrieved from the Stork server.</td>
                 </tr>
             </ng-template>
         </p-table>
@@ -348,7 +347,7 @@
                     <th class="xl:w-18rem">Status</th>
                     <th class="xl:w-18rem">Documentation</th>
                     <th class="xl:w-18rem">Release date</th>
-                    <th class="xl:w-14rem">EoL Date</th>
+                    <th class="xl:w-14rem">EOL Date</th>
                     <th>Download</th>
                 </tr>
             </ng-template>
@@ -390,7 +389,7 @@
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="6">No data retrieved from Stork server.</td>
+                    <td colspan="6">No data retrieved from the Stork server.</td>
                 </tr>
             </ng-template>
         </p-table>
@@ -403,7 +402,7 @@
                     <th class="xl:w-18rem">Status</th>
                     <th class="xl:w-18rem">Documentation</th>
                     <th class="xl:w-18rem">Release date</th>
-                    <th class="xl:w-14rem">EoL Date</th>
+                    <th class="xl:w-14rem">EOL Date</th>
                     <th>Download</th>
                 </tr>
             </ng-template>
@@ -446,7 +445,7 @@
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="6">No data retrieved from Stork server.</td>
+                    <td colspan="6">No data retrieved from the Stork server.</td>
                 </tr>
             </ng-template>
         </p-table>
