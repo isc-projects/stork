@@ -6,7 +6,7 @@
 No hook documentation has been embedded
 #######################################
 
-This Stork compilation contains no hook documentation. To embedd the hook
+This Stork compilation contains no hook documentation. To embed the hook
 documentation, please re-compile Stork with the hook repositories placed in to
 the ``/hooks`` directory.
 
