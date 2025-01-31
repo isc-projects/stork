@@ -293,8 +293,6 @@ describe('HostsPageComponent', () => {
         fixture.detectChanges()
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
-
-        flush()
     }))
 
     it('should emit error message when there is an error deleting transaction for new host', fakeAsync(() => {
@@ -315,8 +313,6 @@ describe('HostsPageComponent', () => {
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
         expect(messageService.add).toHaveBeenCalled()
-
-        flush()
     }))
 
     it('should switch a tab to host editing mode', fakeAsync(() => {
@@ -401,8 +397,6 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(1)
         form = fixture.debugElement.query(By.css('form'))
         expect(form).toBeTruthy()
-
-        flush()
     }))
 
     it('should emit an error when deleting transaction for updating a host fails', fakeAsync(() => {
@@ -460,8 +454,6 @@ describe('HostsPageComponent', () => {
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
         expect(messageService.add).toHaveBeenCalled()
-
-        flush()
     }))
 
     it('should open a tab when hosts have not been loaded', fakeAsync(() => {
@@ -494,8 +486,6 @@ describe('HostsPageComponent', () => {
         // There should be two tabs opened. One with the list of hosts and one
         // with the host details.
         expect(component.tabs.length).toBe(2)
-
-        flush()
     }))
 
     it('should not open a tab when getting host information erred', fakeAsync(() => {
@@ -906,8 +896,6 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
 
         expect(dhcpApi.updateHostDelete).toHaveBeenCalled()
-
-        flush()
     }))
 
     it('should cancel update transaction cancel button is clicked', fakeAsync(() => {
@@ -1109,8 +1097,6 @@ describe('HostsPageComponent', () => {
         expect(component.activeTabIndex).toBe(0)
         expect(router.navigate).toHaveBeenCalledTimes(1)
         expect(dhcpApi.getHosts).toHaveBeenCalledTimes(1)
-
-        flush()
     }))
 
     it('should contain a refresh button', () => {
