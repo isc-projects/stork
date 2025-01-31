@@ -56,7 +56,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component.loading = false
         fixture.detectChanges()
         const nativeElement = fixture.nativeElement as HTMLElement
-        expect(nativeElement.innerText).toContain('There are no checkers.')
+        expect(nativeElement.innerText).toContain('There are no checkers enabled.')
     })
 
     it('should display full layout by default', () => {

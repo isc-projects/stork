@@ -338,7 +338,9 @@ describe('VersionPageComponent', () => {
         const de = fixture.debugElement.query(By.css('.header-message .p-messages .p-message-info'))
         expect(de).toBeTruthy()
         expect(de.nativeElement.innerText).toContain(
-            'Below information about ISC software versions relies on an offline built-in JSON file that was generated on 2024-10-03.'
+            'The information below about ISC software versions relies on an' +
+                ' offline built-in JSON file that was generated on 2024-10-03.' +
+                ' To see up-to-date information, please visit the ISC website'
         )
     })
 

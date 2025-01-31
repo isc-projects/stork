@@ -295,7 +295,7 @@ describe('HostFormComponent', () => {
 
         let errmsg = fixture.debugElement.query(By.css('small'))
         expect(errmsg).toBeTruthy()
-        expect(errmsg.nativeElement.innerText).toContain('Subnet must be selected if the reservation is not global.')
+        expect(errmsg.nativeElement.innerText).toContain('A subnet must be selected if the reservation is not global.')
     }))
 
     it('should disable subnet selection for global reservations', fakeAsync(() => {

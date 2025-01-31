@@ -132,7 +132,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(reviewButton).toBeTruthy()
 
         const statusText = fixture.debugElement.query(By.css('#status-text'))
-        expect(statusText.properties.innerText).toBe('No configuration issues found for this daemon.')
+        expect(statusText.properties.innerText).toBe('No configuration issues were found for this daemon.')
     }))
 
     it('should display empty list message when empty reports list is returned', fakeAsync(() => {
@@ -173,7 +173,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(reviewButton).toBeTruthy()
 
         const statusText = fixture.debugElement.query(By.css('#status-text'))
-        expect(statusText.properties.innerText).toBe('No configuration issues found for this daemon.')
+        expect(statusText.properties.innerText).toBe('No configuration issues were found for this daemon.')
     }))
 
     it('should get and display config reports', fakeAsync(() => {
