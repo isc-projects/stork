@@ -783,7 +783,7 @@ func TestZoneInventoryPopulateAwaitBackgroundTasks(t *testing.T) {
 
 	mutex := &sync.Mutex{}
 	cond := sync.NewCond(mutex)
-	mutex.Lock()
+	cond.L.Lock()
 	go func() {
 		// Await background tasks before finishing up populating the zones.
 		// It should block until zones are populated.
@@ -792,12 +792,15 @@ func TestZoneInventoryPopulateAwaitBackgroundTasks(t *testing.T) {
 	}()
 
 	go func() {
+		cond.L.Lock()
+		defer cond.L.Unlock()
 		// Finish populating the zones.
 		result := <-done
 		require.NoError(t, result.err)
 	}()
 	// Wait for the background tasks to return.
 	cond.Wait()
+	cond.L.Unlock()
 
 	// Make sure the zones have been populated.
 	require.Equal(t, zoneInventoryStatePopulated, inventory.getCurrentState().name)
@@ -1011,7 +1014,7 @@ func TestZoneInventoryLoadAwaitBackgroundTasks(t *testing.T) {
 
 	mutex := &sync.Mutex{}
 	cond := sync.NewCond(mutex)
-	mutex.Lock()
+	cond.L.Lock()
 	go func() {
 		// Await background tasks before finishing up loading the zones.
 		// It should block until zones are loaded.
@@ -1019,12 +1022,15 @@ func TestZoneInventoryLoadAwaitBackgroundTasks(t *testing.T) {
 		cond.Broadcast()
 	}()
 	go func() {
+		cond.L.Lock()
+		defer cond.L.Unlock()
 		// Finish loading the zones.
 		result := <-done
 		require.NoError(t, result.err)
 	}()
 	// Wait for the background tasks to return.
 	cond.Wait()
+	cond.L.Unlock()
 
 	// Make sure that the long lasting operation was finished.
 	require.Equal(t, zoneInventoryStateLoaded, inventory.getCurrentState().name)
