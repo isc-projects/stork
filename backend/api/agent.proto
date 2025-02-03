@@ -199,20 +199,41 @@ message TailTextFileRsp {
   repeated string lines = 2;
 }
 
+// This request is sent from the server to the agent to receive the
+// zones held in the zone inventories over a gRPC stream.
 message ReceiveZonesReq {
+  // Control address of the DNS server from which the zones are
+  // to be returned.
   string controlAddress = 1;
+  // Control port of the DNS server from which the zones are to
+  // be returned.
   int64 controlPort = 2;
+  // Filter the zones by view name.
   string viewName = 3;
+  // Lower bound zone name (i.e., only the zones ordered after
+  // this zone are returned.)
   string lowerBound = 4;
+  // Maximum number of zones to be returned.
   int64 limit = 5;
+  // Filter the zones by load time. Only return the zones loaded
+  // after specified time.
   int64 loadedAfter = 6;
 }
 
+// A single zone returned over the stream.
 message Zone {
+  // Zone name.
   string name = 1;
+  // Zone class (typically IN).
   string class = 2;
+  // Zone serial number.
   int64 serial = 3;
+  // Zone type (e.g., master).
   string type = 4;
-  int64 loaded = 5;string view = 6;
-  int64 viewZoneCount = 7;
+  // A timestamp when the zone was loaded as unix time.
+  int64 loaded = 5;
+  // A name of the view where the zone belongs.
+  string view = 6;
+  // Total number of zones.
+  int64 totalZoneCount = 7;
 }

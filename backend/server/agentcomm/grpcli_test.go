@@ -949,13 +949,13 @@ func TestReceiveZones(t *testing.T) {
 	var mocks []any
 	for _, zone := range generatedZones {
 		zone := &agentapi.Zone{
-			Name:          zone.Name,
-			Class:         zone.Class,
-			Serial:        zone.Serial,
-			Type:          zone.Type,
-			Loaded:        time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC).Unix(),
-			View:          "_default",
-			ViewZoneCount: 100,
+			Name:           zone.Name,
+			Class:          zone.Class,
+			Serial:         zone.Serial,
+			Type:           zone.Type,
+			Loaded:         time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC).Unix(),
+			View:           "_default",
+			TotalZoneCount: 100,
 		}
 		mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(zone, nil))
 	}

@@ -1001,7 +1001,7 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, app Control
 					Loaded:   time.Unix(receivedZone.GetLoaded(), 0).UTC(),
 				},
 				ViewName:       receivedZone.View,
-				TotalZoneCount: receivedZone.ViewZoneCount,
+				TotalZoneCount: receivedZone.TotalZoneCount,
 			}
 			if !yield(zone, nil) {
 				// Stop if the caller no longer iterates over the zones.

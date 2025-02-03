@@ -533,13 +533,13 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 		if result.err == nil {
 			zone := result.zone
 			apiZone := &agentapi.Zone{
-				Name:          zone.Name(),
-				Class:         zone.Class,
-				Serial:        zone.Serial,
-				Type:          zone.Type,
-				Loaded:        zone.Loaded.Unix(),
-				View:          zone.ViewName,
-				ViewZoneCount: zone.TotalZoneCount,
+				Name:           zone.Name(),
+				Class:          zone.Class,
+				Serial:         zone.Serial,
+				Type:           zone.Type,
+				Loaded:         zone.Loaded.Unix(),
+				View:           zone.ViewName,
+				TotalZoneCount: zone.TotalZoneCount,
 			}
 			err = server.Send(apiZone)
 			if err != nil {

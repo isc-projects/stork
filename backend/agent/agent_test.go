@@ -979,13 +979,13 @@ func TestReceiveZonesFilterByView(t *testing.T) {
 	var mocks []any
 	for _, zone := range defaultZones {
 		apiZone := &agentapi.Zone{
-			Name:          zone.Name(),
-			Class:         zone.Class,
-			Serial:        zone.Serial,
-			Type:          zone.Type,
-			Loaded:        zone.Loaded.Unix(),
-			View:          "_default",
-			ViewZoneCount: 10,
+			Name:           zone.Name(),
+			Class:          zone.Class,
+			Serial:         zone.Serial,
+			Type:           zone.Type,
+			Loaded:         zone.Loaded.Unix(),
+			View:           "_default",
+			TotalZoneCount: 10,
 		}
 		mocks = append(mocks, mock.EXPECT().Send(apiZone).Return(nil))
 	}
@@ -1115,13 +1115,13 @@ func TestReceiveZonesFilterLowerBound(t *testing.T) {
 	var mocks []any
 	for _, zone := range defaultZones[6:9] {
 		apiZone := &agentapi.Zone{
-			Name:          zone.Name(),
-			Class:         zone.Class,
-			Serial:        zone.Serial,
-			Type:          zone.Type,
-			Loaded:        zone.Loaded.Unix(),
-			View:          "_default",
-			ViewZoneCount: 10,
+			Name:           zone.Name(),
+			Class:          zone.Class,
+			Serial:         zone.Serial,
+			Type:           zone.Type,
+			Loaded:         zone.Loaded.Unix(),
+			View:           "_default",
+			TotalZoneCount: 10,
 		}
 		mocks = append(mocks, mock.EXPECT().Send(apiZone).Return(nil))
 	}
