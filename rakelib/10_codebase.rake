@@ -499,6 +499,9 @@ namespace :prepare do
 
     desc 'Trigger the frontend (UI) and backend (GO) dependencies installation'
     task :deps => [:ui_deps, :backend_deps]
+
+    desc 'Prepare files needed for documentation building'
+    task :doc => [hook_doc_directory, hook_man_directory]
 end
 
 namespace :check do
