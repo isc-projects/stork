@@ -586,6 +586,7 @@ namespace :lint do
     desc 'Check unreleased changelog files
         FIX - fix linting issues - default: false'
     task :changelog => [FOLD, SED] do
+        allowed_categories = ['bug', 'build', 'doc', 'func', 'sec', 'perf', 'ui']
         changelog_dir = 'changelog_unreleased'
         files = Dir.entries(changelog_dir)
         exit_code = 0
@@ -604,8 +605,38 @@ namespace :lint do
                 next
             end
 
+            if File.empty?(file)
+                puts "ERROR: Changelog entry #{filename} is empty. A valid entry was expected."
+                exit_code = 1
+            end
+
             lines_too_long = []
             File.readlines(file).each_with_index do |line, line_number|
+                if line_number == 0
+                    words = line.split(/[\[\]]+/)
+                    if words.empty?
+                        puts "ERROR: Changelog entry #{filename} has the first line empty. Content expected."
+                        exit_code = 1
+                    end
+                    if words.length < 2
+                        puts "ERROR: Changelog entry #{filename} has no category. Expected one of: #{allowed_categories}."
+                        exit_code = 1
+                    end
+                    if words.length < 3
+                        puts "ERROR: Changelog entry #{filename} has no author."
+                        exit_code = 1
+                    end
+                    leading = words[0]
+                    if not leading.empty?
+                        puts "ERROR: Changelog entry #{filename} has leading text before category. None expected."
+                        exit_code = 1
+                    end
+                    category = words[1]
+                    if not allowed_categories.include?(category)
+                        puts "ERROR: Changelog entry #{filename} has wrong category '#{category}'. Expected one of: #{allowed_categories}."
+                        exit_code = 1
+                    end
+                end
                 # Wrap rows to width 73 == 72 + newline. Historically, number 72 has something to do with punch cards.
                 if line.length > 73
                     lines_too_long.append [line_number, line]
