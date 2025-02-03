@@ -1,3 +1,94 @@
+Stork 2.1.1 released on 2025-02-05.
+
+* 490 [func] marcin
+
+    Implemented a DNS "zone inventory" in the Stork agent. It adds
+    the capability for the Stork agent to gather a list of views
+    and zones from BIND 9 on startup. This list is stored in the
+    agent's memory but is not yet available to the Stork server.
+    This change provides no new user-visible capabilities to the
+    Stork agent, but lays the foundation for the zone viewer
+    feature.
+    (Gitlab #1647)
+
+* 489 [doc] slawek, bscott
+
+    Added an LDAP hook documentation.
+    (Gitlab #1652)
+
+* 488 [doc] sgoldlust
+
+    Editorial and grammatical corrections in UI components.
+    (Gitlab #1673)
+
+* 487 [build] slawek
+
+    Updated dependencies including the Go 1.23.5, and several
+    JavaScript, Python, Ruby and Go packages.
+    (Gitlab #1676)
+
+* 486 [func] piotrek
+
+    Reworked filtering in Machines list view. Filters are now unified
+    with other Stork views that display tables and allow data filtering.
+    It is possible to search for machines globally by keyword regardless
+    of the authorization state.
+    (Gitlab #1533)
+
+* 485 [func] slawek
+
+    The authentication methods provided by hooks are presented before
+    the internal method on the login page.
+    (Gitlab #1648)
+
+* 484 [bug] slawek
+
+    Fixed adding a host reservation with a hex identifier delimited by a
+    dash.
+    (Gitlab #1670)
+
+* 483 [func] slawek
+
+    Stork agent now retrieves the Basic Auth credentials from the Kea
+    CA configuration file. It is no longer supported to provide the
+    JSON file with a login and password to the Kea REST API. The agent
+    selects credentials with a "stork" user name or prefix.
+    If no user is found, it uses the first credentials entry.
+    (Gitlab #1624)
+
+* 482 [func] slawek
+
+    Added an input to alter the subnet name.
+    (Gitlab #1641)
+
+* 481 [bug] marcin
+
+    Enabled timeouts for HTTP client connecting to Kea. It should help
+    to gracefully handle communication issues between Stork agents and
+    Kea servers.
+    (Gitlab #1467)
+
+* 480 [func] piotrek
+
+    The feature which informs about used Kea, BIND 9, and Stork versions
+    was improved to download the metadata about current software
+    releases from an online source. The user may disable this feature in
+    settings so the built-in offline JSON file can be used as a metadata
+    source instead.
+    (Gitlab #1636)
+
+* 479 [func] piotrek
+
+    Anchors to Kea hooks documentation were improved to be automatically
+    generated. This way the anchors will be always up-to-date with new
+    Kea hooks.
+    (Gitlab #1588)
+
+* 478 [build] tomek
+
+    The native packages now have better descriptions.
+    (Gitlab #1618)
+
 Stork 2.1.0 released on 2024-12-11.
 
 * 477 [bug] slawek
