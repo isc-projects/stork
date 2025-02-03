@@ -899,7 +899,27 @@ def test_call_command_adds_env_vars(subprocess_run_mock: MagicMock):
     assert env["global_foo"] == "1"
     assert env["local_bar"] == "2"
     assert env["PWD"] == "project-dir"
-    assert len(env) == 3
+    assert env["IPWD"] == "project-dir"
+    assert len(env) == 4
+
+
+@patch("subprocess.run")
+def test_call_command_adds_isolated_directory_to_env_vars(
+    subprocess_run_mock: MagicMock,
+):
+    compose = DockerCompose(
+        "project-dir",
+        env_vars={"global_foo": "1"},
+        isolated_directory="isolated-dir",
+    )
+    compose._call_command([], env_vars={"local_bar": "2"})
+    subprocess_run_mock.assert_called_once()
+    env = subprocess_run_mock.call_args.kwargs["env"]
+    assert env["global_foo"] == "1"
+    assert env["local_bar"] == "2"
+    assert env["PWD"] == "project-dir"
+    assert env["IPWD"] == "isolated-dir"
+    assert len(env) == 4
 
 
 @patch("subprocess.run", return_value=subprocess_result_mock(0, b"foo\n", b"bar\n"))

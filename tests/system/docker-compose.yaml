@@ -129,8 +129,8 @@ services:
       - $PWD/tests/system/config/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - $PWD/tests/system/config/kea/kea-ctrl-agent-tls.json:/etc/kea/kea-ctrl-agent-tls.json
       - $PWD/tests/system/config/kea/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
-      - $PWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
-      - $PWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - $IPWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - $IPWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - $PWD/tests/system/config/kea-multi-threading/multi-threading-disabled.json:/etc/kea/multi-threading.json
       - $PWD/tests/system/config/kea-multi-threading/ha-multi-threading-disabled.json:/etc/kea/ha-multi-threading.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-ctrl-agent-http-headers.json

@@ -763,6 +763,69 @@ started, and the Stork Agent does not try to register.
    It is not supported to test Stork with different Kea or Bind9 versions.
    This feature is under construction.
 
+Prevent Volumes From Modifications By The Container
+---------------------------------------------------
+
+The volumes and binds in Docker can be mounted in two modes: read-only and
+read-write (the default).
+
+The read-only mode blocks any modifications to the
+files in the container. In this case, the error is raised that the file system
+is read-only. The read-only mode disables also reflecting the changes made in
+the host filesystem to the container filesystem.
+To mount the volume in the read-only mode, add the ``:ro`` suffix to the volume
+definition. For example: ``/path/to/host:/path/to/container:ro``.
+
+The read-write mode allows the container to modify the files in the volume. The
+changes made inside the container are immediately reflected in the host
+filesystem and vice versa.
+
+The behavior of the read-write mode is undeniable in the system tests. First
+of all, it breaks the isolation of the test cases. The changes made in one test
+case can affect the other test cases as they share the same volume and the 
+changes are not reverted after the test case execution. The second reason is
+interrupts the system test development. We don't expect them to be modified as
+a side effect of the test case execution. The developer may not notice that the
+files are modified and commit them to the repository.
+
+We would like to mount the volumes to be editable in the container but prevent
+the changes made in the container from being reflected in the host filesystem.
+Unfortunately, such case is not supported by Docker. However, we implemented a
+workaround to achieve the same effect. The volumes may be marked as isolated
+and they are copied to a temporary directory before the test case execution.
+The changes made in the container are reflected only to these temporary copies
+and don't affect the original files. The temporary copies are removed after the
+test case execution.
+
+To mark the volume as isolated, start its source path with the ``$IPWD``
+(isolated-parent-working-directory) environment variable instead of the
+``$PWD`` variable. The ``$IPWD`` variable will be replaced by the temporary
+directory path (``tests/system/config/.isolated``).
+
+Example:
+
+.. code-block:: yaml
+
+    services:
+      agent-kea:
+        volumes:
+          - $IPWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+
+The framework isolates only volumes of the running services (not all of them).
+Isolation is triggered by the ``up`` and ``run`` commands. Especially, it is
+not triggered by the ``exec`` and ``start`` commands as the volumes are already
+mounted when these commands are executed.
+
+The same volume is isolated only once until cleaning the temporary directory
+to share them between running containers and preserve on stop as do the
+original volumes.
+
+The isolated volumes are cleaned up on the ``down`` command.
+
+It needs to be considered whether all volumes should be isolated by default.
+Currently, only volumes that are expected to change are isolated. This allows
+the developer to spot if something is modified unexpectedly.
+
 Update Packages in System Tests
 -------------------------------
 A specialized ``package_service`` docker-compose service is dedicated to

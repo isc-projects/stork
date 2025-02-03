@@ -26,6 +26,7 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 
 import os
 from typing import Dict, List, Tuple
+import shutil
 import subprocess
 import sys
 
@@ -176,9 +177,19 @@ class DockerCompose:
         docker compose V1 or "docker compose" to use docker compose V2.
     profiles: list[str]
         List of profiles to use with docker-compose.
+    isolated_directory: str
+        The directory to isolate the volumes. The volumes marked to be isolated
+        are copied to this directory before starting the service and mounted
+        from there to a container.
+        To mark the volume to be isolated, the source path must start with the
+        $IPWD environment variable.
+        The default directory is a subdirectory of
+        the system temporary directory. If None, the isolation is disabled.
+        The directory cannot be in the system temporary directory or similar
+        locations because they are not mountable in the Docker containers.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments,too-many-locals
         self,
         project_directory: str,
         *,
@@ -193,6 +204,7 @@ class DockerCompose:
         default_mapped_hostname: str = None,
         compose_base: List[str] = None,
         profiles=None,
+        isolated_directory: str = None,
     ):
         self._project_directory = project_directory
         self._compose_file_names = (
@@ -210,6 +222,7 @@ class DockerCompose:
             compose_base if compose_base is not None else ["docker", "compose"]
         )
         self._profiles = profiles if profiles is not None else []
+        self._isolated_directory = isolated_directory
 
         if build_args is not None:
             build_args_pairs = [
@@ -279,6 +292,8 @@ class DockerCompose:
 
     def up(self, *service_names):  # pylint: disable=invalid-name
         """Up the docker compose services."""
+        self._isolate_volumes(*service_names)
+
         up_cmd = self.docker_compose_command() + ["up", "-d", *service_names]
         self._call_command(cmd=up_cmd, capture_output=False)
 
@@ -302,6 +317,7 @@ class DockerCompose:
         """
         down_cmd = self.docker_compose_command() + ["down", "-v"]
         self._call_command(cmd=down_cmd)
+        self._clean_isolated_directory()
 
     def start(self, *service_names):
         """
@@ -347,6 +363,8 @@ class DockerCompose:
         service_name : str
             Name of the service.
         """
+        self._isolate_volumes(service_name)
+
         run_cmd = self.docker_compose_command() + [
             "run",
             "--no-deps",
@@ -710,6 +728,11 @@ class DockerCompose:
         if env_vars is not None:
             env.update(env_vars)
         env["PWD"] = self._project_directory
+        if self._isolated_directory is not None:
+            env["IPWD"] = self._isolated_directory
+        else:
+            # The isolation is disabled. Use the original location.
+            env["IPWD"] = self._project_directory
 
         opts = {}
         if sys.version_info >= (3, 7):
@@ -729,3 +752,92 @@ class DockerCompose:
             stderr: str = stderr.decode("utf-8").rstrip()
             return result.returncode, stdout, stderr
         return result.returncode, None, None
+
+    def _isolate_volumes(self, *service_names):
+        """
+        Isolates the volumes of the services.
+        It prevents the service from modifying the original volumes if the
+        container writes to the volume.
+
+        It copies the volumes marked to be isolated to a temporary directory.
+        If the volume already exists in the temporary directory, it is not
+        copied again.
+
+        The volume is marked to be isolated by starting its source path with
+        the `$IPWD` environment variable instead of the `$PWD` one.
+
+        The isolation must be done before starting the service.
+        """
+        if self._isolated_directory is None:
+            # The isolation is disabled.
+            return
+
+        # The configuration file is read after the environment variable
+        # substitution. There is no $IPWD in the source path.
+        # The docker compose config supports disabling the substitution by the
+        # --no-interpolate flag. We don't use it because we want to allow to
+        # use other environment variables in the volume paths.
+        # However, we know the $IPWD is substituted to the isolated directory,
+        # so we can recognize the isolated volumes.
+        config = self._read_config_yaml()
+        services_config = config["services"]
+
+        if len(service_names) == 0:
+            # Isolate all services.
+            service_names = services_config.keys()
+
+        for service_name in service_names:
+            service_config = services_config.get(service_name)
+            if service_config is None:
+                return
+
+            volumes = service_config.get("volumes")
+            if volumes is None:
+                # No volumes to isolate.
+                return
+
+            for volume in volumes:
+                volume_source = volume.get("source")
+                if volume_source is None:
+                    # The volume is target-only. It doesn't need to be isolated.
+                    continue
+
+                if not volume_source.startswith(self._isolated_directory + "/"):
+                    # The volume is not marked to be isolated.
+                    continue
+
+                # The path to the isolated file or directory.
+                isolated_path = volume_source
+
+                if os.path.exists(isolated_path):
+                    # The volume is already isolated.
+                    continue
+
+                # The path to the original volume. It will be copied to the
+                # isolated directory.
+                original_path = os.path.join(
+                    self._project_directory,
+                    isolated_path[len(self._isolated_directory) + 1 :],
+                )
+
+                if not os.path.exists(original_path):
+                    # The original volume doesn't exist. It is an error.
+                    raise FileNotFoundError(f"Volume {original_path} doesn't exist")
+
+                # The parent directory must exist.
+                os.makedirs(os.path.dirname(isolated_path), exist_ok=True)
+
+                # Copy the volume to the isolated directory.
+                if os.path.isdir(original_path):
+                    shutil.copytree(original_path, isolated_path)
+                else:
+                    shutil.copy2(original_path, isolated_path)
+
+    def _clean_isolated_directory(self):
+        """Removes all files and directories in the isolated directory."""
+        if self._isolated_directory is None:
+            return
+
+        isolated_directory = self._isolated_directory
+        if os.path.exists(isolated_directory):
+            shutil.rmtree(isolated_directory)

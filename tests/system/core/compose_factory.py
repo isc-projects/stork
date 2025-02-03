@@ -3,7 +3,7 @@ from typing import Dict
 import subprocess
 
 from core.compose import DockerCompose
-from core.constants import project_directory, docker_compose_file
+from core.constants import project_directory, docker_compose_file, config_directory
 
 
 def detect_compose_binary():
@@ -76,4 +76,5 @@ def create_docker_compose(
         default_mapped_hostname=env_vars.get("DEFAULT_MAPPED_ADDRESS", "localhost"),
         compose_base=compose_detector(),
         profiles=profiles,
+        isolated_directory=os.path.join(config_directory, ".isolated"),
     )

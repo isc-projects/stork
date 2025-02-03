@@ -37,19 +37,27 @@ def test_create_compose_single_compose_file():
     assert path.endswith("/docker-compose.yaml")
 
 
-@patch("subprocess.run")
+@patch("subprocess.run", return_value=subprocess_result_mock(0, b"services: {}", b""))
 def test_create_compose_uses_environment_variables(subprocess_run_mock: MagicMock):
     compose = create_docker_compose(
         extra_env_vars={"foo": "1", "bar": "2"},
         compose_detector=fake_compose_binary_detector,
         base_env_vars={"boz": "3"},
     )
+
     compose.up()
-    subprocess_run_mock.assert_called_once()
+
+    subprocess_run_mock.assert_called()
     target_env_vars = subprocess_run_mock.call_args.kwargs["env"]
 
     assert "PWD" in target_env_vars
+    assert "IPWD" in target_env_vars
+    assert ".isolated" in target_env_vars["IPWD"]
+    assert target_env_vars["PWD"] != target_env_vars["IPWD"]
+
     del target_env_vars["PWD"]
+    del target_env_vars["IPWD"]
+
     assert target_env_vars == {"foo": "1", "bar": "2", "boz": "3"}
 
 
