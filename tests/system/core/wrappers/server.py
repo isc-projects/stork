@@ -8,6 +8,7 @@ from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
 from core.wrappers.compose import ComposeServiceWrapper
 from openapi_client.api.dhcp_api import DHCPApi, DhcpOverview, Hosts, Leases, Subnets
+from openapi_client.api.dns_api import DNSApi
 from openapi_client.api.events_api import Events, EventsApi
 from openapi_client.api.general_api import GeneralApi, Version
 from openapi_client.api.services_api import (
@@ -24,6 +25,8 @@ from openapi_client.models.event import Event
 from openapi_client.models.host import Host
 from openapi_client.models.puller import Puller
 from openapi_client.exceptions import ServiceException
+from openapi_client.models.zone_inventory_states import ZoneInventoryStates
+from openapi_client.models.zones import Zones
 
 
 T1 = TypeVar("T1")
@@ -344,6 +347,26 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         response = api_instance.get_access_point_key(app_id=app_id, type="control")
         return response
 
+    def get_zone_inventory_states(self) -> ZoneInventoryStates:
+        """Get zone inventory states."""
+        api_instance = DNSApi(self._api_client)
+
+        http_info = api_instance.get_zone_inventory_states_with_http_info()
+
+        status = http_info.status_code
+        zone_inventory_states = http_info.data
+
+        if status == 202:
+            return None
+        if status == 204:
+            return ZoneInventoryStates(total=0, items=[])
+        return zone_inventory_states
+
+    def get_zones(self, start: int, limit: int) -> Zones:
+        """Get zones with paging."""
+        api_instance = DNSApi(self._api_client)
+        return api_instance.get_zones(start, limit)
+
     # Update
 
     def update_machine(self, machine: Machine) -> Machine:
@@ -380,6 +403,13 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """
         api_instance = ServicesApi(self._api_client)
         return api_instance.delete_machine(id=machine_id)
+
+    # Background
+
+    def fetch_zones(self):
+        """Begins fetching the zones from the monitored servers."""
+        api_instance = DNSApi(self._api_client)
+        api_instance.put_zones_fetch()
 
     # Transactional
 
@@ -695,3 +725,11 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
                     raise NoSuccessException(
                         f"The {identifier} HA peer is {relationship.ha_state}"
                     )
+
+    @wait_for_success(wait_msg="Waiting for zones fetching completion...")
+    def wait_for_fetch_zones(self) -> ZoneInventoryStates:
+        """Waits for finishing the zones fetch."""
+        zones_states = self.get_zone_inventory_states()
+        if zones_states is None:
+            raise NoSuccessException("zones have not been fetched yet")
+        return zones_states
