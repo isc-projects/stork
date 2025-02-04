@@ -19,7 +19,6 @@ func init() {
 				rname TEXT NOT NULL,
 				CONSTRAINT zone_pkey PRIMARY KEY (id)
 			);
-
 			-- Suffice to create a unique index on the name column. There is no need to
 			-- create the unique index on the rname column. It simplifies the use of the
 			-- ON CONFLICT clause.

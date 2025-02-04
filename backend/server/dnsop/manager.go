@@ -70,6 +70,9 @@ type fetchingState struct {
 	mutex              sync.RWMutex
 }
 
+// Attempts to start fetching the zones. If we're already in the fetching state
+// this function returns false indicating that another fetch cannot be started.
+// Otherwise, it resets the state and returns true.
 func (state *fetchingState) startFetching() bool {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
@@ -82,24 +85,31 @@ func (state *fetchingState) startFetching() bool {
 	return true
 }
 
+// Sets the flag indicating that fetching was stopped.
 func (state *fetchingState) stopFetching() {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
 	state.fetching = false
 }
 
+// Returns the underlying state values: a flag indicating whether or not
+// fetch is in progress, the number of apps from which the zones are being
+// fetched, and the number of apps from which the zones have been fetched
+// already.
 func (state *fetchingState) get() (bool, int, int) {
 	state.mutex.RLock()
 	defer state.mutex.RUnlock()
 	return state.fetching, state.appsCount, state.completedAppsCount
 }
 
+// Sets the total number of apps from which the zones are to be fetched.
 func (state *fetchingState) setAppsCount(appsCount int) {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
 	state.appsCount = appsCount
 }
 
+// Increases a counter of apps from which the zones have been fetched.
 func (state *fetchingState) increaseCompletedAppsCount() {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()

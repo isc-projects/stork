@@ -64,13 +64,28 @@ type connectedAgentsConnectorImpl struct {
 	serverCertPEM []byte
 	serverKeyPEM  []byte
 	caCertPEM     []byte
+	mutex         sync.Mutex
 	conn          *grpc.ClientConn
+}
+
+// Instantiates connector implementation.
+func newConnectedAgentsConnectorImpl(agentAddress string, serverCertPEM, serverKeyPEM, caCertPEM []byte) connectedAgentsConnector {
+	return &connectedAgentsConnectorImpl{
+		agentAddress:  agentAddress,
+		serverCertPEM: serverCertPEM,
+		serverKeyPEM:  serverKeyPEM,
+		caCertPEM:     caCertPEM,
+		mutex:         sync.Mutex{},
+	}
 }
 
 // Connects or re-connects using specified agent address, certs and keys.
 // It stores the established connection.
 func (impl *connectedAgentsConnectorImpl) connect() error {
-	impl.close()
+	impl.mutex.Lock()
+	defer impl.mutex.Unlock()
+
+	impl.closeUnsafe()
 
 	// Prepare TLS credentials.
 	creds, err := prepareTLSCreds(impl.caCertPEM, impl.serverCertPEM, impl.serverKeyPEM)
@@ -92,6 +107,13 @@ func (impl *connectedAgentsConnectorImpl) connect() error {
 
 // Closes an existing connection if it exists.
 func (impl *connectedAgentsConnectorImpl) close() {
+	impl.mutex.Lock()
+	defer impl.mutex.Unlock()
+	impl.closeUnsafe()
+}
+
+// Closes an existing connection if it exists (non-safe for concurrent use).
+func (impl *connectedAgentsConnectorImpl) closeUnsafe() {
 	if impl.conn != nil {
 		impl.conn.Close()
 		impl.conn = nil
@@ -140,12 +162,7 @@ func newConnectedAgentsImpl(settings *AgentsSettings, eventCenter eventcenter.Ev
 		commLoopReqs: make(chan *commLoopReq),
 		doneCommLoop: make(chan bool),
 		connectorFactoryFn: func(agentAddress string) connectedAgentsConnector {
-			return &connectedAgentsConnectorImpl{
-				agentAddress:  agentAddress,
-				caCertPEM:     caCertPEM,
-				serverCertPEM: serverCertPEM,
-				serverKeyPEM:  serverKeyPEM,
-			}
+			return newConnectedAgentsConnectorImpl(agentAddress, serverCertPEM, serverKeyPEM, caCertPEM)
 		},
 		wg:    &sync.WaitGroup{},
 		mutex: sync.RWMutex{},

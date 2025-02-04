@@ -84,6 +84,21 @@ func TestGetAppState(t *testing.T) {
 	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheMisses"])
 	require.EqualValues(t, 70, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryHits"])
 	require.EqualValues(t, 30, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryMisses"])
+
+	// If the daemon has no ID, it means it is a new daemon that hasn't
+	// been yet added to the database. In this case, the function will rather
+	// instantiate a new daemon.
+	GetAppState(ctx, fa, &dbApp, fec)
+	require.Len(t, dbApp.Daemons, 1)
+	daemon2 := dbApp.Daemons[0]
+	require.NotSame(t, daemon, daemon2)
+
+	// Set the ID. This time, the daemon should be preserved.
+	dbApp.Daemons[0].ID = 1
+	GetAppState(ctx, fa, &dbApp, fec)
+	require.Len(t, dbApp.Daemons, 1)
+	daemon3 := dbApp.Daemons[0]
+	require.Same(t, daemon3, daemon2)
 }
 
 // Tests that BIND 9 can be added and then updated in the database.

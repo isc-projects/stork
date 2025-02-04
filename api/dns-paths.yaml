@@ -6,10 +6,10 @@
         fetch the zones from these servers and store in the "zone inventories".
         This operation instructs the Stork server to communicate with the zone
         inventories on the respective agents to receive all zones. The received zones
-        are fetched in the Stork server's database. This operation is a background
-        task that may take significant amount of time, depending on the number of
-        zones and DNS servers. Subsequent calls to this endpoint while this operation
-        is still in progress are no-op.
+        are stored in the Stork server's database. It runs in background and may take
+        significant amount of time, depending on the number of zones and DNS servers.
+        Subsequent calls to this endpoint while this operation is still in progress
+        are no-op.
       operationId: putZonesFetch
       tags:
         - DNS
@@ -24,9 +24,9 @@
 
   /dns-management/zone-inventory-states:
     get:
-      summary: Returns states of fetching zones from the zone inventories to the Stork server.
+      summary: Returns states of fetching the zones from the zone inventories to the Stork server.
       description: >-
-        This call returns the state of fetching the zones from the zone inventories to
+        This call returns the states of fetching the zones from the zone inventories to
         the Stork server for multiple DNS servers.
       operationId: getZoneInventoryStates
       tags:
@@ -51,10 +51,10 @@
 
   /zones:
     get:
-      summary: Get list of DNS zones.
+      summary: Get a list of DNS zones.
       description: >-
         A list of zones is returned in items field accompanied by total count
-        which indicates total available number of records for given filtering
+        which indicates total available number of records for the given filtering
         parameters.
       operationId: getZones
       tags:

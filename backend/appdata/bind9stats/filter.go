@@ -68,7 +68,7 @@ func (filter *ZoneFilter) SetLowerBound(lowerBound string, limit int) {
 	filter.Limit = &limit
 }
 
-// Sets the limit on the number of zones.
+// Sets the offset and limit on the number of zones.
 func (filter *ZoneFilter) SetOffsetLimit(offset, limit int) {
 	filter.Offset = &offset
 	filter.Limit = &limit
