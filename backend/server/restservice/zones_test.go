@@ -183,6 +183,7 @@ func TestGetZoneInventoryStates(t *testing.T) {
 		require.Equal(t, d.ZoneCount, rspOK.Payload.Items[index].ZoneCount)
 		require.Positive(t, rspOK.Payload.Items[index].DaemonID)
 		require.Positive(t, rspOK.Payload.Items[index].AppID)
+		require.NotZero(t, rspOK.Payload.Items[index].CreatedAt)
 	}
 }
 

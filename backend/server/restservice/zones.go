@@ -102,6 +102,7 @@ func (r *RestAPI) GetZoneInventoryStates(ctx context.Context, params dns.GetZone
 		restStates = append(restStates, &models.ZoneInventoryState{
 			AppID:     state.Daemon.AppID,
 			AppName:   state.Daemon.App.Name,
+			CreatedAt: strfmt.DateTime(state.CreatedAt),
 			DaemonID:  state.DaemonID,
 			Error:     state.State.Error,
 			Status:    string(state.State.Status),
