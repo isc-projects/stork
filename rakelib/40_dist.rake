@@ -359,8 +359,25 @@ namespace :install do
         if ENV["DEST"].nil?
             ENV["DEST"] = "/"
         end
-        sh "mkdir", "-p", ENV["DEST"]
-        sh "cp", "-a", "-f", File.join(agent_dist_dir, "."), ENV["DEST"]
+        FileUtils.mkdir_p(ENV["DEST"], verbose: true)
+
+        # Copy only the files. Preserve the attributes of the existing
+        # directories.
+        Dir.glob(File.join(agent_dist_dir, '**', '*'), File::FNM_DOTMATCH).each do |file|
+            if !File.file?(file)
+                next
+            end
+
+            dest_file = File.join(ENV["DEST"], file.sub(agent_dist_dir, ''))
+            dest_dir = File.dirname(dest_file)
+            # Mkdir leaves the existing directories untouched.
+            FileUtils.mkdir_p(dest_dir, verbose: true)
+            # Attention! Don't use recursive copy. It will overwrite the
+            # attributes of the existing directories. It is problematic for
+            # the /etc, /lib, /usr directories and its subdirectories. In some
+            # cases, it can lead to system malfunction.
+            FileUtils.cp(file, dest_file, preserve: true, verbose: true)
+        end
     end
 
     desc "Install server
@@ -369,8 +386,25 @@ namespace :install do
         if ENV["DEST"].nil?
             ENV["DEST"] = "/"
         end
-        sh "mkdir", "-p", ENV["DEST"]
-        sh "cp", "-a", "-f", File.join(server_dist_dir, "."), ENV["DEST"]
+        FileUtils.mkdir_p(ENV["DEST"], verbose: true)
+
+        # Copy only the files. Preserve the attributes of the existing
+        # directories.
+        Dir.glob(File.join(server_dist_dir, '**', '*'), File::FNM_DOTMATCH).each do |file|
+            if !File.file?(file)
+                next
+            end
+
+            dest_file = File.join(ENV["DEST"], file.sub(server_dist_dir, ''))
+            dest_dir = File.dirname(dest_file)
+            # Mkdir leaves the existing directories untouched.
+            FileUtils.mkdir_p(dest_dir, verbose: true)
+            # Attention! Don't use recursive copy. It will overwrite the
+            # attributes of the existing directories. It is problematic for
+            # the /etc, /lib, /usr directories and its subdirectories. In some
+            # cases, it can lead to system malfunction.
+            FileUtils.cp(file, dest_file, preserve: true, verbose: true)
+        end
     end
 end
 
