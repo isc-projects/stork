@@ -1,5 +1,12 @@
 Stork 2.1.1 released on 2025-02-05.
 
+* 491 [bug] slawek
+
+    Fixed a bug in the "install:*" commands that caused the overriding
+    of attributes of the system directories on specific operating
+    systems.
+    (Gitlab #1614)
+
 * 490 [func] marcin
 
     Implemented a DNS "zone inventory" in the Stork agent. It adds
