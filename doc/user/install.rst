@@ -1228,7 +1228,7 @@ The dependencies that need to be installed to build the Stork sources are:
  - Rake
  - Java Runtime Environment (only if building natively, not using Docker)
  - Docker (only if running in containers; this is needed to build the demo)
- - Python 3.11 or newer (only if building natively, not using Docker)
+ - Python 3.10 or newer (only if building natively, not using Docker)
 
 Other dependencies are installed automatically in a local directory by Rake tasks, which does not
 require root privileges. If the demo environment will be run, Docker is needed but not
