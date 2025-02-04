@@ -2,7 +2,6 @@ package restservice
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -87,7 +86,7 @@ func (r *RestAPI) GetZoneInventoryStates(ctx context.Context, params dns.GetZone
 	}
 	states, count, err := dbmodel.GetZoneInventoryStates(r.DB, dbmodel.ZoneInventoryStateRelationApp)
 	if err != nil {
-		msg := "Cannot get zones fetch states from the database"
+		msg := "Failed to get zones fetch states from the database"
 		log.WithError(err).Error(msg)
 		rsp := dns.NewGetZoneInventoryStatesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -125,7 +124,8 @@ func (r *RestAPI) PutZonesFetch(ctx context.Context, params dns.PutZonesFetchPar
 	case err == nil, errors.As(err, &alreadyFetchingError):
 		return dns.NewPutZonesFetchAccepted()
 	default:
-		msg := fmt.Sprintf("Cannot start fetching the zones: %s", err.Error())
+		msg := "Failed to start fetching the zones"
+		log.WithError(err).Error(msg)
 		rsp := dns.NewPutZonesFetchDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

@@ -292,5 +292,5 @@ func TestPutZonesFetchError(t *testing.T) {
 	require.IsType(t, &dns.PutZonesFetchDefault{}, rsp)
 	defaultRsp := rsp.(*dns.PutZonesFetchDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Equal(t, "Cannot start fetching the zones: test error", *defaultRsp.Payload.Message)
+	require.Equal(t, "Failed to start fetching the zones", *defaultRsp.Payload.Message)
 }
