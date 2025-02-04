@@ -90,7 +90,15 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 	return addZones(dbi.(*pg.Tx), zones...)
 }
 
-// Retrieves a list of zones from the database.
+// Retrieves a list of zones from the database with optional relations and filtering.
+// The ORM-based implementation may result in multiple queries when deep relations
+// (with daemon and with app) are used. The only alternative would be raw queries.
+// However, raw queries don't improve performance of getting the zones for one
+// relation (LocalZones). They could possibly improve the performance when cascaded
+// relations (i.e., LocalZones.Daemon.App) are used. Unfortunately, it would significantly
+// complicate the implementation. Note that this function is primarily used for
+// paging zones, so the number of records is typically low, and the performance gain
+// would be negligible.
 func GetZones(db pg.DBI, filter *bind9stats.ZoneFilter, relations ...ZoneRelation) ([]*Zone, int, error) {
 	var zones []*Zone
 	q := db.Model(&zones)
