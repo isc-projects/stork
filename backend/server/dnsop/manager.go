@@ -275,6 +275,19 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		}
 		// Wait for all the go-routines to complete.
 		wg.Wait()
+
+		// Log the successful completion.
+		var zoneCount int64
+		for _, result := range results {
+			if result.ZoneCount != nil {
+				zoneCount += *result.ZoneCount
+			}
+		}
+		log.WithFields(log.Fields{
+			"appCount":  len(results),
+			"zoneCount": zoneCount,
+		}).Info("Completed fetching the zones from the agents")
+
 		// Return the result.
 		notifyChannel <- ManagerDoneNotify{
 			results,
