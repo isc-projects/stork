@@ -376,8 +376,7 @@ namespace :install do
 
             dest_file = File.join(ENV["DEST"], file.sub(agent_dist_dir, ''))
             dest_dir = File.dirname(dest_file)
-            # Mkdir leaves the existing directories untouched. The newly created
-            # directories have the default attributes.
+            # Mkdir leaves the existing directories untouched.
             FileUtils.mkdir_p(dest_dir, verbose: true)
             # Attention! Don't use recursive copy. It will overwrite the
             # attributes of the existing directories. It is problematic for
@@ -404,8 +403,7 @@ namespace :install do
 
             dest_file = File.join(ENV["DEST"], file.sub(server_dist_dir, ''))
             dest_dir = File.dirname(dest_file)
-            # Mkdir leave the existing directories untouched. The newly created
-            # directories have the default attributes.
+            # Mkdir leaves the existing directories untouched.
             FileUtils.mkdir_p(dest_dir, verbose: true)
             # Attention! Don't use recursive copy. It will overwrite the
             # attributes of the existing directories. It is problematic for
