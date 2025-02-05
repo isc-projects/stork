@@ -369,7 +369,7 @@ namespace :install do
 
         # Copy only the files. Preserve the attributes of the existing
         # directories.
-        Dir.glob(File.join(agent_dist_dir, '**', '*')).each do |file|
+        Dir.glob(File.join(agent_dist_dir, '**', '*'), File::FNM_DOTMATCH).each do |file|
             if !File.file?(file)
                 next
             end
@@ -397,7 +397,7 @@ namespace :install do
 
         # Copy only the files. Preserve the attributes of the existing
         # directories.
-        Dir.glob(File.join(server_dist_dir, '**', '*')).each do |file|
+        Dir.glob(File.join(server_dist_dir, '**', '*'), File::FNM_DOTMATCH).each do |file|
             if !File.file?(file)
                 next
             end
