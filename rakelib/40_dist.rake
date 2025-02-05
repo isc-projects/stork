@@ -365,7 +365,7 @@ namespace :install do
         if ENV["DEST"].nil?
             ENV["DEST"] = "/"
         end
-        FileUtils.mkdir_p(ENV["DEST"])
+        FileUtils.mkdir_p(ENV["DEST"], verbose: true)
 
         # Copy only the files. Preserve the attributes of the existing
         # directories.
@@ -378,12 +378,12 @@ namespace :install do
             dest_dir = File.dirname(dest_file)
             # Mkdir leaves the existing directories untouched. The newly created
             # directories have the default attributes.
-            FileUtils.mkdir_p(dest_dir)
+            FileUtils.mkdir_p(dest_dir, verbose: true)
             # Attention! Don't use recursive copy. It will overwrite the
             # attributes of the existing directories. It is problematic for
             # the /etc, /lib, /usr directories and its subdirectories. In some
             # cases, it can lead to system malfunction.
-            FileUtils.cp(file, dest_file, preserve: true)
+            FileUtils.cp(file, dest_file, preserve: true, verbose: true)
         end
     end
 
@@ -393,7 +393,7 @@ namespace :install do
         if ENV["DEST"].nil?
             ENV["DEST"] = "/"
         end
-        FileUtils.mkdir_p(ENV["DEST"])
+        FileUtils.mkdir_p(ENV["DEST"], verbose: true)
 
         # Copy only the files. Preserve the attributes of the existing
         # directories.
@@ -406,12 +406,12 @@ namespace :install do
             dest_dir = File.dirname(dest_file)
             # Mkdir leave the existing directories untouched. The newly created
             # directories have the default attributes.
-            FileUtils.mkdir_p(dest_dir)
-            # Attention! Don't use the recursive copy. It will overwrite the
+            FileUtils.mkdir_p(dest_dir, verbose: true)
+            # Attention! Don't use recursive copy. It will overwrite the
             # attributes of the existing directories. It is problematic for
             # the /etc, /lib, /usr directories and its subdirectories. In some
-            # cases, it can lead to the system malfunction.
-            FileUtils.cp(file, dest_file, preserve: true)
+            # cases, it can lead to system malfunction.
+            FileUtils.cp(file, dest_file, preserve: true, verbose: true)
         end
     end
 end
