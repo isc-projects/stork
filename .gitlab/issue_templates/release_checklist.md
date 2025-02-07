@@ -22,7 +22,7 @@ Some of these checks and updates can be made before the actual freeze.
     - Check that the page is loading outside VPN.
 1. Check if ReadTheDocs can build Stork documentation.
     1. [ ] Check if the latest build was successful and if its time matches the merge time of the release changes.
-    1. If not, trigger rebuilding docs on [readthedocs.org](https://readthedocs.org/projects/stork/builds) and wait for the build to complete.
+    1. If not, trigger rebuilding docs on [readthedocs.org](https://app.readthedocs.org/projects/stork/builds) and wait for the build to complete.
 1. Prepare release notes.
     1. [ ] Create a draft of the release notes on the [Stork GitLab wiki](https://gitlab.isc.org/isc-projects/stork/-/wikis/home). It should be created under [the Releases directory](https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases), like this one: https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-2.0.0.
     1. [ ] Notify @tomek that the draft is ready to be redacted. Wait for that to be done.
@@ -48,6 +48,7 @@ The following steps may involve changing files in the repository.
     1. Run `upload_test_packages`.
     1. Run `upload_test_packages_hooks`.
     1. Wait for the jobs to complete.
+    1. Check that the packages were uploaded to Cloudsmith: https://cloudsmith.io/~isc/repos/stork-testing/packages/. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 2 (agent + server + ldap)` total packages.
     1. If there were any errors, investigate and fix.
 1. [ ] Request sanity checks from the team. Run QA script [stork/release/request-sanity-checks.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/request-sanity-checks.py).
     * Example command: `GITLAB_TOKEN='...' ./request-sanity-checks.py`
@@ -80,7 +81,7 @@ Release notes: {release_notes}
 ```
 1. [ ] If reported issues require immediate fixes and respin, please follow standard procedure of creating issue and review.
     1. [ ] Close current sanity check issue.
-1. [ ] If reported issues do NOT require respin, proceed to [Releasing Tarballs and Packages][# Releasing Tarballs and Packages].
+1. [ ] If reported issues do NOT require respin, proceed to the next section: [Releasing Tarballs and Packages](#releasing-tarballs-and-packages).
 
 ## Releasing Tarballs and Packages
 
@@ -96,7 +97,7 @@ Release notes: {release_notes}
     1. Run `upload_packages`.
     1. Run `upload_packages_hooks`.
     1. Wait for the jobs to complete.
-    1. [ ] Check that the packages were uploaded to Cloudsmith: https://cloudsmith.io/~isc/repos/stork/packages/.
+    1. [ ] Check that the packages were uploaded to Cloudsmith: https://cloudsmith.io/~isc/repos/stork/packages/. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 2 (agent + server + ldap)` total packages.
 1. [ ] Sign the tarballs. Run QA script [stork/release/sign-tarballs.sh](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/sign-tarballs.sh).
     * Example command: `./sign-tarballs.sh 1.2.0 wlodek 0259A33B5F5A3A4466CF345C7A5E084CACA51884`
     * To get the fingerprint, run `gpg --list-keys wlodek@isc.org`.
@@ -144,21 +145,18 @@ Release notes: {release_notes}
 
             Code freeze is over.
             ```
-1. [ ] Update docs on https://readthedocs.org/projects/stork/.
-    1. Go to `Builds` -> click `Build Version: latest` (this is really a workaround for RTD to pull the repo and discover the new tag).
-    1. Go to `Versions` -> `Activate a version` -> fill in the version -> press enter -> click `Activate` on the found result -> check `Active` -> click `Save`.
-    1. Go to `Builds` -> wait for the build to complete.
+1. [ ] Update docs on https://app.readthedocs.org/projects/stork/.
+    1. Click the triple dot button on the `latest` build -> click `Rebuild version`. This is really a workaround for RTD to pull the repo and discover the new tag.
+    1. Go to `Versions` -> `Add version` -> find the tag name in the dropdown menu -> check `Active` -> click `Update version`. Wait for the build to complete.
     1. [ ] <mark>Stable and Maintenance Releases Only</mark>: change default version:
-        1. Go to `Admin` -> `Settings` -> `Default version:` -> choose the new version as default.
+        1. Go to `Settings` -> `Default version:` -> choose the new version as default.
         1. Check that https://stork.readthedocs.io/ redirects to the new version.
 
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: follow [those instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update public demo
 
 1. [ ] <mark>Stable Releases Only</mark>: Update the [the Stork Quickstart Guide](https://kb.isc.org/docs/stork-quickstart-guide).
 
-1. [ ] Contact the Marketing team, and find a member who will continue work on this release:
-    1. [ ] Assign this ticket to the person who will continue.
-    1. [ ] Share the link to signing the ticket either directly or as a comment in this issue.
+1. [ ] Contact the Marketing team, and assign this ticket to a member who will continue working on this release.
 
 ## Marketing
 
@@ -171,7 +169,7 @@ Release notes: {release_notes}
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Write blog article.
 1. [ ] Check if [Stork website page](https://www.isc.org/stork/) needs updating.
 1. [ ] If a feature matrix for Stork exists in KB, update it with any significant new features.
-1. [ ] Contact the Support team, find a person who will continue this release and assign this issue to them.
+1. [ ] Contact the Support team, and assign this ticket to a member who will continue working on this release.
 
 ## Support
 
