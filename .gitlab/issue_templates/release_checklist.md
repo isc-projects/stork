@@ -161,14 +161,12 @@ Release notes: {release_notes}
 ## Marketing
 
 1. [ ] Publish links to downloads on the ISC website.
-1. [ ] Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
+1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Announce release to support subscribers using the read-only Kea Announce queue.
 1. [ ] Write email to [stork-users](https://lists.isc.org/pipermail/stork-users/).
 1. [ ] Announce on social media.
-1. [ ] If there is a [Wikipedia entry for Stork](https://en.wikipedia.org/wiki/Stork\_(software)), update it.
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: Write blog article.
-1. [ ] Check if [Stork website page](https://www.isc.org/stork/) needs updating.
-1. [ ] If a feature matrix for Stork exists in KB, update it with any significant new features.
+1. [ ] Check if [the Stork website page](https://www.isc.org/stork/) needs updating.
 1. [ ] Contact the Support team, and assign this ticket to a member who will continue working on this release.
 
 ## Support
