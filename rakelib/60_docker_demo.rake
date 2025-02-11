@@ -169,6 +169,12 @@ namespace :demo do
             docker_up_services("agent-bind9")
         end
 
+        desc 'Build and run container with Stork Agent and PowerDNS
+        See "up" command for arguments.'
+        task :pdns => [DOCKER_COMPOSE] do
+            docker_up_services("agent-pdns")
+        end
+
         desc 'Build and run container with Postgres
             POSTGRES_VERSION - use specific Postgres database version - optional'
         task :postgres => [DOCKER_COMPOSE] do

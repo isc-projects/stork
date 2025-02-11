@@ -19,6 +19,7 @@ Stork services. It contains:
 - Stork Agent with Kea Using Many Subnets
 - Stork Agent with BIND 9
 - Stork Agent with BIND 9-2
+- Stork Agent with PowerDNS
 - Stork Environment Simulator
 - PostgreSQL Database
 - Prometheus & Grafana
@@ -132,6 +133,10 @@ agent-bind9
 agent-bind9-2
    This container also runs a BIND 9 server, for the purpose of
    experimenting with two different DNS servers.
+agent-pdns
+   This container runs a PowerDNS server. With this container, the agent
+   can be added as a machine and Stork begins monitoring its PowerDNS
+   service.
 agent-kea
    This container runs a Kea DHCPv4 server. With this container, the
    agent can be added as a machine and Stork begins monitoring its

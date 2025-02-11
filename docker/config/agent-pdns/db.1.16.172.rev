@@ -1,0 +1,15 @@
+$TTL 2d
+$ORIGIN 1.16.172.in-addr.arpa.
+
+@       IN      SOA     ns1.pdns.example.org. admin.pdns.example.org. (
+                        2024031501      ; Serial
+                        12h             ; Refresh
+                        15m             ; Retry
+                        3w              ; Expire
+                        2h )            ; Minimum TTL
+
+        IN      NS      ns1.pdns.example.org.
+        IN      NS      ns2.pdns.example.org.
+
+; Generate PTR records for web servers
+$GENERATE 1-50 $ PTR web-$.pdns.example.org.

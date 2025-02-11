@@ -416,6 +416,25 @@ RUN mkdir -p /chroot/etc \
         && mkdir -p /chroot/run/named \
         && chown -R bind:bind /chroot
 
+# PowerDNS.
+FROM debian-base AS pdns
+RUN apt-get update \
+        && apt-get install \
+                -y \
+                --no-install-recommends \
+                prometheus-node-exporter=1.5.* \
+                pdns-server \
+                pdns-backend-bind \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        && mkdir -p /var/log/supervisor \
+        && mkdir -p /var/lib/stork-agent
+# Install agent
+COPY --from=agent-builder /app/dist/agent/usr/bin /usr/bin
+# Run the processes.
+ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+HEALTHCHECK CMD [ "supervisorctl", "-c", "/etc/supervisor/supervisord.conf", "status" ]
+
 #################
 ### Packaging ###
 #################

@@ -1,0 +1,37 @@
+; base zone file for pdns.example.org
+$TTL 2d    ; default TTL for zone
+$ORIGIN pdns.example.org. ; base domain-name
+; Start of Authority RR defining the key characteristics of the zone (domain)
+@         IN      SOA   ns1.pdns.example.org. hostmaster.pdns.example.org. (
+                                2024031501 ; serial number
+                                12h        ; refresh
+                                15m        ; update retry
+                                3w         ; expiry
+                                2h         ; minimum
+                                )
+; name server RR for the domain
+                 NS      ns1.pdns.example.org.
+; the second name server is external to this zone (domain)
+           IN      NS      ns2.pdns.example.org.
+; mail server RRs for the zone (domain)
+        3w IN      MX  10  mail.pdns.example.org.
+; Domain hosts include NS and MX records defined above
+; plus any others required.
+; For instance a user query for the A RR of joe.example.org will
+; return the IPv4 address 172.16.0.5 from this zone file.
+ns1        IN      A       172.16.0.2
+ns2        IN      A       172.16.0.3
+mail       IN      A       172.16.0.4
+joe        IN      A       172.16.0.5
+www        IN      A       172.16.0.5
+; aliases ftp (ftp server) to an external domain
+ftp        IN      CNAME   ftp.pdns.example.net.
+
+; Generate records for web servers (web-1 through web-50)
+$GENERATE 1-50 web-$ A 172.16.1.$
+
+; Generate records for app servers (app-1 through app-50)
+$GENERATE 1-50 app-$ A 172.16.2.$
+
+; Generate records for db servers (db-1 through db-20)
+$GENERATE 1-20 db-$ A 172.16.3.$
