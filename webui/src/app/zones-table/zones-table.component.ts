@@ -1,12 +1,8 @@
-import { Component } from '@angular/core';
+import { Component } from '@angular/core'
 
 @Component({
-  selector: 'app-zones-table',
-  standalone: true,
-  imports: [],
-  templateUrl: './zones-table.component.html',
-  styleUrl: './zones-table.component.sass'
+    selector: 'app-zones-table',
+    templateUrl: './zones-table.component.html',
+    styleUrl: './zones-table.component.sass',
 })
-export class ZonesTableComponent {
-
-}
+export class ZonesTableComponent {}

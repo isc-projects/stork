@@ -118,6 +118,12 @@ export class AppComponent implements OnInit, OnDestroy {
                 ],
             },
             {
+                label: 'DNS',
+                id: 'dns',
+                visible: false,
+                items: [{ label: 'Zones', id: 'zones', icon: 'pi pi-sitemap', routerLink: '/dns/zones' }],
+            },
+            {
                 label: 'Services',
                 id: 'services',
                 items: [
@@ -328,10 +334,13 @@ export class AppComponent implements OnInit, OnDestroy {
                         // if there are BIND 9 apps then show BIND 9 related menu items
                         // otherwise hide them
                         const bind9AppsMenuItem = this.getMenuItem('BIND 9 Apps')
+                        const zonesMenuItem = this.getMenuItem('Zones')
                         if (data.bind9AppsTotal && data.bind9AppsTotal > 0) {
                             bind9AppsMenuItem['visible'] = true
+                            zonesMenuItem['visible'] = true
                         } else {
                             bind9AppsMenuItem['visible'] = false
+                            zonesMenuItem['visible'] = false
                         }
 
                         // force refresh of top menu in UI

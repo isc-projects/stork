@@ -23,6 +23,7 @@ import { ConfigCheckerPreferencePageComponent } from './config-checker-preferenc
 import { CommunicationStatusPageComponent } from './communication-status-page/communication-status-page.component'
 import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page/kea-global-configuration-page.component'
 import { VersionPageComponent } from './version-page/version-page.component'
+import { ZonesPageComponent } from './zones-page/zones-page.component'
 
 const routes: Routes = [
     {
@@ -106,6 +107,16 @@ const routes: Routes = [
     {
         path: 'dhcp/shared-networks/:id',
         component: SharedNetworksPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'dns/zones',
+        pathMatch: 'full',
+        redirectTo: 'dns/zones/all',
+    },
+    {
+        path: 'dns/zones/:id',
+        component: ZonesPageComponent,
         canActivate: [AuthGuard],
     },
     {
