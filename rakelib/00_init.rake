@@ -535,7 +535,7 @@ macos_arm64_system = OS == "macos" && arm64_system
 any_system = true
 
 ### Define package versions
-go_ver = '1.23.1'
+go_ver = '1.23.6'
 goswagger_ver = 'v0.31.0'
 protoc_ver = '28.2'
 protoc_gen_go_ver = 'v1.34.2'
