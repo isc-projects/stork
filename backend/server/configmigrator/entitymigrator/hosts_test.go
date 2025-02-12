@@ -1,4 +1,4 @@
-package configmigrator
+package entitymigrator
 
 import (
 	"bytes"
@@ -17,7 +17,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-//go:generate mockgen -package=configmigrator -destination=agentcommmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
+//go:generate mockgen -package=entitymigrator -destination=agentcommmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
 
 // Test that the hosts are migrated and all errors are collected.
 func TestMigrate(t *testing.T) {

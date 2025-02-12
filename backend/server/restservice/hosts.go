@@ -15,6 +15,7 @@ import (
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator"
+	"isc.org/stork/server/configmigrator/entitymigrator"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -636,7 +637,7 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 // migration to the client.
 func (r *RestAPI) MigrateHosts(ctx context.Context, params dhcp.MigrateHostsParams) middleware.Responder {
 	// Create a new host migrator.
-	migrator := configmigrator.NewHostMigrator(
+	migrator := entitymigrator.NewHostMigrator(
 		dbmodel.HostsByPageFilters{
 			AppID:             params.AppID,
 			SubnetID:          params.SubnetID,

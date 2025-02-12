@@ -1,4 +1,4 @@
-package configmigrator
+package entitymigrator
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/configmigrator"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -22,10 +23,10 @@ type hostMigrator struct {
 	connectedAgents  agentcomm.ConnectedAgents
 }
 
-var _ Migrator = &hostMigrator{}
+var _ configmigrator.Migrator = &hostMigrator{}
 
 // Creates a new host migrator.
-func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgents agentcomm.ConnectedAgents, dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup) Migrator {
+func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgents agentcomm.ConnectedAgents, dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup) configmigrator.Migrator {
 	// Migrating the conflicted hosts is not supported.
 	filter.DHCPDataConflict = storkutil.Ptr(false)
 	return &hostMigrator{
@@ -38,8 +39,8 @@ func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgen
 }
 
 // Returns the type of the entities that are being migrated.
-func (m *hostMigrator) GetEntityType() EntityType {
-	return EntityTypeHost
+func (m *hostMigrator) GetEntityType() configmigrator.EntityType {
+	return configmigrator.EntityTypeHost
 }
 
 // Returns a total number of hosts to migrate.
