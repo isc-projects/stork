@@ -3,3 +3,52 @@
         <p>This page displays a list of DNS zones.</p>
     </div>
 </app-breadcrumbs>
+
+<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeIdx" (activeIndexChange)="onActiveIndexChange($event)">
+    <p-tabPanel header="Zones">
+        <p-table
+            [value]="zones"
+            [paginator]="true"
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 30, 100]"
+            [showCurrentPageReport]="true"
+            stateStorage="session"
+            [stateKey]="stateKey"
+            currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            styleClass="p-datatable-striped"
+        >
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Zone</th>
+                    <th>Info</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-zone>
+                <tr>
+                    <td>
+                        <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" />
+                    </td>
+                    <td>Zone has {{ zone.localZones.length }} local zones</td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="2">No zones found.</td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="paginatorright" let-paginatorState>
+                Total: {{ paginatorState.totalRecords | pluralize: 'zone' }}
+            </ng-template>
+        </p-table>
+    </p-tabPanel>
+    <p-tabPanel *ngFor="let tab of openTabs" [header]="tab.name" [closable]="true">
+        <p>
+            Zone name:
+            {{ tab.name }}
+        </p>
+        <p>
+            Zone rname:
+            {{ tab.rname }}
+        </p>
+    </p-tabPanel>
+</p-tabView>
