@@ -9,6 +9,7 @@ import { ServicesService } from '../backend/api/api'
 import { App } from '../backend'
 import { Table } from 'primeng/table'
 import { Menu } from 'primeng/menu'
+import { AppTab } from '../apps'
 
 /**
  * Replaces the newlines in the versions with the HTML-compatible line breaks.
@@ -68,8 +69,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     activeTabIdx = 0
     tabs: MenuItem[]
     activeItem: MenuItem
-    openedApps: any
-    appTab: any = null
+    openedApps: AppTab[]
+    appTab: AppTab = null
 
     refreshedAppTab = new BehaviorSubject(this.appTab)
 

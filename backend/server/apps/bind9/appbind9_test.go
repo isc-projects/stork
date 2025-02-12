@@ -27,6 +27,16 @@ func mockNamed(callNo int, response interface{}) {
 					},
 				},
 			},
+			"guest": {
+				Resolver: ResolverData{
+					CacheStats: CacheStatsData{
+						CacheHits:   100,
+						CacheMisses: 200,
+						QueryHits:   56,
+						QueryMisses: 75,
+					},
+				},
+			},
 			"_bind": {
 				Resolver: ResolverData{
 					CacheStats: CacheStatsData{
@@ -85,6 +95,12 @@ func TestGetAppState(t *testing.T) {
 	require.EqualValues(t, 70, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryHits"])
 	require.EqualValues(t, 30, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryMisses"])
 
+	require.EqualValues(t, 100, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 200, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 56, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 75, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["QueryMisses"])
+
+	require.NotContains(t, daemon.Bind9Daemon.Stats.NamedStats.Views, "_bind")
 	// If the daemon has no ID, it means it is a new daemon that hasn't
 	// been yet added to the database. In this case, the function will rather
 	// instantiate a new daemon.

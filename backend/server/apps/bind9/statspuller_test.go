@@ -44,13 +44,23 @@ func TestStatsPullerPullStats(t *testing.T) {
 		json := `{
 		    "json-stats-version":"1.2",
 		    "views":{
-		        "_default":{
+		        "trusted":{
 		            "resolver":{
 		                "cachestats":{
 		                    "CacheHits": 60,
 		                    "CacheMisses": 40,
 		                    "QueryHits": 10,
 		                    "QueryMisses": 90
+		                }
+		            }
+		        },
+		        "guest":{
+		            "resolver":{
+		                "cachestats":{
+		                    "CacheHits": 100,
+		                    "CacheMisses": 200,
+		                    "QueryHits": 56,
+		                    "QueryMisses": 75
 		                }
 		            }
 		        },
@@ -153,20 +163,34 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.Len(t, app1.Daemons, 1)
 	require.NotNil(t, app1.Daemons[0].Bind9Daemon)
 	daemon = app1.Daemons[0]
-	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheHits"])
-	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheMisses"])
-	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryHits"])
-	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryMisses"])
+	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["QueryMisses"])
+
+	// Add assertions for "guest" view
+	require.EqualValues(t, 100, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 200, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 56, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 75, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["QueryMisses"])
 
 	app2, err := dbmodel.GetAppByID(db, dbApp2.ID)
 	require.NoError(t, err)
 	require.Len(t, app2.Daemons, 1)
 	require.NotNil(t, app2.Daemons[0].Bind9Daemon)
 	daemon = app2.Daemons[0]
-	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheHits"])
-	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheMisses"])
-	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryHits"])
-	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryMisses"])
+	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.NamedStats.Views["trusted"].Resolver.CacheStats["QueryMisses"])
+
+	// Add assertions for "guest" view
+	require.EqualValues(t, 100, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 200, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 56, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 75, daemon.Bind9Daemon.Stats.NamedStats.Views["guest"].Resolver.CacheStats["QueryMisses"])
+
+	require.NotContains(t, daemon.Bind9Daemon.Stats.NamedStats.Views, "_bind")
 }
 
 // Check if statistics-channel response is handled correctly when it is empty.

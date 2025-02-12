@@ -314,6 +314,20 @@
         items:
           $ref: '#/definitions/KeaDaemon'
 
+  Bind9DaemonView:
+    type: object
+    properties:
+      name:
+        type: string
+      queryHitRatio:
+        type: number
+      queryHits:
+        type: integer
+        x-omitempty: false
+      queryMisses:
+        type: integer
+        x-omitempty: false
+
   Bind9Daemon:
     type: object
     properties:
@@ -339,14 +353,10 @@
         type: integer
       autoZoneCount:
         type: integer
-      queryHitRatio:
-        type: number
-      queryHits:
-        type: integer
-        x-omitempty: false
-      queryMisses:
-        type: integer
-        x-omitempty: false
+      views:
+        type: array
+        items:
+          $ref: '#/definitions/Bind9DaemonView'
       agentCommErrors:
         type: integer
       rndcCommErrors:

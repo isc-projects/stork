@@ -10,7 +10,7 @@ import { MockLocationStrategy } from '@angular/common/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 
-import { AppsVersions, ServicesService, UsersService } from '../backend'
+import { AppsVersions, Bind9DaemonView, ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { DialogModule } from 'primeng/dialog'
@@ -203,5 +203,15 @@ describe('Bind9AppTabComponent', () => {
         expect(versionStatus[0].properties.outerHTML).toContain('bind9')
         expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
         expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
+    })
+
+    it('should return 0 when queryHitRatio is undefined', () => {
+        const view = {} as Bind9DaemonView
+        expect(component.getQueryUtilization(view)).toBe(0)
+    })
+
+    it('should calculate correct utilization percentage', () => {
+        const view = { queryHitRatio: 0.756 } as Bind9DaemonView
+        expect(component.getQueryUtilization(view)).toBe(75)
     })
 })

@@ -158,7 +158,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
     /**
      * Returns information about currently selected app tab.
      */
-    get appTab() {
+    get appTab(): AppTab {
         return this._appTab
     }
 

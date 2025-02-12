@@ -17,6 +17,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
+	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -1393,6 +1394,110 @@ func TestRestGetApps(t *testing.T) {
 			require.EqualValues(t, 3, daemon.StatsCommErrors)
 		}
 	}
+}
+
+// Test converting BIND9 app to REST API format with DNS query stats.
+func TestRestGetBind9AppWithQueryStats(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	settings := RestAPISettings{}
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, mock, fec, fd)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// get empty list of app
+	params := services.GetAppsParams{}
+	rsp := rapi.GetApps(ctx, params)
+	require.IsType(t, &services.GetAppsOK{}, rsp)
+	okRsp := rsp.(*services.GetAppsOK)
+	require.Zero(t, okRsp.Payload.Total)
+
+	// Add machine.
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add BIND 9  app to the machine.
+	var bind9Points []*dbmodel.AccessPoint
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
+	app := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeBind9,
+		Active:       true,
+		Name:         "named",
+		AccessPoints: bind9Points,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Bind9Daemon: &dbmodel.Bind9Daemon{
+					Stats: dbmodel.Bind9DaemonStats{
+						ZoneCount:          int64(100),
+						AutomaticZoneCount: int64(50),
+						NamedStats: &bind9stats.Bind9NamedStats{
+							Views: map[string]*bind9stats.Bind9StatsView{
+								"trusted": {
+									Resolver: &bind9stats.Bind9StatsResolver{
+										CacheStats: map[string]int64{"QueryHits": 150, "QueryMisses": 50},
+									},
+								},
+								"guest": {
+									Resolver: &bind9stats.Bind9StatsResolver{
+										CacheStats: map[string]int64{"QueryHits": 75, "QueryMisses": 50},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	stats := agentcomm.NewAgentStats()
+	mock.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).DoAndReturn(wrap(stats)).AnyTimes()
+
+	// Get apps.
+	params = services.GetAppsParams{}
+	rsp = rapi.GetApps(ctx, params)
+	require.IsType(t, &services.GetAppsOK{}, rsp)
+	okRsp = rsp.(*services.GetAppsOK)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
+
+	// Verify BIND9 views
+	require.Len(t, okRsp.Payload.Items, 1)
+	bind9App := okRsp.Payload.Items[0].Details.AppBind9
+	require.NotNil(t, bind9App)
+	require.NotNil(t, bind9App.Daemon)
+	require.NotNil(t, bind9App.Daemon.Views)
+
+	// Zone counts.
+	require.EqualValues(t, 100, bind9App.Daemon.ZoneCount)
+	require.EqualValues(t, 50, bind9App.Daemon.AutoZoneCount)
+
+	// Test "trusted" view. It is at index 1 because the views are sorted by name.
+	trustedView := bind9App.Daemon.Views[1]
+	require.NotNil(t, trustedView)
+	require.EqualValues(t, 150, trustedView.QueryHits)
+	require.EqualValues(t, 50, trustedView.QueryMisses)
+	require.EqualValues(t, 0.75, trustedView.QueryHitRatio)
+
+	// Test "guest" view. It is at index 0 because the views are sorted by name.
+	guestView := bind9App.Daemon.Views[0]
+	require.NotNil(t, guestView)
+	require.EqualValues(t, 75, guestView.QueryHits)
+	require.EqualValues(t, 50, guestView.QueryMisses)
+	require.EqualValues(t, 0.6, guestView.QueryHitRatio)
 }
 
 // Test that a list of apps' ids and names is returned via the API.

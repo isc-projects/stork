@@ -66,8 +66,9 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 		viewStats := make(map[string]*bind9stats.Bind9StatsView)
 
 		for name, view := range statsOutput.Views {
-			// Only deal with the default view for now.
-			if name != "_default" {
+			// Exclude _bind view as it is a special kind of view for which
+			// we don't have query stats.
+			if name == "_bind" {
 				continue
 			}
 
@@ -82,7 +83,6 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 					CacheStats: cacheStats,
 				},
 			}
-			break
 		}
 
 		namedStats.Views = viewStats

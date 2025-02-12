@@ -1,0 +1,20 @@
+; base zone file for bind9.example.org
+$TTL 2d
+$ORIGIN bind9.example.org.
+
+@       IN      SOA     ns1.bind9.example.org. admin.bind9.example.org. (
+                        2024031501      ; Serial
+                        12h             ; Refresh
+                        15m             ; Retry
+                        3w              ; Expire
+                        2h )            ; Minimum TTL
+
+        IN      NS      ns1.bind9.example.org.
+        IN      NS      ns2.bind9.example.org.
+        IN      MX  10  mail.bind9.example.org.
+
+; Static records
+ns1     IN      A       12.0.0.2
+ns2     IN      A       12.0.0.3
+mail    IN      A       12.0.0.4
+www     IN      A       12.0.0.5

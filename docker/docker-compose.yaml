@@ -338,8 +338,6 @@ services:
       target: bind
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
     hostname: agent-bind9
-    ports:
-      - "8883:8883"
     networks:
       storknet:
         ipv4_address: 172.24.0.53
@@ -351,8 +349,13 @@ services:
       - "8883"
       - "9100" # node_exporter for prometheus
       - "9119" # bind_exporter for prometheus
+    ports:
+      - "8883:8883"
+      - "5301:53/udp" # Expose DNS service to the host.
+      - "5301:53/tcp" # Expose DNS service to the host.
     volumes:
-      - ./docker/config/agent-bind9/db.test:/etc/bind/db.test
+      - ./docker/config/agent-bind9/db.bind9.example.com:/etc/bind/db.bind9.example.com
+      - ./docker/config/agent-bind9/db.bind9.example.org:/etc/bind/db.bind9.example.org
       - ./docker/config/agent-bind9/named.conf:/etc/bind/named.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
@@ -383,11 +386,13 @@ services:
       - "8882"
       - "9100" # node_exporter for prometheus
       - "9119" # bind_exporter for prometheus
+      - "5302:53/udp" # Expose DNS service to the host.
+      - "5302:53/tcp" # Expose DNS service to the host.
     ports:
       - "8882:8882"
     volumes:
-      - ./docker/config/agent-bind9/db.test:/etc/bind/db.test
-      - ./docker/config/agent-bind9/named.conf:/etc/bind/named.conf
+      - ./docker/config/agent-bind9-2/db.test:/etc/bind/db.test
+      - ./docker/config/agent-bind9-2/named.conf:/etc/bind/named.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
@@ -412,6 +417,7 @@ services:
       STORK_AGENT_PORT: "8891"
     expose:
       - "8891"
+      - "8085"
       - "9100" # node_exporter for prometheus
     ports:
       - "8891:8891"

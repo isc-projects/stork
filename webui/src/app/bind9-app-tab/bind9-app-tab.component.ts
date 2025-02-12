@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 
-import { forkJoin, Subscription } from 'rxjs'
+import { forkJoin, Observable, Subscription } from 'rxjs'
 
 import { MessageService } from 'primeng/api'
 
@@ -14,6 +14,8 @@ import {
     daemonStatusIconTooltip,
     getErrorMessage,
 } from '../utils'
+import { AppTab } from '../apps'
+import { Bind9DaemonView } from '../backend'
 
 @Component({
     selector: 'app-bind9-app-tab',
@@ -22,9 +24,9 @@ import {
 })
 export class Bind9AppTabComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
-    private _appTab: any
+    private _appTab: AppTab
     @Output() refreshApp = new EventEmitter<number>()
-    @Input() refreshedAppTab: any
+    @Input() refreshedAppTab: Observable<AppTab>
 
     daemons: any[] = []
 
@@ -117,7 +119,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
     /**
      * Returns information about currently selected app tab.
      */
-    get appTab() {
+    get appTab(): AppTab {
         return this._appTab
     }
 
@@ -165,15 +167,17 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Get cache effectiveness based on stats.
-     * A percentage is returned as floored int.
+     * Get cache effectiveness based on stats for a BIND9 view.
+     *
+     * @param view is a data structure holding the information about the BIND9 view.
+     * @return A percentage is returned as floored int.
      */
-    getQueryUtilization(daemon) {
+    getQueryUtilization(view: Bind9DaemonView) {
         let utilization = 0.0
-        if (!daemon.queryHitRatio) {
+        if (!view.queryHitRatio) {
             return utilization
         }
-        utilization = 100 * daemon.queryHitRatio
+        utilization = 100 * view.queryHitRatio
         return Math.floor(utilization)
     }
 

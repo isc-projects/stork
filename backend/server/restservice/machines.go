@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -1201,19 +1202,28 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			break
 		}
 
-		var queryHitRatio float64
-		var queryHits int64
-		var queryMisses int64
+		var views []*models.Bind9DaemonView
 		if namedStats != nil {
-			view, okView := namedStats.Views["_default"]
-			if okView {
-				queryHits = view.Resolver.CacheStats["QueryHits"]
-				queryMisses = view.Resolver.CacheStats["QueryMisses"]
+			for name, view := range namedStats.Views {
+				queryHits := view.Resolver.CacheStats["QueryHits"]
+				queryMisses := view.Resolver.CacheStats["QueryMisses"]
 				queryTotal := float64(queryHits) + float64(queryMisses)
+				var queryHitRatio float64
 				if queryTotal > 0 {
 					queryHitRatio = float64(queryHits) / queryTotal
 				}
+				views = append(views, &models.Bind9DaemonView{
+					Name:          name,
+					QueryHits:     queryHits,
+					QueryMisses:   queryMisses,
+					QueryHitRatio: queryHitRatio,
+				})
 			}
+			// Sort views by name. Otherwise they will be returned in the random
+			// order of a map.
+			sort.Slice(views, func(i, j int) bool {
+				return views[i].Name < views[j].Name
+			})
 		}
 
 		bind9Daemon := &models.Bind9Daemon{
@@ -1225,9 +1235,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			Version:         bind9DaemonDB.Version,
 			Uptime:          bind9DaemonDB.Uptime,
 			ReloadedAt:      convertToOptionalDatetime(bind9DaemonDB.ReloadedAt),
-			QueryHits:       queryHits,
-			QueryMisses:     queryMisses,
-			QueryHitRatio:   queryHitRatio,
+			Views:           views,
 			AgentCommErrors: agentErrors,
 		}
 		app.Details.AppBind9.Daemon = bind9Daemon
