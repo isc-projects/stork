@@ -1,5 +1,12 @@
 package configmigrator
 
+// Indicates the entities that are being migrated.
+type EntityType string
+
+const (
+	EntityTypeHost EntityType = "host"
+)
+
 // Interface implemented by the structs that know how to migrate the particular
 // entries from the Kea configuration to the database.
 type Migrator interface {
@@ -11,4 +18,8 @@ type Migrator interface {
 	// Migrates the loaded items. Returns a map of errors that occurred during
 	// the migration. The key is the ID of the migrated item.
 	Migrate() map[int64]error
+	// Indicates the type of the entities that are being migrated. The keys of
+	// the error map returned by the @Migrate method are the IDs of the
+	// entities of this type.
+	GetEntityType() EntityType
 }

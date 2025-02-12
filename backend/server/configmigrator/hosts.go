@@ -37,6 +37,11 @@ func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgen
 	}
 }
 
+// Returns the type of the entities that are being migrated.
+func (m *hostMigrator) GetEntityType() EntityType {
+	return EntityTypeHost
+}
+
 // Returns a total number of hosts to migrate.
 func (m *hostMigrator) CountTotal() (int64, error) {
 	_, count, err := dbmodel.GetHostsByPage(m.db, 0, 0, m.filter, "", dbmodel.SortDirAny)
