@@ -409,12 +409,13 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-pdns
-      STORK_AGENT_PORT: "8889"
+      STORK_AGENT_PORT: "8891"
     expose:
-      - "8889"
+      - "8891"
       - "9100" # node_exporter for prometheus
     ports:
-      - "8889:8889"
+      - "8891:8891"
+      - "8085:8085"
       - "5300:53/udp"
       - "5300:53/tcp"
     volumes:

@@ -423,14 +423,14 @@ RUN apt-get update \
                 -y \
                 --no-install-recommends \
                 prometheus-node-exporter=1.5.* \
-                pdns-server \
-                pdns-backend-bind \
+                pdns-server=4.7.* \
+                pdns-backend-bind=4.7.* \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/log/supervisor \
         && mkdir -p /var/lib/stork-agent
 # Install agent
-COPY --from=agent-builder /app/dist/agent/usr/bin /usr/bin
+COPY --from=agent-builder /app/dist/agent /
 # Run the processes.
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 HEALTHCHECK CMD [ "supervisorctl", "-c", "/etc/supervisor/supervisord.conf", "status" ]
