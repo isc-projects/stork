@@ -334,3 +334,17 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Empty(t, thirdChunkStatus.Errors)
 	require.Equal(t, initialStatus.EntityType, thirdChunkStatus.EntityType)
 }
+
+// Test that the migration errors are aggregated.
+
+// Test that the migration is not started if an error occurs in the initial
+// phase.
+
+// Test that the migration has unique ID even if some migrations are started
+// in exactly the same time.
+
+// Test that the loading error interrupts the migration.
+
+// Test that the migration can be canceled.
+
+// Test that the migration status doesn't contain the cancellation stuff.
