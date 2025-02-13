@@ -1,4 +1,5 @@
-[build] bscott
+[ui] bscott
 
-    Added a search/filter to the "Subnet" drop-down-list in the "host" form used for DHCP Reservations.
+    Added a search/filter to the "Subnet" drop-down-list in the
+    "host" form used for DHCP Reservations.
     (Gitlab #1725)
