@@ -190,25 +190,45 @@ func (m *migration) registerChunk(loadedItems int64, errs map[int64]error) {
 	}
 }
 
+// Migration service interface. It provides the methods to interact with the
+// migrations. The service is responsible for starting and stopping the
+// migrations. It also provides the information about the migrations.
+type Service interface {
+	// Returns the list of all migrations.
+	GetMigrations() []MigrationStatus
+	// Returns the migration with the provided ID. If the migration is not found,
+	// the second return value is false.
+	GetMigration(id MigrationIdentifier) (MigrationStatus, bool)
+	// Starts the migration in background. The migrator is the object that knows how to migrate
+	// certain entities. The username is the name of the user who started the
+	// migration.
+	StartMigration(migrator Migrator, username string) (MigrationStatus, error)
+	// Requests the migration to stop. The migration is stopped asynchronously.
+	// If the migration is not found, the second return value is false.
+	StopMigration(id MigrationIdentifier) (MigrationStatus, bool)
+	// Clears the finished migrations from the memory.
+	ClearFinishedMigrations()
+}
+
 // It manages the migrations. It is responsible for starting and stopping the
 // migrations. It also provides the information about the migrations.
 //
 // The migration data are stored in memory only. The data are lost when the
 // server is restarted.
-type Service struct {
+type service struct {
 	migrations map[MigrationIdentifier]*migration
 	mutex      sync.RWMutex
 }
 
 // Constructs a new migration service.
-func NewService() *Service {
-	return &Service{
+func NewService() Service {
+	return &service{
 		migrations: make(map[MigrationIdentifier]*migration),
 	}
 }
 
 // Returns the list of all migrations.
-func (s *Service) GetMigrations() []MigrationStatus {
+func (s *service) GetMigrations() []MigrationStatus {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -221,7 +241,7 @@ func (s *Service) GetMigrations() []MigrationStatus {
 
 // Returns the migration with the provided ID. If the migration is not found,
 // the second return value is false.
-func (s *Service) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
+func (s *service) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -235,7 +255,7 @@ func (s *Service) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 // Starts the migration in background. The migrator is the object that knows how to migrate
 // certain entities. The username is the name of the user who started the
 // migration.
-func (s *Service) StartMigration(migrator Migrator, username string) (MigrationStatus, error) {
+func (s *service) StartMigration(migrator Migrator, username string) (MigrationStatus, error) {
 	totalItems, err := migrator.CountTotal()
 	if err != nil {
 		return MigrationStatus{}, errors.WithMessage(err, "failed to get the total items")
@@ -277,7 +297,7 @@ func (s *Service) StartMigration(migrator Migrator, username string) (MigrationS
 }
 
 // Generates a unique migration ID based on the provided date.
-func (s *Service) getUniqueMigrationID(date time.Time) MigrationIdentifier {
+func (s *service) getUniqueMigrationID(date time.Time) MigrationIdentifier {
 	iteration := 1
 	for {
 		id := MigrationIdentifier(fmt.Sprintf("%d-%d", date.Unix(), iteration))
@@ -290,7 +310,7 @@ func (s *Service) getUniqueMigrationID(date time.Time) MigrationIdentifier {
 
 // Requests the migration to stop. The migration is stopped asynchronously.
 // If the migration is not found, the second return value is false.
-func (s *Service) StopMigration(id MigrationIdentifier) (MigrationStatus, bool) {
+func (s *service) StopMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 	s.mutex.RLock()
 	migration, ok := s.migrations[id]
 	s.mutex.RUnlock()
@@ -304,7 +324,7 @@ func (s *Service) StopMigration(id MigrationIdentifier) (MigrationStatus, bool) 
 }
 
 // Clears the finished migrations from the memory.
-func (s *Service) ClearFinishedMigrations() {
+func (s *service) ClearFinishedMigrations() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
