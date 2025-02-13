@@ -13,7 +13,7 @@ interface CommunicationStatusNodeData {
      */
     attrs?: any
     /**
-     * Bind 9 communication channel name to which the tree node pertains.
+     * BIND 9 communication channel name to which the tree node pertains.
      */
     channelName?: 'Control' | 'Statistics'
     /**
@@ -21,19 +21,19 @@ interface CommunicationStatusNodeData {
      */
     monitored?: boolean
     /**
-     * Number of the communication errors with a Stork agent.
+     * Number of communication errors with a Stork agent.
      */
     agentCommErrors?: number
     /**
-     * Number of the communication errors with a Kea Control Agent.
+     * Number of communication errors with a Kea Control Agent.
      */
     caCommErrors?: number
     /**
-     * Number of the communication errors with a Kea daemon.
+     * Number of communication errors with a Kea daemon.
      */
     daemonCommErrors?: number
     /**
-     * Number of the communication errors via a Bind 9 channel.
+     * Number of communication errors via a BIND 9 channel.
      */
     channelCommErrors?: number
 }
@@ -46,7 +46,7 @@ interface CommunicationStatusNodeData {
  * machines. Next level for Kea holds a state of the Kea Control Agent. Finally,
  * the lowest level contains a list of Kea daemons behind the Kea Control Agent.
  *
- * Bind 9-specific tree has a slightly different structure. The level below the
+ * BIND 9-specific tree has a slightly different structure. The level below the
  * Stork agent contains a list of communication channels for the named daemon
  * (i.e., control channel and statistics channel).
  *
@@ -162,7 +162,7 @@ export class CommunicationStatusTreeComponent implements OnInit {
                     break
 
                 case 'bind9':
-                    // Bind 9 daemon is held in a different structure.
+                    // BIND 9 daemon is held in a different structure.
                     const daemon = app.details?.daemon
                     if (!daemon) {
                         continue
@@ -214,10 +214,10 @@ export class CommunicationStatusTreeComponent implements OnInit {
     }
 
     /**
-     * Instantiates a tree node for Bind 9 control or statistics channel.
+     * Instantiates a tree node for BIND 9 control or statistics channel.
      *
-     * @param app Bind 9 app instance.
-     * @param daemon Bind9 daemon.
+     * @param app BIND 9 app instance.
+     * @param daemon BIND 9 daemon.
      * @param channelType channel type for which the node should be created.
      * @returns An instance of the tree node.
      */

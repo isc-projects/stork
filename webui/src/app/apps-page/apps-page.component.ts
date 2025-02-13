@@ -207,7 +207,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                                 this.msgSrv.add({
                                     severity: 'error',
                                     summary: 'Cannot get app',
-                                    detail: 'Getting app with ID ' + appId + ' erred: ' + msg,
+                                    detail: 'Getting app with ID ' + appId + ' failed: ' + msg,
                                     life: 10000,
                                 })
                                 this.router.navigate(['/apps/' + this.appType + '/all'])
@@ -374,10 +374,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         this.confirmService.confirm({
             message:
                 'This operation instructs the server to fetch the configurations from all Kea servers' +
-                ' and update them in the Stork database. Use it when you suspect that the configuration' +
-                ' information diverged between Kea and Stork. This operation should be harmless and typically' +
-                ' it only causes some additional overhead to populate the fetched data. Populating the data ' +
-                ' can take some time depending on the puller intervals settings and Kea servers availability.',
+                ' and update them in the Stork database. Use it if you suspect that the configuration' +
+                ' information differs between Kea and Stork. This operation should be harmless and typically' +
+                ' causes only some additional overhead to populate the fetched data. Populating the data can' +
+                ' take some time, depending on the puller-interval settings and the availability of the Kea servers.',
             header: 'Resynchronize Kea Configs',
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: 'Continue',
@@ -393,7 +393,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                             summary: 'Request to resynchronize sent',
                             detail:
                                 'Successfully sent the request to the server to resynchronize' +
-                                ' Kea configurations in Stork server. It may take a while' +
+                                ' Kea configurations in the Stork server. It may take a while' +
                                 ' before it takes effect.',
                             life: 10000,
                         })

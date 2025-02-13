@@ -302,7 +302,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Fetching apps and machines failed',
-                    detail: 'Fetching apps and machines list from the server failed',
+                    detail: 'Failed to fetch apps and machines list from the server',
                     life: 10000,
                 })
                 this.showRenameDialogClicked = false

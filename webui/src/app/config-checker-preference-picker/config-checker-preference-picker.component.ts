@@ -121,8 +121,8 @@ export class ConfigCheckerPreferencePickerComponent {
      * - Kea Control daemon is a 6-side die in isometric projection with
      *   highlighted one side
      * - General daemon is a fancy representation of 20-side die
-     * - Bind 9 daemon is a circle with a single dot in the center because it
-     *   has a dot similar to Kea DHCP dice (Bind 9 is a specific daemon), but
+     * - BIND 9 daemon is a circle with a single dot in the center because it
+     *   has a dot similar to Kea DHCP dice (BIND 9 is a specific daemon), but
      *   the circle is opposite of a square (DNS is an entirely different thing
      *   than DHCP). Additionally, the circle is similar to the 20-side dice in
      *   the same way as the square. (20-side dice is a generalization of daemon).
@@ -161,72 +161,72 @@ export class ConfigCheckerPreferencePickerComponent {
     getCheckerDescription(checkerName: string): string {
         switch (checkerName) {
             case 'stat_cmds_presence':
-                return 'The checker verifying if the stat_cmds hooks library is loaded.'
+                return 'This checker verifies whether the stat_cmds hook library is loaded.'
             case 'lease_cmds_presence':
-                return 'The checker verifying if the lease_cmds hooks library is loaded.'
+                return 'This checker verifies whether the lease_cmds hook library is loaded.'
             case 'host_cmds_presence':
                 return (
-                    'The checker verifying if the host_cmds hooks library is ' + 'loaded when host backend is in use.'
+                    'This checker verifies whether the host_cmds hook library is ' + 'loaded when host backend is in use.'
                 )
             case 'dispensable_shared_network':
                 return (
-                    'The checker verifying if a shared network can be removed ' +
+                    'This checker verifies whether a shared network can be removed ' +
                     'because it is empty or contains only one subnet.'
                 )
             case 'dispensable_subnet':
                 return (
-                    'The checker verifying if a subnet can be removed because ' +
+                    'This checker verifies whether a subnet can be removed because ' +
                     'it includes no pools and no reservations. The check is ' +
                     'skipped when the host_cmds hook library is loaded because ' +
                     'host reservations may be present in the database.'
                 )
             case 'out_of_pool_reservation':
                 return (
-                    'The checker suggesting the use of out-of-pool host ' +
+                    'This checker suggests the use of out-of-pool host ' +
                     'reservation mode when there are subnets with all host ' +
                     'reservations outside of the dynamic pools.'
                 )
             case 'overlapping_subnet':
-                return 'The checker verifying if subnet prefixes do not overlap.'
+                return 'This checker verifies that subnet prefixes do not overlap.'
             case 'canonical_prefix':
-                return 'The checker verifying if subnet prefixes are in the canonical form.'
+                return 'This checker verifies that subnet prefixes are in the canonical form.'
             case 'ha_mt_presence':
                 return (
-                    'The checker verifies if the High-Availability hook is ' +
-                    'running in the multi-threading mode when Kea is running in ' +
+                    'This checker verifies whether the High-Availability hook is ' +
+                    'running in multi-threading mode when Kea is running in ' +
                     'this mode.'
                 )
             case 'ha_dedicated_ports':
                 return (
-                    'The checker verifies if the multi-threading mode of ' +
+                    'This checker verifies that the multi-threading mode of ' +
                     'High Availability is enabled together with the ' +
-                    'dedicated HTTP listeners, and if the peers communicate ' +
+                    'dedicated HTTP listeners, and that the peers communicate ' +
                     'via the HTTP ports exposed by the dedicated listeners ' +
-                    'rather than Kea Control Agent.'
+                    'rather than via the Kea Control Agent.'
                 )
             case 'address_pools_exhausted_by_reservations':
-                return 'The checker verifying if all available addresses in IP pools are not reserved for hosts.'
+                return 'This checker verifies that all available addresses in IP pools are not reserved for hosts.'
             case 'pd_pools_exhausted_by_reservations':
-                return 'The checker verifying if all available delegated prefixes in PD pools are not reserved for hosts.'
+                return 'This checker verifies that all available delegated prefixes in PD pools are not reserved for hosts.'
             case 'subnet_cmds_and_cb_mutual_exclusion':
                 return (
-                    'The checker detecting if the subnet commands hook is ' +
-                    'simultaneously used with the configuration backend' +
-                    'database and suggesting replacing it with the ' +
+                    'This checker detects whether the subnet commands hook is ' +
+                    'simultaneously used with a configuration backend' +
+                    'database; if so, it suggests replacing subnet commands with the ' +
                     'configuration backend command hook.'
                 )
             case 'agent_credentials_over_https':
                 return (
-                    'The checker verifying if the Stork agent communicates ' +
-                    'with the Kea Control Agent using the TLS when the ' +
+                    'This checker verifies whether the Stork agent is communicating ' +
+                    'with the Kea Control Agent using TLS when ' +
                     'HTTP authentication credentials (i.e., Basic Auth) are configured.'
                 )
             case 'ca_control_sockets':
-                return 'The checker verifying if the Kea Control Agent configuration includes the control sockets.'
+                return 'This checker verifies that the Kea Control Agent configuration includes the control sockets.'
             case 'statistics_unavailable_due_to_number_overflow':
                 return (
-                    'The checker verifying if the statistics gathering is ' +
-                    'unavailable or inaccurate due to the number overflow in ' +
+                    'This checker verifies whether statistics gathering is ' +
+                    'unavailable or inaccurate due to a number overflow in ' +
                     'the statistics returned by the Kea DHCP daemon.'
                 )
             default:
