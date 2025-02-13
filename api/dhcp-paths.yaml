@@ -289,13 +289,13 @@
           schema:
             $ref: '#/definitions/ApiError'
 
-  /hosts/migration:
+  /hosts/migrations:
     post:
       summary: Starts a new migration of host reservations.
       description: >-
         This call starts a new migration of host reservations from Kea JSON
         configuration(s) to the hosts database. The migration is performed
-        synchronously and the call returns the result of the migration.
+        asynchronously in background.
       operationId: migrateHosts
       tags:
         - DHCP
@@ -326,9 +326,9 @@
           type: boolean
       responses:
         200:
-          description: Migration result.
+          description: Migration status.
           schema:
-            $ref: '#/definitions/MigrationErrors'
+            $ref: '#/definitions/MigrationStatus'
         default:
           description: Generic error message.
           schema:

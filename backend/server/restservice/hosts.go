@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -631,6 +632,38 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 	return rsp
 }
 
+// Converts the status returned by a service to the format used in REST API.
+func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.MigrationStatus) *models.MigrationStatus {
+	errs := []*models.MigrationError{}
+	for id, err := range status.Errors {
+		errs = append(errs, &models.MigrationError{
+			Error:  err.Error(),
+			HostID: id,
+		})
+	}
+	var generalError *string
+	if status.GeneralError != nil {
+		generalError = storkutil.Ptr(status.GeneralError.Error())
+	}
+
+	return &models.MigrationStatus{
+		Canceling:   status.Canceling,
+		Context:     status.Context,
+		ElapsedTime: strfmt.Duration(status.ElapsedTime),
+		EndDate:     convertToOptionalDatetime(status.EndDate),
+		EntityType:  string(status.EntityType),
+		Errors: &models.MigrationErrors{
+			Items: errs,
+			Total: int64(len(errs)),
+		},
+		EstimatedLeftTime: strfmt.Duration(status.EstimatedLeftTime),
+		GeneralError:      generalError,
+		ID:                string(status.ID),
+		Progress:          status.Progress,
+		StartDate:         strfmt.DateTime(status.StartDate),
+	}
+}
+
 // Implements the POST call to migrate host reservations from Kea configuration
 // to the database. Runs a migration of host reservations from Kea configuration
 // to the database. It works in the foreground and returns the results of the
@@ -652,29 +685,20 @@ func (r *RestAPI) MigrateHosts(ctx context.Context, params dhcp.MigrateHostsPara
 		r.DHCPOptionDefinitionLookup,
 	)
 	// Run the migration.
-	errs, err := configmigrator.RunMigration(migrator)
+	status, err := r.MigrationService.StartMigration(ctx, migrator)
 	if err != nil {
 		msg := "Problem with migrating host reservations"
 		log.WithError(err).Error(msg)
-		rsp := dhcp.NewMigrateHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
+		rsp := dhcp.NewMigrateHostsDefault(http.StatusInternalServerError).
+			WithPayload(&models.APIError{
+				Message: &msg,
+			})
 		return rsp
-	}
-	// Convert the errors to the REST API format.
-	migrationErrors := []*models.MigrationError{}
-	for id, err := range errs {
-		migrationError := &models.MigrationError{
-			HostID: id,
-			Error:  err.Error(),
-		}
-		migrationErrors = append(migrationErrors, migrationError)
 	}
 
 	// Send the results to the client.
-	rsp := dhcp.NewMigrateHostsOK().WithPayload(&models.MigrationErrors{
-		Items: migrationErrors,
-		Total: int64(len(migrationErrors)),
-	})
+	rsp := dhcp.NewMigrateHostsOK().WithPayload(
+		r.convertMigrationStatusToRestAPI(status),
+	)
 	return rsp
 }

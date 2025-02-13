@@ -17,8 +17,8 @@ type MigrationIdentifier string
 type MigrationStatus struct {
 	// Unique identifier of the migration.
 	ID MigrationIdentifier
-	// Name of the user who started the migration.
-	StartedBy string
+	// The context passed when the migration was started.
+	Context context.Context
 	// Start date and time of the migration.
 	StartDate time.Time
 	// End date and time of the migration. It is zero if the migration is not
@@ -89,7 +89,7 @@ type MigrationStatus struct {
 //	                                                     +-----------+
 type migration struct {
 	id             MigrationIdentifier
-	startedBy      string
+	ctx            context.Context
 	startDate      time.Time
 	endDate        time.Time
 	cancelDate     time.Time
@@ -135,8 +135,11 @@ func (m *migration) getStatus() MigrationStatus {
 	// It needs to return a copy of the migration data to avoid race
 	// conditions.
 	return MigrationStatus{
-		ID:                m.id,
-		StartedBy:         m.startedBy,
+		ID: m.id,
+		// It should be safe to return the context with cancellation or
+		// deadline but I'm not sure if it is a good idea. Let's return the
+		// context with just the data provided to the start migration method.
+		Context:           context.WithoutCancel(m.ctx),
 		StartDate:         m.startDate,
 		EndDate:           m.endDate,
 		EntityType:        m.entityType,
@@ -200,9 +203,9 @@ type Service interface {
 	// the second return value is false.
 	GetMigration(id MigrationIdentifier) (MigrationStatus, bool)
 	// Starts the migration in background. The migrator is the object that knows how to migrate
-	// certain entities. The username is the name of the user who started the
-	// migration.
-	StartMigration(migrator Migrator, username string) (MigrationStatus, error)
+	// certain entities. The context may contain the information about the user
+	// who started the migration.
+	StartMigration(ctx context.Context, migrator Migrator) (MigrationStatus, error)
 	// Requests the migration to stop. The migration is stopped asynchronously.
 	// If the migration is not found, the second return value is false.
 	StopMigration(id MigrationIdentifier) (MigrationStatus, bool)
@@ -253,18 +256,18 @@ func (s *service) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 }
 
 // Starts the migration in background. The migrator is the object that knows how to migrate
-// certain entities. The username is the name of the user who started the
-// migration.
-func (s *service) StartMigration(migrator Migrator, username string) (MigrationStatus, error) {
+// certain entities. The context may contain the information about the user
+// who started the migration.
+func (s *service) StartMigration(ctx context.Context, migrator Migrator) (MigrationStatus, error) {
 	totalItems, err := migrator.CountTotal()
 	if err != nil {
 		return MigrationStatus{}, errors.WithMessage(err, "failed to get the total items")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 
 	migration := &migration{
-		startedBy:      username,
+		ctx:            ctx,
 		startDate:      time.Now(),
 		entityType:     migrator.GetEntityType(),
 		processedItems: 0,

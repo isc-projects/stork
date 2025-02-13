@@ -30,6 +30,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
 	"isc.org/stork/server/config"
+	"isc.org/stork/server/configmigrator"
 	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
@@ -79,6 +80,7 @@ type RestAPI struct {
 	HookManager                *hookmanager.HookManager
 	EndpointControl            *EndpointControl
 	DNSManager                 dnsop.Manager
+	MigrationService           configmigrator.Service
 
 	Agents agentcomm.ConnectedAgents
 
@@ -179,6 +181,10 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 		if argType.Implements(reflect.TypeOf((*dnsop.Manager)(nil)).Elem()) {
 			api.DNSManager = arg.(dnsop.Manager)
+			continue
+		}
+		if argType.Implements(reflect.TypeOf((*configmigrator.Service)(nil)).Elem()) {
+			api.MigrationService = arg.(configmigrator.Service)
 			continue
 		}
 
