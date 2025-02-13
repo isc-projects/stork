@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 // Creates a migration service with some predefined migrations.
@@ -215,4 +216,121 @@ func TestClearFinishedMigrations(t *testing.T) {
 	require.Len(t, migrations, 2)
 	require.EqualValues(t, "in-progress", migrations[0].ID)
 	require.EqualValues(t, "canceling", migrations[1].ID)
+}
+
+// Test that the migration is started and executed asynchronously.
+func TestStartAndExecuteMigration(t *testing.T) {
+	// Arrange
+	service := NewService()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	migrator := NewMockMigrator(ctrl)
+
+	migrator.EXPECT().CountTotal().Return(int64(250), nil)
+	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
+
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil)
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(200))).Return(int64(50), nil)
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(250))).Return(int64(0), nil)
+
+	// Blocks the migration runner until the assertion of a particular chunk is
+	// finished.
+	assertionFinishedChan := make(chan struct{})
+	defer close(assertionFinishedChan)
+
+	migrator.EXPECT().Migrate().Do(func() {
+		// The migrator will wait for the assertion to finish before it
+		// continues. Also, the assertion will wait for the migrator to finish
+		// migrating the chunk before it continues.
+		<-assertionFinishedChan
+		// The runner does additional processing after the migrator does its
+		// job. So, we cannot immediately run the assertions after the channel
+		// is empty. We need to wait for the runner to finish its job by
+		// calling t.Eventually.
+	}).Return(map[int64]error{}).Times(3)
+
+	type contextKey string
+	ctx := context.WithValue(context.Background(), contextKey("key"), "value")
+
+	// Act
+	initialStatus, err := service.StartMigration(ctx, migrator)
+
+	// Assert
+	require.NoError(t, err)
+
+	// Check the initial status.
+	require.NotEmpty(t, initialStatus.ID)
+	require.False(t, initialStatus.Canceling)
+	require.Equal(t, "value", initialStatus.Context.Value(contextKey("key")))
+	require.Zero(t, initialStatus.EndDate)
+	require.Zero(t, initialStatus.GeneralError)
+	require.Zero(t, initialStatus.Progress)
+	require.Zero(t, initialStatus.EstimatedLeftTime)
+	require.Empty(t, initialStatus.Errors)
+	require.Equal(t, EntityTypeHost, initialStatus.EntityType)
+
+	// Wait for the first chunk to be processed.
+	assertionFinishedChan <- struct{}{}
+	require.Eventually(t, func() bool {
+		status, _ := service.GetMigration(initialStatus.ID)
+		return status.Progress-100.0/250.0 < 1e-6
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	// Check the status after the first chunk is migrated.
+	firstChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	require.True(t, ok)
+	require.Equal(t, initialStatus.ID, firstChunkStatus.ID)
+	require.False(t, firstChunkStatus.Canceling)
+	require.Equal(t, "value", firstChunkStatus.Context.Value(contextKey("key")))
+	require.Zero(t, firstChunkStatus.EndDate)
+	require.Zero(t, firstChunkStatus.GeneralError)
+	require.InDelta(t, firstChunkStatus.Progress, 100.0/250.0, 1e-6)
+	require.NotZero(t, firstChunkStatus.EstimatedLeftTime)
+	require.NotZero(t, firstChunkStatus.ElapsedTime)
+	require.Empty(t, firstChunkStatus.Errors)
+	require.Equal(t, initialStatus.EntityType, firstChunkStatus.EntityType)
+
+	// Wait for the second chunk to be processed.
+	assertionFinishedChan <- struct{}{}
+	require.Eventually(t, func() bool {
+		status, _ := service.GetMigration(initialStatus.ID)
+		return status.Progress-200.0/250.0 < 1e-6
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	// Check the status after the second chunk is migrated.
+	secondChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	require.True(t, ok)
+	require.Equal(t, initialStatus.ID, secondChunkStatus.ID)
+	require.False(t, secondChunkStatus.Canceling)
+	require.Equal(t, "value", secondChunkStatus.Context.Value(contextKey("key")))
+	require.Zero(t, secondChunkStatus.EndDate)
+	require.Zero(t, secondChunkStatus.GeneralError)
+	require.InDelta(t, secondChunkStatus.Progress, 200.0/250.0, 1e-6)
+	require.NotZero(t, secondChunkStatus.EstimatedLeftTime)
+	require.NotZero(t, secondChunkStatus.ElapsedTime)
+	require.Empty(t, secondChunkStatus.Errors)
+	require.Equal(t, initialStatus.EntityType, secondChunkStatus.EntityType)
+
+	// Wait for the third chunk to be processed.
+	assertionFinishedChan <- struct{}{}
+	require.Eventually(t, func() bool {
+		status, _ := service.GetMigration(initialStatus.ID)
+		return status.Progress-1.0 < 1e-6
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	// Check the status after the third chunk is migrated.
+	thirdChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	require.True(t, ok)
+	require.Equal(t, initialStatus.ID, thirdChunkStatus.ID)
+	require.False(t, thirdChunkStatus.Canceling)
+	require.Equal(t, "value", thirdChunkStatus.Context.Value(contextKey("key")))
+	require.NotZero(t, thirdChunkStatus.EndDate)
+	require.Zero(t, thirdChunkStatus.GeneralError)
+	require.InDelta(t, thirdChunkStatus.Progress, 1.0, 1e-6)
+	require.Zero(t, thirdChunkStatus.EstimatedLeftTime)
+	require.NotZero(t, thirdChunkStatus.ElapsedTime)
+	require.Empty(t, thirdChunkStatus.Errors)
+	require.Equal(t, initialStatus.EntityType, thirdChunkStatus.EntityType)
 }
