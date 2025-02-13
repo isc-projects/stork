@@ -115,14 +115,14 @@ variables are listed in square brackets, where applicable):
    The timeout for socket writes; if reached, commands fail instead of blocking. Zero disables the timeout Requires a unit: either ms (milliseconds), s (seconds), or m (minutes), e.g.: 42s. The default is 0. ``[$STORK_DATABASE_WRITE_TIMEOUT]``
 
 ``--rest-cleanup-timeout``
-   Specifies the period, in seconds, to wait before killing idle connections. The default is 10.
+   Specifies the period, in seconds, to wait before killing idle connections. The default is 10. ``[$STORK_REST_CLEANUP_TIMEOUT]``
 
 ``--rest-graceful-timeout``
-   Specifies the period, in seconds, to wait before shutting down the server. The default is 15.
+   Specifies the period, in seconds, to wait before shutting down the server. The default is 15. ``[$STORK_REST_GRACEFUL_TIMEOUT]``
 
 ``--rest-max-header-size``
    Specifies the maximum number of bytes the server reads when parsing the request header's keys and
-   values, including the request line. It does not limit the size of the request body. The default is 1024 (1MB).
+   values, including the request line. It does not limit the size of the request body. The default is 1024 (1MB). ``[$STORK_REST_MAX_HEADER_SIZE]``
 
 ``--rest-host``
    Specifies the IP address to listen on for connections over the RESTful API. ``[$STORK_REST_HOST]``
@@ -131,16 +131,16 @@ variables are listed in square brackets, where applicable):
    Specifies the port to listen on for connections over the RESTful API. The default is 8080. ``[$STORK_REST_PORT]``
 
 ``--rest-listen-limit``
-   Specifies the maximum number of outstanding requests.
+   Specifies the maximum number of outstanding requests. ``[$STORK_REST_LISTEN_LIMIT]``
 
 ``--rest-keep-alive``
    Specifies the TCP keep-alive timeout, in minutes, on accepted connections. After this period, the server prunes dead TCP connections (e.g. if a laptop is closed mid-download). The default is 3.
 
 ``--rest-read-timeout``
-   Specifies the maximum duration, in seconds, before timing out the read of a request. The default is 30.
+   Specifies the maximum duration, in seconds, before timing out the read of a request. The default is 30. ``[$STORK_REST_READ_TIMEOUT]``
 
 ``--rest-write-timeout``
-   Specifies the maximum duration, in seconds, before timing out the write of a response. The default is 60.
+   Specifies the maximum duration, in seconds, before timing out the write of a response. The default is 60. ``[$STORK_REST_WRITE_TIMEOUT]``
 
 ``--rest-tls-certificate``
    Specifies the certificate to use for secure connections. ``[$STORK_REST_TLS_CERTIFICATE]``
