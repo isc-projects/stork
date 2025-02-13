@@ -27,7 +27,7 @@ func NewEndpointControl() *EndpointControl {
 	}
 }
 
-// Checks if the specified endpont operation is disabled.
+// Checks if the specified endpoint operation is disabled.
 func (ctl *EndpointControl) IsDisabled(endpointType EndpointOp) bool {
 	return ctl.disabledState[endpointType]
 }

@@ -306,10 +306,10 @@ type dispatcherImpl struct {
 	// Channel for passing ready review reports to the worker
 	// goroutine populating the reports into the database.
 	reviewDoneChan chan *ReviewContext
-	// Context used for cancelling the worker goroutine when the
+	// Context used for canceling the worker goroutine when the
 	// dispatcher is stopped.
 	dispatchCtx context.Context
-	// Function cancelling the worker goroutine.
+	// Function canceling the worker goroutine.
 	cancelDispatch context.CancelFunc
 	// A map holding information about currently scheduled reviews.
 	state map[int64]bool
