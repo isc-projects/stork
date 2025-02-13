@@ -3,6 +3,7 @@ package configmigrator
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -230,7 +231,7 @@ func NewService() Service {
 	}
 }
 
-// Returns the list of all migrations.
+// Returns the list of all migrations sorted by the start date.
 func (s *service) GetMigrations() []MigrationStatus {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -239,6 +240,11 @@ func (s *service) GetMigrations() []MigrationStatus {
 	for _, m := range s.migrations {
 		statuses = append(statuses, m.getStatus())
 	}
+
+	sort.Slice(statuses, func(i, j int) bool {
+		return statuses[i].StartDate.Before(statuses[j].StartDate)
+	})
+
 	return statuses
 }
 
