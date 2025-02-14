@@ -157,8 +157,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     let msg = getErrorMessage(err)
                     this.msgSrv.add({
                         severity: 'error',
-                        summary: 'Cannot get applications statistics',
-                        detail: 'Error getting applications statistics: ' + msg,
+                        summary: 'Cannot get application statistics',
+                        detail: 'Error getting application statistics: ' + msg,
                         life: 10000,
                     })
                 }

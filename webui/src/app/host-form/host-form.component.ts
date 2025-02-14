@@ -1119,7 +1119,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this._messageService.add({
                     severity: 'error',
                     summary: 'Cannot commit new host',
-                    detail: 'Processing specified DHCP options failed: ' + err,
+                    detail: 'Failed to process specified DHCP options: ' + err,
                     life: 10000,
                 })
                 return
@@ -1215,7 +1215,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                     this._messageService.add({
                         severity: 'error',
                         summary: 'Cannot commit host updates',
-                        detail: 'The transaction updating the host failed: ' + msg,
+                        detail: 'The transaction to update the host failed: ' + msg,
                         life: 10000,
                     })
                 })
@@ -1238,7 +1238,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this._messageService.add({
                     severity: 'error',
                     summary: 'Cannot commit new host',
-                    detail: 'The transaction adding new host failed: ' + msg,
+                    detail: 'The transaction to add a new host failed: ' + msg,
                     life: 10000,
                 })
             })

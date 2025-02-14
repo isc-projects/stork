@@ -580,7 +580,7 @@ export class HostTabComponent {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Cannot delete the host',
-                    detail: 'Failed to delete the host host: ' + msg,
+                    detail: 'Failed to delete the host: ' + msg,
                     life: 10000,
                 })
             })

@@ -6,7 +6,7 @@ import { MessageService } from 'primeng/api'
 import { datetimeToLocal, getErrorMessage } from '../utils'
 
 /**
- * An interface representing an HA table cell data.
+ * An interface representing HA table cell data.
  *
  * The HA relationships are presented in a table. This interface
  * describes the contents of each data cell in that table.
@@ -550,7 +550,7 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      */
     createSummary(serverStatus: KeaHAServerStatus, otherServerStatus: KeaHAServerStatus): string {
         if (this.calculateServerFailoverProgress(serverStatus) >= 0) {
-            return 'Server has started a failover procedure.'
+            return 'Server has started the failover procedure.'
         }
         const scopes = serverStatus?.scopes || []
         if (scopes.length === 0) {

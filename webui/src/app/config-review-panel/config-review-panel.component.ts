@@ -8,7 +8,7 @@ import { getErrorMessage } from '../utils'
 import { ConfigReport, ConfigReview } from '../backend'
 
 /**
- * The component comprising a list of configuration review
+ * The component comprises a list of configuration review
  * reports for a daemon.
  *
  * The Stork server reviews the configurations of the monitored

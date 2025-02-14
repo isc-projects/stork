@@ -217,7 +217,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Cannot get machines',
-                    detail: 'Getting machines failed: ' + msg,
+                    detail: 'Failed to get machines: ' + msg,
                     life: 10000,
                 })
             })
