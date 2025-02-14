@@ -34,6 +34,8 @@ export class ZonesPageComponent implements OnInit {
      */
     activeIdx: number = 0
 
+    expandedRows = {}
+
     /**
      *
      * @param cd
@@ -53,7 +55,9 @@ export class ZonesPageComponent implements OnInit {
                 daemonId: 200 + i * 4, // 200, 204, 208, 212, 216,
                 view: '_default',
                 loadedAt: '2025-02-12T13:03:44.124Z',
-                serial: 1000000 + i * 4, // 1000000, 1000004, .08, .12, .16,
+                serial: 1000000 + i * 4, // 1000000, 1000004,
+                _class: 'IN',
+                zoneType: 'primary',
             })
             dummyLocalZones.push({
                 appId: id,
@@ -61,7 +65,9 @@ export class ZonesPageComponent implements OnInit {
                 daemonId: 200 + i * 4, // 200, 204, 208, 212, 216,
                 view: '_special',
                 loadedAt: '2025-02-12T13:03:44.124Z',
-                serial: 1000000 + i * 4 + 1, // 1000001, 1000005, .09, .13, .17,
+                serial: 1000000 + i * 4 + 1, // 1000001, 1000005,
+                _class: 'IN',
+                zoneType: 'primary',
             })
             dummyLocalZones.push({
                 appId: id,
@@ -69,7 +75,9 @@ export class ZonesPageComponent implements OnInit {
                 daemonId: 200 + i * 4 + 1, // 201, 205, 209, 213, 217,
                 view: '_default',
                 loadedAt: '2025-02-12T13:03:44.124Z',
-                serial: 1000000 + i * 4 + 2, // 1000002, 1000006, .10, .14, .18,
+                serial: 1000000 + i * 4 + 2, // 1000002, 1000006,
+                _class: 'IN',
+                zoneType: 'primary',
             })
             dummyLocalZones.push({
                 appId: id + 1,
@@ -77,7 +85,9 @@ export class ZonesPageComponent implements OnInit {
                 daemonId: 200 + i * 4 + 2, // 202, 206, 210, 214, 218,
                 view: '_default',
                 loadedAt: '2025-02-12T13:03:44.124Z',
-                serial: 1000000 + i * 4 + 3, // 1000003, 1000007, .11, .15, .19,
+                serial: 1000000 + i * 4 + 3, // 1000003, 1000007,
+                _class: 'IN',
+                zoneType: 'secondary',
             })
         }
 
