@@ -60,6 +60,37 @@
       parameters:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
+        - name: text
+          in: query
+          description: >-
+            Limit returned list of zones to the ones matching the specified text.
+            The text is matched against the zone name, app name, and zone view.
+          type: string
+        - name: appId
+          in: query
+          description: >-
+            Limit returned list of zones to the ones served by app with given ID.
+          type: integer
+        - name: appType
+          in: query
+          description: >-
+            Limit returned list of zones to the ones served by app of a given type.
+            The app should be one of the supported DNS servers.
+          type: string
+        - name: zoneType
+          in: query
+          description: Limit returned list of zones to the ones of given type.
+          type: string
+        - name: class
+          in: query
+          description: Limit returned list of zones to the ones of given class.
+          type: string
+        - name: serial
+          in: query
+          description: >-
+            Limit returned list of zones to the ones with given serial number
+            or partial serial number.
+          type: string
       responses:
         200:
           description: List of zones.

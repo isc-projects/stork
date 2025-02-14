@@ -2,6 +2,7 @@ package restservice
 
 import (
 	context "context"
+	"fmt"
 	http "net/http"
 	"slices"
 	"testing"
@@ -37,37 +38,44 @@ func TestGetZones(t *testing.T) {
 	rapi, err := NewRestAPI(&settings, dbSettings, db)
 	require.NoError(t, err)
 
-	machine := &dbmodel.Machine{
-		ID:        0,
-		Address:   "localhost",
-		AgentPort: int64(8080),
-	}
-	err = dbmodel.AddMachine(db, machine)
-	require.NoError(t, err)
-
-	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		Daemons: []*dbmodel.Daemon{
-			dbmodel.NewBind9Daemon(true),
-		},
-	}
-	addedDaemons, err := dbmodel.AddApp(db, app)
-	require.NoError(t, err)
-	require.Len(t, addedDaemons, 1)
-
 	// Store zones in the database and associate them with our app.
-	randomZones := testutil.GenerateRandomZones(100)
+	randomZones := testutil.GenerateRandomZones(25)
+	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
+	randomZones = testutil.GenerateMoreZonesWithSerial(randomZones, 25, 123456)
 
-	var zones []*dbmodel.Zone
+	var (
+		apps  []*dbmodel.App
+		zones []*dbmodel.Zone
+	)
 	for i, randomZone := range randomZones {
+		machine := &dbmodel.Machine{
+			ID:        0,
+			Address:   "localhost",
+			AgentPort: int64(8080 + i),
+		}
+		err = dbmodel.AddMachine(db, machine)
+		require.NoError(t, err)
+
+		app := &dbmodel.App{
+			ID:        0,
+			MachineID: machine.ID,
+			Type:      dbmodel.AppTypeBind9,
+			Name:      fmt.Sprintf("app-%d", i),
+			Daemons: []*dbmodel.Daemon{
+				dbmodel.NewBind9Daemon(true),
+			},
+		}
+		addedDaemons, err := dbmodel.AddApp(db, app)
+		require.NoError(t, err)
+		require.Len(t, addedDaemons, 1)
+		apps = append(apps, app)
 		zones = append(zones, &dbmodel.Zone{
 			Name: randomZones[i].Name,
 			LocalZones: []*dbmodel.LocalZone{
 				{
 					DaemonID: addedDaemons[0].ID,
-					View:     "_default",
+					View:     fmt.Sprintf("view-%d", i),
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
 					Type:     randomZone.Type,
@@ -102,6 +110,213 @@ func TestGetZones(t *testing.T) {
 		rspOK := (rsp).(*dns.GetZonesOK)
 		require.Len(t, rspOK.Payload.Items, 20)
 		require.EqualValues(t, 100, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by serial", func(t *testing.T) {
+		ctx := context.Background()
+		serial := "3456"
+		params := dns.GetZonesParams{
+			Serial: &serial,
+			Limit:  storkutil.Ptr(int64(1000)),
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 25)
+		require.EqualValues(t, 25, rspOK.Payload.Total)
+		for _, zone := range rspOK.Payload.Items {
+			require.EqualValues(t, 123456, zone.LocalZones[0].Serial)
+		}
+	})
+
+	t.Run("filter by non-matching serial", func(t *testing.T) {
+		ctx := context.Background()
+		serial := "890123"
+		params := dns.GetZonesParams{
+			Serial: &serial,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Empty(t, rspOK.Payload.Items)
+		require.Zero(t, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by class", func(t *testing.T) {
+		ctx := context.Background()
+		class := "CH"
+		params := dns.GetZonesParams{
+			Class: &class,
+			Limit: storkutil.Ptr(int64(1000)),
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 25)
+		require.EqualValues(t, 25, rspOK.Payload.Total)
+		for _, zone := range rspOK.Payload.Items {
+			require.Equal(t, "CH", zone.LocalZones[0].Class)
+		}
+	})
+
+	t.Run("filter by non-matching class", func(t *testing.T) {
+		ctx := context.Background()
+		class := "HS"
+		params := dns.GetZonesParams{
+			Class: &class,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Empty(t, rspOK.Payload.Items)
+		require.Zero(t, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by zone type", func(t *testing.T) {
+		ctx := context.Background()
+		zoneType := "secondary"
+		params := dns.GetZonesParams{
+			Limit:    storkutil.Ptr(int64(1000)),
+			ZoneType: &zoneType,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 25)
+		require.EqualValues(t, 25, rspOK.Payload.Total)
+		for _, zone := range rspOK.Payload.Items {
+			require.Equal(t, "secondary", zone.LocalZones[0].ZoneType)
+		}
+	})
+
+	t.Run("filter by non-existent zone type", func(t *testing.T) {
+		ctx := context.Background()
+		zoneType := "foo"
+		params := dns.GetZonesParams{
+			ZoneType: &zoneType,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Empty(t, rspOK.Payload.Items)
+		require.Zero(t, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by app ID", func(t *testing.T) {
+		ctx := context.Background()
+		appID := apps[0].ID
+		params := dns.GetZonesParams{
+			AppID: &appID,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.NotEmpty(t, rspOK.Payload.Items)
+		require.Equal(t, 1, len(rspOK.Payload.Items))
+		require.EqualValues(t, apps[0].ID, rspOK.Payload.Items[0].LocalZones[0].AppID)
+		require.EqualValues(t, 1, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by non-existent app ID", func(t *testing.T) {
+		ctx := context.Background()
+		appID := apps[99].ID + 100
+		params := dns.GetZonesParams{
+			AppID: &appID,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Empty(t, rspOK.Payload.Items)
+		require.Zero(t, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by DNS app type", func(t *testing.T) {
+		ctx := context.Background()
+		appType := "bind9"
+		params := dns.GetZonesParams{
+			AppType: &appType,
+			Limit:   storkutil.Ptr(int64(1000)),
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 100)
+		require.EqualValues(t, 100, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by non-DNS app type", func(t *testing.T) {
+		ctx := context.Background()
+		appType := "kea"
+		params := dns.GetZonesParams{
+			AppType: &appType,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Empty(t, rspOK.Payload.Items)
+		require.Zero(t, rspOK.Payload.Total)
+	})
+
+	t.Run("filter by zone name using text", func(t *testing.T) {
+		ctx := context.Background()
+		// Use the first zone's name as search text
+		searchText := zones[0].Name
+		params := dns.GetZonesParams{
+			Text: &searchText,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		// We expect that typically there is only one item returned. However,
+		// the zone names are autogenerated and may sometimes contain the search
+		// text. To avoid sporadic test failures, let's just make sure that the
+		// searched zone is present in the returned list.
+		require.GreaterOrEqual(t, len(rspOK.Payload.Items), 1)
+		index := slices.IndexFunc(rspOK.Payload.Items, func(zone *models.Zone) bool {
+			return zone.Name == searchText
+		})
+		require.GreaterOrEqual(t, index, 0)
+	})
+
+	t.Run("filter by app name using text", func(t *testing.T) {
+		ctx := context.Background()
+		// Use the first zone's name as search text
+		searchText := apps[0].Name
+		params := dns.GetZonesParams{
+			Text: &searchText,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		// We expect that typically there is only one item returned. However,
+		// the zone names are autogenerated and may sometimes contain the app
+		// name. To avoid sporadic test failures, let's just make sure that the
+		// searched zone is present in the returned list.
+		require.GreaterOrEqual(t, len(rspOK.Payload.Items), 1)
+		index := slices.IndexFunc(rspOK.Payload.Items, func(zone *models.Zone) bool {
+			return zone.LocalZones[0].AppName == searchText
+		})
+		require.GreaterOrEqual(t, index, 0)
+	})
+
+	t.Run("filter by view name using text", func(t *testing.T) {
+		ctx := context.Background()
+		view := zones[0].LocalZones[0].View
+		params := dns.GetZonesParams{
+			Text: &view,
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		// We expect that typically there is only one item returned. However,
+		// the zone names are autogenerated and may sometimes contain the view
+		// name. To avoid sporadic test failures, let's just make sure that the
+		// searched zone is present in the returned list.
+		require.GreaterOrEqual(t, len(rspOK.Payload.Items), 1)
+		index := slices.IndexFunc(rspOK.Payload.Items, func(zone *models.Zone) bool {
+			return zone.LocalZones[0].View == view
+		})
+		require.GreaterOrEqual(t, index, 0)
 	})
 }
 

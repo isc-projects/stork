@@ -8,11 +8,11 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"isc.org/stork/appdata/bind9stats"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/dnsop"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/dns"
+	storkutil "isc.org/stork/util"
 )
 
 // Returns a list DNS zones with paging.
@@ -27,8 +27,16 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 		limit = int(*params.Limit)
 	}
 	// Apply paging parameters.
-	filter := bind9stats.NewZoneFilter()
-	filter.SetOffsetLimit(offset, limit)
+	filter := &dbmodel.GetZonesFilter{
+		AppID:   params.AppID,
+		AppType: params.AppType,
+		Class:   params.Class,
+		Serial:  params.Serial,
+		Text:    params.Text,
+		Type:    params.ZoneType,
+		Offset:  storkutil.Ptr(offset),
+		Limit:   storkutil.Ptr(limit),
+	}
 
 	// Get the zones from the database.
 	zones, total, err := dbmodel.GetZones(r.DB, filter, dbmodel.ZoneRelationLocalZonesApp)

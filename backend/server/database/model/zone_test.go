@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/appdata/bind9stats"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
@@ -133,7 +132,10 @@ func TestGetZones(t *testing.T) {
 	require.Len(t, addedDaemons, 1)
 
 	// Store zones in the database and associate them with our app.
-	randomZones := testutil.GenerateRandomZones(100)
+	randomZones := testutil.GenerateRandomZones(25)
+	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
+	randomZones = testutil.GenerateMoreZonesWithSerial(randomZones, 25, 123456)
 
 	var zones []*Zone
 	for i, randomZone := range randomZones {
@@ -176,35 +178,58 @@ func TestGetZones(t *testing.T) {
 		}
 	})
 
-	t.Run("filter by existing view", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
-		filter.SetView("_default")
+	t.Run("filter by serial", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Serial: storkutil.Ptr("123456"),
+		}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
-		require.Len(t, zones, 100)
+		require.Equal(t, 25, total)
+		require.Len(t, zones, 25)
+		for _, zone := range zones {
+			require.EqualValues(t, 123456, zone.LocalZones[0].Serial)
+		}
 	})
 
-	t.Run("filter by non-existing view", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
-		filter.SetView("_bind")
+	t.Run("filter by class", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Class: storkutil.Ptr("IN"),
+		}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Zero(t, total)
-		require.Empty(t, zones)
+		require.Equal(t, 75, total)
+		require.Len(t, zones, 75)
+		for _, zone := range zones {
+			require.Equal(t, "IN", zone.LocalZones[0].Class)
+		}
+	})
+
+	t.Run("filter by type", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Type: storkutil.Ptr("secondary"),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 25, total)
+		require.Len(t, zones, 25)
+		for _, zone := range zones {
+			require.Equal(t, "secondary", zone.LocalZones[0].Type)
+		}
 	})
 
 	t.Run("lower bound", func(t *testing.T) {
 		// Get first 30 zones ordered by DNS name.
-		filter := bind9stats.NewZoneFilter()
-		filter.SetLowerBound("", 30)
+		filter := &GetZonesFilter{
+			Limit: storkutil.Ptr(30),
+		}
 		zones1, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 100, total)
 		require.Len(t, zones1, 30)
 
 		// Use the 29th zone as a start (lower bound) for another fetch.
-		filter.SetLowerBound(zones1[28].Name, 20)
+		filter.LowerBound = storkutil.Ptr(zones1[28].Name)
+		filter.Limit = storkutil.Ptr(20)
 		zones2, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 71, total)
@@ -217,15 +242,18 @@ func TestGetZones(t *testing.T) {
 
 	t.Run("offset", func(t *testing.T) {
 		// Get first 20 zones ordered by DNS name.
-		filter := bind9stats.NewZoneFilter()
-		filter.SetOffsetLimit(0, 20)
+		filter := &GetZonesFilter{
+			Offset: storkutil.Ptr(0),
+			Limit:  storkutil.Ptr(20),
+		}
 		zones1, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 100, total)
 		require.Len(t, zones1, 20)
 
 		// Use the 20th zone as a start for another fetch.
-		filter.SetOffsetLimit(19, 20)
+		filter.Offset = storkutil.Ptr(19)
+		filter.Limit = storkutil.Ptr(20)
 		zones2, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 100, total)
@@ -237,7 +265,7 @@ func TestGetZones(t *testing.T) {
 	})
 
 	t.Run("sort", func(t *testing.T) {
-		filter := bind9stats.NewZoneFilter()
+		filter := &GetZonesFilter{}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 100, total)
@@ -249,6 +277,124 @@ func TestGetZones(t *testing.T) {
 				require.Negative(t, storkutil.CompareNames(zones[i-1].Name, zones[i].Name))
 			}
 		}
+	})
+}
+
+// Test getting zones with flexible filtering using text.
+func TestGetZonesWithTextFilter(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	for i := 0; i < 3; i++ {
+		app := &App{
+			ID:        0,
+			MachineID: machine.ID,
+			Type:      AppTypeBind9,
+			Name:      fmt.Sprintf("app%d", i),
+			Daemons: []*Daemon{
+				NewBind9Daemon(true),
+			},
+		}
+		addedDaemons, err := AddApp(db, app)
+		require.NoError(t, err)
+		require.Len(t, addedDaemons, 1)
+
+		zone := &Zone{
+			Name: fmt.Sprintf("example%d.org", i),
+			LocalZones: []*LocalZone{
+				{
+					DaemonID: addedDaemons[0].ID,
+					View:     fmt.Sprintf("view%d", i),
+					Class:    "IN",
+					Serial:   123456,
+					Type:     "primary",
+					LoadedAt: time.Now().UTC(),
+				},
+			},
+		}
+		err = AddZones(db, zone)
+		require.NoError(t, err)
+	}
+
+	t.Run("filter by zone name", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			AppType: storkutil.Ptr("bind9"),
+			Text:    storkutil.Ptr("mple0.org"),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 1, total)
+		require.Len(t, zones, 1)
+		require.Equal(t, "example0.org", zones[0].Name)
+	})
+
+	t.Run("filter by app name", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			AppType: storkutil.Ptr("bind9"),
+			Text:    storkutil.Ptr("pp1"),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 1, total)
+		require.Len(t, zones, 1)
+		require.Equal(t, "example1.org", zones[0].Name)
+	})
+
+	t.Run("filter by view", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			AppType: storkutil.Ptr("bind9"),
+			Text:    storkutil.Ptr("ew2"),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 1, total)
+		require.Len(t, zones, 1)
+		require.Equal(t, "example2.org", zones[0].Name)
+	})
+
+	t.Run("match all zone names", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Text: storkutil.Ptr("exam"),
+		}
+		_, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 3, total)
+	})
+
+	t.Run("match all app names", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Text: storkutil.Ptr("app"),
+		}
+		_, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 3, total)
+	})
+
+	t.Run("match all views", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Text: storkutil.Ptr("vi"),
+		}
+		_, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 3, total)
+	})
+
+	t.Run("combined filtering", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			AppType: storkutil.Ptr("kea"),
+			Text:    storkutil.Ptr("mple0.org"),
+		}
+		_, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Zero(t, total)
 	})
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/miekg/dns"
 	"github.com/pkg/errors"
-	"isc.org/stork/appdata/bind9stats"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -20,6 +19,29 @@ const (
 	ZoneRelationLocalZones    = "LocalZones"
 	ZoneRelationLocalZonesApp = "LocalZones.Daemon.App"
 )
+
+// Filter used in the GetZones function for complex filtering of
+// the zones returned from the database.
+type GetZonesFilter struct {
+	// Filter by an explicit app ID.
+	AppID *int64
+	// Filter by DNS app type (e.g., "bind9").
+	AppType *string
+	// Filter by class (typically, IN).
+	Class *string
+	// Filter by lower bound zone.
+	LowerBound *string
+	// Limit the number of zones returned.
+	Limit *int
+	// Paging offset.
+	Offset *int
+	// Filter by partial or exact zone serial.
+	Serial *string
+	// Filter by zone type (e.g., primary or secondary).
+	Type *string
+	// Filter by partial zone name, app name or view.
+	Text *string
+}
 
 // Represents a zone in a database. The same zone can be shared between
 // many DNS servers. Associations with different servers is are created
@@ -99,7 +121,7 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 // complicate the implementation. Note that this function is primarily used for
 // paging zones, so the number of records is typically low, and the performance gain
 // would be negligible.
-func GetZones(db pg.DBI, filter *bind9stats.ZoneFilter, relations ...ZoneRelation) ([]*Zone, int, error) {
+func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*Zone, int, error) {
 	var zones []*Zone
 	q := db.Model(&zones)
 	// Add relations.
@@ -126,9 +148,41 @@ func GetZones(db pg.DBI, filter *bind9stats.ZoneFilter, relations ...ZoneRelatio
 		if filter.Offset != nil {
 			q = q.Offset(*filter.Offset)
 		}
-		// Filter by view.
-		if filter.View != nil {
-			q = q.Join("JOIN local_zone AS lz ON lz.zone_id = zone.id").Where("lz.view = ?", filter.View)
+		// Join relations required for filtering.
+		if filter.Serial != nil || filter.Class != nil || filter.Type != nil || filter.AppID != nil || filter.AppType != nil || filter.Text != nil {
+			q = q.Join("JOIN local_zone AS lz").JoinOn("lz.zone_id = zone.id")
+			if filter.AppID != nil || filter.AppType != nil || filter.Text != nil {
+				q = q.Join("JOIN daemon AS d").JoinOn("d.id = lz.daemon_id").
+					Join("JOIN app AS a").JoinOn("a.id = d.app_id")
+			}
+		}
+		// Filter by serial.
+		if filter.Serial != nil {
+			q = q.Where("lz.serial::text ILIKE ?", "%"+*filter.Serial+"%")
+		}
+		// Filter by class.
+		if filter.Class != nil {
+			q = q.Where("lz.class = ?", *filter.Class)
+		}
+		// Filter by type.
+		if filter.Type != nil {
+			q = q.Where("lz.type = ?", *filter.Type)
+		}
+		// Filter by app ID.
+		if filter.AppID != nil {
+			q = q.Where("a.id = ?", *filter.AppID)
+		}
+		// Filter by app type.
+		if filter.AppType != nil {
+			q = q.Where("a.type = ?", *filter.AppType)
+		}
+		// Filter by zone name, app name or local zone view using partial matching.
+		if filter.Text != nil {
+			q = q.WhereGroup(func(q *pg.Query) (*pg.Query, error) {
+				return q.WhereOr("zone.name ILIKE ?", "%"+*filter.Text+"%").
+					WhereOr("a.name ILIKE ?", "%"+*filter.Text+"%").
+					WhereOr("lz.view ILIKE ?", "%"+*filter.Text+"%"), nil
+			})
 		}
 	}
 	count, err := q.SelectAndCount()

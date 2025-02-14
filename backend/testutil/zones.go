@@ -18,7 +18,7 @@ type Zone struct {
 // The function argument specifies the number of zones to be generated.
 //
 //nolint:gosec
-func GenerateRandomZones(num int) []*Zone {
+func generateRandomZones(existingZones []*Zone, num int, class, zoneType string, serial int64) []*Zone {
 	// We construct labels from this set of characters.
 	const charset = "abcdefghijklmnopqrstuvwxyz"
 	// We want to simulate a use case where zones have child zones, e.g.:
@@ -28,9 +28,11 @@ func GenerateRandomZones(num int) []*Zone {
 	labels := []string{}
 	// Make sure the generated zones are unique.
 	zones := make(map[string]*Zone)
-
+	for _, existingZone := range existingZones {
+		zones[existingZone.Name] = existingZone
+	}
 	// Generate num number of zones.
-	for i := int64(0); len(zones) < num; i++ {
+	for i := int64(0); len(zones) < num+len(existingZones); i++ {
 		// For every 10th zone we forget previously generated zones
 		// and generate completely new one.
 		if i%10 == 0 {
@@ -70,10 +72,30 @@ func GenerateRandomZones(num int) []*Zone {
 		// Create the zone entry.
 		zones[name] = &Zone{
 			Name:   name,
-			Class:  "IN",
-			Type:   "primary",
-			Serial: 20240304,
+			Class:  class,
+			Type:   zoneType,
+			Serial: serial,
 		}
 	}
 	return slices.Collect(maps.Values(zones))
+}
+
+// Generate random zones with default parameters.
+func GenerateRandomZones(num int) []*Zone {
+	return generateRandomZones([]*Zone{}, num, "IN", "primary", 20240304)
+}
+
+// Generate more zones with a specific class.
+func GenerateMoreZonesWithClass(existingZones []*Zone, num int, class string) []*Zone {
+	return generateRandomZones(existingZones, num, class, "primary", 20240304)
+}
+
+// Generate more zones with a specific type.
+func GenerateMoreZonesWithType(existingZones []*Zone, num int, zoneType string) []*Zone {
+	return generateRandomZones(existingZones, num, "IN", zoneType, 20240304)
+}
+
+// Generate more zones with a specific serial.
+func GenerateMoreZonesWithSerial(existingZones []*Zone, num int, serial int64) []*Zone {
+	return generateRandomZones(existingZones, num, "IN", "primary", serial)
 }
