@@ -1,7 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core'
 import { MenuItem } from 'primeng/api'
-import { Zone, LocalZone } from '../backend'
+import { Zone, LocalZone, DNSService, ZonesFetchStatus, ZoneInventoryStates, ZoneInventoryState } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
+import { lastValueFrom } from 'rxjs'
+import { TableLazyLoadEvent } from 'primeng/table'
+
+type ZoneInventoryStatus = 'busy' | 'erred' | 'ok' | 'uninitialized' | string
 
 @Component({
     selector: 'app-zones-page',
@@ -18,6 +22,8 @@ export class ZonesPageComponent implements OnInit {
      * Collection of zones fetched from backend.
      */
     zones: Zone[] = []
+
+    dummyZones: Zone[] = []
 
     /**
      * Collection of open tabs of the tabView.
@@ -36,11 +42,24 @@ export class ZonesPageComponent implements OnInit {
 
     expandedRows = {}
 
+    zoneInventoryStates: ZoneInventoryState[] = []
+
+    zoneInventoryTotal: number = 0
+
+    dateTimeFormat = 'YYYY-MM-dd HH:mm:ss'
+    zonesLoading: boolean = false
+    zonesTotal: number = 0
+    inventoryLoading: boolean = false
+
     /**
      *
      * @param cd
+     * @param dnsService
      */
-    constructor(private cd: ChangeDetectorRef) {}
+    constructor(
+        private cd: ChangeDetectorRef,
+        private dnsService: DNSService
+    ) {}
 
     /**
      *
@@ -91,13 +110,15 @@ export class ZonesPageComponent implements OnInit {
             })
         }
 
-        this.zones = [
+        this.dummyZones = [
             { id: 1, name: 'this.is.example.org', rname: 'org.example.is.this', localZones: dummyLocalZones },
             { id: 2, name: 'this.is.example.com', rname: 'com.example.is.this', localZones: dummyLocalZones },
             { id: 3, name: 'this.example.org', rname: 'org.example.this', localZones: dummyLocalZones },
             { id: 4, name: 'foo.bar.org', rname: 'org.bar.foo', localZones: dummyLocalZones },
             { id: 5, name: 'example.org', rname: 'org.example', localZones: [dummyLocalZones[0]] },
         ]
+
+        this.getZoneInventoryState()
     }
 
     /**
@@ -136,5 +157,91 @@ export class ZonesPageComponent implements OnInit {
      */
     onActiveIndexChange(indexAfterChange: number) {
         console.log('onActiveIdxChange', indexAfterChange, 'this.activeIdx', this.activeIdx)
+    }
+
+    getZoneInventoryState() {
+        this.inventoryLoading = true
+        lastValueFrom(this.dnsService.getZoneInventoryStates())
+            .then((resp: ZoneInventoryStates | ZonesFetchStatus) => {
+                console.log('getZoneInventoryState promise then', resp)
+                if (!resp) {
+                    console.log('getZoneInventoryState: there is no inventory yet. Was fetchZones triggered?')
+                } else if ('completedAppsCount' in resp && 'appsCount' in resp) {
+                    console.log(
+                        `getZoneInventoryState: zones fetch status ${resp.completedAppsCount} of ${resp.appsCount} fetched`
+                    )
+                } else if ('items' in resp && 'total' in resp) {
+                    this.zoneInventoryStates = resp.items ?? []
+                    this.zoneInventoryTotal = resp.total ?? 0
+                }
+            })
+            .catch((err) => {
+                console.log('getZoneInventoryState promise catch', err)
+            })
+            .finally(() => {
+                console.log('getZoneInventoryState promise finally')
+                this.inventoryLoading = false
+            })
+    }
+
+    fetchZones() {
+        lastValueFrom(this.dnsService.putZonesFetch())
+            .then((resp) => {
+                console.log('fetchZones promise then', resp)
+            })
+            .catch((err) => {
+                console.log('fetchZones promise catch', err)
+            })
+            .finally(() => console.log('fetchZones promise finally'))
+    }
+
+    getSeverity(status: ZoneInventoryStatus) {
+        switch (status) {
+            case 'ok':
+                return 'success'
+            case 'busy':
+                return 'warning'
+            case 'erred':
+                return 'danger'
+            case 'uninitialized':
+                return 'secondary'
+            default:
+                return 'info'
+        }
+    }
+
+    getErrorMessage(err: string) {
+        return `Error when communicating with a zone inventory on an agent: ${err}.`
+    }
+
+    getTooltip(status: ZoneInventoryStatus) {
+        switch (status) {
+            case 'busy':
+                return 'Zone inventory on an agent performs a long lasting operation and cannot perform the requested operation at this time.'
+            case 'ok':
+                return 'Communication with the zone inventory was successful.'
+            case 'erred':
+                return 'Error when communicating with a zone inventory on an agent.'
+            case 'uninitialized':
+                return 'Zone inventory was not initialized (neither populated nor loaded).'
+            default:
+                return null
+        }
+    }
+
+    onLazyLoadZones(event: TableLazyLoadEvent) {
+        this.zonesLoading = true
+        lastValueFrom(this.dnsService.getZones(event?.first ?? 0, event?.rows ?? 10))
+            .then((resp) => {
+                this.expandedRows = {}
+                this.zones = resp?.items ?? []
+                this.zonesTotal = resp?.total ?? 0
+            })
+            .catch((err) => console.log('error when calling getZones', err))
+            .finally(() => (this.zonesLoading = false))
+    }
+
+    onLazyLoadInventory(event: TableLazyLoadEvent) {
+        this.inventoryLoading = true
     }
 }

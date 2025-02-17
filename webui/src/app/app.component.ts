@@ -334,13 +334,13 @@ export class AppComponent implements OnInit, OnDestroy {
                         // if there are BIND 9 apps then show BIND 9 related menu items
                         // otherwise hide them
                         const bind9AppsMenuItem = this.getMenuItem('BIND 9 Apps')
-                        const zonesMenuItem = this.getMenuItem('Zones')
+                        const dnsMenuItem = this.getMenuItem('DNS')
                         if (data.bind9AppsTotal && data.bind9AppsTotal > 0) {
                             bind9AppsMenuItem['visible'] = true
-                            zonesMenuItem['visible'] = true
+                            dnsMenuItem['visible'] = true
                         } else {
                             bind9AppsMenuItem['visible'] = false
-                            zonesMenuItem['visible'] = false
+                            dnsMenuItem['visible'] = false
                         }
 
                         // force refresh of top menu in UI
