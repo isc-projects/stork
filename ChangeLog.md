@@ -1,3 +1,17 @@
+Stork 2.0.1 released on 2025-02-19.
+
+* 474 [build] slawek
+
+    Upgraded Go to 1.23.6 and some minor UI and Python dependencies.
+    (Gitlab #1706)
+
+* 473 [bug] slawek
+
+    Fixed a bug in the "install:*" commands that caused the overriding
+    of attributes of the system directories on specific operating
+    systems.
+    (Gitlab #1701)
+
 Stork 2.0.0 released on 2024-11-13.
 
 * 472 [bug] marcin
