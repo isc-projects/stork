@@ -22,6 +22,7 @@ func TestCompareNames(t *testing.T) {
 // Tests converting names to a the names with labels ordered backwards.
 func TestConvertNameToRname(t *testing.T) {
 	require.Equal(t, "org.example.zone", ConvertNameToRname("zone.example.org"))
+	require.Equal(t, "org.example.www", ConvertNameToRname("www.example.org."))
 	require.Empty(t, ConvertNameToRname(""))
 }
 
