@@ -974,7 +974,8 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, app Control
 						_ = yield(nil, NewZoneInventoryBusyError(agentAddressPort))
 						return
 					default:
-						continue
+						_ = yield(nil, err)
+						return
 					}
 				}
 			}

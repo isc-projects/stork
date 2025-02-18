@@ -889,6 +889,44 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	}
 }
 
+// Test that other gRPC status errors are handled properly.
+func TestReceiveZonesOtherStatusError(t *testing.T) {
+	// Create an app.
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+
+	// Create a generic status error returned over gRPC.
+	st := status.New(codes.Internal, "internal server error")
+	ds, err := st.WithDetails(&errdetails.ErrorInfo{
+		Reason: "SOME_OTHER_ERROR",
+	})
+	require.NoError(t, err)
+	mockAgentClient.EXPECT().ReceiveZones(gomock.Any(), gomock.Any()).Times(2).Return(nil, ds.Err())
+
+	// The iterator should return the original error without special handling.
+	for zone, err := range agents.ReceiveZones(context.Background(), app, nil) {
+		require.ErrorContains(t, err, "internal server error")
+		require.Nil(t, zone)
+	}
+}
+
 // Test that an error is returned when getting a zone over the stream fails.
 func TestReceiveZonesZoneInventoryReceiveZoneError(t *testing.T) {
 	// Create an app.
