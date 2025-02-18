@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/go-pg/pg/v10"
-	"github.com/panjf2000/ants/v2"
 	log "github.com/sirupsen/logrus"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
@@ -173,13 +172,15 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 	// time, depending on the number of zones and the number of DNS
 	// servers.
 	go func() {
-		// Create a pool of workers. Each worker communicates with one
-		// machine. Concurrently fetching from multiple machines should
-		// significantly decrease the time to populate all zones.
-		pool, _ := ants.NewPool(poolSize)
-		defer pool.Release()
-		// Indicate that the fetch is done and another fetch can be started.
-		defer manager.fetchingState.stopFetching()
+		// Create a channel to distribute work to workers. Each worker
+		// communicates with one machine. Concurrently fetching from
+		// multiple machines should significantly decrease the time to
+		// populate all zones.
+		appsChan := make(chan dbmodel.App, len(apps))
+		for _, app := range apps {
+			appsChan <- app
+		}
+		close(appsChan)
 		// Wait group is used to ensure we wait for zone fetch from all DNS servers.
 		wg := sync.WaitGroup{}
 		wg.Add(len(apps))
@@ -187,90 +188,86 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		// a map of errors for respective daemons.
 		mutex := sync.Mutex{}
 		results := make(map[int64]*dbmodel.ZoneInventoryStateDetails)
-		// For each DNS server create a dedicated go-routine to fetch the
-		// zones from the zone inventory.
-		for _, app := range apps {
-			// Zone inventory state will be stored in the database for each server.
-			state := dbmodel.NewZoneInventoryStateDetails()
-			err := pool.Submit(func() {
-				defer wg.Done()
-				// Insert zones into the database in batches. It significantly improves
-				// performance for large number of zones.
-				batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
-				for zone, err := range manager.agents.ReceiveZones(context.Background(), &app, nil) {
-					if err != nil {
-						// Returned status depends on the returned error type. Some
-						// errors require special handling.
-						var (
-							busyError      *agentcomm.ZoneInventoryBusyError
-							notInitedError *agentcomm.ZoneInventoryNotInitedError
-						)
-						switch {
-						case errors.As(err, &busyError):
-							// Unable to fetch from the inventory because the inventory on
-							// the agent is busy running some long lasting operation.
-							state.SetStatus(dbmodel.ZoneInventoryStatusBusy, err)
-						case errors.As(err, &notInitedError):
-							// Unable to fetch from the inventory because the inventory has
-							// not been initialized yet.
-							state.SetStatus(dbmodel.ZoneInventoryStatusUninitialized, err)
-						default:
-							// Some other error.
+		// Create worker goroutines. The goroutines will read from the common
+		// channel and fetch the zones from the apps listed in the channel.
+		for i := 0; i < poolSize; i++ {
+			go func(appsChan <-chan dbmodel.App) {
+				state := dbmodel.NewZoneInventoryStateDetails()
+				// Read next app from the channel.
+				for app := range appsChan {
+					defer wg.Done()
+					// Insert zones into the database in batches. It significantly improves
+					// performance for large number of zones.
+					batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
+					for zone, err := range manager.agents.ReceiveZones(context.Background(), &app, nil) {
+						if err != nil {
+							// Returned status depends on the returned error type. Some
+							// errors require special handling.
+							var (
+								busyError      *agentcomm.ZoneInventoryBusyError
+								notInitedError *agentcomm.ZoneInventoryNotInitedError
+							)
+							switch {
+							case errors.As(err, &busyError):
+								// Unable to fetch from the inventory because the inventory on
+								// the agent is busy running some long lasting operation.
+								state.SetStatus(dbmodel.ZoneInventoryStatusBusy, err)
+							case errors.As(err, &notInitedError):
+								// Unable to fetch from the inventory because the inventory has
+								// not been initialized yet.
+								state.SetStatus(dbmodel.ZoneInventoryStatusUninitialized, err)
+							default:
+								// Some other error.
+								state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+							}
+							break
+						}
+						// Successfully received the zone from the agent. Let's queue
+						// it in the database for insertion.
+						dbZone := dbmodel.Zone{
+							Name: zone.Name(),
+							LocalZones: []*dbmodel.LocalZone{
+								{
+									DaemonID: app.Daemons[0].ID,
+									View:     zone.ViewName,
+									Class:    zone.Class,
+									Serial:   zone.Serial,
+									Type:     zone.Type,
+									LoadedAt: zone.Loaded,
+								},
+							},
+						}
+						// The zone also carries the total number of zones in the inventory.
+						state.SetTotalZones(zone.TotalZoneCount)
+						if err := batch.Add(&dbZone); err != nil {
+							state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+							break
+						}
+					}
+					if state.Error == nil {
+						// If we successfully added zones to the database so far. There is
+						// one more batch to add with a lower number of zones than the
+						// specified batchSize.
+						if err := batch.Finish(); err != nil {
 							state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 						}
-						break
 					}
-					// Successfully received the zone from the agent. Let's queue
-					// it in the database for insertion.
-					dbZone := dbmodel.Zone{
-						Name: zone.Name(),
-						LocalZones: []*dbmodel.LocalZone{
-							{
-								DaemonID: app.Daemons[0].ID,
-								View:     zone.ViewName,
-								Class:    zone.Class,
-								Serial:   zone.Serial,
-								Type:     zone.Type,
-								LoadedAt: zone.Loaded,
-							},
-						},
-					}
-					// The zone also carries the total number of zones in the inventory.
-					state.SetTotalZones(zone.TotalZoneCount)
-					if err := batch.Add(&dbZone); err != nil {
+					// Add the zone inventory state into the database for this DNS server.
+					if err := dbmodel.AddZoneInventoryState(manager.db, dbmodel.NewZoneInventoryState(app.Daemons[0].ID, state)); err != nil {
+						// This is an exceptional situation and normally shouldn't happen.
+						// Let's communicate this issue to the caller and log it. The
+						// zone inventory state won't be available for this server.
 						state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-						break
+						log.WithFields(log.Fields{
+							"app": app.Name,
+						}).WithError(err).Error("Failed to save the zone inventory status in the database")
 					}
+					// Store the inventory state in the common map, so it can be returned
+					// to a caller.
+					storeResult(&mutex, results, app.Daemons[0].ID, state)
+					manager.fetchingState.increaseCompletedAppsCount()
 				}
-				if state.Error == nil {
-					// If we successfully added zones to the database so far. There is
-					// one more batch to add with a lower number of zones than the
-					// specified batchSize.
-					if err := batch.Finish(); err != nil {
-						state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-					}
-				}
-				// Add the zone inventory state into the database for this DNS server.
-				if err := dbmodel.AddZoneInventoryState(manager.db, dbmodel.NewZoneInventoryState(app.Daemons[0].ID, state)); err != nil {
-					// This is an exceptional situation and normally shouldn't happen.
-					// Let's communicate this issue to the caller and log it. The
-					// zone inventory state won't be available for this server.
-					state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-					log.WithFields(log.Fields{
-						"app": app.Name,
-					}).WithError(err).Error("Failed to save the zone inventory status in the database")
-				}
-				// Store the inventory state in the common map, so it can be returned
-				// to a caller.
-				storeResult(&mutex, results, app.Daemons[0].ID, state)
-				manager.fetchingState.increaseCompletedAppsCount()
-			})
-			if err != nil {
-				// In an unlikely event that submitting a task to the pool failed let's
-				// also report an error.
-				storeResult(&mutex, results, app.Daemons[0].ID, state)
-				wg.Done()
-			}
+			}(appsChan)
 		}
 		// Wait for all the go-routines to complete.
 		wg.Wait()
