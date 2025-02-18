@@ -254,12 +254,7 @@ sudo ./stork-install-agent.sh</textarea
             </div>
 
             <div>
-                <p-message
-                    *ngIf="machineTab?.error"
-                    severity="danger"
-                    styleClass="p-inline-message-error"
-                    text="{{ machineTab?.error }}"
-                ></p-message>
+                <p-message *ngIf="machineTab?.error" severity="error" text="{{ machineTab?.error }}"></p-message>
             </div>
         </div>
 

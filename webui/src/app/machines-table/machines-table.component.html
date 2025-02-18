@@ -256,12 +256,7 @@
                 </td>
                 <td>
                     <ng-container *ngIf="m.authorized">
-                        <p-message
-                            *ngIf="m.error"
-                            severity="danger"
-                            styleClass="p-inline-message-error"
-                            text="{{ m.error }}"
-                        ></p-message
+                        <p-message *ngIf="m.error" severity="error" text="{{ m.error }}"></p-message
                     ></ng-container>
                 </td>
             </ng-container>
