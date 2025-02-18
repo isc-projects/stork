@@ -446,6 +446,86 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	require.InDelta(t, 100.0/250.0, firstChunkStatus.Progress, 1e-6)
 }
 
-// Test that the migration can be canceled.
+// Test that the migration can be canceled. The context in the returned
+// statuses should not include the canceling stuff.
+func TestCancelMigration(t *testing.T) {
+	// Arrange
+	service := NewService()
 
-// Test that the migration status doesn't contain the cancellation stuff.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	migrator := NewMockMigrator(ctrl)
+
+	migrator.EXPECT().CountTotal().Return(int64(250), nil)
+	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
+
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil)
+
+	// Blocks the migration runner until the assertion of a particular chunk is
+	// finished.
+	assertionFinishedChan := make(chan struct{})
+	defer close(assertionFinishedChan)
+
+	migrator.EXPECT().Migrate().Do(func() {
+		// The migrator will wait for the assertion to finish before it
+		// continues. Also, the assertion will wait for the migrator to finish
+		// migrating the chunk before it continues.
+		<-assertionFinishedChan
+		// The runner does additional processing after the migrator does its
+		// job. So, we cannot immediately run the assertions after the channel
+		// is empty. We need to wait for the runner to finish its job by
+		// calling t.Eventually.
+	}).Return(map[int64]error{}).Times(2)
+
+	// Act & Assert
+	initialStatus, err := service.StartMigration(context.Background(), migrator)
+	require.NoError(t, err)
+
+	// Check the initial status.
+	require.False(t, initialStatus.Canceling)
+	require.Zero(t, initialStatus.EndDate)
+	require.NoError(t, initialStatus.GeneralError)
+	require.Nil(t, initialStatus.Context.Done())
+
+	// Wait for the first chunk to be processed.
+	assertionFinishedChan <- struct{}{}
+	require.Eventually(t, func() bool {
+		status, _ := service.GetMigration(initialStatus.ID)
+		return status.Progress-100.0/250.0 < 1e-6
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	// Check the status after the first chunk is migrated.
+	firstChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	require.True(t, ok)
+	require.False(t, firstChunkStatus.Canceling)
+	require.Zero(t, firstChunkStatus.EndDate)
+	require.NoError(t, firstChunkStatus.GeneralError)
+	require.Nil(t, firstChunkStatus.Context.Done())
+
+	// Cancel the migration.
+	stopStatus, ok := service.StopMigration(initialStatus.ID)
+
+	// Check the canceled status.
+	require.True(t, ok)
+	require.NotNil(t, stopStatus)
+	require.True(t, stopStatus.Canceling)
+	require.Zero(t, stopStatus.EndDate)
+	require.NoError(t, stopStatus.GeneralError)
+	require.Nil(t, stopStatus.Context.Done())
+
+	// Wait for the cancellation to be processed.
+	assertionFinishedChan <- struct{}{}
+	require.Eventually(t, func() bool {
+		status, _ := service.GetMigration(initialStatus.ID)
+		return status.EndDate != time.Time{}
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	// Check the status after the second chunk is migrated.
+	secondChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	require.True(t, ok)
+	require.True(t, secondChunkStatus.Canceling)
+	require.NotZero(t, secondChunkStatus.EndDate)
+	require.ErrorContains(t, secondChunkStatus.GeneralError, "canceled")
+	require.Nil(t, secondChunkStatus.Context.Done())
+}
