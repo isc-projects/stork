@@ -263,7 +263,7 @@ func TestVerifyPeerCorrectCertificate(t *testing.T) {
 
 // Test that the agent client can be instantiated.
 func TestConnectedAgentsConnectorCreateClient(t *testing.T) {
-	connectedAgentsConnector := &connectedAgentsConnectorImpl{}
-	client := connectedAgentsConnector.createClient()
+	agentConnector := &agentConnectorImpl{}
+	client := agentConnector.createClient()
 	require.NotNil(t, client)
 }

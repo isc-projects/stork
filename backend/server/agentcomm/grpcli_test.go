@@ -42,7 +42,7 @@ func makeAccessPoint(tp, address, key string, port int64) (ap []*agentapi.Access
 // Setup function for the unit tests.
 func setupGrpcliTestCase(ctrl *gomock.Controller) (*MockAgentClient, *connectedAgentsImpl) {
 	mockAgentClient := NewMockAgentClient(ctrl)
-	mockAgentsConnector := NewMockconnectedAgentsConnector(ctrl)
+	mockAgentsConnector := NewMockAgentConnector(ctrl)
 	mockAgentsConnector.EXPECT().connect().AnyTimes().Return(nil)
 	mockAgentsConnector.EXPECT().close().AnyTimes()
 	mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
@@ -50,7 +50,7 @@ func setupGrpcliTestCase(ctrl *gomock.Controller) (*MockAgentClient, *connectedA
 	settings := AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}
 	agents := newConnectedAgentsImpl(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM)
-	agents.setConnectorFactory(func(string) connectedAgentsConnector {
+	agents.setConnectorFactory(func(string) agentConnector {
 		return mockAgentsConnector
 	})
 
@@ -98,7 +98,7 @@ func (*gzipMatcher) String() string {
 }
 
 //go:generate mockgen -package=agentcomm -destination=apimock_test.go -source=../../api/agent_grpc.pb.go isc.org/stork/api AgentClient
-//go:generate mockgen -package=agentcomm -destination=agentcommmock_test.go -source=agentcomm.go isc.org/stork/server/agentcomm -mock_names=connectedAgentsConnector=MockConnectedAgentsConnector connectedAgentsConnector
+//go:generate mockgen -package=agentcomm -destination=agentcommmock_test.go -source=agentcomm.go -mock_names=agentConnector=MockAgentConnector agentConnector
 //go:generate mockgen -package=agentcomm -destination=serverstreamingclientmock_test.go google.golang.org/grpc ServerStreamingClient
 
 // Check if Ping works.
@@ -753,14 +753,14 @@ func TestReceiveZonesConnectionError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockAgentClient := NewMockAgentClient(ctrl)
-	mockAgentsConnector := NewMockconnectedAgentsConnector(ctrl)
-	mockAgentsConnector.EXPECT().connect().AnyTimes().Return(&testError{})
-	mockAgentsConnector.EXPECT().close().AnyTimes()
-	mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+	mockAgentConnector := NewMockAgentConnector(ctrl)
+	mockAgentConnector.EXPECT().connect().AnyTimes().Return(&testError{})
+	mockAgentConnector.EXPECT().close().AnyTimes()
+	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
 
 	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, CACertPEM, ServerCertPEM, ServerKeyPEM)
-	agents.setConnectorFactory(func(string) connectedAgentsConnector {
-		return mockAgentsConnector
+	agents.setConnectorFactory(func(string) agentConnector {
+		return mockAgentConnector
 	})
 
 	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)

@@ -23,7 +23,7 @@ import (
 	"isc.org/stork/server/eventcenter"
 )
 
-var _ connectedAgentsConnector = (*connectedAgentsConnectorImpl)(nil)
+var _ agentConnector = (*agentConnectorImpl)(nil)
 
 // Settings specific to communication with Agents.
 type AgentsSettings struct{}
@@ -42,10 +42,10 @@ type ConnectedAgents interface {
 }
 
 // Interface representing a connector to a selected agent over gRPC.
-// The connectedAgentsConnectorImpl is a default implementation for this
-// interface used by the connectedAgentsImpl. The connector can be replaced
+// The agentConnectorImpl is a default implementation for this interface
+// used by the connectedAgentsImpl. The connector can be replaced
 // with a mock in the unit tests to eliminate actual gRPC communication.
-type connectedAgentsConnector interface {
+type agentConnector interface {
 	// Attempts to establish connection with the agent. The connection
 	// should be cached by the connector and reused when possible.
 	connect() error
@@ -59,7 +59,7 @@ type connectedAgentsConnector interface {
 }
 
 // Default implementation of the connector.
-type connectedAgentsConnectorImpl struct {
+type agentConnectorImpl struct {
 	agentAddress  string
 	serverCertPEM []byte
 	serverKeyPEM  []byte
@@ -69,8 +69,8 @@ type connectedAgentsConnectorImpl struct {
 }
 
 // Instantiates connector implementation.
-func newConnectedAgentsConnectorImpl(agentAddress string, serverCertPEM, serverKeyPEM, caCertPEM []byte) connectedAgentsConnector {
-	return &connectedAgentsConnectorImpl{
+func newAgentConnectorImpl(agentAddress string, serverCertPEM, serverKeyPEM, caCertPEM []byte) agentConnector {
+	return &agentConnectorImpl{
 		agentAddress:  agentAddress,
 		serverCertPEM: serverCertPEM,
 		serverKeyPEM:  serverKeyPEM,
@@ -81,7 +81,7 @@ func newConnectedAgentsConnectorImpl(agentAddress string, serverCertPEM, serverK
 
 // Connects or re-connects using specified agent address, certs and keys.
 // It stores the established connection.
-func (impl *connectedAgentsConnectorImpl) connect() error {
+func (impl *agentConnectorImpl) connect() error {
 	impl.mutex.Lock()
 	defer impl.mutex.Unlock()
 
@@ -106,14 +106,14 @@ func (impl *connectedAgentsConnectorImpl) connect() error {
 }
 
 // Closes an existing connection if it exists.
-func (impl *connectedAgentsConnectorImpl) close() {
+func (impl *agentConnectorImpl) close() {
 	impl.mutex.Lock()
 	defer impl.mutex.Unlock()
 	impl.closeUnsafe()
 }
 
 // Closes an existing connection if it exists (non-safe for concurrent use).
-func (impl *connectedAgentsConnectorImpl) closeUnsafe() {
+func (impl *agentConnectorImpl) closeUnsafe() {
 	if impl.conn != nil {
 		impl.conn.Close()
 		impl.conn = nil
@@ -121,14 +121,14 @@ func (impl *connectedAgentsConnectorImpl) closeUnsafe() {
 }
 
 // Instantiates gRPC client using established connection.
-func (impl *connectedAgentsConnectorImpl) createClient() agentapi.AgentClient {
+func (impl *agentConnectorImpl) createClient() agentapi.AgentClient {
 	return agentapi.NewAgentClient(impl.conn)
 }
 
 // Runtime information about the connected agent.
 type agentState struct {
 	address   string
-	connector connectedAgentsConnector
+	connector agentConnector
 	stats     *AgentCommStats
 }
 
@@ -139,7 +139,7 @@ type connectedAgentsImpl struct {
 	agentsStates       map[string]*agentState
 	commLoopReqs       chan *commLoopReq
 	doneCommLoop       chan bool
-	connectorFactoryFn func(string) connectedAgentsConnector
+	connectorFactoryFn func(string) agentConnector
 	wg                 *sync.WaitGroup
 	mutex              sync.RWMutex
 }
@@ -161,8 +161,8 @@ func newConnectedAgentsImpl(settings *AgentsSettings, eventCenter eventcenter.Ev
 		agentsStates: make(map[string]*agentState),
 		commLoopReqs: make(chan *commLoopReq),
 		doneCommLoop: make(chan bool),
-		connectorFactoryFn: func(agentAddress string) connectedAgentsConnector {
-			return newConnectedAgentsConnectorImpl(agentAddress, serverCertPEM, serverKeyPEM, caCertPEM)
+		connectorFactoryFn: func(agentAddress string) agentConnector {
+			return newAgentConnectorImpl(agentAddress, serverCertPEM, serverKeyPEM, caCertPEM)
 		},
 		wg:    &sync.WaitGroup{},
 		mutex: sync.RWMutex{},
@@ -176,7 +176,7 @@ func newConnectedAgentsImpl(settings *AgentsSettings, eventCenter eventcenter.Ev
 
 // Replaces the default connector factory with a custom one. It can be
 // used to mock gRPC calls.
-func (agents *connectedAgentsImpl) setConnectorFactory(factory func(string) connectedAgentsConnector) {
+func (agents *connectedAgentsImpl) setConnectorFactory(factory func(string) agentConnector) {
 	agents.connectorFactoryFn = factory
 }
 
