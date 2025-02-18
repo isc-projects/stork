@@ -106,7 +106,7 @@ func TestGetZones(t *testing.T) {
 }
 
 // Test getting zone inventory states from the database over the REST API.
-func TestGetZoneInventoryStates(t *testing.T) {
+func TestGetZonesFetch(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -165,11 +165,11 @@ func TestGetZoneInventoryStates(t *testing.T) {
 
 	// Get the states from the database.
 	ctx := context.Background()
-	params := dns.GetZoneInventoryStatesParams{}
-	rsp := rapi.GetZoneInventoryStates(ctx, params)
+	params := dns.GetZonesFetchParams{}
+	rsp := rapi.GetZonesFetch(ctx, params)
 	require.NotNil(t, rsp)
-	require.IsType(t, &dns.GetZoneInventoryStatesOK{}, rsp)
-	rspOK := (rsp).(*dns.GetZoneInventoryStatesOK)
+	require.IsType(t, &dns.GetZonesFetchOK{}, rsp)
+	rspOK := (rsp).(*dns.GetZonesFetchOK)
 	require.Len(t, rspOK.Payload.Items, 3)
 	require.EqualValues(t, 3, rspOK.Payload.Total)
 
@@ -189,7 +189,7 @@ func TestGetZoneInventoryStates(t *testing.T) {
 
 // Test that HTTP Accepted status is returned when zones fetch hasn't
 // finished and another is attempted.
-func TestGetZoneInventoryStatesAlreadyFetching(t *testing.T) {
+func TestGetZonesFetchAlreadyFetching(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -204,17 +204,17 @@ func TestGetZoneInventoryStatesAlreadyFetching(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	params := dns.GetZoneInventoryStatesParams{}
-	rsp := rapi.GetZoneInventoryStates(ctx, params)
+	params := dns.GetZonesFetchParams{}
+	rsp := rapi.GetZonesFetch(ctx, params)
 	require.NotNil(t, rsp)
-	require.IsType(t, &dns.GetZoneInventoryStatesAccepted{}, rsp)
-	rspAccepted := (rsp).(*dns.GetZoneInventoryStatesAccepted)
+	require.IsType(t, &dns.GetZonesFetchAccepted{}, rsp)
+	rspAccepted := (rsp).(*dns.GetZonesFetchAccepted)
 	require.EqualValues(t, 10, rspAccepted.Payload.AppsCount)
 	require.EqualValues(t, 5, rspAccepted.Payload.CompletedAppsCount)
 }
 
 // Test getting the zone inventory states when no state is available.
-func TestGetZoneInventoryStatesNoContent(t *testing.T) {
+func TestGetZonesFetchNoContent(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -227,10 +227,10 @@ func TestGetZoneInventoryStatesNoContent(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	params := dns.GetZoneInventoryStatesParams{}
-	rsp := rapi.GetZoneInventoryStates(ctx, params)
+	params := dns.GetZonesFetchParams{}
+	rsp := rapi.GetZonesFetch(ctx, params)
 	require.NotNil(t, rsp)
-	require.IsType(t, &dns.GetZoneInventoryStatesNoContent{}, rsp)
+	require.IsType(t, &dns.GetZonesFetchNoContent{}, rsp)
 }
 
 // Tests triggering the zones fetch in background and that the

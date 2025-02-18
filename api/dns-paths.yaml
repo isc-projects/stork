@@ -1,4 +1,29 @@
   /dns-management/zones-fetch:
+    get:
+      summary: Returns states of fetching the zones from the zone inventories to the Stork server.
+      description: >-
+        This call returns the states of fetching the zones from the zone inventories to
+        the Stork server for multiple DNS servers.
+      operationId: getZonesFetch
+      tags:
+        - DNS
+      responses:
+        200:
+          description: Zones fetch status successfully returned.
+          schema:
+            $ref: "#/definitions/ZoneInventoryStates"
+        202:
+          description: >-
+            Zones fetch is still in progress but the returned structure contains the
+            number of apps from which the fetch has completed.
+          schema:
+            $ref: "#/definitions/ZonesFetchStatus"
+        204:
+          description: No state is currently available, presumably because the zones have not been fetched.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
     put:
       summary: Begin fetching zones from the agents with DNS servers.
       description: >-
@@ -17,33 +42,6 @@
         202:
           description: >-
             Zone fetch has successfully started or is still in progress.
-        default:
-          description: generic error response
-          schema:
-            $ref: "#/definitions/ApiError"
-
-  /dns-management/zone-inventory-states:
-    get:
-      summary: Returns states of fetching the zones from the zone inventories to the Stork server.
-      description: >-
-        This call returns the states of fetching the zones from the zone inventories to
-        the Stork server for multiple DNS servers.
-      operationId: getZoneInventoryStates
-      tags:
-        - DNS
-      responses:
-        200:
-          description: Zones fetch status successfully returned.
-          schema:
-            $ref: "#/definitions/ZoneInventoryStates"
-        202:
-          description: >-
-            Zones fetch is still in progress but the returned structure contains the
-            number of apps from which the fetch has completed.
-          schema:
-            $ref: "#/definitions/ZonesFetchStatus"
-        204:
-          description: No state is currently available, presumably because the zones have not been fetched.
         default:
           description: generic error response
           schema:

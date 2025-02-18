@@ -74,27 +74,27 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 }
 
 // Get the states of fetching the DNS zone information from the remote zone inventories.
-func (r *RestAPI) GetZoneInventoryStates(ctx context.Context, params dns.GetZoneInventoryStatesParams) middleware.Responder {
+func (r *RestAPI) GetZonesFetch(ctx context.Context, params dns.GetZonesFetchParams) middleware.Responder {
 	isFetching, appsCount, completedAppsCount := r.DNSManager.GetFetchZonesProgress()
 	if isFetching {
 		payload := models.ZonesFetchStatus{
 			CompletedAppsCount: int64(completedAppsCount),
 			AppsCount:          int64(appsCount),
 		}
-		rsp := dns.NewGetZoneInventoryStatesAccepted().WithPayload(&payload)
+		rsp := dns.NewGetZonesFetchAccepted().WithPayload(&payload)
 		return rsp
 	}
 	states, count, err := dbmodel.GetZoneInventoryStates(r.DB, dbmodel.ZoneInventoryStateRelationApp)
 	if err != nil {
 		msg := "Failed to get zones fetch states from the database"
 		log.WithError(err).Error(msg)
-		rsp := dns.NewGetZoneInventoryStatesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+		rsp := dns.NewGetZonesFetchDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if count == 0 {
-		rsp := dns.NewGetZoneInventoryStatesNoContent()
+		rsp := dns.NewGetZonesFetchNoContent()
 		return rsp
 	}
 	var restStates []*models.ZoneInventoryState
@@ -113,7 +113,7 @@ func (r *RestAPI) GetZoneInventoryStates(ctx context.Context, params dns.GetZone
 		Items: restStates,
 		Total: int64(count),
 	}
-	rsp := dns.NewGetZoneInventoryStatesOK().WithPayload(&payload)
+	rsp := dns.NewGetZonesFetchOK().WithPayload(&payload)
 	return rsp
 }
 
