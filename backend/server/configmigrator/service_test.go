@@ -354,11 +354,97 @@ func TestStartAndExecuteMigration(t *testing.T) {
 
 // Test that the migration is not started if an error occurs in the initial
 // phase.
+func TestStartMigrationErrorInInitialPhase(t *testing.T) {
+	// Arrange
+	service := NewService()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	migrator := NewMockMigrator(ctrl)
+
+	migrator.EXPECT().CountTotal().Return(int64(0), errors.New("error"))
+
+	// Act
+	status, err := service.StartMigration(context.Background(), migrator)
+
+	// Assert
+	require.Error(t, err)
+	require.Empty(t, status)
+}
 
 // Test that the migration has unique ID even if some migrations are started
 // in exactly the same time.
+func TestStartMigrationUniqueID(t *testing.T) {
+	// Arrange
+	service := NewService().(*service)
+
+	// Act
+	id1 := service.getUniqueMigrationID(time.Time{})
+	service.migrations[id1] = &migration{id: id1}
+
+	id2 := service.getUniqueMigrationID(time.Time{})
+
+	// Assert
+	require.NotEqual(t, id1, id2)
+}
 
 // Test that the loading error interrupts the migration.
+func TestStartMigrationLoadingError(t *testing.T) {
+	// Arrange
+	service := NewService()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	migrator := NewMockMigrator(ctrl)
+
+	migrator.EXPECT().CountTotal().Return(int64(250), nil)
+	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
+	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(
+		int64(100),
+		errors.New("loading error"),
+	)
+
+	// Blocks the migration runner until the assertion of a particular chunk is
+	// finished.
+	assertionFinishedChan := make(chan struct{})
+	defer close(assertionFinishedChan)
+
+	migrator.EXPECT().Migrate().Do(func() {
+		// The migrator will wait for the assertion to finish before it
+		// continues. Also, the assertion will wait for the migrator to finish
+		// migrating the chunk before it continues.
+		<-assertionFinishedChan
+		// The runner does additional processing after the migrator does its
+		// job. So, we cannot immediately run the assertions after the channel
+		// is empty. We need to wait for the runner to finish its job by
+		// calling t.Eventually.
+	}).Return(map[int64]error{}).Times(1)
+
+	// Act & Assert
+	initialStatus, err := service.StartMigration(context.Background(), migrator)
+	require.NoError(t, err)
+
+	// Check the initial status.
+	require.Zero(t, initialStatus.EndDate)
+	require.Zero(t, initialStatus.GeneralError)
+	require.Empty(t, initialStatus.Errors)
+
+	// Wait for the first chunk to be processed.
+	assertionFinishedChan <- struct{}{}
+	require.Eventually(t, func() bool {
+		status, _ := service.GetMigration(initialStatus.ID)
+		return status.GeneralError != nil
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	// Check the status after the first chunk is migrated.
+	firstChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	require.True(t, ok)
+	require.NotZero(t, firstChunkStatus.EndDate)
+	require.ErrorContains(t, firstChunkStatus.GeneralError, "loading error")
+	require.Empty(t, firstChunkStatus.Errors)
+	require.InDelta(t, 100.0/250.0, firstChunkStatus.Progress, 1e-6)
+}
 
 // Test that the migration can be canceled.
 
