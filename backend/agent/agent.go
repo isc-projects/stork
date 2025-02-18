@@ -478,10 +478,14 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 	case *Bind9App:
 		inventory = app.zoneInventory
 	default:
-		return nil
+		// This is rather an exceptional case, so we don't necessarily need to
+		// include the detailed error message.
+		return status.New(codes.InvalidArgument, "attempted to receive DNS zones from an unsupported app").Err()
 	}
 	if inventory == nil {
-		return nil
+		// This is also an exceptional case. All DNS servers should have the
+		// zone inventory initialized.
+		return status.New(codes.FailedPrecondition, "attempted to receive DNS zones from an app for which zone inventory was not instantiated").Err()
 	}
 	// Set filtering rules based on the request.
 	var filter *bind9stats.ZoneFilter

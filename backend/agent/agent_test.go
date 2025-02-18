@@ -1137,7 +1137,7 @@ func TestReceiveZonesFilterLowerBound(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Test that no zones are returned when zone inventory is nil.
+// Test that an error is returned when zone inventory is nil.
 func TestReceiveZonesNilZoneInventory(t *testing.T) {
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
@@ -1167,7 +1167,38 @@ func TestReceiveZonesNilZoneInventory(t *testing.T) {
 		ViewName:       "_default",
 		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
 	}, mock)
-	require.NoError(t, err)
+	require.Contains(t, err.Error(), "attempted to receive DNS zones from an app for which zone inventory was not instantiated")
+}
+
+// Test that an error is returned when the app is not a DNS server.
+func TestReceiveZonesUnsupportedApp(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add an app that is not a DNS server.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// Run the actual test.
+	err := sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+	}, mock)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "attempted to receive DNS zones from an unsupported app")
 }
 
 // Test that specific error is returned when the zone inventory was not initialized
