@@ -231,6 +231,7 @@ export class ZonesPageComponent implements OnInit {
 
     onLazyLoadZones(event: TableLazyLoadEvent) {
         this.zonesLoading = true
+        this.cd.detectChanges()
         lastValueFrom(this.dnsService.getZones(event?.first ?? 0, event?.rows ?? 10))
             .then((resp) => {
                 this.expandedRows = {}
@@ -239,9 +240,5 @@ export class ZonesPageComponent implements OnInit {
             })
             .catch((err) => console.log('error when calling getZones', err))
             .finally(() => (this.zonesLoading = false))
-    }
-
-    onLazyLoadInventory(event: TableLazyLoadEvent) {
-        this.inventoryLoading = true
     }
 }

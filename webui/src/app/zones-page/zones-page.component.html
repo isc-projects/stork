@@ -112,7 +112,7 @@
                         <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" />
                     </td>
                     <td>{{ zone.rname }}</td>
-                    <td>Zone has {{ zone.localZones.length }} local zones</td>
+                    <td>Zone has {{ zone.localZones?.length ?? 0 }} local zones</td>
                 </tr>
             </ng-template>
             <ng-template pTemplate="rowexpansion" let-zone>
@@ -120,7 +120,7 @@
                     <td colspan="4">
                         <div class="p-2">
                             <p-table
-                                [value]="zone.localZones"
+                                [value]="zone.localZones ?? []"
                                 dataKey="serial"
                                 [paginator]="true"
                                 [rows]="10"
