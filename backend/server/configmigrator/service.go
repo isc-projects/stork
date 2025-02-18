@@ -288,9 +288,17 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 	go func() {
 		for {
 			select {
-			case migratedCount := <-chunkChunk:
+			case migratedCount, ok := <-chunkChunk:
+				if !ok {
+					// Channel closed.
+					continue
+				}
 				migration.registerChunk(migratedCount.loadedCount, migratedCount.errs)
-			case err := <-doneChan:
+			case err, ok := <-doneChan:
+				if !ok {
+					// Channel closed.
+					return
+				}
 				migration.registerStop(err)
 			}
 		}
