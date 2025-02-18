@@ -958,7 +958,7 @@ func TestReceiveZonesFilterByView(t *testing.T) {
 	defer teardown()
 
 	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -1034,7 +1034,7 @@ func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 	defer teardown()
 
 	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -1093,7 +1093,7 @@ func TestReceiveZonesFilterLowerBound(t *testing.T) {
 	defer teardown()
 
 	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -1143,7 +1143,7 @@ func TestReceiveZonesNilZoneInventory(t *testing.T) {
 	defer teardown()
 
 	// Add a BIND9 app without zone inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -1200,7 +1200,7 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	defer teardown()
 
 	// Add a BIND9 app with the inventory.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
