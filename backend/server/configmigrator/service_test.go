@@ -219,6 +219,7 @@ func TestClearFinishedMigrations(t *testing.T) {
 }
 
 // Test that the migration is started and executed asynchronously.
+// The errors should be aggregated.
 func TestStartAndExecuteMigration(t *testing.T) {
 	// Arrange
 	service := NewService()
@@ -239,8 +240,9 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	// finished.
 	assertionFinishedChan := make(chan struct{})
 	defer close(assertionFinishedChan)
+	callIndex := int64(0)
 
-	migrator.EXPECT().Migrate().Do(func() {
+	migrator.EXPECT().Migrate().DoAndReturn(func() map[int64]error {
 		// The migrator will wait for the assertion to finish before it
 		// continues. Also, the assertion will wait for the migrator to finish
 		// migrating the chunk before it continues.
@@ -249,15 +251,21 @@ func TestStartAndExecuteMigration(t *testing.T) {
 		// job. So, we cannot immediately run the assertions after the channel
 		// is empty. We need to wait for the runner to finish its job by
 		// calling t.Eventually.
-	}).Return(map[int64]error{}).Times(3)
+
+		// Return some errors.
+		callIndex++
+		return map[int64]error{
+			callIndex*100 + 1: errors.New("error"),
+			callIndex*100 + 2: errors.New("error"),
+			callIndex*100 + 3: errors.New("error"),
+		}
+	}).Times(3)
 
 	type contextKey string
 	ctx := context.WithValue(context.Background(), contextKey("key"), "value")
 
-	// Act
+	// Act & Assert
 	initialStatus, err := service.StartMigration(ctx, migrator)
-
-	// Assert
 	require.NoError(t, err)
 
 	// Check the initial status.
@@ -289,8 +297,11 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.InDelta(t, firstChunkStatus.Progress, 100.0/250.0, 1e-6)
 	require.NotZero(t, firstChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, firstChunkStatus.ElapsedTime)
-	require.Empty(t, firstChunkStatus.Errors)
 	require.Equal(t, initialStatus.EntityType, firstChunkStatus.EntityType)
+	require.Len(t, firstChunkStatus.Errors, 3)
+	require.Contains(t, firstChunkStatus.Errors, int64(101))
+	require.Contains(t, firstChunkStatus.Errors, int64(102))
+	require.Contains(t, firstChunkStatus.Errors, int64(103))
 
 	// Wait for the second chunk to be processed.
 	assertionFinishedChan <- struct{}{}
@@ -310,8 +321,11 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.InDelta(t, secondChunkStatus.Progress, 200.0/250.0, 1e-6)
 	require.NotZero(t, secondChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, secondChunkStatus.ElapsedTime)
-	require.Empty(t, secondChunkStatus.Errors)
 	require.Equal(t, initialStatus.EntityType, secondChunkStatus.EntityType)
+	require.Len(t, secondChunkStatus.Errors, 6)
+	require.Contains(t, secondChunkStatus.Errors, int64(201))
+	require.Contains(t, secondChunkStatus.Errors, int64(202))
+	require.Contains(t, secondChunkStatus.Errors, int64(203))
 
 	// Wait for the third chunk to be processed.
 	assertionFinishedChan <- struct{}{}
@@ -331,11 +345,12 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.InDelta(t, thirdChunkStatus.Progress, 1.0, 1e-6)
 	require.Zero(t, thirdChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, thirdChunkStatus.ElapsedTime)
-	require.Empty(t, thirdChunkStatus.Errors)
 	require.Equal(t, initialStatus.EntityType, thirdChunkStatus.EntityType)
+	require.Len(t, thirdChunkStatus.Errors, 9)
+	require.Contains(t, thirdChunkStatus.Errors, int64(301))
+	require.Contains(t, thirdChunkStatus.Errors, int64(302))
+	require.Contains(t, thirdChunkStatus.Errors, int64(303))
 }
-
-// Test that the migration errors are aggregated.
 
 // Test that the migration is not started if an error occurs in the initial
 // phase.
