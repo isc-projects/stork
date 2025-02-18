@@ -12,6 +12,7 @@ import (
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/configmigrator"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
@@ -911,4 +912,16 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 			require.EqualValues(t, 2*i, host.HostIdentifiers[0].Value[0])
 		}
 	})
+}
+
+// Test that the expected entity type is returned.
+func TestGetEntityType(t *testing.T) {
+	// Arrange
+	migrator := NewHostMigrator(dbmodel.HostsByPageFilters{}, nil, nil, nil)
+
+	// Act
+	entityType := migrator.GetEntityType()
+
+	// Assert
+	require.Equal(t, configmigrator.EntityTypeHost, entityType)
 }
