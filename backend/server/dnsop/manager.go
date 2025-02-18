@@ -146,8 +146,7 @@ func NewManager(owner ManagerAccessors) Manager {
 // Contacts all agents with DNS servers and fetches zones from these servers.
 // It implements the Manager interface.
 func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error) {
-	// Only swap if the flag is currently set to false. If it is set to
-	// true it means that there is another fetch still in progress.
+	// Only start fetching if there is no other fetch in progress.
 	if !manager.fetchingState.startFetching() {
 		return nil, &ManagerAlreadyFetchingError{}
 	}
