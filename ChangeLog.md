@@ -1,5 +1,11 @@
 Stork 2.0.1 released on 2025-02-19.
 
+* 475 [ui] bscott
+
+    Added a search/filter to the "Subnet" drop-down-list in the
+    "host" form used for DHCP Reservations.
+    (Gitlab #1725)
+
 * 474 [build] slawek
 
     Upgraded Go to 1.23.6 and some minor UI and Python dependencies.
