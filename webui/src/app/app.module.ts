@@ -50,6 +50,7 @@ import { ChartModule } from 'primeng/chart'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { AccordionModule } from 'primeng/accordion'
 import { TreeTableModule } from 'primeng/treetable'
+import { SkeletonModule } from 'primeng/skeleton'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -300,6 +301,7 @@ export function cfgFactory() {
         AccordionModule,
         TreeTableModule,
         BadgeModule,
+        SkeletonModule,
     ],
     providers: [
         {

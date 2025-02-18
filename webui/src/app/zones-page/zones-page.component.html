@@ -3,75 +3,137 @@
         <p>This page displays a list of DNS zones.</p>
     </div>
 </app-breadcrumbs>
-
+<p-fieldset legend="Zones Inventory State" styleClass="mb-2" [toggleable]="true">
+    <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
+        <p-button
+            label="Refresh List"
+            icon="pi pi-refresh"
+            styleClass="block p-button-primary no-underline"
+            (onClick)="getZoneInventoryState()"
+        ></p-button>
+        <p-button label="Trigger Zone Inventory Process" (onClick)="fetchZones()" [disabled]="inventoryInProgress" />
+    </div>
+    <p-table
+        [value]="zoneInventoryStates"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[10, 30, 100]"
+        [totalRecords]="zoneInventoryTotal"
+        [loading]="inventoryLoading || inventoryInProgress"
+        [showLoader]="false"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th>App</th>
+                <th>Daemon ID</th>
+                <th>Zone Count</th>
+                <th>Status</th>
+                <th>Error</th>
+                <th>Created at</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-state>
+            <tr>
+                <td>
+                    <a routerLink="/apps/bind9/{{ state.appId }}">{{ state.appName }}</a>
+                </td>
+                <td>{{ state.daemonId }}</td>
+                <td>{{ state.zoneCount || 'n/a' }}</td>
+                <td>
+                    <p-tag
+                        value="{{ state.status === 'erred' ? 'Error' : (state.status | titlecase) }} "
+                        [severity]="getSeverity(state.status)"
+                        [pTooltip]="getTooltip(state.status)"
+                    />
+                </td>
+                <td>
+                    <p-message
+                        *ngIf="state.error"
+                        severity="error"
+                        [text]="getStateErrorMessage(state.error)"
+                    ></p-message>
+                </td>
+                <td>{{ state.createdAt | date: dateTimeFormat | placeholder: 'never' }}</td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="6">
+                    <ng-container *ngIf="!putZonesFetchSent">
+                        <p-message
+                            styleClass="mb-2"
+                            severity="info"
+                            text="Zone Inventory Process was not triggered yet."
+                        ></p-message>
+                        <p></p>
+                        <p-button
+                            label="Trigger Zone Inventory Process"
+                            (onClick)="fetchZones()"
+                            [disabled]="inventoryInProgress"
+                    /></ng-container>
+                    <p>
+                        There is no information about the state of fetching the zones from the zone inventories to the
+                        Stork server.
+                    </p>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="loadingbody">
+            <tr>
+                <td colspan="6">
+                    <p-message
+                        *ngIf="inventoryInProgress"
+                        styleClass="mb-3"
+                        severity="info"
+                        [text]="
+                            'Zone Inventory Process is now running in background. It may take some time depending on DNS servers count and zones count. Inventory completed for ' +
+                            inventoryAppsCompletedCount +
+                            ' out of ' +
+                            inventoryTotalAppsCount +
+                            ' DNS apps.'
+                        "
+                    ></p-message>
+                    <p-progressBar
+                        [value]="(inventoryAppsCompletedCount / inventoryTotalAppsCount) * 100"
+                        styleClass="max-w-30rem"
+                    >
+                        <ng-template pTemplate="content">
+                            <span>{{ inventoryAppsCompletedCount }}/{{ inventoryTotalAppsCount }}</span>
+                        </ng-template>
+                    </p-progressBar>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p-skeleton />
+                </td>
+                <td><p-skeleton /></td>
+                <td><p-skeleton /></td>
+                <td>
+                    <p-skeleton />
+                </td>
+                <td>
+                    <p-skeleton />
+                </td>
+                <td><p-skeleton /></td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-fieldset>
 <p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeIdx" (activeIndexChange)="onActiveIndexChange($event)">
     <p-tabPanel header="Zones">
-        <p-fieldset legend="Actions">
-            <div class="flex mb-2 gap-2 justify-content-end">
-                <p-button label="Check Zone Inventory State" (onClick)="getZoneInventoryState()" />
-                <p-button label="Feed Zone Inventories" (onClick)="fetchZones()" />
-                <p-button
-                    label="Get Zones"
-                    (onClick)="zonesTable.onLazyLoad.emit(zonesTable.createLazyLoadMetadata())"
-                />
-            </div>
-        </p-fieldset>
-        <p-fieldset legend="Zones Inventory State">
-            <p class="m-0">
-                <p-table
-                    [value]="zoneInventoryStates"
-                    [paginator]="true"
-                    [rows]="10"
-                    [rowsPerPageOptions]="[10, 30, 100]"
-                    [totalRecords]="zoneInventoryTotal"
-                    [loading]="inventoryLoading"
-                >
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <th>App</th>
-                            <th>Daemon ID</th>
-                            <th>Zone Count</th>
-                            <th>Status</th>
-                            <th>Error</th>
-                            <th>Created at</th>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-state>
-                        <tr>
-                            <td>
-                                <a routerLink="/apps/bind9/{{ state.appId }}">{{ state.appName }}</a>
-                            </td>
-                            <td>{{ state.daemonId }}</td>
-                            <td>{{ state.zoneCount || 'n/a' }}</td>
-                            <td>
-                                <p-tag
-                                    value="{{ state.status === 'erred' ? 'Error' : (state.status | titlecase) }} "
-                                    [severity]="getSeverity(state.status)"
-                                    [pTooltip]="getTooltip(state.status)"
-                                />
-                            </td>
-                            <td>
-                                <p-message
-                                    *ngIf="state.error"
-                                    severity="error"
-                                    [text]="getErrorMessage(state.error)"
-                                ></p-message>
-                            </td>
-                            <td>{{ state.createdAt | date: dateTimeFormat | placeholder: 'never' }}</td>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="emptymessage">
-                        <tr>
-                            <td colspan="6">There is no Zones Inventory State fetched yet.</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            </p>
-        </p-fieldset>
+        <div class="my-2 flex gap-2 flex-wrap justify-content-end">
+            <p-button
+                label="Refresh List"
+                icon="pi pi-refresh"
+                styleClass="block p-button-primary no-underline"
+                (onClick)="zonesTable.onLazyLoad.emit(zonesTable.createLazyLoadMetadata())"
+            ></p-button>
+        </div>
         <p-table
             #zonesTable
             [value]="zones"
-            [lazyLoadOnInit]="true"
+            [lazyLoadOnInit]="false"
             [lazy]="true"
             (onLazyLoad)="onLazyLoadZones($event)"
             [paginator]="true"

@@ -1,9 +1,10 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core'
-import { MenuItem } from 'primeng/api'
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core'
+import { MenuItem, MessageService } from 'primeng/api'
 import { Zone, LocalZone, DNSService, ZonesFetchStatus, ZoneInventoryStates, ZoneInventoryState } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
 import { lastValueFrom } from 'rxjs'
 import { TableLazyLoadEvent } from 'primeng/table'
+import { getErrorMessage } from '../utils'
 
 type ZoneInventoryStatus = 'busy' | 'erred' | 'ok' | 'uninitialized' | string
 
@@ -50,15 +51,24 @@ export class ZonesPageComponent implements OnInit {
     zonesLoading: boolean = false
     zonesTotal: number = 0
     inventoryLoading: boolean = false
+    putZonesFetchSent: boolean
+    inventoryInProgress: boolean = false
+    inventoryAppsCompletedCount: number = 0
+    inventoryTotalAppsCount: number = 0
+    private timeout: any
+
+    @ViewChild('zonesTable') zonesTable
 
     /**
      *
      * @param cd
      * @param dnsService
+     * @param messageService
      */
     constructor(
         private cd: ChangeDetectorRef,
-        private dnsService: DNSService
+        private dnsService: DNSService,
+        private messageService: MessageService
     ) {}
 
     /**
@@ -165,18 +175,50 @@ export class ZonesPageComponent implements OnInit {
             .then((resp: ZoneInventoryStates | ZonesFetchStatus) => {
                 console.log('getZoneInventoryState promise then', resp)
                 if (!resp) {
-                    console.log('getZoneInventoryState: there is no inventory yet. Was fetchZones triggered?')
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Zone Inventory empty',
+                        detail: 'No state is currently available, presumably because the zones have not been fetched from Stork agents.',
+                    })
                 } else if ('completedAppsCount' in resp && 'appsCount' in resp) {
+                    this.zoneInventoryStates = []
+                    this.zoneInventoryTotal = 0
+                    this.inventoryInProgress = true
+                    this.inventoryAppsCompletedCount = resp.completedAppsCount
+                    this.inventoryTotalAppsCount = resp.appsCount
                     console.log(
                         `getZoneInventoryState: zones fetch status ${resp.completedAppsCount} of ${resp.appsCount} fetched`
                     )
+                    if (resp.appsCount > resp.completedAppsCount) {
+                        this.timeout = setTimeout(() => {
+                            this.getZoneInventoryState()
+                        }, 10000)
+                    }
                 } else if ('items' in resp && 'total' in resp) {
+                    if (this.inventoryInProgress) {
+                        this.inventoryAppsCompletedCount = this.inventoryTotalAppsCount
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Zone Inventory Process done',
+                            detail: 'Zone Inventory Process finished successfully!',
+                        })
+                    }
+
+                    this.inventoryInProgress = false
+                    clearTimeout(this.timeout)
                     this.zoneInventoryStates = resp.items ?? []
                     this.zoneInventoryTotal = resp.total ?? 0
+                    this.onLazyLoadZones(this.zonesTable?.createLazyLoadMetadata())
                 }
             })
             .catch((err) => {
-                console.log('getZoneInventoryState promise catch', err)
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error sending request',
+                    detail: 'Sending $Check Zone Inventory State$ request failed: ' + msg,
+                    life: 10000,
+                })
             })
             .finally(() => {
                 console.log('getZoneInventoryState promise finally')
@@ -186,13 +228,26 @@ export class ZonesPageComponent implements OnInit {
 
     fetchZones() {
         lastValueFrom(this.dnsService.putZonesFetch())
-            .then((resp) => {
-                console.log('fetchZones promise then', resp)
+            .then(() => {
+                this.putZonesFetchSent = true
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Request sent',
+                    detail: 'Sending $Fetch Zones$ request succeeded.',
+                })
+                // if (this.zoneInventoryTotal === 0) {
+                this.getZoneInventoryState()
+                // }
             })
             .catch((err) => {
-                console.log('fetchZones promise catch', err)
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error sending request',
+                    detail: 'Sending $Fetch Zones$ request failed: ' + msg,
+                    life: 10000,
+                })
             })
-            .finally(() => console.log('fetchZones promise finally'))
     }
 
     getSeverity(status: ZoneInventoryStatus) {
@@ -210,7 +265,7 @@ export class ZonesPageComponent implements OnInit {
         }
     }
 
-    getErrorMessage(err: string) {
+    getStateErrorMessage(err: string) {
         return `Error when communicating with a zone inventory on an agent: ${err}.`
     }
 
@@ -238,7 +293,15 @@ export class ZonesPageComponent implements OnInit {
                 this.zones = resp?.items ?? []
                 this.zonesTotal = resp?.total ?? 0
             })
-            .catch((err) => console.log('error when calling getZones', err))
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error retrieving data',
+                    detail: 'Retrieving Zones data failed: ' + msg,
+                    life: 10000,
+                })
+            })
             .finally(() => (this.zonesLoading = false))
     }
 }
