@@ -122,11 +122,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	// Is the named daemon running?
 	pattern = regexp.MustCompile(`server is up and running`)
 	up := pattern.FindString(out.Output)
-	if up != "" {
-		bind9Daemon.Active = true
-	} else {
-		bind9Daemon.Active = false
-	}
+	bind9Daemon.Active = up != ""
 
 	// Up time
 	pattern = regexp.MustCompile(`boot time:\s+(.+)`)
