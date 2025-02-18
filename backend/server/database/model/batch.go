@@ -11,7 +11,7 @@ import "github.com/go-pg/pg/v10"
 // them from the queue making space for another set of entries.
 type Batch[T any] struct {
 	db    pg.DBI
-	items *[]T
+	items []T
 	limit int
 	fn    func(pg.DBI, ...T) error
 }
@@ -22,7 +22,7 @@ type Batch[T any] struct {
 func NewBatch[T any](db pg.DBI, limit int, fn func(pg.DBI, ...T) error) (batch *Batch[T]) {
 	return &Batch[T]{
 		db:    db,
-		items: &[]T{},
+		items: make([]T, 0, limit),
 		limit: limit,
 		fn:    fn,
 	}
@@ -31,12 +31,12 @@ func NewBatch[T any](db pg.DBI, limit int, fn func(pg.DBI, ...T) error) (batch *
 // Inserts new item into the batch. If the number of items in the batch hits
 // the specified limit the items are inserted into the database.
 func (buffer *Batch[T]) Add(item T) error {
-	*buffer.items = append(*buffer.items, item)
-	if (len(*buffer.items) >= buffer.limit) && len(*buffer.items) > 0 {
-		if err := buffer.fn(buffer.db, *buffer.items...); err != nil {
+	buffer.items = append(buffer.items, item)
+	if (len(buffer.items) >= buffer.limit) && len(buffer.items) > 0 {
+		if err := buffer.fn(buffer.db, buffer.items...); err != nil {
 			return err
 		}
-		*buffer.items = []T{}
+		buffer.items = buffer.items[:0]
 	}
 	return nil
 }
@@ -46,11 +46,11 @@ func (buffer *Batch[T]) Add(item T) error {
 // this function immediately attempts to insert all items from the batch
 // into the database.
 func (buffer *Batch[T]) Finish() error {
-	if len(*buffer.items) > 0 {
-		if err := buffer.fn(buffer.db, *buffer.items...); err != nil {
+	if len(buffer.items) > 0 {
+		if err := buffer.fn(buffer.db, buffer.items...); err != nil {
 			return err
 		}
-		*buffer.items = []T{}
+		buffer.items = buffer.items[:0]
 	}
 	return nil
 }

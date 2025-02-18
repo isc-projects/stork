@@ -344,15 +344,13 @@ func TestZoneBeforeUpdate(t *testing.T) {
 // sequentially. The following results have been obtained during the
 // development of this benchmark:
 //
-// BenchmarkAddZones/zones-1-12         3132826500 ns/op
-// BenchmarkAddZones/zones-10-12        458866820 ns/op
-// BenchmarkAddZones/zones-100-12       720914292 ns/op
-// BenchmarkAddZones/zones-1000-12      263773656 ns/op
-// BenchmarkAddZones/zones-10000-12     259945438 ns/op
+// BenchmarkAddZones/zones-1-12         2916306666 ns/op    12013740600 B/op   702690 allocs/op
+// BenchmarkAddZones/zones-10-12        504430139 ns/op     1207774253 B/op    135839 allocs/op
+// BenchmarkAddZones/zones-100-12       269607531 ns/op     120577492 B/op     84488 allocs/op
+// BenchmarkAddZones/zones-1000-12      256385229 ns/op     14314112 B/op      79112 allocs/op
+// BenchmarkAddZones/zones-10000-12     257393979 ns/op     7575522 B/op       78552 allocs/op
 //
-// It is interesting to see that the batch size of 100 has worse performance
-// than the batch size of 10. There is no significant difference between batch
-// size of 1000 and 10000.
+// There is no significant difference between batch size of 100 and 10000.
 func BenchmarkAddZones(b *testing.B) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
 	defer teardown()
