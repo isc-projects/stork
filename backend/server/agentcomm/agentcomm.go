@@ -176,9 +176,8 @@ func newConnectedAgentsImpl(settings *AgentsSettings, eventCenter eventcenter.Ev
 
 // Replaces the default connector factory with a custom one. It can be
 // used to mock gRPC calls.
-func (agents *connectedAgentsImpl) withConnectorFactory(factory func(string) connectedAgentsConnector) *connectedAgentsImpl {
+func (agents *connectedAgentsImpl) setConnectorFactory(factory func(string) connectedAgentsConnector) {
 	agents.connectorFactoryFn = factory
-	return agents
 }
 
 // Stops communication with all agents.

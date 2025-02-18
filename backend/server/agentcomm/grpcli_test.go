@@ -49,10 +49,10 @@ func setupGrpcliTestCase(ctrl *gomock.Controller) (*MockAgentClient, *connectedA
 
 	settings := AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}
-	agents := newConnectedAgentsImpl(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM).
-		withConnectorFactory(func(string) connectedAgentsConnector {
-			return mockAgentsConnector
-		})
+	agents := newConnectedAgentsImpl(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM)
+	agents.setConnectorFactory(func(string) connectedAgentsConnector {
+		return mockAgentsConnector
+	})
 
 	return mockAgentClient, agents
 }
@@ -758,10 +758,10 @@ func TestReceiveZonesConnectionError(t *testing.T) {
 	mockAgentsConnector.EXPECT().close().AnyTimes()
 	mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
 
-	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, CACertPEM, ServerCertPEM, ServerKeyPEM).
-		withConnectorFactory(func(string) connectedAgentsConnector {
-			return mockAgentsConnector
-		})
+	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, CACertPEM, ServerCertPEM, ServerKeyPEM)
+	agents.setConnectorFactory(func(string) connectedAgentsConnector {
+		return mockAgentsConnector
+	})
 
 	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
 	// Make sure that the gRPC client is not used.
