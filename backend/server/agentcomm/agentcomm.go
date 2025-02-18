@@ -48,8 +48,11 @@ type ConnectedAgents interface {
 type agentConnector interface {
 	// Attempts to establish connection with the agent. The connection
 	// should be cached by the connector and reused when possible.
+	// The implementation should close any existing connection before
+	// establishing a new one.
 	connect() error
-	// Closes established connection with the agent.
+	// Closes established connection with the agent. It should be called
+	// on agent shutdown.
 	close()
 	// Creates and returns a gRPC client using the established connection.
 	// The client typically is not cached for future use because it is
@@ -80,7 +83,7 @@ func newAgentConnectorImpl(agentAddress string, serverCertPEM, serverKeyPEM, caC
 }
 
 // Connects or re-connects using specified agent address, certs and keys.
-// It stores the established connection.
+// It stores the established connection. It closes any existing connection.
 func (impl *agentConnectorImpl) connect() error {
 	impl.mutex.Lock()
 	defer impl.mutex.Unlock()
