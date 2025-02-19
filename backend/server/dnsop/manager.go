@@ -95,7 +95,7 @@ func (state *fetchingState) stopFetching() {
 // fetch is in progress, the number of apps from which the zones are being
 // fetched, and the number of apps from which the zones have been fetched
 // already.
-func (state *fetchingState) get() (bool, int, int) {
+func (state *fetchingState) getFetchZonesProgress() (bool, int, int) {
 	state.mutex.RLock()
 	defer state.mutex.RUnlock()
 	return state.fetching, state.appsCount, state.completedAppsCount
@@ -295,7 +295,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 
 // Checks if the DNS Manager is currently fetching the zones.
 func (manager *managerImpl) GetFetchZonesProgress() (bool, int, int) {
-	return manager.fetchingState.get()
+	return manager.fetchingState.getFetchZonesProgress()
 }
 
 // Convenience function storing a value in a map with mutex protection.
