@@ -2,6 +2,7 @@ package configmigrator
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -528,4 +529,42 @@ func TestCancelMigration(t *testing.T) {
 	require.NotZero(t, secondChunkStatus.EndDate)
 	require.ErrorContains(t, secondChunkStatus.GeneralError, "canceled")
 	require.Nil(t, secondChunkStatus.Context.Done())
+}
+
+// Test that the closing of the migration service cancels all migrations and
+// waits for them to finish.
+func TestConcurrentMigrationsCloseService(t *testing.T) {
+	// Arrange
+	service := NewService()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	migrator := NewMockMigrator(ctrl)
+
+	migrator.EXPECT().CountTotal().Return(int64(math.MaxInt64), nil)
+	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
+
+	// Migrate infinitely.
+	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).MinTimes(1)
+	migrator.EXPECT().Migrate().Return(map[int64]error{}).MinTimes(1)
+
+	// Act & Assert
+	initialStatus, err := service.StartMigration(context.Background(), migrator)
+	require.NoError(t, err)
+
+	// Check the initial status.
+	require.False(t, initialStatus.Canceling)
+	require.Zero(t, initialStatus.EndDate)
+	require.NoError(t, initialStatus.GeneralError)
+	require.Nil(t, initialStatus.Context.Done())
+
+	// Close the migration service.
+	service.Close()
+
+	// Check the status after the service is closed.
+	closedStatus, ok := service.GetMigration(initialStatus.ID)
+	require.True(t, ok)
+	require.True(t, closedStatus.Canceling)
+	require.NotZero(t, closedStatus.EndDate)
+	require.ErrorContains(t, closedStatus.GeneralError, "canceled")
 }

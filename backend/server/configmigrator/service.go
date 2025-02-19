@@ -105,8 +105,10 @@ type migration struct {
 	// Function that cancels the context passed to the migration runner.
 	// It doesn't interrupt the migration immediately.
 	cancelFunc context.CancelFunc
-	// Emits a value when the migration is done (successful or failed).
-	doneChan <-chan error
+	// Emits a value when the migration is done (successful or failed). It is
+	// guaranteed that when the channel is closed, the migration goroutine
+	// is gone.
+	doneChan <-chan struct{}
 }
 
 // Returns the current status of the migration.
@@ -279,6 +281,9 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 
 	// Run migration.
 	chunkChunk, doneChan := runMigration(ctx, migrator)
+	// Emits a value when the runner is done and its done value has been
+	// processed.
+	workerDoneChan := make(chan struct{})
 
 	migration := &migration{
 		ctx:            ctx,
@@ -288,10 +293,11 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		totalItems:     totalItems,
 		errors:         make(map[int64]error),
 		cancelFunc:     cancel,
-		doneChan:       doneChan,
+		doneChan:       workerDoneChan,
 	}
 
 	go func() {
+		defer close(workerDoneChan)
 		for {
 			select {
 			case migratedCount, ok := <-chunkChunk:
