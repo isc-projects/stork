@@ -4,8 +4,10 @@
     properties:
       completedAppsCount:
         type: integer
+        x-omitempty: false
       appsCount:
         type: integer
+        x-omitempty: false
 
   # ZoneInventoryState
   ZoneInventoryState:
