@@ -59,6 +59,8 @@ export class ZonesPageComponent implements OnInit {
 
     @ViewChild('zonesTable') zonesTable
 
+    private _fetchSentStorageKey = 'zone-fetch-sent'
+
     /**
      *
      * @param cd
@@ -229,6 +231,7 @@ export class ZonesPageComponent implements OnInit {
     fetchZones() {
         lastValueFrom(this.dnsService.putZonesFetch())
             .then(() => {
+                this.storeZoneFetchSent(true)
                 this.putZonesFetchSent = true
                 this.messageService.add({
                     severity: 'success',
@@ -292,6 +295,14 @@ export class ZonesPageComponent implements OnInit {
                 this.expandedRows = {}
                 this.zones = resp?.items ?? []
                 this.zonesTotal = resp?.total ?? 0
+                if (this.zones.length === 0 && !this.wasZoneFetchSent()) {
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Automatically fetching zones',
+                        detail: 'Zones were not fetched yet, so Fetch Zones was triggered automatically.',
+                    })
+                    this.fetchZones()
+                }
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
@@ -304,4 +315,14 @@ export class ZonesPageComponent implements OnInit {
             })
             .finally(() => (this.zonesLoading = false))
     }
+
+    wasZoneFetchSent() : boolean {
+        const fromStorage = sessionStorage.getItem(this._fetchSentStorageKey) ?? "false"
+        return JSON.parse(fromStorage) === true
+    }
+
+    storeZoneFetchSent(sent: boolean) {
+        sessionStorage.setItem(this._fetchSentStorageKey, JSON.stringify(sent))
+    }
+
 }
