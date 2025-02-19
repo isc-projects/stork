@@ -310,6 +310,16 @@
         type: string
         format: duration
 
+  MigrationStatuses:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/MigrationStatus'
+      total:
+        type: integer
+
 # Pool
 
   Pool:
