@@ -664,6 +664,70 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.Migratio
 	}
 }
 
+// Implements the GET call to retrieve the statuses of all (ongoing or
+// completed) migrations.
+func (r *RestAPI) GetMigrations(ctx context.Context, params dhcp.GetMigrationsParams) middleware.Responder {
+	// Fetch migration statuses from the migration service.
+	statuses := r.MigrationService.GetMigrations()
+
+	// Convert statuses to REST API format.
+	respStatuses := []*models.MigrationStatus{}
+	for _, status := range statuses {
+		respStatuses = append(respStatuses, r.convertMigrationStatusToRestAPI(status))
+	}
+
+	// Send the statuses to the client.
+	rsp := dhcp.NewGetMigrationsOK().WithPayload(&models.MigrationStatuses{
+		Items: respStatuses,
+		Total: int64(len(respStatuses)),
+	})
+	return rsp
+}
+
+// Implements the DELETE call to remove all finished migrations.
+func (r *RestAPI) DeleteFinishedMigrations(ctx context.Context, params dhcp.DeleteFinishedMigrationsParams) middleware.Responder {
+	// Remove finished migrations from the migration service.
+	r.MigrationService.ClearFinishedMigrations()
+
+	// Send OK response to the client.
+	rsp := dhcp.NewDeleteFinishedMigrationsOK()
+	return rsp
+}
+
+// Implements the GET call to retrieve the status of a specific migration.
+func (r *RestAPI) GetMigration(ctx context.Context, params dhcp.GetMigrationParams) middleware.Responder {
+	// Fetch migration status from the migration service.
+	status, ok := r.MigrationService.GetMigration(configmigrator.MigrationIdentifier(params.ID))
+	if !ok {
+		msg := fmt.Sprintf("Cannot find migration status with ID %s", params.ID)
+		rsp := dhcp.NewGetMigrationDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	migrationStatus := r.convertMigrationStatusToRestAPI(status)
+	rsp := dhcp.NewGetMigrationOK().WithPayload(migrationStatus)
+	return rsp
+}
+
+// Implements the POST call to cancel an ongoing migration.
+func (r *RestAPI) CancelMigration(ctx context.Context, params dhcp.CancelMigrationParams) middleware.Responder {
+	// Attempt to cancel the migration.
+	status, ok := r.MigrationService.StopMigration(configmigrator.MigrationIdentifier(params.ID))
+	if !ok {
+		msg := fmt.Sprintf("Cannot find migration status with ID %s", params.ID)
+		rsp := dhcp.NewCancelMigrationDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// Send OK response to the client.
+	rsp := dhcp.NewCancelMigrationOK().WithPayload(r.convertMigrationStatusToRestAPI(status))
+	return rsp
+}
+
 // Implements the POST call to migrate host reservations from Kea configuration
 // to the database. Runs a migration of host reservations from Kea configuration
 // to the database. It works in the foreground and returns the results of the

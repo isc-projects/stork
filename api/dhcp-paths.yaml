@@ -928,7 +928,7 @@
       parameters:
         - in: path
           name: id
-          type: integer
+          type: string
           required: true
           description: Migration ID.
       responses:
@@ -951,7 +951,7 @@
       parameters:
         - in: path
           name: id
-          type: integer
+          type: string
           required: true
           description: Migration ID.
       responses:
