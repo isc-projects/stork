@@ -128,7 +128,7 @@ export class ZonesPageComponent implements OnInit {
             { id: 5, name: 'example.org', rname: 'org.example', localZones: [dummyLocalZones[0]] },
         ]
 
-        this.getZoneInventoryState()
+        this.getZonesFetchStatus()
     }
 
     /**
@@ -169,9 +169,9 @@ export class ZonesPageComponent implements OnInit {
         console.log('onActiveIdxChange', indexAfterChange, 'this.activeIdx', this.activeIdx)
     }
 
-    getZoneInventoryState() {
+    getZonesFetchStatus() {
         this.inventoryLoading = true
-        lastValueFrom(this.dnsService.getZoneInventoryStates())
+        lastValueFrom(this.dnsService.getZonesFetch())
             .then((resp: ZoneInventoryStates | ZonesFetchStatus) => {
                 console.log('getZoneInventoryState promise then', resp)
                 if (!resp) {
@@ -191,7 +191,7 @@ export class ZonesPageComponent implements OnInit {
                     )
                     if (resp.appsCount > resp.completedAppsCount) {
                         this.timeout = setTimeout(() => {
-                            this.getZoneInventoryState()
+                            this.getZonesFetchStatus()
                         }, 10000)
                     }
                 } else if ('items' in resp && 'total' in resp) {
@@ -236,7 +236,7 @@ export class ZonesPageComponent implements OnInit {
                     detail: 'Sending $Fetch Zones$ request succeeded.',
                 })
                 // if (this.zoneInventoryTotal === 0) {
-                this.getZoneInventoryState()
+                this.getZonesFetchStatus()
                 // }
             })
             .catch((err) => {

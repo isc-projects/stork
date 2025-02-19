@@ -9,9 +9,9 @@
             label="Refresh List"
             icon="pi pi-refresh"
             styleClass="block p-button-primary no-underline"
-            (onClick)="getZoneInventoryState()"
+            (onClick)="getZonesFetchStatus()"
         ></p-button>
-        <p-button label="Trigger Zone Inventory Process" (onClick)="fetchZones()" [disabled]="inventoryInProgress" />
+        <p-button label="Fetch Zones" (onClick)="fetchZones()" [disabled]="inventoryInProgress" />
     </div>
     <p-table
         [value]="zoneInventoryStates"
@@ -63,13 +63,10 @@
                         <p-message
                             styleClass="mb-2"
                             severity="info"
-                            text="Zone Inventory Process was not triggered yet."
+                            text="Zones were not fetched yet from Stork agents."
                         ></p-message>
                         <p></p>
-                        <p-button
-                            label="Trigger Zone Inventory Process"
-                            (onClick)="fetchZones()"
-                            [disabled]="inventoryInProgress"
+                        <p-button label="Fetch Zones" (onClick)="fetchZones()" [disabled]="inventoryInProgress"
                     /></ng-container>
                     <p>
                         There is no information about the state of fetching the zones from the zone inventories to the
@@ -86,7 +83,7 @@
                         styleClass="mb-3"
                         severity="info"
                         [text]="
-                            'Zone Inventory Process is now running in background. It may take some time depending on DNS servers count and zones count. Inventory completed for ' +
+                            'Zone fetching process is now running in background. It may take some time depending on DNS servers count and zones count. Completed for ' +
                             inventoryAppsCompletedCount +
                             ' out of ' +
                             inventoryTotalAppsCount +
@@ -162,7 +159,6 @@
                     <td>
                         <p-button
                             type="button"
-                            pRipple
                             [pRowToggler]="zone"
                             [text]="true"
                             [rounded]="true"
