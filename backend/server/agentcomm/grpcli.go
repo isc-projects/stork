@@ -911,7 +911,7 @@ func (agents *connectedAgentsImpl) TailTextFile(ctx context.Context, machine dbm
 
 // Receive DNS zones over the stream from a selected agent's zone inventory.
 // It returns an iterator with a pointer to zone and error. The iterator ends
-// when an error occurs.
+// when an error occurs. Receiving the zones is not cancellable at the moment.
 func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, app ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
 	return func(yield func(*bind9stats.ExtendedZone, error) bool) {
 		// Get control access point for the specified app. It will be sent
