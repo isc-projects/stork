@@ -391,7 +391,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Failed to fetch apps and machines',
-                    detail: 'Failed to fetch apps and machines list from the server',
+                    detail: 'Failed to fetch app and machine list from the server',
                     life: 10000,
                 })
                 this.showRenameDialogClicked = false
@@ -465,7 +465,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
         if (!hookLibrary || !keaVersion || !(isNewVer || this.anchorsByHook[hookLibrary])) {
             // Return null:
             // - if hook name is not provided
-            // - or if kea version is not provided
+            // - or if Kea version is not provided
             // - or if it is older Kea version (< 2.4) and there is no lookup value in the anchorsByHook for given hook.
             // For Kea version >= 2.4 lookup is not needed because new 'std-ischooklib-hook_name.so' anchors were
             // introduced in ARM.
@@ -498,7 +498,7 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Copy to clipboard failed',
-                    detail: 'Hook path ' + hookPath + ' copy to the clipboard failed.',
+                    detail: 'Hook path ' + hookPath + ' failed to copy to the clipboard.',
                     life: 10000,
                 })
             }
