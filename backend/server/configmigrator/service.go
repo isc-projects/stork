@@ -105,6 +105,8 @@ type migration struct {
 	// Function that cancels the context passed to the migration runner.
 	// It doesn't interrupt the migration immediately.
 	cancelFunc context.CancelFunc
+	// Emits a value when the migration is done (successful or failed).
+	doneChan <-chan error
 }
 
 // Returns the current status of the migration.
@@ -212,6 +214,9 @@ type Service interface {
 	StopMigration(id MigrationIdentifier) (MigrationStatus, bool)
 	// Clears the finished migrations from the memory.
 	ClearFinishedMigrations()
+	// Cancels all the running migrations and waits for them to finish.
+	// The method is blocking.
+	Close()
 }
 
 // It manages the migrations. It is responsible for starting and stopping the
@@ -272,6 +277,9 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 
 	ctx, cancel := context.WithCancel(ctx)
 
+	// Run migration.
+	chunkChunk, doneChan := runMigration(ctx, migrator)
+
 	migration := &migration{
 		ctx:            ctx,
 		startDate:      time.Now(),
@@ -280,10 +288,8 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		totalItems:     totalItems,
 		errors:         make(map[int64]error),
 		cancelFunc:     cancel,
+		doneChan:       doneChan,
 	}
-
-	// Run migration.
-	chunkChunk, doneChan := runMigration(ctx, migrator)
 
 	go func() {
 		for {
@@ -349,5 +355,18 @@ func (s *service) ClearFinishedMigrations() {
 		if !m.endDate.IsZero() {
 			delete(s.migrations, m.id)
 		}
+	}
+}
+
+// Cancels all the running migrations and waits for them to finish.
+// The method is blocking.
+func (s *service) Close() {
+	for _, migration := range s.migrations {
+		migration.cancel()
+	}
+
+	// Wait for the migrations to finish.
+	for _, migration := range s.migrations {
+		<-migration.doneChan
 	}
 }

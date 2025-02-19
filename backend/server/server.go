@@ -17,6 +17,7 @@ import (
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/certs"
 	"isc.org/stork/server/config"
+	"isc.org/stork/server/configmigrator"
 	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -232,12 +233,16 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	// Create DNS Manager.
 	dnsManager := dnsop.NewManager(ss)
 
+	// Config migration service manages list of pending migrations.
+	migrationService := configmigrator.NewService()
+
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
 		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
 		ss.DHCPOptionDefinitionLookup, ss.HookManager, endpointControl,
-		dnsManager)
+		dnsManager,
+		migrationService)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
@@ -250,6 +255,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 
 		ss.HookManager.Close()
 		ss.DB.Close()
+		migrationService.Close()
 
 		return err
 	}

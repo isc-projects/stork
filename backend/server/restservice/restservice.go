@@ -611,4 +611,10 @@ func (r *RestAPI) Shutdown() {
 		r.SessionManager.Close()
 	}
 	log.Print("Stopped the session manager")
+
+	log.Print("Stopping the migration service")
+	if r.MigrationService != nil {
+		r.MigrationService.Close()
+	}
+	log.Print("Stopped the migration service")
 }
