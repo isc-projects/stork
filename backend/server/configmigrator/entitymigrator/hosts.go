@@ -351,5 +351,9 @@ func getLabel(host dbmodel.Host) string {
 		return "unknown"
 	}
 	identifier := host.HostIdentifiers[0]
-	return fmt.Sprintf("%s=%s", identifier.Type, identifier.Value)
+	return fmt.Sprintf(
+		"%s=%s",
+		identifier.Type,
+		storkutil.BytesToHexWithSeparator(identifier.Value, ":"),
+	)
 }

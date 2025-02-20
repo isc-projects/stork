@@ -154,7 +154,7 @@ func TestMigrate(t *testing.T) {
 			HostIdentifiers: []dbmodel.HostIdentifier{{
 				ID:     nextHostID,
 				Type:   "hw-address",
-				Value:  []byte(fmt.Sprintf("%d", nextHostID)),
+				Value:  []byte{byte(nextHostID)},
 				HostID: 1,
 			}},
 			LocalHosts: localHosts,
@@ -173,6 +173,13 @@ func TestMigrate(t *testing.T) {
 		}
 		nextDaemonID++
 		return daemon
+	}
+
+	getExpectedLabel := func(hostID int64) string {
+		return fmt.Sprintf(
+			"hw-address=%s",
+			storkutil.BytesToHex([]byte{byte(hostID)}),
+		)
 	}
 
 	// Tests migrating a single host with no errors.
@@ -359,10 +366,7 @@ func TestMigrate(t *testing.T) {
 		require.ErrorContains(t, errs[5].Err, "error as result")
 
 		for _, err := range errs {
-			require.EqualValues(t,
-				fmt.Sprintf("hw-address=%d", err.ID),
-				err.Label,
-			)
+			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -451,10 +455,7 @@ func TestMigrate(t *testing.T) {
 		require.ErrorContains(t, errs[5].Err, "error is result")
 
 		for _, err := range errs {
-			require.EqualValues(t,
-				fmt.Sprintf("hw-address=%d", err.ID),
-				err.Label,
-			)
+			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -487,7 +488,7 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 1)
 		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Err, "error adding reservation")
-		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
+		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -519,7 +520,7 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Err, "error adding reservation")
-		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
+		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -601,10 +602,7 @@ func TestMigrate(t *testing.T) {
 		require.ErrorContains(t, errs[7].Err, "error execution")
 
 		for _, err := range errs {
-			require.EqualValues(t,
-				fmt.Sprintf("hw-address=%d", err.ID),
-				err.Label,
-			)
+			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -682,10 +680,7 @@ func TestMigrate(t *testing.T) {
 		require.ErrorContains(t, errs[3].Err, "Stork agent error")
 
 		for _, err := range errs {
-			require.EqualValues(t,
-				fmt.Sprintf("hw-address=%d", err.ID),
-				err.Label,
-			)
+			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -755,7 +750,7 @@ func TestMigrate(t *testing.T) {
 			errs[0].Err,
 			"local subnet id not found in host",
 		)
-		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
+		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
 		require.True(t, ctrl.Satisfied())
 	})
 
@@ -784,7 +779,7 @@ func TestMigrate(t *testing.T) {
 			errs[0].Err,
 			"local subnet id not found in host",
 		)
-		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
+		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
 	})
 }
 
