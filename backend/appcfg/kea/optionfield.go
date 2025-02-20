@@ -490,7 +490,7 @@ func ConvertIntField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (
 			return fmt.Sprintf("%08X", uint32(ivalue.Int())), nil
 		}
 	}
-	return fmt.Sprintf("%d", values[0]), nil
+	return fmt.Sprintf("%d", ivalue.Int()), nil
 }
 
 // Converts an IPv4 address option field from Stork to Kea format. It expects
