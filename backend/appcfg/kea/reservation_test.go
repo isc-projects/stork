@@ -211,7 +211,7 @@ func TestCreateHostCmdsDeletedReservation(t *testing.T) {
 
 // Test that conversion error is returned when the host has no
 // identifiers.
-func TestCreateHostCmdsDeletedReservationNoIdentfiers(t *testing.T) {
+func TestCreateHostCmdsDeletedReservationNoIdentifiers(t *testing.T) {
 	host := createDefaultTestHost()
 	host.identifiers = []struct {
 		Type  string
