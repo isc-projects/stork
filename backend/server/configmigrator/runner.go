@@ -6,7 +6,7 @@ import (
 
 type migrationChunk struct {
 	loadedCount int64
-	errs        map[int64]error
+	errs        []MigrationError
 }
 
 // It is an asynchronous migration runner. It loads the items in chunks and

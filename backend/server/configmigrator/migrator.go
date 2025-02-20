@@ -17,7 +17,7 @@ type Migrator interface {
 	LoadItems(offset int64) (int64, error)
 	// Migrates the loaded items. Returns a map of errors that occurred during
 	// the migration. The key is the ID of the migrated item.
-	Migrate() map[int64]error
+	Migrate() []MigrationError
 	// Indicates the type of the entities that are being migrated. The keys of
 	// the error map returned by the @Migrate method are the IDs of the
 	// entities of this type.

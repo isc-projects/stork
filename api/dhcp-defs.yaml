@@ -267,6 +267,8 @@
         format: int64
       error:
         type: string
+      label:
+        type: string
 
   MigrationErrors:
     type: object

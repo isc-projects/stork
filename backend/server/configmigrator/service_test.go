@@ -2,6 +2,7 @@ package configmigrator
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ func newTestService() Service {
 		generalError:   nil,
 		processedItems: 10,
 		totalItems:     100,
-		errors:         make(map[int64]error),
+		errors:         []MigrationError{},
 		cancelDate:     time.Time{},
 		entityType:     EntityTypeHost,
 		cancelFunc: func() {
@@ -41,9 +42,13 @@ func newTestService() Service {
 		generalError:   nil,
 		processedItems: 100,
 		totalItems:     100,
-		errors:         map[int64]error{42: errors.New("error")},
-		cancelDate:     time.Time{},
-		entityType:     EntityTypeHost,
+		errors: []MigrationError{{
+			ID:    42,
+			Err:   errors.New("error"),
+			Label: "host-finished",
+		}},
+		cancelDate: time.Time{},
+		entityType: EntityTypeHost,
 	}
 	// Canceled migration.
 	service.migrations["canceled"] = &migration{
@@ -55,7 +60,7 @@ func newTestService() Service {
 		generalError:   errors.New("canceled"),
 		processedItems: 10,
 		totalItems:     100,
-		errors:         make(map[int64]error),
+		errors:         []MigrationError{},
 		entityType:     EntityTypeHost,
 	}
 	// Canceling migration.
@@ -68,7 +73,7 @@ func newTestService() Service {
 		cancelDate:     time.Date(2025, 2, 4, 12, 0, 0, 0, time.UTC),
 		processedItems: 10,
 		totalItems:     100,
-		errors:         make(map[int64]error),
+		errors:         []MigrationError{},
 		entityType:     EntityTypeHost,
 	}
 	// General error occurred.
@@ -80,7 +85,7 @@ func newTestService() Service {
 		generalError:   errors.New("general error"),
 		processedItems: 10,
 		totalItems:     100,
-		errors:         make(map[int64]error),
+		errors:         []MigrationError{},
 		cancelDate:     time.Time{},
 		entityType:     EntityTypeHost,
 	}
@@ -243,7 +248,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	defer close(assertionFinishedChan)
 	callIndex := int64(0)
 
-	migrator.EXPECT().Migrate().DoAndReturn(func() map[int64]error {
+	migrator.EXPECT().Migrate().DoAndReturn(func() []MigrationError {
 		// The migrator will wait for the assertion to finish before it
 		// continues. Also, the assertion will wait for the migrator to finish
 		// migrating the chunk before it continues.
@@ -255,10 +260,10 @@ func TestStartAndExecuteMigration(t *testing.T) {
 
 		// Return some errors.
 		callIndex++
-		return map[int64]error{
-			callIndex*100 + 1: errors.New("error"),
-			callIndex*100 + 2: errors.New("error"),
-			callIndex*100 + 3: errors.New("error"),
+		return []MigrationError{
+			{ID: callIndex*100 + 1, Err: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+1)},
+			{ID: callIndex*100 + 2, Err: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+2)},
+			{ID: callIndex*100 + 3, Err: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+3)},
 		}
 	}).Times(3)
 
@@ -300,9 +305,9 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.NotZero(t, firstChunkStatus.ElapsedTime)
 	require.Equal(t, initialStatus.EntityType, firstChunkStatus.EntityType)
 	require.Len(t, firstChunkStatus.Errors, 3)
-	require.Contains(t, firstChunkStatus.Errors, int64(101))
-	require.Contains(t, firstChunkStatus.Errors, int64(102))
-	require.Contains(t, firstChunkStatus.Errors, int64(103))
+	require.EqualValues(t, 101, firstChunkStatus.Errors[0].ID)
+	require.EqualValues(t, 102, firstChunkStatus.Errors[1].ID)
+	require.EqualValues(t, 103, firstChunkStatus.Errors[2].ID)
 
 	// Wait for the second chunk to be processed.
 	assertionFinishedChan <- struct{}{}
@@ -324,9 +329,9 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.NotZero(t, secondChunkStatus.ElapsedTime)
 	require.Equal(t, initialStatus.EntityType, secondChunkStatus.EntityType)
 	require.Len(t, secondChunkStatus.Errors, 6)
-	require.Contains(t, secondChunkStatus.Errors, int64(201))
-	require.Contains(t, secondChunkStatus.Errors, int64(202))
-	require.Contains(t, secondChunkStatus.Errors, int64(203))
+	require.EqualValues(t, 201, secondChunkStatus.Errors[3].ID)
+	require.EqualValues(t, 202, secondChunkStatus.Errors[4].ID)
+	require.EqualValues(t, 203, secondChunkStatus.Errors[5].ID)
 
 	// Wait for the third chunk to be processed.
 	assertionFinishedChan <- struct{}{}
@@ -348,9 +353,9 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.NotZero(t, thirdChunkStatus.ElapsedTime)
 	require.Equal(t, initialStatus.EntityType, thirdChunkStatus.EntityType)
 	require.Len(t, thirdChunkStatus.Errors, 9)
-	require.Contains(t, thirdChunkStatus.Errors, int64(301))
-	require.Contains(t, thirdChunkStatus.Errors, int64(302))
-	require.Contains(t, thirdChunkStatus.Errors, int64(303))
+	require.EqualValues(t, 301, thirdChunkStatus.Errors[6].ID)
+	require.EqualValues(t, 302, thirdChunkStatus.Errors[7].ID)
+	require.EqualValues(t, 303, thirdChunkStatus.Errors[8].ID)
 }
 
 // Test that the migration is not started if an error occurs in the initial
@@ -420,7 +425,7 @@ func TestStartMigrationLoadingError(t *testing.T) {
 		// job. So, we cannot immediately run the assertions after the channel
 		// is empty. We need to wait for the runner to finish its job by
 		// calling t.Eventually.
-	}).Return(map[int64]error{}).Times(1)
+	}).Return([]MigrationError{}).Times(1)
 
 	// Act & Assert
 	initialStatus, err := service.StartMigration(context.Background(), migrator)
@@ -477,7 +482,7 @@ func TestCancelMigration(t *testing.T) {
 		// job. So, we cannot immediately run the assertions after the channel
 		// is empty. We need to wait for the runner to finish its job by
 		// calling t.Eventually.
-	}).Return(map[int64]error{}).Times(2)
+	}).Return([]MigrationError{}).Times(2)
 
 	// Act & Assert
 	initialStatus, err := service.StartMigration(context.Background(), migrator)
@@ -546,7 +551,7 @@ func TestConcurrentMigrationsCloseService(t *testing.T) {
 
 	// Migrate infinitely.
 	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).MinTimes(1)
-	migrator.EXPECT().Migrate().Return(map[int64]error{}).MinTimes(1)
+	migrator.EXPECT().Migrate().Return([]MigrationError{}).MinTimes(1)
 
 	// Act & Assert
 	initialStatus, err := service.StartMigration(context.Background(), migrator)

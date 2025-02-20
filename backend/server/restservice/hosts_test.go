@@ -1739,9 +1739,9 @@ func TestMigrateHosts(t *testing.T) {
 		EndDate:   time.Time{},
 		Canceling: false,
 		Progress:  0.2,
-		Errors: map[int64]error{
-			4: errors.New("foo"),
-			2: errors.New("bar"),
+		Errors: []configmigrator.MigrationError{
+			{Err: errors.New("foo"), ID: 4, Label: "host-4"},
+			{Err: errors.New("bar"), ID: 2, Label: "host-2"},
 		},
 		GeneralError:      nil,
 		EntityType:        "host",
@@ -1767,8 +1767,8 @@ func TestMigrateHosts(t *testing.T) {
 	require.Equal(t, okRsp.Payload.Errors.Total, int64(2))
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4},
-		{Error: "bar", HostID: 2},
+		{Error: "foo", HostID: 4, Label: "host-4"},
+		{Error: "bar", HostID: 2, Label: "host-2"},
 	}, okRsp.Payload.Errors.Items)
 	require.Nil(t, okRsp.Payload.GeneralError)
 	require.Equal(t, "host", okRsp.Payload.EntityType)
@@ -1797,9 +1797,9 @@ func TestGetMigrations(t *testing.T) {
 		EndDate:   time.Time{},
 		Canceling: false,
 		Progress:  0.2,
-		Errors: map[int64]error{
-			4: errors.New("foo"),
-			2: errors.New("bar"),
+		Errors: []configmigrator.MigrationError{
+			{Err: errors.New("foo"), ID: 4, Label: "host-4"},
+			{Err: errors.New("bar"), ID: 2, Label: "host-2"},
 		},
 		GeneralError:      nil,
 		EntityType:        "host",
@@ -1814,7 +1814,7 @@ func TestGetMigrations(t *testing.T) {
 		EndDate:           time.Time{},
 		Canceling:         false,
 		Progress:          0.5,
-		Errors:            map[int64]error{},
+		Errors:            nil,
 		GeneralError:      nil,
 		EntityType:        "host",
 		ElapsedTime:       10 * time.Second,
@@ -1828,7 +1828,7 @@ func TestGetMigrations(t *testing.T) {
 		EndDate:           time.Date(2025, 2, 15, 12, 27, 48, 432000000, time.UTC),
 		Canceling:         false,
 		Progress:          1.0,
-		Errors:            map[int64]error{},
+		Errors:            nil,
 		GeneralError:      nil,
 		EntityType:        "host",
 		ElapsedTime:       15 * time.Second,
@@ -1857,8 +1857,8 @@ func TestGetMigrations(t *testing.T) {
 	require.Equal(t, int64(2), status.Errors.Total)
 	require.Len(t, status.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4},
-		{Error: "bar", HostID: 2},
+		{Error: "foo", HostID: 4, Label: "host-4"},
+		{Error: "bar", HostID: 2, Label: "host-2"},
 	}, status.Errors.Items)
 
 	status = okRsp.Payload.Items[1]
@@ -1950,9 +1950,9 @@ func TestGetMigration(t *testing.T) {
 		EndDate:   time.Time{},
 		Canceling: false,
 		Progress:  0.2,
-		Errors: map[int64]error{
-			4: errors.New("foo"),
-			2: errors.New("bar"),
+		Errors: []configmigrator.MigrationError{
+			{Err: errors.New("foo"), ID: 4, Label: "host-4"},
+			{Err: errors.New("bar"), ID: 2, Label: "host-2"},
 		},
 		GeneralError:      nil,
 		EntityType:        "host",
@@ -1975,8 +1975,8 @@ func TestGetMigration(t *testing.T) {
 	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4},
-		{Error: "bar", HostID: 2},
+		{Error: "foo", HostID: 4, Label: "host-4"},
+		{Error: "bar", HostID: 2, Label: "host-2"},
 	}, okRsp.Payload.Errors.Items)
 }
 
@@ -2002,9 +2002,9 @@ func TestCancelMigration(t *testing.T) {
 		EndDate:   time.Time{},
 		Canceling: true,
 		Progress:  0.2,
-		Errors: map[int64]error{
-			4: errors.New("foo"),
-			2: errors.New("bar"),
+		Errors: []configmigrator.MigrationError{
+			{Err: errors.New("foo"), ID: 4, Label: "host-4"},
+			{Err: errors.New("bar"), ID: 2, Label: "host-2"},
 		},
 		GeneralError:      nil,
 		EntityType:        "host",
@@ -2032,8 +2032,8 @@ func TestCancelMigration(t *testing.T) {
 	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4},
-		{Error: "bar", HostID: 2},
+		{Error: "foo", HostID: 4, Label: "host-4"},
+		{Error: "bar", HostID: 2, Label: "host-2"},
 	}, okRsp.Payload.Errors.Items)
 	require.True(t, okRsp.Payload.Canceling)
 }

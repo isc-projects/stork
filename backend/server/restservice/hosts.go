@@ -635,10 +635,11 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 // Converts the status returned by a service to the format used in REST API.
 func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.MigrationStatus) *models.MigrationStatus {
 	errs := []*models.MigrationError{}
-	for id, err := range status.Errors {
+	for _, err := range status.Errors {
 		errs = append(errs, &models.MigrationError{
-			Error:  err.Error(),
-			HostID: id,
+			Error:  err.Err.Error(),
+			HostID: err.ID,
+			Label:  err.Label,
 		})
 	}
 	var generalError *string

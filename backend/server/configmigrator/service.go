@@ -13,6 +13,14 @@ import (
 // Type (alias?) for the migration ID.
 type MigrationIdentifier string
 
+// Contains the basic information about the entity type that was failed to
+// migrate.
+type MigrationError struct {
+	ID    int64
+	Err   error
+	Label string
+}
+
 // Describes the migration process. It is common for all the entities that can
 // be migrated.
 type MigrationStatus struct {
@@ -31,7 +39,7 @@ type MigrationStatus struct {
 	Progress float64
 	// The errors already occurred during the migration. The key is the ID of
 	// the migrated item which type is defined by the @EntityType field.
-	Errors map[int64]error
+	Errors []MigrationError
 	// The general error that interrupted the migration. This error is not
 	// related to any specific item rather to the whole migration process.
 	// If it is not nil, the migration is stopped but if the migration is
@@ -97,7 +105,7 @@ type migration struct {
 	entityType     EntityType
 	processedItems int64
 	totalItems     int64
-	errors         map[int64]error
+	errors         []MigrationError
 	generalError   error
 
 	// Recommended to not use this object outside of the migration structure.
@@ -132,10 +140,7 @@ func (m *migration) getStatus() MigrationStatus {
 		estimatedLeftTime = processingTimeOfSingleItem * time.Duration(leftItems)
 	}
 
-	errsCopy := make(map[int64]error, len(m.errors))
-	for k, v := range m.errors {
-		errsCopy[k] = v
-	}
+	errsCopy := m.errors[:]
 
 	// It needs to return a copy of the migration data to avoid race
 	// conditions.
@@ -186,16 +191,14 @@ func (m *migration) cancel() {
 }
 
 // Registers the chunk of the loaded items. The loadedItems is the number of
-// items that were loaded in the chunk. The errs is a map of errors that
+// items that were loaded in the chunk. The errs is a slice of errors that
 // occurred during the migration of the items. The key is the ID of the item.
-func (m *migration) registerChunk(loadedItems int64, errs map[int64]error) {
+func (m *migration) registerChunk(loadedItems int64, errs []MigrationError) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	m.processedItems += loadedItems
-	for id, err := range errs {
-		m.errors[id] = err
-	}
+	m.errors = append(m.errors, errs...)
 }
 
 // Migration service interface. It provides the methods to interact with the
@@ -291,7 +294,7 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		entityType:     migrator.GetEntityType(),
 		processedItems: 0,
 		totalItems:     totalItems,
-		errors:         make(map[int64]error),
+		errors:         make([]MigrationError, 0),
 		cancelFunc:     cancel,
 		doneChan:       workerDoneChan,
 	}

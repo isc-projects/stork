@@ -1,9 +1,9 @@
 package entitymigrator
 
 import (
-	"bytes"
 	context "context"
-	"encoding/binary"
+	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -149,15 +149,12 @@ func TestMigrate(t *testing.T) {
 			nextLocalHostID++
 		}
 
-		var identifier bytes.Buffer
-		_ = binary.Write(&identifier, binary.LittleEndian, 1024+nextHostID)
-
 		host := dbmodel.Host{
 			ID: nextHostID,
 			HostIdentifiers: []dbmodel.HostIdentifier{{
 				ID:     nextHostID,
 				Type:   "hw-address",
-				Value:  identifier.Bytes(),
+				Value:  []byte(fmt.Sprintf("%d", nextHostID)),
 				HostID: 1,
 			}},
 			LocalHosts: localHosts,
@@ -340,23 +337,33 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host1.ID)
-		require.ErrorContains(t, errs[host1.ID], "error adding reservation")
-		require.Contains(t, errs, host2.ID)
-		require.ErrorContains(t, errs[host2.ID], "error adding reservation")
+		require.Len(t, errs, 6)
+		sort.Slice(errs, func(i, j int) bool {
+			return errs[i].ID < errs[j].ID
+		})
 
-		require.Contains(t, errs, host3.ID)
-		require.ErrorContains(t, errs[host3.ID], "error transferring reservation")
-		require.Contains(t, errs, host4.ID)
-		require.ErrorContains(t, errs[host4.ID], "error transferring reservation")
+		require.EqualValues(t, host1.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Err, "error adding reservation")
+		require.EqualValues(t, host2.ID, errs[1].ID)
+		require.ErrorContains(t, errs[1].Err, "error adding reservation")
 
-		require.NotContains(t, errs, host5.ID)
-		require.Contains(t, errs, host6.ID)
-		require.ErrorContains(t, errs[host6.ID], "error executing command")
+		require.EqualValues(t, host3.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Err, "error transferring reservation")
+		require.EqualValues(t, host4.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Err, "error transferring reservation")
 
-		require.NotContains(t, errs, host7.ID)
-		require.Contains(t, errs, host8.ID)
-		require.ErrorContains(t, errs[host8.ID], "error as result")
+		require.EqualValues(t, host6.ID, errs[4].ID)
+		require.ErrorContains(t, errs[4].Err, "error executing command")
+
+		require.EqualValues(t, host8.ID, errs[5].ID)
+		require.ErrorContains(t, errs[5].Err, "error as result")
+
+		for _, err := range errs {
+			require.EqualValues(t,
+				fmt.Sprintf("hw-address=%d", err.ID),
+				err.Label,
+			)
+		}
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -421,23 +428,34 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host1.ID)
-		require.ErrorContains(t, errs[host1.ID], "error GRPC")
-		require.Contains(t, errs, host2.ID)
-		require.ErrorContains(t, errs[host2.ID], "error GRPC")
+		require.Len(t, errs, 6)
 
-		require.Contains(t, errs, host3.ID)
-		require.ErrorContains(t, errs[host3.ID], "error Kea CA")
-		require.Contains(t, errs, host4.ID)
-		require.ErrorContains(t, errs[host4.ID], "error Kea CA")
+		sort.Slice(errs, func(i, j int) bool {
+			return errs[i].ID < errs[j].ID
+		})
 
-		require.NotContains(t, errs, host5.ID)
-		require.Contains(t, errs, host6.ID)
-		require.ErrorContains(t, errs[host6.ID], "error Kea daemon")
+		require.Equal(t, host1.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Err, "error GRPC")
+		require.Equal(t, host2.ID, errs[1].ID)
+		require.ErrorContains(t, errs[1].Err, "error GRPC")
 
-		require.NotContains(t, errs, host7.ID)
-		require.Contains(t, errs, host8.ID)
-		require.ErrorContains(t, errs[host8.ID], "error is result")
+		require.Equal(t, host3.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Err, "error Kea CA")
+		require.Equal(t, host4.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Err, "error Kea CA")
+
+		require.Equal(t, host6.ID, errs[4].ID)
+		require.ErrorContains(t, errs[4].Err, "error Kea daemon")
+
+		require.Equal(t, host8.ID, errs[5].ID)
+		require.ErrorContains(t, errs[5].Err, "error is result")
+
+		for _, err := range errs {
+			require.EqualValues(t,
+				fmt.Sprintf("hw-address=%d", err.ID),
+				err.Label,
+			)
+		}
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -466,8 +484,10 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host.ID)
-		require.ErrorContains(t, errs[host.ID], "error adding reservation")
+		require.Len(t, errs, 1)
+		require.EqualValues(t, host.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Err, "error adding reservation")
+		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -497,8 +517,9 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host.ID)
-		require.ErrorContains(t, errs[host.ID], "error adding reservation")
+		require.EqualValues(t, host.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Err, "error adding reservation")
+		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -553,25 +574,38 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host1.ID)
-		require.ErrorContains(t, errs[host1.ID], "error GRPC")
-		require.Contains(t, errs, host2.ID)
-		require.ErrorContains(t, errs[host2.ID], "error GRPC")
+		require.Len(t, errs, 8)
 
-		require.Contains(t, errs, host3.ID)
-		require.ErrorContains(t, errs[host3.ID], "error Kea")
-		require.Contains(t, errs, host4.ID)
-		require.ErrorContains(t, errs[host4.ID], "error Kea")
+		sort.Slice(errs, func(i, j int) bool {
+			return errs[i].ID < errs[j].ID
+		})
 
-		require.Contains(t, errs, host5.ID)
-		require.ErrorContains(t, errs[host5.ID], "error command")
-		require.Contains(t, errs, host6.ID)
-		require.ErrorContains(t, errs[host6.ID], "error command")
+		require.EqualValues(t, host1.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Err, "error GRPC")
+		require.EqualValues(t, host2.ID, errs[1].ID)
+		require.ErrorContains(t, errs[1].Err, "error GRPC")
 
-		require.Contains(t, errs, host7.ID)
-		require.ErrorContains(t, errs[host7.ID], "error execution")
-		require.Contains(t, errs, host8.ID)
-		require.ErrorContains(t, errs[host8.ID], "error execution")
+		require.EqualValues(t, host3.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Err, "error Kea")
+		require.EqualValues(t, host4.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Err, "error Kea")
+
+		require.EqualValues(t, host5.ID, errs[4].ID)
+		require.ErrorContains(t, errs[4].Err, "error command")
+		require.EqualValues(t, host6.ID, errs[5].ID)
+		require.ErrorContains(t, errs[5].Err, "error command")
+
+		require.EqualValues(t, host7.ID, errs[6].ID)
+		require.ErrorContains(t, errs[6].Err, "error execution")
+		require.EqualValues(t, host8.ID, errs[7].ID)
+		require.ErrorContains(t, errs[7].Err, "error execution")
+
+		for _, err := range errs {
+			require.EqualValues(t,
+				fmt.Sprintf("hw-address=%d", err.ID),
+				err.Label,
+			)
+		}
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -629,17 +663,30 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host1.ID)
-		require.ErrorContains(t, errs[host1.ID], "response error")
+		require.Len(t, errs, 4)
 
-		require.Contains(t, errs, host2.ID)
-		require.ErrorContains(t, errs[host2.ID], "command error")
+		sort.Slice(errs, func(i, j int) bool {
+			return errs[i].ID < errs[j].ID
+		})
 
-		require.Contains(t, errs, host3.ID)
-		require.ErrorContains(t, errs[host3.ID], "Kea CA error")
+		require.EqualValues(t, host1.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Err, "response error")
 
-		require.Contains(t, errs, host4.ID)
-		require.ErrorContains(t, errs[host4.ID], "Stork agent error")
+		require.EqualValues(t, host2.ID, errs[1].ID)
+		require.ErrorContains(t, errs[1].Err, "command error")
+
+		require.EqualValues(t, host3.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Err, "Kea CA error")
+
+		require.EqualValues(t, host4.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Err, "Stork agent error")
+
+		for _, err := range errs {
+			require.EqualValues(t,
+				fmt.Sprintf("hw-address=%d", err.ID),
+				err.Label,
+			)
+		}
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -702,11 +749,13 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host.ID)
+		require.Len(t, errs, 1)
+		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t,
-			errs[host.ID],
+			errs[0].Err,
 			"local subnet id not found in host",
 		)
+		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
 		require.True(t, ctrl.Satisfied())
 	})
 
@@ -729,11 +778,13 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Contains(t, errs, host.ID)
+		require.Len(t, errs, 1)
+		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t,
-			errs[host.ID],
+			errs[0].Err,
 			"local subnet id not found in host",
 		)
+		require.EqualValues(t, fmt.Sprintf("hw-address=%d", host.ID), errs[0].Label)
 	})
 }
 

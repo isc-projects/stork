@@ -2,6 +2,7 @@ package configmigrator
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -11,16 +12,16 @@ import (
 
 //go:generate mockgen -package=configmigrator -destination=migratormock_test.go isc.org/stork/server/configmigrator Migrator
 
-func readChannels(ch <-chan migrationChunk, done <-chan error) (errs map[int64]error, err error) {
-	errs = make(map[int64]error)
+func readChannels(ch <-chan migrationChunk, done <-chan error) (errs []MigrationError, err error) {
+	errs = make([]MigrationError, 0)
 
 	for {
 		select {
 		case err = <-done:
 			return
 		case chunk := <-ch:
-			for id, e := range chunk.errs {
-				errs[id] = e
+			for _, e := range chunk.errs {
+				errs = append(errs, e)
 			}
 		}
 	}
@@ -57,7 +58,7 @@ func TestRunMigration(t *testing.T) {
 	mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(10), nil)
 	mock.EXPECT().LoadItems(gomock.Eq(int64(20))).Return(int64(5), nil)
 	mock.EXPECT().LoadItems(gomock.Eq(int64(25))).Return(int64(0), nil)
-	mock.EXPECT().Migrate().Return(map[int64]error{}).Times(3)
+	mock.EXPECT().Migrate().Return([]MigrationError{}).Times(3)
 
 	ctx := context.Background()
 
@@ -82,10 +83,14 @@ func TestRunMigrationAggregatesErrors(t *testing.T) {
 	mock.EXPECT().LoadItems(gomock.Eq(int64(15))).Return(int64(0), nil)
 
 	callCount := 0
-	mock.EXPECT().Migrate().DoAndReturn(func() map[int64]error {
+	mock.EXPECT().Migrate().DoAndReturn(func() []MigrationError {
 		callCount++
-		return map[int64]error{
-			int64(callCount): errors.Errorf("error %d", callCount),
+		return []MigrationError{
+			{
+				ID:    int64(callCount),
+				Err:   errors.Errorf("error %d", callCount),
+				Label: fmt.Sprintf("host %d", callCount),
+			},
 		}
 	}).Times(2)
 
@@ -98,8 +103,12 @@ func TestRunMigrationAggregatesErrors(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, errs, 2)
-	require.EqualError(t, errs[1], "error 1")
-	require.EqualError(t, errs[2], "error 2")
+	require.EqualValues(t, 1, errs[0].ID)
+	require.EqualError(t, errs[0].Err, "error 1")
+	require.Equal(t, "host 1", errs[0].Label)
+	require.EqualValues(t, 2, errs[1].ID)
+	require.EqualError(t, errs[1].Err, "error 2")
+	require.Equal(t, "host 2", errs[1].Label)
 }
 
 // Test that the runner interrupts the migration after the loading error.
