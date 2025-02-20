@@ -60,6 +60,7 @@ export class ZonesPageComponent implements OnInit {
     @ViewChild('zonesTable') zonesTable
 
     private _fetchSentStorageKey = 'zone-fetch-sent'
+    fetchStatusVisible: boolean = false
 
     /**
      *
@@ -289,12 +290,15 @@ export class ZonesPageComponent implements OnInit {
 
     onLazyLoadZones(event: TableLazyLoadEvent) {
         this.zonesLoading = true
+        // this.zones = []
         this.cd.detectChanges()
         lastValueFrom(this.dnsService.getZones(event?.first ?? 0, event?.rows ?? 10))
             .then((resp) => {
                 this.expandedRows = {}
                 this.zones = resp?.items ?? []
+                // this.zones = this.dummyZones
                 this.zonesTotal = resp?.total ?? 0
+                // this.zonesTotal = 5
                 if (this.zones.length === 0 && !this.wasZoneFetchSent()) {
                     this.messageService.add({
                         severity: 'info',
@@ -316,13 +320,12 @@ export class ZonesPageComponent implements OnInit {
             .finally(() => (this.zonesLoading = false))
     }
 
-    wasZoneFetchSent() : boolean {
-        const fromStorage = sessionStorage.getItem(this._fetchSentStorageKey) ?? "false"
+    wasZoneFetchSent(): boolean {
+        const fromStorage = sessionStorage.getItem(this._fetchSentStorageKey) ?? 'false'
         return JSON.parse(fromStorage) === true
     }
 
     storeZoneFetchSent(sent: boolean) {
         sessionStorage.setItem(this._fetchSentStorageKey, JSON.stringify(sent))
     }
-
 }
