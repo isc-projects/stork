@@ -434,8 +434,12 @@ func ConvertIntField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (
 	if len(values) != 1 {
 		return "", errors.Errorf("require one value in int option field, have %d", len(values))
 	}
-	if !storkutil.IsWholeNumber(values[0]) {
-		return "", errors.New("int option field value is not a valid number")
+	// The integer values marshaled to JSON and unmarshaled back are
+	// float64. It may happen when the numeric values are part of structure
+	// stored in the JSONB column in the PostgreSQL database as we do for
+	// DHCP options.
+	if !storkutil.IsNumber(values[0]) {
+		return "", errors.New("int option field value is not a number")
 	}
 	value := reflect.ValueOf(values[0])
 	ivalue := value.Convert(reflect.TypeOf((*int64)(nil)).Elem())
@@ -549,7 +553,7 @@ func ConvertIPv6PrefixField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat 
 	if !ok {
 		return "", errors.New("IPv6 prefix in the option field is not a string value")
 	}
-	if !storkutil.IsWholeNumber(values[1]) {
+	if !storkutil.IsNumber(values[1]) {
 		return "", errors.New("IPv6 prefix length in the option field is not a number")
 	}
 	prefixLen := reflect.ValueOf(values[1]).Convert(reflect.TypeOf((*int64)(nil)).Elem())
@@ -578,7 +582,7 @@ func ConvertPsidField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) 
 		return "", errors.Errorf("psid option field must contain two values, it has %d", len(values))
 	}
 	for _, v := range values {
-		if !storkutil.IsWholeNumber(v) {
+		if !storkutil.IsNumber(v) {
 			return "", errors.New("values in the psid option field must be numbers")
 		}
 	}

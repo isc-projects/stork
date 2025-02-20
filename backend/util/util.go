@@ -255,8 +255,16 @@ func (e *systemCommandExecutor) IsFileExist(path string) bool {
 
 // Convert bytes to hex string.
 func BytesToHex(bytesArray []byte) string {
+	return BytesToHexWithSeparator(bytesArray, "")
+}
+
+// Convert bytes to hex string with a separator.
+func BytesToHexWithSeparator(bytesArray []byte, separator string) string {
 	var buf bytes.Buffer
-	for _, f := range bytesArray {
+	for i, f := range bytesArray {
+		if i > 0 && separator != "" {
+			buf.WriteString(separator)
+		}
 		fmt.Fprintf(&buf, "%02X", f)
 	}
 	return buf.String()
@@ -443,14 +451,16 @@ func Ptr[T any](value T) *T {
 	return &value
 }
 
-// Checks if the specified value is a whole number.
-func IsWholeNumber(value interface{}) bool {
+// Checks if the specified value has a numeric type.
+func IsNumber(value interface{}) bool {
 	if value == nil {
 		return false
 	}
 	valueType := reflect.TypeOf(value)
 	switch valueType.Kind() {
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int,
+		reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint,
+		reflect.Float32, reflect.Float64:
 		return true
 	default:
 		return false

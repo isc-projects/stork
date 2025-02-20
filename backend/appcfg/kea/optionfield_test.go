@@ -339,9 +339,11 @@ func TestUint8FieldMalformed(t *testing.T) {
 	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Uint8Field, "111"), false)
 	require.Error(t, err)
 
-	// Floating point number.
-	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Uint8Field, 1.1), false)
-	require.Error(t, err)
+	// Floating point number. Special case to handle DHCP option unmarshaled
+	// from JSON (e.g., stored in the JSONB column in the database).
+	str, err := keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Uint8Field, 1.2), false)
+	require.NoError(t, err)
+	require.Equal(t, "01", str) // The fractional part is ignored.
 }
 
 // Test that a positive int8 option field is converted to a hex format.
@@ -394,9 +396,11 @@ func TestInt8FieldMalformed(t *testing.T) {
 	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int8Field, "111"), false)
 	require.Error(t, err)
 
-	// Floating point number.
-	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int8Field, 1.1), false)
-	require.Error(t, err)
+	// Floating point number. Special case to handle DHCP option unmarshaled
+	// from JSON (e.g., stored in the JSONB column in the database).
+	str, err := keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int8Field, 1.2), false)
+	require.NoError(t, err)
+	require.Equal(t, "01", str) // The fractional part is ignored.
 }
 
 // Test that an uint16 option field is converted to a hex format.
@@ -437,6 +441,12 @@ func TestUint16FieldMalformed(t *testing.T) {
 	// Not a number.
 	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Uint16Field, "222"), false)
 	require.Error(t, err)
+
+	// Floating point number. Special case to handle DHCP option unmarshaled
+	// from JSON (e.g., stored in the JSONB column in the database).
+	str, err := keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Uint16Field, 1.2), false)
+	require.NoError(t, err)
+	require.Equal(t, "0001", str) // The fractional part is ignored.
 }
 
 // Test that a positive int16 option field is converted to a hex format.
@@ -489,9 +499,11 @@ func TestInt16FieldMalformed(t *testing.T) {
 	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int16Field, "111"), false)
 	require.Error(t, err)
 
-	// Floating point number.
-	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int16Field, 1.1), false)
-	require.Error(t, err)
+	// Floating point number. Special case to handle DHCP option unmarshaled
+	// from JSON (e.g., stored in the JSONB column in the database).
+	str, err := keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int16Field, 1.2), false)
+	require.NoError(t, err)
+	require.Equal(t, "0001", str) // The fractional part is ignored.
 }
 
 // Test that an uint32 option field is converted to a hex format.
@@ -532,6 +544,12 @@ func TestUint32FieldMalformed(t *testing.T) {
 	// Not a number.
 	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Uint32Field, "222"), false)
 	require.Error(t, err)
+
+	// Floating point number. Special case to handle DHCP option unmarshaled
+	// from JSON (e.g., stored in the JSONB column in the database).
+	str, err := keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Uint32Field, 1.2), false)
+	require.NoError(t, err)
+	require.Equal(t, "00000001", str) // The fractional part is ignored.
 }
 
 // Test that a positive int32 option field is converted to a hex format.
@@ -584,9 +602,11 @@ func TestInt32FieldMalformed(t *testing.T) {
 	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int32Field, "111"), false)
 	require.Error(t, err)
 
-	// Floating point number.
-	_, err = keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int32Field, 1.1), false)
-	require.Error(t, err)
+	// Floating point number. Special case to handle DHCP option unmarshaled
+	// from JSON (e.g., stored in the JSONB column in the database).
+	str, err := keaconfig.ConvertIntField(*newTestDHCPOptionField(dhcpmodel.Int32Field, 1.2), false)
+	require.NoError(t, err)
+	require.Equal(t, "00000001", str) // The fractional part is ignored.
 }
 
 // Test that an IPv4 option field is converted to a hex format.
@@ -689,7 +709,7 @@ func TestIPv6PrefixFieldMalformed(t *testing.T) {
 	require.Error(t, err)
 
 	// Empty prefix.
-	_, err = keaconfig.ConvertBinaryField(*newTestDHCPOptionField(dhcpmodel.IPv6PrefixField, "", 32))
+	_, err = keaconfig.ConvertIPv6PrefixField(*newTestDHCPOptionField(dhcpmodel.IPv6PrefixField, "", 32), false)
 	require.Error(t, err)
 }
 
@@ -736,6 +756,12 @@ func TestPsidFieldMalformed(t *testing.T) {
 	// PSID length is negative.
 	_, err = keaconfig.ConvertPsidField(*newTestDHCPOptionField(dhcpmodel.PsidField, 1, -2), false)
 	require.Error(t, err)
+
+	// PSID length is floating point number. Special case to handle DHCP option
+	// unmarshaled from JSON (e.g., stored in the JSONB column in the database).
+	str, err := keaconfig.ConvertPsidField(*newTestDHCPOptionField(dhcpmodel.PsidField, 1, 2.2), false)
+	require.NoError(t, err)
+	require.Equal(t, "000102", str) // The fractional part is ignored.
 }
 
 // Test that FQDN option field is converted to hex format.
