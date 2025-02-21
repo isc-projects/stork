@@ -19,12 +19,6 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Represents a configuration lock for a user.
-type configLock struct {
-	key    config.LockKey
-	userID int64
-}
-
 // Holds a pair of a context and its cancel function.
 type contextPair struct {
 	context context.Context
@@ -48,11 +42,6 @@ type configManagerImpl struct {
 	// identifier exchanged between the server and the client is a
 	// key of this map.
 	contexts map[int64]contextPair
-	// A map holding acquired locks for daemons. The map key is an
-	// ID of the daemon for which the lock has been acquired.
-	locks map[int64]configLock
-	// Last generated lock key.
-	key config.LockKey
 	// Config manager main mutex.
 	mutex *sync.RWMutex
 	// An interface to the Kea module commit function that the manager
@@ -61,13 +50,9 @@ type configManagerImpl struct {
 	// An interface to the configuration manager's module responsible
 	// for managing Kea configuration.
 	kea config.KeaModule
-}
-
-// Generates a key for a newly acquired lock. It is called internally
-// by the Lock() function.
-func (manager *configManagerImpl) generateKey() config.LockKey {
-	manager.key++
-	return manager.key
+	// The locker that manages the daemon configuration locks in the
+	// application.
+	locker DaemonLocker
 }
 
 // Generates new context ID. This ID is returned to the client when the
@@ -92,70 +77,6 @@ func (manager *configManagerImpl) generateContextID() (int64, error) {
 	return 0, pkgerrors.Errorf("failed to generate a unique context ID after several attempts")
 }
 
-// Checks if the confguration of the specified daemon is already locked
-// for updates. The first returned parameter is an ID of the user who
-// owns the lock. It is equal to 0 when the lock is not present.
-func (manager *configManagerImpl) isLocked(daemonID int64) (int64, bool) {
-	if lock, ok := manager.locks[daemonID]; ok {
-		return lock.userID, true
-	}
-	return 0, false
-}
-
-// Attempts to acquire a lock on the specified daemon's configuration.
-// It returns an error if the lock exists already. This function is
-// called internally from the Lock() function.
-func (manager *configManagerImpl) lock(ctx context.Context, daemonID int64) error {
-	// Check if the daemon configuration has been locked already.
-	if userID, locked := manager.isLocked(daemonID); locked {
-		return pkgerrors.Errorf("configuration for daemon %d is locked for updates by user %d", daemonID, userID)
-	}
-	// The lock key should have been created in the Lock() function.
-	lockKey, ok := ctx.Value(config.LockContextKey).(config.LockKey)
-	if !ok {
-		return pkgerrors.Errorf("context lacks lock key")
-	}
-	// The user id should have been set in the CreateContext() function.
-	userID, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
-	if !ok {
-		return pkgerrors.Errorf("context lacks user key")
-	}
-	// Acquire the lock on the daemon's configuration.
-	manager.locks[daemonID] = configLock{
-		key:    lockKey,
-		userID: userID,
-	}
-	return nil
-}
-
-// Unlocks daemon's configuration if the lock stored in the context matches.
-func (manager *configManagerImpl) unlockDaemon(ctx context.Context, daemonID int64) {
-	// The lock key is required.
-	lockKey, ok := ctx.Value(config.LockContextKey).(config.LockKey)
-	if !ok {
-		return
-	}
-	// If the configuration is locked and the lock key matches then unlock.
-	if _, locked := manager.isLocked(daemonID); locked {
-		if manager.locks[daemonID].key == lockKey {
-			delete(manager.locks, daemonID)
-			// Unlocked.
-			return
-		}
-	}
-	// Didn't unlock.
-}
-
-// Removes locks from the specified daemons' configurations if the
-// key stored in the context matches.
-func (manager *configManagerImpl) unlock(ctx context.Context) {
-	if daemonIDs, ok := ctx.Value(config.DaemonsContextKey).([]int64); ok {
-		for _, id := range daemonIDs {
-			manager.unlockDaemon(ctx, id)
-		}
-	}
-}
-
 // Creates new configuration manager instance. The server parameter is an
 // interface to the owner of the state required by the manager (i.e., an
 // instance of the Stork Server holding the state.).
@@ -164,8 +85,8 @@ func NewManager(server config.ManagerAccessors) config.Manager {
 		db:       server.GetDB(),
 		agents:   server.GetConnectedAgents(),
 		lookup:   server.GetDHCPOptionDefinitionLookup(),
+		locker:   NewDaemonLocker(),
 		contexts: make(map[int64]contextPair),
-		locks:    make(map[int64]configLock),
 		mutex:    &sync.RWMutex{},
 	}
 	keaConfigModule := kea.NewConfigModule(manager)
@@ -286,23 +207,20 @@ func (manager *configManagerImpl) RecoverContext(contextID, userID int64) (conte
 // If an attempt to lock any of the configurations fails, it will remove
 // already acquired locks and return an error.
 func (manager *configManagerImpl) Lock(ctx context.Context, daemonIDs ...int64) (context.Context, error) {
-	// Generate a new lock key.
-	ctx = context.WithValue(ctx, config.LockContextKey, manager.generateKey())
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
-	for _, id := range daemonIDs {
-		// Try to acquire a lock for each daemon.
-		if err := manager.lock(ctx, id); err != nil {
-			// Locking failed. Remove the applied locks.
-			for _, uid := range daemonIDs {
-				if uid == id {
-					break
-				}
-				manager.unlockDaemon(ctx, uid)
-			}
-			return ctx, err
-		}
+	// The user id should have been set in the CreateContext() function.
+	userID, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
+	if !ok {
+		return ctx, pkgerrors.Errorf("context lacks user key")
 	}
+
+	// Lock the daemons' configurations.
+	lockKey, err := manager.locker.Lock(userID, daemonIDs...)
+	if err != nil {
+		return ctx, err
+	}
+
+	// Remember the lock-related data in the context.
+	ctx = context.WithValue(ctx, config.LockContextKey, lockKey)
 	ctx = context.WithValue(ctx, config.DaemonsContextKey, daemonIDs)
 	return ctx, nil
 }
@@ -310,9 +228,20 @@ func (manager *configManagerImpl) Lock(ctx context.Context, daemonIDs ...int64) 
 // Removes locks from the specified daemons' configurations if the
 // key stored in the context matches.
 func (manager *configManagerImpl) Unlock(ctx context.Context) {
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
-	manager.unlock(ctx)
+	daemonIDs, ok := ctx.Value(config.DaemonsContextKey).([]int64)
+	if !ok {
+		// No daemons to unlock.
+		return
+	}
+
+	// The lock key is required.
+	lockKey, ok := ctx.Value(config.LockContextKey).(LockKey)
+	if !ok {
+		return
+	}
+
+	// Unlock the daemons.
+	_ = manager.locker.Unlock(lockKey, daemonIDs...)
 }
 
 // Cancels the context and removes it from the storage of remembered contexts.
@@ -328,7 +257,7 @@ func (manager *configManagerImpl) Done(ctx context.Context) {
 			delete(manager.contexts, contextID)
 		}
 	}
-	manager.unlock(ctx)
+	manager.Unlock(ctx)
 }
 
 // Sends the configuration updates queued in the context to one or multiple daemons
@@ -397,12 +326,12 @@ func (manager *configManagerImpl) CommitDue() error {
 			// Commit the changes in the monitored daemons.
 			_, err = manager.Commit(ctx)
 		}
-		var errtext string
+		var errText string
 		if err != nil {
-			errtext = err.Error()
+			errText = err.Error()
 		}
 		// Mark the current config change as executed.
-		if err = dbmodel.SetScheduledConfigChangeExecuted(manager.GetDB(), change.ID, errtext); err != nil {
+		if err = dbmodel.SetScheduledConfigChangeExecuted(manager.GetDB(), change.ID, errText); err != nil {
 			return err
 		}
 	}

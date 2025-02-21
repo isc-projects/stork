@@ -93,9 +93,9 @@ func TestCreateContext(t *testing.T) {
 		require.NotNil(t, ctx)
 
 		// Make sure that the context ID exists.
-		ctxid, ok := config.GetValueAsInt64(ctx, config.ContextIDKey)
+		ctxID, ok := config.GetValueAsInt64(ctx, config.ContextIDKey)
 		require.True(t, ok)
-		ids[ctxid] = true
+		ids[ctxID] = true
 
 		// Make sure that the user ID exists.
 		userid, ok := config.GetValueAsInt64(ctx, config.UserContextKey)

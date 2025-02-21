@@ -53,9 +53,6 @@ type TransactionState[T any] struct {
 	Updates []*Update[T]
 }
 
-// A type representing a configuration lock key.
-type LockKey int64
-
 // A generic structure associating an object (entity) with a
 // database ID.
 //
