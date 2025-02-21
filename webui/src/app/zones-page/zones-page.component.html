@@ -107,51 +107,11 @@
                         <p></p>
                         <p-button label="Fetch Zones" (onClick)="fetchZones()" [disabled]="inventoryInProgress"
                     /></ng-container>
-                    <p>
+                    <p *ngIf="!inventoryInProgress">
                         There is no information about the state of fetching the zones from the zone inventories to the
                         Stork server.
                     </p>
                 </td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="loadingbody">
-            <tr>
-                <td colspan="6">
-                    <p-message
-                        *ngIf="inventoryInProgress"
-                        styleClass="mb-3"
-                        severity="info"
-                        [text]="
-                            'Zone fetching process is now running in background. It may take some time depending on DNS servers count and zones count. Completed for ' +
-                            inventoryAppsCompletedCount +
-                            ' out of ' +
-                            inventoryTotalAppsCount +
-                            ' DNS apps.'
-                        "
-                    ></p-message>
-                    <p-progressBar
-                        [value]="(inventoryAppsCompletedCount / inventoryTotalAppsCount) * 100"
-                        styleClass="max-w-30rem"
-                    >
-                        <ng-template pTemplate="content">
-                            <span>{{ inventoryAppsCompletedCount }}/{{ inventoryTotalAppsCount }}</span>
-                        </ng-template>
-                    </p-progressBar>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <p-skeleton />
-                </td>
-                <td><p-skeleton /></td>
-                <td><p-skeleton /></td>
-                <td>
-                    <p-skeleton />
-                </td>
-                <td>
-                    <p-skeleton />
-                </td>
-                <td><p-skeleton /></td>
             </tr>
         </ng-template>
     </p-table>
@@ -239,11 +199,11 @@
                                 <ng-template pTemplate="header">
                                     <tr>
                                         <th>App</th>
-                                        <th>Class</th>
                                         <th>Daemon ID</th>
                                         <th>View</th>
                                         <th>Zone type</th>
                                         <th>Serial</th>
+                                        <th>Class</th>
                                         <th>Loaded at</th>
                                     </tr>
                                 </ng-template>
@@ -254,11 +214,11 @@
                                                 localZone.appName
                                             }}</a>
                                         </td>
-                                        <td>{{ localZone._class }}</td>
                                         <td>{{ localZone.daemonId }}</td>
                                         <td>{{ localZone.view }}</td>
                                         <td>{{ localZone.zoneType }}</td>
                                         <td>{{ localZone.serial }}</td>
+                                        <td>{{ localZone.class }}</td>
                                         <td>{{ localZone.loadedAt | date: dateTimeFormat | placeholder: 'never' }}</td>
                                     </tr>
                                 </ng-template>
@@ -314,50 +274,87 @@
         </p-table>
     </p-tabPanel>
     <p-tabPanel *ngFor="let tab of openTabs" [header]="tab.name" [closable]="true">
-        <p>
-            Zone name:
-            {{ tab.name }}
-        </p>
-        <p>
-            Zone rname:
-            {{ tab.rname }}
-        </p>
-        <p-table
-            [value]="tab.localZones"
-            dataKey="serial"
-            [paginator]="true"
-            [rows]="10"
-            [rowsPerPageOptions]="[10, 30, 100]"
-        >
-            <ng-template pTemplate="header">
-                <tr>
-                    <th>App</th>
-                    <th>Class</th>
-                    <th>Daemon ID</th>
-                    <th>View</th>
-                    <th>Zone type</th>
-                    <th>Serial</th>
-                    <th>Loaded at</th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-localZone>
-                <tr>
-                    <td>
-                        <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
-                    </td>
-                    <td>{{ localZone._class }}</td>
-                    <td>{{ localZone.daemonId }}</td>
-                    <td>{{ localZone.view }}</td>
-                    <td>{{ localZone.zoneType }}</td>
-                    <td>{{ localZone.serial }}</td>
-                    <td>{{ localZone.loadedAt | date: dateTimeFormat | placeholder: 'never' }}</td>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="emptymessage">
-                <tr>
-                    <td colspan="7">There are no local zones for this zone.</td>
-                </tr>
-            </ng-template>
-        </p-table>
+        <div class="max-w-100rem">
+            <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
+                <div class="pi pi-sitemap mr-2"></div>
+                <div class="word-break-all">
+                    DNS Zone <span class="font-semibold">{{ tab.name }}</span>
+                </div>
+            </div>
+            <div class="mb-4">
+                <p-fieldset legend="Zone data">
+                    <p-table [value]="[tab]">
+                        <ng-template pTemplate="body" let-zone>
+                            <tr>
+                                <td class="font-semibold">Name</td>
+                                <td>{{ zone.name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">RName</td>
+                                <td>{{ zone.rname }}</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">Stork internal zone ID</td>
+                                <td>{{ zone.id }}</td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </p-fieldset>
+            </div>
+            <div class="mb-4">
+                <p-fieldset legend="DNS servers having the Zone configured">
+                    <p-table
+                        [value]="tab.localZones"
+                        dataKey="serial"
+                        [paginator]="true"
+                        [rows]="10"
+                        [rowsPerPageOptions]="[10, 30, 100]"
+                    >
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th>App</th>
+                                <th>Daemon ID</th>
+                                <th>View</th>
+                                <th>Zone type</th>
+                                <th>Serial</th>
+                                <th>Class</th>
+                                <th>Loaded at</th>
+                                <th>Fetch status</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-localZone>
+                            <tr>
+                                <td>
+                                    <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
+                                </td>
+                                <td>{{ localZone.daemonId }}</td>
+                                <td>{{ localZone.view }}</td>
+                                <td>{{ localZone.zoneType }}</td>
+                                <td>{{ localZone.serial }}</td>
+                                <td>{{ localZone.class }}</td>
+                                <td>{{ localZone.loadedAt | date: dateTimeFormat | placeholder: 'never' }}</td>
+                                <td>
+                                    <p-tag
+                                        *ngIf="zoneInventoryStateMap.get(localZone.daemonId)"
+                                        value="{{
+                                            zoneInventoryStateMap.get(localZone.daemonId).status === 'erred'
+                                                ? 'Error'
+                                                : (zoneInventoryStateMap.get(localZone.daemonId).status | titlecase)
+                                        }} "
+                                        [severity]="getSeverity(zoneInventoryStateMap.get(localZone.daemonId).status)"
+                                        [pTooltip]="getTooltip(zoneInventoryStateMap.get(localZone.daemonId).status)"
+                                    />
+                                </td>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="emptymessage">
+                            <tr>
+                                <td colspan="7">There are no local zones for this zone.</td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </p-fieldset>
+            </div>
+        </div>
     </p-tabPanel>
 </p-tabView>

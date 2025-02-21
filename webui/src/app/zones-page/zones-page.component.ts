@@ -61,6 +61,7 @@ export class ZonesPageComponent implements OnInit {
 
     private _fetchSentStorageKey = 'zone-fetch-sent'
     fetchStatusVisible: boolean = false
+    zoneInventoryStateMap: Map<number, Partial<ZoneInventoryState>> = new Map()
 
     /**
      *
@@ -211,6 +212,13 @@ export class ZonesPageComponent implements OnInit {
                     clearTimeout(this.timeout)
                     this.zoneInventoryStates = resp.items ?? []
                     this.zoneInventoryTotal = resp.total ?? 0
+                    if (this.zoneInventoryTotal) {
+                        this.zoneInventoryStateMap = new Map()
+                        this.zoneInventoryStates.forEach((s) => {
+                            this.zoneInventoryStateMap.set(s.daemonId, s)
+                        })
+                    }
+
                     this.onLazyLoadZones(this.zonesTable?.createLazyLoadMetadata())
                 }
             })
