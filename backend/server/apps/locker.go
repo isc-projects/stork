@@ -15,19 +15,11 @@ type LockKey int64
 // Locker must be thread-safe.
 type DaemonLocker interface {
 	// Locks the daemons' configurations for update.
-	Lock(userID int64, daemonIDs ...int64) (LockKey, error)
+	Lock(daemonIDs ...int64) (LockKey, error)
 	// Unlocks the daemons' configurations.
 	Unlock(key LockKey, daemonIDs ...int64) error
-	// Checks if the configuration of the specified daemon is already locked
-	// The first returned parameter is an ID of the user who owns the lock.
-	// It is equal to 0 when the lock is not present.
-	IsLocked(daemonID int64) (int64, bool)
-}
-
-// Represents a configuration lock for a user.
-type configLock struct {
-	key    LockKey
-	userID int64
+	// Checks if the configuration of the specified daemon is already locked.
+	IsLocked(daemonID int64) bool
 }
 
 // Implementation of the DaemonLocker interface.
@@ -35,7 +27,7 @@ type configLock struct {
 type daemonLocker struct {
 	// A map holding acquired locks for daemons. The map key is an
 	// ID of the daemon for which the lock has been acquired.
-	locks map[int64]configLock
+	locks map[int64]LockKey
 	// Last generated lock key.
 	key LockKey
 	// Access mutex used in the exported methods.
@@ -45,7 +37,7 @@ type daemonLocker struct {
 // Constructs a new instance of the daemonLocker.
 func NewDaemonLocker() DaemonLocker {
 	return &daemonLocker{
-		locks: make(map[int64]configLock),
+		locks: make(map[int64]LockKey),
 	}
 }
 
@@ -57,22 +49,19 @@ func (locker *daemonLocker) generateKey() LockKey {
 }
 
 // Checks if the configuration of the specified daemon is already locked
-// for updates. The first returned parameter is an ID of the user who
-// owns the lock. It is equal to 0 when the lock is not present.
-func (locker *daemonLocker) IsLocked(daemonID int64) (int64, bool) {
+// for updates.
+func (locker *daemonLocker) IsLocked(daemonID int64) bool {
 	locker.mutex.RLock()
 	defer locker.mutex.RUnlock()
 
-	if lock, ok := locker.locks[daemonID]; ok {
-		return lock.userID, true
-	}
-	return 0, false
+	_, ok := locker.locks[daemonID]
+	return ok
 }
 
 // Attempts to lock configurations of the specified daemons.
 // If an attempt to lock any of the configurations fails, it will remove
 // already acquired locks and return an error.
-func (locker *daemonLocker) Lock(userID int64, daemonIDs ...int64) (LockKey, error) {
+func (locker *daemonLocker) Lock(daemonIDs ...int64) (LockKey, error) {
 	locker.mutex.Lock()
 	defer locker.mutex.Unlock()
 
@@ -81,7 +70,7 @@ func (locker *daemonLocker) Lock(userID int64, daemonIDs ...int64) (LockKey, err
 
 	for _, daemonID := range daemonIDs {
 		// Try to acquire a lock for each daemon.
-		if err := locker.lock(key, userID, daemonID); err != nil {
+		if err := locker.lock(key, daemonID); err != nil {
 			// Locking failed. Remove the applied locks.
 			for _, innerDaemonID := range daemonIDs {
 				if innerDaemonID == daemonID {
@@ -98,14 +87,14 @@ func (locker *daemonLocker) Lock(userID int64, daemonIDs ...int64) (LockKey, err
 // Attempts to acquire a lock on the specified daemon's configuration.
 // It returns an error if the lock exists already. This function is
 // called internally from the Lock() function.
-func (locker *daemonLocker) lock(key LockKey, userID int64, daemonID int64) error {
+func (locker *daemonLocker) lock(key LockKey, daemonID int64) error {
 	// Check if the daemon configuration has been locked already.
-	if userID, locked := locker.locks[daemonID]; locked {
-		return errors.Errorf("configuration for daemon %d is locked for updates by user %d", daemonID, userID)
+	if _, locked := locker.locks[daemonID]; locked {
+		return errors.Errorf("configuration for daemon %d is already locked", daemonID)
 	}
 
 	// Acquire the lock.
-	locker.locks[daemonID] = configLock{key: key, userID: userID}
+	locker.locks[daemonID] = key
 	return nil
 }
 
@@ -116,7 +105,7 @@ func (locker *daemonLocker) Unlock(key LockKey, daemonIDs ...int64) error {
 	defer locker.mutex.Unlock()
 
 	for _, daemonID := range daemonIDs {
-		if lock, ok := locker.locks[daemonID]; ok && lock.key == key {
+		if lockedKey, ok := locker.locks[daemonID]; ok && lockedKey == key {
 			delete(locker.locks, daemonID)
 		}
 	}

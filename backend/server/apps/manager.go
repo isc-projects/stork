@@ -207,14 +207,8 @@ func (manager *configManagerImpl) RecoverContext(contextID, userID int64) (conte
 // If an attempt to lock any of the configurations fails, it will remove
 // already acquired locks and return an error.
 func (manager *configManagerImpl) Lock(ctx context.Context, daemonIDs ...int64) (context.Context, error) {
-	// The user id should have been set in the CreateContext() function.
-	userID, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
-	if !ok {
-		return ctx, pkgerrors.Errorf("context lacks user key")
-	}
-
 	// Lock the daemons' configurations.
-	lockKey, err := manager.locker.Lock(userID, daemonIDs...)
+	lockKey, err := manager.locker.Lock(daemonIDs...)
 	if err != nil {
 		return ctx, err
 	}
