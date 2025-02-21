@@ -59,6 +59,7 @@
         format: date-time
       serial:
         type: integer
+        x-omitempty: false
       view:
         type: string
       zoneType:
