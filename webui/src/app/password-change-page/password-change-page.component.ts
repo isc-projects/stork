@@ -97,7 +97,7 @@ export class PasswordChangePageComponent implements OnInit {
             this.msgSrv.add({
                 severity: 'warn',
                 summary: 'Password not updated',
-                detail: 'New password must be different from the current password.',
+                detail: 'New password must be different from current password.',
                 sticky: false,
             })
             return
@@ -124,7 +124,7 @@ export class PasswordChangePageComponent implements OnInit {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Updating user password failed',
+                    summary: 'Failed to update user password',
                     detail: msg,
                     sticky: true,
                 })
@@ -170,7 +170,7 @@ export class PasswordChangePageComponent implements OnInit {
         }
 
         if (this.passwordChangeForm.get(name).errors?.['pattern']) {
-            errors.push(formatFeedback ?? 'This field value is wrong.')
+            errors.push(formatFeedback ?? 'This field value is incorrect.')
         }
 
         if (comparePasswords && this.passwordChangeForm.errors?.['mismatchedPasswords']) {
@@ -178,7 +178,7 @@ export class PasswordChangePageComponent implements OnInit {
         }
 
         if (comparePasswords && this.passwordChangeForm.errors?.['samePasswords']) {
-            errors.push('New password must be different from the current password.')
+            errors.push('New password must be different from current password.')
         }
 
         return errors.join(' ')

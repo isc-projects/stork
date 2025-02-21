@@ -170,7 +170,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
-                    detail: `Failed to create transaction for creating shared network: ` + msg,
+                    detail: `Failed to create shared network: ` + msg,
                     life: 10000,
                 })
                 this.state.setInitError(msg)
@@ -192,7 +192,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
-                    detail: `Failed to create transaction for updating shared network ${this.sharedNetworkId}: ` + msg,
+                    detail: `Failed to update shared network ${this.sharedNetworkId}: ` + msg,
                     life: 10000,
                 })
                 this.state.setInitError(msg)
@@ -363,7 +363,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Cannot commit the shared network',
-                detail: 'Processing the shared network form failed: ' + err,
+                detail: 'Failed to process the shared network form: ' + err,
                 life: 10000,
             })
             return
@@ -391,7 +391,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Cannot commit shared network updates',
-                        detail: 'The transaction updating the shared network failed: ' + msg,
+                        detail: 'Failed to update the shared network: ' + msg,
                         life: 10000,
                     })
                 })
@@ -414,7 +414,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot commit shared network',
-                    detail: 'The transaction creating the shared network failed: ' + msg,
+                    detail: 'Failed to create the shared network: ' + msg,
                     life: 10000,
                 })
             })

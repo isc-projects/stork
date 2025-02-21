@@ -218,7 +218,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
-                    detail: `Failed to create transaction for creating a subnet: ` + msg,
+                    detail: `Failed to create subnet: ` + msg,
                     life: 10000,
                 })
                 this.state.loaded = true
@@ -243,7 +243,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
-                    detail: `Failed to create transaction for updating subnet ${this.subnetId}: ` + msg,
+                    detail: `Failed to update subnet ${this.subnetId}: ` + msg,
                     life: 10000,
                 })
                 this.state.loaded = true
@@ -511,7 +511,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Cannot commit the subnet',
-                detail: 'Processing the subnet form failed: ' + err,
+                detail: 'Failed to process the subnet form: ' + err,
                 life: 10000,
             })
             return
@@ -545,7 +545,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Cannot commit subnet updates',
-                        detail: 'The transaction updating the subnet failed: ' + msg,
+                        detail: 'Failed to update the subnet: ' + msg,
                         life: 10000,
                     })
                 })
@@ -569,7 +569,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot commit subnet',
-                    detail: 'The transaction creating the subnet failed: ' + msg,
+                    detail: 'Failed to create the subnet: ' + msg,
                     life: 10000,
                 })
             })

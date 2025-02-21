@@ -399,7 +399,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Loading user accounts failed',
-                    detail: 'Loading user accounts from the database failed: ' + msg,
+                    detail: 'Failed to load user accounts from the database: ' + msg,
                     sticky: true,
                 })
             })
@@ -530,7 +530,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'New user account created',
-                    detail: 'Adding new user account succeeded.',
+                    detail: 'Successfully added new user account.',
                 })
                 this.closeActiveTab()
             })
@@ -539,7 +539,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Failed to create new user account',
-                    detail: 'Creating new user account failed: ' + msg,
+                    detail: 'Failed to create new user account: ' + msg,
                     sticky: true,
                 })
             })
@@ -568,7 +568,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User account updated',
-                    detail: 'Updating user account succeeded.',
+                    detail: 'Successfully updated user account.',
                 })
                 this.closeActiveTab()
             })
@@ -577,7 +577,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Failed to update user account',
-                    detail: 'Updating user account failed: ' + msg,
+                    detail: 'Failed to update user account: ' + msg,
                     sticky: true,
                 })
             })
@@ -608,8 +608,8 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             .then((/* data */) => {
                 this.msgSrv.add({
                     severity: 'success',
-                    summary: 'Existing user account deleted',
-                    detail: 'Deleting existing user account succeeded.',
+                    summary: 'User account deleted',
+                    detail: 'Successfully deleted user account.',
                 })
                 this.closeActiveTab()
             })
@@ -617,8 +617,8 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                 const msg = getErrorMessage(err)
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Failed to delete existing user account',
-                    detail: 'Deleting existing user account failed: ' + msg,
+                    summary: 'Failed to delete user account',
+                    detail: 'Failed to delete user account: ' + msg,
                     sticky: true,
                 })
             })
@@ -680,11 +680,11 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         }
 
         if (this.userTab.userForm.get(name).errors?.['email']) {
-            errors.push('Email is incorrect.')
+            errors.push('Email is invalid.')
         }
 
         if (this.userTab.userForm.get(name).errors?.['pattern']) {
-            errors.push(formatFeedback ?? 'This field value is wrong.')
+            errors.push(formatFeedback ?? 'This field value is incorrect.')
         }
 
         if (comparePasswords && this.userTab.userForm.errors?.['mismatchedPasswords']) {

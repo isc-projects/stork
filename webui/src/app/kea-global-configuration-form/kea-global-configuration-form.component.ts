@@ -112,8 +112,8 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
                 const msg = getErrorMessage(err)
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Cannot commit configuration updates',
-                    detail: 'The transaction updating configuration failed: ' + msg,
+                    summary: 'Cannot update configuration',
+                    detail: 'Failed to update configuration: ' + msg,
                     life: 10000,
                 })
             })
@@ -193,7 +193,7 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
-                    detail: `Failed to create transaction for updating global Kea parameters: ` + msg,
+                    detail: `Failed to update global Kea parameters: ` + msg,
                     life: 10000,
                 })
                 this.initError = msg

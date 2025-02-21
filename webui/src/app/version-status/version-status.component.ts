@@ -6,7 +6,7 @@ import { getErrorMessage } from '../utils'
 import { map } from 'rxjs/operators'
 
 /**
- * This component displays feedback information about the used version of either Kea, Bind9, or Stork software.
+ * This component displays feedback information about the used version of either Kea, BIND 9, or Stork software.
  * The given version is compared with current known released versions. Feedback contains information
  * about available software updates and how severe the urge to update the software is.
  * The component can be either an inline icon with a tooltip or a block container with feedback visible upfront.
@@ -102,7 +102,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
         this._appName = this.app === 'bind9' ? this.app.toUpperCase() : this.app[0].toUpperCase() + this.app.slice(1)
         this._appName += this.app === 'stork' ? ' agent' : ''
         if (!this.version) {
-            // Version is a mandatory input. In case it is falsy (undefined, null, empty string),
+            // Version is a mandatory input. In case it is false (undefined, null, empty string),
             // simply return. No feedback will be displayed.
             return
         }
@@ -131,8 +131,8 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
                             const msg = getErrorMessage(err)
                             this.messageService.add({
                                 severity: 'error',
-                                summary: 'Error fetching software versions data',
-                                detail: 'Error when fetching software versions data: ' + msg,
+                                summary: 'Error fetching software version data',
+                                detail: 'Error when fetching software version data: ' + msg,
                                 life: 10000,
                             })
                         },

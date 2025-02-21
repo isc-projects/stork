@@ -74,7 +74,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             label: 'Remove',
             id: 'remove-single-machine',
             icon: 'pi pi-times',
-            title: 'Remove machine from Stork Server',
+            title: 'Remove machine from Stork server',
         },
     ]
 
@@ -91,7 +91,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             label: 'Remove',
             id: 'remove-single-machine',
             icon: 'pi pi-times',
-            title: 'Remove machine from Stork Server',
+            title: 'Remove machine from Stork server',
         },
     ]
 
@@ -442,7 +442,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         severity: 'error',
                         summary: 'Error getting machine state from Stork agent',
                         detail:
-                            'State of the machine was retrieved from Stork server, but the server had problems communicating with Stork agent on the machine: ' +
+                            'The machine state was retrieved from the Stork server, but the server had problems communicating with the Stork agent on the machine: ' +
                             m.error,
                         life: 10000,
                     })

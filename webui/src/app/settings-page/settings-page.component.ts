@@ -55,7 +55,7 @@ export class SettingsPageComponent implements OnInit {
         {
             title: 'Apps State Puller Interval',
             formControlName: 'appsStatePullerInterval',
-            help: 'This puller refreshes the states of the apps running on the monitored machines.',
+            help: 'This puller refreshes the state of the apps running on the monitored machines.',
         },
         {
             title: 'BIND 9 Statistics Puller Interval',
@@ -75,7 +75,7 @@ export class SettingsPageComponent implements OnInit {
         {
             title: 'Kea Status Puller Interval',
             formControlName: 'keaStatusPullerInterval',
-            help: 'This puller fetches high availability status from the Kea servers.',
+            help: 'This puller fetches the high-availability status from the Kea servers.',
         },
     ]
 

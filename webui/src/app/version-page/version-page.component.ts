@@ -7,7 +7,7 @@ import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
 
 /**
- * This component displays current known released versions of ISC Kea, Bind9 and Stork.
+ * This component displays current known released versions of ISC Kea, BIND 9, and Stork.
  * There is also a table with summary of ISC software versions detected by Stork
  * among authorized machines.
  * For now, the source of all versions data used by this component is an offline JSON file,
@@ -32,11 +32,11 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      * the "summary of ISC software versions detected by Stork" table.
      */
     private _groupHeaderMap: string[] = [
-        'Some issues were detected for ISC software used on these machines (security updates available, versions mismatch)!',
-        'These machines use ISC software version that require your attention. Software updates are available.',
+        'Some issues were detected for the ISC software running on these machines (security updates available, versions mismatch)!',
+        'These machines are running ISC software versions that require your attention. Software updates are available.',
         'ISC software updates are available for these machines.',
         '',
-        'These machines use up-to-date ISC software',
+        'These machines are running up-to-date ISC software',
     ]
 
     /**
@@ -88,7 +88,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
     summaryDataLoading: boolean
 
     /**
-     * Keeps information whether Kea, Bind9, Stork current versions tables data is loading.
+     * Keeps information whether Kea, BIND 9, Stork current versions tables data is loading.
      */
     swVersionsDataLoading: boolean
 
@@ -220,8 +220,8 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 const msg = getErrorMessage(err)
                                 this.messageService.add({
                                     severity: 'error',
-                                    summary: 'Error retrieving software versions data',
-                                    detail: 'Error occurred when retrieving software versions data: ' + msg,
+                                    summary: 'Error retrieving software version data',
+                                    detail: 'An error occurred when retrieving software version data: ' + msg,
                                     life: 10000,
                                 })
                                 this.summaryDataLoading = false
@@ -275,8 +275,8 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                         const msg = getErrorMessage(err)
                         this.messageService.add({
                             severity: 'error',
-                            summary: 'Error retrieving software versions data',
-                            detail: 'Error occurred when retrieving software versions data: ' + msg,
+                            summary: 'Error retrieving software version data',
+                            detail: 'An error occurred when retrieving software version data: ' + msg,
                             life: 10000,
                         })
                         this.machines = []
@@ -314,7 +314,7 @@ export class VersionPageComponent implements OnInit, OnDestroy {
      */
     getGroupHeaderMessage(severity: Severity, dataDate: string) {
         if (severity === Severity.success) {
-            return `These machines use up-to-date ISC software (known as of ${dataDate})`
+            return `These machines are running up-to-date ISC software (known as of ${dataDate})`
         }
 
         return this._groupHeaderMap[severity]

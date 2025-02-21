@@ -45,7 +45,7 @@ enum LeasesSearchStatus {
 export class LeaseSearchPageComponent implements OnInit {
     public Status = LeasesSearchStatus
 
-    breadcrumbs = [{ label: 'DHCP' }, { label: 'Leases Search' }]
+    breadcrumbs = [{ label: 'DHCP' }, { label: 'Lease Search' }]
 
     /**
      * Leases search status indicator.
@@ -188,7 +188,7 @@ export class LeaseSearchPageComponent implements OnInit {
                     this.msgService.add({
                         severity: 'error',
                         summary: 'Error searching leases',
-                        detail: 'Error searching leases by ' + searchText + ' : ' + msg,
+                        detail: 'Error searching leases for ' + searchText + ' : ' + msg,
                         life: 10000,
                     })
 
