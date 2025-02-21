@@ -52,7 +52,7 @@ type configManagerImpl struct {
 	kea config.KeaModule
 	// The locker that manages the daemon configuration locks in the
 	// application.
-	locker DaemonLocker
+	locker config.DaemonLocker
 }
 
 // Generates new context ID. This ID is returned to the client when the
@@ -85,7 +85,7 @@ func NewManager(server config.ManagerAccessors) config.Manager {
 		db:       server.GetDB(),
 		agents:   server.GetConnectedAgents(),
 		lookup:   server.GetDHCPOptionDefinitionLookup(),
-		locker:   NewDaemonLocker(),
+		locker:   server.GetDaemonLocker(),
 		contexts: make(map[int64]contextPair),
 		mutex:    &sync.RWMutex{},
 	}
@@ -115,6 +115,11 @@ func (manager *configManagerImpl) GetDHCPOptionDefinitionLookup() keaconfig.DHCP
 // Returns Kea configuration module of the configuration manager.
 func (manager *configManagerImpl) GetKeaModule() config.KeaModule {
 	return manager.kea
+}
+
+// Returns the daemon locker instance used by the configuration manager.
+func (manager *configManagerImpl) GetDaemonLocker() config.DaemonLocker {
+	return manager.locker
 }
 
 // Creates the context for use with the configuration manager. It sets the
@@ -229,7 +234,7 @@ func (manager *configManagerImpl) Unlock(ctx context.Context) {
 	}
 
 	// The lock key is required.
-	lockKey, ok := ctx.Value(config.LockContextKey).(LockKey)
+	lockKey, ok := ctx.Value(config.LockContextKey).(config.LockKey)
 	if !ok {
 		return
 	}

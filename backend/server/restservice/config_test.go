@@ -11,6 +11,7 @@ import (
 	apps "isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/kea"
 	appstest "isc.org/stork/server/apps/test"
+	"isc.org/stork/server/config"
 	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	dbmodeltest "isc.org/stork/server/database/model/test"
@@ -1658,11 +1659,14 @@ func TestUpdateGlobalParameters4BeginSubmit(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -1940,11 +1944,14 @@ func TestUpdateGlobalParameters6BeginSubmit(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -2255,11 +2262,14 @@ func TestUpdateGlobalParametersSubmitError(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -2457,11 +2467,14 @@ func TestUpdateGlobalParametersBeginCancel(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 

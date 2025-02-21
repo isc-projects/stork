@@ -61,11 +61,13 @@ func TestNewManager(t *testing.T) {
 
 	agents := &agentcommtest.FakeAgents{}
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	daemonLocker := config.NewDaemonLocker()
 
 	manager := NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    agents,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       agents,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, manager)
 	require.NotNil(t, manager.GetKeaModule())
@@ -76,6 +78,7 @@ func TestNewManager(t *testing.T) {
 	require.Equal(t, db, impl.GetDB())
 	require.Equal(t, agents, impl.GetConnectedAgents())
 	require.Equal(t, lookup, impl.GetDHCPOptionDefinitionLookup())
+	require.Equal(t, daemonLocker, impl.GetDaemonLocker())
 }
 
 // Test creating new context with context ID and user ID.
@@ -183,7 +186,9 @@ func TestRememberRecoverContext(t *testing.T) {
 
 // Test the case when a timeout occurs during config update.
 func TestContextTimeout(t *testing.T) {
-	manager := NewManager(&appstest.ManagerAccessorsWrapper{})
+	manager := NewManager(&appstest.ManagerAccessorsWrapper{
+		DaemonLocker: config.NewDaemonLocker(),
+	})
 	require.NotNil(t, manager)
 
 	ctx, err := manager.CreateContext(int64(123))
@@ -230,7 +235,9 @@ func TestContextTimeout(t *testing.T) {
 // Test that calling Done() function results in removing the context and
 // unlocking the configuration.
 func TestDone(t *testing.T) {
-	manager := NewManager(&appstest.ManagerAccessorsWrapper{})
+	manager := NewManager(&appstest.ManagerAccessorsWrapper{
+		DaemonLocker: config.NewDaemonLocker(),
+	})
 	require.NotNil(t, manager)
 
 	ctx, err := manager.CreateContext(int64(123))
@@ -336,7 +343,9 @@ func TestRecoverContextMismatch(t *testing.T) {
 // Test that daemon configurations can be locked for updates and then
 // unlocked allowing for locking again.
 func TestLockUnlock(t *testing.T) {
-	manager := NewManager(&appstest.ManagerAccessorsWrapper{})
+	manager := NewManager(&appstest.ManagerAccessorsWrapper{
+		DaemonLocker: config.NewDaemonLocker(),
+	})
 	require.NotNil(t, manager)
 
 	// Create context and lock daemons 1, 2, 3.

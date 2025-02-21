@@ -52,7 +52,9 @@ type StorkServer struct {
 	ConfigManager config.Manager
 	// Provides lookup functionality for DHCP option definitions.
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
-	shutdownOnce               sync.Once
+	// Provides locking mechanism for daemon configurations.
+	DaemonLocker config.DaemonLocker
+	shutdownOnce sync.Once
 
 	HookManager   *hookmanager.HookManager
 	hooksSettings map[string]hooks.HookSettings
@@ -162,6 +164,10 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	// This instance provides functions to search for option definitions, both in the
 	// database and among the standard options. It is required by the config manager.
 	ss.DHCPOptionDefinitionLookup = dbmodel.NewDHCPOptionDefinitionLookup()
+
+	// This instance provides locking mechanism for daemon configurations. It
+	// is global for the server so various parts of the application can use it.
+	ss.DaemonLocker = config.NewDaemonLocker()
 
 	// setup apps state puller
 	ss.Pullers.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter, ss.ReviewDispatcher, ss.DHCPOptionDefinitionLookup)
@@ -315,4 +321,10 @@ func (ss *StorkServer) GetConnectedAgents() agentcomm.ConnectedAgents {
 // lookup logic.
 func (ss *StorkServer) GetDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
 	return ss.DHCPOptionDefinitionLookup
+}
+
+// Returns an interface to the instance providing the daemon configurations'
+// locking mechanism.
+func (ss *StorkServer) GetDaemonLocker() config.DaemonLocker {
+	return ss.DaemonLocker
 }

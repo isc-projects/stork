@@ -14,6 +14,7 @@ import (
 	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/kea"
 	appstest "isc.org/stork/server/apps/test"
+	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
@@ -2075,11 +2076,14 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -2572,11 +2576,14 @@ func TestUpdateSubnet4BeginSubmitChangeSharedNetwork(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -2771,11 +2778,14 @@ func TestUpdateSubnet4BeginSubmitAddToSharedNetwork(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -2959,11 +2969,14 @@ func TestUpdateSubnet4BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -3171,11 +3184,14 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -3484,11 +3500,14 @@ func TestUpdateSubnet6BeginSubmitRemoveFromSharedNetwork(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -3673,11 +3692,14 @@ func TestUpdateSubnet6BeginSubmitAddToSharedNetwork(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -4001,11 +4023,14 @@ func TestUpdateSubnetSubmitError(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -4181,11 +4206,14 @@ func TestUpdateSubnetBeginCancel(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 

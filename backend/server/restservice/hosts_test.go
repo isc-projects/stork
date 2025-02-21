@@ -1021,11 +1021,14 @@ func TestUpdateHostBeginSubmit(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -1279,11 +1282,14 @@ func TestUpdateHostSubmitError(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 
@@ -1427,11 +1433,14 @@ func TestUpdateHostBeginCancel(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	require.NotNil(t, lookup)
 
+	daemonLocker := config.NewDaemonLocker()
+
 	// Create the config manager.
 	cm := apps.NewManager(&appstest.ManagerAccessorsWrapper{
-		DB:        db,
-		Agents:    fa,
-		DefLookup: lookup,
+		DB:           db,
+		Agents:       fa,
+		DefLookup:    lookup,
+		DaemonLocker: daemonLocker,
 	})
 	require.NotNil(t, cm)
 

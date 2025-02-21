@@ -26,9 +26,10 @@ import (
 // Test config manager. Besides returning database and agents instance
 // it also provides additional functions useful in testing.
 type testManager struct {
-	db     *pg.DB
-	agents agentcomm.ConnectedAgents
-	lookup keaconfig.DHCPOptionDefinitionLookup
+	db           *pg.DB
+	agents       agentcomm.ConnectedAgents
+	lookup       keaconfig.DHCPOptionDefinitionLookup
+	daemonLocker config.DaemonLocker
 
 	locks map[int64]bool
 }
@@ -36,10 +37,11 @@ type testManager struct {
 // Creates new test config manager instance.
 func newTestManager(server config.ManagerAccessors) *testManager {
 	return &testManager{
-		db:     server.GetDB(),
-		agents: server.GetConnectedAgents(),
-		lookup: server.GetDHCPOptionDefinitionLookup(),
-		locks:  make(map[int64]bool),
+		db:           server.GetDB(),
+		agents:       server.GetConnectedAgents(),
+		lookup:       server.GetDHCPOptionDefinitionLookup(),
+		locks:        make(map[int64]bool),
+		daemonLocker: server.GetDaemonLocker(),
 	}
 }
 
@@ -57,6 +59,12 @@ func (tm *testManager) GetConnectedAgents() agentcomm.ConnectedAgents {
 // option definitions.
 func (tm *testManager) GetDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup {
 	return tm.lookup
+}
+
+// Returns an interface to the instance providing the daemon
+// configurations' locking mechanism.
+func (tm *testManager) GetDaemonLocker() config.DaemonLocker {
+	return tm.daemonLocker
 }
 
 // Applies locks on specified daemons.

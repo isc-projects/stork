@@ -1,4 +1,4 @@
-package apps
+package config
 
 import (
 	"testing"
@@ -59,7 +59,7 @@ func TestDaemonLockerLockAlreadyLocked(t *testing.T) {
 	key, err := locker.Lock(42)
 
 	// Assert
-	require.ErrorContains(t, err, "is locked")
+	require.ErrorContains(t, err, "is already locked")
 	require.Zero(t, key)
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
-	config "isc.org/stork/server/config"
+	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )

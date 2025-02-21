@@ -146,6 +146,9 @@ type ManagerAccessors interface {
 	// Returns an interface to the instance providing the DHCP option definition
 	// lookup logic.
 	GetDHCPOptionDefinitionLookup() keaconfig.DHCPOptionDefinitionLookup
+	// Returns an interface to the instance providing the daemon
+	// configurations' locking mechanism.
+	GetDaemonLocker() DaemonLocker
 }
 
 // Configuration manager interface exposing functions available to the
