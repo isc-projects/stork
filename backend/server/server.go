@@ -241,8 +241,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 		ss.DB, ss.Agents, ss.EventCenter,
 		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
 		ss.DHCPOptionDefinitionLookup, ss.HookManager, endpointControl,
-		dnsManager,
-		migrationService)
+		dnsManager, migrationService, ss.DaemonLocker)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()

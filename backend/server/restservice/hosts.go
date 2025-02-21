@@ -649,6 +649,7 @@ func (r *RestAPI) MigrateHosts(ctx context.Context, params dhcp.MigrateHostsPara
 		r.DB,
 		r.Agents,
 		r.DHCPOptionDefinitionLookup,
+		r.DaemonLocker,
 	)
 	// Run the migration.
 	status, err := r.MigrationService.StartMigration(ctx, migrator)

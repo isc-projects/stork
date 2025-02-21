@@ -12,6 +12,7 @@ import (
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -19,6 +20,7 @@ import (
 )
 
 //go:generate mockgen -package=entitymigrator -destination=agentcommmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
+//go:generate mockgen -package=entitymigrator -destination=daemonlockermock_test.go isc.org/stork/server/config DaemonLocker
 
 // Test that the hosts are migrated and all errors are collected.
 func TestMigrate(t *testing.T) {
@@ -27,12 +29,14 @@ func TestMigrate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	agentMock := NewMockConnectedAgents(ctrl)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
+	agentMock := NewMockConnectedAgents(ctrl)
+	lockerMock := NewMockDaemonLocker(ctrl)
 
 	migrator := NewHostMigrator(
 		dbmodel.HostsByPageFilters{}, nil, agentMock,
 		dbmodel.NewDHCPOptionDefinitionLookup(),
+		lockerMock,
 	).(*hostMigrator)
 
 	// Assertion helpers.
@@ -55,8 +59,8 @@ func TestMigrate(t *testing.T) {
 		executionErrs []error
 	}
 
-	expectForwardToKeaOverHTTP := func(daemon *dbmodel.Daemon, cmds []keactrl.SerializableCommand, err mockErrors) {
-		agentMock.EXPECT().ForwardToKeaOverHTTP(
+	expectForwardToKeaOverHTTP := func(daemon *dbmodel.Daemon, cmds []keactrl.SerializableCommand, err mockErrors) *gomock.Call {
+		return agentMock.EXPECT().ForwardToKeaOverHTTP(
 			gomock.Any(),          // Context.
 			gomock.Eq(daemon.App), // App.
 			gomock.Eq(cmds),       // Commands.
@@ -83,7 +87,7 @@ func TestMigrate(t *testing.T) {
 		}, err.grpcErr)
 	}
 
-	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) {
+	expectReservationAddCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) *gomock.Call {
 		var reservations []keactrl.SerializableCommand
 		for _, host := range hosts {
 			reservation, _ := keaconfig.CreateHostCmdsReservation(
@@ -94,14 +98,14 @@ func TestMigrate(t *testing.T) {
 			))
 		}
 
-		expectForwardToKeaOverHTTP(daemon, reservations, err)
+		return expectForwardToKeaOverHTTP(daemon, reservations, err)
 	}
 
-	expectReservationAddCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
-		expectReservationAddCommandWithError(daemon, mockErrors{}, hosts...)
+	expectReservationAddCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) *gomock.Call {
+		return expectReservationAddCommandWithError(daemon, mockErrors{}, hosts...)
 	}
 
-	expectReservationDelCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) {
+	expectReservationDelCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors, hosts ...dbmodel.Host) *gomock.Call {
 		var reservations []keactrl.SerializableCommand
 
 		for _, host := range hosts {
@@ -113,21 +117,33 @@ func TestMigrate(t *testing.T) {
 			))
 		}
 
-		expectForwardToKeaOverHTTP(daemon, reservations, err)
+		return expectForwardToKeaOverHTTP(daemon, reservations, err)
 	}
 
-	expectReservationDelCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) {
-		expectReservationDelCommandWithError(daemon, mockErrors{}, hosts...)
+	expectReservationDelCommandNoError := func(daemon *dbmodel.Daemon, hosts ...dbmodel.Host) *gomock.Call {
+		return expectReservationDelCommandWithError(daemon, mockErrors{}, hosts...)
 	}
 
-	expectConfigWriteCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors) {
-		expectForwardToKeaOverHTTP(daemon, []keactrl.SerializableCommand{
+	expectConfigWriteCommandWithError := func(daemon *dbmodel.Daemon, err mockErrors) *gomock.Call {
+		return expectForwardToKeaOverHTTP(daemon, []keactrl.SerializableCommand{
 			keactrl.NewCommandBase(keactrl.ConfigWrite, daemon.Name),
 		}, err)
 	}
 
-	expectConfigWriteCommandNoError := func(daemon *dbmodel.Daemon) {
-		expectConfigWriteCommandWithError(daemon, mockErrors{})
+	expectConfigWriteCommandNoError := func(daemon *dbmodel.Daemon) *gomock.Call {
+		return expectConfigWriteCommandWithError(daemon, mockErrors{})
+	}
+
+	expectDaemonLock := func(daemon *dbmodel.Daemon) *gomock.Call {
+		return lockerMock.EXPECT().
+			Lock(gomock.Eq(daemon.ID)).
+			Return(config.LockKey(daemon.ID), nil)
+	}
+
+	expectDaemonUnlock := func(daemon *dbmodel.Daemon) *gomock.Call {
+		return lockerMock.EXPECT().
+			Unlock(gomock.Eq(config.LockKey(daemon.ID)), gomock.Eq(daemon.ID)).
+			Return(nil)
 	}
 
 	// Entities.
@@ -187,9 +203,13 @@ func TestMigrate(t *testing.T) {
 		daemon := createDaemon()
 		host := createHost(daemon)
 
-		expectReservationAddCommandNoError(daemon, host)
-		expectReservationDelCommandNoError(daemon, host)
-		expectConfigWriteCommandNoError(daemon)
+		gomock.InOrder(
+			expectDaemonLock(daemon),
+			expectReservationAddCommandNoError(daemon, host),
+			expectReservationDelCommandNoError(daemon, host),
+			expectConfigWriteCommandNoError(daemon),
+			expectDaemonUnlock(daemon),
+		)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -241,9 +261,13 @@ func TestMigrate(t *testing.T) {
 			createHost(daemon),
 		}
 
-		expectReservationAddCommandNoError(daemon, hosts...)
-		expectReservationDelCommandNoError(daemon, hosts...)
-		expectConfigWriteCommandNoError(daemon)
+		gomock.InOrder(
+			expectDaemonLock(daemon),
+			expectReservationAddCommandNoError(daemon, hosts...),
+			expectReservationDelCommandNoError(daemon, hosts...),
+			expectConfigWriteCommandNoError(daemon),
+			expectDaemonUnlock(daemon),
+		)
 
 		migrator.items = hosts
 
@@ -268,13 +292,19 @@ func TestMigrate(t *testing.T) {
 			createHost(daemon1, daemon2),
 		}
 
-		expectReservationAddCommandNoError(daemon1, hosts[0], hosts[1], hosts[4])
-		expectReservationDelCommandNoError(daemon1, hosts[0], hosts[1], hosts[4])
-		expectConfigWriteCommandNoError(daemon1)
+		gomock.InOrder(
+			expectDaemonLock(daemon1),
+			expectReservationAddCommandNoError(daemon1, hosts[0], hosts[1], hosts[4]),
+			expectReservationDelCommandNoError(daemon1, hosts[0], hosts[1], hosts[4]),
+			expectConfigWriteCommandNoError(daemon1),
+			expectDaemonUnlock(daemon1),
 
-		expectReservationAddCommandNoError(daemon2, hosts[2], hosts[3], hosts[4])
-		expectReservationDelCommandNoError(daemon2, hosts[2], hosts[3], hosts[4])
-		expectConfigWriteCommandNoError(daemon2)
+			expectDaemonLock(daemon2),
+			expectReservationAddCommandNoError(daemon2, hosts[2], hosts[3], hosts[4]),
+			expectReservationDelCommandNoError(daemon2, hosts[2], hosts[3], hosts[4]),
+			expectConfigWriteCommandNoError(daemon2),
+			expectDaemonUnlock(daemon2),
+		)
 
 		migrator.items = hosts
 
@@ -308,33 +338,43 @@ func TestMigrate(t *testing.T) {
 		host7 := createHost(daemon4)
 		host8 := createHost(daemon4)
 
-		// Stork agent returns an error.
-		expectReservationAddCommandWithError(daemon1, mockErrors{
-			grpcErr: errors.Errorf("error adding reservation"),
-		}, host1, host2)
-		expectConfigWriteCommandNoError(daemon1)
+		gomock.InOrder(
+			expectDaemonLock(daemon1),
+			// Stork agent returns an error.
+			expectReservationAddCommandWithError(daemon1, mockErrors{
+				grpcErr: errors.Errorf("error adding reservation"),
+			}, host1, host2),
+			expectConfigWriteCommandNoError(daemon1),
+			expectDaemonUnlock(daemon1),
 
-		// The Kea CA return an error.
-		expectReservationAddCommandWithError(daemon2, mockErrors{
-			keaErr: errors.Errorf("error transferring reservation"),
-		}, host3, host4)
-		expectConfigWriteCommandNoError(daemon2)
+			// The Kea CA return an error.
+			expectDaemonLock(daemon2),
+			expectReservationAddCommandWithError(daemon2, mockErrors{
+				keaErr: errors.Errorf("error transferring reservation"),
+			}, host3, host4),
+			expectConfigWriteCommandNoError(daemon2),
+			expectDaemonUnlock(daemon2),
 
-		// The Kea daemon returns an error while processing the add command.
-		// One host should be still processed.
-		expectReservationAddCommandWithError(daemon3, mockErrors{
-			cmdErrs: []error{nil, errors.Errorf("error executing command")},
-		}, host5, host6)
-		expectReservationDelCommandNoError(daemon3, host5)
-		expectConfigWriteCommandNoError(daemon3)
+			// The Kea daemon returns an error while processing the add command.
+			// One host should be still processed.
+			expectDaemonLock(daemon3),
+			expectReservationAddCommandWithError(daemon3, mockErrors{
+				cmdErrs: []error{nil, errors.Errorf("error executing command")},
+			}, host5, host6),
+			expectReservationDelCommandNoError(daemon3, host5),
+			expectConfigWriteCommandNoError(daemon3),
+			expectDaemonUnlock(daemon3),
 
-		// The Kea daemon processed the commands but a result of one of them
-		// is an error.
-		expectReservationAddCommandWithError(daemon4, mockErrors{
-			executionErrs: []error{nil, errors.Errorf("error as result")},
-		}, host7, host8)
-		expectReservationDelCommandNoError(daemon4, host7)
-		expectConfigWriteCommandNoError(daemon4)
+			// The Kea daemon processed the commands but a result of one of them
+			// is an error.
+			expectDaemonLock(daemon4),
+			expectReservationAddCommandWithError(daemon4, mockErrors{
+				executionErrs: []error{nil, errors.Errorf("error as result")},
+			}, host7, host8),
+			expectReservationDelCommandNoError(daemon4, host7),
+			expectConfigWriteCommandNoError(daemon4),
+			expectDaemonUnlock(daemon4),
+		)
 
 		migrator.items = []dbmodel.Host{
 			host1, host2, host3, host4, host5, host6, host7, host8,
@@ -394,35 +434,45 @@ func TestMigrate(t *testing.T) {
 		host7 := createHost(daemon4)
 		host8 := createHost(daemon4)
 
-		// Stork agent returns an error.
-		expectReservationAddCommandNoError(daemon1, host1, host2)
-		expectReservationDelCommandWithError(daemon1, mockErrors{
-			grpcErr: errors.Errorf("error GRPC"),
-		}, host1, host2)
-		expectConfigWriteCommandNoError(daemon1)
+		gomock.InOrder(
+			// Stork agent returns an error.
+			expectDaemonLock(daemon1),
+			expectReservationAddCommandNoError(daemon1, host1, host2),
+			expectReservationDelCommandWithError(daemon1, mockErrors{
+				grpcErr: errors.Errorf("error GRPC"),
+			}, host1, host2),
+			expectConfigWriteCommandNoError(daemon1),
+			expectDaemonUnlock(daemon1),
 
-		// The Kea CA return an error.
-		expectReservationAddCommandNoError(daemon2, host3, host4)
-		expectReservationDelCommandWithError(daemon2, mockErrors{
-			keaErr: errors.Errorf("error Kea CA"),
-		}, host3, host4)
-		expectConfigWriteCommandNoError(daemon2)
+			// The Kea CA return an error.
+			expectDaemonLock(daemon2),
+			expectReservationAddCommandNoError(daemon2, host3, host4),
+			expectReservationDelCommandWithError(daemon2, mockErrors{
+				keaErr: errors.Errorf("error Kea CA"),
+			}, host3, host4),
+			expectConfigWriteCommandNoError(daemon2),
+			expectDaemonUnlock(daemon2),
 
-		// The Kea daemon returns an error while processing the add command.
-		// One host should be still processed.
-		expectReservationAddCommandNoError(daemon3, host5, host6)
-		expectReservationDelCommandWithError(daemon3, mockErrors{
-			cmdErrs: []error{nil, errors.Errorf("error Kea daemon")},
-		}, host5, host6)
-		expectConfigWriteCommandNoError(daemon3)
+			// The Kea daemon returns an error while processing the add command.
+			// One host should be still processed.
+			expectDaemonLock(daemon3),
+			expectReservationAddCommandNoError(daemon3, host5, host6),
+			expectReservationDelCommandWithError(daemon3, mockErrors{
+				cmdErrs: []error{nil, errors.Errorf("error Kea daemon")},
+			}, host5, host6),
+			expectConfigWriteCommandNoError(daemon3),
+			expectDaemonUnlock(daemon3),
 
-		// The Kea daemon processed the commands but a result of one of them
-		// is an error.
-		expectReservationAddCommandNoError(daemon4, host7, host8)
-		expectReservationDelCommandWithError(daemon4, mockErrors{
-			executionErrs: []error{nil, errors.Errorf("error is result")},
-		}, host7, host8)
-		expectConfigWriteCommandNoError(daemon4)
+			// The Kea daemon processed the commands but a result of one of them
+			// is an error.
+			expectDaemonLock(daemon4),
+			expectReservationAddCommandNoError(daemon4, host7, host8),
+			expectReservationDelCommandWithError(daemon4, mockErrors{
+				executionErrs: []error{nil, errors.Errorf("error is result")},
+			}, host7, host8),
+			expectConfigWriteCommandNoError(daemon4),
+			expectDaemonUnlock(daemon4),
+		)
 
 		migrator.items = []dbmodel.Host{
 			host1, host2, host3, host4, host5, host6, host7, host8,
@@ -471,13 +521,22 @@ func TestMigrate(t *testing.T) {
 
 		host := createHost(daemon1, daemon2, daemon3)
 
-		expectReservationAddCommandWithError(daemon1, mockErrors{
-			cmdErrs: []error{errors.Errorf("error adding reservation")},
-		}, host)
+		gomock.InOrder(
+			expectDaemonLock(daemon1),
+			expectReservationAddCommandWithError(daemon1, mockErrors{
+				cmdErrs: []error{errors.Errorf("error adding reservation")},
+			}, host),
+			expectConfigWriteCommandNoError(daemon1),
+			expectDaemonUnlock(daemon1),
 
-		expectConfigWriteCommandNoError(daemon1)
-		expectConfigWriteCommandNoError(daemon2)
-		expectConfigWriteCommandNoError(daemon3)
+			expectDaemonLock(daemon2),
+			expectConfigWriteCommandNoError(daemon2),
+			expectDaemonUnlock(daemon2),
+
+			expectDaemonLock(daemon3),
+			expectConfigWriteCommandNoError(daemon3),
+			expectDaemonUnlock(daemon3),
+		)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -503,14 +562,23 @@ func TestMigrate(t *testing.T) {
 
 		host := createHost(daemon1, daemon2, daemon3)
 
-		expectReservationAddCommandNoError(daemon1, host)
-		expectReservationDelCommandWithError(daemon1, mockErrors{
-			cmdErrs: []error{errors.Errorf("error adding reservation")},
-		}, host)
+		gomock.InOrder(
+			expectDaemonLock(daemon1),
+			expectReservationAddCommandNoError(daemon1, host),
+			expectReservationDelCommandWithError(daemon1, mockErrors{
+				cmdErrs: []error{errors.Errorf("error adding reservation")},
+			}, host),
+			expectConfigWriteCommandNoError(daemon1),
+			expectDaemonUnlock(daemon1),
 
-		expectConfigWriteCommandNoError(daemon1)
-		expectConfigWriteCommandNoError(daemon2)
-		expectConfigWriteCommandNoError(daemon3)
+			expectDaemonLock(daemon2),
+			expectConfigWriteCommandNoError(daemon2),
+			expectDaemonUnlock(daemon2),
+
+			expectDaemonLock(daemon3),
+			expectConfigWriteCommandNoError(daemon3),
+			expectDaemonUnlock(daemon3),
+		)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -543,29 +611,39 @@ func TestMigrate(t *testing.T) {
 		host7 := createHost(daemon4)
 		host8 := createHost(daemon4)
 
-		expectReservationAddCommandNoError(daemon1, host1, host2)
-		expectReservationDelCommandNoError(daemon1, host1, host2)
-		expectConfigWriteCommandWithError(daemon1, mockErrors{
-			grpcErr: errors.Errorf("error GRPC"),
-		})
+		gomock.InOrder(
+			expectDaemonLock(daemon1),
+			expectReservationAddCommandNoError(daemon1, host1, host2),
+			expectReservationDelCommandNoError(daemon1, host1, host2),
+			expectConfigWriteCommandWithError(daemon1, mockErrors{
+				grpcErr: errors.Errorf("error GRPC"),
+			}),
+			expectDaemonUnlock(daemon1),
 
-		expectReservationAddCommandNoError(daemon2, host3, host4)
-		expectReservationDelCommandNoError(daemon2, host3, host4)
-		expectConfigWriteCommandWithError(daemon2, mockErrors{
-			keaErr: errors.Errorf("error Kea"),
-		})
+			expectDaemonLock(daemon2),
+			expectReservationAddCommandNoError(daemon2, host3, host4),
+			expectReservationDelCommandNoError(daemon2, host3, host4),
+			expectConfigWriteCommandWithError(daemon2, mockErrors{
+				keaErr: errors.Errorf("error Kea"),
+			}),
+			expectDaemonUnlock(daemon2),
 
-		expectReservationAddCommandNoError(daemon3, host5, host6)
-		expectReservationDelCommandNoError(daemon3, host5, host6)
-		expectConfigWriteCommandWithError(daemon3, mockErrors{
-			cmdErrs: []error{errors.Errorf("error command")},
-		})
+			expectDaemonLock(daemon3),
+			expectReservationAddCommandNoError(daemon3, host5, host6),
+			expectReservationDelCommandNoError(daemon3, host5, host6),
+			expectConfigWriteCommandWithError(daemon3, mockErrors{
+				cmdErrs: []error{errors.Errorf("error command")},
+			}),
+			expectDaemonUnlock(daemon3),
 
-		expectReservationAddCommandNoError(daemon4, host7, host8)
-		expectReservationDelCommandNoError(daemon4, host7, host8)
-		expectConfigWriteCommandWithError(daemon4, mockErrors{
-			executionErrs: []error{errors.Errorf("error execution")},
-		})
+			expectDaemonLock(daemon4),
+			expectReservationAddCommandNoError(daemon4, host7, host8),
+			expectReservationDelCommandNoError(daemon4, host7, host8),
+			expectConfigWriteCommandWithError(daemon4, mockErrors{
+				executionErrs: []error{errors.Errorf("error execution")},
+			}),
+			expectDaemonUnlock(daemon4),
+		)
 
 		migrator.items = []dbmodel.Host{
 			host1, host2, host3, host4, host5, host6, host7, host8,
@@ -620,40 +698,50 @@ func TestMigrate(t *testing.T) {
 		host3 := createHost(daemon1, daemon2, daemon3, daemon4)
 		host4 := createHost(daemon1, daemon2, daemon4)
 
-		// The first error is returned as a response to the command.
-		expectReservationAddCommandWithError(daemon1, mockErrors{
-			executionErrs: []error{
-				errors.Errorf("response error"),
-				nil,
-				nil,
-				nil,
-			},
-		}, host1, host2, host3, host4)
-		expectReservationDelCommandNoError(daemon1, host2, host3, host4)
-		expectConfigWriteCommandNoError(daemon1)
+		gomock.InOrder(
+			// The first error is returned as a response to the command.
+			expectDaemonLock(daemon1),
+			expectReservationAddCommandWithError(daemon1, mockErrors{
+				executionErrs: []error{
+					errors.Errorf("response error"),
+					nil,
+					nil,
+					nil,
+				},
+			}, host1, host2, host3, host4),
+			expectReservationDelCommandNoError(daemon1, host2, host3, host4),
+			expectConfigWriteCommandNoError(daemon1),
+			expectDaemonUnlock(daemon1),
 
-		// The second error is returned as a command error.
-		expectReservationAddCommandWithError(daemon2, mockErrors{
-			cmdErrs: []error{
-				errors.Errorf("command error"),
-				nil,
-				nil,
-			},
-		}, host2, host3, host4)
-		expectReservationDelCommandNoError(daemon2, host3, host4)
-		expectConfigWriteCommandNoError(daemon2)
+			// The second error is returned as a command error.
+			expectDaemonLock(daemon2),
+			expectReservationAddCommandWithError(daemon2, mockErrors{
+				cmdErrs: []error{
+					errors.Errorf("command error"),
+					nil,
+					nil,
+				},
+			}, host2, host3, host4),
+			expectReservationDelCommandNoError(daemon2, host3, host4),
+			expectConfigWriteCommandNoError(daemon2),
+			expectDaemonUnlock(daemon2),
 
-		// The third error is returned as a Kea CA error.
-		expectReservationAddCommandWithError(daemon3, mockErrors{
-			keaErr: errors.Errorf("Kea CA error"),
-		}, host3)
-		expectConfigWriteCommandNoError(daemon3)
+			// The third error is returned as a Kea CA error.
+			expectDaemonLock(daemon3),
+			expectReservationAddCommandWithError(daemon3, mockErrors{
+				keaErr: errors.Errorf("Kea CA error"),
+			}, host3),
+			expectConfigWriteCommandNoError(daemon3),
+			expectDaemonUnlock(daemon3),
 
-		// The fourth error is returned as a Stork agent error.
-		expectReservationAddCommandWithError(daemon4, mockErrors{
-			grpcErr: errors.Errorf("Stork agent error"),
-		}, host4)
-		expectConfigWriteCommandNoError(daemon4)
+			// The fourth error is returned as a Stork agent error.
+			expectDaemonLock(daemon4),
+			expectReservationAddCommandWithError(daemon4, mockErrors{
+				grpcErr: errors.Errorf("Stork agent error"),
+			}, host4),
+			expectConfigWriteCommandNoError(daemon4),
+			expectDaemonUnlock(daemon4),
+		)
 
 		migrator.items = []dbmodel.Host{host1, host2, host3, host4}
 
@@ -694,7 +782,11 @@ func TestMigrate(t *testing.T) {
 		host := createHost(daemon)
 		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
 
-		expectConfigWriteCommandNoError(daemon)
+		gomock.InOrder(
+			expectDaemonLock(daemon),
+			expectConfigWriteCommandNoError(daemon),
+			expectDaemonUnlock(daemon),
+		)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -715,8 +807,12 @@ func TestMigrate(t *testing.T) {
 		host := createHost(daemon, daemon)
 		host.LocalHosts[0].DataSource = dbmodel.HostDataSourceAPI
 
-		expectReservationDelCommandNoError(daemon, host)
-		expectConfigWriteCommandNoError(daemon)
+		gomock.InOrder(
+			expectDaemonLock(daemon),
+			expectReservationDelCommandNoError(daemon, host),
+			expectConfigWriteCommandNoError(daemon),
+			expectDaemonUnlock(daemon),
+		)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -736,7 +832,11 @@ func TestMigrate(t *testing.T) {
 		host := createHost(daemon)
 		host.Subnet = &dbmodel.Subnet{ID: 42}
 
-		expectConfigWriteCommandNoError(daemon)
+		gomock.InOrder(
+			expectDaemonLock(daemon),
+			expectConfigWriteCommandNoError(daemon),
+			expectDaemonUnlock(daemon),
+		)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -764,8 +864,14 @@ func TestMigrate(t *testing.T) {
 		host := createHost(daemon1, daemon2)
 		host.Subnet = &dbmodel.Subnet{ID: 42}
 
-		expectConfigWriteCommandNoError(daemon1)
-		expectConfigWriteCommandNoError(daemon2)
+		gomock.InOrder(
+			expectDaemonLock(daemon1),
+			expectConfigWriteCommandNoError(daemon1),
+			expectDaemonUnlock(daemon1),
+			expectDaemonLock(daemon2),
+			expectConfigWriteCommandNoError(daemon2),
+			expectDaemonUnlock(daemon2),
+		)
 
 		migrator.items = []dbmodel.Host{host}
 
@@ -781,6 +887,8 @@ func TestMigrate(t *testing.T) {
 		)
 		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
 	})
+
+	// TODO: Check situation when daemon failed to lock or unlock.
 }
 
 // Test that the hosts are loaded and counted correctly.
@@ -795,6 +903,7 @@ func TestLoadAndCountItems(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	agentMock := NewMockConnectedAgents(ctrl)
+	daemonLockerMock := NewMockDaemonLocker(ctrl)
 
 	// Add 20 hosts to the database.
 	for i := 0; i < 22; i++ {
@@ -813,7 +922,7 @@ func TestLoadAndCountItems(t *testing.T) {
 
 	migrator := NewHostMigrator(
 		dbmodel.HostsByPageFilters{},
-		db, agentMock, lookup,
+		db, agentMock, lookup, daemonLockerMock,
 	).(*hostMigrator)
 
 	migrator.limit = 5
@@ -879,6 +988,7 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 
 	agentMock := NewMockConnectedAgents(ctrl)
+	daemonLockerMock := NewMockDaemonLocker(ctrl)
 
 	// Even hosts belong to the subnet, odd hosts don't.
 	subnet := &dbmodel.Subnet{Prefix: "10.0.0.0/8"}
@@ -907,7 +1017,7 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 		dbmodel.HostsByPageFilters{
 			SubnetID: storkutil.Ptr(subnet.ID),
 		},
-		db, agentMock, lookup,
+		db, agentMock, lookup, daemonLockerMock,
 	).(*hostMigrator)
 
 	migrator.limit = 5
@@ -963,7 +1073,7 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 // Test that the expected entity type is returned.
 func TestGetEntityType(t *testing.T) {
 	// Arrange
-	migrator := NewHostMigrator(dbmodel.HostsByPageFilters{}, nil, nil, nil)
+	migrator := NewHostMigrator(dbmodel.HostsByPageFilters{}, nil, nil, nil, nil)
 
 	// Act
 	entityType := migrator.GetEntityType()

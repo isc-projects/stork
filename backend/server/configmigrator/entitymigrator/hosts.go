@@ -3,12 +3,13 @@ package entitymigrator
 import (
 	"context"
 	"fmt"
-	"slices"
+	"sort"
 
 	"github.com/go-pg/pg/v10"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -22,12 +23,13 @@ type hostMigrator struct {
 	limit            int64
 	dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup
 	connectedAgents  agentcomm.ConnectedAgents
+	daemonLocker     config.DaemonLocker
 }
 
 var _ configmigrator.Migrator = &hostMigrator{}
 
 // Creates a new host migrator.
-func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgents agentcomm.ConnectedAgents, dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup) configmigrator.Migrator {
+func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgents agentcomm.ConnectedAgents, dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup, locker config.DaemonLocker) configmigrator.Migrator {
 	// Migrating the conflicted hosts is not supported.
 	filter.DHCPDataConflict = storkutil.Ptr(false)
 	return &hostMigrator{
@@ -36,6 +38,7 @@ func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgen
 		limit:            100,
 		dhcpOptionLookup: dhcpOptionLookup,
 		connectedAgents:  connectedAgents,
+		daemonLocker:     locker,
 	}
 }
 
@@ -77,8 +80,8 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 	// Clean up the error map.
 	m.errs = make(map[int64]configmigrator.MigrationError)
 
-	// Collect the daemon IDs to send all the commands to the same daemon in
-	// a single batch.
+	// Collect the unique daemons to send all the commands to the same daemon
+	// in a single batch.
 	daemonsByIDs := make(map[int64]*dbmodel.Daemon)
 	for _, host := range m.items {
 		for _, localHost := range host.LocalHosts {
@@ -92,70 +95,17 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 		}
 	}
 
-	// Iterate over the daemons in the ascending order of their IDs.
-	daemonIDs := make([]int64, 0, len(daemonsByIDs))
-	for daemonID := range daemonsByIDs {
-		daemonIDs = append(daemonIDs, daemonID)
+	daemons := make([]*dbmodel.Daemon, 0, len(daemonsByIDs))
+	for _, daemon := range daemonsByIDs {
+		daemons = append(daemons, daemon)
 	}
-	slices.Sort(daemonIDs)
+	sort.Slice(daemons, func(i, j int) bool {
+		return daemons[i].ID < daemons[j].ID
+	})
 
-	for _, daemonID := range daemonIDs {
-		daemon := daemonsByIDs[daemonID]
-		// Insert the reservations to the host database.
-		m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
-			if _, ok := localHosts[dbmodel.HostDataSourceConfig]; !ok {
-				// Nothing to add. The host is not stored in the JSON
-				// configuration.
-				return nil, nil
-			}
-
-			// Skip if the host is already in the database.
-			// Disclaimer: We expect all conflicts to be resolved before the
-			// migration.
-			if _, ok := localHosts[dbmodel.HostDataSourceAPI]; ok {
-				// Nothing to migrate. The host is already in the database.
-				return nil, nil
-			}
-
-			// Add the reservation to the Kea host database.
-			reservationAdd, err := keaconfig.CreateHostCmdsReservation(
-				daemonID,
-				m.dhcpOptionLookup,
-				*host,
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			commandAdd := keactrl.NewCommandReservationAdd(reservationAdd, daemon.Name)
-
-			return commandAdd, nil
-		})
-
-		// Delete the reservations from the Kea configuration. It is done only
-		// for the hosts that has been properly added to the host database or
-		// already existed in the host database.
-		m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
-			if _, ok := localHosts[dbmodel.HostDataSourceConfig]; !ok {
-				// Nothing to remove. The host is not stored in the JSON
-				// configuration.
-				return nil, nil
-			}
-
-			// Remove the reservation from the Kea configuration.
-			reservationDel, err := keaconfig.CreateHostCmdsDeletedReservation(
-				daemonID, host, keaconfig.HostCmdsOperationTargetMemory,
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			commandDel := keactrl.NewCommandReservationDel(reservationDel, daemon.Name)
-			return commandDel, nil
-		})
-
-		// Make the configuration persistent.
-		m.saveConfigChanges(daemon)
+	// Iterate over the daemons in the ascending order of their IDs.
+	for _, daemon := range daemons {
+		m.migrateDaemon(daemon)
 	}
 
 	sliceErrs := make([]configmigrator.MigrationError, 0, len(m.errs))
@@ -163,6 +113,77 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 		sliceErrs = append(sliceErrs, err)
 	}
 	return sliceErrs
+}
+
+// Migrates the hosts related to the given daemon.
+func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
+	daemonID := daemon.ID
+
+	// Lock the daemon for modification.
+	lockKey, err := m.daemonLocker.Lock(daemonID)
+	if err != nil {
+		// Skip the daemon if it cannot be locked.
+		m.setDaemonError(daemonID, err)
+		return
+	}
+	// TODO: Check the return value of unlock.
+	defer m.daemonLocker.Unlock(lockKey, daemonID)
+
+	// Insert the reservations to the host database.
+	m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
+		if _, ok := localHosts[dbmodel.HostDataSourceConfig]; !ok {
+			// Nothing to add. The host is not stored in the JSON
+			// configuration.
+			return nil, nil
+		}
+
+		// Skip if the host is already in the database.
+		// Disclaimer: We expect all conflicts to be resolved before the
+		// migration.
+		if _, ok := localHosts[dbmodel.HostDataSourceAPI]; ok {
+			// Nothing to migrate. The host is already in the database.
+			return nil, nil
+		}
+
+		// Add the reservation to the Kea host database.
+		reservationAdd, err := keaconfig.CreateHostCmdsReservation(
+			daemonID,
+			m.dhcpOptionLookup,
+			*host,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		commandAdd := keactrl.NewCommandReservationAdd(reservationAdd, daemon.Name)
+
+		return commandAdd, nil
+	})
+
+	// Delete the reservations from the Kea configuration. It is done only
+	// for the hosts that has been properly added to the host database or
+	// already existed in the host database.
+	m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
+		if _, ok := localHosts[dbmodel.HostDataSourceConfig]; !ok {
+			// Nothing to remove. The host is not stored in the JSON
+			// configuration.
+			return nil, nil
+		}
+
+		// Remove the reservation from the Kea configuration.
+		reservationDel, err := keaconfig.CreateHostCmdsDeletedReservation(
+			daemonID, host, keaconfig.HostCmdsOperationTargetMemory,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		commandDel := keactrl.NewCommandReservationDel(reservationDel, daemon.Name)
+		return commandDel, nil
+	})
+
+	// Make the configuration persistent.
+	m.saveConfigChanges(daemon)
 }
 
 // It is general-purpose function to create a command for each host and send
