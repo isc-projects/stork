@@ -140,7 +140,8 @@ func (m *migration) getStatus() MigrationStatus {
 		estimatedLeftTime = processingTimeOfSingleItem * time.Duration(leftItems)
 	}
 
-	errsCopy := m.errors[:]
+	errsCopy := make([]MigrationError, len(m.errors))
+	copy(errsCopy, m.errors)
 
 	// It needs to return a copy of the migration data to avoid race
 	// conditions.

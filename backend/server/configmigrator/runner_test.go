@@ -12,6 +12,7 @@ import (
 
 //go:generate mockgen -package=configmigrator -destination=migratormock_test.go isc.org/stork/server/configmigrator Migrator
 
+// A helper function to read all items from the channels.
 func readChannels(ch <-chan migrationChunk, done <-chan error) (errs []MigrationError, err error) {
 	errs = make([]MigrationError, 0)
 
@@ -20,9 +21,7 @@ func readChannels(ch <-chan migrationChunk, done <-chan error) (errs []Migration
 		case err = <-done:
 			return
 		case chunk := <-ch:
-			for _, e := range chunk.errs {
-				errs = append(errs, e)
-			}
+			errs = append(errs, chunk.errs...)
 		}
 	}
 }
