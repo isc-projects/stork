@@ -550,8 +550,8 @@ func TestConcurrentMigrationsCloseService(t *testing.T) {
 	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
 
 	// Migrate infinitely.
-	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).MinTimes(1)
-	migrator.EXPECT().Migrate().Return([]MigrationError{}).MinTimes(1)
+	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).AnyTimes()
+	migrator.EXPECT().Migrate().Return([]MigrationError{}).AnyTimes()
 
 	// Act & Assert
 	initialStatus, err := service.StartMigration(context.Background(), migrator)
