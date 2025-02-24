@@ -131,8 +131,13 @@ func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
 		m.setDaemonError(daemon, err)
 		return
 	}
-	// TODO: Check the return value of unlock.
-	defer m.daemonLocker.Unlock(lockKey, daemonID)
+
+	defer func() {
+		err := m.daemonLocker.Unlock(lockKey, daemonID)
+		if err != nil {
+			m.setDaemonError(daemon, err)
+		}
+	}()
 
 	// Insert the reservations to the host database.
 	m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
