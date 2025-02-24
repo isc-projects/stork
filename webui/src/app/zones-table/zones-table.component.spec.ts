@@ -8,7 +8,8 @@ describe('ZonesTableComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [ZonesTableComponent],
+            imports: [],
+            declarations: [ZonesTableComponent],
         }).compileComponents()
 
         fixture = TestBed.createComponent(ZonesTableComponent)
