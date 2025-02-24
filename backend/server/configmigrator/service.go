@@ -269,6 +269,9 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		return MigrationStatus{}, errors.WithMessage(err, "failed to get the total items")
 	}
 
+	// Strip the cancel and deadline from the parent context.
+	ctx = context.WithoutCancel(ctx)
+	// Add own independent cancel.
 	ctx, cancel := context.WithCancel(ctx)
 
 	// Run migration.
