@@ -69,14 +69,12 @@ func (m *hostMigrator) LoadItems(offset int64) (int64, error) {
 //
 // Algorithm.
 //
-// TODO: Check the transaction lock for a given daemon. Lock it before the
-// migration and unlock it after the migration.
-// TODO: 0. Check if the config is writable.
-// 1. Send the reservation-add command
-// TODO: 2. Detect unexpected changes in the Kea JSON configuration (before config-set)
-// 3. Send the reservation-local-del command
-// 4. Send the config-write command
-// TODO: 5. Handle the insufficient permissions to write the configuration.
+//   - Check the transaction lock for a given daemon. Lock it before the
+//     migration and unlock it after the migration.
+//   - Send the reservation-add command
+//   - Send the reservation-local-del command
+//   - Send the config-write command
+//   - Handle the insufficient permissions to write the configuration.
 func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 	// Clean up the error map.
 	m.hostErrs = make(map[int64]configmigrator.MigrationError)
