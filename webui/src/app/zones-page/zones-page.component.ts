@@ -2,9 +2,10 @@ import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core'
 import { MenuItem, MessageService } from 'primeng/api'
 import { Zone, LocalZone, DNSService, ZonesFetchStatus, ZoneInventoryStates, ZoneInventoryState } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
-import { lastValueFrom } from 'rxjs'
+import { concat, EMPTY, finalize, fromEvent, interval, lastValueFrom, of, switchMap, takeWhile, tap, timer } from 'rxjs'
 import { TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
+import { catchError, map } from 'rxjs/operators'
 
 type ZoneInventoryStatus = 'busy' | 'erred' | 'ok' | 'uninitialized' | string
 
@@ -173,6 +174,32 @@ export class ZonesPageComponent implements OnInit {
         console.log('onActiveIdxChange', indexAfterChange, 'this.activeIdx', this.activeIdx)
     }
 
+    continuePolling: boolean = true
+
+    pollingInterval = 10 * 1000
+
+    polling$ = interval(this.pollingInterval).pipe(
+        switchMap(() => this.dnsService.getZonesFetch()),
+        takeWhile(
+            (resp: ZoneInventoryStates | ZonesFetchStatus) =>
+                this.continuePolling && 'completedAppsCount' in resp && 'appsCount' in resp
+        ),
+        tap((resp: ZonesFetchStatus) => {
+            this.inventoryAppsCompletedCount = resp.completedAppsCount
+            this.inventoryTotalAppsCount = resp.appsCount
+        }),
+        catchError((err) => {
+            const msg = getErrorMessage(err)
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error sending request',
+                detail: 'Sending GET Zones Fetch request failed: ' + msg,
+                life: 10000,
+            })
+            return of(EMPTY)
+        })
+    )
+
     getZonesFetchStatus() {
         this.inventoryLoading = true
         lastValueFrom(this.dnsService.getZonesFetch())
@@ -183,6 +210,7 @@ export class ZonesPageComponent implements OnInit {
                         severity: 'info',
                         summary: 'Zone Inventory empty',
                         detail: 'No state is currently available, presumably because the zones have not been fetched from Stork agents.',
+                        life: 5000,
                     })
                 } else if ('completedAppsCount' in resp && 'appsCount' in resp) {
                     this.zoneInventoryStates = []
@@ -191,13 +219,31 @@ export class ZonesPageComponent implements OnInit {
                     this.inventoryAppsCompletedCount = resp.completedAppsCount
                     this.inventoryTotalAppsCount = resp.appsCount
                     console.log(
-                        `getZoneInventoryState: zones fetch status ${resp.completedAppsCount} of ${resp.appsCount} fetched`
+                        `getZoneInventoryState: zones fetch status ${resp.completedAppsCount} of ${resp.appsCount} fetched`,
+                        Date.now()
                     )
-                    if (resp.appsCount > resp.completedAppsCount) {
-                        this.timeout = setTimeout(() => {
-                            this.getZonesFetchStatus()
-                        }, 10000)
-                    }
+                    concat(
+                        this.polling$,
+                        of(EMPTY).pipe(
+                            tap(() => {
+                                this.inventoryAppsCompletedCount = this.inventoryTotalAppsCount
+                            })
+                        ),
+                        timer(500).pipe(switchMap(() => this.dnsService.getZonesFetch()))
+                    ).subscribe({
+                        next: (resp) => {
+                            console.log('concat next', resp, Date.now())
+                        },
+                        complete: () => {
+                            console.log('concat complete')
+                            this.inventoryInProgress = false
+                        },
+                    })
+                    // if (resp.appsCount > resp.completedAppsCount) {
+                    //     this.timeout = setTimeout(() => {
+                    //         this.getZonesFetchStatus()
+                    //     }, 10000)
+                    // }
                 } else if ('items' in resp && 'total' in resp) {
                     if (this.inventoryInProgress) {
                         this.inventoryAppsCompletedCount = this.inventoryTotalAppsCount
@@ -209,7 +255,7 @@ export class ZonesPageComponent implements OnInit {
                     }
 
                     this.inventoryInProgress = false
-                    clearTimeout(this.timeout)
+                    // clearTimeout(this.timeout)
                     this.zoneInventoryStates = resp.items ?? []
                     this.zoneInventoryTotal = resp.total ?? 0
                     if (this.zoneInventoryTotal) {
