@@ -166,7 +166,8 @@ export class ConfigCheckerPreferencePickerComponent {
                 return 'This checker verifies whether the lease_cmds hook library is loaded.'
             case 'host_cmds_presence':
                 return (
-                    'This checker verifies whether the host_cmds hook library is ' + 'loaded when host backend is in use.'
+                    'This checker verifies whether the host_cmds hook library is ' +
+                    'loaded when host backend is in use.'
                 )
             case 'dispensable_shared_network':
                 return (
