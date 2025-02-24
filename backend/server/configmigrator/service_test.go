@@ -26,7 +26,6 @@ func newTestService() Service {
 		totalItems:     100,
 		errors:         []MigrationError{},
 		cancelDate:     time.Time{},
-		entityType:     EntityTypeHost,
 		cancelFunc: func() {
 			service.migrations["in-progress"].cancelDate = time.Date(
 				2025, 2, 1, 13, 0, 0, 0, time.UTC,
@@ -44,11 +43,11 @@ func newTestService() Service {
 		totalItems:     100,
 		errors: []MigrationError{{
 			ID:    42,
-			Err:   errors.New("error"),
+			Error: errors.New("error"),
 			Label: "host-finished",
+			Type:  EntityTypeHost,
 		}},
 		cancelDate: time.Time{},
-		entityType: EntityTypeHost,
 	}
 	// Canceled migration.
 	service.migrations["canceled"] = &migration{
@@ -61,7 +60,6 @@ func newTestService() Service {
 		processedItems: 10,
 		totalItems:     100,
 		errors:         []MigrationError{},
-		entityType:     EntityTypeHost,
 	}
 	// Canceling migration.
 	service.migrations["canceling"] = &migration{
@@ -74,7 +72,6 @@ func newTestService() Service {
 		processedItems: 10,
 		totalItems:     100,
 		errors:         []MigrationError{},
-		entityType:     EntityTypeHost,
 	}
 	// General error occurred.
 	service.migrations["general-error"] = &migration{
@@ -87,7 +84,6 @@ func newTestService() Service {
 		totalItems:     100,
 		errors:         []MigrationError{},
 		cancelDate:     time.Time{},
-		entityType:     EntityTypeHost,
 	}
 	return service
 }
@@ -235,7 +231,6 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	migrator := NewMockMigrator(ctrl)
 
 	migrator.EXPECT().CountTotal().Return(int64(250), nil)
-	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
 
 	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
 	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil)
@@ -261,9 +256,9 @@ func TestStartAndExecuteMigration(t *testing.T) {
 		// Return some errors.
 		callIndex++
 		return []MigrationError{
-			{ID: callIndex*100 + 1, Err: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+1)},
-			{ID: callIndex*100 + 2, Err: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+2)},
-			{ID: callIndex*100 + 3, Err: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+3)},
+			{ID: callIndex*100 + 1, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+1), Type: EntityTypeHost},
+			{ID: callIndex*100 + 2, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+2), Type: EntityTypeHost},
+			{ID: callIndex*100 + 3, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+3), Type: EntityTypeHost},
 		}
 	}).Times(3)
 
@@ -283,7 +278,6 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Zero(t, initialStatus.Progress)
 	require.Zero(t, initialStatus.EstimatedLeftTime)
 	require.Empty(t, initialStatus.Errors)
-	require.Equal(t, EntityTypeHost, initialStatus.EntityType)
 
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
@@ -303,7 +297,6 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.InDelta(t, firstChunkStatus.Progress, 100.0/250.0, 1e-6)
 	require.NotZero(t, firstChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, firstChunkStatus.ElapsedTime)
-	require.Equal(t, initialStatus.EntityType, firstChunkStatus.EntityType)
 	require.Len(t, firstChunkStatus.Errors, 3)
 	require.EqualValues(t, 101, firstChunkStatus.Errors[0].ID)
 	require.EqualValues(t, 102, firstChunkStatus.Errors[1].ID)
@@ -327,7 +320,6 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.InDelta(t, secondChunkStatus.Progress, 200.0/250.0, 1e-6)
 	require.NotZero(t, secondChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, secondChunkStatus.ElapsedTime)
-	require.Equal(t, initialStatus.EntityType, secondChunkStatus.EntityType)
 	require.Len(t, secondChunkStatus.Errors, 6)
 	require.EqualValues(t, 201, secondChunkStatus.Errors[3].ID)
 	require.EqualValues(t, 202, secondChunkStatus.Errors[4].ID)
@@ -351,7 +343,6 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.InDelta(t, thirdChunkStatus.Progress, 1.0, 1e-6)
 	require.Zero(t, thirdChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, thirdChunkStatus.ElapsedTime)
-	require.Equal(t, initialStatus.EntityType, thirdChunkStatus.EntityType)
 	require.Len(t, thirdChunkStatus.Errors, 9)
 	require.EqualValues(t, 301, thirdChunkStatus.Errors[6].ID)
 	require.EqualValues(t, 302, thirdChunkStatus.Errors[7].ID)
@@ -404,7 +395,6 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	migrator := NewMockMigrator(ctrl)
 
 	migrator.EXPECT().CountTotal().Return(int64(250), nil)
-	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
 	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
 	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(
 		int64(100),
@@ -463,7 +453,6 @@ func TestCancelMigration(t *testing.T) {
 	migrator := NewMockMigrator(ctrl)
 
 	migrator.EXPECT().CountTotal().Return(int64(250), nil)
-	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
 
 	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
 	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil)
@@ -547,7 +536,6 @@ func TestConcurrentMigrationsCloseService(t *testing.T) {
 	migrator := NewMockMigrator(ctrl)
 
 	migrator.EXPECT().CountTotal().Return(int64(math.MaxInt64), nil)
-	migrator.EXPECT().GetEntityType().Return(EntityTypeHost)
 
 	// Migrate infinitely.
 	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).AnyTimes()

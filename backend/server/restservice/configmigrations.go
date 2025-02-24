@@ -18,9 +18,10 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.Migratio
 	errs := []*models.MigrationError{}
 	for _, err := range status.Errors {
 		errs = append(errs, &models.MigrationError{
-			Error:  err.Err.Error(),
+			Error:  err.Error.Error(),
 			HostID: err.ID,
 			Label:  err.Label,
+			Type:   string(err.Type),
 		})
 	}
 	var generalError *string
@@ -33,7 +34,6 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.Migratio
 		Context:     status.Context,
 		ElapsedTime: strfmt.Duration(status.ElapsedTime),
 		EndDate:     convertToOptionalDatetime(status.EndDate),
-		EntityType:  string(status.EntityType),
 		Errors: &models.MigrationErrors{
 			Items: errs,
 			Total: int64(len(errs)),

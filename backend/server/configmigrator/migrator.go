@@ -4,8 +4,22 @@ package configmigrator
 type EntityType string
 
 const (
-	EntityTypeHost EntityType = "host"
+	EntityTypeHost   EntityType = "host"
+	EntityTypeDaemon EntityType = "daemon"
 )
+
+// Contains the basic information about the entity type that was failed to
+// migrate.
+type MigrationError struct {
+	// ID of the errored entity.
+	ID int64
+	// Label of the errored entity.
+	Label string
+	// Type of the errored entity.
+	Type EntityType
+	// Error that occurred during the migration.
+	Error error
+}
 
 // Interface implemented by the structs that know how to migrate the particular
 // entries from the Kea configuration to the database.

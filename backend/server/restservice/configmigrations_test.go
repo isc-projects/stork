@@ -37,11 +37,10 @@ func TestGetMigrations(t *testing.T) {
 		Canceling: false,
 		Progress:  0.2,
 		Errors: []configmigrator.MigrationError{
-			{Err: errors.New("foo"), ID: 4, Label: "host-4"},
-			{Err: errors.New("bar"), ID: 2, Label: "host-2"},
+			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
+			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
 		},
 		GeneralError:      nil,
-		EntityType:        "host",
 		ElapsedTime:       5 * time.Second,
 		EstimatedLeftTime: 1 * time.Minute,
 	}
@@ -55,7 +54,6 @@ func TestGetMigrations(t *testing.T) {
 		Progress:          0.5,
 		Errors:            nil,
 		GeneralError:      nil,
-		EntityType:        "host",
 		ElapsedTime:       10 * time.Second,
 		EstimatedLeftTime: 2 * time.Minute,
 	}
@@ -69,7 +67,6 @@ func TestGetMigrations(t *testing.T) {
 		Progress:          1.0,
 		Errors:            nil,
 		GeneralError:      nil,
-		EntityType:        "host",
 		ElapsedTime:       15 * time.Second,
 		EstimatedLeftTime: 0 * time.Minute,
 	}
@@ -96,8 +93,8 @@ func TestGetMigrations(t *testing.T) {
 	require.Equal(t, int64(2), status.Errors.Total)
 	require.Len(t, status.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4, Label: "host-4"},
-		{Error: "bar", HostID: 2, Label: "host-2"},
+		{Error: "foo", HostID: 4, Label: "host-4", Type: "host"},
+		{Error: "bar", HostID: 2, Label: "host-2", Type: "host"},
 	}, status.Errors.Items)
 
 	status = okRsp.Payload.Items[1]
@@ -190,11 +187,10 @@ func TestGetMigration(t *testing.T) {
 		Canceling: false,
 		Progress:  0.2,
 		Errors: []configmigrator.MigrationError{
-			{Err: errors.New("foo"), ID: 4, Label: "host-4"},
-			{Err: errors.New("bar"), ID: 2, Label: "host-2"},
+			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
+			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
 		},
 		GeneralError:      nil,
-		EntityType:        "host",
 		ElapsedTime:       5 * time.Second,
 		EstimatedLeftTime: 1 * time.Minute,
 	}
@@ -214,8 +210,8 @@ func TestGetMigration(t *testing.T) {
 	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4, Label: "host-4"},
-		{Error: "bar", HostID: 2, Label: "host-2"},
+		{Error: "foo", HostID: 4, Label: "host-4", Type: "host"},
+		{Error: "bar", HostID: 2, Label: "host-2", Type: "host"},
 	}, okRsp.Payload.Errors.Items)
 }
 
@@ -242,11 +238,10 @@ func TestCancelMigration(t *testing.T) {
 		Canceling: true,
 		Progress:  0.2,
 		Errors: []configmigrator.MigrationError{
-			{Err: errors.New("foo"), ID: 4, Label: "host-4"},
-			{Err: errors.New("bar"), ID: 2, Label: "host-2"},
+			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
+			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
 		},
 		GeneralError:      nil,
-		EntityType:        "host",
 		ElapsedTime:       5 * time.Second,
 		EstimatedLeftTime: 1 * time.Minute,
 	}
@@ -271,8 +266,8 @@ func TestCancelMigration(t *testing.T) {
 	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4, Label: "host-4"},
-		{Error: "bar", HostID: 2, Label: "host-2"},
+		{Error: "foo", HostID: 4, Label: "host-4", Type: "host"},
+		{Error: "bar", HostID: 2, Label: "host-2", Type: "host"},
 	}, okRsp.Payload.Errors.Items)
 	require.True(t, okRsp.Payload.Canceling)
 }

@@ -191,11 +191,17 @@ func TestMigrate(t *testing.T) {
 		return daemon
 	}
 
-	getExpectedLabel := func(hostID int64) string {
-		return fmt.Sprintf(
-			"hw-address=%s",
-			storkutil.BytesToHex([]byte{byte(hostID)}),
-		)
+	getExpectedLabel := func(err configmigrator.MigrationError) string {
+		if err.Type == configmigrator.EntityTypeHost {
+			return fmt.Sprintf(
+				"hw-address=%s",
+				storkutil.BytesToHex([]byte{byte(err.ID)}),
+			)
+		}
+		if err.Type == configmigrator.EntityTypeDaemon {
+			return fmt.Sprintf("[%d] dhcp4", err.ID)
+		}
+		return "unsupported"
 	}
 
 	// Tests migrating a single host with no errors.
@@ -384,29 +390,32 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Len(t, errs, 6)
+		require.Len(t, errs, 4)
 		sort.Slice(errs, func(i, j int) bool {
+			if errs[i].Type != errs[j].Type {
+				return len(errs[i].Type) > len(errs[j].Type)
+			}
 			return errs[i].ID < errs[j].ID
 		})
 
-		require.EqualValues(t, host1.ID, errs[0].ID)
-		require.ErrorContains(t, errs[0].Err, "error adding reservation")
-		require.EqualValues(t, host2.ID, errs[1].ID)
-		require.ErrorContains(t, errs[1].Err, "error adding reservation")
+		require.EqualValues(t, daemon1.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Error, "error adding reservation")
+		require.EqualValues(t, configmigrator.EntityTypeDaemon, errs[0].Type)
 
-		require.EqualValues(t, host3.ID, errs[2].ID)
-		require.ErrorContains(t, errs[2].Err, "error transferring reservation")
-		require.EqualValues(t, host4.ID, errs[3].ID)
-		require.ErrorContains(t, errs[3].Err, "error transferring reservation")
+		require.EqualValues(t, daemon2.ID, errs[1].ID)
+		require.ErrorContains(t, errs[1].Error, "error transferring reservation")
+		require.EqualValues(t, configmigrator.EntityTypeDaemon, errs[1].Type)
 
-		require.EqualValues(t, host6.ID, errs[4].ID)
-		require.ErrorContains(t, errs[4].Err, "error executing command")
+		require.EqualValues(t, host6.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Error, "error executing command")
+		require.EqualValues(t, configmigrator.EntityTypeHost, errs[2].Type)
 
-		require.EqualValues(t, host8.ID, errs[5].ID)
-		require.ErrorContains(t, errs[5].Err, "error as result")
+		require.EqualValues(t, host8.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Error, "error as result")
+		require.EqualValues(t, configmigrator.EntityTypeHost, errs[3].Type)
 
 		for _, err := range errs {
-			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
+			require.EqualValues(t, getExpectedLabel(err), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -458,7 +467,7 @@ func TestMigrate(t *testing.T) {
 			expectDaemonLock(daemon3),
 			expectReservationAddCommandNoError(daemon3, host5, host6),
 			expectReservationDelCommandWithError(daemon3, mockErrors{
-				cmdErrs: []error{nil, errors.Errorf("error Kea daemon")},
+				cmdErrs: []error{nil, errors.Errorf("error Kea command")},
 			}, host5, host6),
 			expectConfigWriteCommandNoError(daemon3),
 			expectDaemonUnlock(daemon3),
@@ -482,30 +491,33 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Len(t, errs, 6)
+		require.Len(t, errs, 4)
 
 		sort.Slice(errs, func(i, j int) bool {
+			if errs[i].Type != errs[j].Type {
+				return len(errs[i].Type) > len(errs[j].Type)
+			}
 			return errs[i].ID < errs[j].ID
 		})
 
-		require.Equal(t, host1.ID, errs[0].ID)
-		require.ErrorContains(t, errs[0].Err, "error GRPC")
-		require.Equal(t, host2.ID, errs[1].ID)
-		require.ErrorContains(t, errs[1].Err, "error GRPC")
+		require.Equal(t, daemon1.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Error, "error GRPC")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[0].Type)
 
-		require.Equal(t, host3.ID, errs[2].ID)
-		require.ErrorContains(t, errs[2].Err, "error Kea CA")
-		require.Equal(t, host4.ID, errs[3].ID)
-		require.ErrorContains(t, errs[3].Err, "error Kea CA")
+		require.Equal(t, daemon2.ID, errs[1].ID)
+		require.ErrorContains(t, errs[1].Error, "error Kea CA")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[1].Type)
 
-		require.Equal(t, host6.ID, errs[4].ID)
-		require.ErrorContains(t, errs[4].Err, "error Kea daemon")
+		require.Equal(t, host6.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Error, "error Kea command")
+		require.Equal(t, configmigrator.EntityTypeHost, errs[2].Type)
 
-		require.Equal(t, host8.ID, errs[5].ID)
-		require.ErrorContains(t, errs[5].Err, "error is result")
+		require.Equal(t, host8.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Error, "error is result")
+		require.Equal(t, configmigrator.EntityTypeHost, errs[3].Type)
 
 		for _, err := range errs {
-			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
+			require.EqualValues(t, getExpectedLabel(err), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -546,8 +558,9 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.Len(t, errs, 1)
 		require.EqualValues(t, host.ID, errs[0].ID)
-		require.ErrorContains(t, errs[0].Err, "error adding reservation")
-		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
+		require.ErrorContains(t, errs[0].Error, "error adding reservation")
+		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -587,8 +600,9 @@ func TestMigrate(t *testing.T) {
 
 		// Assert
 		require.EqualValues(t, host.ID, errs[0].ID)
-		require.ErrorContains(t, errs[0].Err, "error adding reservation")
-		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
+		require.ErrorContains(t, errs[0].Error, "error adding reservation")
+		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
 	})
@@ -653,34 +667,33 @@ func TestMigrate(t *testing.T) {
 		errs := migrator.Migrate()
 
 		// Assert
-		require.Len(t, errs, 8)
+		require.Len(t, errs, 4)
 
 		sort.Slice(errs, func(i, j int) bool {
+			if errs[i].Type != errs[j].Type {
+				return len(errs[i].Type) > len(errs[j].Type)
+			}
 			return errs[i].ID < errs[j].ID
 		})
 
-		require.EqualValues(t, host1.ID, errs[0].ID)
-		require.ErrorContains(t, errs[0].Err, "error GRPC")
-		require.EqualValues(t, host2.ID, errs[1].ID)
-		require.ErrorContains(t, errs[1].Err, "error GRPC")
+		require.EqualValues(t, daemon1.ID, errs[0].ID)
+		require.ErrorContains(t, errs[0].Error, "error GRPC")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[0].Type)
 
-		require.EqualValues(t, host3.ID, errs[2].ID)
-		require.ErrorContains(t, errs[2].Err, "error Kea")
-		require.EqualValues(t, host4.ID, errs[3].ID)
-		require.ErrorContains(t, errs[3].Err, "error Kea")
+		require.EqualValues(t, daemon2.ID, errs[1].ID)
+		require.ErrorContains(t, errs[1].Error, "error Kea")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[1].Type)
 
-		require.EqualValues(t, host5.ID, errs[4].ID)
-		require.ErrorContains(t, errs[4].Err, "error command")
-		require.EqualValues(t, host6.ID, errs[5].ID)
-		require.ErrorContains(t, errs[5].Err, "error command")
+		require.EqualValues(t, daemon3.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Error, "error command")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[2].Type)
 
-		require.EqualValues(t, host7.ID, errs[6].ID)
-		require.ErrorContains(t, errs[6].Err, "error execution")
-		require.EqualValues(t, host8.ID, errs[7].ID)
-		require.ErrorContains(t, errs[7].Err, "error execution")
+		require.EqualValues(t, daemon4.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Error, "error execution")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[3].Type)
 
 		for _, err := range errs {
-			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
+			require.EqualValues(t, getExpectedLabel(err), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -738,7 +751,7 @@ func TestMigrate(t *testing.T) {
 			expectDaemonLock(daemon4),
 			expectReservationAddCommandWithError(daemon4, mockErrors{
 				grpcErr: errors.Errorf("Stork agent error"),
-			}, host4),
+			}, host3, host4),
 			expectConfigWriteCommandNoError(daemon4),
 			expectDaemonUnlock(daemon4),
 		)
@@ -752,23 +765,30 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 4)
 
 		sort.Slice(errs, func(i, j int) bool {
+			if errs[i].Type != errs[j].Type {
+				return len(errs[i].Type) < len(errs[j].Type)
+			}
 			return errs[i].ID < errs[j].ID
 		})
 
 		require.EqualValues(t, host1.ID, errs[0].ID)
-		require.ErrorContains(t, errs[0].Err, "response error")
+		require.ErrorContains(t, errs[0].Error, "response error")
+		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
 
 		require.EqualValues(t, host2.ID, errs[1].ID)
-		require.ErrorContains(t, errs[1].Err, "command error")
+		require.ErrorContains(t, errs[1].Error, "command error")
+		require.Equal(t, configmigrator.EntityTypeHost, errs[1].Type)
 
-		require.EqualValues(t, host3.ID, errs[2].ID)
-		require.ErrorContains(t, errs[2].Err, "Kea CA error")
+		require.EqualValues(t, daemon3.ID, errs[2].ID)
+		require.ErrorContains(t, errs[2].Error, "Kea CA error")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[2].Type)
 
-		require.EqualValues(t, host4.ID, errs[3].ID)
-		require.ErrorContains(t, errs[3].Err, "Stork agent error")
+		require.EqualValues(t, daemon4.ID, errs[3].ID)
+		require.ErrorContains(t, errs[3].Error, "Stork agent error")
+		require.Equal(t, configmigrator.EntityTypeDaemon, errs[3].Type)
 
 		for _, err := range errs {
-			require.EqualValues(t, getExpectedLabel(err.ID), err.Label)
+			require.EqualValues(t, getExpectedLabel(err), err.Label)
 		}
 
 		require.True(t, ctrl.Satisfied())
@@ -847,10 +867,11 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 1)
 		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t,
-			errs[0].Err,
+			errs[0].Error,
 			"local subnet id not found in host",
 		)
-		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
+		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
+		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
 		require.True(t, ctrl.Satisfied())
 	})
 
@@ -882,10 +903,11 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 1)
 		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t,
-			errs[0].Err,
+			errs[0].Error,
 			"local subnet id not found in host",
 		)
-		require.EqualValues(t, getExpectedLabel(host.ID), errs[0].Label)
+		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 	})
 
 	// TODO: Check situation when daemon failed to lock or unlock.

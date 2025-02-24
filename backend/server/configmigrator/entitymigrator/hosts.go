@@ -19,7 +19,8 @@ type hostMigrator struct {
 	db               *pg.DB
 	filter           dbmodel.HostsByPageFilters
 	items            []dbmodel.Host
-	errs             map[int64]configmigrator.MigrationError
+	hostErrs         map[int64]configmigrator.MigrationError
+	daemonErrs       map[int64]configmigrator.MigrationError
 	limit            int64
 	dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup
 	connectedAgents  agentcomm.ConnectedAgents
@@ -78,7 +79,8 @@ func (m *hostMigrator) LoadItems(offset int64) (int64, error) {
 // TODO: 5. Handle the insufficient permissions to write the configuration.
 func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 	// Clean up the error map.
-	m.errs = make(map[int64]configmigrator.MigrationError)
+	m.hostErrs = make(map[int64]configmigrator.MigrationError)
+	m.daemonErrs = make(map[int64]configmigrator.MigrationError)
 
 	// Collect the unique daemons to send all the commands to the same daemon
 	// in a single batch.
@@ -108,8 +110,11 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 		m.migrateDaemon(daemon)
 	}
 
-	sliceErrs := make([]configmigrator.MigrationError, 0, len(m.errs))
-	for _, err := range m.errs {
+	sliceErrs := make([]configmigrator.MigrationError, 0, len(m.hostErrs)+len(m.daemonErrs))
+	for _, err := range m.hostErrs {
+		sliceErrs = append(sliceErrs, err)
+	}
+	for _, err := range m.daemonErrs {
 		sliceErrs = append(sliceErrs, err)
 	}
 	return sliceErrs
@@ -123,7 +128,7 @@ func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
 	lockKey, err := m.daemonLocker.Lock(daemonID)
 	if err != nil {
 		// Skip the daemon if it cannot be locked.
-		m.setDaemonError(daemonID, err)
+		m.setDaemonError(daemon, err)
 		return
 	}
 	// TODO: Check the return value of unlock.
@@ -198,6 +203,11 @@ func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
 // execution fails, the host is marked as errored. If the daemon communication
 // fails, all hosts related to the daemon are marked as errored.
 func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func(*dbmodel.Host, map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error)) {
+	if m.isDaemonErrored(daemon.ID) {
+		// Skip errored daemons.
+		return
+	}
+
 	daemonID := daemon.ID
 
 	var commands []keactrl.SerializableCommand
@@ -205,7 +215,7 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 	var commandHostLabels []string
 
 	for _, host := range m.items {
-		if m.isErrored(host.ID) {
+		if m.isHostErrored(host.ID) {
 			// Skip errored hosts.
 			continue
 		}
@@ -227,14 +237,15 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 			continue
 		}
 
-		hostLabel := getLabel(host)
+		hostLabel := getHostLabel(host)
 
 		command, err := f(&host, localHosts)
 		if err != nil {
-			m.errs[host.ID] = configmigrator.MigrationError{
+			m.hostErrs[host.ID] = configmigrator.MigrationError{
 				ID:    host.ID,
 				Label: hostLabel,
-				Err:   err,
+				Type:  configmigrator.EntityTypeHost,
+				Error: err,
 			}
 			continue
 		}
@@ -273,31 +284,32 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 	if err != nil {
 		// Communication error between the server and the agent.
 		// Mark all related hosts as errored.
-		m.setDaemonError(daemonID, err)
+		m.setDaemonError(daemon, err)
 		return
 	}
 
 	// Communication error between the Kea CA and the Kea DHCP daemon.
 	for i, err := range result.CmdsErrors {
 		hostID := commandHostIDs[i]
-		if m.isErrored(hostID) {
+		if m.isHostErrored(hostID) {
 			continue
 		}
 
 		if err == nil {
 			continue
 		}
-		m.errs[hostID] = configmigrator.MigrationError{
+		m.hostErrs[hostID] = configmigrator.MigrationError{
 			ID:    hostID,
 			Label: commandHostLabels[i],
-			Err:   err,
+			Type:  configmigrator.EntityTypeHost,
+			Error: err,
 		}
 	}
 
 	// Execution error of the command.
 	for i, responsePerDaemon := range responses {
 		hostID := commandHostIDs[i]
-		if m.isErrored(hostID) {
+		if m.isHostErrored(hostID) {
 			continue
 		}
 
@@ -308,10 +320,11 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		response := (*responsePerDaemon)[0]
 
 		if err := response.GetError(); err != nil {
-			m.errs[hostID] = configmigrator.MigrationError{
+			m.hostErrs[hostID] = configmigrator.MigrationError{
 				ID:    hostID,
 				Label: commandHostLabels[i],
-				Err:   err,
+				Error: err,
+				Type:  configmigrator.EntityTypeHost,
 			}
 		}
 	}
@@ -335,38 +348,34 @@ func (m *hostMigrator) saveConfigChanges(daemon *dbmodel.Daemon) {
 		}
 	}
 	if err != nil {
-		m.setDaemonError(daemon.ID, err)
+		m.setDaemonError(daemon, err)
 	}
 }
 
 // Marks all hosts related to the daemon as errored.
-func (m *hostMigrator) setDaemonError(daemonID int64, err error) {
-	for _, host := range m.items {
-		if m.isErrored(host.ID) {
-			continue
-		}
-
-		for _, localHost := range host.LocalHosts {
-			if localHost.DaemonID == daemonID {
-				m.errs[host.ID] = configmigrator.MigrationError{
-					ID:    host.ID,
-					Label: getLabel(host),
-					Err:   err,
-				}
-				break
-			}
-		}
+func (m *hostMigrator) setDaemonError(daemon *dbmodel.Daemon, err error) {
+	m.daemonErrs[daemon.ID] = configmigrator.MigrationError{
+		ID:    daemon.ID,
+		Label: getDaemonLabel(daemon),
+		Error: err,
+		Type:  configmigrator.EntityTypeDaemon,
 	}
 }
 
 // Returns true if the host is errored.
-func (m *hostMigrator) isErrored(hostID int64) bool {
-	_, ok := m.errs[hostID]
+func (m *hostMigrator) isHostErrored(hostID int64) bool {
+	_, ok := m.hostErrs[hostID]
+	return ok
+}
+
+// Returns true if the daemon is errored.
+func (m *hostMigrator) isDaemonErrored(daemonID int64) bool {
+	_, ok := m.daemonErrs[daemonID]
 	return ok
 }
 
 // Creates a label for the host.
-func getLabel(host dbmodel.Host) string {
+func getHostLabel(host dbmodel.Host) string {
 	if len(host.HostIdentifiers) == 0 {
 		// Host must have at least one identifier.
 		return "unknown"
@@ -377,4 +386,9 @@ func getLabel(host dbmodel.Host) string {
 		identifier.Type,
 		storkutil.BytesToHexWithSeparator(identifier.Value, ":"),
 	)
+}
+
+// Creates a label for the daemon.
+func getDaemonLabel(daemon *dbmodel.Daemon) string {
+	return fmt.Sprintf("[%d] %s", daemon.ID, daemon.Name)
 }

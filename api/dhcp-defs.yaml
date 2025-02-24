@@ -269,6 +269,8 @@
         type: string
       label:
         type: string
+      type:
+        type: string
 
   MigrationErrors:
     type: object
@@ -303,8 +305,6 @@
       generalError:
         type: string
         x-nullable: true
-      entityType:
-        type: string
       elapsedTime:
         type: string
         format: duration

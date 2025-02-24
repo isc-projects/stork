@@ -13,14 +13,6 @@ import (
 // Type (alias?) for the migration ID.
 type MigrationIdentifier string
 
-// Contains the basic information about the entity type that was failed to
-// migrate.
-type MigrationError struct {
-	ID    int64
-	Err   error
-	Label string
-}
-
 // Describes the migration process. It is common for all the entities that can
 // be migrated.
 type MigrationStatus struct {
@@ -45,8 +37,6 @@ type MigrationStatus struct {
 	// If it is not nil, the migration is stopped but if the migration is
 	// finished successfully, the value is nil.
 	GeneralError error
-	// The type of the entities that are being migrated.
-	EntityType EntityType
 	// The amount of time that has already elapsed since the migration started.
 	ElapsedTime time.Duration
 	// The estimated amount of time that is left to finish the migration.
@@ -102,7 +92,6 @@ type migration struct {
 	startDate      time.Time
 	endDate        time.Time
 	cancelDate     time.Time
-	entityType     EntityType
 	processedItems int64
 	totalItems     int64
 	errors         []MigrationError
@@ -153,7 +142,6 @@ func (m *migration) getStatus() MigrationStatus {
 		Context:           context.WithoutCancel(m.ctx),
 		StartDate:         m.startDate,
 		EndDate:           m.endDate,
-		EntityType:        m.entityType,
 		Canceling:         !m.cancelDate.IsZero(),
 		Errors:            errsCopy,
 		GeneralError:      m.generalError,
@@ -292,7 +280,6 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 	migration := &migration{
 		ctx:            ctx,
 		startDate:      time.Now(),
-		entityType:     migrator.GetEntityType(),
 		processedItems: 0,
 		totalItems:     totalItems,
 		errors:         make([]MigrationError, 0),
