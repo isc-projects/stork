@@ -230,12 +230,16 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	defer ctrl.Finish()
 	migrator := NewMockMigrator(ctrl)
 
-	migrator.EXPECT().CountTotal().Return(int64(250), nil)
+	gomock.InOrder(
+		migrator.EXPECT().CountTotal().Return(int64(250), nil),
 
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(200))).Return(int64(50), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(250))).Return(int64(0), nil)
+		migrator.EXPECT().Begin(),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(200))).Return(int64(50), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(250))).Return(int64(0), nil),
+		migrator.EXPECT().End(),
+	)
 
 	// Blocks the migration runner until the assertion of a particular chunk is
 	// finished.
@@ -394,11 +398,15 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	defer ctrl.Finish()
 	migrator := NewMockMigrator(ctrl)
 
-	migrator.EXPECT().CountTotal().Return(int64(250), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(
-		int64(100),
-		errors.New("loading error"),
+	gomock.InOrder(
+		migrator.EXPECT().CountTotal().Return(int64(250), nil),
+		migrator.EXPECT().Begin(),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(
+			int64(100),
+			errors.New("loading error"),
+		),
+		migrator.EXPECT().End(),
 	)
 
 	// Blocks the migration runner until the assertion of a particular chunk is
@@ -452,10 +460,13 @@ func TestCancelMigration(t *testing.T) {
 	defer ctrl.Finish()
 	migrator := NewMockMigrator(ctrl)
 
-	migrator.EXPECT().CountTotal().Return(int64(250), nil)
-
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil)
+	gomock.InOrder(
+		migrator.EXPECT().CountTotal().Return(int64(250), nil),
+		migrator.EXPECT().Begin(),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil),
+		migrator.EXPECT().End(),
+	)
 
 	// Blocks the migration runner until the assertion of a particular chunk is
 	// finished.
@@ -534,12 +545,15 @@ func TestMigrationParentCancel(t *testing.T) {
 	defer ctrl.Finish()
 	migrator := NewMockMigrator(ctrl)
 
-	migrator.EXPECT().CountTotal().Return(int64(250), nil)
-
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(200))).Return(int64(50), nil)
-	migrator.EXPECT().LoadItems(gomock.Eq(int64(250))).Return(int64(0), nil)
+	gomock.InOrder(
+		migrator.EXPECT().CountTotal().Return(int64(250), nil),
+		migrator.EXPECT().Begin(),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(200))).Return(int64(50), nil),
+		migrator.EXPECT().LoadItems(gomock.Eq(int64(250))).Return(int64(0), nil),
+		migrator.EXPECT().End(),
+	)
 
 	// Blocks the migration runner until the assertion of a particular chunk is
 	// finished.
@@ -616,6 +630,8 @@ func TestConcurrentMigrationsCloseService(t *testing.T) {
 	migrator := NewMockMigrator(ctrl)
 
 	migrator.EXPECT().CountTotal().Return(int64(math.MaxInt64), nil)
+	migrator.EXPECT().Begin()
+	migrator.EXPECT().End()
 
 	// Migrate infinitely.
 	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).AnyTimes()

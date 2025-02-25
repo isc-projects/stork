@@ -13,13 +13,19 @@ import (
 //go:generate mockgen -package=configmigrator -destination=migratormock_test.go isc.org/stork/server/configmigrator Migrator
 
 // A helper function to read all items from the channels.
-func readChannels(ch <-chan migrationChunk, done <-chan error) (errs []MigrationError, err error) {
+func readChannels(ch <-chan migrationChunk, done <-chan error) (errs []MigrationError, generalErr error) {
 	errs = make([]MigrationError, 0)
 
 	for {
 		select {
-		case err = <-done:
-			return
+		case err, ok := <-done:
+			if err != nil {
+				generalErr = err
+			}
+			if !ok {
+				// Return when the channels are closed.
+				return
+			}
 		case chunk := <-ch:
 			errs = append(errs, chunk.errs...)
 		}
@@ -33,7 +39,11 @@ func TestRunMigrationEmpty(t *testing.T) {
 	defer ctrl.Finish()
 
 	mock := NewMockMigrator(ctrl)
-	mock.EXPECT().LoadItems(int64(0)).Return(int64(0), nil)
+	gomock.InOrder(
+		mock.EXPECT().Begin(),
+		mock.EXPECT().LoadItems(int64(0)).Return(int64(0), nil),
+		mock.EXPECT().End(),
+	)
 
 	ctx := context.Background()
 
@@ -53,11 +63,18 @@ func TestRunMigration(t *testing.T) {
 	defer ctrl.Finish()
 
 	mock := NewMockMigrator(ctrl)
-	mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), nil)
-	mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(10), nil)
-	mock.EXPECT().LoadItems(gomock.Eq(int64(20))).Return(int64(5), nil)
-	mock.EXPECT().LoadItems(gomock.Eq(int64(25))).Return(int64(0), nil)
-	mock.EXPECT().Migrate().Return([]MigrationError{}).Times(3)
+
+	gomock.InOrder(
+		mock.EXPECT().Begin(),
+		mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), nil),
+		mock.EXPECT().Migrate().Return([]MigrationError{}),
+		mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(10), nil),
+		mock.EXPECT().Migrate().Return([]MigrationError{}),
+		mock.EXPECT().LoadItems(gomock.Eq(int64(20))).Return(int64(5), nil),
+		mock.EXPECT().Migrate().Return([]MigrationError{}),
+		mock.EXPECT().LoadItems(gomock.Eq(int64(25))).Return(int64(0), nil),
+		mock.EXPECT().End(),
+	)
 
 	ctx := context.Background()
 
@@ -70,6 +87,51 @@ func TestRunMigration(t *testing.T) {
 	require.Empty(t, errs) // updated to check allChunks instead of errs
 }
 
+// Test that the migration is interrupted if any error occurs in the initial
+// phase of the migration.
+func TestRunMigrateInterruptOnBeginError(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock := NewMockMigrator(ctrl)
+
+	mock.EXPECT().Begin().Return(errors.New("begin error"))
+
+	// Act
+	chunks, done := runMigration(context.Background(), mock)
+	errs, err := readChannels(chunks, done)
+
+	// Assert
+	require.ErrorContains(t, err, "begin error")
+	require.Empty(t, errs)
+}
+
+// Test that the migration done channel doesn't contain an error occurred
+// during the cleanup.
+func TestRunMigrationCleanupError(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock := NewMockMigrator(ctrl)
+	gomock.InOrder(
+		mock.EXPECT().Begin(),
+		mock.EXPECT().LoadItems(int64(0)).Return(int64(0), nil),
+		mock.EXPECT().End().Return(errors.New("cleanup error")),
+	)
+
+	ctx := context.Background()
+
+	// Act
+	chunks, done := runMigration(ctx, mock)
+	allChunks, err := readChannels(chunks, done)
+
+	// Assert
+	require.NoError(t, err)
+	require.Empty(t, allChunks)
+}
+
 // Test that the migration errors are aggregated.
 func TestRunMigrationAggregatesErrors(t *testing.T) {
 	// Arrange
@@ -77,6 +139,8 @@ func TestRunMigrationAggregatesErrors(t *testing.T) {
 	defer ctrl.Finish()
 
 	mock := NewMockMigrator(ctrl)
+	mock.EXPECT().Begin()
+	mock.EXPECT().End()
 	mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), nil)
 	mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(5), nil)
 	mock.EXPECT().LoadItems(gomock.Eq(int64(15))).Return(int64(0), nil)
@@ -120,7 +184,11 @@ func TestRunMigrationInterruptOnLoadingError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mock := NewMockMigrator(ctrl)
-	mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), errors.New("loading error"))
+	gomock.InOrder(
+		mock.EXPECT().Begin(),
+		mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), errors.New("loading error")),
+		mock.EXPECT().End(),
+	)
 
 	ctx := context.Background()
 

@@ -14,6 +14,7 @@ import (
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
+	"isc.org/stork/server/apps/kea"
 	appstest "isc.org/stork/server/apps/test"
 	"isc.org/stork/server/config"
 	"isc.org/stork/server/configmigrator"
@@ -1723,7 +1724,12 @@ func TestMigrateHosts(t *testing.T) {
 
 	migrationService := NewMockMigrationService(ctrl)
 
-	rapi, err := NewRestAPI(dbSettings, db, migrationService)
+	hostPuller, _ := kea.NewHostsPuller(db, nil, nil, nil)
+	pullers := &apps.Pullers{
+		KeaHostsPuller: hostPuller,
+	}
+
+	rapi, err := NewRestAPI(dbSettings, db, migrationService, pullers)
 	require.NoError(t, err)
 
 	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).

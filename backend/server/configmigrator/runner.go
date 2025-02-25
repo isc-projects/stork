@@ -2,6 +2,8 @@ package configmigrator
 
 import (
 	"context"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type migrationChunk struct {
@@ -24,9 +26,26 @@ func runMigration(ctx context.Context, migrator Migrator) (<-chan migrationChunk
 		defer close(migrationChunkChan)
 		defer close(doneChan)
 
+		// Begin the migration - make all necessary preparations.
+		err := migrator.Begin()
+		if err != nil {
+			doneChan <- err
+			return
+		}
+		defer func() {
+			// End the migration. Clean up after the migration.
+			err := migrator.End()
+			if err != nil {
+				// We cannot return this error through the done channel because
+				// the done channel is expected to return exactly one value.
+				// We log the error instead as it is not a problem with the
+				// migrated data but with the migration runner itself.
+				log.WithError(err).Error("failed to clean up after migration")
+			}
+		}()
+
 		var totalLoadedCount int64
 		var loadedCount int64
-		var err error
 		for {
 			select {
 			case <-ctx.Done():

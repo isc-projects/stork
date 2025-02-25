@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
@@ -14,6 +15,14 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
+
+// Represents an object that runs a continuous process and its execution can be
+// paused and unpaused. It is implemented by the PeriodicExecutor struct that
+// is embedded in all pullers.
+type Pauser interface {
+	Pause()
+	Unpause()
+}
 
 type hostMigrator struct {
 	db               *pg.DB
@@ -25,12 +34,23 @@ type hostMigrator struct {
 	dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup
 	connectedAgents  agentcomm.ConnectedAgents
 	daemonLocker     config.DaemonLocker
+	// The global pullers that fetch the hosts.
+	// Expected to be the state puller (fetches hosts from JSON) and the host
+	// puller (fetches hosts from DB).
+	pullers []Pauser
 }
 
 var _ configmigrator.Migrator = &hostMigrator{}
 
 // Creates a new host migrator.
-func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgents agentcomm.ConnectedAgents, dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup, locker config.DaemonLocker) configmigrator.Migrator {
+func NewHostMigrator(
+	filter dbmodel.HostsByPageFilters,
+	db *pg.DB,
+	connectedAgents agentcomm.ConnectedAgents,
+	dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup,
+	locker config.DaemonLocker,
+	pullers []Pauser,
+) configmigrator.Migrator {
 	// Migrating the conflicted hosts is not supported.
 	filter.DHCPDataConflict = storkutil.Ptr(false)
 	return &hostMigrator{
@@ -40,7 +60,25 @@ func NewHostMigrator(filter dbmodel.HostsByPageFilters, db *pg.DB, connectedAgen
 		dhcpOptionLookup: dhcpOptionLookup,
 		connectedAgents:  connectedAgents,
 		daemonLocker:     locker,
+		pullers:          pullers,
 	}
+}
+
+// Begins the migration. Returns an error if the migration cannot be started.
+// Stops the hosts puller.
+func (m *hostMigrator) Begin() error {
+	for _, puller := range m.pullers {
+		puller.Pause()
+	}
+	return nil
+}
+
+// Ends the migration. Restarts the hosts puller.
+func (m *hostMigrator) End() error {
+	for _, puller := range m.pullers {
+		puller.Unpause()
+	}
+	return nil
 }
 
 // Returns a total number of hosts to migrate.

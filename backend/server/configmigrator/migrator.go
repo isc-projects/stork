@@ -25,6 +25,12 @@ type MigrationError struct {
 // Interface implemented by the structs that know how to migrate the particular
 // entries from the Kea configuration to the database.
 type Migrator interface {
+	// Begins the migration. Returns an error if the migration cannot be
+	// started. It is called before the first LoadItems call.
+	Begin() error
+	// Ends the migration. It is called after the last Migrate call.
+	End() error
+
 	// Returns a total number of items to migrate.
 	CountTotal() (int64, error)
 	// Loads a chunk of items from the Kea configuration. Returns the number of
