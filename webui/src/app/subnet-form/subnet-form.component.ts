@@ -218,7 +218,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
-                    detail: `Failed to create subnet: ` + msg,
+                    detail: `Failed to create transaction for subnet creation: ` + msg,
                     life: 10000,
                 })
                 this.state.loaded = true
@@ -243,7 +243,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Cannot create new transaction',
-                    detail: `Failed to update subnet ${this.subnetId}: ` + msg,
+                    detail: `Failed to create transaction to update subnet ${this.subnetId}: ` + msg,
                     life: 10000,
                 })
                 this.state.loaded = true
