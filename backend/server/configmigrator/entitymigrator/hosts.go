@@ -124,7 +124,7 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 				continue
 			}
 
-			daemonsByIDs[localHost.DaemonID] = localHost.Daemon
+			daemonsByIDs[daemon.ID] = daemon
 		}
 	}
 
@@ -346,7 +346,7 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		}
 		err = errors.WithMessagef(err,
 			"command %d/%d execution failed for host '%d' of daemon '%d'",
-			i, len(result.CmdsErrors),
+			i+1, len(result.CmdsErrors),
 			hostID, daemonID)
 		m.hostErrs[hostID] = configmigrator.MigrationError{
 			ID:    hostID,
@@ -372,7 +372,7 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		if err := response.GetError(); err != nil {
 			err = errors.WithMessagef(err,
 				"command %d/%d returned an error for host '%d' of daemon '%d'",
-				i, len(responses),
+				i+1, len(responses),
 				hostID, daemonID)
 			m.hostErrs[hostID] = configmigrator.MigrationError{
 				ID:    hostID,
