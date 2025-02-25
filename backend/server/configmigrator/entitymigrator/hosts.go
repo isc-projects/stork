@@ -193,6 +193,10 @@ func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
 			*host,
 		)
 		if err != nil {
+			err = errors.WithMessagef(err,
+				"failed to create a reservation for host '%d' of daemon '%d'",
+				host.ID, daemonID,
+			)
 			return nil, err
 		}
 
@@ -216,6 +220,10 @@ func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
 			daemonID, host, keaconfig.HostCmdsOperationTargetMemory,
 		)
 		if err != nil {
+			err = errors.WithMessagef(err,
+				"failed to create a deleted reservation for host '%d' of daemon '%d'",
+				host.ID, daemonID,
+			)
 			return nil, err
 		}
 
@@ -277,6 +285,7 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 
 		command, err := f(&host, localHosts)
 		if err != nil {
+			err = errors.WithMessagef(err, "failed to create a command for host '%d' of daemon '%d'", host.ID, daemonID)
 			m.hostErrs[host.ID] = configmigrator.MigrationError{
 				ID:    host.ID,
 				Label: hostLabel,
@@ -318,6 +327,7 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		err = result.Error
 	}
 	if err != nil {
+		err = errors.WithMessagef(err, "failed to send a command to daemon '%d'", daemonID)
 		// Communication error between the server and the agent.
 		// Mark all related hosts as errored.
 		m.setDaemonError(daemon, err)
@@ -334,6 +344,10 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		if err == nil {
 			continue
 		}
+		err = errors.WithMessagef(err,
+			"command %d/%d execution failed for host '%d' of daemon '%d'",
+			i, len(result.CmdsErrors),
+			hostID, daemonID)
 		m.hostErrs[hostID] = configmigrator.MigrationError{
 			ID:    hostID,
 			Label: commandHostLabels[i],
@@ -356,6 +370,10 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		response := (*responsePerDaemon)[0]
 
 		if err := response.GetError(); err != nil {
+			err = errors.WithMessagef(err,
+				"command %d/%d returned an error for host '%d' of daemon '%d'",
+				i, len(responses),
+				hostID, daemonID)
 			m.hostErrs[hostID] = configmigrator.MigrationError{
 				ID:    hostID,
 				Label: commandHostLabels[i],
@@ -384,6 +402,7 @@ func (m *hostMigrator) saveConfigChanges(daemon *dbmodel.Daemon) {
 		}
 	}
 	if err != nil {
+		err = errors.WithMessagef(err, "failed to send config-write to daemon '%d'", daemon.ID)
 		m.setDaemonError(daemon, err)
 	}
 }
