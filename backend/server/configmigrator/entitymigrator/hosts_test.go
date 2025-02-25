@@ -1091,15 +1091,3 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 		}
 	})
 }
-
-// Test that the expected entity type is returned.
-func TestGetEntityType(t *testing.T) {
-	// Arrange
-	migrator := NewHostMigrator(dbmodel.HostsByPageFilters{}, nil, nil, nil, nil)
-
-	// Act
-	entityType := migrator.GetEntityType()
-
-	// Assert
-	require.Equal(t, configmigrator.EntityTypeHost, entityType)
-}

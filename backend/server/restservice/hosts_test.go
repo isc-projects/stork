@@ -1726,27 +1726,22 @@ func TestMigrateHosts(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
 
-	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Cond(func(arg any) bool {
-		migrator, ok := arg.(configmigrator.Migrator)
-		if !ok {
-			return false
-		}
-		return migrator.GetEntityType() == "host"
-	})).Return(configmigrator.MigrationStatus{
-		ID:        "1234-1",
-		Context:   context.Background(),
-		StartDate: time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
-		EndDate:   time.Time{},
-		Canceling: false,
-		Progress:  0.2,
-		Errors: []configmigrator.MigrationError{
-			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: "host"},
-			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: "host"},
-		},
-		GeneralError:      nil,
-		ElapsedTime:       5 * time.Second,
-		EstimatedLeftTime: 1 * time.Minute,
-	}, nil)
+	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).
+		Return(configmigrator.MigrationStatus{
+			ID:        "1234-1",
+			Context:   context.Background(),
+			StartDate: time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
+			EndDate:   time.Time{},
+			Canceling: false,
+			Progress:  0.2,
+			Errors: []configmigrator.MigrationError{
+				{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: "host"},
+				{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: "host"},
+			},
+			GeneralError:      nil,
+			ElapsedTime:       5 * time.Second,
+			EstimatedLeftTime: 1 * time.Minute,
+		}, nil)
 
 	// Act
 	rsp := rapi.MigrateHosts(context.Background(), dhcp.MigrateHostsParams{

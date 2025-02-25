@@ -33,8 +33,4 @@ type Migrator interface {
 	// Migrates the loaded items. Returns a map of errors that occurred during
 	// the migration. The key is the ID of the migrated item.
 	Migrate() []MigrationError
-	// Indicates the type of the entities that are being migrated. The keys of
-	// the error map returned by the @Migrate method are the IDs of the
-	// entities of this type.
-	GetEntityType() EntityType
 }
