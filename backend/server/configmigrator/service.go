@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // Type (alias?) for the migration ID.
@@ -269,12 +270,22 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		return MigrationStatus{}, errors.WithMessage(err, "failed to get the total items")
 	}
 
+	// Obtain migration ID.
+	startDate := time.Now()
+	s.mutex.RLock()
+	migrationID := s.getUniqueMigrationID(startDate)
+	s.mutex.RUnlock()
+
 	// Strip the cancel and deadline from the parent context.
 	ctx = context.WithoutCancel(ctx)
 	// Add own independent cancel.
 	ctx, cancel := context.WithCancel(ctx)
 
 	// Run migration.
+	log.WithFields(log.Fields{
+		"migration_id": migrationID,
+		"total_items":  totalItems,
+	}).Info("Starting config migration")
 	chunkChunk, doneChan := runMigration(ctx, migrator)
 	// Emits a value when the runner is done and its done value has been
 	// processed.
@@ -282,7 +293,8 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 
 	migration := &migration{
 		ctx:            ctx,
-		startDate:      time.Now(),
+		startDate:      startDate,
+		id:             migrationID,
 		processedItems: 0,
 		totalItems:     totalItems,
 		errors:         make([]MigrationError, 0),
@@ -303,6 +315,7 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 			case err, ok := <-doneChan:
 				if !ok {
 					// Channel closed.
+					log.WithField("migration_id", migrationID).Info("Config migration done")
 					return
 				}
 				migration.registerStop(err)
@@ -312,7 +325,6 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 
 	// Save the migration.
 	s.mutex.Lock()
-	migration.id = s.getUniqueMigrationID(migration.startDate)
 	s.migrations[migration.id] = migration
 	s.mutex.Unlock()
 

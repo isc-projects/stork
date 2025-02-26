@@ -49,6 +49,7 @@ func (puller *StatePuller) Shutdown() {
 
 // Gets the status of machines and their apps and stores useful information in the database.
 func (puller *StatePuller) pullData() error {
+	log.Info("Pulling information from machines")
 	// get list of all authorized machines from database
 	authorized := true
 	dbMachines, err := dbmodel.GetAllMachines(puller.DB, &authorized)
