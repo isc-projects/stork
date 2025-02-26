@@ -21,6 +21,10 @@ type PeriodicExecutor struct {
 	wg              sync.WaitGroup
 	mutex           sync.RWMutex
 	getIntervalFunc func() (time.Duration, error)
+	// This wait group is blocking when the executor iteration is in progress
+	// and it is released when the iteration is finished. It is used to wait
+	// for the iteration to finish after pausing the executor.
+	wgIteration sync.WaitGroup
 }
 
 // Interval is used while the puller is inactive to check if it was re-enabled.
@@ -117,6 +121,13 @@ func (executor *PeriodicExecutor) Unpause() {
 	}
 }
 
+// Blocks until the current iteration of the executor is finished. If there is
+// no iteration in progress, the function returns immediately.
+// It may be used to ensure there is no execution after the executor is paused.
+func (executor *PeriodicExecutor) WaitForStandby() {
+	executor.wgIteration.Wait()
+}
+
 // Return the current interval.
 func (executor *PeriodicExecutor) GetInterval() time.Duration {
 	executor.mutex.RLock()
@@ -147,7 +158,9 @@ func (executor *PeriodicExecutor) executorLoop() {
 				// Temporarily stop the executor while running the external action.
 				// It will be resumed when the action ends.
 				executor.Pause()
+				executor.wgIteration.Add(1)
 				err := executor.executorFunc()
+				executor.wgIteration.Done()
 				executor.Unpause()
 				if err != nil {
 					log.WithError(err).Errorf("Errors were encountered while pulling data from apps")

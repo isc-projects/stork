@@ -22,6 +22,7 @@ import (
 type Pauser interface {
 	Pause()
 	Unpause()
+	WaitForStandby()
 }
 
 type hostMigrator struct {
@@ -70,6 +71,9 @@ func (m *hostMigrator) Begin() error {
 	for _, puller := range m.pullers {
 		puller.Pause()
 	}
+	for _, puller := range m.pullers {
+		puller.WaitForStandby()
+	}
 	return nil
 }
 
@@ -78,6 +82,7 @@ func (m *hostMigrator) End() error {
 	for _, puller := range m.pullers {
 		puller.Unpause()
 	}
+
 	return nil
 }
 
@@ -89,7 +94,7 @@ func (m *hostMigrator) CountTotal() (int64, error) {
 
 // Loads a chunk of hosts from the database.
 func (m *hostMigrator) LoadItems(offset int64) (int64, error) {
-	items, _, err := dbmodel.GetHostsByPage(m.db, offset, m.limit, m.filter, "id", dbmodel.SortDirAsc)
+	items, _, err := dbmodel.GetHostsByPage(m.db, offset, m.limit, m.filter, "", dbmodel.SortDirAsc)
 	if err != nil {
 		// Returns the number of items tried to load.
 		return m.limit, err
