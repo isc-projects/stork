@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core'
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
@@ -170,7 +170,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private dhcpApi: DHCPService,
         private msgSrv: MessageService,
         private settingSvc: SettingService,
-        private servicesApi: ServicesService
+        private servicesApi: ServicesService,
+        private cd: ChangeDetectorRef
     ) {}
 
     ngOnDestroy(): void {
@@ -297,6 +298,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
      */
     refreshDnsOverview(event: TableLazyLoadEvent) {
         this.dnsServiceStatusLoading = true
+        this.cd.detectChanges()
         lastValueFrom(this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'bind9'))
             .then((data) => {
                 this.dnsApps = data?.items ?? []

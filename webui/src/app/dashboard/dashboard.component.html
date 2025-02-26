@@ -396,6 +396,7 @@
                     <ng-template pTemplate="header">
                         <tr>
                             <th>Host</th>
+                            <th>Address</th>
                             <th>App Version</th>
                             <th>App Name</th>
                             <th>Daemon</th>
@@ -408,6 +409,9 @@
                         <tr>
                             <td>
                                 <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.hostname }}</a>
+                            </td>
+                            <td>
+                                <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.address }}</a>
                             </td>
                             <td>
                                 <a routerLink="/apps/bind9/{{ a.id }}"
