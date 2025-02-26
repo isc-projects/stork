@@ -91,6 +91,10 @@ section.stork-layout
     // It shrinks and grows.
     flex: 2 1 58rem
 
+    & > div:not(:first-child)
+      // If there are more div sections in the article, add some horizontal margin to split them.
+      margin-top: 1rem
+
   & > aside
     // aside is supposed to take 33% width of the viewport.
     // It is additional content on the right hand side.

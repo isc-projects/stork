@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
-import { DHCPService } from '../backend/api/api'
+import { DHCPService, ServicesService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
 import {
     datetimeToLocal,
@@ -16,11 +16,12 @@ import {
 } from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
-import { Subscription } from 'rxjs'
+import { lastValueFrom, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
-import { DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview, Settings } from '../backend'
+import { App, DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview, Settings } from '../backend'
 import { ModifyDeep } from '../utiltypes'
+import { TableLazyLoadEvent } from 'primeng/table'
 
 type DhcpOverviewParsed = ModifyDeep<
     DhcpOverview,
@@ -117,6 +118,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
     grafanaDhcp6DashboardId: string
 
     /**
+     * List of DNS Apps displayed in the DNS dashboard.
+     */
+    dnsApps: App[] = []
+
+    /**
+     * Total count of DNS Apps returned by the backend.
+     */
+    dnsAppsTotalCount: number = 0
+
+    /**
+     * Flag stating whether DNS Service Status table data is loading or not.
+     */
+    dnsServiceStatusLoading: boolean = false
+
+    /**
      * Returns true when no kea and no bind9 apps exist among authorized machines;
      * false otherwise.
      */
@@ -153,7 +169,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private serverData: ServerDataService,
         private dhcpApi: DHCPService,
         private msgSrv: MessageService,
-        private settingSvc: SettingService
+        private settingSvc: SettingService,
+        private servicesApi: ServicesService
     ) {}
 
     ngOnDestroy(): void {
@@ -272,6 +289,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     life: 10000,
                 })
             })
+    }
+
+    /**
+     * Get or refresh DNS overview data from the server
+     * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
+     */
+    refreshDnsOverview(event: TableLazyLoadEvent) {
+        this.dnsServiceStatusLoading = true
+        lastValueFrom(this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'bind9'))
+            .then((data) => {
+                this.dnsApps = data?.items ?? []
+                this.dnsAppsTotalCount = data?.total ?? 0
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Cannot get DNS overview',
+                    detail: 'Error getting DNS overview: ' + msg,
+                    life: 10000,
+                })
+            })
+            .finally(() => (this.dnsServiceStatusLoading = false))
     }
 
     /**
