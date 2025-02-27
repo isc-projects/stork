@@ -11,6 +11,7 @@ import (
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	apps "isc.org/stork/server/apps"
 	appstest "isc.org/stork/server/apps/test"
+	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
