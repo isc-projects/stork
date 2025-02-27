@@ -179,15 +179,18 @@ func TestGetName(t *testing.T) {
 // Test that the caller of the wait function is blocked until the executor
 // finishes the current iteration.
 func TestWaitForStandby(t *testing.T) {
-	// Closed when the iteration starts. It notifies that the executor goroutine
-	// reached the executor function.
+	// Emits a value when the iteration starts. It notifies that the executor
+	// goroutine reached the executor function.
 	iterationStarted := make(chan struct{})
-	// Closed when the iteration finishes. It releases the blocked executor
-	// goroutine.
+	defer close(iterationStarted)
+	// Emits a value when the iteration finishes. It releases the blocked
+	// executor goroutine.
 	iterationFinished := make(chan struct{})
-	// Closed when the test goroutine runs, just before waiting for the executor
-	// standby.
+	defer close(iterationFinished)
+	// Emits a value when the test goroutine runs, just before waiting for the
+	// executor standby.
 	waitingStarted := make(chan struct{})
+	defer close(waitingStarted)
 	// Releases when the test goroutine finishes waiting.
 	var waitingFinished sync.WaitGroup
 
@@ -195,12 +198,13 @@ func TestWaitForStandby(t *testing.T) {
 	executor, _ := NewPeriodicExecutor(
 		"foobar",
 		func() error {
-			close(iterationStarted)
+			iterationStarted <- struct{}{}
 			<-iterationFinished
 			return nil
 		},
 		func() (time.Duration, error) { return 1 * time.Second, nil },
 	)
+	defer executor.Shutdown()
 
 	// Wait until the executor goroutine starts the iteration and call the
 	// handler function.
@@ -210,7 +214,7 @@ func TestWaitForStandby(t *testing.T) {
 	waitingFinished.Add(1)
 	go func() {
 		// Notify the test goroutine is running.
-		close(waitingStarted)
+		waitingStarted <- struct{}{}
 		// Block until the executor finishes the current iteration.
 		executor.WaitForStandby()
 		// Notify the test goroutine is finished.
@@ -228,7 +232,7 @@ func TestWaitForStandby(t *testing.T) {
 	}, 500*time.Millisecond, 100*time.Millisecond)
 
 	// Release the executor goroutine.
-	close(iterationFinished)
+	iterationFinished <- struct{}{}
 	// Check that the test goroutine is released. It means it stopped waiting.
 	require.Eventually(t, func() bool {
 		waitingFinished.Wait()
