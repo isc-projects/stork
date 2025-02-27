@@ -752,9 +752,19 @@ class DockerCompose:
             opts["stdout"] = subprocess.PIPE
             opts["stderr"] = subprocess.PIPE
 
-        result = subprocess.run(
-            cmd, check=check, cwd=self._project_directory, env=env, **opts
-        )
+        try:
+            result = subprocess.run(
+                cmd, check=check, cwd=self._project_directory, env=env, **opts
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                "Command '%s' failed with exit code: '%d'; stdout: '%s'; stderr: '%s'",
+                e.cmd, e.returncode,
+                e.stdout.decode("utf-8").rstrip() if e.stdout else None,
+                e.stderr.decode("utf-8").rstrip() if e.stderr else None,
+            )
+            raise
+
         stdout: bytes = result.stdout
         stderr: bytes = result.stderr
         if capture_output:
