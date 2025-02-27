@@ -336,7 +336,11 @@ ENTRYPOINT [ "/bin/sh", "-c", \
 EXPOSE 8080
 # Prometheus Kea port
 EXPOSE 9547
-HEALTHCHECK CMD [ "supervisorctl", "status" ]
+# The process is in a BACKOFF state when it is starting or start is retrying.
+# BACKOFF and STARTING states doesn't cause the supervisor to exit with a
+# non-zero status.
+# But for Healthcheck purposes, we need to treat them as unhealthy states.
+HEALTHCHECK CMD output="$(supervisorctl status)" || exit 1; echo "$output" | grep -vz 'BACKOFF\|STARTING'
 # Configuration files:
 # Mysql database seed: /var/lib/db/init_mysql_query.sql
 # Postgres database seed: /var/lib/db/init_pgsql_query.sql

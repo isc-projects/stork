@@ -96,8 +96,8 @@ services:
   agent-kea:
     extends: agent-kea-base
     ports:
-      - "42888:8080"
-      - "42547:9547"
+      - "42888-42889:8080"
+      - "42547-42548:9547"
     networks:
       storknet:
         ipv4_address: 172.42.42.100
@@ -156,19 +156,18 @@ services:
     volumes:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
-  agent-kea-many-subnets-and-shared-networks-1:
-    extends: agent-kea
+  agent-kea-many-host-reservations-1:
+    extends: agent-kea-premium-host-database
     volumes:
-      - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4-sn4400-s13000.conf:/etc/kea/kea-dhcp4.conf
+      - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-1.conf:/etc/kea/kea-dhcp4.conf
 
-  agent-kea-many-subnets-and-shared-networks-2:
-    extends: agent-kea-many-subnets-and-shared-networks-1
-    hostname: agent-kea2
-    ports: !override
-      - 8080
-      - "42548:9547"
+  agent-kea-many-host-reservations-2:
+    extends: agent-kea-many-host-reservations-1
     environment:
       STORK_AGENT_HOST: 172.42.42.101
+      DB_NAME: kea_hostcmds_2
+      DB_USER: kea_hostcmds_2
+      DB_PASSWORD: kea_hostcmds_2
     networks:
       storknet:
         ipv4_address: 172.42.42.101
@@ -188,6 +187,9 @@ services:
       subnet6_01:
         ipv6_address: 3001:db8:1:42::101
         priority: 400
+    volumes:
+      - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-2.conf:/etc/kea/kea-dhcp4.conf
+      - $PWD/tests/system/config/kea-premium-host-database/kea-host-database-2.json:/etc/kea/kea-host-database.json
 
   agent-kea6:
     extends: agent-kea
@@ -267,7 +269,7 @@ services:
       DB_ROOT_USER: stork
       DB_ROOT_PASSWORD: stork
     volumes:
-      - $PWD/tests/system/config/kea-premium-host-database/kea-host-database.json:/etc/kea/kea-host-database.json
+      - $PWD/tests/system/config/kea-premium-host-database/kea-host-database-1.json:/etc/kea/kea-host-database.json
       - $PWD/tests/system/config/kea-premium-host-database/kea-hook-hostcmds.json:/etc/kea/hook-hostcmds.json
       - $PWD/tests/system/config/kea-premium-host-database/init_pgsql_query.sql:/var/lib/db/init_pgsql_query.sql
 
@@ -287,6 +289,35 @@ services:
       # The Kea DHCPv4 daemon is not running but it is still specified in the
       # control sockets section of Kea CA.
       - /etc/supervisor/conf.d/kea-dhcp4.conf
+
+  agent-kea-many-subnets-and-shared-networks-1:
+    extends: agent-kea-premium
+    volumes:
+      - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4-sn4400-s13000.conf:/etc/kea/kea-dhcp4.conf
+
+  agent-kea-many-subnets-and-shared-networks-2:
+    extends: agent-kea-many-subnets-and-shared-networks-1
+    environment:
+      STORK_AGENT_HOST: 172.42.42.101
+    networks:
+      storknet:
+        ipv4_address: 172.42.42.101
+        priority: 1000
+      subnet_00:
+        ipv4_address: 172.100.42.101
+        priority: 500
+      subnet_01:
+        ipv4_address: 172.101.42.101
+        priority: 400
+      subnet_02:
+        ipv4_address: 172.102.42.101
+        priority: 300
+      subnet6_00:
+        ipv6_address: 3000:db8:1:42::101
+        priority: 500
+      subnet6_01:
+        ipv6_address: 3001:db8:1:42::101
+        priority: 400
 
   agent-kea-ha1:
     extends: agent-kea
@@ -309,10 +340,6 @@ services:
 
   agent-kea-ha2:
     extends: agent-kea
-    hostname: agent-kea-ha2
-    ports: !override
-      - 8080
-      - "42548:9547"
     environment:
       STORK_AGENT_HOST: 172.42.42.101
     networks:

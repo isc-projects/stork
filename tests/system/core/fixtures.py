@@ -570,6 +570,11 @@ def collect_logs(test_dir: Path):
 
     # Write logs
     with open(test_dir / "stdout.log", "wt", encoding="utf-8") as f:
+        # Stdout log is in format: container_name | timestamp message
+        # Sort by timestamp.
+        stdout = "\n".join(
+            sorted(stdout.splitlines(), key=lambda x: x.split("|")[1] if "|" in x else x)
+        )
         f.write(stdout)
 
     with open(test_dir / "stderr.log", "wt", encoding="utf-8") as f:

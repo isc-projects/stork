@@ -156,3 +156,42 @@ def test_update_host_reservation(kea_service: Kea, server_service: Server):
     identifier = host.host_identifiers[0]
     assert identifier.id_type == "client-id"
     assert identifier.id_hex_value == "06:05:04:03:02:01"
+
+
+@kea_parametrize("agent-kea-premium-host-database")
+def test_migrate_host_reservations(kea_service: Kea, server_service: Server):
+    """Tests that the host reservations are migrated properly."""
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    server_service.wait_for_next_machine_states()
+    server_service.wait_for_host_reservation_pulling()
+
+    # Fetch existing host reservations.
+    hosts = server_service.list_hosts()
+    in_config_count = len(
+        [h for h in hosts.items if h.local_hosts[0].data_source == "config"]
+    )
+    in_api_count = len(
+        [h for h in hosts.items if h.local_hosts[0].data_source == "api"]
+    )
+    assert in_config_count == 10
+    assert in_api_count == 1
+
+    # Migrate host reservations.
+    migration = server_service.migrate_hosts()
+    migration = server_service.wait_for_finishing_migration(migration)
+    assert migration.errors.total is None
+    assert len(migration.errors.items) == 0
+
+    # Fetch host reservations after migration.
+    server_service.wait_for_host_reservation_pulling()
+
+    hosts = server_service.list_hosts()
+    in_config_count = len(
+        [h for h in hosts.items if h.local_hosts[0].data_source == "config"]
+    )
+    in_api_count = len(
+        [h for h in hosts.items if h.local_hosts[0].data_source == "api"]
+    )
+    assert in_config_count == 0
+    assert in_api_count == 11

@@ -7,7 +7,7 @@ class SupervisorService:
     """A wrapper for the supervisor service."""
 
     def __init__(
-        self, exec_: Callable[[Sequence[str]], Tuple[str, str, int]], service_name: str
+        self, exec_: Callable[[Sequence[str]], Tuple[int, str, str]], service_name: str
     ):
         """
         A constructor of the class.
@@ -28,13 +28,6 @@ class SupervisorService:
         self._service_name = service_name
         self._exec = exec_
 
-    def _get_status_code(self):
-        """Returns a status of a specific supervisor service. The zero status
-        code indicates that the service is running correctly."""
-        cmd = ["supervisorctl", "status", self._service_name]
-        code, _, _ = self._exec(cmd)
-        return code
-
     def get_pid(self):
         """Returns a PID of a specific supervisor service."""
         cmd = ["supervisorctl", "pid", self._service_name]
@@ -43,7 +36,18 @@ class SupervisorService:
 
     def is_operational(self):
         """Checks if a specific supervisor service is operational."""
-        return self._get_status_code() == 0
+        cmd = ["supervisorctl", "status", self._service_name]
+        # See: https://supervisord.org/subprocess.html#process-states for
+        # the list of process states.
+        code, stdout, _ = self._exec(cmd)
+
+        # If any process is in the STARTING or BACKOFF state, it means they are
+        # not operational. BACKOFF means that the process failed to start
+        # and is waiting for the retry.
+        if "BACKOFF" in stdout or "STARTING" in stdout:
+            return False
+
+        return code == 0
 
     def restart(self):
         """Restart a specific supervisor service and wait to recover

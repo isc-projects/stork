@@ -95,3 +95,31 @@ def wait_for_success(
         return inner_wrapper
 
     return outer_wrapper
+
+
+def tic(label: str = ""):
+    """
+    A function to quickly measure time between two points in the code.
+    The measurements are not reliable for very short time intervals (less than
+    500ms).
+    Call `tic()` to start the timer. It returns a "toc" function that should be
+    called to get the time difference and print elapsed time.
+    Accepts an optional label that will be printed with the elapsed time.
+
+    Similarly to the `print` function, the `tic` calls should be removed from
+    the production code.
+    """
+    if label:
+        print("Starting timer for", label)
+
+    start = time.perf_counter()
+
+    def toc():
+        end = time.perf_counter()
+        elapsed = end - start
+        if label:
+            print(f"Elapsed time for {label}: {elapsed:.2f} seconds")
+        else:
+            print(f"Elapsed time: {elapsed:.2f} seconds")
+
+    return toc
