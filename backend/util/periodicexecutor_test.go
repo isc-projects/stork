@@ -175,3 +175,63 @@ func TestGetName(t *testing.T) {
 	// Assert
 	require.EqualValues(t, "foobar", name)
 }
+
+// Test that the caller of the wait function is blocked until the executor
+// finishes the current iteration.
+func TestWaitForStandby(t *testing.T) {
+	// Closed when the iteration starts. It notifies that the executor goroutine
+	// reached the executor function.
+	iterationStarted := make(chan struct{})
+	// Closed when the iteration finishes. It releases the blocked executor
+	// goroutine.
+	iterationFinished := make(chan struct{})
+	// Closed when the test goroutine runs, just before waiting for the executor
+	// standby.
+	waitingStarted := make(chan struct{})
+	// Releases when the test goroutine finishes waiting.
+	var waitingFinished sync.WaitGroup
+
+	// It runs the executor loop.
+	executor, _ := NewPeriodicExecutor(
+		"foobar",
+		func() error {
+			close(iterationStarted)
+			<-iterationFinished
+			return nil
+		},
+		func() (time.Duration, error) { return 1 * time.Second, nil },
+	)
+
+	// Wait until the executor goroutine starts the iteration and call the
+	// handler function.
+	<-iterationStarted
+
+	// Start the test goroutine that waits for the executor standby.
+	waitingFinished.Add(1)
+	go func() {
+		// Notify the test goroutine is running.
+		close(waitingStarted)
+		// Block until the executor finishes the current iteration.
+		executor.WaitForStandby()
+		// Notify the test goroutine is finished.
+		waitingFinished.Done()
+	}()
+
+	// Wait until the test goroutine starts waiting.
+	<-waitingStarted
+
+	// Check that the test goroutine is blocked.
+	require.Never(t, func() bool {
+		// It should block forever.
+		waitingFinished.Wait()
+		return true
+	}, 500*time.Millisecond, 100*time.Millisecond)
+
+	// Release the executor goroutine.
+	close(iterationFinished)
+	// Check that the test goroutine is released. It means it stopped waiting.
+	require.Eventually(t, func() bool {
+		waitingFinished.Wait()
+		return true
+	}, 500*time.Millisecond, 100*time.Millisecond)
+}
