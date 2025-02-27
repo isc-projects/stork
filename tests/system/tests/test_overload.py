@@ -1,4 +1,3 @@
-import time
 from typing import Tuple
 
 import pytest
@@ -68,7 +67,7 @@ def test_two_same_big_configurations_at_time(
 
 
 @pytest.mark.skip(
-    reason="""The test is unstable because the deadlocks may occur after the 
+    reason="""The test is unstable because the deadlocks may occur after the
 migration. It causes the server only partially updates the host data in its
 database. In result, the test assertions fail."""
 )
