@@ -587,8 +587,7 @@ def collect_logs(test_dir: Path):
             continue
         has_non_operational_service = True
         inspect_stdout = compose.inspect_raw(service_name)
-        filename = f"inspect-{service_name}.json"
-        with open(test_dir / filename, "wt", encoding="utf-8") as f:
+        with open(test_dir / f"inspect-{service_name}.json", "wt", encoding="utf-8") as f:
             f.write(inspect_stdout)
 
     if has_non_operational_service:

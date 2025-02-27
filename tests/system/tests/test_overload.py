@@ -112,8 +112,8 @@ def test_migrate_many_hosts(server_service: Server, ha_service: Tuple[Kea, Kea])
             for local_host in host.local_hosts:
                 if local_host.data_source != "api":
                     logger.error(
-                        f"Host reservation {host.host_identifiers[0].id_hex_value} "
-                        f"for daemon {local_host.daemon_id} "
-                        f"was not migrated properly."
+                        "Host reservation %s for daemon %d was not migrated properly.",
+                        host.host_identifiers[0].id_hex_value,
+                        local_host.daemon_id,
                     )
                 assert local_host.data_source == "api"

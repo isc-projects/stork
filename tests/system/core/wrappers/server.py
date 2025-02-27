@@ -334,7 +334,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
                 e.status == 500
                 and "Problem storing application state in the database" in e.body
             ):
-                raise DatabaseDeadlockError()
+                raise DatabaseDeadlockError() from e
             raise
 
     def read_version(self) -> Version:
