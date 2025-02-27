@@ -66,6 +66,7 @@ def test_two_same_big_configurations_at_time(
     state, *_ = server_service.wait_for_next_machine_states()
     assert state
 
+
 @pytest.mark.skip(
     reason="""The test is unstable because the deadlocks may occur after the 
 migration. It causes the server only partially updates the host data in its

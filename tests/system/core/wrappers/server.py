@@ -19,7 +19,7 @@ from openapi_client.api.services_api import (
 )
 from openapi_client.api.settings_api import Settings, SettingsApi
 from openapi_client.api.users_api import Groups, User, UserAccount, Users, UsersApi
-import openapi_client.exceptions
+from openapi_client.exceptions import ApiException
 from openapi_client.models.create_host_begin_response import CreateHostBeginResponse
 from openapi_client.models.update_host_begin_response import UpdateHostBeginResponse
 from openapi_client.models.event import Event
@@ -325,7 +325,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         api_instance = ServicesApi(self._api_client)
         try:
             return api_instance.get_machine_state(id=machine_id)
-        except openapi_client.exceptions.ApiException as e:
+        except ApiException as e:
             # The request may fail when the deadlocks in the database occur.
             # The server can recover from this state, so the request should be
             # repeated. We return a dedicated exception to allow handling this
