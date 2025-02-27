@@ -157,12 +157,12 @@ services:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
   agent-kea-many-host-reservations-1:
-    extends: agent-kea-premium-host-database
+    extends: agent-kea-premium-host-database-base
     volumes:
       - $IPWD/tests/system/config/kea-many-host-reservations/kea-dhcp4-s40-h250-1.conf:/etc/kea/kea-dhcp4.conf
 
   agent-kea-many-host-reservations-2:
-    extends: agent-kea-many-host-reservations-1
+    extends: agent-kea-premium-host-database-base
     environment:
       STORK_AGENT_HOST: 172.42.42.101
       DB_NAME: kea_hostcmds_2
