@@ -35,6 +35,9 @@ type hostMigrator struct {
 	dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup
 	connectedAgents  agentcomm.ConnectedAgents
 	daemonLocker     config.DaemonLocker
+	// The daemons are unlocked at the end of the migration because we expect
+	// the same daemons will appear in many chunks.
+	lockedDemonIDs map[int64]config.LockKey
 	// The global pullers that fetch the hosts.
 	// Expected to be the state puller (fetches hosts from JSON) and the host
 	// puller (fetches hosts from DB).
@@ -62,6 +65,7 @@ func NewHostMigrator(
 		connectedAgents:  connectedAgents,
 		daemonLocker:     locker,
 		pullers:          pullers,
+		lockedDemonIDs:   make(map[int64]config.LockKey),
 	}
 }
 
@@ -79,11 +83,23 @@ func (m *hostMigrator) Begin() error {
 
 // Ends the migration. Restarts the hosts puller.
 func (m *hostMigrator) End() error {
+	var errs []error
+	for daemonID, lockKey := range m.lockedDemonIDs {
+		err := m.daemonLocker.Unlock(lockKey, daemonID)
+		if err != nil {
+			errs = append(errs, err)
+		}
+		delete(m.lockedDemonIDs, daemonID)
+	}
+
 	for _, puller := range m.pullers {
 		puller.Unpause()
 	}
 
-	return nil
+	return storkutil.CombineErrors(
+		"some errors occurred while finishing the migration",
+		errs,
+	)
 }
 
 // Returns a total number of hosts to migrate.
@@ -160,20 +176,17 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
 	daemonID := daemon.ID
 
-	// Lock the daemon for modification.
-	lockKey, err := m.daemonLocker.Lock(daemonID)
-	if err != nil {
-		// Skip the daemon if it cannot be locked.
-		m.setDaemonError(daemon, err)
-		return
-	}
-
-	defer func() {
-		err := m.daemonLocker.Unlock(lockKey, daemonID)
+	// Lock the daemon for modification. Do it only if the daemon has not
+	// been locked yet.
+	if _, ok := m.lockedDemonIDs[daemonID]; !ok {
+		lockKey, err := m.daemonLocker.Lock(daemonID)
 		if err != nil {
+			// Skip the daemon if it cannot be locked.
 			m.setDaemonError(daemon, err)
+			return
 		}
-	}()
+		m.lockedDemonIDs[daemonID] = lockKey
+	}
 
 	// Insert the reservations to the host database.
 	m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
