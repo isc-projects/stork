@@ -57,7 +57,7 @@ describe('RenameAppDialogComponent', () => {
         component.save()
 
         // The emitter indicating that the name was submitted should have been
-        // triggered. The one that indicates cancelling the operation should
+        // triggered. The one that indicates canceling the operation should
         // not.
         expect(component.submitted.emit).toHaveBeenCalled()
         expect(component.submitted.emit).toHaveBeenCalledWith('dhcp-server-floor1')
