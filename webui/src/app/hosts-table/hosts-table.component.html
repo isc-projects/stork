@@ -4,6 +4,36 @@
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
+
+    <p-confirmDialog key="migrationToDatabaseDialog">
+        <ng-template pTemplate="message">
+            <div class="block ml-3 max-w-40rem">
+                <p>Are you sure you want to migrate host reservations to the database?</p>
+                <p>
+                    The number of hosts to be migrated is <strong>{{ totalRecords }}</strong
+                    >. They are selected by the below filter:
+                </p>
+                <ul>
+                    <li *ngFor="validFilter.appId">App Id: {{ validFilter.appId }}</li>
+                </ul>
+                {{ validFilter | json }}
+                <p>
+                    This operation will lock for modifications the related daemons. During the migration the Stork
+                    server will not synchronize the Kea data (i.e., the Kea configuration, subnets, shared networks,
+                    host reservations).
+                </p>
+                <p>The migration can be canceled in any time.</p>
+            </div>
+        </ng-template>
+    </p-confirmDialog>
+
+    <p-button
+        label="Migrate to Database"
+        icon="pi pi-database"
+        styleClass="block p-button-primary no-underline"
+        (onClick)="migrateToDatabaseAsk()"
+    ></p-button>
+
     <a
         label="New Host"
         icon="pi pi-plus"

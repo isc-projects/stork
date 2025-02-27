@@ -4,7 +4,7 @@ import { HostsTableComponent } from './hosts-table.component'
 import { TableModule } from 'primeng/table'
 import { RouterModule } from '@angular/router'
 import { HostsPageComponent } from '../hosts-page/hosts-page.component'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ButtonModule } from 'primeng/button'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -16,6 +16,7 @@ import { PanelModule } from 'primeng/panel'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { TagModule } from 'primeng/tag'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -44,8 +45,14 @@ describe('HostsTableComponent', () => {
                 PanelModule,
                 BrowserAnimationsModule,
                 TagModule,
+                ConfirmDialogModule,
             ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
+            providers: [
+                MessageService,
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
     }))
 

@@ -4,7 +4,7 @@ import { DHCPService, Host, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { ActivatedRoute } from '@angular/router'
 import { Location } from '@angular/common'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { getErrorMessage } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
 import { lastValueFrom } from 'rxjs'
@@ -81,10 +81,11 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
     @ViewChild('hostsTable') table: Table
 
     constructor(
-        private route: ActivatedRoute,
+        route: ActivatedRoute,
         private dhcpApi: DHCPService,
         private messageService: MessageService,
-        private location: Location
+        location: Location,
+        private confirmationService: ConfirmationService
     ) {
         super(route, location)
     }
@@ -212,5 +213,25 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      */
     ngOnInit(): void {
         super.onInit()
+    }
+
+    /**
+     * Displays a modal dialog with the details of the host migration.
+     * The dialog displays the host filter and the total number of migrated
+     * hosts. There is also warning that the related daemons will be locked
+     * during the migration. User can confirm or abort the migration.
+     */
+    migrateToDatabaseAsk(): void {
+        // Display a confirmation dialog.
+        this.confirmationService.confirm({
+            key: 'migrationToDatabaseDialog',
+            header: 'Migrate host reservations to database',
+            icon: 'pi pi-exclamation-triangle',
+            message: `Are you sure you want to migrate all host reservations to the database? <br>This operation<br>will<br>lock<br>for<br>modifications the related daemons. During the migration the Stork server will not synchronize the Kea data (i.e., the Kea configuration, subnets, shared networks, host reservations).`,
+            accept: () => {
+                // User confirmed the migration.
+                console.log('Migration confirmed')
+            },
+        })
     }
 }
