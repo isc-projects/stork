@@ -10,16 +10,17 @@
             label="Refresh List"
             icon="pi pi-refresh"
             styleClass="block p-button-primary no-underline"
-            (onClick)="getZonesFetchStatus()"
+            (onClick)="refreshFetchingStatusTable()"
         ></p-button>
     </div>
     <p-table
-        [value]="zoneInventoryStates"
+        [value]="zonesFetchingStates"
         [paginator]="true"
         [rows]="10"
         [rowsPerPageOptions]="[10, 30, 100]"
-        [totalRecords]="zoneInventoryTotal"
-        [loading]="inventoryLoading"
+        [totalRecords]="zonesFetchingStatesTotal"
+        [loading]="zonesFetchingStatesLoading"
+        [alwaysShowPaginator]="false"
     >
         <ng-template pTemplate="header">
             <tr>
@@ -56,7 +57,7 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-            <ng-container *ngIf="inventoryInProgress">
+            <ng-container *ngIf="fetchingInProgress">
                 <tr>
                     <td colspan="6">
                         <p-message
@@ -64,18 +65,18 @@
                             severity="info"
                             [text]="
                                 'Zone fetching process is now running in background. It may take some time depending on DNS servers count and zones count. Completed for ' +
-                                inventoryAppsCompletedCount +
+                                fetchingAppsCompletedCount +
                                 ' out of ' +
-                                inventoryTotalAppsCount +
+                                fetchingTotalAppsCount +
                                 ' DNS apps.'
                             "
                         ></p-message>
                         <p-progressBar
-                            [value]="(inventoryAppsCompletedCount / inventoryTotalAppsCount) * 100"
+                            [value]="(fetchingAppsCompletedCount / fetchingTotalAppsCount) * 100"
                             styleClass="max-w-30rem"
                         >
                             <ng-template pTemplate="content">
-                                <span>{{ inventoryAppsCompletedCount }}/{{ inventoryTotalAppsCount }}</span>
+                                <span>{{ fetchingAppsCompletedCount }}/{{ fetchingTotalAppsCount }}</span>
                             </ng-template>
                         </p-progressBar>
                     </td>
@@ -98,16 +99,15 @@
 
             <tr>
                 <td colspan="6">
-                    <ng-container *ngIf="!putZonesFetchSent">
+                    <ng-container *ngIf="!wasZoneFetchSent()">
                         <p-message
                             styleClass="mb-2"
                             severity="info"
                             text="Zones were not fetched yet from Stork agents."
                         ></p-message>
-                        <p></p>
-                        <p-button label="Fetch Zones" (onClick)="fetchZones()" [disabled]="inventoryInProgress"
+                        <p-button label="Fetch Zones" (onClick)="sendPutZonesFetch()" [disabled]="fetchingInProgress"
                     /></ng-container>
-                    <p *ngIf="!inventoryInProgress">
+                    <p *ngIf="!fetchingInProgress">
                         There is no information about the state of fetching the zones from the zone inventories to the
                         Stork server.
                     </p>
@@ -117,25 +117,25 @@
     </p-table>
 </p-dialog>
 
-<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeIdx" (activeIndexChange)="onActiveIndexChange($event)">
+<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeIdx">
     <p-tabPanel header="Zones">
         <div class="my-2 flex gap-2 flex-wrap justify-content-end">
             <p-button
                 label="Fetching Status"
-                [icon]="inventoryInProgress ? 'pi pi-spin pi-spinner' : 'pi pi-info-circle'"
+                [icon]="fetchingInProgress ? 'pi pi-spin pi-spinner' : 'pi pi-info-circle'"
                 (onClick)="fetchStatusVisible = true"
             />
             <p-button
                 label="Fetch Zones"
                 icon="pi pi-download"
-                (onClick)="fetchZones()"
-                [disabled]="inventoryInProgress"
+                (onClick)="sendPutZonesFetch()"
+                [disabled]="fetchingInProgress"
             />
             <p-button
                 label="Refresh List"
                 icon="pi pi-refresh"
                 styleClass="block p-button-primary no-underline"
-                (onClick)="zonesTable.onLazyLoad.emit(zonesTable.createLazyLoadMetadata())"
+                (onClick)="onLazyLoadZones(zonesTable.createLazyLoadMetadata())"
             ></p-button>
         </div>
         <p-table
@@ -149,13 +149,14 @@
             [rowsPerPageOptions]="[10, 30, 100]"
             [showCurrentPageReport]="true"
             stateStorage="session"
-            [stateKey]="stateKey"
+            [stateKey]="zonesStateKey"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
             styleClass="p-datatable-striped"
             dataKey="id"
-            [expandedRowKeys]="expandedRows"
+            [expandedRowKeys]="zonesExpandedRows"
             [loading]="zonesLoading"
             [totalRecords]="zonesTotal"
+            [alwaysShowPaginator]="false"
         >
             <ng-template pTemplate="header">
                 <tr>
@@ -195,6 +196,7 @@
                                 [paginator]="true"
                                 [rows]="10"
                                 [rowsPerPageOptions]="[10, 30, 100]"
+                                [alwaysShowPaginator]="false"
                             >
                                 <ng-template pTemplate="header">
                                     <tr>
@@ -233,7 +235,7 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="emptymessage">
-                <ng-container *ngIf="inventoryInProgress">
+                <ng-container *ngIf="fetchingInProgress">
                     <tr>
                         <td colspan="4">
                             <p-message
@@ -241,18 +243,18 @@
                                 severity="info"
                                 [text]="
                                     'Zone fetching process is now running in background. It may take some time depending on DNS servers count and zones count. Completed for ' +
-                                    inventoryAppsCompletedCount +
+                                    fetchingAppsCompletedCount +
                                     ' out of ' +
-                                    inventoryTotalAppsCount +
+                                    fetchingTotalAppsCount +
                                     ' DNS apps.'
                                 "
                             ></p-message>
                             <p-progressBar
-                                [value]="(inventoryAppsCompletedCount / inventoryTotalAppsCount) * 100"
+                                [value]="(fetchingAppsCompletedCount / fetchingTotalAppsCount) * 100"
                                 styleClass="max-w-30rem"
                             >
                                 <ng-template pTemplate="content">
-                                    <span>{{ inventoryAppsCompletedCount }}/{{ inventoryTotalAppsCount }}</span>
+                                    <span>{{ fetchingAppsCompletedCount }}/{{ fetchingTotalAppsCount }}</span>
                                 </ng-template>
                             </p-progressBar>
                         </td>
@@ -264,7 +266,7 @@
                         <td><p-skeleton /></td>
                     </tr>
                 </ng-container>
-                <tr>
+                <tr *ngIf="!fetchingInProgress">
                     <td colspan="4">No zones found.</td>
                 </tr>
             </ng-template>
@@ -309,6 +311,7 @@
                         [paginator]="true"
                         [rows]="10"
                         [rowsPerPageOptions]="[10, 30, 100]"
+                        [alwaysShowPaginator]="false"
                     >
                         <ng-template pTemplate="header">
                             <tr>
