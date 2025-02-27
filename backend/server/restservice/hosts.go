@@ -631,9 +631,9 @@ func (r *RestAPI) DeleteHost(ctx context.Context, params dhcp.DeleteHostParams) 
 }
 
 // Implements the POST call to migrate host reservations from Kea configuration
-// to the database. Runs a migration of host reservations from Kea configuration
-// to the database. It works in the foreground and returns the results of the
-// migration to the client.
+// to the database. Starts a migration of host reservations from Kea
+// configuration to the database. It works in the background. The handler is
+// non-blocking. Returns an initial status of the migration.
 func (r *RestAPI) MigrateHosts(ctx context.Context, params dhcp.MigrateHostsParams) middleware.Responder {
 	// Create a new host migrator.
 	migrator := entitymigrator.NewHostMigrator(
@@ -652,7 +652,7 @@ func (r *RestAPI) MigrateHosts(ctx context.Context, params dhcp.MigrateHostsPara
 		r.DaemonLocker,
 		[]entitymigrator.Pauser{r.Pullers.AppsStatePuller, r.Pullers.KeaHostsPuller},
 	)
-	// Run the migration.
+	// Start the migration.
 	status, err := r.MigrationService.StartMigration(ctx, migrator)
 	if err != nil {
 		msg := "Problem with migrating host reservations"
