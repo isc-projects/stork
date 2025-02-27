@@ -50,7 +50,6 @@ suggestion-mode=yes
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
 
-
 [MESSAGES CONTROL]
 
 # Only show warnings with the listed confidence levels. Leave empty to show
@@ -285,7 +284,7 @@ ignore-docstrings=yes
 ignore-imports=no
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=5
 
 
 [BASIC]
