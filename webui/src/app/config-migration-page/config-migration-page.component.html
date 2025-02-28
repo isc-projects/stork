@@ -1,1 +1,39 @@
-<p>config-migration-page works!</p>
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>
+            This page displays a list of config migration. The migration moves the entities from the Kea JSON
+            configuration to the Kea database. The migration is a one-time but time-consuming operation. On this page,
+            you can monitor the progress of the migration.
+        </p>
+    </div>
+</app-breadcrumbs>
+
+<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [scrollable]="true" styleClass="mb-2">
+    <ng-template pTemplate="item" let-item let-i="index">
+        <a
+            role="menuitem"
+            pRipple
+            [routerLink]="item.routerLink"
+            class="p-ripple p-element p-menuitem-link"
+        >
+            <div class="flex justify-content-between">
+                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
+                <div class="p-menuitem-text">
+                    <b>{{ item.label }}</b>
+                </div>
+                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTab($event, i)"></div>
+            </div>
+        </a>
+    </ng-template>
+</p-tabMenu>
+
+<div>
+    <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
+        <app-config-migration-tab
+            [item]="openedTabs[activeTabIndex - 1].subject"
+            (cancel)="onCancel(openedTabs[activeTabIndex - 1].subject)"
+        ></app-config-migration-tab>
+    </div>
+    <app-config-migration-table #tableComponent [hidden]="activeTabIndex !== 0"></app-config-migration-table>
+</div>
+
