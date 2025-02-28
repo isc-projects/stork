@@ -7,7 +7,7 @@ import { Location } from '@angular/common'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
-import { lastValueFrom } from 'rxjs'
+import { last, lastValueFrom } from 'rxjs'
 
 /**
  * Specifies the filter parameters for fetching hosts that may be specified
@@ -227,10 +227,29 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
             key: 'migrationToDatabaseDialog',
             header: 'Migrate host reservations to database',
             icon: 'pi pi-exclamation-triangle',
-            message: `Are you sure you want to migrate all host reservations to the database? <br>This operation<br>will<br>lock<br>for<br>modifications the related daemons. During the migration the Stork server will not synchronize the Kea data (i.e., the Kea configuration, subnets, shared networks, host reservations).`,
             accept: () => {
                 // User confirmed the migration.
-                console.log('Migration confirmed')
+                this.dhcpApi
+                    .startHostsMigration(
+                        this.validFilter.appId,
+                        this.validFilter.subnetId,
+                        this.validFilter.keaSubnetId,
+                        this.validFilter.text,
+                        this.validFilter.isGlobal
+                    )
+                    .pipe(last())
+                    .subscribe(
+                        (result) => {
+                            console.log(result)
+                        },
+                        (error) => {
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Cannot migrate host reservations',
+                                detail: getErrorMessage(error),
+                            })
+                        }
+                    )
             },
         })
     }
