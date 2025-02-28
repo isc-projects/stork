@@ -105,7 +105,10 @@
                             severity="info"
                             text="Zones were not fetched yet from Stork agents."
                         ></p-message>
-                        <p-button label="Fetch Zones" (onClick)="sendPutZonesFetch()" [disabled]="fetchingInProgress"
+                        <p-button
+                            label="Fetch Zones"
+                            (onClick)="sendPutZonesFetch()"
+                            [disabled]="fetchingInProgress || putZonesFetchLocked"
                     /></ng-container>
                     <p *ngIf="!fetchingInProgress">
                         There is no information about the state of fetching the zones from the zone inventories to the
@@ -129,7 +132,7 @@
                 label="Fetch Zones"
                 icon="pi pi-download"
                 (onClick)="sendPutZonesFetch()"
-                [disabled]="fetchingInProgress"
+                [disabled]="fetchingInProgress || putZonesFetchLocked"
             />
             <p-button
                 label="Refresh List"

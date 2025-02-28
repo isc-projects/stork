@@ -3,7 +3,7 @@ import { MenuItem, MessageService } from 'primeng/api'
 import { Zone, DNSService, ZonesFetchStatus, ZoneInventoryStates, ZoneInventoryState } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
 import { concatMap, finalize, share, switchMap, takeWhile, tap, delay, catchError, map } from 'rxjs/operators'
-import { EMPTY, interval, lastValueFrom, of, Subscription } from 'rxjs'
+import { EMPTY, interval, lastValueFrom, of, Subscription, timer } from 'rxjs'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
@@ -110,6 +110,22 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     zoneInventoryStateMap: Map<number, Partial<ZoneInventoryState>> = new Map()
 
     /**
+     * Flag stating whether Fetch Zones button is locked/disabled or not.
+     */
+    putZonesFetchLocked: boolean = false
+
+    /**
+     * RxJS observable which locks Fetch Zones button for 5 seconds to limit the rate of PUT Zones Fetch requests sent.
+     * @private
+     */
+    private _putZonesFetchGuard = of(null).pipe(
+        tap(() => (this.putZonesFetchLocked = true)),
+        concatMap(() => timer(5000)),
+        tap(() => (this.putZonesFetchLocked = false)),
+        share()
+    )
+
+    /**
      * Key to be used in browser storage for keeping Zone Fetch Sent flag value.
      * @private
      */
@@ -182,6 +198,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         }),
         finalize(() => {
             this.fetchingInProgress = false
+            this._isPolling = false
         })
     )
 
@@ -190,6 +207,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @private
      */
     private _subscriptions = new Subscription()
+
+    /**
+     * Flag stating whether _polling$ observable is active or not.
+     * @private
+     */
+    private _isPolling = false
 
     /**
      * Class constructor.
@@ -259,6 +282,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             .then((resp) => {
                 switch (resp.status) {
                     case HttpStatusCode.NoContent:
+                        this.fetchingInProgress = false
                         this.messageService.add({
                             severity: 'info',
                             summary: 'No Zone Fetching information',
@@ -267,16 +291,18 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                         })
                         break
                     case HttpStatusCode.Accepted:
+                        this.fetchingInProgress = true
                         this.zonesFetchingStates = []
                         this.zonesFetchingStatesTotal = 0
 
                         this.fetchingAppsCompletedCount = resp.completedAppsCount
                         this.fetchingTotalAppsCount = resp.appsCount
 
-                        if (!this.fetchingInProgress) {
-                            this.fetchingInProgress = true
+                        if (!this._isPolling) {
+                            this._isPolling = true
                             this._subscriptions.add(this._polling$.subscribe())
                         }
+
                         break
                     case HttpStatusCode.Ok:
                         this.zonesFetchingStates = resp.items ?? []
@@ -302,6 +328,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
                         break
                     default:
+                        this.fetchingInProgress = false
                         this.messageService.add({
                             severity: 'info',
                             summary: 'Unexpected response',
@@ -330,8 +357,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * Sends PUT ZonesFetch request and triggers refreshing data of the Zones Fetching Status table right after.
      */
     sendPutZonesFetch() {
+        this._subscriptions.add(this._putZonesFetchGuard.subscribe())
+
         lastValueFrom(
             this.dnsService.putZonesFetch().pipe(
+                tap(() => (this.fetchingInProgress = true)),
                 delay(500), // Trigger refreshFetchingStatusTable() with small delay - smaller deployments will likely have 200 Ok ZoneInventoryStates response there.
                 concatMap((resp) => {
                     this.refreshFetchingStatusTable()
