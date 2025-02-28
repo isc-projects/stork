@@ -185,7 +185,18 @@
                         <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" />
                     </td>
                     <td>{{ zone.rname }}</td>
-                    <td>Zone has {{ zone.localZones?.length ?? 0 }} local zones</td>
+                    <td>
+                        <ng-container *ngIf="zone.localZones?.length"
+                            >Zone has association with {{ zone.localZones.length }} DNS daemons.
+                            <p-button
+                                [label]="expanded ? 'Collapse the row' : 'Expand the row to see the details'"
+                                size="small"
+                                class="block mt-2"
+                                [pRowToggler]="zone"
+                                [rounded]="true"
+                                severity="secondary"
+                        /></ng-container>
+                    </td>
                 </tr>
             </ng-template>
 
@@ -203,8 +214,8 @@
                             >
                                 <ng-template pTemplate="header">
                                     <tr>
-                                        <th>App</th>
-                                        <th>Daemon ID</th>
+                                        <th>DNS App</th>
+                                        <th>DNS Daemon ID</th>
                                         <th>View</th>
                                         <th>Zone type</th>
                                         <th>Serial</th>
@@ -318,8 +329,8 @@
                     >
                         <ng-template pTemplate="header">
                             <tr>
-                                <th>App</th>
-                                <th>Daemon ID</th>
+                                <th>DNS App</th>
+                                <th>DNS Daemon ID</th>
                                 <th>View</th>
                                 <th>Zone type</th>
                                 <th>Serial</th>
