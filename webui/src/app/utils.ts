@@ -550,6 +550,7 @@ export function uncamelCase(key: string): string {
     text = text.replace(/dhcp/gi, 'DHCP')
     text = text.replace(/^pd/gi, 'PD')
     text = text.replace(/^ip/gi, 'IP')
+    text = text.replace(/^id/gi, 'ID')
     text = text.charAt(0).toUpperCase() + text.slice(1)
     return text
 }

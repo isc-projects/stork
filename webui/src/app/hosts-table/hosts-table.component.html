@@ -13,10 +13,13 @@
                     The number of hosts to be migrated is <strong>{{ totalRecords }}</strong
                     >. They are selected by the below filter:
                 </p>
-                <ul>
-                    <li *ngFor="validFilter.appId">App Id: {{ validFilter.appId }}</li>
-                </ul>
-                {{ validFilter | json }}
+                <div class="w-full">
+                    <div *ngFor="let entry of migrationFilterEntries" class="flex flex-row gap-2">
+                        <span class="font-bold text-right flex-1">{{ entry[0] }}</span>
+                        <span class="flex-1">{{ entry[1] }}</span>
+                    </div>
+                </div>
+
                 <p>
                     This operation will lock for modifications the related daemons. During the migration the Stork
                     server will not synchronize the Kea data (i.e., the Kea configuration, subnets, shared networks,
@@ -30,6 +33,7 @@
     <p-button
         label="Migrate to Database"
         icon="pi pi-database"
+        [disabled]="!totalRecords"
         styleClass="block p-button-primary no-underline"
         (onClick)="migrateToDatabaseAsk()"
     ></p-button>

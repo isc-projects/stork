@@ -5,7 +5,7 @@ import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { ActivatedRoute } from '@angular/router'
 import { Location } from '@angular/common'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { getErrorMessage } from '../utils'
+import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
 import { lastValueFrom } from 'rxjs'
 
@@ -233,5 +233,18 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
                 console.log('Migration confirmed')
             },
         })
+    }
+
+    /**
+     * Returns entries of the valid filter that will be used to migrate the
+     * hosts. The keys are uncamelized and capitalized. The conflict key is
+     * always false.
+     */
+    get migrationFilterEntries() {
+        const migrationFilter = { ...this.validFilter }
+        migrationFilter.conflict = false
+        return Object.entries(migrationFilter)
+            .map(([key, value]) => [uncamelCase(key), value.toString()])
+            .sort(([key1], [key2]) => key1.localeCompare(key2))
     }
 }
