@@ -382,20 +382,35 @@ export abstract class PrefilteredTable<
      * Callback method called when PrimeNG table was filtered.
      * This method is supposed to be bound to PrimeNG Table "onFilter" output property EventEmitter.
      * e.g. (onFilter)="onFilter()"
+     * This method is called AFTER onLazyLoad() callback, so the data is already loaded.
      */
     onFilter(): void {
-        let change = false
-        for (const k of Object.keys(this.validFilter)) {
-            if (this.validFilter[k] != null && this.getTableFilterValue(k) != this.validFilter[k]) {
-                // This filter was either cleared or edited, so delete it from validFilter.
-                change = true
-                delete this.validFilter[k]
+        const newFilter = {}
+        for (const [filterKey, filterMetadata] of Object.entries(this.table.filters)) {
+            let value: any
+            if (Array.isArray(filterMetadata)) {
+                value = filterMetadata.map((filter) => filter.value)
+            } else {
+                value = filterMetadata.value
+            }
+
+            if (value != null) {
+                newFilter[filterKey] = value
             }
         }
 
-        if (change) {
-            this.updateQueryParameters()
+        if (JSON.stringify(newFilter) === JSON.stringify(this.validFilter)) {
+            return
         }
+
+        const errors = this.validateFilter(newFilter as FilterInterface)
+        if (errors.length !== 0) {
+            this.filterTextFormatErrors = errors
+            return
+        }
+
+        this.validFilter = newFilter as FilterInterface
+        this.updateQueryParameters()
     }
 
     /**
@@ -509,9 +524,10 @@ export abstract class PrefilteredTable<
         this._subscriptions.add(
             this.filter$.subscribe((filter) => {
                 this.filterTextFormatErrors = this.validateFilter(filter)
-                if (this.filterTextFormatErrors.length === 0) {
-                    this.validFilter = filter
+                if (this.filterTextFormatErrors.length !== 0) {
+                    return
                 }
+                this.validFilter = filter
 
                 if (this.table) {
                     if (this.validatedFilterAndTableFilterDiffer()) {
