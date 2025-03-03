@@ -463,5 +463,5 @@ func getHostLabel(host dbmodel.Host) string {
 
 // Creates a label for the daemon.
 func getDaemonLabel(daemon *dbmodel.Daemon) string {
-	return fmt.Sprintf("[%d] %s", daemon.ID, daemon.Name)
+	return daemon.Name
 }

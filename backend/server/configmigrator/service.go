@@ -28,8 +28,10 @@ type MigrationStatus struct {
 	EndDate time.Time
 	// Indicates if the migration is canceling.
 	Canceling bool
-	// Progress of the migration. The value is between 0 and 1 (finished).
-	Progress float64
+	// Number of already processed items.
+	ProcessedItemsCount int64
+	// Total number of items that should be migrated.
+	TotalItemsCount int64
 	// The errors already occurred during the migration. The key is the ID of
 	// the migrated item which type is defined by the @EntityType field.
 	Errors []MigrationError
@@ -140,15 +142,16 @@ func (m *migration) getStatus() MigrationStatus {
 		// It should be safe to return the context with cancellation or
 		// deadline but I'm not sure if it is a good idea. Let's return the
 		// context with just the data provided to the start migration method.
-		Context:           context.WithoutCancel(m.ctx),
-		StartDate:         m.startDate,
-		EndDate:           m.endDate,
-		Canceling:         !m.cancelDate.IsZero(),
-		Errors:            errsCopy,
-		GeneralError:      m.generalError,
-		Progress:          float64(m.processedItems) / float64(m.totalItems),
-		ElapsedTime:       elapsedTime,
-		EstimatedLeftTime: estimatedLeftTime,
+		Context:             context.WithoutCancel(m.ctx),
+		StartDate:           m.startDate,
+		EndDate:             m.endDate,
+		Canceling:           !m.cancelDate.IsZero(),
+		Errors:              errsCopy,
+		GeneralError:        m.generalError,
+		ProcessedItemsCount: m.processedItems,
+		TotalItemsCount:     m.totalItems,
+		ElapsedTime:         elapsedTime,
+		EstimatedLeftTime:   estimatedLeftTime,
 	}
 }
 

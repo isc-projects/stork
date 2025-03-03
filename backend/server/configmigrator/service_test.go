@@ -279,7 +279,8 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Equal(t, "value", initialStatus.Context.Value(contextKey("key")))
 	require.Zero(t, initialStatus.EndDate)
 	require.Zero(t, initialStatus.GeneralError)
-	require.Zero(t, initialStatus.Progress)
+	require.Zero(t, initialStatus.ProcessedItemsCount)
+	require.EqualValues(t, 250, initialStatus.TotalItemsCount)
 	require.Zero(t, initialStatus.EstimatedLeftTime)
 	require.Empty(t, initialStatus.Errors)
 
@@ -287,7 +288,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
 		status, _ := service.GetMigration(initialStatus.ID)
-		return status.Progress-100.0/250.0 < 1e-6
+		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
@@ -298,7 +299,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Equal(t, "value", firstChunkStatus.Context.Value(contextKey("key")))
 	require.Zero(t, firstChunkStatus.EndDate)
 	require.Zero(t, firstChunkStatus.GeneralError)
-	require.InDelta(t, firstChunkStatus.Progress, 100.0/250.0, 1e-6)
+	require.Equal(t, 100, firstChunkStatus.ProcessedItemsCount)
 	require.NotZero(t, firstChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, firstChunkStatus.ElapsedTime)
 	require.Len(t, firstChunkStatus.Errors, 3)
@@ -310,7 +311,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
 		status, _ := service.GetMigration(initialStatus.ID)
-		return status.Progress-200.0/250.0 < 1e-6
+		return status.ProcessedItemsCount == 200
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the second chunk is migrated.
@@ -321,7 +322,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Equal(t, "value", secondChunkStatus.Context.Value(contextKey("key")))
 	require.Zero(t, secondChunkStatus.EndDate)
 	require.Zero(t, secondChunkStatus.GeneralError)
-	require.InDelta(t, secondChunkStatus.Progress, 200.0/250.0, 1e-6)
+	require.Equal(t, 200, secondChunkStatus.ProcessedItemsCount)
 	require.NotZero(t, secondChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, secondChunkStatus.ElapsedTime)
 	require.Len(t, secondChunkStatus.Errors, 6)
@@ -333,7 +334,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
 		status, _ := service.GetMigration(initialStatus.ID)
-		return status.Progress-1.0 < 1e-6
+		return status.ProcessedItemsCount == 250
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the third chunk is migrated.
@@ -344,7 +345,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Equal(t, "value", thirdChunkStatus.Context.Value(contextKey("key")))
 	require.NotZero(t, thirdChunkStatus.EndDate)
 	require.Zero(t, thirdChunkStatus.GeneralError)
-	require.InDelta(t, thirdChunkStatus.Progress, 1.0, 1e-6)
+	require.Equal(t, 250, thirdChunkStatus.ProcessedItemsCount)
 	require.Zero(t, thirdChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, thirdChunkStatus.ElapsedTime)
 	require.Len(t, thirdChunkStatus.Errors, 9)
@@ -447,7 +448,7 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	require.NotZero(t, firstChunkStatus.EndDate)
 	require.ErrorContains(t, firstChunkStatus.GeneralError, "loading error")
 	require.Empty(t, firstChunkStatus.Errors)
-	require.InDelta(t, 100.0/250.0, firstChunkStatus.Progress, 1e-6)
+	require.Equal(t, 100, firstChunkStatus.ProcessedItemsCount)
 }
 
 // Test that the migration can be canceled. The context in the returned
@@ -498,7 +499,7 @@ func TestCancelMigration(t *testing.T) {
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
 		status, _ := service.GetMigration(initialStatus.ID)
-		return status.Progress-100.0/250.0 < 1e-6
+		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
@@ -587,7 +588,7 @@ func TestMigrationParentCancel(t *testing.T) {
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
 		status, _ := service.GetMigration(initialStatus.ID)
-		return status.Progress-100.0/250.0 < 1e-6
+		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.

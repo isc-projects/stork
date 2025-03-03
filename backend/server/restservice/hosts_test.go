@@ -1734,12 +1734,13 @@ func TestMigrateHosts(t *testing.T) {
 
 	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).
 		Return(configmigrator.MigrationStatus{
-			ID:        "1234-1",
-			Context:   context.Background(),
-			StartDate: time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
-			EndDate:   time.Time{},
-			Canceling: false,
-			Progress:  0.2,
+			ID:                  "1234-1",
+			Context:             context.Background(),
+			StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
+			EndDate:             time.Time{},
+			Canceling:           false,
+			ProcessedItemsCount: 2,
+			TotalItemsCount:     10,
 			Errors: []configmigrator.MigrationError{
 				{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: "host"},
 				{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: "host"},
@@ -1759,16 +1760,18 @@ func TestMigrateHosts(t *testing.T) {
 	okRsp := rsp.(*dhcp.MigrateHostsOK)
 
 	require.Equal(t, "1234-1", okRsp.Payload.ID)
-	require.NotNil(t, okRsp.Payload.Context)
+	require.Zero(t, okRsp.Payload.AuthorID)
+	require.Empty(t, okRsp.Payload.AuthorLogin)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
 	require.Nil(t, okRsp.Payload.EndDate)
 	require.False(t, okRsp.Payload.Canceling)
-	require.Equal(t, 0.2, okRsp.Payload.Progress)
+	require.Equal(t, 2, okRsp.Payload.ProcessedItemsCount)
+	require.Equal(t, 10, okRsp.Payload.TotalItemsCount)
 	require.Equal(t, okRsp.Payload.Errors.Total, int64(2))
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", HostID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
 	}, okRsp.Payload.Errors.Items)
 	require.Nil(t, okRsp.Payload.GeneralError)
 	require.Equal(t, strfmt.Duration(5*time.Second), okRsp.Payload.ElapsedTime)

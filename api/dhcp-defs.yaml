@@ -262,7 +262,7 @@
   MigrationError:
     type: object
     properties:
-      hostId:
+      id:
         type: integer
         format: int64
       error:
@@ -287,8 +287,10 @@
     properties:
       id:
         type: string
-      context:
-        type: object
+      authorLogin:
+        type: string
+      authorId:
+        type: integer
       startDate:
         type: string
         format: date-time
@@ -298,8 +300,12 @@
         x-nullable: true
       canceling:
         type: boolean
-      progress:
-        type: number
+      processedItemsCount:
+        type: integer
+        x-omitempty: false
+      totalItemsCount:
+        type: integer
+        x-omitempty: false
       errors:
         $ref: '#/definitions/MigrationErrors'
       generalError:

@@ -18,10 +18,10 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.Migratio
 	errs := []*models.MigrationError{}
 	for _, err := range status.Errors {
 		errs = append(errs, &models.MigrationError{
-			Error:  err.Error.Error(),
-			HostID: err.ID,
-			Label:  err.Label,
-			Type:   string(err.Type),
+			Error: err.Error.Error(),
+			ID:    err.ID,
+			Label: err.Label,
+			Type:  string(err.Type),
 		})
 	}
 	var generalError *string
@@ -29,20 +29,30 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.Migratio
 		generalError = storkutil.Ptr(status.GeneralError.Error())
 	}
 
+	// Retrieve some details from the context passed when the migration was started.
+	var userLogin string
+	var userID int64
+	if ok, userWhoStartedMigration := r.SessionManager.Logged(status.Context); ok {
+		userLogin = userWhoStartedMigration.Login
+		userID = int64(userWhoStartedMigration.ID)
+	}
+
 	return &models.MigrationStatus{
 		Canceling:   status.Canceling,
-		Context:     status.Context,
+		AuthorID:    userID,
+		AuthorLogin: userLogin,
 		ElapsedTime: strfmt.Duration(status.ElapsedTime),
 		EndDate:     convertToOptionalDatetime(status.EndDate),
 		Errors: &models.MigrationErrors{
 			Items: errs,
 			Total: int64(len(errs)),
 		},
-		EstimatedLeftTime: strfmt.Duration(status.EstimatedLeftTime),
-		GeneralError:      generalError,
-		ID:                string(status.ID),
-		Progress:          status.Progress,
-		StartDate:         strfmt.DateTime(status.StartDate),
+		EstimatedLeftTime:   strfmt.Duration(status.EstimatedLeftTime),
+		GeneralError:        generalError,
+		ID:                  string(status.ID),
+		ProcessedItemsCount: status.ProcessedItemsCount,
+		TotalItemsCount:     status.TotalItemsCount,
+		StartDate:           strfmt.DateTime(status.StartDate),
 	}
 }
 

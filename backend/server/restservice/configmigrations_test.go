@@ -30,12 +30,13 @@ func TestGetMigrations(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationErred := configmigrator.MigrationStatus{
-		ID:        "1234-1",
-		Context:   context.Background(),
-		StartDate: time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
-		EndDate:   time.Time{},
-		Canceling: false,
-		Progress:  0.2,
+		ID:                  "1234-1",
+		Context:             context.Background(),
+		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
+		EndDate:             time.Time{},
+		Canceling:           false,
+		ProcessedItemsCount: 2,
+		TotalItemsCount:     10,
 		Errors: []configmigrator.MigrationError{
 			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
 			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
@@ -46,29 +47,31 @@ func TestGetMigrations(t *testing.T) {
 	}
 
 	migrationInProgress := configmigrator.MigrationStatus{
-		ID:                "1234-2",
-		Context:           context.Background(),
-		StartDate:         time.Date(2025, 2, 14, 11, 25, 46, 432000000, time.UTC),
-		EndDate:           time.Time{},
-		Canceling:         false,
-		Progress:          0.5,
-		Errors:            nil,
-		GeneralError:      nil,
-		ElapsedTime:       10 * time.Second,
-		EstimatedLeftTime: 2 * time.Minute,
+		ID:                  "1234-2",
+		Context:             context.Background(),
+		StartDate:           time.Date(2025, 2, 14, 11, 25, 46, 432000000, time.UTC),
+		EndDate:             time.Time{},
+		Canceling:           false,
+		ProcessedItemsCount: 5,
+		TotalItemsCount:     10,
+		Errors:              nil,
+		GeneralError:        nil,
+		ElapsedTime:         10 * time.Second,
+		EstimatedLeftTime:   2 * time.Minute,
 	}
 
 	migrationFinished := configmigrator.MigrationStatus{
-		ID:                "1234-3",
-		Context:           context.Background(),
-		StartDate:         time.Date(2025, 2, 15, 12, 26, 47, 432000000, time.UTC),
-		EndDate:           time.Date(2025, 2, 15, 12, 27, 48, 432000000, time.UTC),
-		Canceling:         false,
-		Progress:          1.0,
-		Errors:            nil,
-		GeneralError:      nil,
-		ElapsedTime:       15 * time.Second,
-		EstimatedLeftTime: 0 * time.Minute,
+		ID:                  "1234-3",
+		Context:             context.Background(),
+		StartDate:           time.Date(2025, 2, 15, 12, 26, 47, 432000000, time.UTC),
+		EndDate:             time.Date(2025, 2, 15, 12, 27, 48, 432000000, time.UTC),
+		Canceling:           false,
+		ProcessedItemsCount: 10,
+		TotalItemsCount:     10,
+		Errors:              nil,
+		GeneralError:        nil,
+		ElapsedTime:         15 * time.Second,
+		EstimatedLeftTime:   0 * time.Minute,
 	}
 
 	migrationService.EXPECT().GetMigrations().Return(
@@ -89,25 +92,25 @@ func TestGetMigrations(t *testing.T) {
 	status := okRsp.Payload.Items[0]
 	require.Equal(t, "1234-1", status.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", status.StartDate.String())
-	require.Equal(t, 0.2, status.Progress)
+	require.Equal(t, 2, status.ProcessedItemsCount)
 	require.Equal(t, int64(2), status.Errors.Total)
 	require.Len(t, status.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", HostID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
 	}, status.Errors.Items)
 
 	status = okRsp.Payload.Items[1]
 	require.Equal(t, "1234-2", status.ID)
 	require.Equal(t, "2025-02-14T11:25:46.432Z", status.StartDate.String())
-	require.Equal(t, 0.5, status.Progress)
+	require.Equal(t, 5, status.ProcessedItemsCount)
 	require.Equal(t, int64(0), status.Errors.Total)
 	require.Len(t, status.Errors.Items, 0)
 
 	status = okRsp.Payload.Items[2]
 	require.Equal(t, "1234-3", status.ID)
 	require.Equal(t, "2025-02-15T12:26:47.432Z", status.StartDate.String())
-	require.Equal(t, 1.0, status.Progress)
+	require.Equal(t, 10, status.ProcessedItemsCount)
 	require.Equal(t, int64(0), status.Errors.Total)
 	require.Len(t, status.Errors.Items, 0)
 }
@@ -180,12 +183,13 @@ func TestGetMigration(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationStatus := configmigrator.MigrationStatus{
-		ID:        "1234-1",
-		Context:   context.Background(),
-		StartDate: time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
-		EndDate:   time.Time{},
-		Canceling: false,
-		Progress:  0.2,
+		ID:                  "1234-1",
+		Context:             context.Background(),
+		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
+		EndDate:             time.Time{},
+		Canceling:           false,
+		ProcessedItemsCount: 2,
+		TotalItemsCount:     10,
 		Errors: []configmigrator.MigrationError{
 			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
 			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
@@ -206,12 +210,13 @@ func TestGetMigration(t *testing.T) {
 
 	require.Equal(t, "1234-1", okRsp.Payload.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
-	require.Equal(t, 0.2, okRsp.Payload.Progress)
+	require.Equal(t, 2, okRsp.Payload.ProcessedItemsCount)
+	require.Equal(t, 10, okRsp.Payload.TotalItemsCount)
 	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", HostID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
 	}, okRsp.Payload.Errors.Items)
 }
 
@@ -231,12 +236,13 @@ func TestCancelMigration(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationStatus := configmigrator.MigrationStatus{
-		ID:        "1234-1",
-		Context:   context.Background(),
-		StartDate: time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
-		EndDate:   time.Time{},
-		Canceling: true,
-		Progress:  0.2,
+		ID:                  "1234-1",
+		Context:             context.Background(),
+		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
+		EndDate:             time.Time{},
+		Canceling:           true,
+		ProcessedItemsCount: 2,
+		TotalItemsCount:     10,
 		Errors: []configmigrator.MigrationError{
 			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
 			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
@@ -262,12 +268,13 @@ func TestCancelMigration(t *testing.T) {
 
 	require.Equal(t, "1234-1", okRsp.Payload.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
-	require.Equal(t, 0.2, okRsp.Payload.Progress)
+	require.Equal(t, 2, okRsp.Payload.ProcessedItemsCount)
+	require.Equal(t, 10, okRsp.Payload.TotalItemsCount)
 	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", HostID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", HostID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
 	}, okRsp.Payload.Errors.Items)
 	require.True(t, okRsp.Payload.Canceling)
 }
