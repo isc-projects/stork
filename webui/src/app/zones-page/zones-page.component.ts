@@ -485,7 +485,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.zones = resp?.items ?? []
                 this.zonesTotal = resp?.total ?? 0
 
-                if ((this.zones.length === 0 && !this.wasZoneFetchSent())) {
+                if (this.zones.length === 0 && !this.wasZoneFetchSent()) {
                     this.sendPutZonesFetch(true)
                     this.messageService.add({
                         severity: 'info',
