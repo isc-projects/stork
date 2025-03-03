@@ -1732,10 +1732,13 @@ func TestMigrateHosts(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService, pullers)
 	require.NoError(t, err)
 
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
 	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).
 		Return(configmigrator.MigrationStatus{
 			ID:                  "1234-1",
-			Context:             context.Background(),
+			Context:             ctx,
 			StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 			EndDate:             time.Time{},
 			Canceling:           false,
@@ -1765,9 +1768,9 @@ func TestMigrateHosts(t *testing.T) {
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
 	require.Nil(t, okRsp.Payload.EndDate)
 	require.False(t, okRsp.Payload.Canceling)
-	require.Equal(t, 2, okRsp.Payload.ProcessedItemsCount)
-	require.Equal(t, 10, okRsp.Payload.TotalItemsCount)
-	require.Equal(t, okRsp.Payload.Errors.Total, int64(2))
+	require.EqualValues(t, 2, okRsp.Payload.ProcessedItemsCount)
+	require.EqualValues(t, 10, okRsp.Payload.TotalItemsCount)
+	require.EqualValues(t, 2, okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
 		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},

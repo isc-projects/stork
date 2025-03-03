@@ -299,7 +299,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Equal(t, "value", firstChunkStatus.Context.Value(contextKey("key")))
 	require.Zero(t, firstChunkStatus.EndDate)
 	require.Zero(t, firstChunkStatus.GeneralError)
-	require.Equal(t, 100, firstChunkStatus.ProcessedItemsCount)
+	require.EqualValues(t, 100, firstChunkStatus.ProcessedItemsCount)
 	require.NotZero(t, firstChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, firstChunkStatus.ElapsedTime)
 	require.Len(t, firstChunkStatus.Errors, 3)
@@ -322,7 +322,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Equal(t, "value", secondChunkStatus.Context.Value(contextKey("key")))
 	require.Zero(t, secondChunkStatus.EndDate)
 	require.Zero(t, secondChunkStatus.GeneralError)
-	require.Equal(t, 200, secondChunkStatus.ProcessedItemsCount)
+	require.EqualValues(t, 200, secondChunkStatus.ProcessedItemsCount)
 	require.NotZero(t, secondChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, secondChunkStatus.ElapsedTime)
 	require.Len(t, secondChunkStatus.Errors, 6)
@@ -345,7 +345,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	require.Equal(t, "value", thirdChunkStatus.Context.Value(contextKey("key")))
 	require.NotZero(t, thirdChunkStatus.EndDate)
 	require.Zero(t, thirdChunkStatus.GeneralError)
-	require.Equal(t, 250, thirdChunkStatus.ProcessedItemsCount)
+	require.EqualValues(t, 250, thirdChunkStatus.ProcessedItemsCount)
 	require.Zero(t, thirdChunkStatus.EstimatedLeftTime)
 	require.NotZero(t, thirdChunkStatus.ElapsedTime)
 	require.Len(t, thirdChunkStatus.Errors, 9)
@@ -448,7 +448,7 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	require.NotZero(t, firstChunkStatus.EndDate)
 	require.ErrorContains(t, firstChunkStatus.GeneralError, "loading error")
 	require.Empty(t, firstChunkStatus.Errors)
-	require.Equal(t, 100, firstChunkStatus.ProcessedItemsCount)
+	require.EqualValues(t, 100, firstChunkStatus.ProcessedItemsCount)
 }
 
 // Test that the migration can be canceled. The context in the returned

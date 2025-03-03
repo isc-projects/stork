@@ -29,9 +29,12 @@ func TestGetMigrations(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
 
+	ctxAuthor, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
 	migrationErred := configmigrator.MigrationStatus{
 		ID:                  "1234-1",
-		Context:             context.Background(),
+		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 		EndDate:             time.Time{},
 		Canceling:           false,
@@ -48,7 +51,7 @@ func TestGetMigrations(t *testing.T) {
 
 	migrationInProgress := configmigrator.MigrationStatus{
 		ID:                  "1234-2",
-		Context:             context.Background(),
+		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 14, 11, 25, 46, 432000000, time.UTC),
 		EndDate:             time.Time{},
 		Canceling:           false,
@@ -62,7 +65,7 @@ func TestGetMigrations(t *testing.T) {
 
 	migrationFinished := configmigrator.MigrationStatus{
 		ID:                  "1234-3",
-		Context:             context.Background(),
+		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 15, 12, 26, 47, 432000000, time.UTC),
 		EndDate:             time.Date(2025, 2, 15, 12, 27, 48, 432000000, time.UTC),
 		Canceling:           false,
@@ -92,8 +95,8 @@ func TestGetMigrations(t *testing.T) {
 	status := okRsp.Payload.Items[0]
 	require.Equal(t, "1234-1", status.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", status.StartDate.String())
-	require.Equal(t, 2, status.ProcessedItemsCount)
-	require.Equal(t, int64(2), status.Errors.Total)
+	require.EqualValues(t, 2, status.ProcessedItemsCount)
+	require.EqualValues(t, 2, status.Errors.Total)
 	require.Len(t, status.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
 		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
@@ -103,15 +106,15 @@ func TestGetMigrations(t *testing.T) {
 	status = okRsp.Payload.Items[1]
 	require.Equal(t, "1234-2", status.ID)
 	require.Equal(t, "2025-02-14T11:25:46.432Z", status.StartDate.String())
-	require.Equal(t, 5, status.ProcessedItemsCount)
-	require.Equal(t, int64(0), status.Errors.Total)
+	require.EqualValues(t, 5, status.ProcessedItemsCount)
+	require.EqualValues(t, 0, status.Errors.Total)
 	require.Len(t, status.Errors.Items, 0)
 
 	status = okRsp.Payload.Items[2]
 	require.Equal(t, "1234-3", status.ID)
 	require.Equal(t, "2025-02-15T12:26:47.432Z", status.StartDate.String())
-	require.Equal(t, 10, status.ProcessedItemsCount)
-	require.Equal(t, int64(0), status.Errors.Total)
+	require.EqualValues(t, 10, status.ProcessedItemsCount)
+	require.EqualValues(t, int64(0), status.Errors.Total)
 	require.Len(t, status.Errors.Items, 0)
 }
 
@@ -182,9 +185,12 @@ func TestGetMigration(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
 
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
 	migrationStatus := configmigrator.MigrationStatus{
 		ID:                  "1234-1",
-		Context:             context.Background(),
+		Context:             ctx,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 		EndDate:             time.Time{},
 		Canceling:           false,
@@ -210,9 +216,9 @@ func TestGetMigration(t *testing.T) {
 
 	require.Equal(t, "1234-1", okRsp.Payload.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
-	require.Equal(t, 2, okRsp.Payload.ProcessedItemsCount)
-	require.Equal(t, 10, okRsp.Payload.TotalItemsCount)
-	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
+	require.EqualValues(t, 2, okRsp.Payload.ProcessedItemsCount)
+	require.EqualValues(t, 10, okRsp.Payload.TotalItemsCount)
+	require.EqualValues(t, 2, okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
 		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
@@ -235,9 +241,12 @@ func TestCancelMigration(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
 
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
 	migrationStatus := configmigrator.MigrationStatus{
 		ID:                  "1234-1",
-		Context:             context.Background(),
+		Context:             ctx,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 		EndDate:             time.Time{},
 		Canceling:           true,
@@ -268,9 +277,9 @@ func TestCancelMigration(t *testing.T) {
 
 	require.Equal(t, "1234-1", okRsp.Payload.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
-	require.Equal(t, 2, okRsp.Payload.ProcessedItemsCount)
-	require.Equal(t, 10, okRsp.Payload.TotalItemsCount)
-	require.Equal(t, int64(2), okRsp.Payload.Errors.Total)
+	require.EqualValues(t, 2, okRsp.Payload.ProcessedItemsCount)
+	require.EqualValues(t, 10, okRsp.Payload.TotalItemsCount)
+	require.EqualValues(t, 2, okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
 		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},

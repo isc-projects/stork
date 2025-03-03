@@ -205,7 +205,7 @@ func TestMigrate(t *testing.T) {
 			)
 		}
 		if err.Type == configmigrator.EntityTypeDaemon {
-			return fmt.Sprintf("[%d] dhcp4", err.ID)
+			return "dhcp4"
 		}
 		return "unsupported"
 	}
