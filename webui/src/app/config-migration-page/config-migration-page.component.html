@@ -10,12 +10,7 @@
 
 <p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [scrollable]="true" styleClass="mb-2">
     <ng-template pTemplate="item" let-item let-i="index">
-        <a
-            role="menuitem"
-            pRipple
-            [routerLink]="item.routerLink"
-            class="p-ripple p-element p-menuitem-link"
-        >
+        <a role="menuitem" pRipple [routerLink]="item.routerLink" class="p-ripple p-element p-menuitem-link">
             <div class="flex justify-content-between">
                 <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
@@ -36,4 +31,3 @@
     </div>
     <app-config-migration-table #tableComponent [hidden]="activeTabIndex !== 0"></app-config-migration-table>
 </div>
-

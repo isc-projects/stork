@@ -1,23 +1,22 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing'
 
-import { ConfigMigrationTableComponent } from './config-migration-table.component';
+import { ConfigMigrationTableComponent } from './config-migration-table.component'
 
 describe('ConfigMigrationTableComponent', () => {
-  let component: ConfigMigrationTableComponent;
-  let fixture: ComponentFixture<ConfigMigrationTableComponent>;
+    let component: ConfigMigrationTableComponent
+    let fixture: ComponentFixture<ConfigMigrationTableComponent>
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ConfigMigrationTableComponent]
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [ConfigMigrationTableComponent],
+        }).compileComponents()
+
+        fixture = TestBed.createComponent(ConfigMigrationTableComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
     })
-    .compileComponents();
-    
-    fixture = TestBed.createComponent(ConfigMigrationTableComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+})

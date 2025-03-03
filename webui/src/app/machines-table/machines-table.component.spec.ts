@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { MachinesTableComponent } from './machines-table.component'
 import { RouterModule } from '@angular/router'
@@ -544,8 +544,7 @@ describe('MachinesTableComponent', () => {
         expect(selectAllCheckbox).toBeTruthy()
 
         selectAllCheckbox.nativeElement.click()
-
-        tick() // Wait for PrimeNG to react on Select all change
+        flush() // Wait for PrimeNG to react on Select all change
         fixture.detectChanges()
         tick()
 
