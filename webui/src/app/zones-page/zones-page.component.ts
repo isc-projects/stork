@@ -209,7 +209,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     private _subscriptions = new Subscription()
 
     /**
-     * Flag stating whether _polling$ observable is active or not.
+     * Flag stating whether _polling$ observable is active (emitting values and not complete yet) or not.
      * @private
      */
     private _isPolling = false

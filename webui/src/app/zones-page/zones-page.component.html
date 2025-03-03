@@ -4,7 +4,7 @@
     </div>
 </app-breadcrumbs>
 
-<p-dialog header="Zones Fetching Status" [modal]="true" [(visible)]="fetchStatusVisible">
+<p-dialog header="Zones Fetching Status" [modal]="true" [(visible)]="fetchStatusVisible" styleClass="max-w-screen">
     <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
         <p-button
             label="Refresh List"
@@ -24,8 +24,8 @@
     >
         <ng-template pTemplate="header">
             <tr>
-                <th>App</th>
-                <th>Daemon ID</th>
+                <th>DNS App</th>
+                <th>DNS Daemon ID</th>
                 <th>Zone Count</th>
                 <th>Status</th>
                 <th>Error</th>
@@ -120,7 +120,7 @@
     </p-table>
 </p-dialog>
 
-<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeIdx">
+<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeIdx" [scrollable]="true">
     <p-tabPanel header="Zones">
         <div class="my-2 flex gap-2 flex-wrap justify-content-end">
             <p-button
@@ -191,7 +191,7 @@
                             <p-button
                                 [label]="expanded ? 'Collapse the row' : 'Expand the row to see the details'"
                                 size="small"
-                                class="block mt-2"
+                                class="md:block mt-2 hidden"
                                 [pRowToggler]="zone"
                                 [rounded]="true"
                                 severity="secondary"
