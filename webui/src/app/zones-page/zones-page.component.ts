@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { MenuItem, MessageService } from 'primeng/api'
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api'
 import { Zone, DNSService, ZonesFetchStatus, ZoneInventoryStates, ZoneInventoryState } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
 import { concatMap, finalize, share, switchMap, takeWhile, tap, delay, catchError, map } from 'rxjs/operators'
@@ -230,11 +230,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @param cd Angular change detection required to manually trigger detectChanges in this component
      * @param dnsService service providing DNS REST APIs
      * @param messageService PrimeNG message service used to display feedback messages in UI
+     * @param confirmationService PrimeNG confirmation service used to display confirmation dialog
      */
     constructor(
         private cd: ChangeDetectorRef,
         private dnsService: DNSService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private confirmationService: ConfirmationService
     ) {}
 
     /**
@@ -362,9 +364,36 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Sends PUT ZonesFetch request and triggers refreshing data of the Zones Fetch Status table right after.
+     * Wrapper function that calls _sendPutZonesFetch() but only after user confirms that action
+     * in the confirmation dialog.
+     * @param autoAccept when set to true, the confirmation step will be skipped; defaults to false
      */
-    sendPutZonesFetch() {
+    sendPutZonesFetch(autoAccept: boolean = false) {
+        if (autoAccept) {
+            this._sendPutZonesFetch()
+        } else {
+            this.confirmationService.confirm({
+                message:
+                    'This operation instructs the server to fetch the zones from all DNS servers' +
+                    ' and update them in the Stork database. This operation may take long time depending' +
+                    ' on DNS servers count and zones count. All zones data will be overwritten with the newly ' +
+                    'fetched data from DNS servers that Stork is monitoring. Are you sure you want to continue?',
+                header: 'Confirm triggering Zones Fetch!',
+                icon: 'pi pi-exclamation-triangle',
+                acceptLabel: 'Continue',
+                rejectLabel: 'Cancel',
+                accept: () => {
+                    this._sendPutZonesFetch()
+                },
+            })
+        }
+    }
+
+    /**
+     * Sends PUT ZonesFetch request and triggers refreshing data of the Zones Fetch Status table right after.
+     * @private
+     */
+    private _sendPutZonesFetch() {
         this._subscriptions.add(this._putZonesFetchGuard.subscribe())
 
         lastValueFrom(
@@ -456,8 +485,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.zones = resp?.items ?? []
                 this.zonesTotal = resp?.total ?? 0
 
-                if (this.zones.length === 0 && !this.wasZoneFetchSent()) {
-                    this.sendPutZonesFetch()
+                if ((this.zones.length === 0 && !this.wasZoneFetchSent())) {
+                    this.sendPutZonesFetch(true)
                     this.messageService.add({
                         severity: 'info',
                         summary: 'Automatically called Fetch Zones',
