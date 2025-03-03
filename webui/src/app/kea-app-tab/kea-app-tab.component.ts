@@ -5,6 +5,7 @@ import { prerelease, gte } from 'semver'
 
 import { MessageService } from 'primeng/api'
 
+import { AppTab } from '../apps'
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 
@@ -16,11 +17,7 @@ import {
     daemonStatusIconTooltip,
     getErrorMessage,
 } from '../utils'
-import { App, KeaDaemon, ModelFile } from '../backend'
-
-interface AppTab {
-    app: App
-}
+import { KeaDaemon, ModelFile } from '../backend'
 
 @Component({
     selector: 'app-kea-app-tab',
