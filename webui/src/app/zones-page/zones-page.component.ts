@@ -55,19 +55,19 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     @ViewChild('zonesTable') zonesTable: Table
 
     /**
-     * Collection of Zone Inventory States fetched from backend that are presented in Zones Fetching Status table.
+     * Collection of Zone Inventory States fetched from backend that are presented in Zones Fetch Status table.
      */
-    zonesFetchingStates: ZoneInventoryState[] = []
+    zonesFetchStates: ZoneInventoryState[] = []
 
     /**
      * Total count of Zone Inventory States fetched from backend.
      */
-    zonesFetchingStatesTotal: number = 0
+    zonesFetchStatesTotal: number = 0
 
     /**
-     * Flag stating whether Zones Fetching Status table data is loading or not.
+     * Flag stating whether Zones Fetch Status table data is loading or not.
      */
-    zonesFetchingStatesLoading: boolean = false
+    zonesFetchStatesLoading: boolean = false
 
     /**
      * Timestamp formatting used to display "Created at" or "Loaded at" data.
@@ -75,19 +75,19 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     dateTimeFormat = 'YYYY-MM-dd HH:mm:ss'
 
     /**
-     * Flag stating whether Zones fetching is in progress or not.
+     * Flag stating whether Zones Fetch is in progress or not.
      */
-    fetchingInProgress: boolean = false
+    fetchInProgress: boolean = false
 
     /**
-     * Keeps count of DNS apps for which Zones fetching was completed. This number comes from backend.
+     * Keeps count of DNS apps for which Zones Fetch was completed. This number comes from backend.
      */
-    fetchingAppsCompletedCount: number = 0
+    fetchAppsCompletedCount: number = 0
 
     /**
-     * Keeps total count of DNS apps for which Zones fetching is currently in progress. This number comes from backend.
+     * Keeps total count of DNS apps for which Zones Fetch is currently in progress. This number comes from backend.
      */
-    fetchingTotalAppsCount: number = 0
+    fetchTotalAppsCount: number = 0
 
     /**
      * Collection of open tabs with zones details.
@@ -100,7 +100,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     activeIdx: number = 0
 
     /**
-     * Flag stating whether Zones Fetching Status dialog is visible or not.
+     * Flag stating whether Zones Fetch Status dialog is visible or not.
      */
     fetchStatusVisible: boolean = false
 
@@ -113,6 +113,17 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * Flag stating whether Fetch Zones button is locked/disabled or not.
      */
     putZonesFetchLocked: boolean = false
+
+    /**
+     * Column names for tables which display local zones.
+     */
+    localZoneColumns: string[] = ['App Name', 'App ID', 'View', 'Zone Type', 'Serial', 'Class', 'Loaded At']
+
+    /**
+     * Reference to Array ctor to be used in the HTML template.
+     * @protected
+     */
+    protected readonly Array = Array
 
     /**
      * RxJS observable which locks Fetch Zones button for 5 seconds to limit the rate of PUT Zones Fetch requests sent.
@@ -132,7 +143,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     private _fetchSentStorageKey = 'zone-fetch-sent'
 
     /**
-     * Interval in milliseconds between requests sent to backend REST API asking about Zones fetching status.
+     * Interval in milliseconds between requests sent to backend REST API asking about Zones Fetch status.
      * @private
      */
     private _pollingInterval: number = 10 * 1000
@@ -151,32 +162,32 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
     /**
      * RxJS observable stream which sends GET ZonesFetch request response every interval of _pollingInterval time
-     * until Zone fetching is complete OR fetchingInProgress is set to false. It is useful for polling the Zone fetching status
+     * until Zone Fetch is complete OR fetchInProgress is set to false. It is useful for polling the Zone Fetch status
      * once 202 Accepted response is received after GET ZonesFetch request.
      * Expected sequence of sent values is: 202 ZonesFetchStatus -> ... -> 202 ZonesFetchStatus -> 200 ZoneInventoryStates |-> complete.
      * @private
      */
     private _polling$ = interval(this._pollingInterval).pipe(
         switchMap(() => this._getZonesFetchWithStatus), // Use switchMap to discard ongoing request from previous interval tick.
-        takeWhile((resp) => this.fetchingInProgress && resp.status === HttpStatusCode.Accepted, true),
+        takeWhile((resp) => this.fetchInProgress && resp.status === HttpStatusCode.Accepted, true),
         tap((resp) => {
             if (resp.status === HttpStatusCode.Accepted) {
-                this.fetchingAppsCompletedCount = resp.completedAppsCount
-                this.fetchingTotalAppsCount = resp.appsCount
+                this.fetchAppsCompletedCount = resp.completedAppsCount
+                this.fetchTotalAppsCount = resp.appsCount
             } else if (resp.status === HttpStatusCode.Ok) {
-                this.fetchingAppsCompletedCount = this.fetchingTotalAppsCount
-                this.zonesFetchingStates = resp.items ?? []
-                this.zonesFetchingStatesTotal = resp.total ?? 0
-                if (this.fetchingInProgress) {
+                this.fetchAppsCompletedCount = this.fetchTotalAppsCount
+                this.zonesFetchStates = resp.items ?? []
+                this.zonesFetchStatesTotal = resp.total ?? 0
+                if (this.fetchInProgress) {
                     this.messageService.add({
                         severity: 'success',
-                        summary: 'Zone Fetching done',
-                        detail: 'Zone Fetching finished successfully!',
+                        summary: 'Zone Fetch done',
+                        detail: 'Zone Fetch finished successfully!',
                         life: 5000,
                     })
-                    if (this.zonesFetchingStates.length > 0) {
+                    if (this.zonesFetchStates.length > 0) {
                         this.zoneInventoryStateMap = new Map()
-                        this.zonesFetchingStates.forEach((s) => {
+                        this.zonesFetchStates.forEach((s) => {
                             this.zoneInventoryStateMap.set(s.daemonId, s)
                         })
                     }
@@ -197,7 +208,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             return of(EMPTY) // In case of any GET ZonesFetch error, just display Error feedback in UI and complete this observable.
         }),
         finalize(() => {
-            this.fetchingInProgress = false
+            this.fetchInProgress = false
             this._isPolling = false
         })
     )
@@ -230,9 +241,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
-        // console.log('onInit')
-        // TODO: should it be called onInit?
-        this.refreshFetchingStatusTable()
+        this.refreshFetchStatusTable()
     }
 
     /**
@@ -261,42 +270,41 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         const openTabsZoneIds = this.openTabs.map((z) => z.id)
         const zoneIdx = openTabsZoneIds.indexOf(zone.id)
         if (zoneIdx >= 0) {
-            // tab exists, just switch to it
+            // Tab exists, just switch to it.
             this.activeIdx = zoneIdx + 1
         } else {
             this.openTabs = [...this.openTabs, zone]
             this.cd.detectChanges()
-            console.log('openTab setting activeIdx to', this.openTabs.length)
             this.activeIdx = this.openTabs.length
         }
     }
 
     /**
-     * Fetches data from backend and refreshes Zones Fetching Status table with the data.
-     * If Zone fetching is in progress, it subscribes to _polling$ observable to receive and
-     * visualize fetching progress.
+     * Fetches data from backend and refreshes Zones Fetch Status table with the data.
+     * If Zone Fetch is in progress, it subscribes to _polling$ observable to receive and
+     * visualize Fetch progress.
      */
-    refreshFetchingStatusTable() {
-        this.zonesFetchingStatesLoading = true
+    refreshFetchStatusTable() {
+        this.zonesFetchStatesLoading = true
         lastValueFrom(this._getZonesFetchWithStatus)
             .then((resp) => {
                 switch (resp.status) {
                     case HttpStatusCode.NoContent:
-                        this.fetchingInProgress = false
+                        this.fetchInProgress = false
                         this.messageService.add({
                             severity: 'info',
-                            summary: 'No Zone Fetching information',
-                            detail: 'Information about Zone Fetching is currently unavailable.',
+                            summary: 'No Zone Fetch information',
+                            detail: 'Information about Zone Fetch is currently unavailable.',
                             life: 5000,
                         })
                         break
                     case HttpStatusCode.Accepted:
-                        this.fetchingInProgress = true
-                        this.zonesFetchingStates = []
-                        this.zonesFetchingStatesTotal = 0
+                        this.fetchInProgress = true
+                        this.zonesFetchStates = []
+                        this.zonesFetchStatesTotal = 0
 
-                        this.fetchingAppsCompletedCount = resp.completedAppsCount
-                        this.fetchingTotalAppsCount = resp.appsCount
+                        this.fetchAppsCompletedCount = resp.completedAppsCount
+                        this.fetchTotalAppsCount = resp.appsCount
 
                         if (!this._isPolling) {
                             this._isPolling = true
@@ -305,22 +313,22 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
                         break
                     case HttpStatusCode.Ok:
-                        this.zonesFetchingStates = resp.items ?? []
-                        this.zonesFetchingStatesTotal = resp.total ?? 0
-                        if (this.zonesFetchingStates.length > 0) {
+                        this.zonesFetchStates = resp.items ?? []
+                        this.zonesFetchStatesTotal = resp.total ?? 0
+                        if (this.zonesFetchStates.length > 0) {
                             this.zoneInventoryStateMap = new Map()
-                            this.zonesFetchingStates.forEach((s) => {
+                            this.zonesFetchStates.forEach((s) => {
                                 this.zoneInventoryStateMap.set(s.daemonId, s)
                             })
                         }
 
-                        if (this.fetchingInProgress) {
-                            this.fetchingInProgress = false
-                            this.fetchingAppsCompletedCount = this.fetchingTotalAppsCount
+                        if (this.fetchInProgress) {
+                            this.fetchInProgress = false
+                            this.fetchAppsCompletedCount = this.fetchTotalAppsCount
                             this.messageService.add({
                                 severity: 'success',
-                                summary: 'Zone Fetching done',
-                                detail: 'Zone Fetching finished successfully!',
+                                summary: 'Zone Fetch done',
+                                detail: 'Zone Fetch finished successfully!',
                                 life: 5000,
                             })
                             this.onLazyLoadZones(this.zonesTable?.createLazyLoadMetadata())
@@ -328,7 +336,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
                         break
                     default:
-                        this.fetchingInProgress = false
+                        this.fetchInProgress = false
                         this.messageService.add({
                             severity: 'info',
                             summary: 'Unexpected response',
@@ -349,22 +357,22 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 })
             })
             .finally(() => {
-                this.zonesFetchingStatesLoading = false
+                this.zonesFetchStatesLoading = false
             })
     }
 
     /**
-     * Sends PUT ZonesFetch request and triggers refreshing data of the Zones Fetching Status table right after.
+     * Sends PUT ZonesFetch request and triggers refreshing data of the Zones Fetch Status table right after.
      */
     sendPutZonesFetch() {
         this._subscriptions.add(this._putZonesFetchGuard.subscribe())
 
         lastValueFrom(
             this.dnsService.putZonesFetch().pipe(
-                tap(() => (this.fetchingInProgress = true)),
-                delay(500), // Trigger refreshFetchingStatusTable() with small delay - smaller deployments will likely have 200 Ok ZoneInventoryStates response there.
+                tap(() => (this.fetchInProgress = true)),
+                delay(500), // Trigger refreshFetchStatusTable() with small delay - smaller deployments will likely have 200 Ok ZoneInventoryStates response there.
                 concatMap((resp) => {
-                    this.refreshFetchingStatusTable()
+                    this.refreshFetchStatusTable()
                     return of(resp)
                 })
             )
@@ -425,7 +433,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             case 'busy':
                 return 'Zone inventory on an agent performs a long lasting operation and cannot perform the requested operation at this time.'
             case 'ok':
-                return 'Communication with the zone inventory was successful.'
+                return 'Stork server successfully fetched all zones from the DNS server.'
             case 'erred':
                 return 'Error when communicating with a zone inventory on an agent.'
             case 'uninitialized':
@@ -452,7 +460,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                     this.sendPutZonesFetch()
                     this.messageService.add({
                         severity: 'info',
-                        summary: 'Automatically fetching zones',
+                        summary: 'Automatically called Fetch Zones',
                         detail: 'Zones were not fetched yet, so Fetch Zones was triggered automatically.',
                         life: 5000,
                     })
