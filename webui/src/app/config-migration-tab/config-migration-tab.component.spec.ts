@@ -7,6 +7,8 @@ import { TableModule } from 'primeng/table'
 import { FieldsetModule } from 'primeng/fieldset'
 import { TagModule } from 'primeng/tag'
 import { ProgressBarModule } from 'primeng/progressbar'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { RouterTestingModule } from '@angular/router/testing'
 
 describe('ConfigMigrationTabComponent', () => {
     let component: ConfigMigrationTabComponent
@@ -17,7 +19,7 @@ describe('ConfigMigrationTabComponent', () => {
         startDate: new Date(2023, 5, 15, 10, 0, 0).toISOString(),
         endDate: null,
         canceling: false,
-        processedItemsCount: 5,
+        processedItemsCount: 0,
         totalItemsCount: 10,
         errors: {
             total: 0,
@@ -63,8 +65,15 @@ describe('ConfigMigrationTabComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [NoopAnimationsModule, TableModule, FieldsetModule, TagModule, ProgressBarModule],
-            declarations: [ConfigMigrationTabComponent],
+            imports: [
+                NoopAnimationsModule,
+                TableModule,
+                FieldsetModule,
+                TagModule,
+                ProgressBarModule,
+                RouterTestingModule,
+            ],
+            declarations: [ConfigMigrationTabComponent, EntityLinkComponent],
         }).compileComponents()
     })
 

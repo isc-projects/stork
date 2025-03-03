@@ -32,12 +32,13 @@
 >
     <ng-template pTemplate="header">
         <tr>
-            <th style="width: 20%">ID</th>
-            <th style="width: 15%">Start Date</th>
-            <th style="width: 20%">Progress</th>
-            <th style="width: 15%">Status</th>
-            <th style="width: 20%">Time</th>
-            <th style="width: 10%">Actions</th>
+            <th>ID</th>
+            <th>Start Date</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th>Elapsed Time</th>
+            <th>Left Time</th>
+            <th>Actions</th>
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
@@ -51,9 +52,6 @@
                 <a routerLink="/config-migrations/{{ m.id }}">{{ m.id }}</a>
             </td>
             <td>{{ m.startDate | date: 'short' }}</td>
-            <td>
-                <p-progressBar [value]="m.progress * 100" [showValue]="true"></p-progressBar>
-            </td>
             <td>
                 <div class="flex flex-wrap justify-center gap-2">
                     <p-tag *ngIf="m.endDate" severity="success" value="Completed"></p-tag>
@@ -76,13 +74,13 @@
                 </div>
             </td>
             <td>
-                <div *ngIf="!m.endDate">
-                    <div>Elapsed: {{ m.elapsedTime }}</div>
-                    <div>Estimated Left: {{ m.estimatedLeftTime }}</div>
-                </div>
-                <div *ngIf="m.endDate">
-                    <div>Duration: {{ m.elapsedTime }}</div>
-                </div>
+                <p-progressBar [value]="m.progress * 100" [showValue]="true"></p-progressBar>
+            </td>
+            <td>
+                {{ m.elapsedTime }}
+            </td>
+            <td>
+                {{ m.estimatedLeftTime ?? '0s' }}
             </td>
             <td>
                 <button

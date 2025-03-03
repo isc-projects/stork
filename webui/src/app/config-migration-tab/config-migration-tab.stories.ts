@@ -52,7 +52,8 @@ export const RunningMigration: Story = {
             startDate: new Date().toISOString(),
             endDate: null,
             canceling: false,
-            progress: 0.35,
+            processedItemsCount: 35,
+            totalItemsCount: 100,
             errors: {
                 total: 0,
                 items: [],
@@ -70,7 +71,8 @@ export const CancelingMigration: Story = {
             startDate: new Date().toISOString(),
             endDate: null,
             canceling: true,
-            progress: 0.67,
+            processedItemsCount: 67,
+            totalItemsCount: 100,
             errors: {
                 total: 0,
                 items: [],
@@ -88,7 +90,8 @@ export const CompletedMigration: Story = {
             startDate: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
             endDate: new Date().toISOString(),
             canceling: false,
-            progress: 1.0,
+            processedItemsCount: 100,
+            totalItemsCount: 100,
             errors: {
                 total: 0,
                 items: [],
@@ -106,14 +109,15 @@ export const FailedMigration: Story = {
             startDate: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
             endDate: new Date().toISOString(),
             canceling: false,
-            progress: 0.45,
+            processedItemsCount: 45,
+            totalItemsCount: 100,
             generalError: 'Migration failed due to connectivity issues',
             errors: {
                 total: 3,
                 items: [
-                    { hostId: 1, error: 'Failed to process host: timeout', label: 'host-1', type: 'host' },
-                    { hostId: 2, error: 'Failed to process host: invalid data', label: 'host-2', type: 'host' },
-                    { hostId: 3, error: 'Failed to process host: connection refused', label: 'host-3', type: 'host' },
+                    { id: 1, error: 'Failed to process host: timeout', label: 'host-1', type: 'host' },
+                    { id: 2, error: 'Failed to process host: invalid data', label: 'host-2', type: 'host' },
+                    { id: 3, error: 'Failed to process host: connection refused', label: 'host-3', type: 'host' },
                 ],
             },
             elapsedTime: '10m0s',
@@ -129,7 +133,8 @@ export const FailedMigrationWithManyErrors: Story = {
             startDate: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
             endDate: new Date().toISOString(),
             canceling: false,
-            progress: 0.78,
+            processedItemsCount: 78,
+            totalItemsCount: 100,
             generalError: 'Migration terminated due to exceeding error threshold',
             errors: {
                 total: 10,

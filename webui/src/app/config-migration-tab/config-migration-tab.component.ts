@@ -59,6 +59,9 @@ export class ConfigMigrationTabComponent {
      * Gets the completion percentage of the migration.
      */
     get completionPercentage(): number {
+        if (this.migration.totalItemsCount === 0) {
+            return 0
+        }
         return (this.migration.processedItemsCount / this.migration.totalItemsCount) * 100
     }
 
