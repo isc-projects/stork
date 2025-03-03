@@ -5,3 +5,16 @@
     padding-left: 0.5rem
     padding-top: 1.5rem
     padding-right: 0
+
+  // For more narrow screens decrease paddings inside of the PrimeNG p-table.
+  // This makes the table more condensed and more readible on smaller screens.
+  .p-datatable.datatable-responsive
+    @media screen and (max-width: 767px)
+      .p-datatable-header, .p-datatable-footer
+        padding: 0.375rem 0.5rem
+      .p-datatable-thead > tr > th
+        padding: 0.375rem 0.5rem
+      .p-datatable-tbody > tr > td
+        padding: 0.375rem 0.5rem
+      .p-datatable-tfoot > tr > td
+        padding: 0.375rem 0.5rem

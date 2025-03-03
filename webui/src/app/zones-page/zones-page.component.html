@@ -21,6 +21,7 @@
         [totalRecords]="zonesFetchStatesTotal"
         [loading]="zonesFetchStatesLoading"
         [alwaysShowPaginator]="false"
+        styleClass="p-datatable-striped datatable-responsive"
     >
         <ng-template pTemplate="header">
             <tr>
@@ -142,7 +143,7 @@
             stateStorage="session"
             [stateKey]="zonesStateKey"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            styleClass="p-datatable-striped"
+            styleClass="p-datatable-striped datatable-responsive"
             dataKey="id"
             [expandedRowKeys]="zonesExpandedRows"
             [loading]="zonesLoading"
@@ -151,7 +152,7 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th class="w-5rem"></th>
+                    <th class="w-3rem sm:w-5rem"></th>
                     <th>Zone Name</th>
                     <th># Of Associated DNS Servers</th>
                 </tr>
@@ -169,7 +170,7 @@
                         />
                     </td>
                     <td>
-                        <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" />
+                        <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" styleClass="px-0 md:px-2" />
                     </td>
                     <td>
                         {{ zone?.localZones?.length ?? 0 }}
@@ -189,6 +190,7 @@
                                 [rowsPerPageOptions]="[10, 30, 100]"
                                 [alwaysShowPaginator]="false"
                                 [columns]="localZoneColumns"
+                                styleClass="p-datatable-striped datatable-responsive"
                             >
                                 <ng-template pTemplate="header" let-columns>
                                     <tr>
@@ -294,6 +296,7 @@
                         [rowsPerPageOptions]="[10, 30, 100]"
                         [alwaysShowPaginator]="false"
                         [columns]="localZoneColumns"
+                        styleClass="p-datatable-striped datatable-responsive"
                     >
                         <ng-template pTemplate="header" let-columns>
                             <tr>
