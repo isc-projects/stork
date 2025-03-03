@@ -1,1 +1,103 @@
-<p>config-migration-table works!</p>
+<div class="mb-2 flex gap-2 flex-wrap justify-content-end">
+    <p-button
+        label="Clear Finished Migrations"
+        icon="pi pi-trash"
+        styleClass="block p-button-warning no-underline"
+        (onClick)="clearFinishedMigrations()"
+    ></p-button>
+
+    <p-button
+        label="Refresh List"
+        icon="pi pi-refresh"
+        styleClass="block p-button-primary no-underline"
+        (onClick)="reloadData(configMigrationTable)"
+    ></p-button>
+</div>
+
+<p-table
+    id="config-migration-table"
+    #configMigrationTable
+    [value]="dataCollection"
+    [paginator]="true"
+    [rows]="10"
+    [lazy]="true"
+    [loading]="dataLoading"
+    (onLazyLoad)="loadData($event)"
+    [lazyLoadOnInit]="false"
+    [totalRecords]="totalRecords"
+    [rowsPerPageOptions]="[10, 30, 100]"
+    [showCurrentPageReport]="true"
+    [currentPageReportTemplate]="currentPageReportTemplate"
+    styleClass="p-datatable-striped"
+>
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 20%">ID</th>
+            <th style="width: 15%">Start Date</th>
+            <th style="width: 20%">Progress</th>
+            <th style="width: 15%">Status</th>
+            <th style="width: 20%">Time</th>
+            <th style="width: 10%">Actions</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="6" class="text-center">No migrations found.</td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-m>
+        <tr id="migration-row-{{ m.id }}">
+            <td>
+                <a routerLink="/config-migrations/{{ m.id }}">{{ m.id }}</a>
+            </td>
+            <td>{{ m.startDate | date: 'short' }}</td>
+            <td>
+                <p-progressBar [value]="m.progress * 100" [showValue]="true"></p-progressBar>
+            </td>
+            <td>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <p-tag *ngIf="m.endDate" severity="success" value="Completed"></p-tag>
+                    <p-tag
+                        *ngIf="m.generalError"
+                        severity="danger"
+                        value="Failed"
+                        [pTooltip]="m.generalError"
+                        tooltipPosition="top"
+                    ></p-tag>
+                    <p-tag *ngIf="m.canceling" severity="warning" value="Canceling"></p-tag>
+                    <p-tag *ngIf="!m.endDate" severity="info" value="Running"></p-tag>
+                    <p-tag
+                        *ngIf="m.errors?.total > 0"
+                        severity="danger"
+                        [value]="m.errors.total + ' errors'"
+                        [pTooltip]="'This migration has ' + m.errors.total + ' errors.'"
+                        tooltipPosition="top"
+                    ></p-tag>
+                </div>
+            </td>
+            <td>
+                <div *ngIf="!m.endDate">
+                    <div>Elapsed: {{ m.elapsedTime }}</div>
+                    <div>Estimated Left: {{ m.estimatedLeftTime }}</div>
+                </div>
+                <div *ngIf="m.endDate">
+                    <div>Duration: {{ m.elapsedTime }}</div>
+                </div>
+            </td>
+            <td>
+                <button
+                    [class.hidden]="!!m.endDate || m.canceling"
+                    pButton
+                    class="p-button-danger p-button-sm"
+                    icon="pi pi-times"
+                    pTooltip="Cancel Migration"
+                    tooltipPosition="top"
+                    (click)="cancelMigration(m.id)"
+                ></button>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="paginatorright" let-paginatorState>
+        Total: {{ paginatorState.totalRecords | pluralize: 'migration' }}
+    </ng-template>
+</p-table>

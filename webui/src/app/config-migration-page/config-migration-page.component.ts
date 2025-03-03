@@ -1,9 +1,8 @@
-import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core'
 import { Subscription } from 'rxjs'
-import { ConfigMigrationTableComponent } from '../config-migration-table/config-migration-table.component'
 import { MenuItem, MessageService } from 'primeng/api'
 import { DHCPService, MigrationStatus } from '../backend'
-import { ActivatedRoute, Router } from '@angular/router'
+import { ActivatedRoute } from '@angular/router'
 import { getErrorMessage } from '../utils'
 
 /**
@@ -25,11 +24,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      */
     subscriptions = new Subscription()
 
-    /**
-     * Table component.
-     */
-    @ViewChild('tableComponent') table: ConfigMigrationTableComponent
-
     breadcrumbs = [{ label: 'Monitoring' }, { label: 'Config Migration' }]
 
     /**
@@ -38,6 +32,15 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      * The first tab is always present and displays the list.
      */
     tabs: MenuItem[]
+
+    /**
+     * Holds the information about specific config migrations presented in
+     * the tabs.
+     *
+     * The tab holding hosts list is not included in this tab. If only a tab
+     * with the hosts list is displayed, this array is empty.
+     */
+    tabItems: MigrationStatus[]
 
     /**
      * Selected tab index.
@@ -52,15 +55,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     activeTabItem: MigrationStatus | null = null
 
     /**
-     * Holds the information about specific config migrations presented in
-     * the tabs.
-     *
-     * The tab holding hosts list is not included in this tab. If only a tab
-     * with the hosts list is displayed, this array is empty.
-     */
-    tabItems: MigrationStatus[]
-
-    /**
      * Constructor.
      *
      * @param route activated route used to gather parameters from the URL.
@@ -70,7 +64,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      */
     constructor(
         private route: ActivatedRoute,
-        private router: Router,
         private dhcpApi: DHCPService,
         private messageService: MessageService
     ) {}
@@ -86,7 +79,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      */
     ngOnInit() {
         // Initially, there is only a tab with hosts list.
-        this.tabs = [{ label: 'Config migrations', routerLink: '/config-migrations' }]
+        this.tabs = [{ label: 'Config migrations', routerLink: '/config-migrations/all' }]
         this.tabItems = [{}]
     }
 
@@ -100,9 +93,14 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      */
     ngAfterViewInit(): void {
         this.subscriptions.add(
-            this.route.queryParams.subscribe((params) => {
-                if (params['id']) {
-                    this.openTab(params['id'])
+            this.route.params.subscribe((params) => {
+                if (params.hasOwnProperty('id')) {
+                    const id = params['id']
+                    if (id === 'all') {
+                        this.switchToTab(0)
+                    } else {
+                        this.openTab(params['id'])
+                    }
                 }
             })
         )
@@ -123,11 +121,21 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
             return
         }
 
-        // ToDo: Make an API call to get migration details.
-        const status = null
-
-        this.createTab(status)
-        this.switchToTab(this.tabs.length - 1)
+        // Make an API call to get migration details.
+        this.dhcpApi.getMigration(id).subscribe({
+            next: (status) => {
+                this.createTab(status)
+                this.switchToTab(this.tabs.length - 1)
+            },
+            error: (error) => {
+                const errorMessage = getErrorMessage(error)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Failed to get migration details',
+                    detail: errorMessage,
+                })
+            },
+        })
     }
 
     /**
@@ -140,14 +148,20 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      * @param tabIndex index of the tab to be closed. It must be equal to or
      *        greater than 1.
      */
-    closeTab(tabIndex: number) {
+    closeTab(tabIndex: number, event?: Event) {
+        if (event) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+
         if (tabIndex === 0) {
             return
         }
+
         // Remove the MenuItem representing the tab.
         this.tabs = [...this.tabs.slice(0, tabIndex), ...this.tabs.slice(tabIndex + 1)]
         // Remove host specific information associated with the tab.
-        this.tabItems = [...this.tabItems.slice(0, tabIndex - 1), ...this.tabItems.slice(tabIndex)]
+        this.tabItems = [...this.tabItems.slice(0, tabIndex), ...this.tabItems.slice(tabIndex + 1)]
 
         if (this.activeTabIndex === tabIndex) {
             // Closing currently selected tab. Switch to previous tab.
@@ -170,7 +184,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
         }
         this.activeTabIndex = tabIndex
         this.activeTabItem = tabIndex !== 0 ? this.tabItems[tabIndex] : null
-        this.router.navigate([this.tabs[tabIndex].routerLink])
     }
 
     /**
@@ -208,9 +221,9 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     }
 
     /**
-     * Callback called when requested to cancel a migration.
+     * Function called when requested to cancel a migration.
      */
-    onCancelMigration(id: number) {
+    cancelMigration(id: number) {
         const index = this.tabs.findIndex((t, i) => this.tabItems[i].id === id)
         if (index <= 0) {
             return
@@ -233,12 +246,21 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     }
 
     /**
-     * Callback called when requested to clean up finished migrations.
+     * Function called when requested to clean up finished migrations.
      */
-    onCleanUpFinishedMigrations() {
-        // ToDo: Make an API call to clean up finished migrations.
+    cleanUpFinishedMigrations() {
+        // Make an API call to clean up finished migrations.
         this.dhcpApi.deleteFinishedMigrations().subscribe({
-            next: () => {},
+            next: () => {
+                // Close tabs for finished migrations.
+                for (let i = this.tabs.length - 1; i > 0; i--) {
+                    const item = this.tabItems[i]
+                    if (item.endDate == null) {
+                        continue
+                    }
+                    this.closeTab(i)
+                }
+            },
             error: (error) => {
                 const errorMessage = getErrorMessage(error)
                 this.messageService.add({
@@ -248,19 +270,24 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
                 })
             },
         })
+    }
 
-        // Close tabs for finished migrations.
-        for (let i = this.tabs.length - 1; i > 0; i--) {
-            const item = this.tabItems[i]
-            if (item.endDate == null) {
-                continue
-            }
-            this.closeTab(i)
-            this.tabItems = [...this.tabItems.slice(0, i), ...this.tabItems.slice(i + 1)]
-            this.tabs = [...this.tabs.slice(0, i), ...this.tabs.slice(i + 1)]
-            if (this.activeTabIndex > i) {
-                this.activeTabIndex--
-            }
-        }
+    /**
+     * Function called when requested to refresh migration status.
+     */
+    refreshMigration(id: number) {
+        this.dhcpApi.getMigration(id).subscribe({
+            next: (status) => {
+                this.replaceItem(status)
+            },
+            error: (error) => {
+                const errorMessage = getErrorMessage(error)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Failed to refresh migration status',
+                    detail: errorMessage,
+                })
+            },
+        })
     }
 }

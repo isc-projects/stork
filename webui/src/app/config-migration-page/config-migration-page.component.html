@@ -16,18 +16,23 @@
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
                 </div>
-                <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTab($event, i)"></div>
             </div>
+            <div *ngIf="i !== 0" class="pi pi-times close-tab-btn" (click)="closeTab(i, $event)"></div>
         </a>
     </ng-template>
 </p-tabMenu>
 
 <div>
-    <div *ngIf="activeTabIndex !== 0" [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
+    <div *ngIf="activeTabIndex !== 0" class="p-component">
         <app-config-migration-tab
-            [item]="openedTabs[activeTabIndex - 1].subject"
-            (cancel)="onCancel(openedTabs[activeTabIndex - 1].subject)"
+            [migration]="activeTabItem"
+            (onCancel)="cancelMigration($event)"
+            (onRefresh)="refreshMigration($event)"
         ></app-config-migration-tab>
     </div>
-    <app-config-migration-table #tableComponent [hidden]="activeTabIndex !== 0"></app-config-migration-table>
+    <app-config-migration-table
+        [hidden]="activeTabIndex !== 0"
+        (onCancel)="cancelMigration($event)"
+        (onClear)="cleanUpFinishedMigrations()"
+    ></app-config-migration-table>
 </div>

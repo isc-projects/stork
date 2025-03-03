@@ -115,6 +115,12 @@ export class AppComponent implements OnInit, OnDestroy {
                         icon: 'fa fa-network-wired',
                         routerLink: '/dhcp/shared-networks',
                     },
+                    {
+                        label: 'Config migrations',
+                        id: 'config-migrations',
+                        routerLink: '/config-migrations',
+                        icon: 'fa fa-suitcase',
+                    },
                 ],
             },
             {

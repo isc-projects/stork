@@ -1,16 +1,51 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { HttpResponse } from '@angular/common/http'
 
 import { ConfigMigrationTableComponent } from './config-migration-table.component'
+import { TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { MessageService } from 'primeng/api'
+import { ButtonModule } from 'primeng/button'
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { TagModule } from 'primeng/tag'
+import { ProgressBarModule } from 'primeng/progressbar'
+import { TooltipModule } from 'primeng/tooltip'
+import { DHCPService, MigrationStatuses } from '../backend'
+import { Observable, of } from 'rxjs'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
 
 describe('ConfigMigrationTableComponent', () => {
     let component: ConfigMigrationTableComponent
     let fixture: ComponentFixture<ConfigMigrationTableComponent>
+    let dhcpServiceSpy: jasmine.SpyObj<DHCPService>
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [ConfigMigrationTableComponent],
+    beforeEach(waitForAsync(() => {
+        const spy = jasmine.createSpyObj('DHCPService', ['getMigrations'])
+
+        // Setup the spy to return empty migrations list by default
+        const emptyResponse: MigrationStatuses = {
+            items: [],
+            total: 0,
+        }
+        spy.getMigrations.and.returnValue(of(emptyResponse))
+
+        TestBed.configureTestingModule({
+            providers: [MessageService, { provide: DHCPService, useValue: spy }],
+            imports: [
+                ButtonModule,
+                BrowserAnimationsModule,
+                TagModule,
+                ProgressBarModule,
+                TooltipModule,
+                TableModule,
+                ProgressBarModule,
+            ],
+            declarations: [ConfigMigrationTableComponent, PluralizePipe],
         }).compileComponents()
 
+        dhcpServiceSpy = TestBed.inject(DHCPService) as jasmine.SpyObj<DHCPService>
+    }))
+
+    beforeEach(() => {
         fixture = TestBed.createComponent(ConfigMigrationTableComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
@@ -18,5 +53,61 @@ describe('ConfigMigrationTableComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('should call dhcpApi.getMigrations on loadData', () => {
+        const event = { first: 0, rows: 10 } as TableLazyLoadEvent
+        component.loadData(event)
+        expect(dhcpServiceSpy.getMigrations).toHaveBeenCalledWith(0, 10)
+    })
+
+    it('should set migrations and totalRecords on successful loadData', async () => {
+        // Setup test data
+        const testMigrations = [
+            { id: '1', progress: 0.5 },
+            { id: '2', progress: 1.0 },
+        ]
+
+        dhcpServiceSpy.getMigrations.and.returnValue(
+            of({
+                items: testMigrations,
+                total: 2,
+            }) as any as Observable<HttpResponse<MigrationStatuses>>
+        )
+
+        // Call loadData
+        const event = { first: 0, rows: 10 } as TableLazyLoadEvent
+        component.loadData(event)
+
+        // Wait for async operations
+        fixture.detectChanges()
+        await fixture.whenStable()
+
+        // Verify the component state
+        expect(component.migrations.length).toBe(2)
+        expect(component.totalRecords).toBe(2)
+    })
+
+    it('should emit clearFinishedMigrationsRequest when onClearFinishedMigrations is called', () => {
+        // Arrange
+        spyOn(component.clear, 'emit')
+
+        // Act
+        component.clearFinishedMigrations()
+
+        // Assert
+        expect(component.clear.emit).toHaveBeenCalled()
+    })
+
+    it('should emit cancelMigrationRequest with migrationId when onCancelMigration is called', () => {
+        // Arrange
+        spyOn(component.cancel, 'emit')
+        const migrationId = '1234-abcd'
+
+        // Act
+        component.cancelMigration(migrationId)
+
+        // Assert
+        expect(component.cancel.emit).toHaveBeenCalledWith(migrationId)
     })
 })

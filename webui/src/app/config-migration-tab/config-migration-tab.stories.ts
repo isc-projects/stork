@@ -1,0 +1,149 @@
+import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
+import { HttpClientModule } from '@angular/common/http'
+import { FormsModule } from '@angular/forms'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { MessageService } from 'primeng/api'
+import { ButtonModule } from 'primeng/button'
+import { CardModule } from 'primeng/card'
+import { FieldsetModule } from 'primeng/fieldset'
+import { MessagesModule } from 'primeng/messages'
+import { ProgressBarModule } from 'primeng/progressbar'
+import { TableModule } from 'primeng/table'
+import { TagModule } from 'primeng/tag'
+import { TooltipModule } from 'primeng/tooltip'
+import { importProvidersFrom } from '@angular/core'
+import { toastDecorator } from '../utils-stories'
+import { ConfigMigrationTabComponent } from './config-migration-tab.component'
+
+export default {
+    title: 'App/ConfigMigrationTab',
+    component: ConfigMigrationTabComponent,
+    decorators: [
+        applicationConfig({
+            providers: [importProvidersFrom(HttpClientModule)],
+        }),
+        moduleMetadata({
+            imports: [
+                ButtonModule,
+                CardModule,
+                FieldsetModule,
+                FormsModule,
+                HttpClientModule,
+                NoopAnimationsModule,
+                MessagesModule,
+                ProgressBarModule,
+                TableModule,
+                TagModule,
+                TooltipModule,
+            ],
+            declarations: [ConfigMigrationTabComponent],
+            providers: [MessageService],
+        }),
+        toastDecorator,
+    ],
+} as Meta
+
+type Story = StoryObj<ConfigMigrationTabComponent>
+
+export const RunningMigration: Story = {
+    args: {
+        migration: {
+            id: 'migration-123',
+            startDate: new Date().toISOString(),
+            endDate: null,
+            canceling: false,
+            progress: 0.35,
+            errors: {
+                total: 0,
+                items: [],
+            },
+            elapsedTime: '10m30s',
+            estimatedLeftTime: '19m45s',
+        },
+    },
+}
+
+export const CancelingMigration: Story = {
+    args: {
+        migration: {
+            id: 'migration-456',
+            startDate: new Date().toISOString(),
+            endDate: null,
+            canceling: true,
+            progress: 0.67,
+            errors: {
+                total: 0,
+                items: [],
+            },
+            elapsedTime: '15m22s',
+            estimatedLeftTime: '7m12s',
+        },
+    },
+}
+
+export const CompletedMigration: Story = {
+    args: {
+        migration: {
+            id: 'migration-789',
+            startDate: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
+            endDate: new Date().toISOString(),
+            canceling: false,
+            progress: 1.0,
+            errors: {
+                total: 0,
+                items: [],
+            },
+            elapsedTime: '30m0s',
+            estimatedLeftTime: '0s',
+        },
+    },
+}
+
+export const FailedMigration: Story = {
+    args: {
+        migration: {
+            id: 'migration-abc',
+            startDate: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
+            endDate: new Date().toISOString(),
+            canceling: false,
+            progress: 0.45,
+            generalError: 'Migration failed due to connectivity issues',
+            errors: {
+                total: 3,
+                items: [
+                    { hostId: 1, error: 'Failed to process host: timeout', label: 'host-1', type: 'host' },
+                    { hostId: 2, error: 'Failed to process host: invalid data', label: 'host-2', type: 'host' },
+                    { hostId: 3, error: 'Failed to process host: connection refused', label: 'host-3', type: 'host' },
+                ],
+            },
+            elapsedTime: '10m0s',
+            estimatedLeftTime: '0s',
+        },
+    },
+}
+
+export const FailedMigrationWithManyErrors: Story = {
+    args: {
+        migration: {
+            id: 'migration-def',
+            startDate: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
+            endDate: new Date().toISOString(),
+            canceling: false,
+            progress: 0.78,
+            generalError: 'Migration terminated due to exceeding error threshold',
+            errors: {
+                total: 10,
+                items: Array(10)
+                    .fill(0)
+                    .map((_, i) => ({
+                        hostId: i + 1,
+                        error: `Error code ${1000 + i}: Host configuration validation failed`,
+                        label: `host-${i + 1}`,
+                        type: 'host',
+                    })),
+            },
+            elapsedTime: '15m0s',
+            estimatedLeftTime: '0s',
+        },
+    },
+}

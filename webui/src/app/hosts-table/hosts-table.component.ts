@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { PrefilteredTable } from '../table'
 import { DHCPService, Host, LocalHost } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { Location } from '@angular/common'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { getErrorMessage, uncamelCase } from '../utils'
@@ -82,6 +82,7 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
 
     constructor(
         route: ActivatedRoute,
+        private router: Router,
         private dhcpApi: DHCPService,
         private messageService: MessageService,
         location: Location,
@@ -238,18 +239,18 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
                         this.validFilter.isGlobal
                     )
                     .pipe(last())
-                    .subscribe(
-                        (result) => {
-                            console.log(result)
+                    .subscribe({
+                        next: (result) => {
+                            this.router.navigate(['/config-migrations/' + result.id])
                         },
-                        (error) => {
+                        error: (error) => {
                             this.messageService.add({
                                 severity: 'error',
                                 summary: 'Cannot migrate host reservations',
                                 detail: getErrorMessage(error),
                             })
-                        }
-                    )
+                        },
+                    })
             },
         })
     }

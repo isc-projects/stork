@@ -1,0 +1,12 @@
+:host ::ng-deep
+  // When the table header has p-panel inside, do not add extra horizontal padding,
+  // because the panel has its own padding.
+  .p-datatable .p-datatable-header:has(.p-panel)
+    padding-left: 0
+    padding-right: 0
+    
+  .p-progressbar
+    height: 1rem
+    
+  .p-progressbar-value
+    transition: width 0.5s ease
