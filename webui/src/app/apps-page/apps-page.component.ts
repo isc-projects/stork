@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { BehaviorSubject, lastValueFrom, Subscription } from 'rxjs'
+import { lastValueFrom, Subject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api'
 
@@ -72,7 +72,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     openedApps: AppTab[]
     appTab: AppTab = null
 
-    refreshedAppTab = new BehaviorSubject(this.appTab)
+    refreshedAppTab = new Subject<AppTab>()
 
     constructor(
         private route: ActivatedRoute,
