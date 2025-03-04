@@ -93,7 +93,7 @@
                 <td colspan="6">
                     <ng-container *ngIf="!wasZoneFetchSent()">
                         <p-message
-                            styleClass="mb-2"
+                            styleClass="mb-2 mx-0 md:mx-8"
                             severity="info"
                             [text]="
                                 'Zones were not fetched yet from DNS servers. You can now trigger Zones Fetch operation. ' +
@@ -104,6 +104,7 @@
                             "
                         ></p-message>
                         <p-button
+                            styleClass="mx-0 md:mx-8"
                             label="Fetch Zones"
                             (onClick)="sendPutZonesFetch(true)"
                             [disabled]="fetchInProgress || putZonesFetchLocked"
@@ -132,6 +133,7 @@
                 icon="pi pi-download"
                 (onClick)="sendPutZonesFetch()"
                 [disabled]="fetchInProgress || putZonesFetchLocked"
+                id="fetch-zones"
             />
             <p-button
                 label="Refresh List"
@@ -269,7 +271,7 @@
                     <td colspan="3">
                         <ng-container *ngIf="!wasZoneFetchSent()">
                             <p-message
-                                styleClass="mb-2"
+                                styleClass="mb-2 mx-0 md:mx-8"
                                 severity="info"
                                 [text]="
                                     'Zones were not fetched yet from DNS servers. You can now trigger Zones Fetch operation. ' +
@@ -280,6 +282,7 @@
                                 "
                             ></p-message>
                             <p-button
+                                styleClass="mx-0 md:mx-8"
                                 label="Fetch Zones"
                                 (onClick)="sendPutZonesFetch(true)"
                                 [disabled]="fetchInProgress || putZonesFetchLocked"

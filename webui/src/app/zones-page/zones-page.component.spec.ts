@@ -243,6 +243,10 @@ describe('ZonesPageComponent', () => {
         expect(component.zonesTotal).toEqual(fakeZones.total)
         fixture.detectChanges()
 
+        // There should be no notification about zones that were not fetched yet.
+        const messageDe = fixture.debugElement.query(By.css('#zones-table .p-inline-message'))
+        expect(messageDe).toBeNull()
+
         // There are all 3 zones listed.
         const tableRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tr'))
         expect(tableRows).toBeTruthy()
@@ -264,5 +268,45 @@ describe('ZonesPageComponent', () => {
         expect(innerRows.length).toEqual(2)
         expect(innerRows[0].nativeElement.innerText).toContain(fakeZones.items[0].localZones[0].appName)
         expect(innerRows[1].nativeElement.innerText).toContain(fakeZones.items[0].localZones[1].appName)
+    })
+
+    it('should display explanation message and fetch zones button', async () => {
+        // Arrange + Act
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        fixture.detectChanges()
+        const onlyCellDe = fixture.debugElement.query(By.css('#zones-table tbody td'))
+
+        // Assert
+        expect(onlyCellDe).toBeTruthy()
+        const messageDe = onlyCellDe.query(By.css('.p-inline-message'))
+        const buttonDe = onlyCellDe.query(By.css('button'))
+        expect(messageDe).toBeTruthy()
+        expect(buttonDe).toBeTruthy()
+        expect(messageDe.nativeElement.innerText).toContain('Zones were not fetched yet')
+        expect(buttonDe.nativeElement.innerText).toContain('Fetch Zones')
+        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10)
+    })
+
+    it('should display confirmation dialog when fetch zones clicked', async () => {
+        // Arrange + Act
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        fixture.detectChanges()
+        const fetchZonesBtn = fixture.debugElement.query(By.css('#fetch-zones button'))
+        expect(fetchZonesBtn).toBeTruthy()
+        fetchZonesBtn.nativeElement.click()
+        fixture.detectChanges()
+
+        // Assert
+        const confirmDialog = fixture.debugElement.query(By.css('.p-confirm-dialog'))
+        expect(confirmDialog).toBeTruthy()
+        expect(confirmDialog.nativeElement.innerText).toContain('Confirm triggering Zones Fetch')
+        expect(confirmDialog.nativeElement.innerText).toContain('Are you sure you want to continue?')
+
+        // cancel
+        const rejectBtnDe = confirmDialog.query(By.css('button.p-confirm-dialog-reject'))
+        expect(rejectBtnDe).toBeTruthy()
+        rejectBtnDe.nativeElement.click()
+        fixture.detectChanges()
+        expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
     })
 })
