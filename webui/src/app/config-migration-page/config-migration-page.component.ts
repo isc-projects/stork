@@ -24,7 +24,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      */
     subscriptions = new Subscription()
 
-    breadcrumbs = [{ label: 'Monitoring' }, { label: 'Config Migration' }]
+    breadcrumbs = [{ label: 'DHCP' }, { label: 'Config Migrations' }]
 
     /**
      * Array of tabs with migration information.
