@@ -638,13 +638,12 @@ func (r *RestAPI) MigrateHosts(ctx context.Context, params dhcp.MigrateHostsPara
 	// Create a new host migrator.
 	migrator := entitymigrator.NewHostMigrator(
 		dbmodel.HostsByPageFilters{
-			AppID:             params.AppID,
-			SubnetID:          params.SubnetID,
-			LocalSubnetID:     params.LocalSubnetID,
-			FilterText:        params.Text,
-			Global:            params.Global,
-			DHCPDataConflict:  storkutil.Ptr(false),
-			DHCPDataDuplicate: storkutil.Ptr(false),
+			AppID:            params.AppID,
+			SubnetID:         params.SubnetID,
+			LocalSubnetID:    params.LocalSubnetID,
+			FilterText:       params.Text,
+			Global:           params.Global,
+			DHCPDataConflict: storkutil.Ptr(false),
 		},
 		r.DB,
 		r.Agents,
