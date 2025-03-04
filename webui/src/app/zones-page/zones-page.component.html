@@ -95,14 +95,22 @@
                         <p-message
                             styleClass="mb-2"
                             severity="info"
-                            text="Zones were not fetched yet from Stork agents."
+                            [text]="
+                                'Zones were not fetched yet from DNS servers. You can now trigger Zones Fetch operation. ' +
+                                'This operation instructs the Stork server to fetch the zones from all DNS servers' +
+                                ' and update them in the Stork database. This operation may take long time depending' +
+                                ' on DNS servers count and zones count. If you decide to trigger the Zones Fetch ' +
+                                'operation, you can use the button below.'
+                            "
                         ></p-message>
                         <p-button
                             label="Fetch Zones"
-                            (onClick)="sendPutZonesFetch()"
+                            (onClick)="sendPutZonesFetch(true)"
                             [disabled]="fetchInProgress || putZonesFetchLocked"
                     /></ng-container>
-                    <p *ngIf="!fetchInProgress">There is no Zones Fetch Status information available.</p>
+                    <p *ngIf="!fetchInProgress">
+                        There is no Zones Fetch Status information available in the Stork server database.
+                    </p>
                 </td>
             </tr>
         </ng-template>
@@ -258,7 +266,26 @@
                     </tr>
                 </ng-container>
                 <tr *ngIf="!fetchInProgress">
-                    <td colspan="3">No zones found.</td>
+                    <td colspan="3">
+                        <ng-container *ngIf="!wasZoneFetchSent()">
+                            <p-message
+                                styleClass="mb-2"
+                                severity="info"
+                                [text]="
+                                    'Zones were not fetched yet from DNS servers. You can now trigger Zones Fetch operation. ' +
+                                    'This operation instructs the Stork server to fetch the zones from all DNS servers' +
+                                    ' and update them in the Stork database. This operation may take long time depending' +
+                                    ' on DNS servers count and zones count. If you decide to trigger the Zones Fetch ' +
+                                    'operation, you can use the button below.'
+                                "
+                            ></p-message>
+                            <p-button
+                                label="Fetch Zones"
+                                (onClick)="sendPutZonesFetch(true)"
+                                [disabled]="fetchInProgress || putZonesFetchLocked"
+                        /></ng-container>
+                        <p>No zones were found in the Stork server database.</p>
+                    </td>
                 </tr>
             </ng-template>
             <ng-template pTemplate="paginatorright" let-paginatorState>
@@ -279,11 +306,11 @@
                     <p-table [value]="[tab]">
                         <ng-template pTemplate="body" let-zone>
                             <tr>
-                                <td class="font-semibold">Name</td>
+                                <td class="font-semibold w-14rem">Name</td>
                                 <td>{{ zone.name }}</td>
                             </tr>
                             <tr>
-                                <td class="font-semibold">Stork Internal Zone ID</td>
+                                <td class="font-semibold w-14rem">Stork Internal Zone ID</td>
                                 <td>{{ zone.id }}</td>
                             </tr>
                         </ng-template>

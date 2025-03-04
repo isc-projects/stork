@@ -293,6 +293,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 switch (resp.status) {
                     case HttpStatusCode.NoContent:
                         this.fetchInProgress = false
+                        this.zonesFetchStates = []
+                        this.zonesFetchStatesTotal = 0
                         this.messageService.add({
                             severity: 'info',
                             summary: 'No Zones Fetch information',
@@ -374,7 +376,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         } else {
             this.confirmationService.confirm({
                 message:
-                    'This operation instructs the server to fetch the zones from all DNS servers' +
+                    'This operation instructs the Stork server to fetch the zones from all DNS servers' +
                     ' and update them in the Stork database. This operation may take long time depending' +
                     ' on DNS servers count and zones count. All zones data will be overwritten with the newly ' +
                     'fetched data from DNS servers that Stork is monitoring. Are you sure you want to continue?',
@@ -484,16 +486,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.zonesExpandedRows = {}
                 this.zones = resp?.items ?? []
                 this.zonesTotal = resp?.total ?? 0
-
-                if (this.zones.length === 0 && !this.wasZoneFetchSent()) {
-                    this.sendPutZonesFetch(true)
-                    this.messageService.add({
-                        severity: 'info',
-                        summary: 'Automatically called Fetch Zones',
-                        detail: 'Zones were not fetched yet, so Fetch Zones was triggered automatically.',
-                        life: 5000,
-                    })
-                }
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)

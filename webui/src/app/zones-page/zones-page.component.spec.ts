@@ -179,8 +179,8 @@ describe('ZonesPageComponent', () => {
         fixture = TestBed.createComponent(ZonesPageComponent)
         component = fixture.componentInstance
 
-        // By default, fake that wasZoneFetchSent returns true from session storage.
-        spyOn(component, 'wasZoneFetchSent').and.returnValue(true)
+        // By default, fake that wasZoneFetchSent returns false from session storage.
+        spyOn(component, 'wasZoneFetchSent').and.returnValue(false)
 
         fixture.detectChanges()
 
