@@ -107,4 +107,16 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
     cancelMigration(migrationId: string) {
         this.cancel.emit(migrationId)
     }
+
+    /**
+     * Gets the completion percentage of the specific migration.
+     */
+    getCompletionPercentage(status: MigrationStatus): number {
+        if (status.totalItemsCount === 0) {
+            return 0
+        }
+        return Math.round(
+            (status.processedItemsCount / status.totalItemsCount) * 100
+        )
+    }
 }

@@ -74,7 +74,7 @@
                 </div>
             </td>
             <td>
-                <p-progressBar [value]="m.progress * 100" [showValue]="true"></p-progressBar>
+                <p-progressBar [value]="getCompletionPercentage(m)" [showValue]="true"></p-progressBar>
             </td>
             <td>
                 {{ m.elapsedTime }}
