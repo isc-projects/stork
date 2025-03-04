@@ -62,9 +62,7 @@ export class ConfigMigrationTabComponent {
         if (this.migration.totalItemsCount === 0) {
             return 0
         }
-        return Math.round(
-            (this.migration.processedItemsCount / this.migration.totalItemsCount) * 100
-        )
+        return Math.round((this.migration.processedItemsCount / this.migration.totalItemsCount) * 100)
     }
 
     /**

@@ -115,8 +115,6 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
         if (status.totalItemsCount === 0) {
             return 0
         }
-        return Math.round(
-            (status.processedItemsCount / status.totalItemsCount) * 100
-        )
+        return Math.round((status.processedItemsCount / status.totalItemsCount) * 100)
     }
 }

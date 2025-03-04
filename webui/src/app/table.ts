@@ -141,10 +141,7 @@ export abstract class LazyLoadTable<TRecord> {
  *
  * Derived class must also call onInit() in ngOnInit() and onDestroy() in ngOnDestroy().
  */
-export abstract class PrefilteredTable<
-    FilterInterface extends BaseQueryParamFilter,
-    TRecord,
-> extends LazyLoadTable<TRecord> {
+export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRecord> extends LazyLoadTable<TRecord> {
     /**
      * RxJS Subscription holding all subscriptions to Observables, so that they can be all unsubscribed
      * at once onDestroy.
@@ -155,7 +152,7 @@ export abstract class PrefilteredTable<
     /**
      * The provided queryParam filter RxJS Subject.
      */
-    filter$ = new Subject<FilterInterface>()
+    filter$ = new Subject<TFilter>()
 
     /**
      * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
@@ -167,7 +164,7 @@ export abstract class PrefilteredTable<
      * The recent queryParam filter applied to the table data. Only filters that pass the
      * validation are used.
      */
-    validFilter: FilterInterface = {} as FilterInterface
+    validFilter: TFilter = {} as TFilter
 
     /**
      * An array of errors found during queryParam filter validation.
@@ -180,7 +177,7 @@ export abstract class PrefilteredTable<
     /**
      * queryParam keyword of the prefilter.
      */
-    abstract prefilterKey: keyof FilterInterface
+    abstract prefilterKey: keyof TFilter
 
     /**
      * Prefix of the stateKey. Will be used to evaluate stateKey by appending either '-all' suffix or
@@ -228,27 +225,31 @@ export abstract class PrefilteredTable<
     private _restoredTable: Table
 
     /**
-     * Array of all numeric keys of the FilterInterface. This should be a superset of queryParamNumericKeys.
+     * Array of all numeric keys of the TFilter. This should be a superset of queryParamNumericKeys.
      */
-    abstract filterNumericKeys: (keyof FilterInterface)[]
+    abstract filterNumericKeys: (keyof TFilter)[]
 
     /**
-     * Array of all boolean keys of the FilterInterface. This should be a superset of queryParamBooleanKeys.
+     * Array of all boolean keys of the TFilter. This should be a superset of queryParamBooleanKeys.
      */
-    abstract filterBooleanKeys: (keyof FilterInterface)[]
+    abstract filterBooleanKeys: (keyof TFilter)[]
 
     /**
-     * Array of all numeric keys of the FilterInterface that are supported when filtering via URL queryParams.
+     * Array of all numeric keys of the TFilter that are supported when filtering via URL queryParams.
      * Note that it doesn't have to contain prefilterKey. prefilterKey by default is considered as a primary
      * queryParam filter key. This should be a subset of filterNumericKeys.
      */
-    abstract queryParamNumericKeys: (keyof FilterInterface)[]
+    abstract queryParamNumericKeys: (keyof TFilter)[]
 
     /**
+<<<<<<< HEAD
      * Array of all boolean keys of the FilterInterface that are supported when filtering via URL queryParams.
      * This should be a subset of filterBooleanKeys.
+=======
+     * Array of all boolean keys of the TFilter that are supported when filtering via URL queryParams.
+>>>>>>> 7eadb8216 ([#800] Fix problem with restoring table state)
      */
-    abstract queryParamBooleanKeys: (keyof FilterInterface)[]
+    abstract queryParamBooleanKeys: (keyof TFilter)[]
 
     /**
      * Array of FilterValidators that will be used for validation of filters, which values are limited
@@ -307,6 +308,7 @@ export abstract class PrefilteredTable<
             // where for stateful table, sometimes when filtering is applied,
             // table.first property is not set to 0 as expected.
             table.restoringFilter = false
+            table.filters = {}
         }
 
         // Backup restored data to properties.
@@ -385,8 +387,31 @@ export abstract class PrefilteredTable<
      * This method is called AFTER onLazyLoad() callback, so the data is already loaded.
      */
     onFilter(): void {
+        const newFilter = this.parseTableFilters(this.table.filters)
+
+        if (JSON.stringify(newFilter) === JSON.stringify(this.validFilter)) {
+            return
+        }
+
+        const errors = this.validateFilter(newFilter as TFilter)
+        if (errors.length !== 0) {
+            this.filterTextFormatErrors = errors
+            return
+        }
+
+        this.validFilter = newFilter as TFilter
+        this.updateQueryParameters()
+    }
+
+    /**
+     * Parses PrimeNG table filters and returns a new filter object.
+     * 
+     * @param filters filters object provided by PrimeNG table
+     * @returns 
+     */
+    private parseTableFilters(filters: Record<string, FilterMetadata | FilterMetadata[]>): TFilter {
         const newFilter = {}
-        for (const [filterKey, filterMetadata] of Object.entries(this.table.filters)) {
+        for (const [filterKey, filterMetadata] of Object.entries(filters)) {
             let value: any
             if (Array.isArray(filterMetadata)) {
                 value = filterMetadata.map((filter) => filter.value)
@@ -398,19 +423,7 @@ export abstract class PrefilteredTable<
                 newFilter[filterKey] = value
             }
         }
-
-        if (JSON.stringify(newFilter) === JSON.stringify(this.validFilter)) {
-            return
-        }
-
-        const errors = this.validateFilter(newFilter as FilterInterface)
-        if (errors.length !== 0) {
-            this.filterTextFormatErrors = errors
-            return
-        }
-
-        this.validFilter = newFilter as FilterInterface
-        this.updateQueryParameters()
+        return newFilter as TFilter
     }
 
     /**
@@ -488,14 +501,14 @@ export abstract class PrefilteredTable<
             }
         }
 
-        this.filter$.next(filter as FilterInterface)
+        this.filter$.next(filter as TFilter)
     }
 
     /**
      * Triggers data load in the table without any filtering applied.
      */
     loadDataWithoutFilter(): void {
-        this.filter$.next({} as FilterInterface)
+        this.filter$.next({} as TFilter)
     }
 
     /**
@@ -596,7 +609,7 @@ export abstract class PrefilteredTable<
      * valid.
      * @private
      */
-    private validateFilter(filter: FilterInterface): string[] {
+    private validateFilter(filter: TFilter): string[] {
         const errors: string[] = []
 
         for (const key of this.filterNumericKeys) {
