@@ -137,7 +137,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     )
 
     /**
-     * Key to be used in browser storage for keeping Zone Fetch Sent flag value.
+     * Key to be used in browser storage for keeping Zones Fetch Sent flag value.
      * @private
      */
     private _fetchSentStorageKey = 'zone-fetch-sent'
@@ -162,7 +162,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
     /**
      * RxJS observable stream which sends GET ZonesFetch request response every interval of _pollingInterval time
-     * until Zone Fetch is complete OR fetchInProgress is set to false. It is useful for polling the Zone Fetch status
+     * until Zones Fetch is complete OR fetchInProgress is set to false. It is useful for polling the Zones Fetch status
      * once 202 Accepted response is received after GET ZonesFetch request.
      * Expected sequence of sent values is: 202 ZonesFetchStatus -> ... -> 202 ZonesFetchStatus -> 200 ZoneInventoryStates |-> complete.
      * @private
@@ -181,8 +181,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 if (this.fetchInProgress) {
                     this.messageService.add({
                         severity: 'success',
-                        summary: 'Zone Fetch done',
-                        detail: 'Zone Fetch finished successfully!',
+                        summary: 'Zones Fetch done',
+                        detail: 'Zones Fetch finished successfully!',
                         life: 5000,
                     })
                     if (this.zonesFetchStates.length > 0) {
@@ -283,7 +283,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
     /**
      * Fetches data from backend and refreshes Zones Fetch Status table with the data.
-     * If Zone Fetch is in progress, it subscribes to _polling$ observable to receive and
+     * If Zones Fetch is in progress, it subscribes to _polling$ observable to receive and
      * visualize Fetch progress.
      */
     refreshFetchStatusTable() {
@@ -295,8 +295,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                         this.fetchInProgress = false
                         this.messageService.add({
                             severity: 'info',
-                            summary: 'No Zone Fetch information',
-                            detail: 'Information about Zone Fetch is currently unavailable.',
+                            summary: 'No Zones Fetch information',
+                            detail: 'Information about Zones Fetch is currently unavailable.',
                             life: 5000,
                         })
                         break
@@ -329,8 +329,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                             this.fetchAppsCompletedCount = this.fetchTotalAppsCount
                             this.messageService.add({
                                 severity: 'success',
-                                summary: 'Zone Fetch done',
-                                detail: 'Zone Fetch finished successfully!',
+                                summary: 'Zones Fetch done',
+                                detail: 'Zones Fetch finished successfully!',
                                 life: 5000,
                             })
                             this.onLazyLoadZones(this.zonesTable?.createLazyLoadMetadata())
