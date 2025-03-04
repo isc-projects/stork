@@ -130,10 +130,12 @@
                 icon="pi pi-refresh"
                 styleClass="block p-button-primary no-underline"
                 (onClick)="onLazyLoadZones(zonesTable.createLazyLoadMetadata())"
+                id="refresh-zones-data"
             ></p-button>
         </div>
         <p-table
             #zonesTable
+            id="zones-table"
             [value]="zones"
             [lazyLoadOnInit]="true"
             [lazy]="true"

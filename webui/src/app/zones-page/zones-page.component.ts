@@ -478,7 +478,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     onLazyLoadZones(event: TableLazyLoadEvent) {
         this.zonesLoading = true
-        this.cd.detectChanges()
+        this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
         lastValueFrom(this.dnsService.getZones(event?.first ?? 0, event?.rows ?? 10))
             .then((resp) => {
                 this.zonesExpandedRows = {}

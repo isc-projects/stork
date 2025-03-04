@@ -18,6 +18,12 @@ import { of } from 'rxjs'
 import { HttpEventType, HttpHeaders, HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import objectContaining = jasmine.objectContaining
+import { MessageModule } from 'primeng/message'
+import { ProgressBarModule } from 'primeng/progressbar'
+import { SkeletonModule } from 'primeng/skeleton'
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { By } from '@angular/platform-browser'
+import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -157,8 +163,12 @@ describe('ZonesPageComponent', () => {
                 OverlayPanelModule,
                 RouterModule.forRoot([]),
                 ConfirmDialogModule,
+                MessageModule,
+                ProgressBarModule,
+                SkeletonModule,
+                BrowserAnimationsModule,
             ],
-            declarations: [ZonesPageComponent, BreadcrumbsComponent, HelpTipComponent],
+            declarations: [ZonesPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
             providers: [
                 { provide: MessageService, useValue: messageService },
                 { provide: DNSService, useValue: dnsApi },
@@ -168,13 +178,34 @@ describe('ZonesPageComponent', () => {
 
         fixture = TestBed.createComponent(ZonesPageComponent)
         component = fixture.componentInstance
+
+        // By default, fake that wasZoneFetchSent returns true from session storage.
+        spyOn(component, 'wasZoneFetchSent').and.returnValue(true)
+
         fixture.detectChanges()
 
         // Do not save table state between tests, because that makes tests unstable.
         spyOn(component.zonesTable, 'saveState').and.callFake(() => {})
 
-        // By default, fake that wasZoneFetchSent returns true from session storage.
-        spyOn(component, 'wasZoneFetchSent').and.returnValue(true)
+        // Let's wait for async actions that happen on component init:
+        // 1. Zones Fetch Status table data is fetched on every init
+        // 2. Zones table data is lazily loaded on every init
+
+        // onLazyLoadZones() is manually triggering change detection cycle in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
+        // Call await fixture.whenStable() two times to wait for another round of change detection.
+        await fixture.whenStable()
+        await fixture.whenStable()
+
+        expect(component.zonesLoading).withContext('zones data loads on init').toBeTrue()
+        expect(component.zonesFetchStatesLoading).withContext('zones fetch status data loads on init').toBeTrue()
+
+        // Wait for getZones and getZonesFetch async responses
+        await fixture.whenStable()
+
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        expect(component.zonesFetchStatesLoading)
+            .withContext('Zones Fetch Status table data loading should be done')
+            .toBeFalse()
     })
 
     it('should create', () => {
@@ -182,20 +213,8 @@ describe('ZonesPageComponent', () => {
     })
 
     it('should call dns apis on init', async () => {
-        // Arrange + Act
-        expect(component.zonesLoading).withContext('data loads on init').toBeTrue()
-        expect(component.zonesFetchStatesLoading).withContext('data loads on init').toBeTrue()
-        // Wait for getZones and getZonesFetch async responses
-        await fixture.whenStable()
-        await fixture.whenStable()
-        fixture.detectChanges()
-
-        // Assert
-        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
-        expect(component.zonesFetchStatesLoading)
-            .withContext('Zones Fetch Status table data loading should be done')
-            .toBeFalse()
-        expect(getZonesSpy).toHaveBeenCalledTimes(1)
+        // Arrange + Act + Assert
+        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10)
         expect(getZonesFetchSpy).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(messageAddSpy).toHaveBeenCalledOnceWith(
@@ -204,28 +223,46 @@ describe('ZonesPageComponent', () => {
     })
 
     it('should fetch list of zones', async () => {
-        // Arrange
-        // Wait for getZones and getZonesFetch async responses
-        await fixture.whenStable()
-        await fixture.whenStable()
+        // Arrange + Act
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-zones-data button'))
+        expect(refreshBtnDe).toBeTruthy()
+        // Click on Refresh List button
+        refreshBtnDe.nativeElement.click()
         fixture.detectChanges()
-
-        // Act
-        component.onLazyLoadZones(component.zonesTable.createLazyLoadMetadata())
+        expect(component.zonesLoading).withContext('zones data loads').toBeTrue()
         await fixture.whenStable()
-        await fixture.whenStable()
-        await fixture.whenStable()
-        fixture.detectChanges()
 
         // Assert
-        expect(component.zonesFetchStatesLoading)
-            .withContext('Zones Fetch Status table data loading should be done')
-            .toBeFalse()
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10)
         expect(getZonesFetchSpy).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(component.zones).toEqual(fakeZones.items)
         expect(component.zonesTotal).toEqual(fakeZones.total)
+        fixture.detectChanges()
+
+        // There are all 3 zones listed.
+        const tableRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tr'))
+        expect(tableRows).toBeTruthy()
+        expect(tableRows.length).toEqual(3)
+        expect(tableRows[0].nativeElement.innerText).toContain(fakeZones.items[0].name)
+        expect(tableRows[1].nativeElement.innerText).toContain(fakeZones.items[1].name)
+        expect(tableRows[2].nativeElement.innerText).toContain(fakeZones.items[2].name)
+
+        // Try to expand the row.
+        const expandRowBtns = tableRows[0].queryAll(By.css('button'))
+        expect(expandRowBtns).toBeTruthy()
+        // There are 2 buttons per row: 1. expand/collapse row; 2. anchor to detailed zone view
+        expect(expandRowBtns.length).toEqual(2)
+        expandRowBtns[0].nativeElement.click()
+        fixture.detectChanges()
+
+        const innerRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tbody tr'))
+        expect(innerRows).toBeTruthy()
+        expect(innerRows.length).toEqual(2)
+        expect(innerRows[0].nativeElement.innerText).toContain(fakeZones.items[0].localZones[0].appName)
+        expect(innerRows[1].nativeElement.innerText).toContain(fakeZones.items[0].localZones[1].appName)
     })
 })
