@@ -70,11 +70,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     zonesFetchStatesLoading: boolean = false
 
     /**
-     * Timestamp formatting used to display "Created at" or "Loaded at" data.
-     */
-    dateTimeFormat = 'YYYY-MM-dd HH:mm:ss'
-
-    /**
      * Flag stating whether Zones Fetch is in progress or not.
      */
     fetchInProgress: boolean = false
@@ -97,7 +92,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     /**
      * Keeps active zone details tab index.
      */
-    activeIdx: number = 0
+    activeTabIdx: number = 0
 
     /**
      * Flag stating whether Zones Fetch Status dialog is visible or not.
@@ -259,8 +254,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     onTabClose(event: TabViewCloseEvent) {
         this.openTabs.splice(event.index - 1, 1)
-        if (event.index <= this.activeIdx) {
-            this.activeIdx = 0
+        if (event.index <= this.activeTabIdx) {
+            this.activeTabIdx = 0
         }
     }
 
@@ -273,11 +268,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         const zoneIdx = openTabsZoneIds.indexOf(zone.id)
         if (zoneIdx >= 0) {
             // Tab exists, just switch to it.
-            this.activeIdx = zoneIdx + 1
+            this.activeTabIdx = zoneIdx + 1
         } else {
             this.openTabs = [...this.openTabs, zone]
             this.cd.detectChanges()
-            this.activeIdx = this.openTabs.length
+            this.activeTabIdx = this.openTabs.length
         }
     }
 

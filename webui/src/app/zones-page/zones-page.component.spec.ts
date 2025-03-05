@@ -24,6 +24,7 @@ import { SkeletonModule } from 'primeng/skeleton'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -168,7 +169,7 @@ describe('ZonesPageComponent', () => {
                 SkeletonModule,
                 BrowserAnimationsModule,
             ],
-            declarations: [ZonesPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
+            declarations: [ZonesPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe, LocaltimePipe],
             providers: [
                 { provide: MessageService, useValue: messageService },
                 { provide: DNSService, useValue: dnsApi },

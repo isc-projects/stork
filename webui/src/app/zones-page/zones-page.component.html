@@ -54,7 +54,7 @@
                         [text]="getStateErrorMessage(state.error)"
                     ></p-message>
                 </td>
-                <td>{{ state.createdAt | date: dateTimeFormat | placeholder: 'never' }}</td>
+                <td>{{ state.createdAt | localtime | placeholder: 'never' }}</td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
@@ -120,7 +120,7 @@
 
 <p-confirmDialog styleClass="w-28rem" />
 
-<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeIdx" [scrollable]="true">
+<p-tabView (onClose)="onTabClose($event)" [(activeIndex)]="activeTabIdx" [scrollable]="true">
     <p-tabPanel header="Zones">
         <div class="my-2 flex gap-2 flex-wrap justify-content-end">
             <p-button
@@ -223,7 +223,7 @@
                                         <td>{{ localZone.zoneType }}</td>
                                         <td>{{ localZone.serial }}</td>
                                         <td>{{ localZone.class }}</td>
-                                        <td>{{ localZone.loadedAt | date: dateTimeFormat | placeholder: 'never' }}</td>
+                                        <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
                                     </tr>
                                 </ng-template>
                                 <ng-template pTemplate="emptymessage" let-columns>
@@ -348,7 +348,7 @@
                                 <td>{{ localZone.zoneType }}</td>
                                 <td>{{ localZone.serial }}</td>
                                 <td>{{ localZone.class }}</td>
-                                <td>{{ localZone.loadedAt | date: dateTimeFormat | placeholder: 'never' }}</td>
+                                <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
                                 <td>
                                     <p-tag
                                         *ngIf="zoneInventoryStateMap.get(localZone.daemonId)"
