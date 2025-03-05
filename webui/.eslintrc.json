@@ -44,7 +44,6 @@
                     }
                 ],
                 "unused-imports/no-unused-imports": "error",
-                // .filter(([key, value]) => value != null)
                 "unused-imports/no-unused-vars": [
                     "error",
                     {
