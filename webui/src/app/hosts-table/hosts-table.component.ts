@@ -47,7 +47,7 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      * Array of all boolean keys that are supported when filtering hosts via URL queryParams.
      * Currently, no boolean key is supported in queryParams filtering.
      */
-    queryParamBooleanKeys: (keyof HostsFilter)[] = []
+    queryParamBooleanKeys: (keyof HostsFilter)[] = ['isGlobal', 'conflict']
 
     /**
      * Array of all numeric keys that can be used to filter hosts.

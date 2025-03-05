@@ -544,9 +544,8 @@ describe('MachinesTableComponent', () => {
         expect(selectAllCheckbox).toBeTruthy()
 
         selectAllCheckbox.nativeElement.click()
-        flush() // Wait for PrimeNG to react on Select all change
         fixture.detectChanges()
-        tick()
+        flush() // Wait for PrimeNG to react on Select all change
 
         expect(component.selectedMachines.length).toEqual(3)
         expect(component.selectedMachines).toEqual(getUnauthorizedMachinesResp.items)
