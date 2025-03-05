@@ -120,7 +120,7 @@ export const FailedMigration: Story = {
                 ],
             },
             elapsedTime: '10m0s',
-            estimatedLeftTime: '0s',            
+            estimatedLeftTime: '0s',
             authorId: 42,
             authorLogin: 'admin',
         },

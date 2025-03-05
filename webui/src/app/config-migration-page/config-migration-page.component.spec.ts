@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
 import { HttpEvent } from '@angular/common/http'
 import { ConfigMigrationPageComponent } from './config-migration-page.component'
-import { DHCPService, MigrationStatus, ServicesService } from '../backend'
+import { DHCPService, MigrationStatus } from '../backend'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { ConfigMigrationTableComponent } from '../config-migration-table/config-migration-table.component'
@@ -193,7 +193,7 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.getMigration.calls.reset()
 
         // Try to open same tab again
-        paramsSubject.next({ id: 1})
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
