@@ -1,7 +1,7 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
 import { HttpEvent } from '@angular/common/http'
 import { ConfigMigrationPageComponent } from './config-migration-page.component'
-import { DHCPService, MigrationStatus } from '../backend'
+import { DHCPService, MigrationStatus, ServicesService } from '../backend'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { ConfigMigrationTableComponent } from '../config-migration-table/config-migration-table.component'
@@ -46,7 +46,7 @@ describe('ConfigMigrationPageComponent', () => {
     }
 
     const mockRunningMigration: MigrationStatus = {
-        id: 'mig-1',
+        id: 1,
         startDate: new Date(2023, 5, 15, 10, 0, 0).toISOString(),
         endDate: null,
         canceling: false,
@@ -64,7 +64,7 @@ describe('ConfigMigrationPageComponent', () => {
 
     const mockCompletedMigration: MigrationStatus = {
         ...mockRunningMigration,
-        id: 'mig-2',
+        id: 2,
         endDate: new Date(2023, 5, 15, 10, 15, 0).toISOString(),
         processedItemsCount: 100,
         totalItemsCount: 100,
@@ -74,7 +74,7 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi = jasmine.createSpyObj('DHCPService', [
             'getMigration',
             'getMigrations',
-            'cancelMigration',
+            'putMigration',
             'deleteFinishedMigrations',
         ])
         paramsSubject = new BehaviorSubject({ id: 'all' })
@@ -146,14 +146,16 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Simulate navigation to specific migration
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getMigration).toHaveBeenCalledWith('mig-1')
+        expect(dhcpApi.getMigration).toHaveBeenCalledWith(1)
         expect(component.tabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
         expect(component.activeTabItem).toEqual(mockRunningMigration)
+
+        flush()
     }))
 
     it('should handle error when opening migration tab', fakeAsync(() => {
@@ -161,7 +163,7 @@ describe('ConfigMigrationPageComponent', () => {
         spyOn(messageService, 'add')
         fixture.detectChanges()
 
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
@@ -179,19 +181,19 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab first time
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
         expect(component.tabs.length).toBe(2)
         expect(component.tabItems.length).toBe(2)
         expect(component.tabItems[1]).toBe(mockRunningMigration)
-        expect(component.tabItems[1].id).toBe('mig-1')
+        expect(component.tabItems[1].id).toBe(1)
 
         // Reset spy count
         dhcpApi.getMigration.calls.reset()
 
         // Try to open same tab again
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1})
         tick()
         fixture.detectChanges()
 
@@ -205,7 +207,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
@@ -218,6 +220,8 @@ describe('ConfigMigrationPageComponent', () => {
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
         expect(component.activeTabItem).toBeNull()
+
+        flush()
     }))
 
     it('should not allow closing the main tab', () => {
@@ -236,36 +240,36 @@ describe('ConfigMigrationPageComponent', () => {
             ...mockRunningMigration,
             canceling: true,
         }
-        dhcpApi.cancelMigration.and.returnValue(wrapInHttpResponse(canceledMigration))
+        dhcpApi.putMigration.and.returnValue(wrapInHttpResponse(canceledMigration))
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
         // Cancel migration
-        component.cancelMigration('mig-1')
+        component.cancelMigration(1)
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.cancelMigration).toHaveBeenCalledWith('mig-1')
+        expect(dhcpApi.putMigration).toHaveBeenCalledWith(1)
         expect(component.tabItems[1].canceling).toBeTrue()
     }))
 
     it('should handle error when canceling migration', fakeAsync(() => {
         dhcpApi.getMigration.and.returnValue(wrapInHttpResponse(mockRunningMigration))
-        dhcpApi.cancelMigration.and.returnValue(throwError(() => new Error('Failed to cancel')))
+        dhcpApi.putMigration.and.returnValue(throwError(() => new Error('Failed to cancel')))
         spyOn(messageService, 'add')
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
         // Try to cancel
-        component.cancelMigration('mig-1')
+        component.cancelMigration(1)
         tick()
         fixture.detectChanges()
 
@@ -287,10 +291,10 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open completed migration tab
-        paramsSubject.next({ id: 'mig-2' })
+        paramsSubject.next({ id: 1 })
         tick()
         // Open running migration tab
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
@@ -304,7 +308,7 @@ describe('ConfigMigrationPageComponent', () => {
         expect(dhcpApi.deleteFinishedMigrations).toHaveBeenCalled()
         expect(component.tabs.length).toBe(2)
         // Running migration tab should remain
-        expect(component.tabs[1].label).toBe('mig-1')
+        expect(component.tabs[1].label).toBe('Migration 1')
     }))
 
     it('should handle error when cleaning up migrations', fakeAsync(() => {
@@ -337,7 +341,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
@@ -345,11 +349,11 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.getMigration.calls.reset()
 
         // Refresh status
-        component.refreshMigration('mig-1')
+        component.refreshMigration(1)
         tick()
         fixture.detectChanges()
 
-        expect(dhcpApi.getMigration).toHaveBeenCalledWith('mig-1')
+        expect(dhcpApi.getMigration).toHaveBeenCalledWith(1)
         expect(component.tabItems[1].processedItemsCount).toBe(75)
     }))
 
@@ -362,7 +366,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 'mig-1' })
+        paramsSubject.next({ id: 1 })
         tick()
         fixture.detectChanges()
 
@@ -370,7 +374,7 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.getMigration.calls.reset()
 
         // Try to refresh
-        component.refreshMigration('mig-1')
+        component.refreshMigration(1)
         tick()
         fixture.detectChanges()
 
