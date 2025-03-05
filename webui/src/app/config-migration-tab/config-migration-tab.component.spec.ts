@@ -89,21 +89,21 @@ describe('ConfigMigrationTabComponent', () => {
     })
 
     it('should emit refresh event when refresh button is clicked', () => {
-        spyOn(component.refresh, 'emit')
+        spyOn(component.refreshMigration, 'emit')
 
         const refreshButton = fixture.debugElement.query(By.css('button:not(.p-button-danger)'))
         refreshButton.nativeElement.click()
 
-        expect(component.refresh.emit).toHaveBeenCalledWith(1)
+        expect(component.refreshMigration.emit).toHaveBeenCalledWith(1)
     })
 
     it('should emit event when cancel button is clicked', () => {
-        spyOn(component.cancel, 'emit')
+        spyOn(component.cancelMigration, 'emit')
 
         const cancelButton = fixture.debugElement.query(By.css('button.p-button-danger'))
         cancelButton.nativeElement.click()
 
-        expect(component.cancel.emit).toHaveBeenCalledWith(1)
+        expect(component.cancelMigration.emit).toHaveBeenCalledWith(1)
     })
 
     it('should correctly identify migration state based on endDate', () => {

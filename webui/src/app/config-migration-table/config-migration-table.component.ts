@@ -19,13 +19,13 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
     /**
      * Event emitted when the user wants to clear finished migrations.
      */
-    @Output() clear = new EventEmitter<void>()
+    @Output() clearMigrations = new EventEmitter<void>()
 
     /**
      * Event emitted when the user wants to cancel a migration.
      * Emits the ID of the migration to cancel.
      */
-    @Output() cancel = new EventEmitter<string>()
+    @Output() cancelMigration = new EventEmitter<string>()
 
     /**
      * PrimeNG table instance.
@@ -96,7 +96,7 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
      * Emits an event to clear finished migrations
      */
     clearFinishedMigrations() {
-        this.clear.emit()
+        this.clearMigrations.emit()
     }
 
     /**
@@ -104,8 +104,8 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
      *
      * @param migrationId ID of the migration to cancel
      */
-    cancelMigration(migrationId: string) {
-        this.cancel.emit(migrationId)
+    cancel(migrationId: string) {
+        this.cancelMigration.emit(migrationId)
     }
 
     /**

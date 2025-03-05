@@ -14,13 +14,13 @@ export class ConfigMigrationTabComponent {
      * An event emitter notifying a parent that user has clicked the
      * Cancel button to cancel the migration.
      */
-    @Output() cancel = new EventEmitter<number>()
+    @Output() cancelMigration = new EventEmitter<number>()
 
     /**
      * An event emitter notifying a parent that user has clicked the
      * Refresh button to refresh migration status.
      */
-    @Output() refresh = new EventEmitter<number>()
+    @Output() refreshMigration = new EventEmitter<number>()
 
     /**
      * Structure containing migration information to be displayed.
@@ -104,14 +104,14 @@ export class ConfigMigrationTabComponent {
     /**
      * Emits an event to refresh migration status.
      */
-    refreshMigration() {
-        this.refresh.emit(this.migration.id)
+    refresh() {
+        this.refreshMigration.emit(this.migration.id)
     }
 
     /**
      * Emits an event to cancel the migration.
      */
-    cancelMigration() {
-        this.cancel.emit(this.migration.id)
+    cancel() {
+        this.cancelMigration.emit(this.migration.id)
     }
 }

@@ -26,13 +26,13 @@
     <div *ngIf="activeTabIndex !== 0" class="p-component">
         <app-config-migration-tab
             [migration]="activeTabItem"
-            (cancel)="cancelMigration($event)"
-            (refresh)="refreshMigration($event)"
+            (cancelMigration)="cancelMigration($event)"
+            (refreshMigration)="refreshMigration($event)"
         ></app-config-migration-tab>
     </div>
     <app-config-migration-table
         [hidden]="activeTabIndex !== 0"
-        (cancel)="cancelMigration($event)"
-        (clear)="cleanUpFinishedMigrations()"
+        (cancelMigration)="cancelMigration($event)"
+        (clearMigrations)="cleanUpFinishedMigrations()"
     ></app-config-migration-table>
 </div>

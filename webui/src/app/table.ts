@@ -277,7 +277,6 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
      * Callback method called when PrimeNG table's state was saved to browser's storage.
      * This method is supposed to be bound to PrimeNG Table "onStateSave" output property EventEmitter.
      * e.g. (onStateSave)="stateSaved(table)"
-     * @param table table which state was saved
      */
     stateSaved(table: Table): void {
         // Do not store selection as part of the table state.
@@ -405,9 +404,9 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
 
     /**
      * Parses PrimeNG table filters and returns a new filter object.
-     * 
+     *
      * @param filters filters object provided by PrimeNG table
-     * @returns 
+     * @returns
      */
     private parseTableFilters(filters: Record<string, FilterMetadata | FilterMetadata[]>): TFilter {
         const newFilter = {}

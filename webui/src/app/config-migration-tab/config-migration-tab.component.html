@@ -70,7 +70,7 @@
                     label="Refresh"
                     icon="pi pi-refresh"
                     class="mr-2"
-                    (click)="refreshMigration()"
+                    (click)="refresh()"
                 ></button>
 
                 <button
@@ -80,7 +80,7 @@
                     icon="pi pi-times"
                     class="p-button-danger"
                     [disabled]="!isRunning || migration.canceling"
-                    (click)="cancelMigration()"
+                    (click)="cancel()"
                 ></button>
             </div>
         </div>

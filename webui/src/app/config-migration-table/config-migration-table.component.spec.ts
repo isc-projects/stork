@@ -90,24 +90,24 @@ describe('ConfigMigrationTableComponent', () => {
 
     it('should emit clearFinishedMigrationsRequest when onClearFinishedMigrations is called', () => {
         // Arrange
-        spyOn(component.clear, 'emit')
+        spyOn(component.clearMigrations, 'emit')
 
         // Act
         component.clearFinishedMigrations()
 
         // Assert
-        expect(component.clear.emit).toHaveBeenCalled()
+        expect(component.clearMigrations.emit).toHaveBeenCalled()
     })
 
     it('should emit cancelMigrationRequest with migrationId when onCancelMigration is called', () => {
         // Arrange
-        spyOn(component.cancel, 'emit')
+        spyOn(component.cancelMigration, 'emit')
         const migrationId = '1234-abcd'
 
         // Act
-        component.cancelMigration(migrationId)
+        component.cancel(migrationId)
 
         // Assert
-        expect(component.cancel.emit).toHaveBeenCalledWith(migrationId)
+        expect(component.cancelMigration.emit).toHaveBeenCalledWith(migrationId)
     })
 })

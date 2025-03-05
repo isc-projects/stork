@@ -264,7 +264,7 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
         const migrationFilter = { ...this.validFilter }
         migrationFilter.conflict = false
         return Object.entries(migrationFilter)
-            .filter(([key, value]) => value != null)
+            .filter(([_key, value]) => value != null)
             .map(([key, value]) => [uncamelCase(key), value.toString()])
             .sort(([key1], [key2]) => key1.localeCompare(key2))
     }
