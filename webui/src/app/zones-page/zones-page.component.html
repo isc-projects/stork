@@ -4,6 +4,63 @@
     </div>
 </app-breadcrumbs>
 
+<ng-template #emptymessage let-colspan let-empty="empty">
+    <ng-container *ngIf="fetchInProgress">
+        <tr>
+            <td [attr.colspan]="colspan">
+                <p-message
+                    styleClass="mb-3"
+                    severity="info"
+                    [text]="
+                        'The server is fetching zones from the agents in the background. It may take some time, depending on the number of the DNS servers and zones. Completed for ' +
+                        fetchAppsCompletedCount +
+                        ' out of ' +
+                        fetchTotalAppsCount +
+                        ' DNS apps.'
+                    "
+                ></p-message>
+                <h4>Progress</h4>
+                <p-progressBar [value]="(fetchAppsCompletedCount / fetchTotalAppsCount) * 100" styleClass="max-w-30rem">
+                    <ng-template pTemplate="content">
+                        <span>{{ fetchAppsCompletedCount }}/{{ fetchTotalAppsCount }}</span>
+                    </ng-template>
+                </p-progressBar>
+            </td>
+        </tr>
+        <tr *ngFor="let i of Array(3)">
+            <td *ngFor="let j of Array(colspan)">
+                <p-skeleton />
+            </td>
+        </tr>
+    </ng-container>
+
+    <tr *ngIf="!fetchInProgress">
+        <td [attr.colspan]="colspan">
+            <ng-container *ngIf="!wasZoneFetchSent()">
+                <p-message
+                    styleClass="mb-2 mx-0 md:mx-8"
+                    severity="info"
+                    [text]="
+                        'Zones were not fetched yet from DNS servers. You can now trigger zones fetch operation. ' +
+                        'This operation instructs the Stork server to fetch the zones from all DNS servers' +
+                        ' and update them in the Stork database. It may take some time, depending on the number of the ' +
+                        'DNS servers and zones. If you decide to trigger the zones fetch ' +
+                        'operation, you can use the button below.'
+                    "
+                ></p-message>
+                <p-button
+                    styleClass="mx-0 md:mx-8"
+                    label="Fetch Zones"
+                    (onClick)="sendPutZonesFetch(true)"
+                    [disabled]="fetchInProgress || putZonesFetchLocked"
+            /></ng-container>
+            <p>
+                {{ empty }}
+            </p>
+        </td>
+    </tr>
+</ng-template>
+
 <p-dialog header="Zones Fetch Status" [modal]="true" [(visible)]="fetchStatusVisible" styleClass="max-w-screen">
     <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
         <p-button
@@ -58,62 +115,15 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-            <ng-container *ngIf="fetchInProgress">
-                <tr>
-                    <td colspan="6">
-                        <p-message
-                            styleClass="mb-3"
-                            severity="info"
-                            [text]="
-                                'The server is fetching zones from the agents in the background. It may take some time, depending on the number of the DNS servers and zones. Completed for ' +
-                                fetchAppsCompletedCount +
-                                ' out of ' +
-                                fetchTotalAppsCount +
-                                ' DNS apps.'
-                            "
-                        ></p-message>
-                        <p-progressBar
-                            [value]="(fetchAppsCompletedCount / fetchTotalAppsCount) * 100"
-                            styleClass="max-w-30rem"
-                        >
-                            <ng-template pTemplate="content">
-                                <span>{{ fetchAppsCompletedCount }}/{{ fetchTotalAppsCount }}</span>
-                            </ng-template>
-                        </p-progressBar>
-                    </td>
-                </tr>
-                <tr *ngFor="let i of Array(3)">
-                    <td *ngFor="let j of Array(6)">
-                        <p-skeleton />
-                    </td>
-                </tr>
-            </ng-container>
-
-            <tr>
-                <td colspan="6">
-                    <ng-container *ngIf="!wasZoneFetchSent()">
-                        <p-message
-                            styleClass="mb-2 mx-0 md:mx-8"
-                            severity="info"
-                            [text]="
-                                'Zones were not fetched yet from DNS servers. You can now trigger zones fetch operation. ' +
-                                'This operation instructs the Stork server to fetch the zones from all DNS servers' +
-                                ' and update them in the Stork database. This operation may take long time depending' +
-                                ' on DNS servers count and zones count. If you decide to trigger the zones fetch ' +
-                                'operation, you can use the button below.'
-                            "
-                        ></p-message>
-                        <p-button
-                            styleClass="mx-0 md:mx-8"
-                            label="Fetch Zones"
-                            (onClick)="sendPutZonesFetch(true)"
-                            [disabled]="fetchInProgress || putZonesFetchLocked"
-                    /></ng-container>
-                    <p *ngIf="!fetchInProgress">
-                        There is no Zones Fetch Status information available in the Stork server database.
-                    </p>
-                </td>
-            </tr>
+            <ng-container
+                *ngTemplateOutlet="
+                    emptymessage;
+                    context: {
+                        $implicit: 6,
+                        empty: 'There is no Zones Fetch Status information available in the Stork server database.',
+                    }
+                "
+            ></ng-container>
         </ng-template>
     </p-table>
 </p-dialog>
@@ -239,57 +249,15 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="emptymessage">
-                <ng-container *ngIf="fetchInProgress">
-                    <tr>
-                        <td colspan="3">
-                            <p-message
-                                styleClass="mb-3"
-                                severity="info"
-                                [text]="
-                                    'The server is fetching zones from the agents in the background. It may take some time, depending on the number of the DNS servers and zones. Completed for ' +
-                                    fetchAppsCompletedCount +
-                                    ' out of ' +
-                                    fetchTotalAppsCount +
-                                    ' DNS apps.'
-                                "
-                            ></p-message>
-                            <p-progressBar
-                                [value]="(fetchAppsCompletedCount / fetchTotalAppsCount) * 100"
-                                styleClass="max-w-30rem"
-                            >
-                                <ng-template pTemplate="content">
-                                    <span>{{ fetchAppsCompletedCount }}/{{ fetchTotalAppsCount }}</span>
-                                </ng-template>
-                            </p-progressBar>
-                        </td>
-                    </tr>
-                    <tr *ngFor="let i of Array(3)">
-                        <td *ngFor="let j of Array(3)"><p-skeleton /></td>
-                    </tr>
-                </ng-container>
-                <tr *ngIf="!fetchInProgress">
-                    <td colspan="3">
-                        <ng-container *ngIf="!wasZoneFetchSent()">
-                            <p-message
-                                styleClass="mb-2 mx-0 md:mx-8"
-                                severity="info"
-                                [text]="
-                                    'Zones were not fetched yet from DNS servers. You can now trigger zones fetch operation. ' +
-                                    'This operation instructs the Stork server to fetch the zones from all DNS servers' +
-                                    ' and update them in the Stork database. This operation may take long time depending' +
-                                    ' on DNS servers count and zones count. If you decide to trigger the zones fetch ' +
-                                    'operation, you can use the button below.'
-                                "
-                            ></p-message>
-                            <p-button
-                                styleClass="mx-0 md:mx-8"
-                                label="Fetch Zones"
-                                (onClick)="sendPutZonesFetch(true)"
-                                [disabled]="fetchInProgress || putZonesFetchLocked"
-                        /></ng-container>
-                        <p>No zones were found in the Stork server database.</p>
-                    </td>
-                </tr>
+                <ng-container
+                    *ngTemplateOutlet="
+                        emptymessage;
+                        context: {
+                            $implicit: 3,
+                            empty: 'No zones were found in the Stork server database.',
+                        }
+                    "
+                ></ng-container>
             </ng-template>
             <ng-template pTemplate="paginatorright" let-paginatorState>
                 Total: {{ paginatorState.totalRecords | pluralize: 'zone' }}
