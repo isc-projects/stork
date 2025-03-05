@@ -13,6 +13,7 @@ import { Table } from 'primeng/table'
 import { ProgressBar } from 'primeng/progressbar'
 import { Tag } from 'primeng/tag'
 import { Fieldset } from 'primeng/fieldset'
+import { ButtonModule } from 'primeng/button'
 
 describe('ConfigMigrationTabComponent', () => {
     let component: ConfigMigrationTabComponent
@@ -76,6 +77,7 @@ describe('ConfigMigrationTabComponent', () => {
                 TagModule,
                 ProgressBarModule,
                 RouterTestingModule,
+                ButtonModule,
             ],
             declarations: [ConfigMigrationTabComponent, EntityLinkComponent],
         }).compileComponents()

@@ -12,9 +12,11 @@
                     <div class="flex align-items-center">
                         <span class="font-semibold w-8rem">Status:</span>
                         <p-tag [severity]="statusSeverity" [value]="statusText"></p-tag>
-                        <span *ngIf="isFailed && migration.generalError" class="ml-3 text-red-500">
-                            {{ migration.generalError }}
-                        </span>
+                    </div>
+
+                    <div class="flex align-items-center" *ngIf="migration.generalError">
+                        <span class="font-semibold w-8rem">General error:</span>
+                        <span class="text-red-500">{{ migration.generalError }}</span>
                     </div>
 
                     <div class="flex align-items-center" *ngIf="totalErrors > 0">

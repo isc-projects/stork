@@ -1,19 +1,17 @@
 import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { HttpClientModule } from '@angular/common/http'
-import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
-import { CardModule } from 'primeng/card'
 import { FieldsetModule } from 'primeng/fieldset'
-import { MessagesModule } from 'primeng/messages'
 import { ProgressBarModule } from 'primeng/progressbar'
 import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
-import { TooltipModule } from 'primeng/tooltip'
 import { importProvidersFrom } from '@angular/core'
 import { toastDecorator } from '../utils-stories'
 import { ConfigMigrationTabComponent } from './config-migration-tab.component'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { SurroundPipe } from '../pipes/surround.pipe'
+import { RouterTestingModule } from '@angular/router/testing'
 
 export default {
     title: 'App/ConfigMigrationTab',
@@ -24,20 +22,15 @@ export default {
         }),
         moduleMetadata({
             imports: [
-                ButtonModule,
-                CardModule,
-                FieldsetModule,
-                FormsModule,
-                HttpClientModule,
                 NoopAnimationsModule,
-                MessagesModule,
-                ProgressBarModule,
                 TableModule,
+                FieldsetModule,
                 TagModule,
-                TooltipModule,
+                ProgressBarModule,
+                RouterTestingModule,
+                ButtonModule,
             ],
-            declarations: [ConfigMigrationTabComponent],
-            providers: [MessageService],
+            declarations: [ConfigMigrationTabComponent, EntityLinkComponent, SurroundPipe],
         }),
         toastDecorator,
     ],
@@ -60,6 +53,8 @@ export const RunningMigration: Story = {
             },
             elapsedTime: '10m30s',
             estimatedLeftTime: '19m45s',
+            authorId: 42,
+            authorLogin: 'admin',
         },
     },
 }
@@ -79,6 +74,8 @@ export const CancelingMigration: Story = {
             },
             elapsedTime: '15m22s',
             estimatedLeftTime: '7m12s',
+            authorId: 42,
+            authorLogin: 'admin',
         },
     },
 }
@@ -98,6 +95,8 @@ export const CompletedMigration: Story = {
             },
             elapsedTime: '30m0s',
             estimatedLeftTime: '0s',
+            authorId: 42,
+            authorLogin: 'admin',
         },
     },
 }
@@ -121,7 +120,9 @@ export const FailedMigration: Story = {
                 ],
             },
             elapsedTime: '10m0s',
-            estimatedLeftTime: '0s',
+            estimatedLeftTime: '0s',            
+            authorId: 42,
+            authorLogin: 'admin',
         },
     },
 }
@@ -149,6 +150,8 @@ export const FailedMigrationWithManyErrors: Story = {
             },
             elapsedTime: '15m0s',
             estimatedLeftTime: '0s',
+            authorId: 42,
+            authorLogin: 'admin',
         },
     },
 }
