@@ -771,7 +771,7 @@ read-write (the default).
 
 The read-only mode blocks any modifications to the
 files in the container. In this case, the error is raised that the file system
-is read-only. The read-only mode disables also reflecting the changes made in
+is read-only. The read-only mode also disables reflecting the changes made in
 the host filesystem to the container filesystem.
 To mount the volume in the read-only mode, add the ``:ro`` suffix to the volume
 definition. For example: ``/path/to/host:/path/to/container:ro``.
@@ -780,22 +780,21 @@ The read-write mode allows the container to modify the files in the volume. The
 changes made inside the container are immediately reflected in the host
 filesystem and vice versa.
 
-The behavior of the read-write mode is undeniable in the system tests. First
-of all, it breaks the isolation of the test cases. The changes made in one test
-case can affect the other test cases as they share the same volume and the 
-changes are not reverted after the test case execution. The second reason is
-interrupts the system test development. We don't expect them to be modified as
-a side effect of the test case execution. The developer may not notice that the
-files are modified and commit them to the repository.
+The read-write mode must be used in the system tests involving disk writes.
+However, the test framework must ensure a proper isolation of the test cases.
+Otherwise, the disk writes in some test cases can affect other test cases as
+they share the same volume, and the changes are not reverted after the test
+case execution. In addition, the files must not remain modified on the host
+after the tests execution. The developer may not notice that the files are
+modified and commit them to the repository.
 
-We would like to mount the volumes to be editable in the container but prevent
-the changes made in the container from being reflected in the host filesystem.
-Unfortunately, such case is not supported by Docker. However, we implemented a
+We would like to mount the volumes so they are editable in the container but prevent
+changes made in the container from being reflected in the host filesystem.
+Unfortunately, Docker does not support such a case. However, we implemented a
 workaround to achieve the same effect. The volumes may be marked as isolated
-and they are copied to a temporary directory before the test case execution.
-The changes made in the container are reflected only to these temporary copies
-and don't affect the original files. The temporary copies are removed after the
-test case execution.
+and copied to a temporary directory before the test case. The changes made in
+the container are reflected only in these temporary copies and don't affect the
+original files. The temporary copies are removed after the test case.
 
 To mark the volume as isolated, start its source path with the ``$IPWD``
 (isolated-parent-working-directory) environment variable instead of the
@@ -823,8 +822,8 @@ original volumes.
 The isolated volumes are cleaned up on the ``down`` command.
 
 It needs to be considered whether all volumes should be isolated by default.
-Currently, only volumes that are expected to change are isolated. This allows
-the developer to spot if something is modified unexpectedly.
+Currently, only the volumes that are expected to be modified during the test are
+isolated. This allows the developer to spot unexpected modifications.
 
 Update Packages in System Tests
 -------------------------------
