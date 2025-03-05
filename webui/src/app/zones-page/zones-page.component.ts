@@ -70,17 +70,17 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     zonesFetchStatesLoading: boolean = false
 
     /**
-     * Flag stating whether Zones Fetch is in progress or not.
+     * Flag stating whether zones fetch is in progress or not.
      */
     fetchInProgress: boolean = false
 
     /**
-     * Keeps count of DNS apps for which Zones Fetch was completed. This number comes from backend.
+     * Keeps count of DNS apps for which zones fetch was completed. This number comes from backend.
      */
     fetchAppsCompletedCount: number = 0
 
     /**
-     * Keeps total count of DNS apps for which Zones Fetch is currently in progress. This number comes from backend.
+     * Keeps total count of DNS apps for which zones fetch is currently in progress. This number comes from backend.
      */
     fetchTotalAppsCount: number = 0
 
@@ -121,7 +121,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     protected readonly Array = Array
 
     /**
-     * RxJS observable which locks Fetch Zones button for 5 seconds to limit the rate of PUT Zones Fetch requests sent.
+     * RxJS observable which locks Fetch Zones button for 5 seconds to limit the rate of PUT /dns-management/zones-fetch requests sent.
      * @private
      */
     private _putZonesFetchGuard = of(null).pipe(
@@ -132,13 +132,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     )
 
     /**
-     * Key to be used in browser storage for keeping Zones Fetch Sent flag value.
+     * Key to be used in browser storage for keeping zones fetch sent flag value.
      * @private
      */
     private _fetchSentStorageKey = 'zone-fetch-sent'
 
     /**
-     * Interval in milliseconds between requests sent to backend REST API asking about Zones Fetch status.
+     * Interval in milliseconds between requests sent to backend REST API asking about zones fetch status.
      * @private
      */
     private _pollingInterval: number = 10 * 1000
@@ -158,7 +158,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     /**
      * RxJS observable stream which returns a response to GET /dns-management/zones-fetch request every interval of _pollingInterval time
      * until zones fetch is complete OR fetchInProgress is set to false. It is useful for polling the zones fetch status
-     * once 202 Accepted response is received after GET ZonesFetch request.
+     * once 202 Accepted response is received after GET /dns-management/zones-fetch request.
      * Expected sequence of sent values is: 202 ZonesFetchStatus -> ... -> 202 ZonesFetchStatus -> 200 ZoneInventoryStates |-> complete.
      * @private
      */
@@ -176,8 +176,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 if (this.fetchInProgress) {
                     this.messageService.add({
                         severity: 'success',
-                        summary: 'Zones Fetch done',
-                        detail: 'Zones Fetch finished successfully!',
+                        summary: 'Zones fetch complete',
+                        detail: 'Zones fetched successfully!',
                         life: 5000,
                     })
                     if (this.zonesFetchStates.length > 0) {
@@ -197,10 +197,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error sending request',
-                detail: 'Sending GET Zones Fetch request failed: ' + msg,
+                detail: 'Sending GET /dns-management/zones-fetch request failed: ' + msg,
                 life: 10000,
             })
-            return of(EMPTY) // In case of any GET ZonesFetch error, just display Error feedback in UI and complete this observable.
+            return of(EMPTY) // In case of any GET /dns-management/zones-fetch error, just display Error feedback in UI and complete this observable.
         }),
         finalize(() => {
             this.fetchInProgress = false
@@ -278,7 +278,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
     /**
      * Fetches data from backend and refreshes Zones Fetch Status table with the data.
-     * If Zones Fetch is in progress, it subscribes to _polling$ observable to receive and
+     * If zones fetch is in progress, it subscribes to _polling$ observable to receive and
      * visualize Fetch progress.
      */
     refreshFetchStatusTable() {
@@ -340,8 +340,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                             severity: 'info',
                             summary: 'Unexpected response',
                             detail:
-                                'Unexpected response while fetching zones - received HTTP status code ' +
-                                resp.status,
+                                'Unexpected response while fetching zones - received HTTP status code ' + resp.status,
                             life: 5000,
                         })
                 }
@@ -387,7 +386,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Sends PUT ZonesFetch request and triggers refreshing data of the Zones Fetch Status table right after.
+     * Sends PUT /dns-management/zones-fetch request and triggers refreshing data of the Zones Fetch Status table right after.
      * @private
      */
     private _sendPutZonesFetch() {
@@ -495,7 +494,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Retrieves information from browser session storage whether PUT Zones Fetch was sent or not.
+     * Retrieves information from browser session storage whether PUT /dns-management/zones-fetch was sent or not.
      */
     wasZoneFetchSent(): boolean {
         const fromStorage = sessionStorage.getItem(this._fetchSentStorageKey) ?? 'false'
@@ -503,8 +502,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Stores information in browser session storage whether PUT Zones Fetch was sent or not.
-     * @param sent PUT Zones Fetch was sent or not
+     * Stores information in browser session storage whether PUT /dns-management/zones-fetch was sent or not.
+     * @param sent request was sent or not
      */
     storeZoneFetchSent(sent: boolean) {
         sessionStorage.setItem(this._fetchSentStorageKey, JSON.stringify(sent))

@@ -219,7 +219,7 @@ describe('ZonesPageComponent', () => {
         expect(getZonesFetchSpy).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(messageAddSpy).toHaveBeenCalledOnceWith(
-            objectContaining({ summary: 'No Zones Fetch information', severity: 'info' })
+            objectContaining({ summary: 'Zones not fetched', severity: 'info' })
         )
     })
 
@@ -300,7 +300,7 @@ describe('ZonesPageComponent', () => {
         // Assert
         const confirmDialog = fixture.debugElement.query(By.css('.p-confirm-dialog'))
         expect(confirmDialog).toBeTruthy()
-        expect(confirmDialog.nativeElement.innerText).toContain('Confirm triggering Zones Fetch')
+        expect(confirmDialog.nativeElement.innerText).toContain('Confirm Fetching Zones')
         expect(confirmDialog.nativeElement.innerText).toContain('Are you sure you want to continue?')
 
         // cancel
