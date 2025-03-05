@@ -144,7 +144,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     private _pollingInterval: number = 10 * 1000
 
     /**
-     * RxJS observable which emits one value with DNS Service GET ZonesFetch request response together with the HTTP response
+     * RxJS observable which emits one value with the GET /dns-management/zones-fetch response
      * status header value and completes.
      * @private
      */
@@ -156,8 +156,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     )
 
     /**
-     * RxJS observable stream which sends GET ZonesFetch request response every interval of _pollingInterval time
-     * until Zones Fetch is complete OR fetchInProgress is set to false. It is useful for polling the Zones Fetch status
+     * RxJS observable stream which returns a response to GET /dns-management/zones-fetch request every interval of _pollingInterval time
+     * until zones fetch is complete OR fetchInProgress is set to false. It is useful for polling the zones fetch status
      * once 202 Accepted response is received after GET ZonesFetch request.
      * Expected sequence of sent values is: 202 ZonesFetchStatus -> ... -> 202 ZonesFetchStatus -> 200 ZoneInventoryStates |-> complete.
      * @private
@@ -292,8 +292,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                         this.zonesFetchStatesTotal = 0
                         this.messageService.add({
                             severity: 'info',
-                            summary: 'No Zones Fetch information',
-                            detail: 'Information about Zones Fetch is currently unavailable.',
+                            summary: 'Zones not fetched',
+                            detail: 'Zones fetch status not available because zones have not been fetched yet.',
                             life: 5000,
                         })
                         break
@@ -326,8 +326,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                             this.fetchAppsCompletedCount = this.fetchTotalAppsCount
                             this.messageService.add({
                                 severity: 'success',
-                                summary: 'Zones Fetch done',
-                                detail: 'Zones Fetch finished successfully!',
+                                summary: 'Zones fetch complete',
+                                detail: 'Zones fetched successfully!',
                                 life: 5000,
                             })
                             this.onLazyLoadZones(this.zonesTable?.createLazyLoadMetadata())
@@ -340,7 +340,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                             severity: 'info',
                             summary: 'Unexpected response',
                             detail:
-                                'Unexpected response to GET Zones Fetch request - received HTTP status code ' +
+                                'Unexpected response while fetching zones - received HTTP status code ' +
                                 resp.status,
                             life: 5000,
                         })
@@ -351,7 +351,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error sending request',
-                    detail: 'Sending GET Zones Fetch request failed: ' + msg,
+                    detail: 'Fetching zones failed: ' + msg,
                     life: 10000,
                 })
             })
@@ -373,9 +373,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 message:
                     'This operation instructs the Stork server to fetch the zones from all DNS servers' +
                     ' and update them in the Stork database. This operation may take long time depending' +
-                    ' on DNS servers count and zones count. All zones data will be overwritten with the newly ' +
+                    ' on the number of the DNS servers and zones. All zones data will be overwritten with the newly ' +
                     'fetched data from DNS servers that Stork is monitoring. Are you sure you want to continue?',
-                header: 'Confirm triggering Zones Fetch!',
+                header: 'Confirm Fetching Zones!',
                 icon: 'pi pi-exclamation-triangle',
                 acceptLabel: 'Continue',
                 rejectLabel: 'Cancel',
@@ -408,7 +408,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Request sent',
-                    detail: 'Sending PUT Zones Fetch request succeeded.',
+                    detail: 'Fetching zones started successfully.',
                     life: 5000,
                 })
             })
@@ -417,7 +417,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error sending request',
-                    detail: 'Sending PUT Zones Fetch request failed: ' + msg,
+                    detail: 'Fetching zones failed: ' + msg,
                     life: 10000,
                 })
             })
@@ -457,13 +457,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     getTooltip(status: ZoneInventoryStatus) {
         switch (status) {
             case 'busy':
-                return 'Zone inventory on an agent performs a long lasting operation and cannot perform the requested operation at this time.'
+                return 'Zone inventory on the agent is busy and cannot return zones at this time. Try again later.'
             case 'ok':
                 return 'Stork server successfully fetched all zones from the DNS server.'
             case 'erred':
                 return 'Error when communicating with a zone inventory on an agent.'
             case 'uninitialized':
-                return 'Zone inventory was not initialized (neither populated nor loaded).'
+                return 'Zone inventory on the agent was not initialized. Trying again or restarting the agent can help.'
             default:
                 return null
         }
@@ -486,8 +486,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 const msg = getErrorMessage(err)
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error retrieving data',
-                    detail: 'Retrieving Zones data failed: ' + msg,
+                    summary: 'Error retrieving zones',
+                    detail: 'Retrieving zones information failed: ' + msg,
                     life: 10000,
                 })
             })

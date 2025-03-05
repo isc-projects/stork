@@ -65,7 +65,7 @@
                             styleClass="mb-3"
                             severity="info"
                             [text]="
-                                'Zones Fetch process is now running in background. It may take some time depending on DNS servers count and zones count. Completed for ' +
+                                'The server is fetching zones from the agents in the background. It may take some time, depending on the number of the DNS servers and zones. Completed for ' +
                                 fetchAppsCompletedCount +
                                 ' out of ' +
                                 fetchTotalAppsCount +
@@ -168,7 +168,7 @@
                 <tr>
                     <th class="w-3rem sm:w-5rem"></th>
                     <th>Zone Name</th>
-                    <th># Of Associated DNS Servers</th>
+                    <th># of Associated DNS Servers</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-zone let-expanded="expanded">
@@ -246,7 +246,7 @@
                                 styleClass="mb-3"
                                 severity="info"
                                 [text]="
-                                    'Zones Fetch process is now running in background. It may take some time depending on DNS servers count and zones count. Completed for ' +
+                                    'The server is fetching zones from the agents in the background. It may take some time, depending on the number of the DNS servers and zones. Completed for ' +
                                     fetchAppsCompletedCount +
                                     ' out of ' +
                                     fetchTotalAppsCount +
@@ -321,7 +321,7 @@
                 </p-fieldset>
             </div>
             <div class="mb-4">
-                <p-fieldset legend="DNS Servers Associated With The Zone">
+                <p-fieldset legend="DNS Servers Associated with the Zone">
                     <p-table
                         [value]="tab.localZones"
                         dataKey="serial"
