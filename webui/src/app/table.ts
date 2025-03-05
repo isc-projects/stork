@@ -242,12 +242,7 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
     abstract queryParamNumericKeys: (keyof TFilter)[]
 
     /**
-<<<<<<< HEAD
-     * Array of all boolean keys of the FilterInterface that are supported when filtering via URL queryParams.
-     * This should be a subset of filterBooleanKeys.
-=======
      * Array of all boolean keys of the TFilter that are supported when filtering via URL queryParams.
->>>>>>> 7eadb8216 ([#800] Fix problem with restoring table state)
      */
     abstract queryParamBooleanKeys: (keyof TFilter)[]
 
@@ -277,13 +272,9 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
      * Callback method called when PrimeNG table's state was saved to browser's storage.
      * This method is supposed to be bound to PrimeNG Table "onStateSave" output property EventEmitter.
      * e.g. (onStateSave)="stateSaved(table)"
+     * @param table table which state was saved
      */
     stateSaved(table: Table): void {
-        // Do not store selection as part of the table state.
-        const state = JSON.parse(sessionStorage.getItem(this.stateKey))
-        state.selection = []
-        sessionStorage.setItem(this.stateKey, JSON.stringify(state))
-
         if (table.restoringFilter) {
             // Force set this flag to false.
             // This is a workaround of the issue in PrimeNG,
@@ -307,8 +298,21 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
             // where for stateful table, sometimes when filtering is applied,
             // table.first property is not set to 0 as expected.
             table.restoringFilter = false
-            table.filters = {}
         }
+
+        // Clear filters. Restoring filters from state is incompatible with
+        // query params.
+        for (const key of Object.keys(table.filters)) {
+            const meta = table.filters[key]
+            if (Array.isArray(meta)) {
+                meta.forEach((m) => (m.value = null))
+            } else {
+                meta.value = null
+            }
+        }
+
+        // Ignore selection.
+        state.selection = []
 
         // Backup restored data to properties.
         // They will be used when PrimeNG table is not available.

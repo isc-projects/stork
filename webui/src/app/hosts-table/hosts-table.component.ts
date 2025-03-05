@@ -41,7 +41,7 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      * Note that it doesn't have to contain hosts prefilterKey, which is 'appId'.
      * prefilterKey by default is considered as a primary queryParam filter key.
      */
-    queryParamNumericKeys: (keyof HostsFilter)[] = []
+    queryParamNumericKeys: (keyof HostsFilter)[] = ['subnetId', 'keaSubnetId']
 
     /**
      * Array of all boolean keys that are supported when filtering hosts via URL queryParams.
