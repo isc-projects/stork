@@ -51,10 +51,11 @@
                 <p-button
                     styleClass="mx-0 md:mx-8"
                     label="Fetch Zones"
+                    icon="pi pi-download"
                     (onClick)="sendPutZonesFetch(true)"
                     [disabled]="fetchInProgress || putZonesFetchLocked"
             /></ng-container>
-            <p>
+            <p *ngIf="wasZoneFetchSent()">
                 {{ empty }}
             </p>
         </td>
@@ -68,6 +69,7 @@
             icon="pi pi-refresh"
             styleClass="block p-button-primary no-underline"
             (onClick)="refreshFetchStatusTable()"
+            id="refresh-fetch-status-data"
         ></p-button>
     </div>
     <p-table
@@ -137,6 +139,7 @@
                 label="Fetch Status"
                 [icon]="fetchInProgress ? 'pi pi-spin pi-spinner' : 'pi pi-info-circle'"
                 (onClick)="fetchStatusVisible = true"
+                id="fetch-status"
             />
             <p-button
                 label="Fetch Zones"
