@@ -42,6 +42,7 @@ require (
 )
 
 require (
+	github.com/alecthomas/participle/v2 v2.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
