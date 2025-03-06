@@ -12,12 +12,10 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterModule } from '@angular/router'
-import createSpyObj = jasmine.createSpyObj
-import { DNSService, ZoneInventoryStates, Zones } from '../backend'
+import { DNSService, ZoneInventoryStates, Zones, ZonesFetchStatus } from '../backend'
 import { of } from 'rxjs'
 import { HttpEventType, HttpHeaders, HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import objectContaining = jasmine.objectContaining
 import { MessageModule } from 'primeng/message'
 import { ProgressBarModule } from 'primeng/progressbar'
 import { SkeletonModule } from 'primeng/skeleton'
@@ -25,6 +23,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { TagModule } from 'primeng/tag'
+import createSpyObj = jasmine.createSpyObj
+import objectContaining = jasmine.objectContaining
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -46,7 +47,93 @@ describe('ZonesPageComponent', () => {
         headers: new HttpHeaders(),
         statusText: '',
         url: '',
-        ok: false,
+        ok: true,
+    }
+
+    const progress1: HttpResponse<ZonesFetchStatus> = {
+        body: { appsCount: 3, completedAppsCount: 0 },
+        status: HttpStatusCode.Accepted,
+        type: HttpEventType.Response,
+        clone: function (): HttpResponse<ZonesFetchStatus> {
+            return null
+        },
+        headers: new HttpHeaders(),
+        statusText: '',
+        url: '',
+        ok: true,
+    }
+
+    const progress2: HttpResponse<ZonesFetchStatus> = {
+        body: { appsCount: 3, completedAppsCount: 1 },
+        status: HttpStatusCode.Accepted,
+        type: HttpEventType.Response,
+        clone: function (): HttpResponse<ZonesFetchStatus> {
+            return null
+        },
+        headers: new HttpHeaders(),
+        statusText: '',
+        url: '',
+        ok: true,
+    }
+
+    const progress3: HttpResponse<ZonesFetchStatus> = {
+        body: { appsCount: 3, completedAppsCount: 2 },
+        status: HttpStatusCode.Accepted,
+        type: HttpEventType.Response,
+        clone: function (): HttpResponse<ZonesFetchStatus> {
+            return null
+        },
+        headers: new HttpHeaders(),
+        statusText: '',
+        url: '',
+        ok: true,
+    }
+
+    const progress4: HttpResponse<ZonesFetchStatus> = {
+        body: { appsCount: 3, completedAppsCount: 3 },
+        status: HttpStatusCode.Accepted,
+        type: HttpEventType.Response,
+        clone: function (): HttpResponse<ZonesFetchStatus> {
+            return null
+        },
+        headers: new HttpHeaders(),
+        statusText: '',
+        url: '',
+        ok: true,
+    }
+
+    const zoneFetchStates: HttpResponse<ZoneInventoryStates> = {
+        body: {
+            items: [
+                {
+                    appId: 30,
+                    appName: 'bind9@agent-bind9',
+                    createdAt: '2025-03-04T20:37:05.096Z',
+                    daemonId: 73,
+                    status: 'ok',
+                    zoneCount: 105,
+                },
+                {
+                    appId: 31,
+                    appName: 'bind9@agent-bind9-2',
+                    createdAt: '2025-03-04T20:37:13.106Z',
+                    daemonId: 74,
+                    status: 'erred',
+                    error: 'Fetching custom error',
+                    zoneCount: 105,
+                },
+            ],
+            total: 2,
+        },
+        status: HttpStatusCode.Ok,
+        type: HttpEventType.Response,
+        clone: function (): HttpResponse<ZoneInventoryStates> {
+            return null
+        },
+        headers: new HttpHeaders(),
+        statusText: '',
+        url: '',
+        ok: true,
     }
 
     const noZones: Zones = { items: null }
@@ -143,8 +230,17 @@ describe('ZonesPageComponent', () => {
         putZonesFetchSpy = dnsApi.putZonesFetch
         getZonesSpy = dnsApi.getZones
 
-        // By default, reply with 204 No content.
-        getZonesFetchSpy.withArgs('response').and.returnValue(of(noContent))
+        // Returns replies in order: 204 No content, 200 Ok ZoneInventoryStates, 202 Accepted ZonesFetchStatus 0/3, 202 Accepted progress 1/3,
+        // 202 Accepted progress 2/3, 202 Accepted progress 3/3, 200 Ok ZoneInventoryStates.
+        getZonesFetchSpy.and.returnValues(
+            of(noContent),
+            of(zoneFetchStates),
+            of(progress1),
+            of(progress2),
+            of(progress3),
+            of(progress4),
+            of(zoneFetchStates)
+        )
         // By default, emits null response and completes without any error.
         putZonesFetchSpy.and.returnValue(of(null))
         // Returns replies in order: no Zones, 3 Zones.
@@ -168,6 +264,7 @@ describe('ZonesPageComponent', () => {
                 ProgressBarModule,
                 SkeletonModule,
                 BrowserAnimationsModule,
+                TagModule,
             ],
             declarations: [ZonesPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe, LocaltimePipe],
             providers: [
@@ -223,7 +320,7 @@ describe('ZonesPageComponent', () => {
         )
     })
 
-    it('should fetch list of zones', async () => {
+    it('should retrieve list of zones', async () => {
         // Arrange + Act
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-zones-data button'))
