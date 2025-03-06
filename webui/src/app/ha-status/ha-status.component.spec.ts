@@ -340,7 +340,7 @@ describe('HaStatusComponent', () => {
         expect(component.status[22].cells[0].value).toBeFalsy()
         expect(component.status[22].cells[0].progress).toBe(16)
         expect(component.status[22].cells[1].value).toBe('n/a')
-        expect(component.status[23].cells[0].value).toBe('Server has started a failover procedure.')
+        expect(component.status[23].cells[0].value).toBe('Server has started the failover procedure.')
         expect(component.status[23].cells[1].value).toBe('Server is responding to all DHCP traffic.')
     }))
 
@@ -591,7 +591,7 @@ describe('HaStatusComponent', () => {
 
     it('should create summary', () => {
         expect(component.createSummary({ unackedClients: 2, unackedClientsLeft: 3 }, {})).toBe(
-            'Server has started a failover procedure.'
+            'Server has started the failover procedure.'
         )
         expect(component.createSummary({ scopes: [] }, {})).toBe('Server is responding to no DHCP traffic.')
         expect(component.createSummary({ scopes: ['server1'] }, { scopes: [] })).toBe(

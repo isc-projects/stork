@@ -176,8 +176,8 @@ describe('VersionStatusComponent', () => {
         expect(getSoftwareVersionFeedbackSpy).toHaveBeenCalledTimes(1)
         expect(messageAddSpy).toHaveBeenCalledOnceWith({
             severity: 'error',
-            summary: 'Error fetching software versions data',
-            detail: 'Error when fetching software versions data: internal error',
+            summary: 'Error fetching software version data',
+            detail: 'Error when fetching software version data: internal error',
             life: 10000,
         })
         expect(component.severity).toBeUndefined()

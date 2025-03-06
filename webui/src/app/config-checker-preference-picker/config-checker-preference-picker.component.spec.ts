@@ -171,7 +171,9 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         const element = fixture.debugElement.query(By.css('td.picker__description-column'))
         expect(element).not.toBeNull()
         const content = (element.nativeElement as HTMLElement).innerText
-        expect(content).toContain('The checker verifying if the host_cmds hooks library is loaded')
+        expect(content).toContain(
+            'This checker verifies whether the host_cmds hook library is loaded when host backend is in use.'
+        )
     })
 
     it('should display the checker selectors', () => {

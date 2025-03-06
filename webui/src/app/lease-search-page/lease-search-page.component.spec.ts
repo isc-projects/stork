@@ -760,6 +760,6 @@ describe('LeaseSearchPageComponent', () => {
         expect(breadcrumbsComponent).not.toBeNull()
         expect(breadcrumbsComponent.items).toHaveSize(2)
         expect(breadcrumbsComponent.items[0].label).toEqual('DHCP')
-        expect(breadcrumbsComponent.items[1].label).toEqual('Leases Search')
+        expect(breadcrumbsComponent.items[1].label).toEqual('Lease Search')
     })
 })

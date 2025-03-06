@@ -473,8 +473,8 @@ describe('VersionPageComponent', () => {
         expect(getMachinesAppsVersionsSpy).toHaveBeenCalledTimes(1)
         expect(messageAddSpy).toHaveBeenCalledOnceWith({
             severity: 'error',
-            summary: 'Error retrieving software versions data',
-            detail: 'Error occurred when retrieving software versions data: version service error2',
+            summary: 'Error retrieving software version data',
+            detail: 'An error occurred when retrieving software version data: version service error2',
             life: 10000,
         })
     })
