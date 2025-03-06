@@ -27,6 +27,7 @@
         x-nullable: true
       status:
         type: string
+        enum: [busy, erred, ok, uninitialized]
       zoneCount:
         type: integer
         x-nullable: true

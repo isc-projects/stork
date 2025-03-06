@@ -7,11 +7,7 @@ import { EMPTY, interval, lastValueFrom, of, Subscription, timer } from 'rxjs'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
-
-/**
- * Type defining Status of the Zone Inventory returned from the backend.
- */
-type ZoneInventoryStatus = 'busy' | 'erred' | 'ok' | 'uninitialized' | string
+import StatusEnum = ZoneInventoryState.StatusEnum
 
 @Component({
     selector: 'app-zones-page',
@@ -102,7 +98,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     /**
      * Map keeping Zone Inventory States accessible by the daemonId key.
      */
-    zoneInventoryStateMap: Map<number, Partial<ZoneInventoryState>> = new Map()
+    zoneInventoryStateMap: Map<number, ZoneInventoryState> = new Map()
 
     /**
      * Flag stating whether Fetch Zones button is locked/disabled or not.
@@ -180,13 +176,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                         detail: 'Zones fetched successfully!',
                         life: 5000,
                     })
-                    if (this.zonesFetchStates.length > 0) {
-                        this.zoneInventoryStateMap = new Map()
-                        this.zonesFetchStates.forEach((s) => {
-                            this.zoneInventoryStateMap.set(s.daemonId, s)
-                        })
-                    }
-
+                    this._resetZoneInventoryStateMap()
                     this.onLazyLoadZones(this.zonesTable?.createLazyLoadMetadata())
                 }
             }
@@ -314,12 +304,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                     case HttpStatusCode.Ok:
                         this.zonesFetchStates = resp.items ?? []
                         this.zonesFetchStatesTotal = resp.total ?? 0
-                        if (this.zonesFetchStates.length > 0) {
-                            this.zoneInventoryStateMap = new Map()
-                            this.zonesFetchStates.forEach((s) => {
-                                this.zoneInventoryStateMap.set(s.daemonId, s)
-                            })
-                        }
+                        this._resetZoneInventoryStateMap()
 
                         if (this.fetchInProgress) {
                             this.fetchInProgress = false
@@ -354,9 +339,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                     life: 10000,
                 })
             })
-            .finally(() => {
-                this.zonesFetchStatesLoading = false
-            })
+            .finally(() => (this.zonesFetchStatesLoading = false))
     }
 
     /**
@@ -381,6 +364,19 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 accept: () => {
                     this._sendPutZonesFetch()
                 },
+            })
+        }
+    }
+
+    /**
+     * Resets zoneInventoryStateMap with new values from zonesFetchStates.
+     * @private
+     */
+    private _resetZoneInventoryStateMap() {
+        if (this.zonesFetchStates.length > 0) {
+            this.zoneInventoryStateMap = new Map()
+            this.zonesFetchStates.forEach((s) => {
+                this.zoneInventoryStateMap.set(s.daemonId, s)
             })
         }
     }
@@ -423,10 +419,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Returns PrimeNG severity for given ZoneInventoryStatus.
-     * @param status ZoneInventoryStatus
+     * Returns PrimeNG severity for given ZoneInventoryState status.
+     * @param status ZoneInventoryState status
      */
-    getSeverity(status: ZoneInventoryStatus) {
+    getSeverity(status: StatusEnum) {
         switch (status) {
             case 'ok':
                 return 'success'
@@ -450,10 +446,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Returns tooltip message for given ZoneInventoryStatus.
-     * @param status ZoneInventoryStatus
+     * Returns tooltip message for given ZoneInventoryState status.
+     * @param status ZoneInventoryState status
      */
-    getTooltip(status: ZoneInventoryStatus) {
+    getTooltip(status: StatusEnum) {
         switch (status) {
             case 'busy':
                 return 'Zone inventory on the agent is busy and cannot return zones at this time. Try again later.'
