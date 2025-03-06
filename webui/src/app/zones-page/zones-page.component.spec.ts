@@ -13,7 +13,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterModule } from '@angular/router'
 import { DNSService, ZoneInventoryState, ZoneInventoryStates, Zones, ZonesFetchStatus } from '../backend'
-import { of } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { HttpEventType, HttpHeaders, HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MessageModule } from 'primeng/message'
@@ -32,11 +32,11 @@ import { FieldsetModule } from 'primeng/fieldset'
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
     let fixture: ComponentFixture<ZonesPageComponent>
-    let dnsApi: any
+    let dnsApi: jasmine.SpyObj<DNSService>
     let getZonesFetchSpy: any
     let putZonesFetchSpy: any
     let getZonesSpy: any
-    let messageService: any
+    let messageService: jasmine.SpyObj<MessageService>
     let messageAddSpy: any
 
     const noContent: HttpResponse<ZoneInventoryStates> = {
@@ -237,10 +237,10 @@ describe('ZonesPageComponent', () => {
         getZonesFetchSpy.and.returnValues(
             of(noContent),
             of(zoneFetchStates),
-            of(progress1),
-            of(progress2),
-            of(progress3),
-            of(progress4),
+            of(progress1) as Observable<any>,
+            of(progress2) as Observable<any>,
+            of(progress3) as Observable<any>,
+            of(progress4) as Observable<any>,
             of(zoneFetchStates)
         )
         // By default, emits null response and completes without any error.
@@ -519,5 +519,36 @@ describe('ZonesPageComponent', () => {
         rejectBtnDe.nativeElement.click()
         fixture.detectChanges()
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
+    })
+
+    it('should retrieve list of zone fetch states', async () => {
+        // Arrange
+        expect(component.zonesFetchStatesLoading)
+            .withContext('Zones Fetch Status table data loading should be done')
+            .toBeFalse()
+
+        // Display Fetch Status dialog
+        const fetchStatusBtnDe = fixture.debugElement.query(By.css('#fetch-status button'))
+        expect(fetchStatusBtnDe).toBeTruthy()
+        fetchStatusBtnDe.nativeElement.click()
+        fixture.detectChanges()
+        expect(component.fetchStatusVisible).toBeTrue()
+
+        // Locate the Refresh List button
+        const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-fetch-status-data button'))
+        expect(refreshBtnDe).toBeTruthy()
+
+        // Act
+        refreshBtnDe.nativeElement.click()
+        fixture.detectChanges()
+
+        // Assert
+        expect(component.zonesFetchStatesLoading).withContext('data should be loading').toBeTrue()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.zonesFetchStatesLoading).withContext('data loading should be done').toBeFalse()
+        expect(getZonesFetchSpy).toHaveBeenCalledTimes(2)
+        expect(component.zonesFetchStates).toEqual(zoneFetchStates.body.items)
+        expect(component.zonesFetchStatesTotal).toEqual(zoneFetchStates.body.total)
     })
 })
