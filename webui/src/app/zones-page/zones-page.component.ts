@@ -244,6 +244,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     onTabClose(event: TabViewCloseEvent) {
         this.openTabs.splice(event.index - 1, 1)
+        this.cd.detectChanges()
         if (event.index <= this.activeTabIdx) {
             this.activeTabIdx = 0
         }

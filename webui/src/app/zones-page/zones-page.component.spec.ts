@@ -27,6 +27,7 @@ import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
 import StatusEnum = ZoneInventoryState.StatusEnum
+import { FieldsetModule } from 'primeng/fieldset'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -266,6 +267,7 @@ describe('ZonesPageComponent', () => {
                 SkeletonModule,
                 BrowserAnimationsModule,
                 TagModule,
+                FieldsetModule,
             ],
             declarations: [ZonesPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe, LocaltimePipe],
             providers: [
@@ -404,6 +406,96 @@ describe('ZonesPageComponent', () => {
             'Zone inventory on the agent was not initialized'
         )
         expect(component.getTooltip(<StatusEnum>'foo')).toBeNull()
+    })
+
+    it('should open and close tabs', async () => {
+        // Arrange
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-zones-data button'))
+        expect(refreshBtnDe).toBeTruthy()
+        // Click on Refresh List button
+        refreshBtnDe.nativeElement.click()
+        fixture.detectChanges()
+        expect(component.zonesLoading).withContext('zones data loads').toBeTrue()
+        await fixture.whenStable()
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        expect(component.zones).toEqual(fakeZones.items)
+        expect(component.zonesTotal).toEqual(fakeZones.total)
+        fixture.detectChanges()
+
+        // There are all 3 zones listed.
+        const tableRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tr'))
+        expect(tableRows).toBeTruthy()
+        expect(tableRows.length).toEqual(3)
+
+        // Act + Assert
+        const zonesTabDe = fixture.debugElement.query(By.css('ul.p-tabview-nav li:first-child a'))
+        expect(zonesTabDe).toBeTruthy()
+
+        // Try to open tab 1.
+        const firstRowBtns = tableRows[0].queryAll(By.css('button'))
+        expect(firstRowBtns).toBeTruthy()
+        // There are 2 buttons per row: 1. expand/collapse row; 2. anchor to detailed zone view
+        expect(firstRowBtns.length).toEqual(2)
+        firstRowBtns[1].nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.activeTabIdx).toEqual(1)
+        expect(component.openTabs.length).toEqual(1)
+        expect(component.openTabs).toContain(component.zones[0])
+
+        // Go back to first tab.
+        zonesTabDe.nativeElement.click()
+        fixture.detectChanges()
+
+        // Try to open tab 2.
+        const secondRowBtns = tableRows[1].queryAll(By.css('button'))
+        expect(secondRowBtns).toBeTruthy()
+        // There are 2 buttons per row: 1. expand/collapse row; 2. anchor to detailed zone view
+        expect(secondRowBtns.length).toEqual(2)
+        secondRowBtns[1].nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.activeTabIdx).toEqual(2)
+        expect(component.openTabs.length).toEqual(2)
+        expect(component.openTabs).toContain(component.zones[1])
+        expect(component.openTabs).toContain(component.zones[0])
+        expect(component.openTabs).not.toContain(component.zones[2])
+
+        // Go back to first tab.
+        zonesTabDe.nativeElement.click()
+        fixture.detectChanges()
+
+        // Try to open tab 1 again.
+        firstRowBtns[1].nativeElement.click()
+        fixture.detectChanges()
+        expect(component.activeTabIdx).toEqual(1)
+        expect(component.openTabs.length).toEqual(2)
+        expect(component.openTabs).toContain(component.zones[0])
+        expect(component.openTabs).toContain(component.zones[1])
+        expect(component.openTabs).not.toContain(component.zones[2])
+
+        const closeTabBtns = fixture.debugElement.queryAll(By.css('ul.p-tabview-nav .p-icon-wrapper'))
+        expect(closeTabBtns).toBeTruthy()
+        expect(closeTabBtns.length).toEqual(2)
+
+        // Close tab 2.
+        closeTabBtns[1].nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.activeTabIdx).toEqual(1)
+        expect(component.openTabs.length).toEqual(1)
+        expect(component.openTabs).not.toContain(component.zones[1])
+        expect(component.openTabs).toContain(component.zones[0])
+
+        // Close tab 1.
+        closeTabBtns[0].nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.activeTabIdx).toEqual(0)
+        expect(component.openTabs.length).toEqual(0)
+        expect(component.openTabs).not.toContain(component.zones[0])
+        expect(component.openTabs).not.toContain(component.zones[1])
     })
 
     it('should display confirmation dialog when fetch zones clicked', async () => {
