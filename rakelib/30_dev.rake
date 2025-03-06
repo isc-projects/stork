@@ -606,37 +606,74 @@ namespace :lint do
             end
 
             if File.empty?(file)
-                puts "ERROR: Changelog entry #{filename} is empty. A valid entry was expected."
+                puts "ERROR: Changelog entry '#{filename}' is empty. Expected a valid entry."
                 exit_code = 1
             end
 
-            lines_too_long = []
-            File.readlines(file).each_with_index do |line, line_number|
-                if line_number == 0
-                    words = line.split(/[\[\]]+/)
-                    if words.empty?
-                        puts "ERROR: Changelog entry #{filename} has the first line empty. Content expected."
-                        exit_code = 1
-                    end
-                    if words.length < 2
-                        puts "ERROR: Changelog entry #{filename} has no category. Expected one of: #{allowed_categories}."
-                        exit_code = 1
-                    end
-                    if words.length < 3
-                        puts "ERROR: Changelog entry #{filename} has no author."
-                        exit_code = 1
-                    end
-                    leading = words[0]
-                    if not leading.empty?
-                        puts "ERROR: Changelog entry #{filename} has leading text before category. None expected."
-                        exit_code = 1
-                    end
-                    category = words[1]
-                    if not allowed_categories.include?(category)
-                        puts "ERROR: Changelog entry #{filename} has wrong category '#{category}'. Expected one of: #{allowed_categories}."
-                        exit_code = 1
-                    end
+            lines = File.readlines(file)
+
+            # First line
+            tokens = lines[0].split(/(\[|\])+/)  # => ["", "[", "category", "]", " author"]
+            words = tokens.map(&:strip)
+            if words.empty?
+                puts "ERROR: Changelog entry '#{filename}' has the first line empty. Expected format '[category] author'."
+                exit_code = 1
+            end
+            if not words[0].empty?
+                puts "ERROR: Changelog entry '#{filename}' has leading text '#{words[0]}' before category. Expected no leading text."
+                exit_code = 1
+            end
+            if words.length < 3 or words[2].empty?
+                puts "ERROR: Changelog entry '#{filename}' has no category. Expected one of: #{allowed_categories}."
+                exit_code = 1
+            end
+            if words.length < 4 or words[1] != "[" or words[3] != "]"
+                puts "ERROR: Changelog entry '#{filename}' has wrong format on the first line. Expected format '[category] author'."
+                exit_code = 1
+            end
+            if words.length < 5 or words[4].empty?
+                puts "ERROR: Changelog entry '#{filename}' has no author."
+                exit_code = 1
+            end
+            if tokens[4].length - tokens[4].lstrip.length > 1
+                puts "ERROR: Changelog entry '#{filename}' has more than one space before the author. Expected only one leading space."
+                exit_code = 1
+            end
+            if tokens[4].length - tokens[4].rstrip.length > 1  # Not 0 because 1 is newline.
+                puts "ERROR: Changelog entry '#{filename}' has spaces after the author. Expected no trailing space."
+                exit_code = 1
+            end
+            category = words[2]
+            if not allowed_categories.include?(category)
+                puts "ERROR: Changelog entry '#{filename}' has wrong category '#{category}'. Expected one of: #{allowed_categories}."
+                exit_code = 1
+            end
+
+            # Second line
+            if not lines[1].strip.empty?
+                puts "ERROR: Changelog entry '#{filename}' has text on the second line. Expected none."
+            end
+
+            # Last line
+            gitlab_line_index = lines.rindex { |i| not i.strip.empty? }
+            gitlab_line = lines[gitlab_line_index].delete("\n")
+            regex = '^    \(Gitlab #[0-9]+\)$'
+            if not gitlab_line.match(/#{regex}/)
+                puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' not matched with regex '#{regex}'."
+            end
+
+            # Description section
+            for line, i in lines[2..gitlab_line_index].each_with_index do
+                space_count = line.length - line.lstrip.length
+                if space_count != 4
+                    line_number = i + 2
+                    puts "ERROR: Changelog entry '#{filename}' has #{space_count} spaces on line #{line_number}. Expected 4."
                 end
+            end
+
+            # All lines
+            lines_too_long = []
+            for line in lines do
                 # Wrap rows to width 73 == 72 + newline. Historically, number 72 has something to do with punch cards.
                 if line.length > 73
                     lines_too_long.append [line_number, line]
