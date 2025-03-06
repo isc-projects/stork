@@ -412,7 +412,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error sending request',
-                    detail: 'Fetching zones failed: ' + msg,
+                    detail: 'Failed to start fetching zones: ' + msg,
                     life: 10000,
                 })
             })
