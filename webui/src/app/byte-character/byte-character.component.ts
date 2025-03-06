@@ -1,5 +1,16 @@
 import { Component, Input } from '@angular/core'
 
+/**
+ * A component displaying a byte character. If the byte character is printable,
+ * it is displayed as usual. Otherwise, it is displayed as a hexadecimal value
+ * with a leading '0x' (except NaN) with a small border.
+ * 
+ * The input value is expected to be a number between 0 and 255.
+ * 
+ * The component supports copy to clipboard. If the byte character is
+ * printable, it is copied as-is. Otherwise, the hexadecimal value is copied
+ * including the leading slash and the '0x' prefix, e.g., '\0x00'.
+ */
 @Component({
     selector: 'app-byte-character',
     templateUrl: './byte-character.component.html',
