@@ -29,6 +29,7 @@ import { DividerModule } from 'primeng/divider'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { MessagesModule } from 'primeng/messages'
+import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -66,6 +67,7 @@ describe('HostTabComponent', () => {
                 HostTabComponent,
                 IdentifierComponent,
                 HostDataSourceLabelComponent,
+                ByteCharacterComponent,
             ],
         }).compileComponents()
     }))

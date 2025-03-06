@@ -1,0 +1,11 @@
+<span *ngIf="isPrintable; else nonPrintableTemplate">{{ character }}</span>
+<ng-template #nonPrintableTemplate>
+    <span class="only-copy">\</span>
+    <span *ngIf="!isNaN; else nanTemplate" class="border-1 border-500 border-round surface-200 text-sm px-1"
+        >0x{{ hex }}</span
+    >
+</ng-template>
+<ng-template #nanTemplate>
+    <span class="only-copy">0x</span>
+    <span class="border-1 border-red-500 border-round bg-red-200 text-sm px-1">NaN</span>
+</ng-template>

@@ -1,23 +1,36 @@
-<span class="flex align-items-center flex-wrap" [ngClass]="styleClass">
+<div class="flex align-items-center flex-wrap" [ngClass]="styleClass">
+    <!-- Optional link. -->
     <a *ngIf="link.length !== 0; else identifierTemplate" routerLink="{{ link }}">
         <ng-container *ngTemplateOutlet="identifierTemplate"></ng-container>
     </a>
     <ng-template #identifierTemplate>
-        <ng-container *ngIf="hexId === null; else identifierTextTemplate">
-            {{ condWrap('unrecognized hex string') }}
-        </ng-container>
-        <ng-template #identifierTextTemplate>
-            {{ hexFormat ? condWrap(hexId) : condWrap(textId) }}
-        </ng-template>
+        <!-- This wrapper with "block" display property ensures the identifier
+             (and optional label) are copy in expected format (without any
+             extra spaces). -->
+        <div class="block">
+            <span *ngIf="label">{{ label }}=</span>
+            <span *ngIf="!!label">(</span>
+            <!-- Hex format. -->
+            <ng-container *ngIf="hexFormat; else identifierTextTemplate">
+                <span>{{ hexValue }}</span>
+            </ng-container>
+            <!-- Text format. -->
+            <ng-template #identifierTextTemplate>
+                <app-byte-character *ngFor="let byte of hexBytes" [byteValue]="byte"></app-byte-character>
+            </ng-template>
+            <!-- Empty placeholder. -->
+            <span *ngIf="isEmpty" class="font-italic text-color-secondary">Empty identifier</span>
+            <span *ngIf="!!label">)</span>
+        </div>
     </ng-template>
     <p-toggleButton
-        *ngIf="textId !== null"
         onLabel="text"
         offLabel="hex"
         class="ml-1"
         styleClass="p-badge"
+        [disabled]="isEmpty"
         [(ngModel)]="hexFormat"
         ngDefaultControl
     >
     </p-toggleButton>
-</span>
+</div>

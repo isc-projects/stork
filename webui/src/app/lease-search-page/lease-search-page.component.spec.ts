@@ -26,6 +26,7 @@ import { ToggleButtonModule } from 'primeng/togglebutton'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
+import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 
 describe('LeaseSearchPageComponent', () => {
     let component: LeaseSearchPageComponent
@@ -65,6 +66,7 @@ describe('LeaseSearchPageComponent', () => {
                 JsonTreeComponent,
                 JsonTreeRootComponent,
                 IdentifierComponent,
+                ByteCharacterComponent,
             ],
         }).compileComponents()
     }))
@@ -448,7 +450,7 @@ describe('LeaseSearchPageComponent', () => {
         let expectedLeaseData: any = [
             [
                 ['MAC address', '01:02:03:04:05:06'],
-                ['DUID', '01:02:03:04'],
+                ['DUID', '\\0x01\\0x02\\0x03\\0x04'],
             ],
             [
                 ['Subnet Identifier', '234'],
@@ -500,7 +502,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(treeComponent.value['ISC']['client-classes'][2]).toBe('UNKNOWN')
 
         expectedLeaseData = [
-            [['DUID', '01:02:03:05']],
+            [['DUID', '\\0x01\\0x02\\0x03\\0x05']],
             [
                 ['Subnet Identifier', '345'],
                 ['IAID', '13'],
@@ -523,7 +525,7 @@ describe('LeaseSearchPageComponent', () => {
             for (const row of rows) {
                 expect(row.children.length).toBe(2)
                 expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
-                expect(row.children[1].nativeElement.innerText).toBe(expectedDataGroup[i][1])
+                expect(row.children[1].nativeElement.innerText).toContain(expectedDataGroup[i][1])
                 i++
             }
             tableIndex++

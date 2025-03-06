@@ -50,6 +50,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { HostsTableComponent } from '../hosts-table/hosts-table.component'
 import { PanelModule } from 'primeng/panel'
+import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -116,6 +117,7 @@ describe('HostsPageComponent', () => {
                 HostDataSourceLabelComponent,
                 PluralizePipe,
                 HostsTableComponent,
+                ByteCharacterComponent,
             ],
         }).compileComponents()
     }))
@@ -623,7 +625,7 @@ describe('HostsPageComponent', () => {
                 hostIdentifiers: [
                     {
                         idType: 'flex-id',
-                        idHexValue: '10:20:30:40:50',
+                        idHexValue: '01:02:03:04:05',
                     },
                 ],
                 addressReservations: [
@@ -662,7 +664,7 @@ describe('HostsPageComponent', () => {
         const thirdIdEl = identifierEl[2].query(By.css('a'))
         expect(thirdIdEl).toBeTruthy()
         // The flex-id is not convertible to text so should be in hex format.
-        expect(thirdIdEl.nativeElement.textContent).toContain('flex-id=(10:20:30:40:50)')
+        expect(thirdIdEl.nativeElement.textContent).toContain('flex-id=(\\0x01\\0x02\\0x03\\0x04\\0x05)')
         expect(thirdIdEl.attributes.href).toBe('/dhcp/hosts/3')
     })
 

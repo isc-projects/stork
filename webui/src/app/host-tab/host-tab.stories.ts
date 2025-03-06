@@ -23,6 +23,7 @@ import { IdentifierComponent } from '../identifier/identifier.component'
 import { toastDecorator } from '../utils-stories'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { importProvidersFrom } from '@angular/core'
+import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 
 export default {
     title: 'App/HostTab',
@@ -55,6 +56,7 @@ export default {
                 DhcpOptionSetViewComponent,
                 HelpTipComponent,
                 EntityLinkComponent,
+                ByteCharacterComponent,
             ],
             providers: [ConfirmationService, MessageService],
         }),

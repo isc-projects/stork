@@ -32,12 +32,29 @@ import { Component, Input, OnInit } from '@angular/core'
 })
 export class IdentifierComponent implements OnInit {
     /**
+     * Bytes of the hex identifier.
+     */
+    hexBytes: number[] = []
+
+    /**
+     * Normalized hex identifier.
+     */
+    _hexValue: string = ''
+
+    /**
      * Identifier in the hex format.
      *
      * It can contain colons and spaces. It must have an even number
      * of hexadecimal digits.
      */
-    @Input() hexValue = ''
+    get hexValue(): string {
+        return this._hexValue
+    }
+
+    @Input() set hexValue(value: string) {
+        this._hexValue = this.normalizeHexString(value)
+        this.hexBytes = this.splitIntoBytes(this._hexValue)
+    }
 
     /**
      * Optional identifier label, e.g., hw-address.
@@ -70,16 +87,6 @@ export class IdentifierComponent implements OnInit {
     @Input() styleClass = ''
 
     /**
-     * Holds the identifier in the hex format.
-     */
-    hexId: string = null
-
-    /**
-     * Holds the identifier in the textual format if available.
-     */
-    textId: string = null
-
-    /**
      * Boolean value indicating if the currently displayed value is
      * displayed in the hex format.
      *
@@ -97,69 +104,44 @@ export class IdentifierComponent implements OnInit {
      * defaultHexFormat is on.
      */
     ngOnInit() {
-        // Attempt to parse the specified identifier.
-        const parsedValue = this._parse(this.hexValue)
-        // If there was an error parsing the input value or the input
-        // value is not convertible to text, let's use the output from
-        // parsing and assign it to hexId. If the hexId becomes null,
-        // an error will be displayed instead of the identifier.
-        if (parsedValue === null || parsedValue === this.hexValue) {
-            this.hexId = parsedValue
-            return
-        }
-        // Set the identifiers in hex and text formats.
-        this.hexId = this.hexValue
-        this.textId = parsedValue
         // Typically, the text format is the default but it can be overridden
         // by the caller, e.g., for MAC addresses.
         this.hexFormat = this.defaultHexFormat
     }
 
     /**
-     * Parse an identifier specified as a string of space or colon separated
-     * hexadecimal digits into a textual form.
-     *
-     * There must be an even number of digits in the string.
-     *
-     * @param value input string holding an identifier in the hex format.
-     * @return null if the specified identifier is invalid or empty;
-     * an input string when the identifier is not convertible to a textual
-     * format; otherwise, an identifier converted to a textual format.
+     * Indicates if the hex identifier is empty.
      */
-    private _parse(value: string): string | null {
-        const inputValue = value.replace(/\:|\s/g, '')
-        if (inputValue.length === 0 || inputValue.length % 2 !== 0) {
-            return null
-        }
-        let outputValue = ''
-        for (let n = 0; n < inputValue.length; n += 2) {
-            const charCode = parseInt(inputValue.substr(n, 2), 16)
-            if (isNaN(charCode)) {
-                return null
-            }
-            if (charCode < 32 || charCode > 126) {
-                return value
-            }
-            outputValue += String.fromCharCode(charCode)
-        }
-        return outputValue
+    get isEmpty(): boolean {
+        return this.hexBytes.length === 0
     }
 
     /**
-     * Conditionally wraps the specified string value with label and parens.
-     *
-     * If a label is specified, it returns the label and the specified text
-     * value in the following format: <label>=(<value>). Otherwise, it returns
-     * the value (i.e., identifier or an error text) without parens.
-     *
-     * @return Optional label and value that can be an identifier or an error
-     * text.
+     * Returns a list of bytes in the hex identifier.
      */
-    condWrap(value: string): string {
-        let text = value
-        if (this.label != '') {
-            text = `${this.label}=(${text})`
+    private splitIntoBytes(normalizedHexValue: string): number[] {
+        if (normalizedHexValue.length === 0) {
+            return []
         }
-        return text
+
+        const output: number[] = []
+        for (const byteStr of normalizedHexValue.split(':')) {
+            const charCode = parseInt(byteStr, 16)
+            output.push(charCode)
+        }
+        return output
+    }
+
+    /**
+     * Normalizes the hex identifier. Replace spaces with colons or add them
+     * if they are missing.
+     */
+    private normalizeHexString(hexValue: string): string {
+        hexValue = hexValue.replace(/\:|\s/g, '')
+        const bytes = []
+        for (let n = 0; n < hexValue.length; n += 2) {
+            bytes.push(hexValue.slice(n, n + 2))
+        }
+        return bytes.join(':')
     }
 }

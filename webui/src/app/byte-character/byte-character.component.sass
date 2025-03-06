@@ -1,0 +1,8 @@
+// Text with this class is not visible but it is present when the text is
+// copied.
+// It allows differentiating between the hex identifier: "01:02" (displayed
+// as "|0x01|0x02|") and "30:78:30:31:30:78:30:32" (displayed as "0x01x02",
+// no borders) when copied. The first one is copied as "\0x01\0x02" and the
+// second one is copied as "0x01x02".
+.only-copy
+    font-size: 0
