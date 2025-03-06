@@ -12,7 +12,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterModule } from '@angular/router'
-import { DNSService, ZoneInventoryStates, Zones, ZonesFetchStatus } from '../backend'
+import { DNSService, ZoneInventoryState, ZoneInventoryStates, Zones, ZonesFetchStatus } from '../backend'
 import { of } from 'rxjs'
 import { HttpEventType, HttpHeaders, HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
@@ -26,6 +26,7 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
+import StatusEnum = ZoneInventoryState.StatusEnum
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -383,6 +384,26 @@ describe('ZonesPageComponent', () => {
         expect(messageDe.nativeElement.innerText).toContain('Zones were not fetched yet')
         expect(buttonDe.nativeElement.innerText).toContain('Fetch Zones')
         expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10)
+    })
+
+    it('should get severity', () => {
+        // Arrange + Act + Assert
+        expect(component.getSeverity(StatusEnum.Busy)).toEqual('warning')
+        expect(component.getSeverity(StatusEnum.Ok)).toEqual('success')
+        expect(component.getSeverity(StatusEnum.Erred)).toEqual('danger')
+        expect(component.getSeverity(StatusEnum.Uninitialized)).toEqual('secondary')
+        expect(component.getSeverity(<StatusEnum>'foo')).toEqual('info')
+    })
+
+    it('should get tooltip', () => {
+        // Arrange + Act + Assert
+        expect(component.getTooltip(StatusEnum.Busy)).toContain('Zone inventory on the agent is busy')
+        expect(component.getTooltip(StatusEnum.Ok)).toContain('successfully fetched all zones')
+        expect(component.getTooltip(StatusEnum.Erred)).toContain('Error when communicating with a zone inventory')
+        expect(component.getTooltip(StatusEnum.Uninitialized)).toContain(
+            'Zone inventory on the agent was not initialized'
+        )
+        expect(component.getTooltip(<StatusEnum>'foo')).toBeNull()
     })
 
     it('should display confirmation dialog when fetch zones clicked', async () => {
