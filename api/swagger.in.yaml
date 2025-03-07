@@ -91,6 +91,15 @@ parameters:
       or version for the apps.
     type: string
 
+  dnsAppType:
+    name: appType
+    in: query
+    description: >-
+      Limit returned list of entities (e.g. zones) to the ones served by app of a
+      given type. The app should be one of the supported DNS servers.
+    type: string
+    enum:
+      - bind9
 
 definitions:
   Version:

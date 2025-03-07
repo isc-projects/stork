@@ -60,6 +60,7 @@
       parameters:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/dnsAppType'
         - name: text
           in: query
           description: >-
@@ -71,12 +72,6 @@
           description: >-
             Limit the returned list of zones to the ones served by the app with the given ID.
           type: integer
-        - name: appType
-          in: query
-          description: >-
-            Limit the returned list of zones to the ones served by an app of a given type.
-            The app should be one of the supported DNS servers.
-          type: string
         - name: zoneType
           in: query
           description: Limit the returned list of zones to the ones of a given type.
