@@ -67,10 +67,9 @@
         <p-button
             label="Refresh List"
             icon="pi pi-refresh"
-            styleClass="block p-button-primary no-underline"
             (onClick)="refreshFetchStatusTable()"
             id="refresh-fetch-status-data"
-        ></p-button>
+        />
     </div>
     <p-table
         [value]="zonesFetchStates"
@@ -151,10 +150,9 @@
             <p-button
                 label="Refresh List"
                 icon="pi pi-refresh"
-                styleClass="block p-button-primary no-underline"
                 (onClick)="onLazyLoadZones(zonesTable.createLazyLoadMetadata())"
                 id="refresh-zones-data"
-            ></p-button>
+            />
         </div>
         <p-table
             #zonesTable
