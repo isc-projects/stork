@@ -140,16 +140,17 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     private _pollingInterval: number = 10 * 1000
 
     /**
-     * RxJS observable which emits one value with the GET /dns-management/zones-fetch response
-     * status header value and completes.
-     * @private
+     * Returns RxJS observable which emits one value with the GET /dns-management/zones-fetch response
+     * together with the status header value and completes.
      */
-    private _getZonesFetchWithStatus = this.dnsService.getZonesFetch('response').pipe(
-        map((httpResponse: HttpResponse<ZonesFetchStatus & ZoneInventoryStates>) => ({
-            ...httpResponse.body,
-            status: httpResponse.status,
-        }))
-    )
+    getZonesFetchWithStatus() {
+        return this.dnsService.getZonesFetch('response').pipe(
+            map((httpResponse: HttpResponse<ZonesFetchStatus & ZoneInventoryStates>) => ({
+                ...httpResponse.body,
+                status: httpResponse.status,
+            }))
+        )
+    }
 
     /**
      * RxJS observable stream which returns a response to GET /dns-management/zones-fetch request every interval of _pollingInterval time
@@ -159,7 +160,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @private
      */
     private _polling$ = interval(this._pollingInterval).pipe(
-        switchMap(() => this._getZonesFetchWithStatus), // Use switchMap to discard ongoing request from previous interval tick.
+        switchMap(() => this.getZonesFetchWithStatus()), // Use switchMap to discard ongoing request from previous interval tick.
         takeWhile((resp) => this.fetchInProgress && resp.status === HttpStatusCode.Accepted, true),
         tap((resp) => {
             if (resp.status === HttpStatusCode.Accepted) {
@@ -274,7 +275,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     refreshFetchStatusTable() {
         this.zonesFetchStatesLoading = true
-        lastValueFrom(this._getZonesFetchWithStatus)
+        lastValueFrom(this.getZonesFetchWithStatus())
             .then((resp) => {
                 switch (resp.status) {
                     case HttpStatusCode.NoContent:

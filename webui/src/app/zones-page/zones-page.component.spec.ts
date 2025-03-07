@@ -12,7 +12,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterModule } from '@angular/router'
-import { DNSService, ZoneInventoryState, ZoneInventoryStates, Zones, ZonesFetchStatus } from '../backend'
+import { DNSService, ZoneInventoryState, ZoneInventoryStates, Zones } from '../backend'
 import { Observable, of } from 'rxjs'
 import { HttpEventType, HttpHeaders, HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
@@ -28,83 +28,71 @@ import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
 import StatusEnum = ZoneInventoryState.StatusEnum
 import { FieldsetModule } from 'primeng/fieldset'
+import { take } from 'rxjs/operators'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
     let fixture: ComponentFixture<ZonesPageComponent>
     let dnsApi: jasmine.SpyObj<DNSService>
-    let getZonesFetchSpy: any
     let putZonesFetchSpy: any
     let getZonesSpy: any
     let messageService: jasmine.SpyObj<MessageService>
     let messageAddSpy: any
+    let getZonesFetchWithStatusSpy: any
 
-    const noContent: HttpResponse<ZoneInventoryStates> = {
-        body: null,
+    const noContent = {
         status: HttpStatusCode.NoContent,
-        type: HttpEventType.Response,
-        clone: function (): HttpResponse<ZoneInventoryStates> {
-            return null
-        },
-        headers: new HttpHeaders(),
-        statusText: '',
-        url: '',
-        ok: true,
     }
 
-    const progress1: HttpResponse<ZonesFetchStatus> = {
-        body: { appsCount: 3, completedAppsCount: 0 },
+    const progress1 = {
+        appsCount: 3,
+        completedAppsCount: 0,
         status: HttpStatusCode.Accepted,
-        type: HttpEventType.Response,
-        clone: function (): HttpResponse<ZonesFetchStatus> {
-            return null
-        },
-        headers: new HttpHeaders(),
-        statusText: '',
-        url: '',
-        ok: true,
     }
 
-    const progress2: HttpResponse<ZonesFetchStatus> = {
-        body: { appsCount: 3, completedAppsCount: 1 },
+    const progress2 = {
+        appsCount: 3,
+        completedAppsCount: 1,
         status: HttpStatusCode.Accepted,
-        type: HttpEventType.Response,
-        clone: function (): HttpResponse<ZonesFetchStatus> {
-            return null
-        },
-        headers: new HttpHeaders(),
-        statusText: '',
-        url: '',
-        ok: true,
     }
 
-    const progress3: HttpResponse<ZonesFetchStatus> = {
-        body: { appsCount: 3, completedAppsCount: 2 },
+    const progress3 = {
+        appsCount: 3,
+        completedAppsCount: 2,
         status: HttpStatusCode.Accepted,
-        type: HttpEventType.Response,
-        clone: function (): HttpResponse<ZonesFetchStatus> {
-            return null
-        },
-        headers: new HttpHeaders(),
-        statusText: '',
-        url: '',
-        ok: true,
     }
 
-    const progress4: HttpResponse<ZonesFetchStatus> = {
-        body: { appsCount: 3, completedAppsCount: 3 },
+    const progress4 = {
+        appsCount: 3,
+        completedAppsCount: 3,
         status: HttpStatusCode.Accepted,
-        type: HttpEventType.Response,
-        clone: function (): HttpResponse<ZonesFetchStatus> {
-            return null
-        },
-        headers: new HttpHeaders(),
-        statusText: '',
-        url: '',
-        ok: true,
     }
 
-    const zoneFetchStates: HttpResponse<ZoneInventoryStates> = {
+    const zoneFetchStates = {
+        items: [
+            {
+                appId: 30,
+                appName: 'bind9@agent-bind9',
+                createdAt: '2025-03-04T20:37:05.096Z',
+                daemonId: 73,
+                status: 'ok',
+                zoneCount: 105,
+            },
+            {
+                appId: 31,
+                appName: 'bind9@agent-bind9-2',
+                createdAt: '2025-03-04T20:37:13.106Z',
+                daemonId: 74,
+                status: 'erred',
+                error: 'Fetching custom error',
+                zoneCount: 105,
+            },
+        ],
+        total: 2,
+        status: HttpStatusCode.Ok,
+    }
+
+    const zoneFetchStatesHttpResp: HttpResponse<ZoneInventoryStates> = {
         body: {
             items: [
                 {
@@ -228,21 +216,9 @@ describe('ZonesPageComponent', () => {
 
     beforeEach(async () => {
         dnsApi = createSpyObj('DNSService', ['getZonesFetch', 'putZonesFetch', 'getZones'])
-        getZonesFetchSpy = dnsApi.getZonesFetch
         putZonesFetchSpy = dnsApi.putZonesFetch
         getZonesSpy = dnsApi.getZones
 
-        // Returns replies in order: 204 No content, 200 Ok ZoneInventoryStates, 202 Accepted ZonesFetchStatus 0/3, 202 Accepted progress 1/3,
-        // 202 Accepted progress 2/3, 202 Accepted progress 3/3, 200 Ok ZoneInventoryStates.
-        getZonesFetchSpy.and.returnValues(
-            of(noContent),
-            of(zoneFetchStates),
-            of(progress1) as Observable<any>,
-            of(progress2) as Observable<any>,
-            of(progress3) as Observable<any>,
-            of(progress4) as Observable<any>,
-            of(zoneFetchStates)
-        )
         // By default, emits null response and completes without any error.
         putZonesFetchSpy.and.returnValue(of(null))
         // Returns replies in order: no Zones, 3 Zones.
@@ -283,6 +259,19 @@ describe('ZonesPageComponent', () => {
         // By default, fake that wasZoneFetchSent returns false from session storage.
         spyOn(component, 'wasZoneFetchSent').and.returnValue(false)
 
+        // Returns replies in order: 204 No content, 200 Ok ZoneInventoryStates, 202 Accepted ZonesFetchStatus 0/3, 202 Accepted progress 1/3,
+        // 202 Accepted progress 2/3, 202 Accepted progress 3/3, 200 Ok ZoneInventoryStates.
+        getZonesFetchWithStatusSpy = spyOn(component, 'getZonesFetchWithStatus')
+        getZonesFetchWithStatusSpy.and.returnValues(
+            of(noContent),
+            of(zoneFetchStates) as Observable<any>,
+            of(progress1),
+            of(progress2),
+            of(progress3),
+            of(progress4),
+            of(zoneFetchStates) as Observable<any>
+        )
+
         fixture.detectChanges()
 
         // Do not save table state between tests, because that makes tests unstable.
@@ -316,7 +305,7 @@ describe('ZonesPageComponent', () => {
     it('should call dns apis on init', async () => {
         // Arrange + Act + Assert
         expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10)
-        expect(getZonesFetchSpy).toHaveBeenCalledTimes(1)
+        expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(messageAddSpy).toHaveBeenCalledOnceWith(
             objectContaining({ summary: 'Zones not fetched', severity: 'info' })
@@ -338,7 +327,7 @@ describe('ZonesPageComponent', () => {
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
         expect(getZonesSpy).toHaveBeenCalledWith(0, 10)
-        expect(getZonesFetchSpy).toHaveBeenCalledTimes(1)
+        expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(component.zones).toEqual(fakeZones.items)
         expect(component.zonesTotal).toEqual(fakeZones.total)
@@ -547,8 +536,28 @@ describe('ZonesPageComponent', () => {
         await fixture.whenStable()
         fixture.detectChanges()
         expect(component.zonesFetchStatesLoading).withContext('data loading should be done').toBeFalse()
-        expect(getZonesFetchSpy).toHaveBeenCalledTimes(2)
-        expect(component.zonesFetchStates).toEqual(zoneFetchStates.body.items)
-        expect(component.zonesFetchStatesTotal).toEqual(zoneFetchStates.body.total)
+        expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(2)
+        expect(component.zonesFetchStates).toEqual(zoneFetchStates.items as Array<ZoneInventoryState>)
+        expect(component.zonesFetchStatesTotal).toEqual(zoneFetchStates.total)
+    })
+
+    it('should return get zones fetch with http status observable', () => {
+        // Arrange
+        getZonesFetchWithStatusSpy.and.callThrough()
+        dnsApi.getZonesFetch.and.returnValue(of(zoneFetchStatesHttpResp))
+        let resp
+
+        // Act
+        component
+            .getZonesFetchWithStatus()
+            .pipe(take(1))
+            .subscribe((r) => (resp = r))
+
+        // Assert
+        expect(resp.status).toEqual(HttpStatusCode.Ok)
+        expect(resp.items).toEqual(zoneFetchStatesHttpResp.body.items)
+        expect(resp.total).toEqual(zoneFetchStatesHttpResp.body.total)
+        expect(resp.appsCount).toBeUndefined()
+        expect(resp.completedAppsCount).toBeUndefined()
     })
 })
