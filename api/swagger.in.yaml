@@ -101,6 +101,37 @@ parameters:
     enum:
       - bind9
 
+  dnsClass:
+    name: class
+    in: query
+    description: >-
+      Limit returned list of entities (e.g. zones) to the ones of a given class.
+    type: string
+    enum:
+      - IN
+      - CH
+      - HS
+      - ANY
+
+  dnsZoneType:
+    name: zoneType
+    in: query
+    description: >-
+      Limit returned list of entities (e.g. zones) to the ones of a given type.
+    type: string
+    enum:
+      - delegation-only
+      - forward
+      - hint
+      - master
+      - mirror
+      - primary
+      - redirect
+      - secondary
+      - slave
+      - static-stub
+      - stub
+
 definitions:
   Version:
     type: object
