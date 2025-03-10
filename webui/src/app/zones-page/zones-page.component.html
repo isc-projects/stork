@@ -175,6 +175,58 @@
             [totalRecords]="zonesTotal"
             [alwaysShowPaginator]="false"
         >
+            <ng-template pTemplate="caption">
+                <p-panel [toggleable]="true">
+                    <ng-template pTemplate="header">
+                        <div class="flex align-items-center gap-2">
+                            <i class="pi pi-filter"></i>
+                            <span class="font-bold">Filters</span>
+                            <p-tag
+                                icon="pi pi-check"
+                                value="Filter applied"
+                                severity="success"
+                                *ngIf="false"
+                                [rounded]="true"
+                            ></p-tag>
+                            <app-help-tip subject="Filtering" id="filtering-help-button">
+                                <p>Filtering help</p>
+                            </app-help-tip>
+                        </div>
+                    </ng-template>
+                    <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
+                        <button pButton label="Clear" icon="pi pi-filter-slash"></button>
+                        <div class="flex-auto"></div>
+                        <p-columnFilter field="zoneType" matchMode="equals" [showMenu]="false">
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <span class="p-float-label">
+                                    <p-dropdown
+                                        inputId="zone-type"
+                                        [options]="zoneTypes"
+                                        (onChange)="filter($event.value)"
+                                        [ngModel]="value"
+                                        styleClass="w-10rem"
+                                    ></p-dropdown>
+                                    <label for="zone-type">Zone Type</label>
+                                </span>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter field="zoneClass" matchMode="equals" [showMenu]="false">
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <span class="p-float-label">
+                                    <p-dropdown
+                                        inputId="zone-class"
+                                        [options]="zoneClasses"
+                                        (onChange)="filter($event.value)"
+                                        [ngModel]="value"
+                                        styleClass="w-10rem"
+                                    ></p-dropdown>
+                                    <label for="zone-class">Zone Class</label>
+                                </span>
+                            </ng-template>
+                        </p-columnFilter>
+                    </div>
+                </p-panel>
+            </ng-template>
             <ng-template pTemplate="header">
                 <tr>
                     <th class="w-3rem sm:w-5rem"></th>

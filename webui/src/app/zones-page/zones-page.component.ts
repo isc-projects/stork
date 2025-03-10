@@ -1,6 +1,14 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api'
-import { Zone, DNSService, ZonesFetchStatus, ZoneInventoryStates, ZoneInventoryState } from '../backend'
+import {
+    Zone,
+    DNSService,
+    ZonesFetchStatus,
+    ZoneInventoryStates,
+    ZoneInventoryState,
+    DnsZoneType,
+    DnsClass,
+} from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
 import { concatMap, finalize, share, switchMap, takeWhile, tap, delay, catchError, map } from 'rxjs/operators'
 import { EMPTY, interval, lastValueFrom, of, Subscription, timer } from 'rxjs'
@@ -8,6 +16,7 @@ import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import StatusEnum = ZoneInventoryState.StatusEnum
+import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 @Component({
     selector: 'app-zones-page',
@@ -225,11 +234,22 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         private confirmationService: ConfirmationService
     ) {}
 
+    zoneTypes: string[] = []
+    zoneClasses: string[] = []
+
     /**
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
         this.refreshFetchStatusTable()
+        for (let t in DnsZoneType) {
+            console.log('type', t, DnsZoneType[t])
+            this.zoneTypes.push(DnsZoneType[t])
+        }
+
+        for (let t in DnsClass) {
+            this.zoneClasses.push(DnsClass[t])
+        }
     }
 
     /**
@@ -471,9 +491,18 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
      */
     onLazyLoadZones(event: TableLazyLoadEvent) {
+        console.log('event', event)
         this.zonesLoading = true
         this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
-        lastValueFrom(this.dnsService.getZones(event?.first ?? 0, event?.rows ?? 10))
+        lastValueFrom(
+            this.dnsService.getZones(
+                event?.first ?? 0,
+                event?.rows ?? 10,
+                null,
+                (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
+                (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
+            )
+        )
             .then((resp) => {
                 this.zonesExpandedRows = {}
                 this.zones = resp?.items ?? []
