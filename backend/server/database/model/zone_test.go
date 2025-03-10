@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -180,7 +181,7 @@ func TestGetZones(t *testing.T) {
 
 	t.Run("filter by serial", func(t *testing.T) {
 		filter := &GetZonesFilter{
-			Serial: storkutil.Ptr("123456"),
+			Serial: storkutil.Ptr("12345"),
 		}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
@@ -278,6 +279,89 @@ func TestGetZones(t *testing.T) {
 			}
 		}
 	})
+}
+
+// Test getting zones with app ID filter.
+func TestGetZonesWithAppIDFilter(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add several apps.
+	var apps []*App
+	for i := 0; i < 3; i++ {
+		app := &App{
+			ID:        0,
+			MachineID: machine.ID,
+			Type:      AppTypeBind9,
+			Name:      fmt.Sprintf("app%d", i),
+			Daemons: []*Daemon{
+				NewBind9Daemon(true),
+			},
+		}
+		addedDaemons, err := AddApp(db, app)
+		require.NoError(t, err)
+		require.Len(t, addedDaemons, 1)
+		apps = append(apps, app)
+	}
+
+	// Generate random zones and associate them with the apps.
+	randomZones := testutil.GenerateRandomZones(75)
+	for i, randomZone := range randomZones {
+		daemonID := apps[i%len(apps)].Daemons[0].ID
+		zone := &Zone{
+			Name: randomZone.Name,
+			LocalZones: []*LocalZone{
+				{
+					DaemonID: daemonID,
+					View:     "_default",
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					LoadedAt: time.Now().UTC(),
+				},
+			},
+		}
+		err = AddZones(db, zone)
+		require.NoError(t, err)
+	}
+
+	// Sort apps by app ID to ensure that the last one has the highest ID.
+	// When we increase this ID by 1 we should get non-existing ID and
+	// no zones should be returned.
+	sort.Slice(apps, func(i, j int) bool {
+		return apps[i].ID < apps[j].ID
+	})
+
+	// Make sure that the zones are returned for each app.
+	for i := 0; i < 3; i++ {
+		filter := &GetZonesFilter{
+			AppID: storkutil.Ptr(apps[i].ID),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZonesApp)
+		require.NoError(t, err)
+		require.Equal(t, 25, total)
+		require.Len(t, zones, 25)
+		for _, zone := range zones {
+			require.Equal(t, apps[i].ID, zone.LocalZones[0].Daemon.AppID)
+		}
+	}
+
+	// Make sure that the zones are not returned for non-existing app ID.
+	filter := &GetZonesFilter{
+		AppID: storkutil.Ptr(apps[2].ID + 1),
+	}
+	zones, total, err := GetZones(db, filter, ZoneRelationLocalZonesApp)
+	require.NoError(t, err)
+	require.Zero(t, total)
+	require.Empty(t, zones)
 }
 
 // Test getting zones with flexible filtering using text.

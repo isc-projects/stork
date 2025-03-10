@@ -320,6 +320,30 @@ func TestGetZones(t *testing.T) {
 	})
 }
 
+// Test that the HTTP InternalServerError status is returned when the
+// database query fails.
+func TestGetZonesError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	// Teardown the database connection to cause an error.
+	teardown()
+
+	settings := RestAPISettings{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db)
+	require.NoError(t, err)
+
+	// Make a request to the REST API when the connection to the database
+	// is unavailable.
+	ctx := context.Background()
+	params := dns.GetZonesParams{}
+	rsp := rapi.GetZones(ctx, params)
+
+	// An error should be returned.
+	require.IsType(t, &dns.GetZonesDefault{}, rsp)
+	defaultRsp := rsp.(*dns.GetZonesDefault)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	require.Equal(t, "Failed to get zones from the database", *defaultRsp.Payload.Message)
+}
+
 // Test getting zone inventory states from the database over the REST API.
 func TestGetZonesFetch(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)

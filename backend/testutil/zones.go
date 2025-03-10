@@ -32,7 +32,8 @@ func generateRandomZones(existingZones []*Zone, num int, class, zoneType string,
 		zones[existingZone.Name] = existingZone
 	}
 	// Generate num number of zones.
-	for i := int64(0); len(zones) < num+len(existingZones); i++ {
+	var i int64
+	for len(zones) < num+len(existingZones) {
 		// For every 10th zone we forget previously generated zones
 		// and generate completely new one.
 		if i%10 == 0 {
@@ -69,12 +70,16 @@ func generateRandomZones(existingZones []*Zone, num int, class, zoneType string,
 			// Prepend the label and the dot to the name.
 			name = label + name
 		}
-		// Create the zone entry.
-		zones[name] = &Zone{
-			Name:   name,
-			Class:  class,
-			Type:   zoneType,
-			Serial: serial,
+		// Only add the zone if it is not in conflict with the existing zones.
+		if _, exists := zones[name]; !exists {
+			// Create the zone entry.
+			zones[name] = &Zone{
+				Name:   name,
+				Class:  class,
+				Type:   zoneType,
+				Serial: serial,
+			}
+			i++
 		}
 	}
 	return slices.Collect(maps.Values(zones))
@@ -83,6 +88,11 @@ func generateRandomZones(existingZones []*Zone, num int, class, zoneType string,
 // Generate random zones with default parameters.
 func GenerateRandomZones(num int) []*Zone {
 	return generateRandomZones([]*Zone{}, num, "IN", "primary", 20240304)
+}
+
+// Generate more zones with default parameters.
+func GenerateMoreZones(existingZones []*Zone, num int) []*Zone {
+	return generateRandomZones(existingZones, num, "IN", "primary", 20240304)
 }
 
 // Generate more zones with a specific class.
