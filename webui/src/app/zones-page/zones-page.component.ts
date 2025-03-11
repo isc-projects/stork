@@ -11,8 +11,19 @@ import {
     DNSZoneType,
 } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
-import { concatMap, finalize, share, switchMap, takeWhile, tap, delay, catchError, map } from 'rxjs/operators'
-import { EMPTY, interval, lastValueFrom, of, Subscription, timer } from 'rxjs'
+import {
+    concatMap,
+    finalize,
+    share,
+    switchMap,
+    takeWhile,
+    tap,
+    delay,
+    catchError,
+    map,
+    distinctUntilChanged,
+} from 'rxjs/operators'
+import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription, timer } from 'rxjs'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
@@ -223,6 +234,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     private _isPolling = false
 
     /**
+     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * @private
+     */
+    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+
+    /**
      * Class constructor.
      * @param cd Angular change detection required to manually trigger detectChanges in this component
      * @param dnsService service providing DNS REST APIs
@@ -238,7 +255,22 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
     zoneTypes: string[] = []
     zoneClasses: string[] = []
-    appTypes: string[] = []
+    appTypes: { name: string; value: string }[] = []
+
+    /**
+     * Returns label for the DNS App type.
+     * @param appType DNS App type
+     */
+    private _getDNSAppName(appType: DNSAppType) {
+        switch (appType) {
+            case DNSAppType.Bind9:
+                return 'BIND9'
+            // case DNSAppType.Pdns:
+            //     return 'PowerDNS'
+            default:
+                return (<string>appType).toUpperCase()
+        }
+    }
 
     /**
      * Component lifecycle hook which inits the component.
@@ -254,8 +286,21 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
         }
 
         for (let a in DNSAppType) {
-            this.appTypes.push(DNSAppType[a])
+            this.appTypes.push({ name: this._getDNSAppName(<any>a), value: DNSAppType[a] })
         }
+
+        this._subscriptions.add(
+            this._tableFilter$
+                .pipe(
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    map((f) => {
+                        f.filterConstraint.value = f.value
+                        this.zonesTable?._filter()
+                    })
+                )
+                .subscribe()
+        )
     }
 
     /**
@@ -263,6 +308,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     ngOnDestroy() {
         this._subscriptions.unsubscribe()
+        this._tableFilter$.complete()
     }
 
     /**
@@ -497,7 +543,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
      */
     onLazyLoadZones(event: TableLazyLoadEvent) {
-        console.log('event', event)
         this.zonesLoading = true
         this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
         lastValueFrom(
@@ -506,7 +551,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 event?.rows ?? 10,
                 (event?.filters?.appType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
-                (event?.filters?.zoneClass as FilterMetadata)?.value ?? null
+                (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
+                (event?.filters?.text as FilterMetadata)?.value ?? null,
+                (event?.filters?.appId as FilterMetadata)?.value ?? null,
+                (event?.filters?.zoneSerial as FilterMetadata)?.value ?? null
             )
         )
             .then((resp) => {
@@ -549,10 +597,20 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     protected readonly hasFilter = hasFilter
 
     /**
-     * Resets zones table state and clears the state stored in browser session storage.
+     * Resets zones table state and updates the state stored in browser session storage.
      */
     clearTableState() {
         this.zonesTable?.clear()
-        this.zonesTable?.clearState()
+        this.zonesTable?.saveState()
+    }
+
+    /**
+     * Emits next value and filterConstraint for the table's filter,
+     * which in the end will result in applying the filter on the table's data.
+     * @param value value of the filter
+     * @param filterConstraint filter field which will be filtered
+     */
+    filterTable(value: any, filterConstraint: FilterMetadata): void {
+        this._tableFilter$.next({ value, filterConstraint })
     }
 }

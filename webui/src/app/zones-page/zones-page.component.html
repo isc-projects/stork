@@ -210,6 +210,37 @@
                             [disabled]="!hasFilter(zonesTable.filters)"
                         />
                         <div class="flex-auto"></div>
+                        <p-columnFilter field="appId" matchMode="equals" [showMenu]="false">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <span class="p-float-label">
+                                    <p-inputNumber
+                                        inputId="app-id"
+                                        mode="decimal"
+                                        [useGrouping]="false"
+                                        (onInput)="filterTable($event.value > 0 ? $event.value : 1, filterConstraint)"
+                                        [ngModel]="value"
+                                        min="1"
+                                        styleClass="w-10rem"
+                                    ></p-inputNumber>
+                                    <label for="app-id">App ID</label>
+                                </span>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter field="zoneSerial" matchMode="contains" [showMenu]="false">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <span class="p-float-label">
+                                    <input
+                                        pInputText
+                                        type="text"
+                                        (input)="filterTable($event.target.value, filterConstraint)"
+                                        [ngModel]="value"
+                                        id="zone-serial"
+                                        class="w-10rem"
+                                    />
+                                    <label for="zone-serial">Serial</label>
+                                </span>
+                            </ng-template>
+                        </p-columnFilter>
                         <p-columnFilter field="zoneType" matchMode="equals" [showMenu]="false">
                             <ng-template pTemplate="filter" let-value let-filter="filterCallback">
                                 <span class="p-float-label">
@@ -244,12 +275,28 @@
                                     <p-dropdown
                                         inputId="app-type"
                                         [options]="appTypes"
+                                        optionLabel="name"
+                                        optionValue="value"
                                         (onChange)="filter($event.value)"
                                         [ngModel]="value"
                                         styleClass="w-10rem"
                                     ></p-dropdown>
                                     <label for="app-type">App Type</label>
                                 </span>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                        <span class="p-input-icon-left">
+                            <i class="pi pi-search"></i>
+                            <input
+                                    pInputText
+                                    type="text"
+                                    (input)="filterTable($event.target.value, filterConstraint)"
+                                    [ngModel]="value"
+                                    placeholder="App name, Zone name or view"
+                            />
+                        </span>
                             </ng-template>
                         </p-columnFilter>
                     </div>
