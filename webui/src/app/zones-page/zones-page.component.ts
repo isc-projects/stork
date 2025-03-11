@@ -7,7 +7,8 @@ import {
     ZoneInventoryStates,
     ZoneInventoryState,
     DNSAppType,
-    DNSClass, DNSZoneType,
+    DNSClass,
+    DNSZoneType,
 } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
 import { concatMap, finalize, share, switchMap, takeWhile, tap, delay, catchError, map } from 'rxjs/operators'
@@ -17,6 +18,7 @@ import { getErrorMessage } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import StatusEnum = ZoneInventoryState.StatusEnum
 import { FilterMetadata } from 'primeng/api/filtermetadata'
+import { hasFilter } from '../table'
 
 @Component({
     selector: 'app-zones-page',
@@ -504,7 +506,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 event?.rows ?? 10,
                 (event?.filters?.appType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
-                (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
+                (event?.filters?.zoneClass as FilterMetadata)?.value ?? null
             )
         )
             .then((resp) => {
@@ -538,5 +540,19 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     storeZoneFetchSent(sent: boolean) {
         sessionStorage.setItem(this._fetchSentStorageKey, JSON.stringify(sent))
+    }
+
+    /**
+     * Reference to hasFilter() utility function so it can be used in the html template.
+     * @protected
+     */
+    protected readonly hasFilter = hasFilter
+
+    /**
+     * Resets zones table state and clears the state stored in browser session storage.
+     */
+    clearTableState() {
+        this.zonesTable?.clear()
+        this.zonesTable?.clearState()
     }
 }

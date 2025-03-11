@@ -14,6 +14,40 @@ export interface BaseQueryParamFilter {
 }
 
 /**
+ * Checks if given PrimeNG table filters contain any non-blank value.
+ * @param filters PrimeNG table filters object
+ * @param continueWhen callable that evaluates to boolean value; when evaluated to true, the filter for given filterKey is considered blank even if it has meaningful value
+ * @return true if any non-blank filter was found; false otherwise
+ */
+export function hasFilter(
+    filters: { [p: string]: FilterMetadata | FilterMetadata[] } = {},
+    continueWhen: (filterKey: string) => boolean = () => false
+): boolean {
+    for (const [filterKey, filterMetadata] of Object.entries(filters)) {
+        if (continueWhen(filterKey)) {
+            continue
+        }
+
+        if (Array.isArray(filterMetadata)) {
+            for (const filter of filterMetadata) {
+                if ((filterKey != 'text' && filter.value !== null) || (filterKey == 'text' && filter.value)) {
+                    return true
+                }
+            }
+        } else if (filterMetadata) {
+            if (
+                (filterKey != 'text' && filterMetadata.value !== null) ||
+                (filterKey == 'text' && filterMetadata.value)
+            ) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+/**
  * Abstract class unifying all components using PrimeNG table with data lazyLoading.
  * The class takes one generic argument, which is the type of the single record object
  * to be displayed in the table.
@@ -392,31 +426,7 @@ export abstract class PrefilteredTable<
      * @param table table which filters are checked
      */
     hasFilter(table: Table): boolean {
-        if (table.filters) {
-            for (const [filterKey, filterMetadata] of Object.entries(table.filters)) {
-                if (this.hasPrefilter() && filterKey == this.prefilterKey) {
-                    // If this is filtered view by the queryParams prefilter, don't count it as an active filter.
-                    continue
-                }
-
-                if (Array.isArray(filterMetadata)) {
-                    for (const filter of filterMetadata) {
-                        if ((filterKey != 'text' && filter.value !== null) || (filterKey == 'text' && filter.value)) {
-                            return true
-                        }
-                    }
-                } else if (filterMetadata) {
-                    if (
-                        (filterKey != 'text' && filterMetadata.value !== null) ||
-                        (filterKey == 'text' && filterMetadata.value)
-                    ) {
-                        return true
-                    }
-                }
-            }
-        }
-
-        return false
+        return hasFilter(table?.filters, (filterKey) => this.hasPrefilter() && filterKey == this.prefilterKey)
     }
 
     /**
