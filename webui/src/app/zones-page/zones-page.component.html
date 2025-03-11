@@ -194,7 +194,7 @@
                         </div>
                     </ng-template>
                     <div class="flex flex-wrap gap-3 row-gap-5 mt-3 align-items-center">
-                        <button pButton label="Clear" icon="pi pi-filter-slash"></button>
+                        <button pButton label="Clear" icon="pi pi-filter-slash" (click)="zonesTable.clear()" [disabled]="!zonesTable.hasFilter()"></button>
                         <div class="flex-auto"></div>
                         <p-columnFilter field="zoneType" matchMode="equals" [showMenu]="false">
                             <ng-template pTemplate="filter" let-value let-filter="filterCallback">
@@ -221,6 +221,20 @@
                                         styleClass="w-10rem"
                                     ></p-dropdown>
                                     <label for="zone-class">Zone Class</label>
+                                </span>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter field="appType" matchMode="equals" [showMenu]="false">
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <span class="p-float-label">
+                                    <p-dropdown
+                                            inputId="app-type"
+                                            [options]="appTypes"
+                                            (onChange)="filter($event.value)"
+                                            [ngModel]="value"
+                                            styleClass="w-10rem"
+                                    ></p-dropdown>
+                                    <label for="app-type">App Type</label>
                                 </span>
                             </ng-template>
                         </p-columnFilter>

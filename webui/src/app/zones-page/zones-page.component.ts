@@ -6,8 +6,8 @@ import {
     ZonesFetchStatus,
     ZoneInventoryStates,
     ZoneInventoryState,
-    DnsZoneType,
-    DnsClass,
+    DNSAppType,
+    DNSClass, DNSZoneType,
 } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
 import { concatMap, finalize, share, switchMap, takeWhile, tap, delay, catchError, map } from 'rxjs/operators'
@@ -236,19 +236,23 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
     zoneTypes: string[] = []
     zoneClasses: string[] = []
+    appTypes: string[] = []
 
     /**
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
         this.refreshFetchStatusTable()
-        for (let t in DnsZoneType) {
-            console.log('type', t, DnsZoneType[t])
-            this.zoneTypes.push(DnsZoneType[t])
+        for (let t in DNSZoneType) {
+            this.zoneTypes.push(DNSZoneType[t])
         }
 
-        for (let t in DnsClass) {
-            this.zoneClasses.push(DnsClass[t])
+        for (let c in DNSClass) {
+            this.zoneClasses.push(DNSClass[c])
+        }
+
+        for (let a in DNSAppType) {
+            this.appTypes.push(DNSAppType[a])
         }
     }
 
@@ -498,7 +502,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             this.dnsService.getZones(
                 event?.first ?? 0,
                 event?.rows ?? 10,
-                null,
+                (event?.filters?.appType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
             )
