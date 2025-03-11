@@ -30,14 +30,17 @@ export function hasFilter(
 
         if (Array.isArray(filterMetadata)) {
             for (const filter of filterMetadata) {
-                if ((filterKey != 'text' && filter.value !== null) || (filterKey == 'text' && filter.value)) {
+                if (
+                    (filter.matchMode != 'contains' && filter.value !== null) ||
+                    (filter.matchMode == 'contains' && filter.value)
+                ) {
                     return true
                 }
             }
         } else if (filterMetadata) {
             if (
-                (filterKey != 'text' && filterMetadata.value !== null) ||
-                (filterKey == 'text' && filterMetadata.value)
+                (filterMetadata.matchMode != 'contains' && filterMetadata.value !== null) ||
+                (filterMetadata.matchMode == 'contains' && filterMetadata.value)
             ) {
                 return true
             }
