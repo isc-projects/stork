@@ -29,6 +29,11 @@ import objectContaining = jasmine.objectContaining
 import StatusEnum = ZoneInventoryState.StatusEnum
 import { FieldsetModule } from 'primeng/fieldset'
 import { take } from 'rxjs/operators'
+import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { PanelModule } from 'primeng/panel'
+import { InputNumberModule } from 'primeng/inputnumber'
+import { FormsModule } from '@angular/forms'
+import { DropdownModule } from 'primeng/dropdown'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -244,8 +249,19 @@ describe('ZonesPageComponent', () => {
                 BrowserAnimationsModule,
                 TagModule,
                 FieldsetModule,
+                PanelModule,
+                InputNumberModule,
+                FormsModule,
+                DropdownModule,
             ],
-            declarations: [ZonesPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe, LocaltimePipe],
+            declarations: [
+                ZonesPageComponent,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                PlaceholderPipe,
+                LocaltimePipe,
+                PluralizePipe,
+            ],
             providers: [
                 { provide: MessageService, useValue: messageService },
                 { provide: DNSService, useValue: dnsApi },
@@ -304,7 +320,7 @@ describe('ZonesPageComponent', () => {
 
     it('should call dns apis on init', async () => {
         // Arrange + Act + Assert
-        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10)
+        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null, null)
         expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(messageAddSpy).toHaveBeenCalledOnceWith(
@@ -326,7 +342,7 @@ describe('ZonesPageComponent', () => {
         // Assert
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
         expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(component.zones).toEqual(fakeZones.items)
@@ -374,7 +390,7 @@ describe('ZonesPageComponent', () => {
         expect(buttonDe).toBeTruthy()
         expect(messageDe.nativeElement.innerText).toContain('Zones were not fetched yet')
         expect(buttonDe.nativeElement.innerText).toContain('Fetch Zones')
-        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10)
+        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null, null)
     })
 
     it('should get severity', () => {
