@@ -36,7 +36,7 @@
 
     <tr *ngIf="!fetchInProgress">
         <td [attr.colspan]="colspan">
-            <ng-container *ngIf="!wasZoneFetchSent()">
+            <ng-container *ngIf="!wasZoneFetchSent() && !hasFilter(zonesTable.filters)">
                 <p-message
                     styleClass="mb-2 mx-0 md:mx-8"
                     severity="info"
@@ -55,7 +55,7 @@
                     (onClick)="sendPutZonesFetch(true)"
                     [disabled]="fetchInProgress || putZonesFetchLocked"
             /></ng-container>
-            <p *ngIf="wasZoneFetchSent()">
+            <p *ngIf="wasZoneFetchSent() || hasFilter(zonesTable.filters)">
                 {{ empty }}
             </p>
         </td>
@@ -158,7 +158,7 @@
             #zonesTable
             id="zones-table"
             [value]="zones"
-            [lazyLoadOnInit]="true"
+            [lazyLoadOnInit]="loadZonesOnInit"
             [lazy]="true"
             (onLazyLoad)="onLazyLoadZones($event)"
             [paginator]="true"
@@ -173,6 +173,8 @@
             [expandedRowKeys]="zonesExpandedRows"
             [loading]="zonesLoading"
             [totalRecords]="zonesTotal"
+            (onStateSave)="saveState($event)"
+            (onStateRestore)="restoreState($event)"
         >
             <ng-template pTemplate="caption">
                 <p-panel #filtersPanel [toggleable]="true">
@@ -356,7 +358,11 @@
                                                 localZone.appName
                                             }}</a>
                                         </td>
-                                        <td>{{ localZone.appId }}</td>
+                                        <td>
+                                            <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }">{{
+                                                localZone.appId
+                                            }}</a>
+                                        </td>
                                         <td>{{ localZone.view }}</td>
                                         <td>{{ localZone.zoneType }}</td>
                                         <td>{{ localZone.serial }}</td>
@@ -442,7 +448,11 @@
                                 <td>
                                     <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
                                 </td>
-                                <td>{{ localZone.appId }}</td>
+                                <td>
+                                    <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }">{{
+                                        localZone.appId
+                                    }}</a>
+                                </td>
                                 <td>{{ localZone.view }}</td>
                                 <td>{{ localZone.zoneType }}</td>
                                 <td>{{ localZone.serial }}</td>

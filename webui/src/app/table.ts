@@ -51,6 +51,14 @@ export function hasFilter(
 }
 
 /**
+ * Parses string into boolean value. Returns boolean or null if it couldn't be parsed.
+ * @param val
+ */
+export function parseBoolean(val: string): boolean | null {
+    return val === 'true' ? true : val === 'false' ? false : null
+}
+
+/**
  * Abstract class unifying all components using PrimeNG table with data lazyLoading.
  * The class takes one generic argument, which is the type of the single record object
  * to be displayed in the table.
@@ -461,7 +469,7 @@ export abstract class PrefilteredTable<
 
         for (const key of booleanKeys) {
             if (params.has(key as string)) {
-                filter[key as any] = this.parseBoolean(params.get(key as string))
+                filter[key as any] = parseBoolean(params.get(key as string))
             }
         }
 
@@ -681,7 +689,7 @@ export abstract class PrefilteredTable<
             const numericId = parseInt(queryParamValue)
             this.prefilterValue = isNaN(numericId) ? null : numericId
         } else if (this.isPrefilterBoolean()) {
-            this.prefilterValue = this.parseBoolean(queryParamValue)
+            this.prefilterValue = parseBoolean(queryParamValue)
         }
     }
 
@@ -700,10 +708,4 @@ export abstract class PrefilteredTable<
     private isPrefilterBoolean(): boolean {
         return this.filterBooleanKeys.includes(this.prefilterKey)
     }
-
-    /**
-     * Parses string into boolean value. Returns boolean or null if it couldn't be parsed.
-     * @param val
-     */
-    private parseBoolean = (val: string) => (val === 'true' ? true : val === 'false' ? false : null)
 }

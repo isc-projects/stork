@@ -1,42 +1,81 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { ConfirmationService, MenuItem, MessageService } from 'primeng/api'
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { ConfirmationService, MenuItem, MessageService, TableState } from 'primeng/api'
 import {
-    Zone,
-    DNSService,
-    ZonesFetchStatus,
-    ZoneInventoryStates,
-    ZoneInventoryState,
     DNSAppType,
     DNSClass,
+    DNSService,
     DNSZoneType,
+    Zone,
+    ZoneInventoryState,
+    ZoneInventoryStates,
+    ZonesFetchStatus,
 } from '../backend'
 import { TabViewCloseEvent } from 'primeng/tabview'
 import {
+    catchError,
     concatMap,
+    delay,
+    distinctUntilChanged,
     finalize,
+    map,
     share,
     switchMap,
     takeWhile,
     tap,
-    delay,
-    catchError,
-    map,
-    distinctUntilChanged,
 } from 'rxjs/operators'
 import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription, timer } from 'rxjs'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
-import StatusEnum = ZoneInventoryState.StatusEnum
 import { FilterMetadata } from 'primeng/api/filtermetadata'
-import { hasFilter } from '../table'
+import { hasFilter, parseBoolean } from '../table'
+import { ActivatedRoute, ParamMap } from '@angular/router'
+import StatusEnum = ZoneInventoryState.StatusEnum
+
+/**
+ * Returns tooltip message for given ZoneInventoryState status.
+ * @param status ZoneInventoryState status
+ */
+export function getTooltip(status: StatusEnum) {
+    switch (status) {
+        case 'busy':
+            return 'Zone inventory on the agent is busy and cannot return zones at this time. Try again later.'
+        case 'ok':
+            return 'Stork server successfully fetched all zones from the DNS server.'
+        case 'erred':
+            return 'Error when communicating with a zone inventory on an agent.'
+        case 'uninitialized':
+            return 'Zone inventory on the agent was not initialized. Trying again or restarting the agent can help.'
+        default:
+            return null
+    }
+}
+
+/**
+ * Returns PrimeNG severity for given ZoneInventoryState status.
+ * @param status ZoneInventoryState status
+ */
+export function getSeverity(status: StatusEnum) {
+    switch (status) {
+        case 'ok':
+            return 'success'
+        case 'busy':
+            return 'warning'
+        case 'erred':
+            return 'danger'
+        case 'uninitialized':
+            return 'secondary'
+        default:
+            return 'info'
+    }
+}
 
 @Component({
     selector: 'app-zones-page',
     templateUrl: './zones-page.component.html',
     styleUrl: './zones-page.component.sass',
 })
-export class ZonesPageComponent implements OnInit, OnDestroy {
+export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Configures the breadcrumbs for the component.
      */
@@ -61,6 +100,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * Unique identifier of a stateful zones table to be used in browser storage.
      */
     zonesStateKey: string = 'zones-table-state'
+
+    /**
+     * Key to be used in browser storage for keeping zones table state.
+     * @private
+     */
+    private _zonesTableStateStorageKey = 'zones-table-state'
 
     /**
      * Keeps expanded rows of zones table.
@@ -245,17 +290,35 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * @param dnsService service providing DNS REST APIs
      * @param messageService PrimeNG message service used to display feedback messages in UI
      * @param confirmationService PrimeNG confirmation service used to display confirmation dialog
+     * @param activatedRoute Angular ActivatedRoute to retrieve information about current route queryParams
      */
     constructor(
         private cd: ChangeDetectorRef,
         private dnsService: DNSService,
         private messageService: MessageService,
-        private confirmationService: ConfirmationService
+        private confirmationService: ConfirmationService,
+        private activatedRoute: ActivatedRoute
     ) {}
 
+    /**
+     * Zone types values used for the UI filter dropdown options.
+     */
     zoneTypes: string[] = []
+
+    /**
+     * Zone classes values used for the UI filter dropdown options.
+     */
     zoneClasses: string[] = []
+
+    /**
+     * DNS app types values used for the UI filter dropdown options.
+     */
     appTypes: { name: string; value: string }[] = []
+
+    /**
+     * Boolean flag stating whether zones table should lazily load zones from backend on component init.
+     */
+    loadZonesOnInit = true
 
     /**
      * Returns label for the DNS App type.
@@ -273,22 +336,182 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Component lifecycle hook which executes after the component view was initialized.
+     * It is likely that filtering shall be done in PrimeNG table. Managing the filtering
+     * at this step is safe because all child components (also the PrimeNG table itself)
+     * should be initialized.
+     */
+    ngAfterViewInit() {
+        this._initDone = true
+        if (!this.loadZonesOnInit) {
+            // Valid zones filter was provided via URL queryParams.
+            this._filterZonesByQueryParams()
+        }
+    }
+
+    /**
+     * Keeps current valid zone filters parsed from URL queryParams.
+     * The type of this object is inline with PrimeNG table filters property.
+     */
+    queryParamFilters: { [p: string]: FilterMetadata } = {}
+
+    /**
+     * Object containing supported zone filters which values are provided via URL deep-link.
+     * The properties of this object correspond to queryParam keys.
+     * Values of this object describe:
+     * - filter type (numeric, enum, string or boolean)
+     * - filter matchMode (contains, equals) which corresponds to PrimeNG table filter metadata
+     * - accepted enum values for enum type of filters.
+     * @private
+     */
+    private _supportedQueryParamFilters: {
+        [k: string]: {
+            type: 'numeric' | 'enum' | 'string' | 'boolean'
+            matchMode: 'contains' | 'equals'
+            enumValues?: string[]
+        }
+    } = {
+        appId: { type: 'numeric', matchMode: 'contains' },
+        appType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSAppType) },
+        zoneType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSZoneType) },
+        zoneClass: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSClass) },
+        text: { type: 'string', matchMode: 'contains' },
+        zoneSerial: { type: 'string', matchMode: 'contains' },
+    }
+
+    /**
+     * Parses zone filters from given URL queryParamMap, validates them and applies to queryParamFilters property.
+     * Filter validation relies on correctly initialized supportedQueryParamFilters property.
+     * Returns number of valid filters found.
+     * @param queryParamMap URL queryParamMap that will be used for zone filters parsing
+     */
+    parseQueryParams(queryParamMap: ParamMap): number {
+        let validFilters = 0
+        this.queryParamFilters = {}
+        for (let paramKey of queryParamMap.keys) {
+            if (paramKey in this._supportedQueryParamFilters) {
+                const paramValue = queryParamMap.get(paramKey)
+                if (paramValue) {
+                    let parsedValue = null
+                    switch (this._supportedQueryParamFilters[paramKey].type) {
+                        case 'numeric':
+                            const numV = parseInt(paramValue, 10)
+                            if (Number.isNaN(numV)) {
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Wrong URL parameter value',
+                                    detail: `URL parameter ${paramKey} requires numeric value!`,
+                                    life: 10000,
+                                })
+                                break
+                            }
+
+                            parsedValue = numV
+                            validFilters += 1
+                            break
+                        case 'boolean':
+                            const booleanV = parseBoolean(paramValue)
+                            if (booleanV === null) {
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Wrong URL parameter value',
+                                    detail: `URL parameter ${paramKey} requires either true or false value!`,
+                                    life: 10000,
+                                })
+                                break
+                            }
+
+                            parsedValue = booleanV
+                            validFilters += 1
+                            break
+                        case 'enum':
+                            if ((this._supportedQueryParamFilters[paramKey].enumValues ?? []).length === 0) {
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Wrong URL parameter value',
+                                    detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
+                                    life: 10000,
+                                })
+                                break
+                            }
+
+                            if (this._supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
+                                parsedValue = paramValue
+                                validFilters += 1
+                                break
+                            }
+
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Wrong URL parameter value',
+                                detail: `URL parameter ${paramKey} requires one of values: ${this._supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
+                                life: 10000,
+                            })
+                            break
+                        case 'string':
+                            parsedValue = paramValue
+                            validFilters += 1
+                            break
+                        default:
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Wrong URL parameter value',
+                                detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
+                                life: 10000,
+                            })
+                            break
+                    }
+
+                    if (parsedValue !== null) {
+                        const filterConstraint = {}
+                        filterConstraint[paramKey] = {
+                            value: parsedValue,
+                            matchMode: this._supportedQueryParamFilters[paramKey].matchMode,
+                        }
+                        this.queryParamFilters = { ...this.queryParamFilters, ...filterConstraint }
+                    }
+                }
+            } else {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Wrong URL parameter value',
+                    detail: `URL parameter ${paramKey} not supported!`,
+                    life: 10000,
+                })
+            }
+        }
+
+        return validFilters
+    }
+
+    /**
+     * Boolean flag stating whether this component init is done or not.
+     * @private
+     */
+    private _initDone = false
+
+    /**
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
-        this.refreshFetchStatusTable()
-        for (let t in DNSZoneType) {
-            this.zoneTypes.push(DNSZoneType[t])
-        }
-
-        for (let c in DNSClass) {
-            this.zoneClasses.push(DNSClass[c])
-        }
-
-        for (let a in DNSAppType) {
-            this.appTypes.push({ name: this._getDNSAppName(<any>a), value: DNSAppType[a] })
-        }
-
+        // Manage RxJS subscriptions on init.
+        this._subscriptions.add(
+            this.activatedRoute.queryParamMap.subscribe((value) => {
+                if (this._initDone) {
+                    const filtersCount = this.parseQueryParams(value)
+                    if (filtersCount > 0) {
+                        this.zonesStateKey = null // Disable stateful zones table when filtering via URL queryParams is in place.
+                        this._filterZonesByQueryParams()
+                    } else {
+                        this.zonesStateKey = this._zonesTableStateStorageKey
+                        this.cd.detectChanges()
+                        // URL queryParams changed, but no valid filter was found there so force restore table state.
+                        this.zonesTable?.restoreState()
+                        this.onLazyLoadZones(this.zonesTable.createLazyLoadMetadata())
+                    }
+                }
+            })
+        )
         this._subscriptions.add(
             this._tableFilter$
                 .pipe(
@@ -301,6 +524,30 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 )
                 .subscribe()
         )
+
+        const queryParamFiltersCount = this.parseQueryParams(this.activatedRoute.snapshot.queryParamMap)
+        if (queryParamFiltersCount > 0) {
+            // Valid filters found, so do not lazily load zones on init, because zones with appropriate filters
+            // will be loaded later.
+            this.loadZonesOnInit = false
+            this.zonesStateKey = null // Disable stateful zones table when filtering via URL queryParams is in place.
+            this.zonesLoading = true
+        }
+
+        this.refreshFetchStatusTable()
+
+        // Initialize arrays that contain values for UI filter dropdowns.
+        for (let t in DNSZoneType) {
+            this.zoneTypes.push(DNSZoneType[t])
+        }
+
+        for (let c in DNSClass) {
+            this.zoneClasses.push(DNSClass[c])
+        }
+
+        for (let a in DNSAppType) {
+            this.appTypes.push({ name: this._getDNSAppName(<any>a), value: DNSAppType[a] })
+        }
     }
 
     /**
@@ -492,24 +739,25 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
             })
     }
 
-    /**
-     * Returns PrimeNG severity for given ZoneInventoryState status.
-     * @param status ZoneInventoryState status
-     */
-    getSeverity(status: StatusEnum) {
-        switch (status) {
-            case 'ok':
-                return 'success'
-            case 'busy':
-                return 'warning'
-            case 'erred':
-                return 'danger'
-            case 'uninitialized':
-                return 'secondary'
-            default:
-                return 'info'
-        }
-    }
+    protected readonly getSeverity = getSeverity
+    // /**
+    //  * Returns PrimeNG severity for given ZoneInventoryState status.
+    //  * @param status ZoneInventoryState status
+    //  */
+    // getSeverity(status: StatusEnum) {
+    //     switch (status) {
+    //         case 'ok':
+    //             return 'success'
+    //         case 'busy':
+    //             return 'warning'
+    //         case 'erred':
+    //             return 'danger'
+    //         case 'uninitialized':
+    //             return 'secondary'
+    //         default:
+    //             return 'info'
+    //     }
+    // }
 
     /**
      * Returns more verbose error message for given error.
@@ -523,26 +771,28 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * Returns tooltip message for given ZoneInventoryState status.
      * @param status ZoneInventoryState status
      */
-    getTooltip(status: StatusEnum) {
-        switch (status) {
-            case 'busy':
-                return 'Zone inventory on the agent is busy and cannot return zones at this time. Try again later.'
-            case 'ok':
-                return 'Stork server successfully fetched all zones from the DNS server.'
-            case 'erred':
-                return 'Error when communicating with a zone inventory on an agent.'
-            case 'uninitialized':
-                return 'Zone inventory on the agent was not initialized. Trying again or restarting the agent can help.'
-            default:
-                return null
-        }
-    }
+    // getTooltip(status: StatusEnum) {
+    //     switch (status) {
+    //         case 'busy':
+    //             return 'Zone inventory on the agent is busy and cannot return zones at this time. Try again later.'
+    //         case 'ok':
+    //             return 'Stork server successfully fetched all zones from the DNS server.'
+    //         case 'erred':
+    //             return 'Error when communicating with a zone inventory on an agent.'
+    //         case 'uninitialized':
+    //             return 'Zone inventory on the agent was not initialized. Trying again or restarting the agent can help.'
+    //         default:
+    //             return null
+    //     }
+    // }
+    protected readonly getTooltip = getTooltip
 
     /**
      * Lazily loads paged zones data from backend.
      * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
      */
     onLazyLoadZones(event: TableLazyLoadEvent) {
+        console.log('lazyLoad', event, Date.now())
         this.zonesLoading = true
         this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
         lastValueFrom(
@@ -552,9 +802,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 (event?.filters?.appType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
-                (event?.filters?.text as FilterMetadata)?.value ?? null,
-                (event?.filters?.appId as FilterMetadata)?.value ?? null,
-                (event?.filters?.zoneSerial as FilterMetadata)?.value ?? null
+                (event?.filters?.text as FilterMetadata)?.value || null,
+                (event?.filters?.appId as FilterMetadata)?.value || null,
+                (event?.filters?.zoneSerial as FilterMetadata)?.value || null
             )
         )
             .then((resp) => {
@@ -612,5 +862,24 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      */
     filterTable(value: any, filterConstraint: FilterMetadata): void {
         this._tableFilter$.next({ value, filterConstraint })
+    }
+
+    /**
+     * Filters zones table by filters provided via URL queryParams.
+     * @private
+     */
+    private _filterZonesByQueryParams(): void {
+        this.zonesTable?.clearFilterValues()
+        const metadata = this.zonesTable?.createLazyLoadMetadata()
+        this.zonesTable.filters = { ...metadata.filters, ...this.queryParamFilters }
+        this.zonesTable?._filter()
+    }
+
+    saveState(state: TableState) {
+        console.log('saveState', state, Date.now())
+    }
+
+    restoreState(state: TableState) {
+        console.log('restoreState', state, Date.now())
     }
 }
