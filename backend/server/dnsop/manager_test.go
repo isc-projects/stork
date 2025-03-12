@@ -476,3 +476,90 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	// Complete the fetch.
 	<-notifyChannel
 }
+
+// This test verifies that the manager can fetch the same zones from
+// multiple views in a single batch.
+func TestFetchRepeatedZones(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	mock := NewMockConnectedAgents(controller)
+
+	randomZones := testutil.GenerateRandomZones(10)
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeBind9,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Cond(func(a any) bool {
+		return a.(*dbmodel.App).ID == app.ID
+	}), nil).DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+			// Return the same zones from two different views.
+			for _, view := range []string{"foo", "bar"} {
+				for _, zone := range randomZones {
+					zone := &bind9stats.ExtendedZone{
+						Zone: bind9stats.Zone{
+							ZoneName: zone.Name,
+							Class:    zone.Class,
+							Serial:   zone.Serial,
+							Type:     zone.Type,
+							Loaded:   time.Now().UTC(),
+						},
+						ViewName:       view,
+						TotalZoneCount: int64(len(randomZones)),
+					}
+					if !yield(zone, nil) {
+						return
+					}
+				}
+			}
+		}
+	})
+
+	manager := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NotNil(t, manager)
+
+	// Set the batch size that will include the ones from both views.
+	notifyChannel, err := manager.FetchZones(1, 100, true)
+	require.Nil(t, err)
+	notification := <-notifyChannel
+
+	// Make sure there are no errors.
+	for _, result := range notification.results {
+		if result.Error != nil {
+			require.Empty(t, *result.Error)
+		}
+	}
+
+	// Get all the zones from the database to make sure that all zones
+	// have been inserted.
+	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	require.NoError(t, err)
+	require.Equal(t, 10, total)
+	require.Len(t, zones, 10)
+
+	// Make sure that all zones have two associations.
+	for _, zone := range zones {
+		require.Len(t, zone.LocalZones, 2)
+	}
+}

@@ -196,6 +196,11 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 				// Read next app from the channel.
 				for app := range appsChan {
 					defer wg.Done()
+					// Track views. We need to flush the batch when the view changes.
+					// Otherwise, if the new view contains the same zone name that already
+					// exists in the batch, the database will return an error on the
+					// ON CONFLICT DO UPDATE clause.
+					var view string
 					// Insert zones into the database in batches. It significantly improves
 					// performance for large number of zones.
 					batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
@@ -239,7 +244,16 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 						}
 						// The zone also carries the total number of zones in the inventory.
 						state.SetTotalZones(zone.TotalZoneCount)
-						if err := batch.Add(&dbZone); err != nil {
+						if view != zone.ViewName {
+							// Flush the batch to complete the view insertion. Note that
+							// this is ok even when the view is empty (first zone). In
+							// this case the FlushAndAdd will skip the flush.
+							err = batch.FlushAndAdd(&dbZone)
+							view = zone.ViewName
+						} else {
+							err = batch.Add(&dbZone)
+						}
+						if err != nil {
 							state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 							break
 						}
@@ -248,7 +262,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 						// If we successfully added zones to the database so far. There is
 						// one more batch to add with a lower number of zones than the
 						// specified batchSize.
-						if err := batch.Finish(); err != nil {
+						if err := batch.Flush(); err != nil {
 							state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 						}
 					}

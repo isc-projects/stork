@@ -41,11 +41,19 @@ func (buffer *Batch[T]) Add(item T) error {
 	return nil
 }
 
+// Flushes the batch and adds a new item to it.
+func (buffer *Batch[T]) FlushAndAdd(item T) error {
+	if err := buffer.Flush(); err != nil {
+		return err
+	}
+	return buffer.Add(item)
+}
+
 // Completes the batch insert. This function must be called when no new
 // items are expected and the batch holds some not insert items. Calling
 // this function immediately attempts to insert all items from the batch
 // into the database.
-func (buffer *Batch[T]) Finish() error {
+func (buffer *Batch[T]) Flush() error {
 	if len(buffer.items) > 0 {
 		if err := buffer.fn(buffer.db, buffer.items...); err != nil {
 			return err

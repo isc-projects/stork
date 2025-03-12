@@ -720,7 +720,7 @@ func BenchmarkGetZones(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-	err := batch.Finish()
+	err := batch.Flush()
 	if err != nil {
 		b.Fatal(err)
 	}
