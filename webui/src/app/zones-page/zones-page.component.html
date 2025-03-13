@@ -270,15 +270,15 @@
                             </ng-template>
                         </p-columnFilter>
                         <p-columnFilter field="zoneType" matchMode="equals" [showMenu]="false">
-                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
                                 <span class="p-float-label">
-                                    <p-dropdown
+                                    <p-multiSelect
                                         inputId="zone-type"
                                         [options]="zoneTypes"
-                                        (onChange)="filter($event.value)"
                                         [ngModel]="value"
-                                        styleClass="w-10rem"
-                                    ></p-dropdown>
+                                        styleClass="w-12rem"
+                                        (onChange)="filterTable($event.value, filterConstraint)"
+                                    />
                                     <label for="zone-type">Zone Type</label>
                                 </span>
                             </ng-template>

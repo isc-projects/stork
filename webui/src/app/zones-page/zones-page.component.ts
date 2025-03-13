@@ -364,7 +364,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Values of this object describe:
      * - filter type (numeric, enum, string or boolean)
      * - filter matchMode (contains, equals) which corresponds to PrimeNG table filter metadata
-     * - accepted enum values for enum type of filters.
+     * - accepted enum values for enum type of filters
+     * - array type when set to true means that the filter may use more than one value.
      * @private
      */
     private _supportedQueryParamFilters: {
@@ -372,11 +373,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             type: 'numeric' | 'enum' | 'string' | 'boolean'
             matchMode: 'contains' | 'equals'
             enumValues?: string[]
+            arrayType?: boolean
         }
     } = {
         appId: { type: 'numeric', matchMode: 'contains' },
         appType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSAppType) },
-        zoneType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSZoneType) },
+        zoneType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSZoneType), arrayType: true },
         zoneClass: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSClass) },
         text: { type: 'string', matchMode: 'contains' },
         zoneSerial: { type: 'string', matchMode: 'contains' },
@@ -402,42 +404,72 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 continue
             }
 
-            const paramValue = queryParamMap.get(paramKey)
-            if (paramValue) {
-                let parsedValue = null
-                switch (this._supportedQueryParamFilters[paramKey].type) {
-                    case 'numeric':
-                        const numV = parseInt(paramValue, 10)
-                        if (Number.isNaN(numV)) {
+            const paramValues = this._supportedQueryParamFilters[paramKey].arrayType
+                ? queryParamMap.getAll(paramKey)
+                : [queryParamMap.get(paramKey)]
+            for (let paramValue of paramValues) {
+                if (paramValue) {
+                    let parsedValue = null
+                    switch (this._supportedQueryParamFilters[paramKey].type) {
+                        case 'numeric':
+                            const numV = parseInt(paramValue, 10)
+                            if (Number.isNaN(numV)) {
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Wrong URL parameter value',
+                                    detail: `URL parameter ${paramKey} requires numeric value!`,
+                                    life: 10000,
+                                })
+                                break
+                            }
+
+                            parsedValue = numV
+                            validFilters += 1
+                            break
+                        case 'boolean':
+                            const booleanV = parseBoolean(paramValue)
+                            if (booleanV === null) {
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Wrong URL parameter value',
+                                    detail: `URL parameter ${paramKey} requires either true or false value!`,
+                                    life: 10000,
+                                })
+                                break
+                            }
+
+                            parsedValue = booleanV
+                            validFilters += 1
+                            break
+                        case 'enum':
+                            if ((this._supportedQueryParamFilters[paramKey].enumValues ?? []).length === 0) {
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: 'Wrong URL parameter value',
+                                    detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
+                                    life: 10000,
+                                })
+                                break
+                            }
+
+                            if (this._supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
+                                parsedValue = paramValue
+                                validFilters += 1
+                                break
+                            }
+
                             this.messageService.add({
                                 severity: 'error',
                                 summary: 'Wrong URL parameter value',
-                                detail: `URL parameter ${paramKey} requires numeric value!`,
+                                detail: `URL parameter ${paramKey} requires one of the values: ${this._supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
                                 life: 10000,
                             })
                             break
-                        }
-
-                        parsedValue = numV
-                        validFilters += 1
-                        break
-                    case 'boolean':
-                        const booleanV = parseBoolean(paramValue)
-                        if (booleanV === null) {
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Wrong URL parameter value',
-                                detail: `URL parameter ${paramKey} requires either true or false value!`,
-                                life: 10000,
-                            })
+                        case 'string':
+                            parsedValue = paramValue
+                            validFilters += 1
                             break
-                        }
-
-                        parsedValue = booleanV
-                        validFilters += 1
-                        break
-                    case 'enum':
-                        if ((this._supportedQueryParamFilters[paramKey].enumValues ?? []).length === 0) {
+                        default:
                             this.messageService.add({
                                 severity: 'error',
                                 summary: 'Wrong URL parameter value',
@@ -445,42 +477,22 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                                 life: 10000,
                             })
                             break
-                        }
-
-                        if (this._supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
-                            parsedValue = paramValue
-                            validFilters += 1
-                            break
-                        }
-
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} requires one of the values: ${this._supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
-                            life: 10000,
-                        })
-                        break
-                    case 'string':
-                        parsedValue = paramValue
-                        validFilters += 1
-                        break
-                    default:
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
-                            life: 10000,
-                        })
-                        break
-                }
-
-                if (parsedValue !== null) {
-                    const filterConstraint = {}
-                    filterConstraint[paramKey] = {
-                        value: parsedValue,
-                        matchMode: this._supportedQueryParamFilters[paramKey].matchMode,
                     }
-                    this.queryParamFilters = { ...this.queryParamFilters, ...filterConstraint }
+
+                    if (parsedValue !== null) {
+                        const filterConstraint = {}
+                        if (this._supportedQueryParamFilters[paramKey].arrayType) {
+                            parsedValue = this.queryParamFilters[paramKey]?.value
+                                ? [...this.queryParamFilters[paramKey]?.value, parsedValue]
+                                : [parsedValue]
+                        }
+
+                        filterConstraint[paramKey] = {
+                            value: parsedValue,
+                            matchMode: this._supportedQueryParamFilters[paramKey].matchMode,
+                        }
+                        this.queryParamFilters = { ...this.queryParamFilters, ...filterConstraint }
+                    }
                 }
             }
         }
