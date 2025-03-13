@@ -173,8 +173,6 @@
             [expandedRowKeys]="zonesExpandedRows"
             [loading]="zonesLoading"
             [totalRecords]="zonesTotal"
-            (onStateSave)="saveState($event)"
-            (onStateRestore)="restoreState($event)"
         >
             <ng-template pTemplate="caption">
                 <p-panel #filtersPanel [toggleable]="true">

@@ -1,5 +1,5 @@
 import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { ConfirmationService, MenuItem, MessageService, TableState } from 'primeng/api'
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api'
 import {
     DNSAppType,
     DNSClass,
@@ -16,6 +16,7 @@ import {
     concatMap,
     delay,
     distinctUntilChanged,
+    filter,
     finalize,
     map,
     share,
@@ -97,15 +98,16 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     zonesLoading: boolean = false
 
     /**
-     * Unique identifier of a stateful zones table to be used in browser storage.
-     */
-    zonesStateKey: string = 'zones-table-state'
-
-    /**
      * Key to be used in browser storage for keeping zones table state.
      * @private
      */
-    private _zonesTableStateStorageKey = 'zones-table-state'
+    private readonly _zonesTableStateStorageKey = 'zones-table-state'
+
+    /**
+     * Key to be used for dynamic binding to stateKey input property of zones PrimeNG table.
+     * Changing this value will have effect on whether zones table is stateful or not.
+     */
+    zonesStateKey: string = this._zonesTableStateStorageKey
 
     /**
      * Keeps expanded rows of zones table.
@@ -389,70 +391,52 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         let validFilters = 0
         this.queryParamFilters = {}
         for (let paramKey of queryParamMap.keys) {
-            if (paramKey in this._supportedQueryParamFilters) {
-                const paramValue = queryParamMap.get(paramKey)
-                if (paramValue) {
-                    let parsedValue = null
-                    switch (this._supportedQueryParamFilters[paramKey].type) {
-                        case 'numeric':
-                            const numV = parseInt(paramValue, 10)
-                            if (Number.isNaN(numV)) {
-                                this.messageService.add({
-                                    severity: 'error',
-                                    summary: 'Wrong URL parameter value',
-                                    detail: `URL parameter ${paramKey} requires numeric value!`,
-                                    life: 10000,
-                                })
-                                break
-                            }
+            if (!(paramKey in this._supportedQueryParamFilters)) {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Wrong URL parameter value',
+                    detail: `URL parameter ${paramKey} not supported!`,
+                    life: 10000,
+                })
+                continue
+            }
 
-                            parsedValue = numV
-                            validFilters += 1
-                            break
-                        case 'boolean':
-                            const booleanV = parseBoolean(paramValue)
-                            if (booleanV === null) {
-                                this.messageService.add({
-                                    severity: 'error',
-                                    summary: 'Wrong URL parameter value',
-                                    detail: `URL parameter ${paramKey} requires either true or false value!`,
-                                    life: 10000,
-                                })
-                                break
-                            }
-
-                            parsedValue = booleanV
-                            validFilters += 1
-                            break
-                        case 'enum':
-                            if ((this._supportedQueryParamFilters[paramKey].enumValues ?? []).length === 0) {
-                                this.messageService.add({
-                                    severity: 'error',
-                                    summary: 'Wrong URL parameter value',
-                                    detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
-                                    life: 10000,
-                                })
-                                break
-                            }
-
-                            if (this._supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
-                                parsedValue = paramValue
-                                validFilters += 1
-                                break
-                            }
-
+            const paramValue = queryParamMap.get(paramKey)
+            if (paramValue) {
+                let parsedValue = null
+                switch (this._supportedQueryParamFilters[paramKey].type) {
+                    case 'numeric':
+                        const numV = parseInt(paramValue, 10)
+                        if (Number.isNaN(numV)) {
                             this.messageService.add({
                                 severity: 'error',
                                 summary: 'Wrong URL parameter value',
-                                detail: `URL parameter ${paramKey} requires one of values: ${this._supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
+                                detail: `URL parameter ${paramKey} requires numeric value!`,
                                 life: 10000,
                             })
                             break
-                        case 'string':
-                            parsedValue = paramValue
-                            validFilters += 1
+                        }
+
+                        parsedValue = numV
+                        validFilters += 1
+                        break
+                    case 'boolean':
+                        const booleanV = parseBoolean(paramValue)
+                        if (booleanV === null) {
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Wrong URL parameter value',
+                                detail: `URL parameter ${paramKey} requires either true or false value!`,
+                                life: 10000,
+                            })
                             break
-                        default:
+                        }
+
+                        parsedValue = booleanV
+                        validFilters += 1
+                        break
+                    case 'enum':
+                        if ((this._supportedQueryParamFilters[paramKey].enumValues ?? []).length === 0) {
                             this.messageService.add({
                                 severity: 'error',
                                 summary: 'Wrong URL parameter value',
@@ -460,24 +444,43 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                                 life: 10000,
                             })
                             break
-                    }
-
-                    if (parsedValue !== null) {
-                        const filterConstraint = {}
-                        filterConstraint[paramKey] = {
-                            value: parsedValue,
-                            matchMode: this._supportedQueryParamFilters[paramKey].matchMode,
                         }
-                        this.queryParamFilters = { ...this.queryParamFilters, ...filterConstraint }
-                    }
+
+                        if (this._supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
+                            parsedValue = paramValue
+                            validFilters += 1
+                            break
+                        }
+
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Wrong URL parameter value',
+                            detail: `URL parameter ${paramKey} requires one of the values: ${this._supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
+                            life: 10000,
+                        })
+                        break
+                    case 'string':
+                        parsedValue = paramValue
+                        validFilters += 1
+                        break
+                    default:
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Wrong URL parameter value',
+                            detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
+                            life: 10000,
+                        })
+                        break
                 }
-            } else {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Wrong URL parameter value',
-                    detail: `URL parameter ${paramKey} not supported!`,
-                    life: 10000,
-                })
+
+                if (parsedValue !== null) {
+                    const filterConstraint = {}
+                    filterConstraint[paramKey] = {
+                        value: parsedValue,
+                        matchMode: this._supportedQueryParamFilters[paramKey].matchMode,
+                    }
+                    this.queryParamFilters = { ...this.queryParamFilters, ...filterConstraint }
+                }
             }
         }
 
@@ -491,25 +494,56 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private _initDone = false
 
     /**
+     * Makes the zones table stateful, which means that pagination, filtering, sorting etc. will be stored
+     * in user browser session storage.
+     * @private
+     */
+    private _enableStatefulZonesTable() {
+        this.zonesStateKey = this._zonesTableStateStorageKey
+        this.cd.detectChanges()
+    }
+
+    /**
+     * Makes the zones table NOT stateful, which means that pagination, filtering, sorting etc. will NOT be stored
+     * in user browser session storage.
+     * @private
+     */
+    private _disableStatefulZonesTable() {
+        this.zonesStateKey = null
+    }
+
+    /**
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
+        // Initialize arrays that contain values for UI filter dropdowns.
+        for (let t in DNSZoneType) {
+            this.zoneTypes.push(DNSZoneType[t])
+        }
+
+        for (let c in DNSClass) {
+            this.zoneClasses.push(DNSClass[c])
+        }
+
+        for (let a in DNSAppType) {
+            this.appTypes.push({ name: this._getDNSAppName(<any>a), value: DNSAppType[a] })
+        }
+
         // Manage RxJS subscriptions on init.
         this._subscriptions.add(
-            this.activatedRoute.queryParamMap.subscribe((value) => {
-                if (this._initDone) {
-                    const filtersCount = this.parseQueryParams(value)
-                    if (filtersCount > 0) {
-                        this.zonesStateKey = null // Disable stateful zones table when filtering via URL queryParams is in place.
-                        this._filterZonesByQueryParams()
-                    } else {
-                        this.zonesStateKey = this._zonesTableStateStorageKey
-                        this.cd.detectChanges()
-                        // URL queryParams changed, but no valid filter was found there so force restore table state.
-                        this.zonesTable?.restoreState()
-                        this.onLazyLoadZones(this.zonesTable.createLazyLoadMetadata())
-                    }
+            this.activatedRoute.queryParamMap.pipe(filter(() => this._initDone)).subscribe((value) => {
+                const queryParamFiltersCount = this.parseQueryParams(value)
+                if (queryParamFiltersCount > 0) {
+                    // Disable stateful zones table when filtering via URL queryParams is in place.
+                    this._disableStatefulZonesTable()
+                    this._filterZonesByQueryParams()
+                    return
                 }
+
+                this._enableStatefulZonesTable()
+                // URL queryParams changed, but no valid filter was found there so force restore table state.
+                this.zonesTable?.restoreState()
+                this.zonesTable?._filter()
             })
         )
         this._subscriptions.add(
@@ -527,27 +561,15 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
         const queryParamFiltersCount = this.parseQueryParams(this.activatedRoute.snapshot.queryParamMap)
         if (queryParamFiltersCount > 0) {
-            // Valid filters found, so do not lazily load zones on init, because zones with appropriate filters
+            // Valid filters found, so do not load lazily zones on init, because zones with appropriate filters
             // will be loaded later.
             this.loadZonesOnInit = false
-            this.zonesStateKey = null // Disable stateful zones table when filtering via URL queryParams is in place.
+            // Disable stateful zones table when filtering via URL queryParams is in place.
+            this._disableStatefulZonesTable()
             this.zonesLoading = true
         }
 
         this.refreshFetchStatusTable()
-
-        // Initialize arrays that contain values for UI filter dropdowns.
-        for (let t in DNSZoneType) {
-            this.zoneTypes.push(DNSZoneType[t])
-        }
-
-        for (let c in DNSClass) {
-            this.zoneClasses.push(DNSClass[c])
-        }
-
-        for (let a in DNSAppType) {
-            this.appTypes.push({ name: this._getDNSAppName(<any>a), value: DNSAppType[a] })
-        }
     }
 
     /**
@@ -739,25 +761,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             })
     }
 
+    /**
+     * Reference to getSeverity() function so it can be used in the html template.
+     * @protected
+     */
     protected readonly getSeverity = getSeverity
-    // /**
-    //  * Returns PrimeNG severity for given ZoneInventoryState status.
-    //  * @param status ZoneInventoryState status
-    //  */
-    // getSeverity(status: StatusEnum) {
-    //     switch (status) {
-    //         case 'ok':
-    //             return 'success'
-    //         case 'busy':
-    //             return 'warning'
-    //         case 'erred':
-    //             return 'danger'
-    //         case 'uninitialized':
-    //             return 'secondary'
-    //         default:
-    //             return 'info'
-    //     }
-    // }
 
     /**
      * Returns more verbose error message for given error.
@@ -768,23 +776,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Returns tooltip message for given ZoneInventoryState status.
-     * @param status ZoneInventoryState status
+     * Reference to getTooltip() function so it can be used in the html template.
+     * @protected
      */
-    // getTooltip(status: StatusEnum) {
-    //     switch (status) {
-    //         case 'busy':
-    //             return 'Zone inventory on the agent is busy and cannot return zones at this time. Try again later.'
-    //         case 'ok':
-    //             return 'Stork server successfully fetched all zones from the DNS server.'
-    //         case 'erred':
-    //             return 'Error when communicating with a zone inventory on an agent.'
-    //         case 'uninitialized':
-    //             return 'Zone inventory on the agent was not initialized. Trying again or restarting the agent can help.'
-    //         default:
-    //             return null
-    //     }
-    // }
     protected readonly getTooltip = getTooltip
 
     /**
@@ -792,7 +786,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
      */
     onLazyLoadZones(event: TableLazyLoadEvent) {
-        console.log('lazyLoad', event, Date.now())
         this.zonesLoading = true
         this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
         lastValueFrom(
@@ -873,13 +866,5 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         const metadata = this.zonesTable?.createLazyLoadMetadata()
         this.zonesTable.filters = { ...metadata.filters, ...this.queryParamFilters }
         this.zonesTable?._filter()
-    }
-
-    saveState(state: TableState) {
-        console.log('saveState', state, Date.now())
-    }
-
-    restoreState(state: TableState) {
-        console.log('restoreState', state, Date.now())
     }
 }
