@@ -4,7 +4,7 @@
     </div>
 </app-breadcrumbs>
 
-<ng-template #emptymessage let-colspan let-empty="empty">
+<ng-template #emptyMessage let-colspan let-empty="empty">
     <ng-container *ngIf="fetchInProgress">
         <tr>
             <td [attr.colspan]="colspan">
@@ -60,6 +60,22 @@
             </p>
         </td>
     </tr>
+</ng-template>
+
+<ng-template #localZoneCells let-localZone>
+    <td>
+        <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
+    </td>
+    <td>
+        <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }" (click)="activateFirstTab()">{{
+            localZone.appId
+        }}</a>
+    </td>
+    <td>{{ localZone.view }}</td>
+    <td>{{ localZone.zoneType }}</td>
+    <td>{{ localZone.serial }}</td>
+    <td>{{ localZone.class }}</td>
+    <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
 </ng-template>
 
 <p-dialog header="Zones Fetch Status" [modal]="true" [(visible)]="fetchStatusVisible" styleClass="max-w-screen">
@@ -118,7 +134,7 @@
         <ng-template pTemplate="emptymessage">
             <ng-container
                 *ngTemplateOutlet="
-                    emptymessage;
+                    emptyMessage;
                     context: {
                         $implicit: 6,
                         empty: 'There is no Zones Fetch Status information available in the Stork server database.',
@@ -351,21 +367,9 @@
                                 </ng-template>
                                 <ng-template pTemplate="body" let-localZone>
                                     <tr>
-                                        <td>
-                                            <a routerLink="/apps/bind9/{{ localZone.appId }}">{{
-                                                localZone.appName
-                                            }}</a>
-                                        </td>
-                                        <td>
-                                            <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }">{{
-                                                localZone.appId
-                                            }}</a>
-                                        </td>
-                                        <td>{{ localZone.view }}</td>
-                                        <td>{{ localZone.zoneType }}</td>
-                                        <td>{{ localZone.serial }}</td>
-                                        <td>{{ localZone.class }}</td>
-                                        <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
+                                        <ng-container
+                                            *ngTemplateOutlet="localZoneCells; context: { $implicit: localZone }"
+                                        ></ng-container>
                                     </tr>
                                 </ng-template>
                                 <ng-template pTemplate="emptymessage" let-columns>
@@ -383,7 +387,7 @@
             <ng-template pTemplate="emptymessage">
                 <ng-container
                     *ngTemplateOutlet="
-                        emptymessage;
+                        emptyMessage;
                         context: {
                             $implicit: 3,
                             empty:
@@ -443,22 +447,9 @@
                         </ng-template>
                         <ng-template pTemplate="body" let-localZone>
                             <tr>
-                                <td>
-                                    <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
-                                </td>
-                                <td>
-                                    <a
-                                        routerLink="/dns/zones"
-                                        [queryParams]="{ appId: localZone.appId }"
-                                        (click)="activateFirstTab()"
-                                        >{{ localZone.appId }}</a
-                                    >
-                                </td>
-                                <td>{{ localZone.view }}</td>
-                                <td>{{ localZone.zoneType }}</td>
-                                <td>{{ localZone.serial }}</td>
-                                <td>{{ localZone.class }}</td>
-                                <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
+                                <ng-container
+                                    *ngTemplateOutlet="localZoneCells; context: { $implicit: localZone }"
+                                ></ng-container>
                                 <td>
                                     <p-tag
                                         *ngIf="zoneInventoryStateMap.get(localZone.daemonId)"
