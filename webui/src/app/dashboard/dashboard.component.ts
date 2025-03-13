@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
-import { DHCPService, ServicesService } from '../backend/api/api'
+import { DHCPService, DNSService, ServicesService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
 import {
     datetimeToLocal,
@@ -16,12 +16,20 @@ import {
 } from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
-import { lastValueFrom, Subscription } from 'rxjs'
+import { concatMap, lastValueFrom, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
-import { App, DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview, Settings } from '../backend'
+import {
+    App,
+    DhcpDaemon,
+    DhcpDaemonHARelationshipOverview,
+    DhcpOverview,
+    Settings,
+    ZoneInventoryState,
+} from '../backend'
 import { ModifyDeep } from '../utiltypes'
 import { TableLazyLoadEvent } from 'primeng/table'
+import { getSeverity, getTooltip } from '../zones-page/zones-page.component'
 
 type DhcpOverviewParsed = ModifyDeep<
     DhcpOverview,
@@ -133,6 +141,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     dnsServiceStatusLoading: boolean = false
 
     /**
+     * Key-value map where keys are DNS app IDs and values are information about zone fetching for particular DNS server.
+     */
+    zoneInventoryStateMap: Map<number, ZoneInventoryState> = new Map()
+
+    /**
      * Returns true when no kea and no bind9 apps exist among authorized machines;
      * false otherwise.
      */
@@ -171,7 +184,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private msgSrv: MessageService,
         private settingSvc: SettingService,
         private servicesApi: ServicesService,
-        private cd: ChangeDetectorRef
+        private cd: ChangeDetectorRef,
+        private dnsApi: DNSService
     ) {}
 
     ngOnDestroy(): void {
@@ -299,7 +313,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     refreshDnsOverview(event: TableLazyLoadEvent) {
         this.dnsServiceStatusLoading = true
         this.cd.detectChanges()
-        lastValueFrom(this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'bind9'))
+        lastValueFrom(
+            this.dnsApi.getZonesFetch().pipe(
+                concatMap((zonesFetch) => {
+                    if (zonesFetch?.items?.length > 0) {
+                        this.zoneInventoryStateMap = new Map()
+                        zonesFetch.items.forEach((s) => {
+                            this.zoneInventoryStateMap.set(s.appId, s)
+                        })
+                    }
+                    return this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'bind9')
+                })
+            )
+        )
             .then((data) => {
                 this.dnsApps = data?.items ?? []
                 this.dnsAppsTotalCount = data?.total ?? 0
@@ -551,4 +577,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
         return localTime
     }
+
+    /**
+     * Reference to getTooltip() function to be used in html template.
+     * @protected
+     */
+    protected readonly getTooltip = getTooltip
+
+    /**
+     * Reference to getSeverity() function to be used in html template.
+     * @protected
+     */
+    protected readonly getSeverity = getSeverity
 }
