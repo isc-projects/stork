@@ -269,10 +269,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     )
 
     /**
-     * RxJS subscriptions kept in one place to unsubsribe all at once when this component is destroyed.
+     * RxJS subscriptions kept in one place to unsubscribe all at once when this component is destroyed.
      * @private
      */
-    private _subscriptions = new Subscription()
+    private _subscriptions: Subscription
 
     /**
      * Flag stating whether _polling$ observable is active (emitting values and not complete yet) or not.
@@ -281,10 +281,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private _isPolling = false
 
     /**
-     * RxJS Subject used for filtering table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
+     * RxJS Subject used for filtering zones table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
      * @private
      */
-    private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
+    private _zonesTableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
      * Class constructor.
@@ -365,7 +365,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * - filter type (numeric, enum, string or boolean)
      * - filter matchMode (contains, equals) which corresponds to PrimeNG table filter metadata
      * - accepted enum values for enum type of filters
-     * - array type when set to true means that the filter may use more than one value.
+     * - array type; when set to true it means that the filter may use more than one value.
      * @private
      */
     private _supportedQueryParamFilters: {
@@ -386,7 +386,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Parses zone filters from given URL queryParamMap, validates them and applies to queryParamFilters property.
-     * Filter validation relies on correctly initialized supportedQueryParamFilters property.
+     * Filter validation relies on correctly initialized _supportedQueryParamFilters property.
      * Returns number of valid filters found.
      * @param queryParamMap URL queryParamMap that will be used for zone filters parsing
      */
@@ -508,7 +508,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Makes the zones table stateful, which means that pagination, filtering, sorting etc. will be stored
-     * in user browser session storage.
+     * in user browser storage.
      * @private
      */
     private _enableStatefulZonesTable() {
@@ -518,7 +518,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Makes the zones table NOT stateful, which means that pagination, filtering, sorting etc. will NOT be stored
-     * in user browser session storage.
+     * in user browser storage.
      * @private
      */
     private _disableStatefulZonesTable() {
@@ -556,8 +556,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         // Manage RxJS subscriptions on init.
-        this._subscriptions.add(
-            this.activatedRoute.queryParamMap.pipe(filter(() => this._initDone)).subscribe((value) => {
+        this._subscriptions = this.activatedRoute.queryParamMap
+            .pipe(filter(() => this._initDone))
+            .subscribe((value) => {
                 const queryParamFiltersCount = this.parseQueryParams(value)
                 if (queryParamFiltersCount > 0) {
                     // Disable stateful zones table when filtering via URL queryParams is in place.
@@ -575,9 +576,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.zonesTable?.restoreState()
                 this.zonesTable?._filter()
             })
-        )
         this._subscriptions.add(
-            this._tableFilter$
+            this._zonesTableFilter$
                 .pipe(
                     debounceTime(300),
                     distinctUntilChanged(),
@@ -607,7 +607,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     ngOnDestroy() {
         this._subscriptions.unsubscribe()
-        this._tableFilter$.complete()
+        this._zonesTableFilter$.complete()
     }
 
     /**
@@ -848,7 +848,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Retrieves information from browser session storage whether PUT /dns-management/zones-fetch was sent or not.
+     * Retrieves information from browser storage whether PUT /dns-management/zones-fetch was sent or not.
      */
     wasZoneFetchSent(): boolean {
         const fromStorage = sessionStorage.getItem(this._fetchSentStorageKey) ?? 'false'
@@ -856,7 +856,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Stores information in browser session storage whether PUT /dns-management/zones-fetch was sent or not.
+     * Stores information in browser storage whether PUT /dns-management/zones-fetch was sent or not.
      * @param sent request was sent or not
      */
     storeZoneFetchSent(sent: boolean) {
@@ -870,7 +870,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     protected readonly hasFilter = hasFilter
 
     /**
-     * Resets zones table state and updates the state stored in browser session storage.
+     * Resets zones table state and updates the state stored in browser storage.
      */
     clearTableState() {
         this.zonesTable?.clear()
@@ -878,13 +878,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
-     * Emits next value and filterConstraint for the table's filter,
+     * Emits next value and filterConstraint for the zones table's filter,
      * which in the end will result in applying the filter on the table's data.
      * @param value value of the filter
      * @param filterConstraint filter field which will be filtered
      */
     filterTable(value: any, filterConstraint: FilterMetadata): void {
-        this._tableFilter$.next({ value, filterConstraint })
+        this._zonesTableFilter$.next({ value, filterConstraint })
     }
 
     /**
