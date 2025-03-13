@@ -71,10 +71,22 @@
             localZone.appId
         }}</a>
     </td>
-    <td>{{ localZone.view }}</td>
-    <td>{{ localZone.zoneType }}</td>
+    <td>
+        <a routerLink="/dns/zones" [queryParams]="{ text: localZone.view }" (click)="activateFirstTab()">{{
+            localZone.view
+        }}</a>
+    </td>
+    <td>
+        <a routerLink="/dns/zones" [queryParams]="{ zoneType: localZone.zoneType }" (click)="activateFirstTab()">{{
+            localZone.zoneType
+        }}</a>
+    </td>
     <td>{{ localZone.serial }}</td>
-    <td>{{ localZone.class }}</td>
+    <td>
+        <a routerLink="/dns/zones" [queryParams]="{ zoneClass: localZone.class }" (click)="activateFirstTab()">{{
+            localZone.class
+        }}</a>
+    </td>
     <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
 </ng-template>
 
