@@ -1,5 +1,5 @@
 import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
-import { ConfirmationService, MenuItem, MessageService } from 'primeng/api'
+import { ConfirmationService, MenuItem, MessageService, TableState } from 'primeng/api'
 import {
     DNSAppType,
     DNSClass,
@@ -347,6 +347,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this._initDone = true
         if (!this.loadZonesOnInit) {
             // Valid zones filter was provided via URL queryParams.
+            this._restoreZonesTableRowsPerPage()
             this._filterZonesByQueryParams()
         }
     }
@@ -513,6 +514,19 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     /**
+     * Restores only rows per page count for the zones table from the state stored in user browser storage.
+     * @private
+     */
+    private _restoreZonesTableRowsPerPage() {
+        const storage = this.zonesTable?.getStorage()
+        const stateString = storage?.getItem(this._zonesTableStateStorageKey)
+        if (stateString) {
+            const state: TableState = JSON.parse(stateString)
+            this.zonesTable.rows = state.rows ?? 10
+        }
+    }
+
+    /**
      * Component lifecycle hook which inits the component.
      */
     ngOnInit(): void {
@@ -537,6 +551,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     // Disable stateful zones table when filtering via URL queryParams is in place.
                     this._disableStatefulZonesTable()
                     this._filterZonesByQueryParams()
+                    if (this.activeTabIdx > 0) {
+                        // Go back to first tab with zones list.
+                        this.activateFirstTab()
+                    }
                     return
                 }
 
@@ -866,5 +884,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         const metadata = this.zonesTable?.createLazyLoadMetadata()
         this.zonesTable.filters = { ...metadata.filters, ...this.queryParamFilters }
         this.zonesTable?._filter()
+    }
+
+    /**
+     * Activates the first tab in the view with the zones table.
+     */
+    activateFirstTab() {
+        this.activeTabIdx = 0
     }
 }

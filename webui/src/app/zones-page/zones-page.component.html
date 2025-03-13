@@ -447,9 +447,12 @@
                                     <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
                                 </td>
                                 <td>
-                                    <a routerLink="/dns/zones" [queryParams]="{ appId: localZone.appId }">{{
-                                        localZone.appId
-                                    }}</a>
+                                    <a
+                                        routerLink="/dns/zones"
+                                        [queryParams]="{ appId: localZone.appId }"
+                                        (click)="activateFirstTab()"
+                                        >{{ localZone.appId }}</a
+                                    >
                                 </td>
                                 <td>{{ localZone.view }}</td>
                                 <td>{{ localZone.zoneType }}</td>
