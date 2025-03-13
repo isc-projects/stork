@@ -26,18 +26,19 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 	if params.Limit != nil {
 		limit = int(*params.Limit)
 	}
-	// Apply paging parameters.
+	// Apply paging parameters and zone-specific filters.
 	filter := &dbmodel.GetZonesFilter{
 		AppID:   params.AppID,
 		AppType: params.AppType,
 		Class:   params.Class,
 		Serial:  params.Serial,
 		Text:    params.Text,
-		Type:    params.ZoneType,
 		Offset:  storkutil.Ptr(offset),
 		Limit:   storkutil.Ptr(limit),
 	}
-
+	for _, zoneType := range params.ZoneType {
+		filter.EnableZoneType(dbmodel.ZoneType(zoneType))
+	}
 	// Get the zones from the database.
 	zones, total, err := dbmodel.GetZones(r.DB, filter, dbmodel.ZoneRelationLocalZonesApp)
 	if err != nil {

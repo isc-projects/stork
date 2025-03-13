@@ -116,7 +116,7 @@ definitions:
         $ref: '#/definitions/VersionDetails'
       currentStable:
         type: array
-        items: 
+        items:
           $ref: '#/definitions/VersionDetails'
       latestSecure:
         type: array
@@ -180,15 +180,14 @@ definitions:
   DNSZoneType:
     type: string
     enum: &DNSZONETYPE
+      - builtin
       - delegation-only
       - forward
       - hint
-      - master
       - mirror
       - primary
       - redirect
       - secondary
-      - slave
       - static-stub
       - stub
 
@@ -244,5 +243,9 @@ parameters:
     in: query
     description: >-
       Limit returned list of entities (e.g. zones) to the ones of a given type.
-    type: string
-    enum: *DNSZONETYPE
+      Multiple zone types can be specified. If unspecified, all zone types are returned.
+    type: array
+    items:
+      type: string
+      enum: *DNSZONETYPE
+    collectionFormat: multi

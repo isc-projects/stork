@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -12,6 +13,38 @@ import (
 	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
+
+// Test convenience function enabling filtering by zone types on the GetZonesFilter.
+func TestGetZonesFilterEnableZoneTypes(t *testing.T) {
+	filter := &GetZonesFilter{}
+	filter.EnableZoneType(ZoneTypeSecondary)
+	filter.EnableZoneType(ZoneTypeBuiltin)
+	require.Equal(t, []ZoneType{ZoneTypeSecondary, ZoneTypeBuiltin}, slices.Collect(filter.Types.GetEnabled()))
+}
+
+// Test that the zone type filter can be enabled and enabled types can be retrieved.
+func TestGetZonesFilterZoneTypes(t *testing.T) {
+	filter := NewGetZonesFilterZoneTypes()
+	filter.Enable(ZoneTypeSecondary)
+	filter.Enable(ZoneTypeDelegationOnly)
+	require.Equal(t, []ZoneType{ZoneTypeSecondary, ZoneTypeDelegationOnly}, slices.Collect(filter.GetEnabled()))
+}
+
+// Test that no zone type filters are returned when none are enabled.
+func TestGetZonesFilterZoneTypesEmpty(t *testing.T) {
+	filter := NewGetZonesFilterZoneTypes()
+	require.Nil(t, slices.Collect(filter.GetEnabled()))
+}
+
+// Test that the zone type filter can be checked if any filter is specified.
+func TestGetZonesFilterZoneTypesIsAnySpecified(t *testing.T) {
+	filter := NewGetZonesFilterZoneTypes()
+	require.False(t, filter.IsAnySpecified())
+	filter.Enable(ZoneTypeSecondary)
+	require.True(t, filter.IsAnySpecified())
+	filter.Enable(ZoneTypeDelegationOnly)
+	require.True(t, filter.IsAnySpecified())
+}
 
 // Test inserting and overriding the zones in the database.
 func TestAddZonesOverlap(t *testing.T) {
@@ -205,10 +238,9 @@ func TestGetZones(t *testing.T) {
 		}
 	})
 
-	t.Run("filter by type", func(t *testing.T) {
-		filter := &GetZonesFilter{
-			Type: storkutil.Ptr("secondary"),
-		}
+	t.Run("filter by single zone type", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		filter.EnableZoneType(ZoneTypeSecondary)
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
 		require.Equal(t, 25, total)
@@ -216,6 +248,45 @@ func TestGetZones(t *testing.T) {
 		for _, zone := range zones {
 			require.Equal(t, "secondary", zone.LocalZones[0].Type)
 		}
+	})
+
+	t.Run("filter by multiple zone types", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		filter.EnableZoneType(ZoneTypeBuiltin)
+		filter.EnableZoneType(ZoneTypePrimary)
+		filter.EnableZoneType(ZoneTypeSecondary)
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 100, total)
+		require.Len(t, zones, 100)
+
+		// Collect unique zone types from the zones.
+		collectedZoneTypes := make(map[ZoneType]struct{})
+		for _, zone := range zones {
+			collectedZoneTypes[ZoneType(zone.LocalZones[0].Type)] = struct{}{}
+		}
+		// There should be two zone types. There is no builtin zone.
+		require.Equal(t, 2, len(collectedZoneTypes))
+		require.Contains(t, collectedZoneTypes, ZoneTypePrimary)
+		require.Contains(t, collectedZoneTypes, ZoneTypeSecondary)
+	})
+
+	t.Run("filter for zone types unspecified", func(t *testing.T) {
+		filter := &GetZonesFilter{}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 100, total)
+		require.Len(t, zones, 100)
+
+		// Collect unique zone types from the zones.
+		collectedZoneTypes := make(map[ZoneType]struct{})
+		for _, zone := range zones {
+			collectedZoneTypes[ZoneType(zone.LocalZones[0].Type)] = struct{}{}
+		}
+		// There should be two zone types. There is no builtin zone.
+		require.Equal(t, 2, len(collectedZoneTypes))
+		require.Contains(t, collectedZoneTypes, ZoneTypePrimary)
+		require.Contains(t, collectedZoneTypes, ZoneTypeSecondary)
 	})
 
 	t.Run("lower bound", func(t *testing.T) {
@@ -362,6 +433,97 @@ func TestGetZonesWithAppIDFilter(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, zones)
+}
+
+// Test getting zones with app ID filter when all apps and some views
+// shared the same zones.
+func TestGetZonesWithAppIDFilterOverlappingZones(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add several apps.
+	var apps []*App
+	for i := 0; i < 3; i++ {
+		app := &App{
+			ID:        0,
+			MachineID: machine.ID,
+			Type:      AppTypeBind9,
+			Name:      fmt.Sprintf("app%d", i),
+			Daemons: []*Daemon{
+				NewBind9Daemon(true),
+			},
+		}
+		addedDaemons, err := AddApp(db, app)
+		require.NoError(t, err)
+		require.Len(t, addedDaemons, 1)
+		apps = append(apps, app)
+	}
+
+	// Generate random zones and associate them with the apps.
+	randomZones := testutil.GenerateRandomZones(75)
+	for _, randomZone := range randomZones {
+		zone := &Zone{
+			Name: randomZone.Name,
+			LocalZones: []*LocalZone{
+				{
+					DaemonID: apps[0].Daemons[0].ID,
+					View:     "_default",
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					LoadedAt: time.Now().UTC(),
+				},
+				{
+					DaemonID: apps[0].Daemons[0].ID,
+					View:     "trusted",
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					LoadedAt: time.Now().UTC(),
+				},
+				{
+					DaemonID: apps[1].Daemons[0].ID,
+					View:     "_default",
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					LoadedAt: time.Now().UTC(),
+				},
+				{
+					DaemonID: apps[2].Daemons[0].ID,
+					View:     "_default",
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					LoadedAt: time.Now().UTC(),
+				},
+			},
+		}
+		err = AddZones(db, zone)
+		require.NoError(t, err)
+	}
+
+	// Make sure that the zones are returned for each app.
+	for i := 0; i < 3; i++ {
+		filter := &GetZonesFilter{
+			AppID: storkutil.Ptr(apps[i].ID),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZonesApp)
+		require.NoError(t, err)
+		require.Equal(t, 75, total)
+		require.Len(t, zones, 75)
+		for _, zone := range zones {
+			require.Len(t, zone.LocalZones, 4)
+		}
+	}
 }
 
 // Test getting zones with flexible filtering using text.
@@ -727,6 +889,98 @@ func BenchmarkGetZones(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		zones, _, err := GetZones(db, nil, ZoneRelationLocalZones)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(zones) != zonesNum {
+			b.Fatalf("invalid number of zones returned %d", len(zones))
+		}
+	}
+}
+
+// The benchmark measures the time to return 100000 zones from the database
+// when filtering by zone type is enabled. The benchmark gave the following
+// results:
+//
+// BenchmarkGetZonesWithZoneTypeFilter-12   2051111792 ns/op
+//
+// This result is slower than the benchmark for the unfiltered zones because
+// we have to join the local_zones table for filtering. However, the performance
+// is acceptable.
+func BenchmarkGetZonesWithZoneTypeFilter(b *testing.B) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
+	defer teardown()
+
+	zonesNum := 100000
+	randomZones := testutil.GenerateRandomZones(zonesNum)
+
+	var daemons []*Daemon
+	for i := range randomZones {
+		// Each server holds 1000 zones.
+		if i%(zonesNum/1000) == 0 {
+			machine := &Machine{
+				ID:        0,
+				Address:   "localhost",
+				AgentPort: int64(8080 + i),
+			}
+			err := AddMachine(db, machine)
+			if err != nil {
+				b.Fatal(err)
+			}
+
+			app := &App{
+				ID:        0,
+				MachineID: machine.ID,
+				Type:      AppTypeKea,
+				Daemons: []*Daemon{
+					NewBind9Daemon(true),
+				},
+			}
+			addedDaemons, err := AddApp(db, app)
+			if err != nil {
+				b.Fatal(err)
+			}
+
+			daemons = append(daemons, addedDaemons...)
+		}
+	}
+	// Add the zones to the database.
+	batch := NewBatch(db, 10000, AddZones)
+	for i, randomZone := range randomZones {
+		zone := &Zone{
+			Name: randomZone.Name,
+			LocalZones: []*LocalZone{
+				{
+					DaemonID: daemons[i/(zonesNum/1000)].ID,
+					Class:    randomZone.Class,
+					Serial:   randomZone.Serial,
+					Type:     randomZone.Type,
+					View:     "_default",
+					LoadedAt: time.Now().UTC(),
+				},
+			},
+		}
+		err := batch.Add(zone)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	err := batch.Flush()
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		filter := &GetZonesFilter{}
+		filter.EnableZoneType(ZoneTypeBuiltin)
+		filter.EnableZoneType(ZoneTypeSecondary)
+		filter.EnableZoneType(ZoneTypeForward)
+		filter.EnableZoneType(ZoneTypeHint)
+		filter.EnableZoneType(ZoneTypePrimary)
+		filter.EnableZoneType(ZoneTypeRedirect)
+		filter.EnableZoneType(ZoneTypeStaticStub)
+		filter.EnableZoneType(ZoneTypeStub)
+		zones, _, err := GetZones(db, filter, ZoneRelationLocalZones)
 		if err != nil {
 			b.Fatal(err)
 		}

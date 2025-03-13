@@ -174,10 +174,9 @@ func TestGetZones(t *testing.T) {
 
 	t.Run("filter by zone type", func(t *testing.T) {
 		ctx := context.Background()
-		zoneType := "secondary"
 		params := dns.GetZonesParams{
 			Limit:    storkutil.Ptr(int64(1000)),
-			ZoneType: &zoneType,
+			ZoneType: []string{"secondary"},
 		}
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
@@ -189,11 +188,32 @@ func TestGetZones(t *testing.T) {
 		}
 	})
 
+	t.Run("filter by several zone types", func(t *testing.T) {
+		ctx := context.Background()
+		params := dns.GetZonesParams{
+			Limit:    storkutil.Ptr(int64(1000)),
+			ZoneType: []string{"primary", "secondary"},
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 100)
+		require.EqualValues(t, 100, rspOK.Payload.Total)
+
+		// Check unique zone types.
+		collectedZoneTypes := make(map[string]struct{})
+		for _, zone := range rspOK.Payload.Items {
+			collectedZoneTypes[zone.LocalZones[0].ZoneType] = struct{}{}
+		}
+		require.Equal(t, 2, len(collectedZoneTypes))
+		require.Contains(t, collectedZoneTypes, "primary")
+		require.Contains(t, collectedZoneTypes, "secondary")
+	})
+
 	t.Run("filter by non-existent zone type", func(t *testing.T) {
 		ctx := context.Background()
-		zoneType := "foo"
 		params := dns.GetZonesParams{
-			ZoneType: &zoneType,
+			ZoneType: []string{"foo"},
 		}
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
