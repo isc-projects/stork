@@ -154,6 +154,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Returns true when both DHCP and DNS apps exist among authorized machines;
+     * false otherwise.
+     */
+    get bothDHCPAndDNSAppsExist(): boolean {
+        return this.appsStats.keaAppsTotal > 0 && this.appsStats.bind9AppsTotal > 0
+    }
+
+    /**
      * A list of possible HA states.
      *
      * The states are ordered by severity, from the least alarming to the
@@ -589,4 +597,52 @@ export class DashboardComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly getSeverity = getSeverity
+
+    /**
+     * Browser storage key for storing dns-dashboard-hidden state.
+     * @private
+     */
+    private readonly _dnsDashboardHiddenStorageKey = 'dns-dashboard-hidden'
+
+    /**
+     * Browser storage key for storing dhcp-dashboard-hidden state.
+     * @private
+     */
+    private readonly _dhcpDashboardHiddenStorageKey = 'dhcp-dashboard-hidden'
+
+    /**
+     * Returns true when DNS dashboard was hidden or false otherwise. The state is read from browser storage.
+     */
+    isDNSDashboardHidden(): boolean {
+        const hidden =
+            localStorage.getItem(this._dnsDashboardHiddenStorageKey) ??
+            (this.bothDHCPAndDNSAppsExist ? 'true' : 'false')
+        return hidden === 'true'
+    }
+
+    /**
+     * Stores in browser storage whether the DNS dashboard should remain hidden or not.
+     * @param hidden
+     */
+    storeDNSDashboardHidden(hidden: boolean): void {
+        localStorage.setItem(this._dnsDashboardHiddenStorageKey, JSON.stringify(hidden))
+    }
+
+    /**
+     * Returns true when DHCP dashboard was hidden or false otherwise. The state is read from browser storage.
+     */
+    isDHCPDashboardHidden(): boolean {
+        const hidden =
+            localStorage.getItem(this._dhcpDashboardHiddenStorageKey) ??
+            (this.bothDHCPAndDNSAppsExist ? 'true' : 'false')
+        return hidden === 'true'
+    }
+
+    /**
+     * Stores in browser storage whether the DHCP dashboard should remain hidden or not.
+     * @param hidden
+     */
+    storeDHCPDashboardHidden(hidden: boolean): void {
+        localStorage.setItem(this._dhcpDashboardHiddenStorageKey, JSON.stringify(hidden))
+    }
 }

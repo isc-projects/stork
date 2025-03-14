@@ -1,12 +1,31 @@
 // Set max-width to prevent horizontal overflow.
-:host ::ng-deep .max-w-100vw
-  // full viewport width minus some space for margins and paddings
-  max-width: calc(100vw - 5rem)
+:host ::ng-deep
+  .max-w-100vw
+    // full viewport width minus some space for margins and paddings
+    max-width: calc(100vw - 5rem)
 
-// Reduce right padding in the panel with Events table.
-// By default, panel's content has left, right, bottom padding 1.125rem.
-:host ::ng-deep .dashboard-events-panel .p-panel-content
-  padding-right: 0.5rem
+  // Reduce right padding in the panel with Events table.
+  // By default, panel's content has left, right, bottom padding 1.125rem.
+  .dashboard-events-panel .p-panel-content
+    padding-right: 0.5rem
+
+  // Set the toggler icon in the panel header to be the first element.
+  .p-panel .p-panel-icons-start
+    order: -1
+
+  // For the panel headers justify flex-container content to have toggler button
+  // on the left and panel title on the right.
+  .p-panel .p-panel-header
+    justify-content: space-between
+
+  // Custom Primary-like style for toggler button, because PrimeNG does not allow to use custom button class
+  // nor style in the panel template.
+  button.p-panel-toggler
+    color: var(--primary-color-text)
+    background: var(--primary-color)
+    &:hover
+      color: var(--highlight-text-color)
+      background: var(--highlight-bg)
 
 h1.section-heading
   font-size: 1.4em
@@ -24,8 +43,3 @@ h2.section-heading
 
 .utilization-row__value
   padding-left: 1em
-
-// Custom style for dashboard p-panel title.
-.p-panel-title
-  font-size: 1.8em
-  display: inline-block
