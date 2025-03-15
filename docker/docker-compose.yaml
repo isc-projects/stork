@@ -386,10 +386,12 @@ services:
       - "8882"
       - "9100" # node_exporter for prometheus
       - "9119" # bind_exporter for prometheus
-      - "5302:53/udp" # Expose DNS service to the host.
-      - "5302:53/tcp" # Expose DNS service to the host.
+      - "5302/udp" # Expose DNS service to the host.
+      - "5302/tcp" # Expose DNS service to the host.
     ports:
       - "8882:8882"
+      - "5302:53/udp" # Expose DNS service to the host.
+      - "5302:53/tcp" # Expose DNS service to the host.
     volumes:
       - ./docker/config/agent-bind9-2/db.test:/etc/bind/db.test
       - ./docker/config/agent-bind9-2/named.conf:/etc/bind/named.conf
