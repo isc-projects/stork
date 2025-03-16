@@ -541,6 +541,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this._restoreZonesTableRowsPerPage()
 
+        // Initialize the filter to hide builtin zones by default
+        setTimeout(() => {
+            if (this.hideBuiltinZones) {
+                this.toggleBuiltinZones();
+            }
+        });
+
         // Manage RxJS subscriptions on init.
         this._subscriptions = this.activatedRoute.queryParamMap
             .pipe(filter(() => this._initDone))
@@ -911,5 +918,30 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         const state: TableState = { rows: rows }
         const storage = this.zonesTable?.getStorage()
         storage?.setItem(this._zonesTableStateStorageKey, JSON.stringify(state))
+    }
+
+    // Add property to track the hide builtin state
+    hideBuiltinZones: boolean = true;
+
+    /**
+     * Toggles builtin zones by manipulating the Zone Type filter
+     */
+    toggleBuiltinZones() {
+        this.hideBuiltinZones = !this.hideBuiltinZones;
+
+        // Get current filters
+        const filters = this.zonesTable?.filters || {};
+
+        // Set zoneType filter to include all types except builtin when hiding
+        filters.zoneType = {
+            matchMode: 'equals',
+            value: this.hideBuiltinZones
+                ? this.zoneTypes.filter(type => type !== 'builtin')
+                : this.zoneTypes
+        };
+
+        // Apply filters to table
+        this.zonesTable.filters = filters;
+        this.zonesTable._filter();
     }
 }
