@@ -477,6 +477,8 @@ for each occurrence of that zone.
                 <tr>
                     <th class="w-3rem sm:w-5rem"></th>
                     <th>Zone Name</th>
+                    <th>Serial</th>
+                    <th>Zone Type</th>
                     <th>Number of Associated DNS Views</th>
                 </tr>
             </ng-template>
@@ -494,6 +496,19 @@ for each occurrence of that zone.
                     </td>
                     <td>
                         <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" styleClass="px-0 md:px-2" />
+                    </td>
+                    <td>
+                        <div [class.bg-red-100]="getZoneSerialInfo(zone).hasMismatch">
+                            {{ getZoneSerialInfo(zone).serial }}
+                            <i *ngIf="getZoneSerialInfo(zone).hasMismatch"
+                               class="pi pi-star-fill text-red-500 ml-2"
+                               pTooltip="Serial numbers mismatch across servers"></i>
+                        </div>
+                    </td>
+                    <td>
+                        <span *ngFor="let type of getUniqueZoneTypes(zone); let last = last">
+                            {{ type }}{{ !last ? ', ' : '' }}
+                        </span>
                     </td>
                     <td>
                         {{ zone?.localZones?.length ?? 0 }}
