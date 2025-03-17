@@ -201,6 +201,7 @@
             [expandedRowKeys]="zonesExpandedRows"
             [loading]="zonesLoading"
             [totalRecords]="zonesTotal"
+            (onFilter)="zonesFiltered($event)"
         >
             <ng-template pTemplate="caption">
                 <p-panel #filtersPanel [toggleable]="true">

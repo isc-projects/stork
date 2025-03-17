@@ -25,9 +25,10 @@ import {
     tap,
 } from 'rxjs/operators'
 import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription, timer } from 'rxjs'
-import { Table, TableLazyLoadEvent } from 'primeng/table'
+import { Table, TableFilterEvent, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
-import { HttpResponse, HttpStatusCode } from '@angular/common/http'
+import { HttpParams, HttpResponse, HttpStatusCode } from '@angular/common/http'
+import { Location } from '@angular/common'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { hasFilter, parseBoolean } from '../table'
 import { ActivatedRoute, ParamMap } from '@angular/router'
@@ -299,7 +300,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private dnsService: DNSService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService,
-        private activatedRoute: ActivatedRoute
+        private activatedRoute: ActivatedRoute,
+        private locationService: Location
     ) {}
 
     /**
@@ -345,6 +347,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     ngAfterViewInit() {
         this._initDone = true
+        console.log('init done')
         if (!this.loadZonesOnInit) {
             // Valid zones filter was provided via URL queryParams.
             this._restoreZonesTableRowsPerPage()
@@ -903,5 +906,38 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     activateFirstTab() {
         this.activeTabIdx = 0
+    }
+
+    filterToQueryParams(filters: {}) {
+        let hP = new HttpParams()
+
+        for (let filterKey in filters) {
+            const filter: FilterMetadata = filters[filterKey]
+            if (filter.value) {
+                if (Array.isArray(filter.value)) {
+                    filter.value.forEach((filterVal) => hP = hP.append(filterKey, filterVal))
+                    continue
+                }
+
+                hP = hP.append(filterKey, filter.value)
+            }
+        }
+
+        return hP.toString()
+    }
+
+    zonesFiltered(filterEvent: TableFilterEvent) {
+        const path = this.activatedRoute.snapshot.url.map((s)=>s.path).join('/')
+        const query = this.filterToQueryParams(filterEvent.filters) || null
+        console.log(
+            'filtered',
+            filterEvent,
+            'path',
+            path,
+            'query',
+            query
+        )
+
+        this.locationService.go(path, query)
     }
 }
