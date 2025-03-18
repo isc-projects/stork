@@ -419,7 +419,7 @@ and a collection of resources and/or parameters to be returned to the
 client if the client's DHCP message is associated with the host reservation by one
 of the identifiers. Stork can detect existing host reservations specified both in
 the configuration files of the monitored Kea servers and in the host database
-backends accessed via the Kea Host Commands premium hook library.
+backends accessed via the Kea Host Commands hook library.
 
 All reservations detected by Stork can be listed by selecting the ``DHCP``
 menu option and then selecting ``Host Reservations``.
@@ -456,7 +456,7 @@ static assignments via host reservations. If HA peers are configured
 correctly, the reservations they share will have two links in the
 ``App Name`` column. Next to each link there is a label indicating
 whether the host reservation for the given server has been specified
-in its configuration file or a host database (via the Host Commands premium
+in its configuration file or a host database (via the Host Commands
 hook library).
 
 The ``Filter Hosts`` input box is located above the ``Hosts`` table. It
@@ -535,7 +535,7 @@ the host reservations can be specified within the Kea configuration files; see
 for details. The other way is to use a host database backend, as described in
 `Storing Host Reservations in MySQL or PostgreSQL <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#storing-host-reservations-in-mysql-or-postgresql>`_.
 The second solution requires the given Kea server to be configured to use the
-Host Commands premium hook library (``host_cmds``). This library implements control commands used
+Host Commands hook library (``host_cmds``). This library implements control commands used
 to store and fetch the host reservations from the host database to which the Kea
 server is connected. If the ``host_cmds`` hook library is not loaded, Stork
 only presents the reservations specified within the Kea configuration files.

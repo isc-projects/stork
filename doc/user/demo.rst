@@ -81,20 +81,6 @@ the Ruby toolkit:
 
    $ ./stork-demo.sh
 
-Additional Features
-~~~~~~~~~~~~~~~~~~~
-
-It is possible to run the demo with additional features enabled in the Kea
-app; this requires the demo to be started with an access token for the Kea premium
-and/or subscriber hook repositories. Access tokens are provided to ISC's paid support customers;
-format-specific setup instructions can be found on
-https://kb.isc.org/docs/isc-kea-packages#private-repositories-for-commercially-licensed-hooks. ISC paid support
-customers should feel free to open a ticket for assistance if needed.
-
-.. code-block:: console
-
-   $ rake demo:up CS_REPO_ACCESS_TOKEN=<access token>
-
 Detached Mode
 ~~~~~~~~~~~~~
 
