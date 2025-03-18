@@ -62,6 +62,17 @@
     </tr>
 </ng-template>
 
+<ng-template #clearFilterBtn let-value let-filterConstraint="filterConstraint">
+    <p-button
+        icon="pi pi-filter-slash"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        [styleClass]="value ? '' : 'p-hidden-space'"
+        (onClick)="clearFilter(filterConstraint)"
+    />
+</ng-template>
+
 <ng-template #localZoneCells let-localZone>
     <td>
         <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
@@ -255,14 +266,15 @@
                                         ></p-inputNumber>
                                         <label for="app-id">App ID</label>
                                     </span>
-                                    <p-button
-                                        icon="pi pi-filter-slash"
-                                        [rounded]="true"
-                                        [text]="true"
-                                        severity="secondary"
-                                        [styleClass]="value ? '' : 'p-hidden-space'"
-                                        (onClick)="clearFilter(filterConstraint)"
-                                    />
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
                                 </div>
                             </ng-template>
                         </p-columnFilter>
@@ -286,14 +298,15 @@
                                         />
                                         <label for="zone-serial">Serial</label>
                                     </span>
-                                    <p-button
-                                        icon="pi pi-filter-slash"
-                                        [rounded]="true"
-                                        [text]="true"
-                                        severity="secondary"
-                                        [styleClass]="value ? '' : 'p-hidden-space'"
-                                        (onClick)="clearFilter(filterConstraint)"
-                                    />
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
                                 </div>
                             </ng-template>
                         </p-columnFilter>
@@ -315,14 +328,15 @@
                                         />
                                         <label for="zone-type">Zone Type</label>
                                     </span>
-                                    <p-button
-                                        icon="pi pi-filter-slash"
-                                        [rounded]="true"
-                                        [text]="true"
-                                        severity="secondary"
-                                        [styleClass]="value ? '' : 'p-hidden-space'"
-                                        (onClick)="clearFilter(filterConstraint)"
-                                    />
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
                                 </div>
                             </ng-template>
                         </p-columnFilter>
@@ -344,14 +358,15 @@
                                         ></p-dropdown>
                                         <label for="zone-class">Zone Class</label>
                                     </span>
-                                    <p-button
-                                        icon="pi pi-filter-slash"
-                                        [rounded]="true"
-                                        [text]="true"
-                                        severity="secondary"
-                                        [styleClass]="value ? '' : 'p-hidden-space'"
-                                        (onClick)="clearFilter(filterConstraint)"
-                                    />
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
                                 </div>
                             </ng-template>
                         </p-columnFilter>
@@ -370,14 +385,15 @@
                                         ></p-dropdown>
                                         <label for="app-type">App Type</label>
                                     </span>
-                                    <p-button
-                                        icon="pi pi-filter-slash"
-                                        [rounded]="true"
-                                        [text]="true"
-                                        severity="secondary"
-                                        [styleClass]="value ? '' : 'p-hidden-space'"
-                                        (onClick)="clearFilter(filterConstraint)"
-                                    />
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
                                 </div>
                             </ng-template>
                         </p-columnFilter>
@@ -394,14 +410,15 @@
                                             placeholder="App name, Zone name or view"
                                         />
                                     </span>
-                                    <p-button
-                                        icon="pi pi-filter-slash"
-                                        [rounded]="true"
-                                        [text]="true"
-                                        severity="secondary"
-                                        [styleClass]="value ? '' : 'p-hidden-space'"
-                                        (onClick)="clearFilter(filterConstraint)"
-                                    />
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
                                 </div>
                             </ng-template>
                         </p-columnFilter>
