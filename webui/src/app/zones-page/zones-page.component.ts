@@ -355,8 +355,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Keeps current valid zone filters parsed from URL queryParams.
      * The type of this object is inline with PrimeNG table filters property.
+     * @private
      */
-    queryParamFilters: { [p: string]: FilterMetadata } = {}
+    private _queryParamFilters: { [p: string]: FilterMetadata } = {}
 
     /**
      * Object containing supported zone filters which values are provided via URL deep-link.
@@ -389,10 +390,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Filter validation relies on correctly initialized _supportedQueryParamFilters property.
      * Returns number of valid filters found.
      * @param queryParamMap URL queryParamMap that will be used for zone filters parsing
+     * @private
      */
-    parseQueryParams(queryParamMap: ParamMap): number {
+    private _parseQueryParams(queryParamMap: ParamMap): number {
         let validFilters = 0
-        this.queryParamFilters = {}
+        this._queryParamFilters = {}
         for (let paramKey of queryParamMap.keys) {
             if (!(paramKey in this._supportedQueryParamFilters)) {
                 this.messageService.add({
@@ -482,8 +484,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     if (parsedValue !== null) {
                         const filterConstraint = {}
                         if (this._supportedQueryParamFilters[paramKey].arrayType) {
-                            parsedValue = this.queryParamFilters[paramKey]?.value
-                                ? [...this.queryParamFilters[paramKey]?.value, parsedValue]
+                            parsedValue = this._queryParamFilters[paramKey]?.value
+                                ? [...this._queryParamFilters[paramKey]?.value, parsedValue]
                                 : [parsedValue]
                         }
 
@@ -491,7 +493,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                             value: parsedValue,
                             matchMode: this._supportedQueryParamFilters[paramKey].matchMode,
                         }
-                        this.queryParamFilters = { ...this.queryParamFilters, ...filterConstraint }
+                        this._queryParamFilters = { ...this._queryParamFilters, ...filterConstraint }
                     }
                 }
             }
@@ -542,7 +544,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             .pipe(filter(() => this._initDone))
             .subscribe((value) => {
                 console.log('activated route emits qpm next', value, Date.now())
-                this.parseQueryParams(value)
+                this._parseQueryParams(value)
                 this._filterZonesByQueryParams()
                 if (this.activeTabIdx > 0) {
                     // Go back to first tab with zones list.
@@ -565,7 +567,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 .subscribe()
         )
 
-        const queryParamFiltersCount = this.parseQueryParams(this.activatedRoute.snapshot.queryParamMap)
+        const queryParamFiltersCount = this._parseQueryParams(this.activatedRoute.snapshot.queryParamMap)
         if (queryParamFiltersCount > 0) {
             // Valid filters found, so do not load lazily zones on init, because zones with appropriate filters
             // will be loaded later.
@@ -746,7 +748,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             )
         )
             .then(() => {
-                this.storeZoneFetchSent(true)
+                this._storeZoneFetchSent(true)
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Request sent',
@@ -832,8 +834,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Stores information in browser storage whether PUT /dns-management/zones-fetch was sent or not.
      * @param sent request was sent or not
+     * @private
      */
-    storeZoneFetchSent(sent: boolean) {
+    private _storeZoneFetchSent(sent: boolean) {
         sessionStorage.setItem(this._fetchSentStorageKey, JSON.stringify(sent))
     }
 
@@ -868,7 +871,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private _filterZonesByQueryParams(): void {
         this.zonesTable?.clearFilterValues()
         const metadata = this.zonesTable?.createLazyLoadMetadata()
-        this.zonesTable.filters = { ...metadata.filters, ...this.queryParamFilters }
+        this.zonesTable.filters = { ...metadata.filters, ...this._queryParamFilters }
         this.zonesTable?._filter()
     }
 
