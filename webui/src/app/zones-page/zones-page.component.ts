@@ -25,13 +25,12 @@ import {
     tap,
 } from 'rxjs/operators'
 import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription, timer } from 'rxjs'
-import { Table, TableFilterEvent, TableLazyLoadEvent } from 'primeng/table'
+import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { getErrorMessage } from '../utils'
-import { HttpParams, HttpResponse, HttpStatusCode } from '@angular/common/http'
-import { Location } from '@angular/common'
+import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { hasFilter, parseBoolean } from '../table'
-import { ActivatedRoute, ParamMap } from '@angular/router'
+import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import StatusEnum = ZoneInventoryState.StatusEnum
 
 /**
@@ -99,16 +98,15 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     zonesLoading: boolean = false
 
     /**
+     * Keeps number of zones per page in the zones table.
+     */
+    zonesRows: number = 10
+
+    /**
      * Key to be used in browser storage for keeping zones table state.
      * @private
      */
     private readonly _zonesTableStateStorageKey = 'zones-table-state'
-
-    /**
-     * Key to be used for dynamic binding to stateKey input property of zones PrimeNG table.
-     * Changing this value will have effect on whether zones table is stateful or not.
-     */
-    zonesStateKey: string = this._zonesTableStateStorageKey
 
     /**
      * Keeps expanded rows of zones table.
@@ -294,6 +292,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param messageService PrimeNG message service used to display feedback messages in UI
      * @param confirmationService PrimeNG confirmation service used to display confirmation dialog
      * @param activatedRoute Angular ActivatedRoute to retrieve information about current route queryParams
+     * @param router Angular router service used to navigate when zones table filtering changes
      */
     constructor(
         private cd: ChangeDetectorRef,
@@ -301,7 +300,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private messageService: MessageService,
         private confirmationService: ConfirmationService,
         private activatedRoute: ActivatedRoute,
-        private locationService: Location
+        private router: Router
     ) {}
 
     /**
@@ -347,10 +346,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     ngAfterViewInit() {
         this._initDone = true
-        console.log('init done')
         if (!this.loadZonesOnInit) {
             // Valid zones filter was provided via URL queryParams.
-            this._restoreZonesTableRowsPerPage()
             this._filterZonesByQueryParams()
         }
     }
@@ -510,34 +507,14 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private _initDone = false
 
     /**
-     * Makes the zones table stateful, which means that pagination, filtering, sorting etc. will be stored
-     * in user browser storage.
-     * @private
-     */
-    private _enableStatefulZonesTable() {
-        this.zonesStateKey = this._zonesTableStateStorageKey
-        this.cd.detectChanges()
-    }
-
-    /**
-     * Makes the zones table NOT stateful, which means that pagination, filtering, sorting etc. will NOT be stored
-     * in user browser storage.
-     * @private
-     */
-    private _disableStatefulZonesTable() {
-        this.zonesStateKey = null
-    }
-
-    /**
      * Restores only rows per page count for the zones table from the state stored in user browser storage.
      * @private
      */
     private _restoreZonesTableRowsPerPage() {
-        const storage = this.zonesTable?.getStorage()
-        const stateString = storage?.getItem(this._zonesTableStateStorageKey)
+        const stateString = localStorage.getItem(this._zonesTableStateStorageKey)
         if (stateString) {
             const state: TableState = JSON.parse(stateString)
-            this.zonesTable.rows = state.rows ?? 10
+            this.zonesRows = state.rows ?? 10
         }
     }
 
@@ -558,35 +535,31 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             this.appTypes.push({ name: this._getDNSAppName(<any>a), value: DNSAppType[a] })
         }
 
+        this._restoreZonesTableRowsPerPage()
+
         // Manage RxJS subscriptions on init.
         this._subscriptions = this.activatedRoute.queryParamMap
             .pipe(filter(() => this._initDone))
             .subscribe((value) => {
-                const queryParamFiltersCount = this.parseQueryParams(value)
-                if (queryParamFiltersCount > 0) {
-                    // Disable stateful zones table when filtering via URL queryParams is in place.
-                    this._disableStatefulZonesTable()
-                    this._filterZonesByQueryParams()
-                    if (this.activeTabIdx > 0) {
-                        // Go back to first tab with zones list.
-                        this.activateFirstTab()
-                    }
-                    return
+                console.log('activated route emits qpm next', value, Date.now())
+                this.parseQueryParams(value)
+                this._filterZonesByQueryParams()
+                if (this.activeTabIdx > 0) {
+                    // Go back to first tab with zones list.
+                    this.activateFirstTab()
                 }
-
-                this._enableStatefulZonesTable()
-                // URL queryParams changed, but no valid filter was found there so force restore table state.
-                this.zonesTable?.restoreState()
-                this.zonesTable?._filter()
             })
         this._subscriptions.add(
             this._zonesTableFilter$
                 .pipe(
+                    map((f) => {
+                        return { ...f, value: f.value || null }
+                    }),
                     debounceTime(300),
                     distinctUntilChanged(),
                     map((f) => {
                         f.filterConstraint.value = f.value
-                        this.zonesTable?._filter()
+                        this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() })
                     })
                 )
                 .subscribe()
@@ -597,8 +570,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             // Valid filters found, so do not load lazily zones on init, because zones with appropriate filters
             // will be loaded later.
             this.loadZonesOnInit = false
-            // Disable stateful zones table when filtering via URL queryParams is in place.
-            this._disableStatefulZonesTable()
             this.zonesLoading = true
         }
 
@@ -873,11 +844,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     protected readonly hasFilter = hasFilter
 
     /**
-     * Resets zones table state and updates the state stored in browser storage.
+     * Resets zones table state and reloads the table without any filters applied.
      */
     clearTableState() {
         this.zonesTable?.clear()
-        this.zonesTable?.saveState()
+        this.router.navigate([])
     }
 
     /**
@@ -908,36 +879,33 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.activeTabIdx = 0
     }
 
-    filterToQueryParams(filters: {}) {
-        let hP = new HttpParams()
-
-        for (let filterKey in filters) {
-            const filter: FilterMetadata = filters[filterKey]
-            if (filter.value) {
-                if (Array.isArray(filter.value)) {
-                    filter.value.forEach((filterVal) => hP = hP.append(filterKey, filterVal))
-                    continue
-                }
-
-                hP = hP.append(filterKey, filter.value)
-            }
-        }
-
-        return hP.toString()
+    /**
+     * Returns zone table filters as queryParam object, which may be used for router navigation.
+     * @private
+     */
+    private _zoneFiltersToQueryParams() {
+        const entries = Object.entries(this.zonesTable.filters).map((entry) => [
+            entry[0],
+            (<FilterMetadata>entry[1]).value,
+        ])
+        return Object.fromEntries(entries)
     }
 
-    zonesFiltered(filterEvent: TableFilterEvent) {
-        const path = this.activatedRoute.snapshot.url.map((s)=>s.path).join('/')
-        const query = this.filterToQueryParams(filterEvent.filters) || null
-        console.log(
-            'filtered',
-            filterEvent,
-            'path',
-            path,
-            'query',
-            query
-        )
+    /**
+     * Clears a value for given zone table filter constraint and reloads the table with the new filtering.
+     * @param filterConstraint
+     */
+    clearFilter(filterConstraint: any) {
+        filterConstraint.value = null
+        this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() })
+    }
 
-        this.locationService.go(path, query)
+    /**
+     * Stores only rows per page count for the zones table in user browser storage.
+     */
+    storeZonesTableRowsPerPage(rows: number) {
+        const state: TableState = { rows: rows }
+        const storage = this.zonesTable?.getStorage()
+        storage?.setItem(this._zonesTableStateStorageKey, JSON.stringify(state))
     }
 }
