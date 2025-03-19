@@ -773,8 +773,6 @@ The read-only mode blocks any modifications to the
 files in the container. In this case, the error is raised that the file system
 is read-only. The read-only mode also disables reflecting the changes made in
 the host filesystem to the container filesystem.
-To mount the volume in the read-only mode, add the ``:ro`` suffix to the volume
-definition. For example: ``/path/to/host:/path/to/container:ro``.
 
 The read-write mode allows the container to modify the files in the volume. The
 changes made inside the container are immediately reflected in the host
@@ -801,7 +799,7 @@ To mark the volume as isolated, start its source path with the ``$IPWD``
 ``$PWD`` variable. The ``$IPWD`` variable will be replaced by the temporary
 directory path (``tests/system/config/.isolated``).
 
-Example:
+Example of the ``docker-compose.yaml`` file with the isolated volume:
 
 .. code-block:: yaml
 
@@ -811,15 +809,16 @@ Example:
           - $IPWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
 The framework isolates only volumes of the running services (not all of them).
-Isolation is triggered by the ``up`` and ``run`` commands. Especially, it is
-not triggered by the ``exec`` and ``start`` commands as the volumes are already
-mounted when these commands are executed.
+Isolation is triggered by the ``docker compose up`` and ``docker compose run``
+commands. Especially, it is not triggered by the ``docker compose exec`` and
+``docker compose start`` commands as the volumes are already mounted when these
+commands are executed.
 
 The same volume is isolated only once until cleaning the temporary directory
 to share them between running containers and preserve on stop as do the
 original volumes.
 
-The isolated volumes are cleaned up on the ``down`` command.
+The isolated volumes are cleaned up on the ``docker compose down`` command.
 
 It needs to be considered whether all volumes should be isolated by default.
 Currently, only the volumes that are expected to be modified during the test are
