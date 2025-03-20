@@ -814,11 +814,9 @@ commands. Especially, it is not triggered by the ``docker compose exec`` and
 ``docker compose start`` commands as the volumes are already mounted when these
 commands are executed.
 
-The same volume is isolated only once until cleaning the temporary directory
-to share them between running containers and preserve on stop as do the
-original volumes.
-
-The isolated volumes are cleaned up on the ``docker compose down`` command.
+A volume is isolated once and shared between several services. The volume and
+all applied modifications are preserved across the service restarts. The volume
+is removed when the service containers are pruned.
 
 It needs to be considered whether all volumes should be isolated by default.
 Currently, only the volumes that are expected to be modified during the test are
