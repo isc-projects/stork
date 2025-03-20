@@ -135,3 +135,19 @@ func TestDaemonLockerUnlockWrongKey(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, locker.IsLocked(42))
 }
+
+// Test that the already locked daemons are unlocked if locking fails.
+func TestDaemonLockerLockFailed(t *testing.T) {
+	// Arrange
+	locker := NewDaemonLocker()
+	_, _ = locker.Lock(42)
+
+	// Act
+	key, err := locker.Lock(24, 42, 4224)
+
+	// Assert
+	require.ErrorContains(t, err, "42 is already locked")
+	require.Zero(t, key)
+	require.False(t, locker.IsLocked(24))
+	require.False(t, locker.IsLocked(4224))
+}
