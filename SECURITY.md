@@ -20,7 +20,7 @@ below are the major points from the policy.
 
 ## Reporting Possible Security Issues
 
-To report a security vulnerability, please follow the instructions on [this page]][5].
+To report a security vulnerability, please follow the instructions on [this page][5].
 
 We prefer that you [open a confidential GitLab issue][2] (not GitHub). The GitLab issue creates a record,
 is visible to all ISC engineers, and provides a shared communication channel with the reporter.
