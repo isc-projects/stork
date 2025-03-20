@@ -119,25 +119,22 @@ export function humanCount(count: string | bigint | number) {
 /**
  * Build URL to Grafana dashboard
  */
-export function getGrafanaUrl(grafanaBaseUrl: string, name: string, subnet?: string, instance?: string): string {
+export function getGrafanaUrl(grafanaBaseUrl: string, dashboardId: string, subnet?: string, instance?: string): string {
+    if (!grafanaBaseUrl || !dashboardId) {
+        return ''
+    }
+
     if (!grafanaBaseUrl.endsWith('/')) {
         grafanaBaseUrl += '/'
     }
 
-    let url = null
-    if (name === 'dhcp4') {
-        if (instance) {
-            instance += ':9547'
-        }
-        url = new URL('./d/hRf18FvWz/', grafanaBaseUrl)
-    } else if (name === 'dhcp6') {
-        if (instance) {
-            instance += ':9547'
-        }
-        url = new URL('./d/AQPHKJUGz/', grafanaBaseUrl)
-    } else {
-        return ''
+    if (instance) {
+        // TODO: The port should not be hardcoded. It must be the same as the
+        // port used by the Stork Agent for the Prometheus exporter.
+        instance += ':9547'
     }
+
+    const url = new URL(`./d/${dashboardId}/`, grafanaBaseUrl)
 
     const sp = new URLSearchParams()
     if (subnet) {

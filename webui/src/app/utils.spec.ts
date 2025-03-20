@@ -266,11 +266,17 @@ describe('utils', () => {
 
     it('should produce a valid link Grafana URL even if the base URL contains a segment', () => {
         const baseURL = 'http://grafana.url/segment'
-        let grafanaURL = getGrafanaUrl(baseURL, 'dhcp4')
+        let grafanaURL = getGrafanaUrl(baseURL, 'hRf18FvWz')
         expect(grafanaURL).toBe('http://grafana.url/segment/d/hRf18FvWz/')
-        grafanaURL = getGrafanaUrl(baseURL, 'dhcp6')
+        grafanaURL = getGrafanaUrl(baseURL, 'AQPHKJUGz')
         expect(grafanaURL).toBe('http://grafana.url/segment/d/AQPHKJUGz/')
         grafanaURL = getGrafanaUrl(baseURL, 'netconf')
+        expect(grafanaURL).toBe('http://grafana.url/segment/d/netconf/')
+        grafanaURL = getGrafanaUrl(baseURL, '')
+        expect(grafanaURL).toBe('')
+        grafanaURL = getGrafanaUrl('', 'foobar')
+        expect(grafanaURL).toBe('')
+        grafanaURL = getGrafanaUrl('', '')
         expect(grafanaURL).toBe('')
     })
 

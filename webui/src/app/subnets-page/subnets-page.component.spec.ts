@@ -341,6 +341,8 @@ describe('SubnetsPageComponent', () => {
         spyOn(settingService, 'getSettings').and.returnValue(
             of({
                 grafanaUrl: 'http://localhost:3000',
+                grafanaDhcp4DashboardId: 'dhcp4-dashboard-id',
+                grafanaDhcp6DashboardId: 'dhcp6-dashboard-id',
             } as any)
         )
     }))
@@ -366,10 +368,12 @@ describe('SubnetsPageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should fetch grafana url', async () => {
+    it('should fetch grafana url and dashboard IDs', async () => {
         component.ngOnInit()
         await fixture.whenStable()
         expect(component.grafanaUrl).toBe('http://localhost:3000')
+        expect(component.grafanaDhcp4DashboardId).toBe('dhcp4-dashboard-id')
+        expect(component.grafanaDhcp6DashboardId).toBe('dhcp6-dashboard-id')
     })
 
     it('should convert statistics to big integers', async () => {

@@ -86,15 +86,25 @@ export class SubnetsTableComponent
     @Input() grafanaUrl: string
 
     /**
+     * ID of the DHCPv4 dashboard in Grafana.
+     */
+    @Input() grafanaDhcp4DashboardId: string
+
+    /**
+     * ID of the DHCPv6 dashboard in Grafana.
+     */
+    @Input() grafanaDhcp6DashboardId: string
+
+    /**
      * Indicates if the data is being fetched from the server.
      */
     @Input() dataLoading: boolean = false
 
     constructor(
-        private route: ActivatedRoute,
+        route: ActivatedRoute,
         private dhcpApi: DHCPService,
         private messageService: MessageService,
-        private location: Location
+        location: Location
     ) {
         super(route, location)
     }
@@ -246,7 +256,14 @@ export class SubnetsTableComponent
      * Build URL to Grafana dashboard
      */
     getGrafanaUrl(name, subnet, instance) {
-        return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
+        let dashboardId = ''
+        if (name === 'dhcp4') {
+            dashboardId = this.grafanaDhcp4DashboardId
+        } else if (name === 'dhcp6') {
+            dashboardId = this.grafanaDhcp6DashboardId
+        }
+
+        return getGrafanaUrl(this.grafanaUrl, dashboardId, subnet, instance)
     }
 
     /**

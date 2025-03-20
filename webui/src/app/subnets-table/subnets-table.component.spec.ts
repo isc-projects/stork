@@ -113,6 +113,9 @@ describe('SubnetsTableComponent', () => {
         }
         spyOn(dhcpApi, 'getSubnets').and.returnValue(of(subnets as any))
         component.grafanaUrl = 'http://localhost:3000/'
+        component.grafanaDhcp4DashboardId = 'hRf18FvWz'
+        component.grafanaDhcp6DashboardId = 'AQPHKJUGz'
+
         component.loadData({
             first: 0,
             rows: 10,

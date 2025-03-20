@@ -70,7 +70,20 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     openedTabs: Tab<SubnetFormState, Subnet>[] = [new Tab(SubnetFormState, TabType.List, { id: 0 })]
 
+    /**
+     * Base URL to Grafana.
+     */
     grafanaUrl: string
+
+    /**
+     * ID of the DHCPv4 dashboard in Grafana.
+     */
+    grafanaDhcp4DashboardId: string
+
+    /**
+     * ID of the DHCPv6 dashboard in Grafana.
+     */
+    grafanaDhcp6DashboardId: string
 
     constructor(
         private route: ActivatedRoute,
@@ -89,7 +102,13 @@ export class SubnetsPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.subscriptions.add(
             this.settingSvc.getSettings().subscribe(
                 (data: Settings) => {
-                    this.grafanaUrl = data?.grafanaUrl
+                    if (!data) {
+                        return
+                    }
+
+                    this.grafanaUrl = data.grafanaUrl
+                    this.grafanaDhcp4DashboardId = data.grafanaDhcp4DashboardId
+                    this.grafanaDhcp6DashboardId = data.grafanaDhcp6DashboardId
                 },
                 (error) => {
                     this.messageService.add({

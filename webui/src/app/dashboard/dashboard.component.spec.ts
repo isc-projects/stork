@@ -225,16 +225,20 @@ describe('DashboardComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should fetch grafana url', fakeAsync(() => {
+    it('should fetch grafana url and dashboard IDs', fakeAsync(() => {
         spyOn(settingService, 'getSettings').and.returnValue(
             of({
                 grafanaUrl: 'http://localhost:3000',
+                grafanaDhcp4DashboardId: 'dhcp4-dashboard-id',
+                grafanaDhcp6DashboardId: 'dhcp6-dashboard-id',
             } as any)
         )
 
         component.ngOnInit()
         tick()
         expect(component.grafanaUrl).toBe('http://localhost:3000')
+        expect(component.grafanaDhcp4DashboardId).toBe('dhcp4-dashboard-id')
+        expect(component.grafanaDhcp6DashboardId).toBe('dhcp6-dashboard-id')
 
         fixture.detectChanges()
         const grafanaIcons = fixture.debugElement.queryAll(By.css('i.pi-chart-line'))

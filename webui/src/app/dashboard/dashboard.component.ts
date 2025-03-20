@@ -76,11 +76,45 @@ type DhcpOverviewParsed = ModifyDeep<
     styleUrls: ['./dashboard.component.sass'],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+    /**
+     * All subscriptions used by this component. It is used to unsubscribe
+     * from all of them when the component is destroyed.
+     */
     private subscriptions = new Subscription()
+
+    /**
+     * Indicates whether the data has been loaded from the server.
+     */
     loaded = false
+
+    /**
+     * Application statistics fetched from the server.
+     */
     appsStats: AppsStats
+
+    /**
+     * The overview data of DHCP daemons.
+     * The big numbers are converted to BigInt.
+     */
     overview: DhcpOverviewParsed
+
+    /**
+     * Base URL of the Grafana instance.
+     * It is fetched from the server settings.
+     */
     grafanaUrl: string
+
+    /**
+     * ID of the DHCPv4 dashboard in Grafana.
+     * It is fetched from the server settings.
+     */
+    grafanaDhcp4DashboardId: string
+
+    /**
+     * ID of the DHCPv6 dashboard in Grafana.
+     * It is fetched from the server settings.
+     */
+    grafanaDhcp6DashboardId: string
 
     /**
      * Returns true when no kea and no bind9 apps exist among authorized machines;
@@ -170,7 +204,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
         this.subscriptions.add(
             this.settingSvc.getSettings().subscribe((data: Settings) => {
-                this.grafanaUrl = data?.grafanaUrl
+                if (!data) {
+                    return
+                }
+
+                this.grafanaUrl = data.grafanaUrl
+                this.grafanaDhcp4DashboardId = data.grafanaDhcp4DashboardId
+                this.grafanaDhcp6DashboardId = data.grafanaDhcp6DashboardId
             })
         )
     }
@@ -262,7 +302,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
      * Build URL to Grafana dashboard
      */
     getGrafanaUrl(name, subnet, instance) {
-        return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
+        let dashboardId = ''
+        if (name === 'dhcp4') {
+            dashboardId = this.grafanaDhcp4DashboardId
+        } else if (name === 'dhcp6') {
+            dashboardId = this.grafanaDhcp6DashboardId
+        }
+
+        return getGrafanaUrl(this.grafanaUrl, dashboardId, subnet, instance)
     }
 
     /**
