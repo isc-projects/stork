@@ -10,7 +10,7 @@ import (
 type LockKey int64
 
 // Low-level mechanism for locking the daemons' configurations.
-// For high-level mechanism that utilizes the context look at the ManagerLocker
+// For high-level mechanism that utilizes the context lock at the ManagerLocker
 // interface.
 // Locker must be thread-safe.
 type DaemonLocker interface {
