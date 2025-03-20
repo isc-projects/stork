@@ -70,6 +70,8 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('appsStatePullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('bind9StatsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('grafanaUrl')?.value).toBe('')
+        expect(component.settingsForm.get('grafanaDhcp4DashboardId')?.value).toBe('hRf18FvWz')
+        expect(component.settingsForm.get('grafanaDhcp6DashboardId')?.value).toBe('AQPHKJUGz')
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(0)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(0)
@@ -100,6 +102,8 @@ describe('SettingsPageComponent', () => {
             appsStatePullerInterval: 28,
             bind9StatsPullerInterval: 29,
             grafanaUrl: 'http://localhost:1234',
+            grafanaDhcp4DashboardId: 'dhcp4',
+            grafanaDhcp6DashboardId: 'dhcp6',
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
@@ -115,6 +119,9 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('appsStatePullerInterval')?.value).toBe(28)
         expect(component.settingsForm.get('bind9StatsPullerInterval')?.value).toBe(29)
         expect(component.settingsForm.get('grafanaUrl')?.value).toBe('http://localhost:1234')
+        expect(component.settingsForm.get('grafanaDhcp4DashboardId')?.value).toBe('dhcp4')
+        expect(component.settingsForm.get('grafanaDhcp6DashboardId')?.value).toBe('dhcp6')
+
         expect(component.settingsForm.get('keaHostsPullerInterval')?.value).toBe(30)
         expect(component.settingsForm.get('keaStatsPullerInterval')?.value).toBe(31)
         expect(component.settingsForm.get('keaStatusPullerInterval')?.value).toBe(32)
@@ -150,6 +157,8 @@ describe('SettingsPageComponent', () => {
             appsStatePullerInterval: 28,
             bind9StatsPullerInterval: 29,
             grafanaUrl: 'http://localhost:1234',
+            grafanaDhcp4DashboardId: 'dhcp4',
+            grafanaDhcp6DashboardId: 'dhcp6',
             keaHostsPullerInterval: 30,
             keaStatsPullerInterval: 31,
             keaStatusPullerInterval: 32,
@@ -160,6 +169,8 @@ describe('SettingsPageComponent', () => {
             appsStatePullerInterval: 13,
             bind9StatsPullerInterval: 13,
             grafanaUrl: 'http://localhost:4234',
+            grafanaDhcp4DashboardId: 'dhcp4',
+            grafanaDhcp6DashboardId: 'dhcp6',
             keaHostsPullerInterval: 13,
             keaStatsPullerInterval: 13,
             keaStatusPullerInterval: 13,

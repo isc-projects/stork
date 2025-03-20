@@ -25,6 +25,8 @@ import { InputTextModule } from 'primeng/inputtext'
 let mockGetSettingsResponse: Settings = {
     bind9StatsPullerInterval: 10,
     grafanaUrl: 'http://grafana.org',
+    grafanaDhcp4DashboardId: 'dhcp4',
+    grafanaDhcp6DashboardId: 'dhcp6',
     keaHostsPullerInterval: 12,
     keaStatsPullerInterval: 15,
     keaStatusPullerInterval: 23,

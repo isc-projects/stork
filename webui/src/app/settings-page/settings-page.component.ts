@@ -16,6 +16,8 @@ interface SettingsForm {
     keaStatsPullerInterval: FormControl<number>
     keaStatusPullerInterval: FormControl<number>
     grafanaUrl: FormControl<string>
+    grafanaDhcp4DashboardId: FormControl<string>
+    grafanaDhcp6DashboardId: FormControl<string>
     enableMachineRegistration: FormControl<boolean>
     enableOnlineSoftwareVersions: FormControl<boolean>
 }
@@ -93,6 +95,24 @@ export class SettingsPageComponent implements OnInit {
     ]
 
     /**
+     * A list of text settings to specify in the form.
+     *
+     * A text input form control is created for each setting in this array.
+     */
+    textSettings: SettingsItem[] = [
+        {
+            title: 'ID of the DHCPv4 Dashboard in Grafana',
+            formControlName: 'grafanaDhcp4DashboardId',
+            help: 'Specifies the ID of the DHCPv4 dashboard in Grafana.',
+        },
+        {
+            title: 'ID of the DHCPv6 Dashboard in Grafana',
+            formControlName: 'grafanaDhcp6DashboardId',
+            help: 'Specifies the ID of the DHCPv6 dashboard in Grafana.',
+        },
+    ]
+
+    /**
      * A form holding the settings.
      */
     settingsForm: FormGroup<SettingsForm>
@@ -123,6 +143,8 @@ export class SettingsPageComponent implements OnInit {
             keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
             grafanaUrl: [''],
+            grafanaDhcp4DashboardId: ['hRf18FvWz'],
+            grafanaDhcp6DashboardId: ['AQPHKJUGz'],
             enableMachineRegistration: [false],
             enableOnlineSoftwareVersions: [false],
         })

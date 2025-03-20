@@ -39,6 +39,8 @@ func TestSettings(t *testing.T) {
 	okRsp := rsp.(*settings.GetSettingsOK)
 	require.EqualValues(t, 60, okRsp.Payload.Bind9StatsPullerInterval)
 	require.Empty(t, okRsp.Payload.GrafanaURL)
+	require.Equal(t, "hRf18FvWz", okRsp.Payload.GrafanaDhcp4DashboardID)
+	require.Equal(t, "AQPHKJUGz", okRsp.Payload.GrafanaDhcp6DashboardID)
 
 	// Update settings.
 	paramsUS := settings.UpdateSettingsParams{
