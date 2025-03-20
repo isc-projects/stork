@@ -147,6 +147,7 @@ import { VersionPageComponent } from './version-page/version-page.component'
 import { BadgeModule } from 'primeng/badge'
 import { MachinesTableComponent } from './machines-table/machines-table.component'
 import { ZonesPageComponent } from './zones-page/zones-page.component'
+import { ByteCharacterComponent } from './byte-character/byte-character.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -244,6 +245,7 @@ export function cfgFactory() {
         VersionPageComponent,
         MachinesTableComponent,
         ZonesPageComponent,
+        ByteCharacterComponent,
     ],
     imports: [
         BrowserModule,
