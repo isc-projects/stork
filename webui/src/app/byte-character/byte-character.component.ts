@@ -21,7 +21,7 @@ export class ByteCharacterComponent {
      * Byte character value.
      * It must be a number between 0 and 255.
      */
-    @Input() byteValue: number
+    @Input({ required: true }) byteValue: number
 
     /**
      * Indicates if the byte character is printable.
