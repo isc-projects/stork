@@ -376,6 +376,35 @@ func TestLockUnlock(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Test that the context passed to the Unlock method must contain the lock key.
+// Otherwise, no daemons are unlocked.
+func TestUnlockForMissingKey(t *testing.T) {
+	// Arrange
+	locker := config.NewDaemonLocker()
+	manager := NewManager(&appstest.ManagerAccessorsWrapper{
+		DaemonLocker: locker,
+	})
+	require.NotNil(t, manager)
+
+	lockCtx, _ := manager.CreateContext(123)
+	lockCtx, _ = manager.Lock(lockCtx, 1, 2, 3)
+
+	// Context with no lock key.
+	unlockCtx := context.WithValue(
+		context.Background(),
+		config.DaemonsContextKey,
+		lockCtx.Value(config.DaemonsContextKey),
+	)
+
+	// Act
+	manager.Unlock(unlockCtx)
+
+	// Assert
+	for _, daemonID := range []int64{1, 2, 3} {
+		require.True(t, locker.IsLocked(daemonID))
+	}
+}
+
 // Test that the commit call is routed to the Kea module when the
 // transaction target is dbmodel.AppTypeKea.
 func TestCommitKeaModule(t *testing.T) {
