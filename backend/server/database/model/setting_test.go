@@ -57,6 +57,18 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, boolVal)
 
+	valStr, err := GetSettingStr(db, "grafana_url")
+	require.NoError(t, err)
+	require.Empty(t, valStr)
+
+	valStr, err = GetSettingStr(db, "grafana_dhcp4_dashboard_id")
+	require.NoError(t, err)
+	require.EqualValues(t, "hRf18FvWz", valStr)
+
+	valStr, err = GetSettingStr(db, "grafana_dhcp6_dashboard_id")
+	require.NoError(t, err)
+	require.EqualValues(t, "AQPHKJUGz", valStr)
+
 	// change the settings
 	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
 	require.NoError(t, err)
@@ -65,6 +77,15 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 
 	err = SetSettingBool(db, "enable_online_software_versions", false)
+	require.NoError(t, err)
+
+	err = SetSettingStr(db, "grafana_url", "http://localhost:3000")
+	require.NoError(t, err)
+
+	err = SetSettingStr(db, "grafana_dhcp4_dashboard_id", "123456")
+	require.NoError(t, err)
+
+	err = SetSettingStr(db, "grafana_dhcp6_dashboard_id", "654321")
 	require.NoError(t, err)
 
 	// reinitialize settings, nothing should change
@@ -84,6 +105,18 @@ func TestInitializeSettings(t *testing.T) {
 	boolVal, err = GetSettingBool(db, "enable_online_software_versions")
 	require.NoError(t, err)
 	require.False(t, boolVal)
+
+	valStr, err = GetSettingStr(db, "grafana_url")
+	require.NoError(t, err)
+	require.EqualValues(t, "http://localhost:3000", valStr)
+
+	valStr, err = GetSettingStr(db, "grafana_dhcp4_dashboard_id")
+	require.NoError(t, err)
+	require.EqualValues(t, "123456", valStr)
+
+	valStr, err = GetSettingStr(db, "grafana_dhcp6_dashboard_id")
+	require.NoError(t, err)
+	require.EqualValues(t, "654321", valStr)
 
 	// get all settings
 	settingsMap, err := GetAllSettings(db)

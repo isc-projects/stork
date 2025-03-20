@@ -49,6 +49,8 @@ func TestSettings(t *testing.T) {
 			KeaStatsPullerInterval:       4,
 			KeaStatusPullerInterval:      5,
 			GrafanaURL:                   "http://foo:3000",
+			GrafanaDhcp4DashboardID:      "dhcp4",
+			GrafanaDhcp6DashboardID:      "dhcp6",
 			EnableMachineRegistration:    false,
 			EnableOnlineSoftwareVersions: false,
 		},
@@ -69,6 +71,8 @@ func TestSettings(t *testing.T) {
 	require.EqualValues(t, 5, okRsp.Payload.KeaStatusPullerInterval)
 
 	require.EqualValues(t, "http://foo:3000", okRsp.Payload.GrafanaURL)
+	require.EqualValues(t, "dhcp4", okRsp.Payload.GrafanaDhcp4DashboardID)
+	require.EqualValues(t, "dhcp6", okRsp.Payload.GrafanaDhcp6DashboardID)
 
 	require.False(t, okRsp.Payload.EnableMachineRegistration)
 	require.False(t, okRsp.Payload.EnableOnlineSoftwareVersions)

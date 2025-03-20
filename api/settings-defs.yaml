@@ -5,6 +5,10 @@
         type: integer
       grafanaUrl:
         type: string
+      grafanaDhcp4DashboardId:
+        type: string
+      grafanaDhcp6DashboardId:
+        type: string
       keaHostsPullerInterval:
         type: integer
       keaStatsPullerInterval:

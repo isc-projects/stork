@@ -82,6 +82,16 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 			Value:   "",
 		},
 		{
+			Name:    "grafana_dhcp4_dashboard_id",
+			ValType: SettingValTypeStr,
+			Value:   "hRf18FvWz",
+		},
+		{
+			Name:    "grafana_dhcp6_dashboard_id",
+			ValType: SettingValTypeStr,
+			Value:   "AQPHKJUGz",
+		},
+		{
 			Name:    "enable_machine_registration",
 			ValType: SettingValTypeBool,
 			Value:   "true",
