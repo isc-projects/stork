@@ -185,7 +185,7 @@ func AddZones(dbi pg.DBI, zones ...*Zone) error {
 // would be negligible.
 func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*Zone, int, error) {
 	var zones []*Zone
-	q := db.Model(&zones).Distinct()
+	q := db.Model(&zones).Group("zone.id")
 	// Add relations.
 	for _, relation := range relations {
 		q = q.Relation(string(relation))
