@@ -420,6 +420,8 @@ describe('MachinesPageComponent', () => {
 
         expect(component.unauthorizedMachinesCount).toBe(4)
         expect(unauthorizedMachinesCountBadge.textContent).toBe('4')
+
+        flush()
     }))
 
     it('should list unauthorized machines requested via URL', fakeAsync(() => {
