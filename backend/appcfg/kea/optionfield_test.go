@@ -114,6 +114,11 @@ func TestParseUint8Field(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 222, iv)
 
+	// Hexadecimal value.
+	iv, err = keaconfig.ParseUint8Field("0xf0")
+	require.NoError(t, err)
+	require.EqualValues(t, 240, iv)
+
 	// Error cases.
 	_, err = keaconfig.ParseUint8Field("268")
 	require.Error(t, err)

@@ -274,6 +274,11 @@ func ParseBoolField(value string) (bool, error) {
 // Parse uint8 option field.
 func ParseUint8Field(value string) (uint8, error) {
 	iv, err := strconv.ParseUint(value, 10, 8)
+	if errors.Is(err, strconv.ErrSyntax) && strings.HasPrefix(value, "0x") {
+		// Check if the value is in hexadecimal format.
+		iv, err = strconv.ParseUint(value[2:], 16, 8)
+	}
+
 	if err != nil {
 		return 0, errors.Errorf("%s is not a valid uint8 option field value", value)
 	}
