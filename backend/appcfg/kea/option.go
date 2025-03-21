@@ -214,6 +214,11 @@ func splitByComma(value string) []string {
 			current += string(c)
 		}
 	}
+
+	if slash {
+		current += "\\"
+	}
+
 	result = append(result, current)
 	return result
 }
