@@ -131,7 +131,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 
 	// Option data specified as comma separated values.
 	if optionData.CSVFormat {
-		values := strings.Split(data, ",")
+		values := splitByComma(data)
 		for i, raw := range values {
 			v := strings.TrimSpace(raw)
 			var field dhcpmodel.DHCPOptionFieldAccessor
@@ -168,4 +168,52 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 	option.Fields = append(option.Fields, field)
 
 	return option, nil
+}
+
+// Splits a string by comma. Supports escaping commas with a backslash.
+func splitByComma(value string) []string {
+	var (
+		slash   bool
+		result  []string
+		current string
+	)
+	for _, c := range value {
+		switch {
+		case c == '\\':
+			if !slash {
+				// Zero has been already seen. Count it.
+				slash = true
+			} else {
+				// The slash has been already seen. Add a single backslash
+				// to the current string.
+				current += string(c)
+			}
+		case c == ',':
+			if slash {
+				// Escaped comma. Add it to the current string.
+				current += string(c)
+				slash = false
+			} else {
+				// Unescaped comma. Split on it.
+				if slash {
+					current += "\\"
+					slash = false
+				}
+
+				result = append(result, current)
+				current = ""
+			}
+		default:
+			// Neither backslash nor comma. Add the character to the current
+			// string.
+			if slash {
+				current += "\\"
+				slash = false
+			}
+
+			current += string(c)
+		}
+	}
+	result = append(result, current)
+	return result
 }

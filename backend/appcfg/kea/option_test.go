@@ -1,6 +1,7 @@
 package keaconfig_test
 
 import (
+	"fmt"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -153,6 +154,7 @@ func TestCreateSingleOptionDataMultipleFields(t *testing.T) {
 	}
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).Return(true)
 
@@ -186,6 +188,7 @@ func TestCreateSingleOptionDataBinaryField(t *testing.T) {
 	}
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).Return(true)
 
@@ -272,6 +275,7 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 	}
 
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().DefinitionExists(gomock.Any(), gomock.Any()).Return(false)
 
@@ -303,6 +307,7 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 		Space:      "bar",
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
@@ -367,6 +372,7 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 		Space:      "baz",
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
@@ -395,6 +401,7 @@ func TestCreateDHCPOptionEmpty(t *testing.T) {
 		Space:     "baz",
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
@@ -415,6 +422,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv4TopLevel(t *testing.T) {
 		Space: dhcpmodel.DHCPv4OptionSpace,
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
@@ -429,6 +437,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv4Suboption(t *testing.T) {
 		Space: "option-253",
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
@@ -443,6 +452,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv6TopLevel(t *testing.T) {
 		Space: dhcpmodel.DHCPv6OptionSpace,
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
@@ -457,6 +467,7 @@ func TestCreateDHCPOptionEncapsulateDHCPv6Suboption(t *testing.T) {
 		Space: "option-1024",
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
@@ -475,6 +486,7 @@ func TestCreateStandardDHCPOption(t *testing.T) {
 		Space:     "s46-cont-mape-options",
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	stdLookup := keaconfig.NewStdDHCPOptionDefinitionLookup()
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(stdLookup.FindByCodeSpace(optionData.Code, optionData.Space, storkutil.IPv6))
@@ -519,6 +531,7 @@ func TestCreateStandardDHCPOptionBinary(t *testing.T) {
 		Space:     "dhcp4",
 	}
 	controller := gomock.NewController(t)
+	defer controller.Finish()
 	lookup := NewMockDHCPOptionDefinitionLookup(controller)
 	stdLookup := keaconfig.NewStdDHCPOptionDefinitionLookup()
 	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(stdLookup.FindByCodeSpace(optionData.Code, optionData.Space, storkutil.IPv4))
@@ -540,4 +553,56 @@ func TestCreateStandardDHCPOptionBinary(t *testing.T) {
 	require.Equal(t, dhcpmodel.BinaryField, fields[1].GetFieldType())
 	require.Len(t, fields[1].GetValues(), 1)
 	require.EqualValues(t, "010203040102", fields[1].GetValues()[0])
+}
+
+// Test that the option data is correctly split by a comma. It must honor the
+// backslash escaping and not split the comma in such cases.
+func TestSplitByComma(t *testing.T) {
+	cases := []string{
+		"1,2,3",
+		"1, 2, 3",
+		"1\\,2,3",
+		"1\\\\,2,3",
+		"1\\\\\\,2,3",
+		"EST5EDT4\\,M3.2.0/02:00\\,M11.1.0/02:00",
+	}
+
+	expected := [][]string{
+		{"1", "2", "3"},
+		{"1", "2", "3"},
+		{"1,2", "3"},
+		{"1\\,2", "3"},
+		{"1\\\\,2", "3"},
+		{"EST5EDT4,M3.2.0/02:00,M11.1.0/02:00"},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	definition := NewMockDHCPOptionDefinition(ctrl)
+	definition.EXPECT().GetEncapsulate().Return("foo").AnyTimes()
+	definition.EXPECT().GetType().Return(dhcpmodel.StringField).AnyTimes()
+	definition.EXPECT().GetRecordTypes().Return([]string{dhcpmodel.StringField}).AnyTimes()
+	definition.EXPECT().GetArray().Return(true).AnyTimes()
+	lookup := NewMockDHCPOptionDefinitionLookup(ctrl)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(definition).AnyTimes()
+
+	for i, c := range cases {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			optionData := keaconfig.SingleOptionData{
+				Code: 42, CSVFormat: true, Name: "foo-bar", Space: "dhcp4",
+				Data: c,
+			}
+
+			option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
+			require.NoError(t, err)
+			fields := option.GetFields()
+			require.Len(t, fields, len(expected[i]))
+			for j, f := range fields {
+				values := f.GetValues()
+				require.Len(t, values, 1)
+				require.Equal(t, expected[i][j], values[0])
+			}
+		})
+	}
 }
