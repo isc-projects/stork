@@ -301,6 +301,8 @@ describe('ZonesPageComponent', () => {
         )
 
         fixture.detectChanges()
+        expect(component.zonesLoading).withContext('zones data loads on init').toBeTrue()
+        expect(component.zonesFetchStatesLoading).withContext('zones fetch status data loads on init').toBeTrue()
 
         // Do not save table state between tests, because that makes tests unstable.
         spyOn(component.zonesTable, 'saveState').and.callFake(() => {})
@@ -313,9 +315,6 @@ describe('ZonesPageComponent', () => {
         // Call await fixture.whenStable() two times to wait for another round of change detection.
         await fixture.whenStable()
         await fixture.whenStable()
-
-        expect(component.zonesLoading).withContext('zones data loads on init').toBeTrue()
-        expect(component.zonesFetchStatesLoading).withContext('zones fetch status data loads on init').toBeTrue()
 
         // Wait for getZones and getZonesFetch async responses
         await fixture.whenStable()
