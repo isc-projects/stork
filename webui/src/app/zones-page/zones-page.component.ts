@@ -769,9 +769,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Reference to getSeverity() function so it can be used in the html template.
-     * @protected
      */
-    protected readonly getSeverity = getSeverity
+    readonly getSeverity = getSeverity
 
     /**
      * Returns more verbose error message for given error.
@@ -783,9 +782,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Reference to getTooltip() function so it can be used in the html template.
-     * @protected
      */
-    protected readonly getTooltip = getTooltip
+    readonly getTooltip = getTooltip
 
     /**
      * Lazily loads paged zones data from backend.

@@ -34,6 +34,7 @@ import { PanelModule } from 'primeng/panel'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { DropdownModule } from 'primeng/dropdown'
+import { MultiSelectModule } from 'primeng/multiselect'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -253,6 +254,7 @@ describe('ZonesPageComponent', () => {
                 InputNumberModule,
                 FormsModule,
                 DropdownModule,
+                MultiSelectModule,
             ],
             declarations: [
                 ZonesPageComponent,
