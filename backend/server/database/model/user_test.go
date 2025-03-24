@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	faker "github.com/brianvoe/gofakeit"
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -14,17 +13,15 @@ import (
 
 // Generates a bunch of users and stores them in the database.
 func generateTestUsers(t *testing.T, db *dbops.PgDB) {
-	faker.Seed(1)
 	for i := 0; i < 100; i++ {
-		login := faker.Word()
-		login = fmt.Sprintf("%s%d", login, i)
+		login := fmt.Sprintf("user-%d", i)
 		user := &SystemUser{
 			Login:    login,
 			Email:    fmt.Sprintf("%s@example.org", login),
-			Lastname: faker.LastName(),
-			Name:     faker.FirstName(),
+			Lastname: fmt.Sprintf("Lastname-%d", i),
+			Name:     fmt.Sprintf("Name-%d", i),
 		}
-		_, err := CreateUserWithPassword(db, user, faker.Word())
+		_, err := CreateUserWithPassword(db, user, fmt.Sprintf("password-%d", i))
 		require.NoError(t, err, "failed for index %d, login %s", i, user.Login)
 	}
 }
@@ -556,14 +553,14 @@ func TestGetUsersPageByText(t *testing.T) {
 	generateTestUsers(t, db)
 
 	text := "3"
-	users, total, err := GetUsersByPage(db, 0, 100, &text, "", SortDirAny)
+	users, total, err := GetUsersByPage(db, 0, 100, &text, "login", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, users, 19)
 	require.EqualValues(t, 19, total)
-	require.EqualValues(t, "ut3", users[0].Login)
-	require.EqualValues(t, "qui32", users[5].Login)
-	require.EqualValues(t, "ut37", users[10].Login)
-	require.EqualValues(t, "est93", users[18].Login)
+	require.EqualValues(t, "user-13", users[0].Login)
+	require.EqualValues(t, "user-32", users[5].Login)
+	require.EqualValues(t, "user-37", users[10].Login)
+	require.EqualValues(t, "user-93", users[18].Login)
 }
 
 // Tests that user can be fetched by Id.

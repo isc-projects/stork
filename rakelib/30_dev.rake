@@ -251,6 +251,9 @@ namespace :unittest do
                         # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
                         'isc.org/stork/agent/process.go',
 
+                        # Skip database migrations.
+                        'isc.org/stork/server/database/migrations',
+
                         # The main server function is currently untestable.
                         'isc.org/stork/cmd/stork-server/main.go',
 
@@ -264,6 +267,7 @@ namespace :unittest do
                         # tests for testing code. They can still be written but we shouldn't fail
                         # if they are not.
                         'isc.org/stork/server/test',
+                        'isc.org/stork/server/apps/test',
                         'isc.org/stork/server/agentcomm/test',
                         'isc.org/stork/server/database/test',
                         'isc.org/stork/server/database/model/test',
@@ -287,7 +291,7 @@ namespace :unittest do
                             end
                         }
                         if not should_ignore
-                            puts "FAIL: %-80s %5s%% < 35%%" % ["#{rel_path} #{func}", "#{cov}"]
+                            puts "FAIL: %-85s %5s%% < 35%%" % ["#{rel_path} #{func}", "#{cov}"]
                             problem = true
                         end
                     end
