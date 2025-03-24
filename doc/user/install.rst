@@ -312,11 +312,10 @@ Installing the Stork Server
 Installing on Debian/Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The first step for both Debian and Ubuntu is:
-
-.. code-block:: console
-
-   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh' | sudo bash
+The Stork packages are available on CloudSmith. You must to configure your
+package manager to use it, visit 
+`setup page for Debian on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-deb>`_
+and follow the instructions.
 
 Next, install the Stork server package:
 
@@ -329,11 +328,10 @@ Next, install the Stork server package:
 Installing on CentOS/RHEL/Fedora
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The first step for RPM-based distributions is:
-
-.. code-block:: console
-
-   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.rpm.sh' | sudo bash
+The Stork packages are available on CloudSmith. You must to configure your
+package manager to use it, visit 
+`setup page for RedHat on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-rpm>`_
+and follow the instructions.
 
 Next, install the Stork server package:
 
@@ -350,17 +348,10 @@ If ``dnf`` is not available, ``yum`` can be used instead:
 Installing on Alpine
 ~~~~~~~~~~~~~~~~~~~~
 
-The first step for Alpine is installing ``bash`` and ``curl``:
-
-.. code-block:: console
-
-   $ apk add bash curl
-
-Next, set up the Cloudsmith repository:
-
-.. code-block:: console
-
-   $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.alpine.sh' | bash
+The Stork packages are available on CloudSmith. You must to configure your
+package manager to use it, visit 
+`setup page for Alpine on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-alpine>`_
+and follow the instructions.
 
 Then, install the Stork server package:
 
