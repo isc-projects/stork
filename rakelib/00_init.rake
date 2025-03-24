@@ -535,6 +535,7 @@ macos_arm64_system = OS == "macos" && arm64_system
 any_system = true
 
 ### Define package versions
+# Golang-related
 go_ver = '1.24.1'
 goswagger_ver = 'v0.31.0'
 protoc_ver = '30.1'
@@ -550,11 +551,15 @@ dlv_ver = 'v1.24.1'
 gdlv_ver = 'v1.13.2'
 nfpm_ver = 'v2.41.3'
 golangcilint_ver = '1.64.8'
+
+# UI-related
 node_ver = '20.17.0'
-npm_ver = '10.9.2'
+npm_ver = '11.2.0'
 yamlinc_ver = '0.1.10'
+openapi_generator_ver = '7.12.0'
 storybook_ver = '8.5.0'
-openapi_generator_ver = '7.10.0'
+
+# Other
 bundler_ver = '2.5.19'
 shellcheck_ver = '0.10.0'
 pip_tools_ver = '7.4.1'
