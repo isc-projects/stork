@@ -1,8 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
-import { ZonesPageComponent } from './zones-page.component'
+import { getSeverity, getTooltip, ZonesPageComponent } from './zones-page.component'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService, TableState } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
 import { ButtonModule } from 'primeng/button'
@@ -397,22 +397,20 @@ describe('ZonesPageComponent', () => {
 
     it('should get severity', () => {
         // Arrange + Act + Assert
-        expect(component.getSeverity(StatusEnum.Busy)).toEqual('warning')
-        expect(component.getSeverity(StatusEnum.Ok)).toEqual('success')
-        expect(component.getSeverity(StatusEnum.Erred)).toEqual('danger')
-        expect(component.getSeverity(StatusEnum.Uninitialized)).toEqual('secondary')
-        expect(component.getSeverity(<StatusEnum>'foo')).toEqual('info')
+        expect(getSeverity(StatusEnum.Busy)).toEqual('warning')
+        expect(getSeverity(StatusEnum.Ok)).toEqual('success')
+        expect(getSeverity(StatusEnum.Erred)).toEqual('danger')
+        expect(getSeverity(StatusEnum.Uninitialized)).toEqual('secondary')
+        expect(getSeverity(<StatusEnum>'foo')).toEqual('info')
     })
 
     it('should get tooltip', () => {
         // Arrange + Act + Assert
-        expect(component.getTooltip(StatusEnum.Busy)).toContain('Zone inventory on the agent is busy')
-        expect(component.getTooltip(StatusEnum.Ok)).toContain('successfully fetched all zones')
-        expect(component.getTooltip(StatusEnum.Erred)).toContain('Error when communicating with a zone inventory')
-        expect(component.getTooltip(StatusEnum.Uninitialized)).toContain(
-            'Zone inventory on the agent was not initialized'
-        )
-        expect(component.getTooltip(<StatusEnum>'foo')).toBeNull()
+        expect(getTooltip(StatusEnum.Busy)).toContain('Zone inventory on the agent is busy')
+        expect(getTooltip(StatusEnum.Ok)).toContain('successfully fetched all zones')
+        expect(getTooltip(StatusEnum.Erred)).toContain('Error when communicating with a zone inventory')
+        expect(getTooltip(StatusEnum.Uninitialized)).toContain('Zone inventory on the agent was not initialized')
+        expect(getTooltip(<StatusEnum>'foo')).toBeNull()
     })
 
     it('should open and close tabs', async () => {
@@ -578,4 +576,103 @@ describe('ZonesPageComponent', () => {
         expect(resp.appsCount).toBeUndefined()
         expect(resp.completedAppsCount).toBeUndefined()
     })
+
+    it('should init filter dropdowns and multiselect', () => {
+        // Arrange + Act + Assert
+        expect(component.zoneTypes.length).toBeGreaterThan(0)
+        expect(component.zoneClasses.length).toBeGreaterThan(0)
+        expect(component.appTypes.length).toBeGreaterThan(0)
+        expect(component.appTypes[0].value).toBeTruthy()
+        expect(component.appTypes[0].name).toBeTruthy()
+    })
+
+    it('should activate first tab', () => {
+        // Arrange
+        component.activeTabIdx = 1
+
+        // Act
+        component.activateFirstTab()
+
+        // Assert
+        expect(component.activeTabIdx).toBe(0)
+    })
+
+    it('should store rows per page for zones table', () => {
+        // Arrange + Act
+        component.storeZonesTableRowsPerPage(10)
+
+        // Expect
+        const stateString = localStorage.getItem('zones-table-state')
+        expect(stateString).toBeTruthy()
+        const state: TableState = JSON.parse(stateString)
+        expect('rows' in state).toBeTrue()
+        expect(state.rows).toEqual(10)
+    })
+
+    it('should filter zones table by serial', fakeAsync(() => {
+        // Arrange
+        const filterInput = fixture.debugElement.query(By.css('#zone-serial'))
+        expect(filterInput).toBeTruthy()
+        filterInput.nativeElement.value = '1'
+
+        // Act
+        filterInput.nativeElement.dispatchEvent(new Event('input'))
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, '1')
+    }))
+
+    it('should filter zones table by app id', fakeAsync(() => {
+        // Arrange
+        const inputNumber = fixture.debugElement.query(By.css('[inputId="app-id"]'))
+        expect(inputNumber).toBeTruthy()
+
+        // Act
+        inputNumber.componentInstance.handleOnInput(new InputEvent('input'), '', '9')
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, 9, null)
+    }))
+
+    it('should filter zones table by text', fakeAsync(() => {
+        // Arrange
+        const filterInput = fixture.debugElement.query(By.css('#text-filter'))
+        expect(filterInput).toBeTruthy()
+        filterInput.nativeElement.value = 'test'
+
+        // Act
+        filterInput.nativeElement.dispatchEvent(new Event('input'))
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, 'test', null, null)
+    }))
+
+    it('should filter zones table by app type', fakeAsync(() => {
+        // Arrange
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="app-type"] .p-dropdown'))
+        expect(inputDropdown).toBeTruthy()
+        inputDropdown.nativeElement.click()
+        fixture.detectChanges()
+        const listItems = inputDropdown.queryAll(By.css('li'))
+        expect(listItems).toBeTruthy()
+        expect(listItems.length).toBeGreaterThan(0)
+
+        // Act
+        listItems[0].nativeElement.click()
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, 'bind9', null, null, null, null, null)
+    }))
 })

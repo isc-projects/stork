@@ -258,7 +258,10 @@
                                             mode="decimal"
                                             [useGrouping]="false"
                                             (onInput)="
-                                                filterTable($event.value === 0 ? 1 : $event.value, filterConstraint)
+                                                filterZonesTable(
+                                                    $event.value === 0 ? 1 : $event.value,
+                                                    filterConstraint
+                                                )
                                             "
                                             [ngModel]="value"
                                             min="1"
@@ -291,7 +294,7 @@
                                         <input
                                             pInputText
                                             type="text"
-                                            (input)="filterTable($event.target.value, filterConstraint)"
+                                            (input)="filterZonesTable($event.target.value, filterConstraint)"
                                             [ngModel]="value"
                                             id="zone-serial"
                                             class="w-10rem"
@@ -324,7 +327,7 @@
                                             [options]="zoneTypes"
                                             [ngModel]="value"
                                             styleClass="w-12rem"
-                                            (onChange)="filterTable($event.value, filterConstraint)"
+                                            (onChange)="filterZonesTable($event.value, filterConstraint)"
                                         />
                                         <label for="zone-type">Zone Type</label>
                                     </span>
@@ -352,7 +355,7 @@
                                         <p-dropdown
                                             inputId="zone-class"
                                             [options]="zoneClasses"
-                                            (onChange)="filterTable($event.value, filterConstraint)"
+                                            (onChange)="filterZonesTable($event.value, filterConstraint)"
                                             [ngModel]="value"
                                             styleClass="w-10rem"
                                         ></p-dropdown>
@@ -379,7 +382,7 @@
                                             [options]="appTypes"
                                             optionLabel="name"
                                             optionValue="value"
-                                            (onChange)="filterTable($event.value, filterConstraint)"
+                                            (onChange)="filterZonesTable($event.value, filterConstraint)"
                                             [ngModel]="value"
                                             styleClass="w-10rem"
                                         ></p-dropdown>
@@ -405,7 +408,8 @@
                                         <input
                                             pInputText
                                             type="text"
-                                            (input)="filterTable($event.target.value, filterConstraint)"
+                                            id="text-filter"
+                                            (input)="filterZonesTable($event.target.value, filterConstraint)"
                                             [ngModel]="value"
                                             placeholder="App name, Zone name or view"
                                         />

@@ -769,8 +769,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Reference to getSeverity() function so it can be used in the html template.
+     * @protected
      */
-    readonly getSeverity = getSeverity
+    protected readonly getSeverity = getSeverity
 
     /**
      * Returns more verbose error message for given error.
@@ -782,8 +783,9 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Reference to getTooltip() function so it can be used in the html template.
+     * @protected
      */
-    readonly getTooltip = getTooltip
+    protected readonly getTooltip = getTooltip
 
     /**
      * Lazily loads paged zones data from backend.
@@ -858,7 +860,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param value value of the filter
      * @param filterConstraint filter field which will be filtered
      */
-    filterTable(value: any, filterConstraint: FilterMetadata): void {
+    filterZonesTable(value: any, filterConstraint: FilterMetadata): void {
         this._zonesTableFilter$.next({ value, filterConstraint })
     }
 
