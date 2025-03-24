@@ -14,7 +14,7 @@ import { ChipsModule } from 'primeng/chips'
 import { DividerModule } from 'primeng/divider'
 import { DropdownModule } from 'primeng/dropdown'
 import { FieldsetModule } from 'primeng/fieldset'
-import { HttpClientModule } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { TableModule } from 'primeng/table'
@@ -280,6 +280,16 @@ describe('SharedNetworkFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            declarations: [
+                ArrayValueSetFormComponent,
+                DhcpClientClassSetFormComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
+                EntityLinkComponent,
+                HelpTipComponent,
+                SharedNetworkFormComponent,
+                SharedParametersFormComponent,
+            ],
             imports: [
                 ButtonModule,
                 CheckboxModule,
@@ -288,7 +298,6 @@ describe('SharedNetworkFormComponent', () => {
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientModule,
                 InputNumberModule,
                 MessagesModule,
                 MultiSelectModule,
@@ -303,17 +312,7 @@ describe('SharedNetworkFormComponent', () => {
                 SplitButtonModule,
                 ToastModule,
             ],
-            declarations: [
-                ArrayValueSetFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                SharedNetworkFormComponent,
-                SharedParametersFormComponent,
-            ],
-            providers: [DHCPService, MessageService],
+            providers: [DHCPService, MessageService, provideHttpClient(withInterceptorsFromDi())],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedNetworkFormComponent)

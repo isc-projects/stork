@@ -2,12 +2,13 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { GlobalSearchComponent } from './global-search.component'
 import { SearchService } from '../backend/api/api'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
 import { RouterTestingModule } from '@angular/router/testing'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
@@ -16,14 +17,8 @@ describe('GlobalSearchComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [GlobalSearchComponent],
-            providers: [SearchService],
-            imports: [
-                HttpClientTestingModule,
-                OverlayPanelModule,
-                NoopAnimationsModule,
-                FormsModule,
-                RouterTestingModule,
-            ],
+            imports: [OverlayPanelModule, NoopAnimationsModule, FormsModule, RouterTestingModule],
+            providers: [SearchService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
     }))
 

@@ -3,7 +3,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { AuthenticationMethod, GeneralService, UsersService } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { SelectButtonModule } from 'primeng/selectbutton'
@@ -16,6 +16,7 @@ import { AuthService } from '../auth.service'
 import { DropdownModule } from 'primeng/dropdown'
 import { PasswordModule } from 'primeng/password'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
@@ -47,11 +48,11 @@ describe('LoginScreenComponent', () => {
             }),
         }
         TestBed.configureTestingModule({
+            declarations: [LoginScreenComponent],
             imports: [
                 ReactiveFormsModule,
                 FormsModule,
                 RouterModule.forRoot([]),
-                HttpClientTestingModule,
                 ProgressSpinnerModule,
                 SelectButtonModule,
                 ButtonModule,
@@ -60,12 +61,13 @@ describe('LoginScreenComponent', () => {
                 PasswordModule,
                 BrowserAnimationsModule,
             ],
-            declarations: [LoginScreenComponent],
             providers: [
                 GeneralService,
                 UsersService,
                 MessageService,
                 { provide: AuthService, useValue: authServiceStub },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

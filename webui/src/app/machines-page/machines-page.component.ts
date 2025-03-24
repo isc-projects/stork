@@ -805,7 +805,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param event change event
      */
     onSelectButtonChange(event: SelectButtonChangeEvent) {
-        this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value } ?? null })
+        this.router.navigate(['machines', 'all'], { queryParams: { authorized: event?.value ?? null } })
     }
 
     /**

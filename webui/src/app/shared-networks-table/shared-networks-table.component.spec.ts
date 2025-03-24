@@ -5,7 +5,7 @@ import { MessageService } from 'primeng/api'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TableModule } from 'primeng/table'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ButtonModule } from 'primeng/button'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { InputNumberModule } from 'primeng/inputnumber'
@@ -25,6 +25,7 @@ import { TooltipModule } from 'primeng/tooltip'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { By } from '@angular/platform-browser'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('SharedNetworksTableComponent', () => {
     let component: SharedNetworksTableComponent
@@ -34,10 +35,18 @@ describe('SharedNetworksTableComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [MessageService],
+            declarations: [
+                SharedNetworksTableComponent,
+                HelpTipComponent,
+                PluralizePipe,
+                EntityLinkComponent,
+                HumanCountComponent,
+                SubnetBarComponent,
+                HumanCountPipe,
+                LocalNumberPipe,
+            ],
             imports: [
                 TableModule,
-                HttpClientTestingModule,
                 ButtonModule,
                 OverlayPanelModule,
                 InputNumberModule,
@@ -59,16 +68,7 @@ describe('SharedNetworksTableComponent', () => {
                 ]),
                 TooltipModule,
             ],
-            declarations: [
-                SharedNetworksTableComponent,
-                HelpTipComponent,
-                PluralizePipe,
-                EntityLinkComponent,
-                HumanCountComponent,
-                SubnetBarComponent,
-                HumanCountPipe,
-                LocalNumberPipe,
-            ],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedNetworksTableComponent)

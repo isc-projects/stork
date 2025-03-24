@@ -1,5 +1,5 @@
-import { HttpEvent } from '@angular/common/http'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
@@ -27,24 +27,28 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            declarations: [
+                HelpTipComponent,
+                ConfigCheckerPreferenceUpdaterComponent,
+                ConfigCheckerPreferencePickerComponent,
+            ],
             imports: [
                 TableModule,
                 ChipModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
-                HttpClientTestingModule,
                 ToastModule,
                 ButtonModule,
                 FormsModule,
                 TriStateCheckboxModule,
                 TagModule,
             ],
-            declarations: [
-                HelpTipComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                ConfigCheckerPreferencePickerComponent,
+            providers: [
+                MessageService,
+                ServicesService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
-            providers: [MessageService, ServicesService],
         }).compileComponents()
 
         servicesApi = TestBed.inject(ServicesService)

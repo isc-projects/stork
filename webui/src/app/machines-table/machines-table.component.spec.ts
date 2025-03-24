@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { MachinesTableComponent } from './machines-table.component'
 import { RouterModule } from '@angular/router'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { TableModule } from 'primeng/table'
@@ -27,6 +27,7 @@ import { deepCopy } from '../utils'
 import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -118,9 +119,17 @@ describe('MachinesTableComponent', () => {
         getMachinesSpy.withArgs(0, 10, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
 
         await TestBed.configureTestingModule({
+            declarations: [
+                MachinesTableComponent,
+                HelpTipComponent,
+                PluralizePipe,
+                VersionStatusComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+                AppDaemonsStatusComponent,
+            ],
             imports: [
                 RouterModule.forRoot([]),
-                HttpClientTestingModule,
                 ButtonModule,
                 TableModule,
                 PanelModule,
@@ -131,19 +140,12 @@ describe('MachinesTableComponent', () => {
                 TagModule,
                 TooltipModule,
             ],
-            declarations: [
-                MachinesTableComponent,
-                HelpTipComponent,
-                PluralizePipe,
-                VersionStatusComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-                AppDaemonsStatusComponent,
-            ],
             providers: [
                 MessageService,
                 { provide: ServicesService, useValue: servicesApi },
                 { provide: VersionService, useValue: versionServiceStub },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
 

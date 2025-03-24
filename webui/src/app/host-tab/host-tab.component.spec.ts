@@ -1,6 +1,6 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
@@ -30,6 +30,7 @@ import { HostDataSourceLabelComponent } from '../host-data-source-label/host-dat
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { MessagesModule } from 'primeng/messages'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -40,14 +41,22 @@ describe('HostTabComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, ConfirmationService, MessageService],
+            declarations: [
+                DhcpClientClassSetViewComponent,
+                DhcpOptionSetViewComponent,
+                EntityLinkComponent,
+                HelpTipComponent,
+                HostTabComponent,
+                IdentifierComponent,
+                HostDataSourceLabelComponent,
+                ByteCharacterComponent,
+            ],
             imports: [
                 ConfirmDialogModule,
                 ChipModule,
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientTestingModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 TableModule,
@@ -59,15 +68,12 @@ describe('HostTabComponent', () => {
                 MessagesModule,
                 ProgressSpinnerModule,
             ],
-            declarations: [
-                DhcpClientClassSetViewComponent,
-                DhcpOptionSetViewComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                HostTabComponent,
-                IdentifierComponent,
-                HostDataSourceLabelComponent,
-                ByteCharacterComponent,
+            providers: [
+                DHCPService,
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

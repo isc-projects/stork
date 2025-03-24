@@ -2,7 +2,7 @@
 import { BrowserModule } from '@angular/platform-browser'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { NgModule } from '@angular/core'
-import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http'
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 
 // Other 3rd-party modules
@@ -247,18 +247,15 @@ export function cfgFactory() {
         ZonesPageComponent,
         ByteCharacterComponent,
     ],
+    bootstrap: [AppComponent],
     imports: [
         BrowserModule,
         BrowserAnimationsModule,
-        HttpClientModule,
         AppRoutingModule,
         FormsModule,
         ReactiveFormsModule,
-
         FontAwesomeModule,
-
         ApiModule.forRoot(cfgFactory),
-
         ButtonModule,
         MenubarModule,
         PanelModule,
@@ -319,7 +316,7 @@ export function cfgFactory() {
             provide: RouteReuseStrategy,
             useClass: CustomRouteReuseStrategy,
         },
+        provideHttpClient(withInterceptorsFromDi()),
     ],
-    bootstrap: [AppComponent],
 })
 export class AppModule {}

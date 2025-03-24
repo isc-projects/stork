@@ -1,4 +1,4 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
@@ -14,6 +14,7 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { EventsPanelComponent } from './events-panel.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { of } from 'rxjs'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 /**
  * Fake event value.
@@ -40,6 +41,8 @@ describe('EventsPanelComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
+            imports: [PaginatorModule, RouterTestingModule, TableModule, ToastModule, ButtonModule],
             providers: [
                 EventsService,
                 UsersService,
@@ -50,16 +53,9 @@ describe('EventsPanelComponent', () => {
                     useValue: {},
                 },
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
-            imports: [
-                HttpClientTestingModule,
-                PaginatorModule,
-                RouterTestingModule,
-                TableModule,
-                ToastModule,
-                ButtonModule,
-            ],
-            declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
         }).compileComponents()
     }))
 

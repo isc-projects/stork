@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
 
@@ -22,7 +22,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
-import { HttpErrorResponse } from '@angular/common/http'
+import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import anything = jasmine.anything
 import { MessagesModule } from 'primeng/messages'
 import {
@@ -121,15 +121,18 @@ describe('MachinesPageComponent', () => {
         servicesApi.getUnauthorizedMachinesCount.and.returnValue(of(3))
 
         await TestBed.configureTestingModule({
-            providers: [
-                MessageService,
-                ConfirmationService,
-                { provide: ServicesService, useValue: servicesApi },
-                { provide: VersionService, useValue: versionServiceStub },
-                { provide: SettingsService, useValue: settingsService },
+            declarations: [
+                MachinesPageComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                AppDaemonsStatusComponent,
+                VersionStatusComponent,
+                MachinesTableComponent,
+                PluralizePipe,
             ],
             imports: [
-                HttpClientTestingModule,
                 RouterModule.forRoot([
                     {
                         path: 'machines',
@@ -158,16 +161,14 @@ describe('MachinesPageComponent', () => {
                 TriStateCheckboxModule,
                 TagModule,
             ],
-            declarations: [
-                MachinesPageComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                AppDaemonsStatusComponent,
-                VersionStatusComponent,
-                MachinesTableComponent,
-                PluralizePipe,
+            providers: [
+                MessageService,
+                ConfirmationService,
+                { provide: ServicesService, useValue: servicesApi },
+                { provide: VersionService, useValue: versionServiceStub },
+                { provide: SettingsService, useValue: settingsService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
 

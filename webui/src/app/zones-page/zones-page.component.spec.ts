@@ -1,7 +1,7 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
 import { getSeverity, getTooltip, ZonesPageComponent } from './zones-page.component'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, TableState } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { DialogModule } from 'primeng/dialog'
@@ -14,7 +14,14 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { Router, RouterModule } from '@angular/router'
 import { DNSAppType, DNSClass, DNSService, ZoneInventoryState, ZoneInventoryStates, Zones } from '../backend'
 import { Observable, of } from 'rxjs'
-import { HttpEventType, HttpHeaders, HttpResponse, HttpStatusCode } from '@angular/common/http'
+import {
+    HttpEventType,
+    HttpHeaders,
+    HttpResponse,
+    HttpStatusCode,
+    provideHttpClient,
+    withInterceptorsFromDi,
+} from '@angular/common/http'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MessageModule } from 'primeng/message'
 import { ProgressBarModule } from 'primeng/progressbar'
@@ -237,7 +244,6 @@ describe('ZonesPageComponent', () => {
 
         await TestBed.configureTestingModule({
             imports: [
-                HttpClientTestingModule,
                 DialogModule,
                 ButtonModule,
                 TableModule,
@@ -270,6 +276,8 @@ describe('ZonesPageComponent', () => {
                 { provide: MessageService, useValue: messageService },
                 { provide: DNSService, useValue: dnsApi },
                 ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
 

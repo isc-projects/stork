@@ -5,10 +5,10 @@ import { TooltipModule } from 'primeng/tooltip'
 import { MessageModule } from 'primeng/message'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ServicesService, ServicesStatus } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ProgressSpinner, ProgressSpinnerModule } from 'primeng/progressspinner'
 import { of, throwError } from 'rxjs'
-import { HttpErrorResponse, HttpEvent } from '@angular/common/http'
+import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { By } from '@angular/platform-browser'
 import { MessageService } from 'primeng/api'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
@@ -23,9 +23,9 @@ describe('HaStatusComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [EntityLinkComponent, HaStatusComponent, LocaltimePipe],
             imports: [
                 ButtonModule,
-                HttpClientTestingModule,
                 MessageModule,
                 PanelModule,
                 ProgressSpinnerModule,
@@ -33,8 +33,12 @@ describe('HaStatusComponent', () => {
                 TableModule,
                 TooltipModule,
             ],
-            declarations: [EntityLinkComponent, HaStatusComponent, LocaltimePipe],
-            providers: [ServicesService, MessageService],
+            providers: [
+                ServicesService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
 
         servicesApi = TestBed.inject(ServicesService)

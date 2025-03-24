@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { VersionPageComponent } from './version-page.component'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -18,6 +18,7 @@ import { AppsVersions, ServicesService } from '../backend'
 import { MessagesModule } from 'primeng/messages'
 import { BadgeModule } from 'primeng/badge'
 import { By } from '@angular/platform-browser'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('VersionPageComponent', () => {
     let component: VersionPageComponent
@@ -246,8 +247,8 @@ describe('VersionPageComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            declarations: [VersionPageComponent, BreadcrumbsComponent, HelpTipComponent],
             imports: [
-                HttpClientTestingModule,
                 PanelModule,
                 TableModule,
                 BreadcrumbModule,
@@ -263,8 +264,7 @@ describe('VersionPageComponent', () => {
                 MessagesModule,
                 BadgeModule,
             ],
-            declarations: [VersionPageComponent, BreadcrumbsComponent, HelpTipComponent],
-            providers: [MessageService],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
         fixture = TestBed.createComponent(VersionPageComponent)
         versionService = TestBed.inject(VersionService)

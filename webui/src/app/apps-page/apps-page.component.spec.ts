@@ -17,7 +17,7 @@ import { RouterModule } from '@angular/router'
 import { ServicesService } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { RouterTestingModule } from '@angular/router/testing'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -27,6 +27,7 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
 import { of, throwError } from 'rxjs'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 class App {
     id: number
@@ -41,9 +42,16 @@ describe('AppsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [ConfirmationService, ServicesService, MessageService],
+            declarations: [
+                AppsPageComponent,
+                Bind9AppTabComponent,
+                KeaAppTabComponent,
+                LocaltimePipe,
+                HaStatusComponent,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+            ],
             imports: [
-                HttpClientTestingModule,
                 TabMenuModule,
                 MenuModule,
                 FormsModule,
@@ -60,14 +68,12 @@ describe('AppsPageComponent', () => {
                 ProgressSpinnerModule,
                 ConfirmDialogModule,
             ],
-            declarations: [
-                AppsPageComponent,
-                Bind9AppTabComponent,
-                KeaAppTabComponent,
-                LocaltimePipe,
-                HaStatusComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
+            providers: [
+                ConfirmationService,
+                ServicesService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

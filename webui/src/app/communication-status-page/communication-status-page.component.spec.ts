@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
 import { RouterTestingModule } from '@angular/router/testing'
 import { MessageService } from 'primeng/api'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TooltipModule } from 'primeng/tooltip'
 import { TreeModule } from 'primeng/tree'
@@ -17,6 +17,7 @@ import { By } from '@angular/platform-browser'
 import { ServicesService } from '../backend'
 import { of, throwError } from 'rxjs'
 import { CommunicationStatusTreeComponent } from '../communication-status-tree/communication-status-tree.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('CommunicationStatusPageComponent', () => {
     let component: CommunicationStatusPageComponent
@@ -26,11 +27,15 @@ describe('CommunicationStatusPageComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [MessageService],
+            declarations: [
+                BreadcrumbsComponent,
+                CommunicationStatusPageComponent,
+                CommunicationStatusTreeComponent,
+                HelpTipComponent,
+            ],
             imports: [
                 BreadcrumbModule,
                 ButtonModule,
-                HttpClientTestingModule,
                 NoopAnimationsModule,
                 RouterTestingModule,
                 OverlayPanelModule,
@@ -38,12 +43,7 @@ describe('CommunicationStatusPageComponent', () => {
                 TooltipModule,
                 TreeModule,
             ],
-            declarations: [
-                BreadcrumbsComponent,
-                CommunicationStatusPageComponent,
-                CommunicationStatusTreeComponent,
-                HelpTipComponent,
-            ],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(CommunicationStatusPageComponent)

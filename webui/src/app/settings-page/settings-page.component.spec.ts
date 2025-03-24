@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { BrowserAnimationsModule, NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FieldsetModule } from 'primeng/fieldset'
 import { MessageService } from 'primeng/api'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessagesModule } from 'primeng/messages'
 import { SettingsPageComponent } from './settings-page.component'
 import { SettingsService } from '../backend/api/api'
@@ -20,6 +20,7 @@ import { of, throwError } from 'rxjs'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { CheckboxModule } from 'primeng/checkbox'
 import { InputNumberModule } from 'primeng/inputnumber'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
@@ -29,6 +30,7 @@ describe('SettingsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
             imports: [
                 BreadcrumbModule,
                 BrowserAnimationsModule,
@@ -36,7 +38,6 @@ describe('SettingsPageComponent', () => {
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientTestingModule,
                 ReactiveFormsModule,
                 MessagesModule,
                 NoopAnimationsModule,
@@ -45,7 +46,6 @@ describe('SettingsPageComponent', () => {
                 RouterTestingModule,
                 InputNumberModule,
             ],
-            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
             providers: [
                 SettingsService,
                 MessageService,
@@ -53,6 +53,8 @@ describe('SettingsPageComponent', () => {
                     provide: ActivatedRoute,
                     useValue: {},
                 },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

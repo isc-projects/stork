@@ -1,6 +1,6 @@
 import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ActivatedRoute, Router } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
@@ -27,6 +27,7 @@ import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.componen
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LeaseSearchPageComponent', () => {
     let component: LeaseSearchPageComponent
@@ -38,10 +39,18 @@ describe('LeaseSearchPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, MessageService],
+            declarations: [
+                LeaseSearchPageComponent,
+                LocaltimePipe,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                JsonTreeComponent,
+                JsonTreeRootComponent,
+                IdentifierComponent,
+                ByteCharacterComponent,
+            ],
             imports: [
                 FormsModule,
-                HttpClientTestingModule,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'dhcp/leases',
@@ -58,15 +67,11 @@ describe('LeaseSearchPageComponent', () => {
                 MessagesModule,
                 ToggleButtonModule,
             ],
-            declarations: [
-                LeaseSearchPageComponent,
-                LocaltimePipe,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                JsonTreeComponent,
-                JsonTreeRootComponent,
-                IdentifierComponent,
-                ByteCharacterComponent,
+            providers: [
+                DHCPService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

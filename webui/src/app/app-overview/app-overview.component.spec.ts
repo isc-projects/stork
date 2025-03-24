@@ -7,10 +7,11 @@ import { PanelModule } from 'primeng/panel'
 import { AppOverviewComponent } from './app-overview.component'
 import { ButtonModule } from 'primeng/button'
 import { AuthService } from '../auth.service'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { App } from '../backend'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
@@ -19,14 +20,8 @@ describe('AppOverviewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                FormsModule,
-                NoopAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule,
-                PanelModule,
-                ButtonModule,
-            ],
+            declarations: [AppOverviewComponent, AccessPointKeyComponent],
+            imports: [FormsModule, NoopAnimationsModule, RouterTestingModule, PanelModule, ButtonModule],
             providers: [
                 MessageService,
                 {
@@ -35,8 +30,9 @@ describe('AppOverviewComponent', () => {
                         superAdmin: () => true,
                     },
                 },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
-            declarations: [AppOverviewComponent, AccessPointKeyComponent],
         }).compileComponents()
         authService = TestBed.inject(AuthService)
     })

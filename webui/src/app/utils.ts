@@ -1,4 +1,4 @@
-import * as moment from 'moment-timezone'
+import moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
 import { gt, lt, valid } from 'semver'
 import { Bind9Daemon, KeaDaemon } from './backend'

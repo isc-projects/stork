@@ -1,7 +1,7 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form.component'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
@@ -26,6 +26,7 @@ import { By } from '@angular/platform-browser'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { SplitButtonModule } from 'primeng/splitbutton'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('KeaGlobalConfigurationFormComponent', () => {
     let component: KeaGlobalConfigurationFormComponent
@@ -237,13 +238,19 @@ describe('KeaGlobalConfigurationFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            declarations: [
+                ArrayValueSetFormComponent,
+                KeaGlobalConfigurationFormComponent,
+                SharedParametersFormComponent,
+                DhcpOptionSetFormComponent,
+                DhcpOptionFormComponent,
+            ],
             imports: [
                 ButtonModule,
                 CheckboxModule,
                 ChipsModule,
                 DropdownModule,
                 FieldsetModule,
-                HttpClientTestingModule,
                 InputNumberModule,
                 MessagesModule,
                 MultiSelectModule,
@@ -252,14 +259,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                 ReactiveFormsModule,
                 SplitButtonModule,
             ],
-            declarations: [
-                ArrayValueSetFormComponent,
-                KeaGlobalConfigurationFormComponent,
-                SharedParametersFormComponent,
-                DhcpOptionSetFormComponent,
-                DhcpOptionFormComponent,
-            ],
-            providers: [MessageService],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         fixture = TestBed.createComponent(KeaGlobalConfigurationFormComponent)

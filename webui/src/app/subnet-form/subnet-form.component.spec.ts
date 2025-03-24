@@ -8,7 +8,7 @@ import { DividerModule } from 'primeng/divider'
 import { DropdownModule } from 'primeng/dropdown'
 import { FieldsetModule } from 'primeng/fieldset'
 import { FormArray, FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
-import { HttpClientModule } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -394,6 +394,18 @@ describe('SubnetFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
+            declarations: [
+                AddressPoolFormComponent,
+                ArrayValueSetFormComponent,
+                DhcpClientClassSetFormComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
+                EntityLinkComponent,
+                HelpTipComponent,
+                PrefixPoolFormComponent,
+                SharedParametersFormComponent,
+                SubnetFormComponent,
+            ],
             imports: [
                 AccordionModule,
                 ButtonModule,
@@ -403,7 +415,6 @@ describe('SubnetFormComponent', () => {
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientModule,
                 InputNumberModule,
                 MessagesModule,
                 MultiSelectModule,
@@ -418,19 +429,7 @@ describe('SubnetFormComponent', () => {
                 SplitButtonModule,
                 ToastModule,
             ],
-            declarations: [
-                AddressPoolFormComponent,
-                ArrayValueSetFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                EntityLinkComponent,
-                HelpTipComponent,
-                PrefixPoolFormComponent,
-                SharedParametersFormComponent,
-                SubnetFormComponent,
-            ],
-            providers: [MessageService],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SubnetFormComponent)

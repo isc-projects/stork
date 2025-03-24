@@ -1,4 +1,4 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
@@ -11,6 +11,7 @@ import { JsonTreeComponent } from '../json-tree/json-tree.component'
 
 import { JsonTreeRootComponent } from './json-tree-root.component'
 import { RouterModule } from '@angular/router'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('JsonTreeRootComponent', () => {
     let component: JsonTreeRootComponent
@@ -20,9 +21,14 @@ describe('JsonTreeRootComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, NoopAnimationsModule, RouterModule],
             declarations: [JsonTreeRootComponent, JsonTreeComponent],
-            providers: [MessageService, UsersService],
+            imports: [NoopAnimationsModule, RouterModule],
+            providers: [
+                MessageService,
+                UsersService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
         userService = TestBed.inject(UsersService)
         authService = TestBed.inject(AuthService)

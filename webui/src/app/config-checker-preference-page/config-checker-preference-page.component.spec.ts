@@ -1,4 +1,4 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -17,6 +17,7 @@ import { ConfigCheckerPreferenceUpdaterComponent } from '../config-checker-prefe
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('ConfigCheckerPreferencePageComponent', () => {
     let component: ConfigCheckerPreferencePageComponent
@@ -24,17 +25,6 @@ describe('ConfigCheckerPreferencePageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                TableModule,
-                ChipModule,
-                OverlayPanelModule,
-                NoopAnimationsModule,
-                HttpClientTestingModule,
-                ToastModule,
-                BreadcrumbModule,
-                RouterTestingModule,
-                ButtonModule,
-            ],
             declarations: [
                 HelpTipComponent,
                 BreadcrumbsComponent,
@@ -42,7 +32,22 @@ describe('ConfigCheckerPreferencePageComponent', () => {
                 ConfigCheckerPreferenceUpdaterComponent,
                 ConfigCheckerPreferencePickerComponent,
             ],
-            providers: [MessageService, ServicesService],
+            imports: [
+                TableModule,
+                ChipModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                ToastModule,
+                BreadcrumbModule,
+                RouterTestingModule,
+                ButtonModule,
+            ],
+            providers: [
+                MessageService,
+                ServicesService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
     }))
 

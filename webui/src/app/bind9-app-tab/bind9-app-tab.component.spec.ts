@@ -7,7 +7,7 @@ import { TabViewModule } from 'primeng/tabview'
 import { MessageService } from 'primeng/api'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { MockLocationStrategy } from '@angular/common/testing'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 
 import { AppsVersions, Bind9DaemonView, ServicesService, UsersService } from '../backend'
@@ -28,6 +28,7 @@ import { EventTextComponent } from '../event-text/event-text.component'
 import { TableModule } from 'primeng/table'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 class Daemon {
     name = 'named'
@@ -69,16 +70,17 @@ describe('Bind9AppTabComponent', () => {
         }
 
         TestBed.configureTestingModule({
-            providers: [
-                UsersService,
-                ServicesService,
-                MessageService,
-                MockLocationStrategy,
-                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
-                { provide: VersionService, useValue: versionServiceStub },
+            declarations: [
+                Bind9AppTabComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+                RenameAppDialogComponent,
+                AppOverviewComponent,
+                EventsPanelComponent,
+                EventTextComponent,
+                VersionStatusComponent,
             ],
             imports: [
-                HttpClientTestingModule,
                 FormsModule,
                 RouterTestingModule,
                 TooltipModule,
@@ -90,15 +92,15 @@ describe('Bind9AppTabComponent', () => {
                 DataViewModule,
                 TableModule,
             ],
-            declarations: [
-                Bind9AppTabComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-                RenameAppDialogComponent,
-                AppOverviewComponent,
-                EventsPanelComponent,
-                EventTextComponent,
-                VersionStatusComponent,
+            providers: [
+                UsersService,
+                ServicesService,
+                MessageService,
+                MockLocationStrategy,
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+                { provide: VersionService, useValue: versionServiceStub },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

@@ -6,7 +6,7 @@ import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { TableModule } from 'primeng/table'
 import { TabViewModule } from 'primeng/tabview'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { PanelModule } from 'primeng/panel'
 import { TooltipModule } from 'primeng/tooltip'
 import { MessageModule } from 'primeng/message'
@@ -40,6 +40,7 @@ import { TagModule } from 'primeng/tag'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 class Details {
     daemons: any = [
@@ -117,14 +118,18 @@ describe('KeaAppTabComponent', () => {
         }
 
         TestBed.configureTestingModule({
-            providers: [
-                UsersService,
-                DHCPService,
-                ServicesService,
-                MessageService,
-                MockLocationStrategy,
-                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
-                { provide: VersionService, useValue: versionServiceStub },
+            declarations: [
+                KeaAppTabComponent,
+                HaStatusComponent,
+                LocaltimePipe,
+                PlaceholderPipe,
+                RenameAppDialogComponent,
+                EventsPanelComponent,
+                ConfigReviewPanelComponent,
+                HelpTipComponent,
+                AppOverviewComponent,
+                EventTextComponent,
+                VersionStatusComponent,
             ],
             imports: [
                 RouterTestingModule,
@@ -133,7 +138,6 @@ describe('KeaAppTabComponent', () => {
                 PanelModule,
                 TooltipModule,
                 MessageModule,
-                HttpClientTestingModule,
                 FormsModule,
                 InputSwitchModule,
                 FieldsetModule,
@@ -149,18 +153,16 @@ describe('KeaAppTabComponent', () => {
                 DividerModule,
                 TagModule,
             ],
-            declarations: [
-                KeaAppTabComponent,
-                HaStatusComponent,
-                LocaltimePipe,
-                PlaceholderPipe,
-                RenameAppDialogComponent,
-                EventsPanelComponent,
-                ConfigReviewPanelComponent,
-                HelpTipComponent,
-                AppOverviewComponent,
-                EventTextComponent,
-                VersionStatusComponent,
+            providers: [
+                UsersService,
+                DHCPService,
+                ServicesService,
+                MessageService,
+                MockLocationStrategy,
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+                { provide: VersionService, useValue: versionServiceStub },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

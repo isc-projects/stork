@@ -2,14 +2,15 @@ import { TestBed, inject } from '@angular/core/testing'
 
 import { AuthGuard } from './auth.guard'
 import { RouterModule, Router } from '@angular/router'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { UsersService } from './backend'
 import { MessageService } from 'primeng/api'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('AuthGuard', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterModule, HttpClientTestingModule],
+            imports: [RouterModule],
             providers: [
                 AuthGuard,
                 UsersService,
@@ -18,6 +19,8 @@ describe('AuthGuard', () => {
                     provide: Router,
                     useValue: {},
                 },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         })
     })

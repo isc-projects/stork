@@ -6,7 +6,7 @@ import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/f
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { DHCPService, Host, LocalHost } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import {
     ActivatedRoute,
     ActivatedRouteSnapshot,
@@ -51,6 +51,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { HostsTableComponent } from '../hosts-table/hosts-table.component'
 import { PanelModule } from 'primeng/panel'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -63,14 +64,30 @@ describe('HostsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, UntypedFormBuilder, ConfirmationService, MessageService],
+            declarations: [
+                EntityLinkComponent,
+                HostsPageComponent,
+                BreadcrumbsComponent,
+                HelpTipComponent,
+                HostTabComponent,
+                IdentifierComponent,
+                HostFormComponent,
+                DhcpClientClassSetFormComponent,
+                DhcpClientClassSetViewComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
+                DhcpOptionSetViewComponent,
+                HostDataSourceLabelComponent,
+                PluralizePipe,
+                HostsTableComponent,
+                ByteCharacterComponent,
+            ],
             imports: [
                 ButtonModule,
                 ChipsModule,
                 DividerModule,
                 FormsModule,
                 TableModule,
-                HttpClientTestingModule,
                 RouterModule.forRoot([
                     {
                         path: 'dhcp/hosts',
@@ -101,23 +118,13 @@ describe('HostsPageComponent', () => {
                 InputNumberModule,
                 PanelModule,
             ],
-            declarations: [
-                EntityLinkComponent,
-                HostsPageComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-                HostTabComponent,
-                IdentifierComponent,
-                HostFormComponent,
-                DhcpClientClassSetFormComponent,
-                DhcpClientClassSetViewComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                DhcpOptionSetViewComponent,
-                HostDataSourceLabelComponent,
-                PluralizePipe,
-                HostsTableComponent,
-                ByteCharacterComponent,
+            providers: [
+                DHCPService,
+                UntypedFormBuilder,
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

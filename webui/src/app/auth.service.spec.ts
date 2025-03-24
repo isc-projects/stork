@@ -1,19 +1,24 @@
 import { TestBed } from '@angular/core/testing'
 
 import { AuthService } from './auth.service'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { AuthenticationMethods, User, UsersService } from './backend'
 import { Router, RouterModule } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { from, of } from 'rxjs'
-import { HttpProgressEvent } from '@angular/common/http'
+import { HttpProgressEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('AuthService', () => {
     beforeEach(() =>
         TestBed.configureTestingModule({
-            providers: [UsersService, MessageService],
-            imports: [HttpClientTestingModule, ProgressSpinnerModule, RouterModule],
+            imports: [ProgressSpinnerModule, RouterModule],
+            providers: [
+                UsersService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         })
     )
 

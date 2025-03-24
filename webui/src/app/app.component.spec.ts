@@ -7,7 +7,7 @@ import { SplitButtonModule } from 'primeng/splitbutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ToastModule } from 'primeng/toast'
 import { AppsVersions, GeneralService, ServicesService, Settings, SettingsService, UsersService } from './backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { GlobalSearchComponent } from './global-search/global-search.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -23,6 +23,7 @@ import { AuthService } from './auth.service'
 import { ServerDataService } from './server-data.service'
 import { Severity, VersionAlert, VersionService } from './version.service'
 import { By } from '@angular/platform-browser'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('AppComponent', () => {
     let component: AppComponent
@@ -40,6 +41,7 @@ describe('AppComponent', () => {
         }
 
         TestBed.configureTestingModule({
+            declarations: [AppComponent, GlobalSearchComponent, PriorityErrorsPanelComponent],
             imports: [
                 RouterTestingModule.withRoutes([{ path: 'abc', component: AppComponent }]),
                 TooltipModule,
@@ -47,14 +49,12 @@ describe('AppComponent', () => {
                 SplitButtonModule,
                 ProgressSpinnerModule,
                 ToastModule,
-                HttpClientTestingModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 FormsModule,
                 MessagesModule,
                 ToggleButtonModule,
             ],
-            declarations: [AppComponent, GlobalSearchComponent, PriorityErrorsPanelComponent],
             providers: [
                 GeneralService,
                 UsersService,
@@ -63,6 +63,8 @@ describe('AppComponent', () => {
                 ServicesService,
                 SettingsService,
                 { provide: VersionService, useValue: versionServiceStub },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
         authService = TestBed.inject(AuthService)

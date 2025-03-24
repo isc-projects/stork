@@ -1,6 +1,6 @@
 import { fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testing'
-import { HttpResponse, HttpStatusCode } from '@angular/common/http'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { HttpResponse, HttpStatusCode, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { of, throwError } from 'rxjs'
@@ -30,11 +30,17 @@ describe('ConfigReviewPanelComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [ServicesService, MessageService],
+            declarations: [
+                ConfigReviewPanelComponent,
+                ConfigCheckerPreferenceUpdaterComponent,
+                ConfigCheckerPreferencePickerComponent,
+                EventTextComponent,
+                LocaltimePipe,
+                HelpTipComponent,
+            ],
             imports: [
                 ButtonModule,
                 DividerModule,
-                HttpClientTestingModule,
                 NoopAnimationsModule,
                 TagModule,
                 TableModule,
@@ -44,13 +50,11 @@ describe('ConfigReviewPanelComponent', () => {
                 ToggleButtonModule,
                 DataViewModule,
             ],
-            declarations: [
-                ConfigReviewPanelComponent,
-                ConfigCheckerPreferenceUpdaterComponent,
-                ConfigCheckerPreferencePickerComponent,
-                EventTextComponent,
-                LocaltimePipe,
-                HelpTipComponent,
+            providers: [
+                ServicesService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     })

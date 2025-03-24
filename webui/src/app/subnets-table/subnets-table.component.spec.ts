@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms'
 import { PanelModule } from 'primeng/panel'
 import { MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
@@ -24,6 +24,7 @@ import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { TooltipModule } from 'primeng/tooltip'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
@@ -32,10 +33,17 @@ describe('SubnetsTableComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [MessageService],
+            declarations: [
+                EntityLinkComponent,
+                HelpTipComponent,
+                HumanCountComponent,
+                HumanCountPipe,
+                SubnetBarComponent,
+                SubnetsTableComponent,
+                PluralizePipe,
+            ],
             imports: [
                 TableModule,
-                HttpClientTestingModule,
                 ButtonModule,
                 OverlayPanelModule,
                 InputNumberModule,
@@ -57,15 +65,7 @@ describe('SubnetsTableComponent', () => {
                 ]),
                 TooltipModule,
             ],
-            declarations: [
-                EntityLinkComponent,
-                HelpTipComponent,
-                HumanCountComponent,
-                HumanCountPipe,
-                SubnetBarComponent,
-                SubnetsTableComponent,
-                PluralizePipe,
-            ],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()
 
         dhcpApi = TestBed.inject(DHCPService)

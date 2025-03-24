@@ -2,7 +2,7 @@ import { By } from '@angular/platform-browser'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { PasswordChangePageComponent } from './password-change-page.component'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ActivatedRoute, RouterModule } from '@angular/router'
 import { UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms'
 import { UsersService } from '../backend'
@@ -19,6 +19,7 @@ import { PasswordModule } from 'primeng/password'
 import { MessageModule } from 'primeng/message'
 import { AuthService } from '../auth.service'
 import { DialogModule } from 'primeng/dialog'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('PasswordChangePageComponent', () => {
     let component: PasswordChangePageComponent
@@ -27,17 +28,8 @@ describe('PasswordChangePageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [
-                UntypedFormBuilder,
-                UsersService,
-                MessageService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {},
-                },
-            ],
+            declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
             imports: [
-                HttpClientTestingModule,
                 PanelModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
@@ -49,7 +41,17 @@ describe('PasswordChangePageComponent', () => {
                 MessageModule,
                 DialogModule,
             ],
-            declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
+            providers: [
+                UntypedFormBuilder,
+                UsersService,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
     }))
 

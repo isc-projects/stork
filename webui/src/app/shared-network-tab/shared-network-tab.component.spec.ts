@@ -30,11 +30,11 @@ import { IPType } from '../iptype'
 import { By } from '@angular/platform-browser'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { RouterModule } from '@angular/router'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { of, throwError } from 'rxjs'
 import { DHCPService } from '../backend'
-import { HttpErrorResponse } from '@angular/common/http'
+import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { UncamelPipe } from '../pipes/uncamel.pipe'
@@ -77,7 +77,6 @@ describe('SharedNetworkTabComponent', () => {
                 DividerModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientTestingModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 RouterModule.forRoot([{ path: 'dhcp/shared-networks/:id', component: SharedNetworkTabComponent }]),
@@ -86,7 +85,12 @@ describe('SharedNetworkTabComponent', () => {
                 TooltipModule,
                 TreeModule,
             ],
-            providers: [ConfirmationService, MessageService],
+            providers: [
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedNetworkTabComponent)

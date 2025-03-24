@@ -12,7 +12,7 @@ import {
     SettingsService,
     UsersService,
 } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { LocationStrategy, PathLocationStrategy } from '@angular/common'
 import { of } from 'rxjs'
@@ -34,6 +34,7 @@ import { ServerSentEventsService, ServerSentEventsTestingService } from '../serv
 import { SettingService } from '../setting.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -51,17 +52,6 @@ describe('DashboardComponent', () => {
         }
 
         TestBed.configureTestingModule({
-            imports: [
-                NoopAnimationsModule,
-                PanelModule,
-                OverlayPanelModule,
-                PaginatorModule,
-                TooltipModule,
-                ButtonModule,
-                RouterTestingModule,
-                HttpClientTestingModule,
-                TableModule,
-            ],
             declarations: [
                 DashboardComponent,
                 EventsPanelComponent,
@@ -71,6 +61,16 @@ describe('DashboardComponent', () => {
                 SurroundPipe,
                 EntityLinkComponent,
                 VersionStatusComponent,
+            ],
+            imports: [
+                NoopAnimationsModule,
+                PanelModule,
+                OverlayPanelModule,
+                PaginatorModule,
+                TooltipModule,
+                ButtonModule,
+                RouterTestingModule,
+                TableModule,
             ],
             providers: [
                 ServicesService,
@@ -82,6 +82,8 @@ describe('DashboardComponent', () => {
                 { provide: LocationStrategy, useClass: PathLocationStrategy },
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         })
 

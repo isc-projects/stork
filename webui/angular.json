@@ -15,12 +15,13 @@
             "prefix": "app",
             "architect": {
                 "build": {
-                    "builder": "@angular-devkit/build-angular:browser",
+                    "builder": "@angular-devkit/build-angular:application",
                     "options": {
-                        "outputPath": "dist/stork-debug",
+                        "outputPath": {
+                            "base": "dist/stork-debug"
+                        },
                         "index": "src/index.html",
-                        "main": "src/main.ts",
-                        "polyfills": "src/polyfills.ts",
+                        "polyfills": ["src/polyfills.ts"],
                         "tsConfig": "tsconfig.app.json",
                         "assets": ["src/favicon.ico", "src/assets"],
                         "styles": [
@@ -37,16 +38,17 @@
                             "node_modules/swagger-ui-dist/swagger-ui-bundle.js",
                             "node_modules/swagger-ui-dist/swagger-ui-standalone-preset.js"
                         ],
-                        "vendorChunk": true,
                         "extractLicenses": false,
-                        "buildOptimizer": false,
                         "sourceMap": true,
                         "optimization": false,
-                        "namedChunks": true
+                        "namedChunks": true,
+                        "browser": "src/main.ts"
                     },
                     "configurations": {
                         "production": {
-                            "outputPath": "dist/stork",
+                            "outputPath": {
+                                "base": "dist/stork"
+                            },
                             "fileReplacements": [
                                 {
                                     "replace": "src/environments/environment.ts",
@@ -58,8 +60,6 @@
                             "sourceMap": false,
                             "namedChunks": false,
                             "extractLicenses": true,
-                            "vendorChunk": false,
-                            "buildOptimizer": true,
                             "budgets": [
                                 {
                                     "type": "initial",

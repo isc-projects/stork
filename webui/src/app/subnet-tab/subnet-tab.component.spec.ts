@@ -30,7 +30,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { ToastModule } from 'primeng/toast'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { DHCPService } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 import { RouterModule } from '@angular/router'
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
@@ -39,6 +39,7 @@ import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { PositivePipe } from '../pipes/positive.pipe'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -49,25 +50,6 @@ describe('SubnetTabComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [ConfirmationService, MessageService],
-            imports: [
-                ButtonModule,
-                ChartModule,
-                CheckboxModule,
-                ConfirmDialogModule,
-                DividerModule,
-                FieldsetModule,
-                FormsModule,
-                HttpClientTestingModule,
-                NoopAnimationsModule,
-                OverlayPanelModule,
-                RouterModule.forRoot([{ path: 'dhcp/subnets/:id', component: SubnetTabComponent }]),
-                TableModule,
-                TagModule,
-                ToastModule,
-                TooltipModule,
-                TreeModule,
-            ],
             declarations: [
                 AddressPoolBarComponent,
                 CascadedParametersBoardComponent,
@@ -88,6 +70,29 @@ describe('SubnetTabComponent', () => {
                 UtilizationStatsChartsComponent,
                 JsonTreeRootComponent,
                 JsonTreeComponent,
+            ],
+            imports: [
+                ButtonModule,
+                ChartModule,
+                CheckboxModule,
+                ConfirmDialogModule,
+                DividerModule,
+                FieldsetModule,
+                FormsModule,
+                NoopAnimationsModule,
+                OverlayPanelModule,
+                RouterModule.forRoot([{ path: 'dhcp/subnets/:id', component: SubnetTabComponent }]),
+                TableModule,
+                TagModule,
+                ToastModule,
+                TooltipModule,
+                TreeModule,
+            ],
+            providers: [
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
 

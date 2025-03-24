@@ -16,7 +16,7 @@ import {
     RouterModule,
 } from '@angular/router'
 import { DHCPService, SharedNetwork } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BehaviorSubject, of } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -26,7 +26,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { HttpEvent } from '@angular/common/http'
+import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { TabMenu, TabMenuModule } from 'primeng/tabmenu'
@@ -69,41 +69,6 @@ describe('SharedNetworksPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                ChartModule,
-                CheckboxModule,
-                ChipsModule,
-                ConfirmDialogModule,
-                DividerModule,
-                DropdownModule,
-                FieldsetModule,
-                FormsModule,
-                HttpClientTestingModule,
-                InputNumberModule,
-                MultiSelectModule,
-                NoopAnimationsModule,
-                OverlayPanelModule,
-                ProgressSpinnerModule,
-                ReactiveFormsModule,
-                RouterModule.forRoot([
-                    {
-                        path: 'dhcp/shared-networks',
-                        pathMatch: 'full',
-                        redirectTo: 'dhcp/shared-networks/all',
-                    },
-                    {
-                        path: 'dhcp/shared-networks/:id',
-                        component: SharedNetworksPageComponent,
-                    },
-                ]),
-                TableModule,
-                TabMenuModule,
-                TooltipModule,
-                PanelModule,
-                TagModule,
-            ],
             declarations: [
                 AddressPoolBarComponent,
                 ArrayValueSetFormComponent,
@@ -129,7 +94,46 @@ describe('SharedNetworksPageComponent', () => {
                 SharedNetworksTableComponent,
                 PluralizePipe,
             ],
-            providers: [ConfirmationService, MessageService],
+            imports: [
+                BreadcrumbModule,
+                ButtonModule,
+                ChartModule,
+                CheckboxModule,
+                ChipsModule,
+                ConfirmDialogModule,
+                DividerModule,
+                DropdownModule,
+                FieldsetModule,
+                FormsModule,
+                InputNumberModule,
+                MultiSelectModule,
+                NoopAnimationsModule,
+                OverlayPanelModule,
+                ProgressSpinnerModule,
+                ReactiveFormsModule,
+                RouterModule.forRoot([
+                    {
+                        path: 'dhcp/shared-networks',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/shared-networks/all',
+                    },
+                    {
+                        path: 'dhcp/shared-networks/:id',
+                        component: SharedNetworksPageComponent,
+                    },
+                ]),
+                TableModule,
+                TabMenuModule,
+                TooltipModule,
+                PanelModule,
+                TagModule,
+            ],
+            providers: [
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         })
 
         dhcpService = TestBed.inject(DHCPService)

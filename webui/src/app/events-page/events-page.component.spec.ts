@@ -5,7 +5,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { EventsPageComponent } from './events-page.component'
 import { EventsService } from '../backend/api/events.service'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { FormsModule } from '@angular/forms'
 import { SelectButtonModule } from 'primeng/selectbutton'
@@ -16,6 +16,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { RouterTestingModule } from '@angular/router/testing'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
@@ -23,11 +24,6 @@ describe('EventsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [
-                EventsService,
-                MessageService,
-                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
-            ],
             declarations: [
                 BreadcrumbsComponent,
                 EventsPageComponent,
@@ -36,7 +32,6 @@ describe('EventsPageComponent', () => {
                 HelpTipComponent,
             ],
             imports: [
-                HttpClientTestingModule,
                 FormsModule,
                 SelectButtonModule,
                 DropdownModule,
@@ -44,6 +39,13 @@ describe('EventsPageComponent', () => {
                 BreadcrumbModule,
                 OverlayPanelModule,
                 RouterTestingModule,
+            ],
+            providers: [
+                EventsService,
+                MessageService,
+                { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

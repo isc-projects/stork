@@ -1,4 +1,4 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute, convertToParamMap, RouterModule } from '@angular/router'
 import { By } from '@angular/platform-browser'
@@ -12,6 +12,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { SharedModule } from 'primeng/api'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { RouterTestingModule } from '@angular/router/testing'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LogViewPageComponent', () => {
     let component: LogViewPageComponent
@@ -19,17 +20,8 @@ describe('LogViewPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [
-                ServicesService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        paramMap: of(convertToParamMap({})),
-                    },
-                },
-            ],
+            declarations: [LogViewPageComponent, EntityLinkComponent],
             imports: [
-                HttpClientTestingModule,
                 PanelModule,
                 NoopAnimationsModule,
                 ButtonModule,
@@ -38,7 +30,17 @@ describe('LogViewPageComponent', () => {
                 RouterModule,
                 RouterTestingModule,
             ],
-            declarations: [LogViewPageComponent, EntityLinkComponent],
+            providers: [
+                ServicesService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        paramMap: of(convertToParamMap({})),
+                    },
+                },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+            ],
         }).compileComponents()
     }))
 

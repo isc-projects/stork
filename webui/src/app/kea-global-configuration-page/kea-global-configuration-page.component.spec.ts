@@ -5,7 +5,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { MockParamMap } from '../utils'
 import { of, throwError } from 'rxjs'
 import { MessageService } from 'primeng/api'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -21,7 +21,7 @@ import { ParameterViewComponent } from '../parameter-view/parameter-view.compone
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
-import { HttpErrorResponse } from '@angular/common/http'
+import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
 import { ButtonModule } from 'primeng/button'
 import { TreeModule } from 'primeng/tree'
@@ -37,29 +37,6 @@ describe('KeaGlobalConfigurationPageComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
-                        paramMap: of(convertToParamMap({ appId: '2', daemonId: '1' })),
-                    },
-                },
-                MessageService,
-            ],
-            imports: [
-                BreadcrumbModule,
-                ButtonModule,
-                FieldsetModule,
-                HttpClientTestingModule,
-                NoopAnimationsModule,
-                OverlayPanelModule,
-                ProgressSpinnerModule,
-                TableModule,
-                TreeModule,
-                TagModule,
-            ],
             declarations: [
                 BreadcrumbsComponent,
                 CascadedParametersBoardComponent,
@@ -71,6 +48,30 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 PlaceholderPipe,
                 UncamelPipe,
                 UnhyphenPipe,
+            ],
+            imports: [
+                BreadcrumbModule,
+                ButtonModule,
+                FieldsetModule,
+                NoopAnimationsModule,
+                OverlayPanelModule,
+                ProgressSpinnerModule,
+                TableModule,
+                TreeModule,
+                TagModule,
+            ],
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParamMap: new MockParamMap() },
+                        queryParamMap: of(new MockParamMap()),
+                        paramMap: of(convertToParamMap({ appId: '2', daemonId: '1' })),
+                    },
+                },
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
 

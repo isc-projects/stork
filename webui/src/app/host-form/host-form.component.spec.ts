@@ -1,7 +1,7 @@
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
 import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { of, throwError } from 'rxjs'
@@ -27,6 +27,7 @@ import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/d
 import { ChipsModule } from 'primeng/chips'
 import { TableModule } from 'primeng/table'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('HostFormComponent', () => {
     let component: HostFormComponent
@@ -123,7 +124,13 @@ describe('HostFormComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [UntypedFormBuilder, DHCPService, MessageService],
+            declarations: [
+                DhcpClientClassSetFormComponent,
+                DhcpOptionFormComponent,
+                DhcpOptionSetFormComponent,
+                HelpTipComponent,
+                HostFormComponent,
+            ],
             imports: [
                 ButtonModule,
                 CheckboxModule,
@@ -131,7 +138,6 @@ describe('HostFormComponent', () => {
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientTestingModule,
                 InputNumberModule,
                 InputSwitchModule,
                 MessagesModule,
@@ -145,12 +151,12 @@ describe('HostFormComponent', () => {
                 ToggleButtonModule,
                 ProgressSpinnerModule,
             ],
-            declarations: [
-                DhcpClientClassSetFormComponent,
-                DhcpOptionFormComponent,
-                DhcpOptionSetFormComponent,
-                HelpTipComponent,
-                HostFormComponent,
+            providers: [
+                UntypedFormBuilder,
+                DHCPService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     })

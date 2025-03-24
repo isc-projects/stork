@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing'
 
 import { Severity, UpdateNotification, VersionAlert, VersionService } from './version.service'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { App, AppsVersions, GeneralService, VersionDetails } from './backend'
 import { of } from 'rxjs'
 import { deepCopy } from './utils'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('VersionService', () => {
     let service: VersionService
@@ -80,8 +81,8 @@ describe('VersionService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [],
-            imports: [HttpClientTestingModule],
+            imports: [],
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         })
         service = TestBed.inject(VersionService)
         generalService = TestBed.inject(GeneralService)

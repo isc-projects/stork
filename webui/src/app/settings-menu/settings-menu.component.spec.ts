@@ -7,8 +7,9 @@ import { MenuModule } from 'primeng/menu'
 import { SettingsMenuComponent } from './settings-menu.component'
 import { AuthService } from '../auth.service'
 import { User } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('SettingsMenuComponent', () => {
     let component: SettingsMenuComponent
@@ -17,14 +18,16 @@ describe('SettingsMenuComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [MenuModule, NoopAnimationsModule, RouterTestingModule, HttpClientTestingModule],
             declarations: [SettingsMenuComponent],
+            imports: [MenuModule, NoopAnimationsModule, RouterTestingModule],
             providers: [
                 {
                     provide: ActivatedRoute,
                     useValue: {},
                 },
                 MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
         authService = TestBed.inject(AuthService)

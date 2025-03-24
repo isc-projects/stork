@@ -9,7 +9,7 @@ import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { ActivatedRoute, Router, convertToParamMap, NavigationEnd, ActivatedRouteSnapshot } from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BehaviorSubject, of, throwError } from 'rxjs'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -51,7 +51,7 @@ import { SharedParametersFormComponent } from '../shared-parameters-form/shared-
 import { AccordionModule } from 'primeng/accordion'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
-import { HttpErrorResponse, HttpEvent } from '@angular/common/http'
+import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { TabType } from '../tab'
 import { SubnetsTableComponent } from '../subnets-table/subnets-table.component'
 import { PanelModule } from 'primeng/panel'
@@ -73,48 +73,6 @@ describe('SubnetsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            providers: [ConfirmationService, DHCPService, UsersService, MessageService, SettingsService],
-            imports: [
-                AccordionModule,
-                FormsModule,
-                DropdownModule,
-                TableModule,
-                TooltipModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        path: 'dhcp/subnets',
-                        pathMatch: 'full',
-                        redirectTo: 'dhcp/subnets/all',
-                    },
-                    {
-                        path: 'dhcp/subnets/:id',
-                        component: SubnetsPageComponent,
-                    },
-                ]),
-                HttpClientTestingModule,
-                BreadcrumbModule,
-                OverlayPanelModule,
-                NoopAnimationsModule,
-                MessageModule,
-                TabMenuModule,
-                FieldsetModule,
-                TreeModule,
-                ProgressSpinnerModule,
-                ButtonModule,
-                CheckboxModule,
-                ChipsModule,
-                DividerModule,
-                InputNumberModule,
-                MessagesModule,
-                MultiSelectModule,
-                TagModule,
-                TriStateCheckboxModule,
-                ReactiveFormsModule,
-                SplitButtonModule,
-                ToastModule,
-                ConfirmDialogModule,
-                PanelModule,
-            ],
             declarations: [
                 AddressPoolFormComponent,
                 SubnetsPageComponent,
@@ -140,6 +98,55 @@ describe('SubnetsPageComponent', () => {
                 PlaceholderPipe,
                 ArrayValueSetFormComponent,
                 ParameterViewComponent,
+            ],
+            imports: [
+                AccordionModule,
+                FormsModule,
+                DropdownModule,
+                TableModule,
+                TooltipModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'dhcp/subnets',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/subnets/all',
+                    },
+                    {
+                        path: 'dhcp/subnets/:id',
+                        component: SubnetsPageComponent,
+                    },
+                ]),
+                BreadcrumbModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                MessageModule,
+                TabMenuModule,
+                FieldsetModule,
+                TreeModule,
+                ProgressSpinnerModule,
+                ButtonModule,
+                CheckboxModule,
+                ChipsModule,
+                DividerModule,
+                InputNumberModule,
+                MessagesModule,
+                MultiSelectModule,
+                TagModule,
+                TriStateCheckboxModule,
+                ReactiveFormsModule,
+                SplitButtonModule,
+                ToastModule,
+                ConfirmDialogModule,
+                PanelModule,
+            ],
+            providers: [
+                ConfirmationService,
+                DHCPService,
+                UsersService,
+                MessageService,
+                SettingsService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         })
         dhcpService = TestBed.inject(DHCPService)

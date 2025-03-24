@@ -4,7 +4,7 @@ import { differentPasswords, UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, convertToParamMap, ParamMap, RouterModule } from '@angular/router'
 import { FormControl, FormGroup, FormsModule, UntypedFormBuilder } from '@angular/forms'
 import { ServicesService, UsersService } from '../backend'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, SharedModule } from 'primeng/api'
 import { of, Subject } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -25,6 +25,7 @@ import { PanelModule } from 'primeng/panel'
 import { DropdownModule } from 'primeng/dropdown'
 import { PasswordModule } from 'primeng/password'
 import { CheckboxModule } from 'primeng/checkbox'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -35,8 +36,8 @@ describe('UsersPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
+            declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
             imports: [
-                HttpClientTestingModule,
                 TabMenuModule,
                 MenuModule,
                 TableModule,
@@ -58,7 +59,6 @@ describe('UsersPageComponent', () => {
                 FormsModule,
                 CheckboxModule,
             ],
-            declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent, PlaceholderPipe],
             providers: [
                 UntypedFormBuilder,
                 UsersService,
@@ -86,6 +86,8 @@ describe('UsersPageComponent', () => {
                         paramMap: paramMapValue.asObservable(),
                     },
                 },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
     }))

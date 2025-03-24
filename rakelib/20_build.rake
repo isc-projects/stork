@@ -151,20 +151,20 @@ CLEAN.append "doc/build"
 ### Frontend ###
 ################
 
-file WEBUI_DIST_DIRECTORY = "webui/dist/stork"
+file WEBUI_DIST_DIRECTORY = "webui/dist/stork/browser"
 file WEBUI_DIST_DIRECTORY => WEBUI_CODEBASE + [NPX] do
     Dir.chdir("webui") do
         sh NPX, "ng", "build", "--configuration", "production"
     end
 end
 
-file WEBUI_DIST_ARM_DIRECTORY = "webui/dist/stork/assets/arm"
+file WEBUI_DIST_ARM_DIRECTORY = File.join(WEBUI_DIST_DIRECTORY, "assets", "arm")
 file WEBUI_DIST_ARM_DIRECTORY => [DOC_USER_ROOT] do
     sh "cp", "-a", DOC_USER_ROOT, WEBUI_DIST_ARM_DIRECTORY
     sh "touch", "-c", WEBUI_DIST_ARM_DIRECTORY
 end
 
-file WEBUI_DEBUG_DIRECTORY = "webui/dist/stork-debug"
+file WEBUI_DEBUG_DIRECTORY = "webui/dist/stork-debug/browser"
 file WEBUI_DEBUG_DIRECTORY => WEBUI_CODEBASE + [NPX] do
     Dir.chdir("webui") do
         sh NPX, "ng", "build"

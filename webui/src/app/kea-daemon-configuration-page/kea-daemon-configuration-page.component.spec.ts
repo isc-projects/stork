@@ -1,5 +1,5 @@
-import { HttpErrorResponse } from '@angular/common/http'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -32,23 +32,22 @@ describe('KeaDaemonConfigurationPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                PanelModule,
-                ButtonModule,
-                RouterModule,
-                HttpClientTestingModule,
-                OverlayPanelModule,
-                NoopAnimationsModule,
-                MessageModule,
-                BreadcrumbModule,
-                RouterTestingModule.withRoutes([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
-            ],
             declarations: [
                 KeaDaemonConfigurationPageComponent,
                 JsonTreeComponent,
                 JsonTreeRootComponent,
                 BreadcrumbsComponent,
                 HelpTipComponent,
+            ],
+            imports: [
+                PanelModule,
+                ButtonModule,
+                RouterModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                MessageModule,
+                BreadcrumbModule,
+                RouterTestingModule.withRoutes([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
             ],
             providers: [
                 ServicesService,
@@ -62,6 +61,8 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                         paramMap: of(convertToParamMap({ appId: '1', daemonId: '2' })),
                     },
                 },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         })
         dataService = TestBed.inject(ServerDataService)
