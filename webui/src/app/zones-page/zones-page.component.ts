@@ -277,7 +277,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Flag stating whether _polling$ observable is active (emitting values and not complete yet) or not.
      * @private
      */
-    private _isPolling = false
+    private _isPolling: boolean = false
 
     /**
      * RxJS Subject used for filtering zones table data based on UI filtering form inputs (text inputs, checkboxes, dropdowns etc.).
@@ -321,7 +321,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Boolean flag stating whether zones table should lazily load zones from backend on component init.
      */
-    loadZonesOnInit = true
+    loadZonesOnInit: boolean = true
 
     /**
      * Returns label for the DNS App type.
@@ -506,7 +506,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Boolean flag stating whether this component init is done or not.
      * @private
      */
-    private _initDone = false
+    private _initDone: boolean = false
 
     /**
      * Restores only rows per page count for the zones table from the state stored in user browser storage.
