@@ -557,7 +557,7 @@ node_ver = '20.17.0'
 npm_ver = '11.2.0'
 yamlinc_ver = '0.1.10'
 openapi_generator_ver = '7.12.0'
-storybook_ver = '8.5.0'
+storybook_ver = '8.6.8'
 
 # Other
 bundler_ver = '2.5.19'

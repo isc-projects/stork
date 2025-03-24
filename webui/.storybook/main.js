@@ -8,7 +8,9 @@ const config = {
         options: {},
     },
 
-    docs: {},
+    docs: {
+        autodocs: false,
+    },
 }
 
 export default config
