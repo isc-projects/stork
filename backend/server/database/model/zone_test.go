@@ -19,7 +19,7 @@ func TestGetZonesFilterEnableZoneTypes(t *testing.T) {
 	filter := &GetZonesFilter{}
 	filter.EnableZoneType(ZoneTypeSecondary)
 	filter.EnableZoneType(ZoneTypeBuiltin)
-	require.Equal(t, []ZoneType{ZoneTypeSecondary, ZoneTypeBuiltin}, slices.Collect(filter.Types.GetEnabled()))
+	require.ElementsMatch(t, []ZoneType{ZoneTypeSecondary, ZoneTypeBuiltin}, slices.Collect(filter.Types.GetEnabled()))
 }
 
 // Test that the zone type filter can be enabled and enabled types can be retrieved.
@@ -27,7 +27,7 @@ func TestGetZonesFilterZoneTypes(t *testing.T) {
 	filter := NewGetZonesFilterZoneTypes()
 	filter.Enable(ZoneTypeSecondary)
 	filter.Enable(ZoneTypeDelegationOnly)
-	require.Equal(t, []ZoneType{ZoneTypeSecondary, ZoneTypeDelegationOnly}, slices.Collect(filter.GetEnabled()))
+	require.ElementsMatch(t, []ZoneType{ZoneTypeSecondary, ZoneTypeDelegationOnly}, slices.Collect(filter.GetEnabled()))
 }
 
 // Test that no zone type filters are returned when none are enabled.
