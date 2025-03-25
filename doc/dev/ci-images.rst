@@ -146,6 +146,12 @@ Changelog
 Below is the list of changes of CI images for particular tags.
 The image names are the file names of their Dockerfiles.
 
+**Tag: 7**
+
+    - ``alpine.Dockerfile``:
+
+        Introduced in the #1758 ticket to upgrade Go to 1.24.1.
+
 **Tag: 6**
 
     - ``alpine.Dockerfile``:

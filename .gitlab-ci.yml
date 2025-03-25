@@ -144,7 +144,7 @@ stages:
       - tools/
     fallback_keys:
       - $CI_PROJECT_NAME-alpine-$CI_DEFAULT_BRANCH
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:6
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:7
   tags:
     - linux
     - aws
@@ -587,7 +587,7 @@ install_rpms_arm64:
     - build_rpms_arm64
 
 install_apks_amd64:
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:6
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:7
   tags:
     - linux
     - aws
