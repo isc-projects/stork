@@ -705,7 +705,7 @@ build_hooks_amd64:
     expire_in: 1 hour
 
 build_hooks_arm64:
-  extends: build_hooks_amd64
+  extends: .base_build_debian
   tags:
     - linux
     - aws
@@ -755,7 +755,7 @@ build_hooks_legacy_arm64:
     ARCH: arm64
 
 unittest_hooks:
-  extends: build_hooks_amd64
+  extends: .base_build_debian
   stage: hooks
   when: always
   needs: []
@@ -765,7 +765,7 @@ unittest_hooks:
     - rake hook:unittest
 
 tarball_hooks:
-  extends: build_hooks_amd64
+  extends: .base_build_debian
   stage: hooks
   when: always
   needs: []
@@ -883,7 +883,7 @@ build_hooks_apks_arm64:
     expire_in: 1 hour
 
 packages_hooks:
-  extends: build_hooks_amd64
+  extends: .base_build_debian
   stage: hooks
   rules:
     - when: on_success
