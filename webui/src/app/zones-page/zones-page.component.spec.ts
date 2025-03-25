@@ -36,6 +36,7 @@ import { FormsModule } from '@angular/forms'
 import { DropdownModule } from 'primeng/dropdown'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { NgZone } from '@angular/core'
+import { hasFilter } from '../table'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -767,7 +768,7 @@ describe('ZonesPageComponent', () => {
     it('should display feedback when wrong filter in query params', async () => {
         // Arrange + Act + Assert
         getZonesSpy.and.returnValue(of(noZones))
-        const zone: NgZone = new NgZone({})
+        const zone = fixture.debugElement.injector.get(NgZone)
         const r = fixture.debugElement.injector.get(Router)
 
         await zone.run(() => r.navigate([], { queryParams: { foo: 'bar' } }))
@@ -823,7 +824,7 @@ describe('ZonesPageComponent', () => {
 
     it('should filter zones when correct filter in query params', async () => {
         // Arrange
-        const zone: NgZone = new NgZone({})
+        const zone = fixture.debugElement.injector.get(NgZone)
         const r = fixture.debugElement.injector.get(Router)
 
         // Act
@@ -858,5 +859,47 @@ describe('ZonesPageComponent', () => {
             2,
             '123'
         )
+    })
+
+    it('should clear zones filter and reset zones table', async () => {
+        // Arrange
+        getZonesSpy.and.returnValue(of(noZones))
+        const zone = fixture.debugElement.injector.get(NgZone)
+        const r = fixture.debugElement.injector.get(Router)
+        await zone.run(() =>
+            r.navigate([], {
+                queryParams: {
+                    appId: 2,
+                    zoneSerial: '123',
+                    zoneType: ['builtin', 'primary'],
+                    zoneClass: 'IN',
+                    appType: 'bind9',
+                    text: 'test',
+                },
+            })
+        )
+        fixture.detectChanges()
+        expect(hasFilter(component?.zonesTable?.filters)).toBeTrue()
+
+        // Act + Assert
+        component.clearFilter(component?.zonesTable?.filters['appId'])
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(hasFilter(component?.zonesTable?.filters)).toBeTrue()
+        expect(getZonesSpy).toHaveBeenCalledWith(
+            0,
+            10,
+            'bind9',
+            jasmine.arrayContaining(['primary', 'builtin']),
+            'IN',
+            'test',
+            null,
+            '123'
+        )
+
+        component.clearTableState()
+        fixture.detectChanges()
+        expect(hasFilter(component?.zonesTable?.filters)).toBeFalse()
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
     })
 })

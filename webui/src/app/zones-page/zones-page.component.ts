@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { ConfirmationService, MenuItem, MessageService, TableState } from 'primeng/api'
 import {
     DNSAppType,
@@ -293,6 +293,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param confirmationService PrimeNG confirmation service used to display confirmation dialog
      * @param activatedRoute Angular ActivatedRoute to retrieve information about current route queryParams
      * @param router Angular router service used to navigate when zones table filtering changes
+     * @param zone Angular zone to call Router navigation inside the zone
      */
     constructor(
         private cd: ChangeDetectorRef,
@@ -300,7 +301,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private messageService: MessageService,
         private confirmationService: ConfirmationService,
         private activatedRoute: ActivatedRoute,
-        private router: Router
+        private router: Router,
+        private zone: NgZone
     ) {}
 
     /**
@@ -561,7 +563,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     distinctUntilChanged(),
                     map((f) => {
                         f.filterConstraint.value = f.value
-                        this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() })
+                        this.zone.run(() => this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() }))
                     })
                 )
                 .subscribe()
@@ -851,7 +853,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     clearTableState() {
         this.zonesTable?.clear()
-        this.router.navigate([])
+        this.zone.run(() => this.router.navigate([]))
     }
 
     /**
@@ -900,7 +902,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     clearFilter(filterConstraint: any) {
         filterConstraint.value = null
-        this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() })
+        this.zone.run(() => this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() }))
     }
 
     /**
