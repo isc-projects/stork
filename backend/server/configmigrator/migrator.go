@@ -1,7 +1,7 @@
 package configmigrator
 
-// Indicates the entity related to the migration error. Usually it is an entity
-// that was migrated or its daemon.
+// Indicates a type of entity for which migration error is reported. Usually, it is
+// a migrated entity or a corresponding daemon.
 type EntityType string
 
 const (

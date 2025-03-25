@@ -224,7 +224,7 @@ func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
 	})
 
 	// Delete the reservations from the Kea configuration. It is done only
-	// for the hosts that has been properly added to the host database or
+	// for the hosts that have been properly added to the host database or
 	// already existed in the host database.
 	m.prepareAndSendHostCommands(daemon, func(host *dbmodel.Host, localHosts map[dbmodel.HostDataSource]*dbmodel.LocalHost) (keactrl.SerializableCommand, error) {
 		if _, ok := localHosts[dbmodel.HostDataSourceConfig]; !ok {
