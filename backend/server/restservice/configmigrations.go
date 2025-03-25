@@ -103,7 +103,7 @@ func (r *RestAPI) GetMigration(ctx context.Context, params dhcp.GetMigrationPara
 	return rsp
 }
 
-// Implements the POST call to cancel an ongoing migration.
+// Implements the DELETE call to cancel an ongoing migration.
 func (r *RestAPI) CancelMigration(ctx context.Context, params dhcp.CancelMigrationParams) middleware.Responder {
 	// Attempt to cancel the migration.
 	status, ok := r.MigrationService.StopMigration(configmigrator.MigrationIdentifier(params.ID))
