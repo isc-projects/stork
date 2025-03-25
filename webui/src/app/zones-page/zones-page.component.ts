@@ -541,12 +541,12 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this._restoreZonesTableRowsPerPage()
 
-        // Initialize the filter to hide builtin zones by default
-        setTimeout(() => {
-            if (this.hideBuiltinZones) {
-                this.toggleBuiltinZones();
-            }
-        });
+        // // Initialize the filter to hide builtin zones by default
+        // setTimeout(() => {
+        //     if (this.hideBuiltinZones) {
+        //         this.toggleBuiltinZones();
+        //     }
+        // });
 
         // Manage RxJS subscriptions on init.
         this._subscriptions = this.activatedRoute.queryParamMap
@@ -920,28 +920,53 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         storage?.setItem(this._zonesTableStateStorageKey, JSON.stringify(state))
     }
 
-    // Add property to track the hide builtin state
-    hideBuiltinZones: boolean = true;
+    /**
+     * Keeps track whether builtin zones are filtered out or not.
+     */
+    get builtinZonesDisplayed(): boolean {
+        const selectedZoneTypes = (<FilterMetadata>this.zonesTable?.filters?.['zoneType'])?.value ?? []
+        if (selectedZoneTypes.length === 0 || selectedZoneTypes.length === this.zoneTypes.length) {
+            // Filtering with no zone types selected is equal to filtering with all zone types selected.
+            // In this case builtin zones are also displayed.
+            return true
+        }
+
+        return selectedZoneTypes.includes('builtin')
+    }
 
     /**
-     * Toggles builtin zones by manipulating the Zone Type filter
+     * Toggles filter in/filter out builtin zones by manipulating the zoneType filter.
      */
     toggleBuiltinZones() {
-        this.hideBuiltinZones = !this.hideBuiltinZones;
-
         // Get current filters
-        const filters = this.zonesTable?.filters || {};
+        const zoneTypeFilterMetadata = <FilterMetadata>this.zonesTable?.filters?.['zoneType']
 
-        // Set zoneType filter to include all types except builtin when hiding
-        filters.zoneType = {
-            matchMode: 'equals',
-            value: this.hideBuiltinZones
-                ? this.zoneTypes.filter(type => type !== 'builtin')
-                : this.zoneTypes
-        };
+        if (!zoneTypeFilterMetadata) {
+            console.log('no zoneType filter')
+            return;
+        }
+
+        const selectedZoneTypes: string[] = zoneTypeFilterMetadata.value ?? []
+
+        if (this.builtinZonesDisplayed && selectedZoneTypes.length === 0) {
+            // zoneType filter is not applied.
+            zoneTypeFilterMetadata.value = this.zoneTypes
+        } else if (
+            !this.builtinZonesDisplayed &&
+            selectedZoneTypes.length === this.zoneTypes.length - 1
+        ) {
+            // zoneType filter is applied and builtin zones is the only type that is filtered out.
+            // Adding builtin zones filter means filtering by all types, so the zoneType filter can be cleared.
+            this.clearFilter(zoneTypeFilterMetadata)
+            return
+        }
+
+        // Add or remove builtin zones to current zoneType filter.
+        zoneTypeFilterMetadata.value = this.builtinZonesDisplayed ? zoneTypeFilterMetadata.value.filter((type) => type !== 'builtin') : [...zoneTypeFilterMetadata.value, 'builtin']
 
         // Apply filters to table
-        this.zonesTable.filters = filters;
-        this.zonesTable._filter();
+        this.zone.run(() => this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() }))
+        // this.zonesTable.filters = filters;
+        // this.zonesTable._filter();
     }
 }
