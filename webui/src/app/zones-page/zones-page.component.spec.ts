@@ -11,7 +11,7 @@ import { TabViewModule } from 'primeng/tabview'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { RouterModule } from '@angular/router'
+import { Router, RouterModule } from '@angular/router'
 import { DNSAppType, DNSClass, DNSService, ZoneInventoryState, ZoneInventoryStates, Zones } from '../backend'
 import { Observable, of } from 'rxjs'
 import { HttpEventType, HttpHeaders, HttpResponse, HttpStatusCode } from '@angular/common/http'
@@ -35,6 +35,7 @@ import { InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { DropdownModule } from 'primeng/dropdown'
 import { MultiSelectModule } from 'primeng/multiselect'
+import { NgZone } from '@angular/core'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -343,7 +344,7 @@ describe('ZonesPageComponent', () => {
              * return value will be seen by the user in the message when a test fails.
              */
             jasmineToString: function () {
-                return `<inValuesOf: anyOf[${Object.values(type).join(', ')}]>`
+                return `<inValuesOf: ${Object.values(type).join(', ')}>`
             },
         }
     }
@@ -762,4 +763,100 @@ describe('ZonesPageComponent', () => {
             null
         )
     }))
+
+    it('should display feedback when wrong filter in query params', async () => {
+        // Arrange + Act + Assert
+        getZonesSpy.and.returnValue(of(noZones))
+        const zone: NgZone = new NgZone({})
+        const r = fixture.debugElement.injector.get(Router)
+
+        await zone.run(() => r.navigate([], { queryParams: { foo: 'bar' } }))
+        fixture.detectChanges()
+        expect(messageAddSpy).toHaveBeenCalledWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Wrong URL parameter value',
+                detail: jasmine.stringContaining('parameter foo not supported'),
+            })
+        )
+
+        await zone.run(() => r.navigate([], { queryParams: { appId: 'bar' } }))
+        fixture.detectChanges()
+        expect(messageAddSpy).toHaveBeenCalledWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Wrong URL parameter value',
+                detail: jasmine.stringContaining('requires numeric value'),
+            })
+        )
+
+        await zone.run(() => r.navigate([], { queryParams: { appType: 'bar' } }))
+        fixture.detectChanges()
+        expect(messageAddSpy).toHaveBeenCalledWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Wrong URL parameter value',
+                detail: jasmine.stringContaining('appType requires one of the values'),
+            })
+        )
+
+        await zone.run(() => r.navigate([], { queryParams: { zoneType: 'bar' } }))
+        fixture.detectChanges()
+        expect(messageAddSpy).toHaveBeenCalledWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Wrong URL parameter value',
+                detail: jasmine.stringContaining('zoneType requires one of the values'),
+            })
+        )
+
+        await zone.run(() => r.navigate([], { queryParams: { zoneClass: 'bar' } }))
+        fixture.detectChanges()
+        expect(messageAddSpy).toHaveBeenCalledWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Wrong URL parameter value',
+                detail: jasmine.stringContaining('zoneClass requires one of the values'),
+            })
+        )
+    })
+
+    it('should filter zones when correct filter in query params', async () => {
+        // Arrange
+        const zone: NgZone = new NgZone({})
+        const r = fixture.debugElement.injector.get(Router)
+
+        // Act
+        await zone.run(() =>
+            r.navigate([], {
+                queryParams: {
+                    appId: 2,
+                    zoneSerial: '123',
+                    zoneType: ['builtin', 'primary'],
+                    zoneClass: 'IN',
+                    appType: 'bind9',
+                    text: 'test',
+                },
+            })
+        )
+        fixture.detectChanges()
+
+        // Assert
+        expect(messageAddSpy).not.toHaveBeenCalledWith(
+            jasmine.objectContaining({
+                severity: 'error',
+            })
+        )
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(
+            0,
+            10,
+            'bind9',
+            jasmine.arrayContaining(['primary', 'builtin']),
+            'IN',
+            'test',
+            2,
+            '123'
+        )
+    })
 })
