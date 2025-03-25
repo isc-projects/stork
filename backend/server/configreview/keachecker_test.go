@@ -1163,7 +1163,9 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
-	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, *report.content,
+		"includes 1 subnet for which it is recommended to set 'reservations-out-of-pool'",
+	)
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1195,7 +1197,9 @@ func TestDHCPv6ReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
-	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, *report.content,
+		"includes 1 subnet for which it is recommended to set 'reservations-out-of-pool'",
+	)
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1547,7 +1551,9 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
-	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, *report.content,
+		"includes 1 subnet for which it is recommended to set 'reservations-out-of-pool'",
+	)
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1587,7 +1593,9 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.NotNil(t, report.content)
-	require.Contains(t, *report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, *report.content,
+		"includes 1 subnet for which it is recommended to set 'reservations-out-of-pool'",
+	)
 }
 
 // Tests that the checker identifying subnets in which out-of-pool

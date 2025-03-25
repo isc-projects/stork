@@ -491,7 +491,7 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	if oopSubnetsCount > 0 {
 		r, err := NewReport(ctx, fmt.Sprintf(
 			"Kea {daemon} configuration includes %s for which it is "+
-				"recommended to use out-of-pool host-reservation mode. "+
+				"recommended to set 'reservations-out-of-pool' to 'true'. "+
 				"Reservations specified for these subnets appear outside the "+
 				"dynamic-address and/or prefix-delegation pools. Using "+
 				"out-of-pool reservation mode prevents Kea from checking "+
