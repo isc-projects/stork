@@ -545,7 +545,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this._subscriptions = this.activatedRoute.queryParamMap
             .pipe(filter(() => this._initDone))
             .subscribe((value) => {
-                console.log('activated route emits qpm next', value, Date.now())
                 this._parseQueryParams(value)
                 this._filterZonesByQueryParams()
                 if (this.activeTabIdx > 0) {
