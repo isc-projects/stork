@@ -103,19 +103,19 @@ func (r *RestAPI) GetMigration(ctx context.Context, params dhcp.GetMigrationPara
 	return rsp
 }
 
-// Implements the DELETE call to cancel an ongoing migration.
-func (r *RestAPI) CancelMigration(ctx context.Context, params dhcp.CancelMigrationParams) middleware.Responder {
+// Implements the PUT call to cancel an ongoing migration.
+func (r *RestAPI) PutMigration(ctx context.Context, params dhcp.PutMigrationParams) middleware.Responder {
 	// Attempt to cancel the migration.
 	status, ok := r.MigrationService.StopMigration(configmigrator.MigrationIdentifier(params.ID))
 	if !ok {
 		msg := fmt.Sprintf("Cannot find migration status with ID %s", params.ID)
-		rsp := dhcp.NewCancelMigrationDefault(http.StatusNotFound).WithPayload(&models.APIError{
+		rsp := dhcp.NewPutMigrationDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 
 	// Send OK response to the client.
-	rsp := dhcp.NewCancelMigrationOK().WithPayload(r.convertMigrationStatusToRestAPI(status))
+	rsp := dhcp.NewPutMigrationOK().WithPayload(r.convertMigrationStatusToRestAPI(status))
 	return rsp
 }

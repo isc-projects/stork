@@ -880,7 +880,7 @@
 
   /migrations:
     get:
-      summary: Get list of host reservations migrations.
+      summary: Get list of migrations.
       description: >-
         A list of migrations is returned in items field accompanied by total count
         which indicates total available number of records for given filtering
@@ -903,8 +903,7 @@
     delete:
       summary: Deletes all finished migrations.
       description: >-
-        Deletes all migrations that have been finished from the memory as they
-        are no longer needed.
+        Deletes all finished (or completed) migrations from memory.
       operationId: deleteFinishedMigrations
       tags:
         - DHCP
@@ -940,12 +939,13 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
-    delete:
+    put:
       summary: Cancels migration by ID.
       description: >-
         Cancels a pending migration. The migration is not stopped immediately
-        but it will be stopped in the background.
-      operationId: cancelMigration
+        but it will be stopped in the background. The status of the cancelled
+        migration is still available.
+      operationId: putMigration
       tags:
         - DHCP
       parameters:
@@ -956,7 +956,7 @@
           description: Migration ID.
       responses:
         200:
-          description: Migration successfully deleted.
+          description: Migration successfully canceled.
           schema:
             $ref: "#/definitions/MigrationStatus"
         default:
@@ -971,33 +971,33 @@
         This call starts a new migration of host reservations from Kea JSON
         configuration(s) to the hosts database. The migration is performed
         asynchronously in background.
-      operationId: migrateHosts
+      operationId: startHostsMigration
       tags:
         - DHCP
       parameters:
         - name: appId
           in: query
-          description: Limit returned list of hosts to these which are served by given app ID.
+          description: Limit migrated hosts to these which are served by given app ID.
           type: integer
         - name: subnetId
           in: query
-          description: Limit returned list of hosts to these which belong to a given subnet.
+          description: Limit migrated hosts to these which belong to a given subnet.
           type: integer
         - name: localSubnetId
           in: query
           description: >-
-            Limit returned list of hosts to these which belong to a subnet having
+            Limit migrated hosts to these which belong to a subnet having
             a specified subnet ID in the Kea configuration.
           type: integer
         - name: text
           in: query
-          description: Limit returned list of hosts to the ones containing the given text.
+          description: Limit migrated hosts to the ones containing the given text.
           type: string
         - name: global
           in: query
           description: >-
-            If true then return only reservations from global scope, if false then return
-            only reservations from subnets, if null then both types of hosts are return.
+            If true then limit migrated only reservations from global scope, if false then migrate
+            only reservations from subnets, if null then both types of hosts are migrated.
           type: boolean
       responses:
         200:

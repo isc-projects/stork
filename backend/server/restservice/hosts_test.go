@@ -1714,7 +1714,7 @@ func TestDHCPOptionsHash(t *testing.T) {
 // Test that the migration of hosts is triggered correctly. The filter on the
 // subnet ID must be applied. Sending commands to the second Kea server fails,
 // so the migration error is returned.
-func TestMigrateHosts(t *testing.T) {
+func TestStartHostsMigration(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1754,13 +1754,13 @@ func TestMigrateHosts(t *testing.T) {
 		}, nil)
 
 	// Act
-	rsp := rapi.MigrateHosts(context.Background(), dhcp.MigrateHostsParams{
+	rsp := rapi.StartHostsMigration(context.Background(), dhcp.StartHostsMigrationParams{
 		SubnetID: storkutil.Ptr(int64(42)),
 	})
 
 	// Assert
-	require.IsType(t, &dhcp.MigrateHostsOK{}, rsp)
-	okRsp := rsp.(*dhcp.MigrateHostsOK)
+	require.IsType(t, &dhcp.StartHostsMigrationOK{}, rsp)
+	okRsp := rsp.(*dhcp.StartHostsMigrationOK)
 
 	require.Equal(t, "1234-1", okRsp.Payload.ID)
 	require.Zero(t, okRsp.Payload.AuthorID)

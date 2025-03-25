@@ -228,7 +228,7 @@ func TestGetMigration(t *testing.T) {
 
 // Test that the cancellation endpoint correctly triggers the cancellation of
 // the migration.
-func TestCancelMigration(t *testing.T) {
+func TestPutMigration(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -266,14 +266,14 @@ func TestCancelMigration(t *testing.T) {
 		Return(migrationStatus, true)
 
 	// Act
-	rsp := rapi.CancelMigration(
+	rsp := rapi.PutMigration(
 		context.Background(),
-		dhcp.CancelMigrationParams{ID: "1234-1"},
+		dhcp.PutMigrationParams{ID: "1234-1"},
 	)
 
 	// Assert
-	require.IsType(t, &dhcp.CancelMigrationOK{}, rsp)
-	okRsp := rsp.(*dhcp.CancelMigrationOK)
+	require.IsType(t, &dhcp.PutMigrationOK{}, rsp)
+	okRsp := rsp.(*dhcp.PutMigrationOK)
 
 	require.Equal(t, "1234-1", okRsp.Payload.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
@@ -290,7 +290,7 @@ func TestCancelMigration(t *testing.T) {
 
 // Test that the cancellation endpoint returns a HTTP 404 Not Found status when
 // trying to cancel a migration that does not exist.
-func TestCancelMigrationNotFound(t *testing.T) {
+func TestPutMigrationNotFound(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -308,13 +308,13 @@ func TestCancelMigrationNotFound(t *testing.T) {
 		Return(configmigrator.MigrationStatus{}, false)
 
 	// Act
-	rsp := rapi.CancelMigration(
+	rsp := rapi.PutMigration(
 		context.Background(),
-		dhcp.CancelMigrationParams{ID: "1234-1"},
+		dhcp.PutMigrationParams{ID: "1234-1"},
 	)
 
 	// Assert
-	require.IsType(t, &dhcp.CancelMigrationDefault{}, rsp)
-	defaultRsp := rsp.(*dhcp.CancelMigrationDefault)
+	require.IsType(t, &dhcp.PutMigrationDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.PutMigrationDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 }
