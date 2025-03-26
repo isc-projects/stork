@@ -36,6 +36,7 @@ import StatusEnum = ZoneInventoryState.StatusEnum
 /**
  * Returns tooltip message for given ZoneInventoryState status.
  * @param status ZoneInventoryState status
+ * @return tooltip message
  */
 export function getTooltip(status: StatusEnum) {
     switch (status) {
@@ -55,6 +56,7 @@ export function getTooltip(status: StatusEnum) {
 /**
  * Returns PrimeNG severity for given ZoneInventoryState status.
  * @param status ZoneInventoryState status
+ * @return PrimeNG severity
  */
 export function getSeverity(status: StatusEnum) {
     switch (status) {
@@ -210,6 +212,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Returns RxJS observable which emits one value with the GET /dns-management/zones-fetch response
      * together with the status header value and completes.
+     * @return RxJS observable
      */
     getZonesFetchWithStatus() {
         return this.dnsService.getZonesFetch('response').pipe(
@@ -328,6 +331,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Returns label for the DNS App type.
      * @param appType DNS App type
+     * @return App type label
      */
     private _getDNSAppName(appType: DNSAppType) {
         switch (appType) {
@@ -392,6 +396,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * Filter validation relies on correctly initialized _supportedQueryParamFilters property.
      * Returns number of valid filters found.
      * @param queryParamMap URL queryParamMap that will be used for zone filters parsing
+     * @return number of valid filters
      * @private
      */
     private _parseQueryParams(queryParamMap: ParamMap): number {
@@ -777,6 +782,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Returns more verbose error message for given error.
      * @param err error message received from backend
+     * @return error message
      */
     getStateErrorMessage(err: string) {
         return `Error when communicating with a zone inventory on an agent: ${err}.`
@@ -826,6 +832,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Retrieves information from browser storage whether PUT /dns-management/zones-fetch was sent or not.
+     * @return boolean flag
      */
     wasZoneFetchSent(): boolean {
         const fromStorage = sessionStorage.getItem(this._fetchSentStorageKey) ?? 'false'
@@ -885,6 +892,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Returns zone table filters as queryParam object, which may be used for router navigation.
+     * @return filters as queryParam object
      * @private
      */
     private _zoneFiltersToQueryParams() {
