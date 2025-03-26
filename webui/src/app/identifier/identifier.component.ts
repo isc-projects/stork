@@ -110,7 +110,7 @@ export class IdentifierComponent implements OnInit {
     }
 
     /**
-     * Indicates if the hex identifier is empty.
+     * Indicates if the identifier is empty.
      */
     get isEmpty(): boolean {
         return (this.hexBytes?.length ?? 0) === 0
