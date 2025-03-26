@@ -302,8 +302,8 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 
 	// Run migration.
 	log.WithFields(log.Fields{
-		"migration_id": migrationID,
-		"total_items":  totalItems,
+		"migrationID": migrationID,
+		"totalItems":  totalItems,
 	}).Info("Starting config migration")
 	chunkChan, doneChan := runMigration(ctx, migrator)
 
@@ -320,7 +320,7 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 			case err, ok := <-doneChan:
 				if !ok {
 					// Channel closed.
-					log.WithField("migration_id", migrationID).Info("Config migration done")
+					log.WithField("migrationID", migrationID).Info("Config migration done")
 					return
 				}
 				migration.registerStop(err)
