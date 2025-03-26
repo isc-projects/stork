@@ -92,10 +92,22 @@ func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) []*App {
 		{
 			ID:     1,
 			Prefix: "192.0.2.0/24",
+			LocalSubnets: []*LocalSubnet{
+				{
+					SubnetID: 1,
+					DaemonID: apps[0].Daemons[0].ID,
+				},
+			},
 		},
 		{
 			ID:     2,
 			Prefix: "2001:db8:1::/64",
+			LocalSubnets: []*LocalSubnet{
+				{
+					SubnetID: 2,
+					DaemonID: apps[1].Daemons[1].ID,
+				},
+			},
 		},
 	}
 	for i, s := range subnets {
@@ -103,6 +115,9 @@ func addMachineAppDaemonsAndSubnets(t *testing.T, db *pg.DB) []*App {
 		err := AddSubnet(db, &subnet)
 		require.NoError(t, err)
 		require.NotZero(t, subnet.ID)
+		err = AddLocalSubnets(db, &subnet)
+		require.NoError(t, err)
+
 		subnets[i] = subnet
 	}
 
@@ -757,6 +772,7 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	require.EqualValues(t, hosts[0].ID, returned[0].ID)
 	require.EqualValues(t, 1, returned[0].SubnetID)
 	require.NotNil(t, returned[0].Subnet)
+	require.Len(t, returned[0].Subnet.LocalSubnets, 1)
 	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
 	require.ElementsMatch(t, returned[0].HostIdentifiers, hosts[0].HostIdentifiers)
 	require.ElementsMatch(t, returned[0].GetIPReservations(), hosts[0].GetIPReservations())
@@ -773,6 +789,7 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	require.EqualValues(t, hosts[2].ID, returned[0].ID)
 	require.EqualValues(t, 2, returned[0].SubnetID)
 	require.NotNil(t, returned[0].Subnet)
+	require.Len(t, returned[0].Subnet.LocalSubnets, 1)
 	require.Equal(t, "2001:db8:1::/64", returned[0].Subnet.Prefix)
 	require.ElementsMatch(t, returned[0].HostIdentifiers, hosts[2].HostIdentifiers)
 	require.ElementsMatch(t, returned[0].GetIPReservations(), hosts[2].GetIPReservations())
