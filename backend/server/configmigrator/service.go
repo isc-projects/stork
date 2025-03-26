@@ -305,13 +305,13 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		"migration_id": migrationID,
 		"total_items":  totalItems,
 	}).Info("Starting config migration")
-	chunkChunk, doneChan := runMigration(ctx, migrator)
+	chunkChan, doneChan := runMigration(ctx, migrator)
 
 	go func() {
 		defer close(workerDoneChan)
 		for {
 			select {
-			case migratedCount, ok := <-chunkChunk:
+			case migratedCount, ok := <-chunkChan:
 				if !ok {
 					// Channel closed.
 					continue
