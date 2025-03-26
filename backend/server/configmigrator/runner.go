@@ -57,13 +57,14 @@ func runMigration(ctx context.Context, migrator Migrator) (<-chan migrationChunk
 					doneChan <- err
 					return
 				}
-				totalLoadedCount += loadedCount
 
 				if loadedCount == 0 {
 					// No more items to migrate.
 					doneChan <- nil // indicate success if no more items to migrate
 					return
 				}
+
+				totalLoadedCount += loadedCount
 
 				errs := migrator.Migrate()
 
