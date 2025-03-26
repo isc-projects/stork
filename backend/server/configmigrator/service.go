@@ -184,7 +184,7 @@ func (m *migration) cancel() {
 
 // Registers the chunk of the loaded items. The loadedItems is the number of
 // items that were loaded in the chunk. The errs is a slice of errors that
-// occurred during the migration of the items. The key is the ID of the item.
+// occurred during the migration of the items.
 func (m *migration) registerChunk(loadedItems int64, errs []MigrationError) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
