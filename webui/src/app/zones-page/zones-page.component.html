@@ -36,7 +36,7 @@
 
     <tr *ngIf="!fetchInProgress">
         <td [attr.colspan]="colspan">
-            <ng-container *ngIf="!wasZoneFetchSent() && !hasFilter(zonesTable.filters)">
+            <ng-container *ngIf="!wasZoneFetchSent()">
                 <p-message
                     styleClass="mb-2 mx-0 md:mx-8"
                     severity="info"
@@ -55,7 +55,7 @@
                     (onClick)="sendPutZonesFetch(true)"
                     [disabled]="fetchInProgress || putZonesFetchLocked"
             /></ng-container>
-            <p *ngIf="wasZoneFetchSent() || hasFilter(zonesTable.filters)">
+            <p *ngIf="wasZoneFetchSent()">
                 {{ empty }}
             </p>
         </td>
