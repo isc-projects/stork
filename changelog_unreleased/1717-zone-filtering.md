@@ -1,6 +1,5 @@
 [func] marcin, piotrek
 
-    Stork server now supports results filtering when returning DNS
-    zones from the database. Filters were also added in Stork UI in
-    the Zone viewer.
+    Stork server now supports DNS zones filtering using new controls
+    in the zone viewer.
     (Gitlab #1716, #1717)
