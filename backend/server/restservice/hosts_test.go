@@ -1773,7 +1773,7 @@ func TestStartHostsMigration(t *testing.T) {
 		}, nil)
 
 	// Act
-	rsp := rapi.StartHostsMigration(context.Background(), dhcp.StartHostsMigrationParams{
+	rsp := rapi.StartHostsMigration(ctx, dhcp.StartHostsMigrationParams{
 		SubnetID: storkutil.Ptr(int64(42)),
 	})
 
@@ -1798,4 +1798,40 @@ func TestStartHostsMigration(t *testing.T) {
 	require.Nil(t, okRsp.Payload.GeneralError)
 	require.Equal(t, strfmt.Duration(5*time.Second), okRsp.Payload.ElapsedTime)
 	require.Equal(t, strfmt.Duration(1*time.Minute), okRsp.Payload.EstimatedLeftTime)
+}
+
+// Test that the error status is returned if the migration fails to start.
+func TestStartHostsMigrationFailed(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	migrationService := NewMockMigrationService(ctrl)
+	pullers := &apps.Pullers{}
+
+	rapi, err := NewRestAPI(dbSettings, db, migrationService, pullers)
+	require.NoError(t, err)
+
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).
+		Return(configmigrator.MigrationStatus{}, errors.New("migration failed"))
+
+	// Act
+	rsp := rapi.StartHostsMigration(ctx, dhcp.StartHostsMigrationParams{
+		SubnetID: storkutil.Ptr(int64(42)),
+	})
+
+	// Assert
+	require.IsType(t, &dhcp.StartHostsMigrationDefault{}, rsp)
+	rspDefault := rsp.(*dhcp.StartHostsMigrationDefault)
+
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*rspDefault))
+	require.Equal(t, "Problem with migrating host reservations", *rspDefault.Payload.Message)
+	require.NotContains(t, "migration failed", *rspDefault.Payload.Message)
+
 }
