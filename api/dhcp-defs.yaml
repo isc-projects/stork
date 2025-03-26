@@ -286,7 +286,7 @@
     type: object
     properties:
       id:
-        type: string
+        type: integer
       authorLogin:
         type: string
       authorId:

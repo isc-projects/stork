@@ -49,7 +49,7 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.Migratio
 		},
 		EstimatedLeftTime:   strfmt.Duration(status.EstimatedLeftTime),
 		GeneralError:        generalError,
-		ID:                  string(status.ID),
+		ID:                  int64(status.ID),
 		ProcessedItemsCount: status.ProcessedItemsCount,
 		TotalItemsCount:     status.TotalItemsCount,
 		StartDate:           strfmt.DateTime(status.StartDate),
@@ -91,7 +91,7 @@ func (r *RestAPI) GetMigration(ctx context.Context, params dhcp.GetMigrationPara
 	// Fetch migration status from the migration service.
 	status, ok := r.MigrationService.GetMigration(configmigrator.MigrationIdentifier(params.ID))
 	if !ok {
-		msg := fmt.Sprintf("Cannot find migration status with ID %s", params.ID)
+		msg := fmt.Sprintf("Cannot find migration status with ID %d", params.ID)
 		rsp := dhcp.NewGetMigrationDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -108,7 +108,7 @@ func (r *RestAPI) PutMigration(ctx context.Context, params dhcp.PutMigrationPara
 	// Attempt to cancel the migration.
 	status, ok := r.MigrationService.StopMigration(configmigrator.MigrationIdentifier(params.ID))
 	if !ok {
-		msg := fmt.Sprintf("Cannot find migration status with ID %s", params.ID)
+		msg := fmt.Sprintf("Cannot find migration status with ID %d", params.ID)
 		rsp := dhcp.NewPutMigrationDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})

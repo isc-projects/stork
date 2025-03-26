@@ -1737,7 +1737,7 @@ func TestStartHostsMigration(t *testing.T) {
 
 	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).
 		Return(configmigrator.MigrationStatus{
-			ID:                  "1234-1",
+			ID:                  12341,
 			Context:             ctx,
 			StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 			EndDate:             time.Time{},
@@ -1762,7 +1762,7 @@ func TestStartHostsMigration(t *testing.T) {
 	require.IsType(t, &dhcp.StartHostsMigrationOK{}, rsp)
 	okRsp := rsp.(*dhcp.StartHostsMigrationOK)
 
-	require.Equal(t, "1234-1", okRsp.Payload.ID)
+	require.EqualValues(t, 12341, okRsp.Payload.ID)
 	require.Zero(t, okRsp.Payload.AuthorID)
 	require.Empty(t, okRsp.Payload.AuthorLogin)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())

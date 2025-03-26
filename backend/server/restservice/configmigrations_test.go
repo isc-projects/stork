@@ -33,7 +33,7 @@ func TestGetMigrations(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationErred := configmigrator.MigrationStatus{
-		ID:                  "1234-1",
+		ID:                  12341,
 		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 		EndDate:             time.Time{},
@@ -50,7 +50,7 @@ func TestGetMigrations(t *testing.T) {
 	}
 
 	migrationInProgress := configmigrator.MigrationStatus{
-		ID:                  "1234-2",
+		ID:                  12342,
 		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 14, 11, 25, 46, 432000000, time.UTC),
 		EndDate:             time.Time{},
@@ -64,7 +64,7 @@ func TestGetMigrations(t *testing.T) {
 	}
 
 	migrationFinished := configmigrator.MigrationStatus{
-		ID:                  "1234-3",
+		ID:                  12343,
 		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 15, 12, 26, 47, 432000000, time.UTC),
 		EndDate:             time.Date(2025, 2, 15, 12, 27, 48, 432000000, time.UTC),
@@ -93,7 +93,7 @@ func TestGetMigrations(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 3)
 
 	status := okRsp.Payload.Items[0]
-	require.Equal(t, "1234-1", status.ID)
+	require.EqualValues(t, 12341, status.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", status.StartDate.String())
 	require.EqualValues(t, 2, status.ProcessedItemsCount)
 	require.EqualValues(t, 2, status.Errors.Total)
@@ -104,14 +104,14 @@ func TestGetMigrations(t *testing.T) {
 	}, status.Errors.Items)
 
 	status = okRsp.Payload.Items[1]
-	require.Equal(t, "1234-2", status.ID)
+	require.EqualValues(t, 12342, status.ID)
 	require.Equal(t, "2025-02-14T11:25:46.432Z", status.StartDate.String())
 	require.EqualValues(t, 5, status.ProcessedItemsCount)
 	require.EqualValues(t, 0, status.Errors.Total)
 	require.Len(t, status.Errors.Items, 0)
 
 	status = okRsp.Payload.Items[2]
-	require.Equal(t, "1234-3", status.ID)
+	require.EqualValues(t, 12343, status.ID)
 	require.Equal(t, "2025-02-15T12:26:47.432Z", status.StartDate.String())
 	require.EqualValues(t, 10, status.ProcessedItemsCount)
 	require.EqualValues(t, int64(0), status.Errors.Total)
@@ -160,10 +160,10 @@ func TestGetMigrationNotFound(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
 
-	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier("1234-1")).Return(configmigrator.MigrationStatus{}, false)
+	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(configmigrator.MigrationStatus{}, false)
 
 	// Act
-	rsp := rapi.GetMigration(context.Background(), dhcp.GetMigrationParams{ID: "1234-1"})
+	rsp := rapi.GetMigration(context.Background(), dhcp.GetMigrationParams{ID: 12341})
 
 	// Assert
 	require.IsType(t, &dhcp.GetMigrationDefault{}, rsp)
@@ -189,7 +189,7 @@ func TestGetMigration(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationStatus := configmigrator.MigrationStatus{
-		ID:                  "1234-1",
+		ID:                  12341,
 		Context:             ctx,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 		EndDate:             time.Time{},
@@ -205,16 +205,16 @@ func TestGetMigration(t *testing.T) {
 		EstimatedLeftTime: 1 * time.Minute,
 	}
 
-	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier("1234-1")).Return(migrationStatus, true)
+	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(migrationStatus, true)
 
 	// Act
-	rsp := rapi.GetMigration(context.Background(), dhcp.GetMigrationParams{ID: "1234-1"})
+	rsp := rapi.GetMigration(context.Background(), dhcp.GetMigrationParams{ID: 12341})
 
 	// Assert
 	require.IsType(t, &dhcp.GetMigrationOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetMigrationOK)
 
-	require.Equal(t, "1234-1", okRsp.Payload.ID)
+	require.EqualValues(t, 12341, okRsp.Payload.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
 	require.EqualValues(t, 2, okRsp.Payload.ProcessedItemsCount)
 	require.EqualValues(t, 10, okRsp.Payload.TotalItemsCount)
@@ -245,7 +245,7 @@ func TestPutMigration(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationStatus := configmigrator.MigrationStatus{
-		ID:                  "1234-1",
+		ID:                  12341,
 		Context:             ctx,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
 		EndDate:             time.Time{},
@@ -262,20 +262,20 @@ func TestPutMigration(t *testing.T) {
 	}
 
 	migrationService.EXPECT().
-		StopMigration(configmigrator.MigrationIdentifier("1234-1")).
+		StopMigration(configmigrator.MigrationIdentifier(12341)).
 		Return(migrationStatus, true)
 
 	// Act
 	rsp := rapi.PutMigration(
 		context.Background(),
-		dhcp.PutMigrationParams{ID: "1234-1"},
+		dhcp.PutMigrationParams{ID: 12341},
 	)
 
 	// Assert
 	require.IsType(t, &dhcp.PutMigrationOK{}, rsp)
 	okRsp := rsp.(*dhcp.PutMigrationOK)
 
-	require.Equal(t, "1234-1", okRsp.Payload.ID)
+	require.EqualValues(t, 12341, okRsp.Payload.ID)
 	require.Equal(t, "2025-02-13T10:24:45.432Z", okRsp.Payload.StartDate.String())
 	require.EqualValues(t, 2, okRsp.Payload.ProcessedItemsCount)
 	require.EqualValues(t, 10, okRsp.Payload.TotalItemsCount)
@@ -304,13 +304,13 @@ func TestPutMigrationNotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationService.EXPECT().
-		StopMigration(configmigrator.MigrationIdentifier("1234-1")).
+		StopMigration(configmigrator.MigrationIdentifier(12341)).
 		Return(configmigrator.MigrationStatus{}, false)
 
 	// Act
 	rsp := rapi.PutMigration(
 		context.Background(),
-		dhcp.PutMigrationParams{ID: "1234-1"},
+		dhcp.PutMigrationParams{ID: 12341},
 	)
 
 	// Assert

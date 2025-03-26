@@ -2,7 +2,6 @@ package configmigrator
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -12,7 +11,7 @@ import (
 )
 
 // Type (alias?) for the migration ID.
-type MigrationIdentifier string
+type MigrationIdentifier int64
 
 // Describes the migration process. It is common for all the entities that can
 // be migrated.
@@ -223,14 +222,16 @@ type Service interface {
 // The migration data are stored in memory only. The data are lost when the
 // server is restarted.
 type service struct {
-	migrations map[MigrationIdentifier]*migration
-	mutex      sync.RWMutex
+	migrations      map[MigrationIdentifier]*migration
+	mutex           sync.RWMutex
+	nextMigrationID MigrationIdentifier
 }
 
 // Constructs a new migration service.
 func NewService() Service {
 	return &service{
-		migrations: make(map[MigrationIdentifier]*migration),
+		migrations:      make(map[MigrationIdentifier]*migration),
+		nextMigrationID: 1,
 	}
 }
 
@@ -273,16 +274,31 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		return MigrationStatus{}, errors.WithMessage(err, "failed to get the total items")
 	}
 
-	// Obtain migration ID.
-	startDate := time.Now()
-	s.mutex.RLock()
-	migrationID := s.getUniqueMigrationID(startDate)
-	s.mutex.RUnlock()
-
 	// Strip the cancel and deadline from the parent context.
 	ctx = context.WithoutCancel(ctx)
 	// Add own independent cancel.
 	ctx, cancel := context.WithCancel(ctx)
+
+	// Emits a value when the runner is done and its done value has been
+	// processed.
+	workerDoneChan := make(chan struct{})
+
+	migration := &migration{
+		ctx:            ctx,
+		startDate:      time.Now(),
+		processedItems: 0,
+		totalItems:     totalItems,
+		errors:         make([]MigrationError, 0),
+		cancelFunc:     cancel,
+		doneChan:       workerDoneChan,
+	}
+
+	// Save the migration.
+	s.mutex.Lock()
+	migrationID := s.getUniqueMigrationID()
+	migration.id = migrationID
+	s.migrations[migration.id] = migration
+	s.mutex.Unlock()
 
 	// Run migration.
 	log.WithFields(log.Fields{
@@ -290,20 +306,6 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		"total_items":  totalItems,
 	}).Info("Starting config migration")
 	chunkChunk, doneChan := runMigration(ctx, migrator)
-	// Emits a value when the runner is done and its done value has been
-	// processed.
-	workerDoneChan := make(chan struct{})
-
-	migration := &migration{
-		ctx:            ctx,
-		startDate:      startDate,
-		id:             migrationID,
-		processedItems: 0,
-		totalItems:     totalItems,
-		errors:         make([]MigrationError, 0),
-		cancelFunc:     cancel,
-		doneChan:       workerDoneChan,
-	}
 
 	go func() {
 		defer close(workerDoneChan)
@@ -326,24 +328,14 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		}
 	}()
 
-	// Save the migration.
-	s.mutex.Lock()
-	s.migrations[migration.id] = migration
-	s.mutex.Unlock()
-
 	return migration.getStatus(), nil
 }
 
-// Generates a unique migration ID based on the provided date.
-func (s *service) getUniqueMigrationID(date time.Time) MigrationIdentifier {
-	iteration := 1
-	for {
-		id := MigrationIdentifier(fmt.Sprintf("%d-%d", date.Unix(), iteration))
-		if _, ok := s.migrations[id]; !ok {
-			return id
-		}
-		iteration++
-	}
+// Generates a unique migration ID.
+func (s *service) getUniqueMigrationID() MigrationIdentifier {
+	id := s.nextMigrationID
+	s.nextMigrationID++
+	return id
 }
 
 // Requests the migration to stop. The migration is stopped asynchronously.
