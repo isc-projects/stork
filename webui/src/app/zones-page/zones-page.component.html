@@ -279,6 +279,11 @@
                                 id="builtin-type-filtered"
                                 class="p-inputwrapper-focus"
                                 [severity]="builtinZonesDisplayed ? 'primary' : 'secondary'"
+                                [pTooltip]="
+                                    builtinZonesDisplayed
+                                        ? 'Click to hide builtin zones'
+                                        : 'Click to show builtin zones'
+                                "
                                 (onClick)="toggleBuiltinZones()"
                             />
                             <label for="builtin-type-filtered">Show/hide Builtin Zones</label>
