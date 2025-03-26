@@ -102,8 +102,8 @@ func (locker *daemonLocker) lock(key LockKey, daemonID int64) error {
 	return nil
 }
 
-// Unlocks the configurations of the specified daemons if the key stored in the
-// context matches.
+// Unlocks the configurations of the specified daemons if the provided key
+// matches the key gained during the lock acquisition.
 func (locker *daemonLocker) Unlock(key LockKey, daemonIDs ...int64) error {
 	locker.mutex.Lock()
 	defer locker.mutex.Unlock()
