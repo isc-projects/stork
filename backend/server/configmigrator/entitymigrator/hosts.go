@@ -162,7 +162,7 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 
 	// Iterate over the daemons in the ascending order of their IDs.
 	for _, daemon := range daemons {
-		m.migrateDaemon(daemon)
+		m.migrateDaemonHosts(daemon)
 	}
 
 	sliceErrs := make([]configmigrator.MigrationError, 0, len(m.hostErrs)+len(m.daemonErrs))
@@ -176,7 +176,7 @@ func (m *hostMigrator) Migrate() []configmigrator.MigrationError {
 }
 
 // Migrates the hosts related to the given daemon.
-func (m *hostMigrator) migrateDaemon(daemon *dbmodel.Daemon) {
+func (m *hostMigrator) migrateDaemonHosts(daemon *dbmodel.Daemon) {
 	daemonID := daemon.ID
 
 	// Lock the daemon for modification. Do it only if the daemon has not
