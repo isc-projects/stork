@@ -900,6 +900,8 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /migrations/finished:
     delete:
       summary: Deletes all finished migrations.
       description: >-
