@@ -295,7 +295,7 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 
 	// Save the migration.
 	s.mutex.Lock()
-	migrationID := s.getUniqueMigrationID()
+	migrationID := s.generateUniqueMigrationID()
 	migration.id = migrationID
 	s.migrations[migration.id] = migration
 	s.mutex.Unlock()
@@ -332,7 +332,7 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 }
 
 // Generates a unique migration ID.
-func (s *service) getUniqueMigrationID() MigrationIdentifier {
+func (s *service) generateUniqueMigrationID() MigrationIdentifier {
 	id := s.nextMigrationID
 	s.nextMigrationID++
 	return id

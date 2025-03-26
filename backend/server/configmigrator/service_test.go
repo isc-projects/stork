@@ -389,10 +389,10 @@ func TestStartMigrationUniqueID(t *testing.T) {
 	service := NewService().(*service)
 
 	// Act
-	id1 := service.getUniqueMigrationID()
+	id1 := service.generateUniqueMigrationID()
 	service.migrations[id1] = &migration{id: id1}
 
-	id2 := service.getUniqueMigrationID()
+	id2 := service.generateUniqueMigrationID()
 
 	// Assert
 	require.NotEqual(t, id1, id2)
