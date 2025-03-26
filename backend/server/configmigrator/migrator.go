@@ -5,7 +5,17 @@ package configmigrator
 type EntityType string
 
 const (
-	EntityTypeHost   EntityType = "host"
+	// Indicates that a specific host entity failed to migrate.
+	EntityTypeHost EntityType = "host"
+	// The daemons are not migrated itself (yet?), but the daemon is
+	// responsible for processing commands that migrate an entity. The
+	// communication with the daemon can fail in various ways. It causes the
+	// migration of the entity managed by the daemon to be blocked. In such
+	// situations, this type is used to report the error.
+	// Alternatively, we could create an error for each entity that is managed
+	// by the daemon, but it would be less efficient because it would produce
+	// a lot of errors with the same error message as all of them would have
+	// the same root cause.
 	EntityTypeDaemon EntityType = "daemon"
 )
 
