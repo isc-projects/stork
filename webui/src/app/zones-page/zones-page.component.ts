@@ -541,13 +541,6 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this._restoreZonesTableRowsPerPage()
 
-        // // Initialize the filter to hide builtin zones by default
-        // setTimeout(() => {
-        //     if (this.hideBuiltinZones) {
-        //         this.toggleBuiltinZones();
-        //     }
-        // });
-
         // Manage RxJS subscriptions on init.
         this._subscriptions = this.activatedRoute.queryParamMap
             .pipe(filter(() => this._initDone))
