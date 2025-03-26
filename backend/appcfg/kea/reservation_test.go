@@ -197,16 +197,27 @@ func TestCreateHostCmdsReservation(t *testing.T) {
 // reservation from Kea.
 func TestCreateHostCmdsDeletedReservation(t *testing.T) {
 	host := createDefaultTestHost()
-	reservation, err := keaconfig.CreateHostCmdsDeletedReservation(
-		1, host, keaconfig.HostCmdsOperationTargetDefault,
-	)
-	require.NoError(t, err)
-	require.NotNil(t, reservation)
 
-	// Use the first identifier to delete the reservation.
-	require.Equal(t, "hw-address", reservation.IdentifierType)
-	require.Equal(t, "010203040506", reservation.Identifier)
-	require.EqualValues(t, 123, reservation.SubnetID)
+	for _, expectedOperationTarget := range []keaconfig.HostCmdsOperationTarget{
+		keaconfig.HostCmdsOperationTargetDefault,
+		keaconfig.HostCmdsOperationTargetDatabase,
+		keaconfig.HostCmdsOperationTargetMemory,
+		keaconfig.HostCmdsOperationTargetAll,
+	} {
+		t.Run(string(expectedOperationTarget), func(t *testing.T) {
+			reservation, err := keaconfig.CreateHostCmdsDeletedReservation(
+				1, host, expectedOperationTarget,
+			)
+			require.NoError(t, err)
+			require.NotNil(t, reservation)
+
+			// Use the first identifier to delete the reservation.
+			require.Equal(t, "hw-address", reservation.IdentifierType)
+			require.Equal(t, "010203040506", reservation.Identifier)
+			require.EqualValues(t, 123, reservation.SubnetID)
+			require.Equal(t, expectedOperationTarget, reservation.OperationTarget)
+		})
+	}
 }
 
 // Test that conversion error is returned when the host has no
