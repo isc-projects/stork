@@ -1,4 +1,4 @@
 [build] slawek
 
-    Upgraded the Kea version in the demo.
+    Upgraded the Kea to version 2.7.6 in the demo.
     (Gitlab #1715)
