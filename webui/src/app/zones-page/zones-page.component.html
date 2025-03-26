@@ -273,21 +273,18 @@
                             [disabled]="!hasFilter(zonesTable.filters)"
                         />
                         <div class="flex-auto"></div>
-                        <span class="p-float-label w-10rem flex justify-content-end">
-                            <p-button
-                                icon="pi {{ builtinZonesDisplayed ? 'pi-eye' : 'pi-eye-slash' }}"
-                                id="builtin-type-filtered"
-                                class="p-inputwrapper-focus"
-                                [severity]="builtinZonesDisplayed ? 'primary' : 'secondary'"
-                                [pTooltip]="
-                                    builtinZonesDisplayed
-                                        ? 'Click to hide builtin zones'
-                                        : 'Click to show builtin zones'
-                                "
-                                (onClick)="toggleBuiltinZones()"
-                            />
-                            <label for="builtin-type-filtered">Show/hide Builtin Zones</label>
-                        </span>
+                        <p-button
+                            icon="pi {{ builtinZonesDisplayed ? 'pi-eye' : 'pi-eye-slash' }}"
+                            id="builtin-type-filtered"
+                            class="p-inputwrapper-focus"
+                            [severity]="builtinZonesDisplayed ? 'primary' : 'secondary'"
+                            [pTooltip]="
+                                builtinZonesDisplayed ? 'Click to hide builtin zones' : 'Click to show builtin zones'
+                            "
+                            (onClick)="toggleBuiltinZones()"
+                            label="Toggle builtin zones"
+                            iconPos="right"
+                        />
                         <p-columnFilter
                             field="zoneType"
                             matchMode="equals"
