@@ -649,7 +649,7 @@ func (r *RestAPI) StartHostsMigration(ctx context.Context, params dhcp.StartHost
 		r.Agents,
 		r.DHCPOptionDefinitionLookup,
 		r.DaemonLocker,
-		[]entitymigrator.Pauser{r.Pullers.AppsStatePuller, r.Pullers.KeaHostsPuller},
+		r.Pullers.AppsStatePuller, r.Pullers.KeaHostsPuller,
 	)
 	// Start the migration.
 	status, err := r.MigrationService.StartMigration(ctx, migrator)

@@ -25,6 +25,8 @@ type Pauser interface {
 	WaitForStandby()
 }
 
+// Implements the configmigrator.Migrator interface. Migrates the hosts from
+// the Kea JSON configuration to the host database.
 type hostMigrator struct {
 	db               *pg.DB
 	filter           dbmodel.HostsByPageFilters
@@ -53,7 +55,8 @@ func NewHostMigrator(
 	connectedAgents agentcomm.ConnectedAgents,
 	dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup,
 	locker config.DaemonLocker,
-	pullers []Pauser,
+	statePuller Pauser,
+	hostPuller Pauser,
 ) configmigrator.Migrator {
 	// Migrating the conflicted hosts is not supported.
 	filter.DHCPDataConflict = storkutil.Ptr(false)
@@ -64,7 +67,7 @@ func NewHostMigrator(
 		dhcpOptionLookup: dhcpOptionLookup,
 		connectedAgents:  connectedAgents,
 		daemonLocker:     locker,
-		pullers:          pullers,
+		pullers:          []Pauser{statePuller, hostPuller},
 		lockedDemonIDs:   make(map[int64]config.LockKey),
 	}
 }

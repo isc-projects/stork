@@ -1718,16 +1718,23 @@ func TestStartHostsMigration(t *testing.T) {
 	// Arrange
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db, 0)
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	migrationService := NewMockMigrationService(ctrl)
 
-	hostPuller, _ := kea.NewHostsPuller(db, nil, nil, nil)
+	statePuller, err := apps.NewStatePuller(db, nil, nil, nil, nil)
+	require.NoError(t, err)
+	hostPuller, err := kea.NewHostsPuller(db, nil, nil, nil)
+	require.NoError(t, err)
 	pullers := &apps.Pullers{
-		KeaHostsPuller: hostPuller,
+		KeaHostsPuller:  hostPuller,
+		AppsStatePuller: statePuller,
 	}
+	require.False(t, statePuller.Paused())
+	require.False(t, hostPuller.Paused())
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService, pullers)
 	require.NoError(t, err)
@@ -1736,6 +1743,18 @@ func TestStartHostsMigration(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).
+		Do(func(ctx context.Context, migrator configmigrator.Migrator) {
+			// Check if the proper puller are paused.
+			migrator.Begin()
+			require.True(t, statePuller.Paused())
+			require.True(t, hostPuller.Paused())
+
+			// Check if the pullers are unpaused.
+			err = migrator.End()
+			require.NoError(t, err)
+			require.False(t, statePuller.Paused())
+			require.False(t, hostPuller.Paused())
+		}).
 		Return(configmigrator.MigrationStatus{
 			ID:                  12341,
 			Context:             ctx,

@@ -33,13 +33,15 @@ func TestMigrate(t *testing.T) {
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
 	agentMock := NewMockConnectedAgents(ctrl)
 	lockerMock := NewMockDaemonLocker(ctrl)
-	puller := NewMockPauser(ctrl)
+	statePuller := NewMockPauser(ctrl)
+	hostPuller := NewMockPauser(ctrl)
 
 	migrator := NewHostMigrator(
 		dbmodel.HostsByPageFilters{}, nil, agentMock,
 		dbmodel.NewDHCPOptionDefinitionLookup(),
 		lockerMock,
-		[]Pauser{puller},
+		statePuller,
+		hostPuller,
 	).(*hostMigrator)
 
 	// Assertion helpers.
@@ -966,7 +968,7 @@ func TestLoadAndCountItems(t *testing.T) {
 	migrator := NewHostMigrator(
 		dbmodel.HostsByPageFilters{},
 		db, agentMock, lookup, daemonLockerMock,
-		[]Pauser{statePullerMock, hostPullerMock},
+		statePullerMock, hostPullerMock,
 	).(*hostMigrator)
 
 	migrator.limit = 5
@@ -1064,7 +1066,7 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 			SubnetID: storkutil.Ptr(subnet.ID),
 		},
 		db, agentMock, lookup, daemonLockerMock,
-		[]Pauser{statePullerMock, hostPullerMock},
+		statePullerMock, hostPullerMock,
 	).(*hostMigrator)
 
 	migrator.limit = 5
@@ -1132,7 +1134,7 @@ func TestHostMigrationBegin(t *testing.T) {
 	migrator := NewHostMigrator(
 		dbmodel.HostsByPageFilters{},
 		nil, agentMock, lookup, daemonLockerMock,
-		[]Pauser{statePullerMock, hostPullerMock},
+		statePullerMock, hostPullerMock,
 	).(*hostMigrator)
 
 	gomock.InOrder(
@@ -1164,7 +1166,7 @@ func TestHostMigrationEnd(t *testing.T) {
 	migrator := NewHostMigrator(
 		dbmodel.HostsByPageFilters{},
 		nil, agentMock, lookup, daemonLockerMock,
-		[]Pauser{statePuller, hostPullerMock},
+		statePuller, hostPullerMock,
 	).(*hostMigrator)
 
 	statePuller.EXPECT().Unpause()
