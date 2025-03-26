@@ -732,31 +732,35 @@ describe('ZonesPageComponent', () => {
 
     it('should filter zones table by type', fakeAsync(() => {
         // Arrange
+        expect(component.builtinZonesDisplayed).toBeTrue()
         const inputMultiselect = fixture.debugElement.query(By.css('[inputId="zone-type"] .p-multiselect'))
         expect(inputMultiselect).toBeTruthy()
         inputMultiselect.nativeElement.click()
         fixture.detectChanges()
         const listItems = inputMultiselect.queryAll(By.css('li.p-multiselect-item'))
         expect(listItems).toBeTruthy()
-        expect(listItems.length).toBeGreaterThan(3)
+        // Filter out builtin zone type.
+        const filteredListItems = listItems.filter((liDe) => liDe.nativeElement.innerText !== 'builtin')
+        expect(filteredListItems.length).toBeGreaterThan(3)
 
         // Act
-        listItems[0].nativeElement.click()
-        listItems[1].nativeElement.click()
-        listItems[2].nativeElement.click()
+        filteredListItems[0].nativeElement.click()
+        filteredListItems[1].nativeElement.click()
+        filteredListItems[2].nativeElement.click()
         tick(300)
         fixture.detectChanges()
 
         // Assert
+        expect(component.builtinZonesDisplayed).toBeFalse()
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
         expect(getZonesSpy).toHaveBeenCalledWith(
             0,
             10,
             null,
             jasmine.arrayContaining([
-                listItems[0].nativeElement.innerText,
-                listItems[1].nativeElement.innerText,
-                listItems[2].nativeElement.innerText,
+                filteredListItems[0].nativeElement.innerText,
+                filteredListItems[1].nativeElement.innerText,
+                filteredListItems[2].nativeElement.innerText,
             ]),
             null,
             null,
@@ -882,6 +886,26 @@ describe('ZonesPageComponent', () => {
         expect(hasFilter(component?.zonesTable?.filters)).toBeTrue()
 
         // Act + Assert
+        expect(component.builtinZonesDisplayed).toBeTrue()
+        component.toggleBuiltinZones()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.builtinZonesDisplayed).toBeFalse()
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, 'bind9', ['primary'], 'IN', 'test', 2, '123')
+        component.toggleBuiltinZones()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(getZonesSpy).toHaveBeenCalledWith(
+            0,
+            10,
+            'bind9',
+            jasmine.arrayContaining(['primary', 'builtin']),
+            'IN',
+            'test',
+            2,
+            '123'
+        )
+
         component.clearFilter(component?.zonesTable?.filters['appId'])
         await fixture.whenStable()
         fixture.detectChanges()
