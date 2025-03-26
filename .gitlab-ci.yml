@@ -705,7 +705,7 @@ build_hooks_amd64:
     expire_in: 1 hour
 
 build_hooks_arm64:
-  extends: .base_build_debian
+  extends: build_hooks_amd64
   tags:
     - linux
     - aws
