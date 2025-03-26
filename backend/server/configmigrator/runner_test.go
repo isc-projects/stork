@@ -200,3 +200,33 @@ func TestRunMigrationInterruptOnLoadingError(t *testing.T) {
 	require.ErrorContains(t, err, "loading error")
 	require.Empty(t, errs)
 }
+
+// Test that the migration may be canceled.
+func TestRunMigrationCanceled(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mock := NewMockMigrator(ctrl)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	gomock.InOrder(
+		mock.EXPECT().Begin(),
+		mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), nil),
+		mock.EXPECT().Migrate().Return([]MigrationError{}),
+		mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(10), nil),
+		mock.EXPECT().Migrate().Do(func() {
+			cancel()
+		}).Return([]MigrationError{}),
+		mock.EXPECT().End(),
+	)
+
+	// Act
+	chunks, done := runMigration(ctx, mock)
+	errs, err := readChannels(chunks, done)
+	cancel()
+
+	// Assert
+	require.ErrorContains(t, err, "context canceled")
+	require.Empty(t, errs)
+}
