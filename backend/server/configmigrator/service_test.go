@@ -640,29 +640,41 @@ func TestConcurrentMigrationsCloseService(t *testing.T) {
 	defer ctrl.Finish()
 	migrator := NewMockMigrator(ctrl)
 
-	migrator.EXPECT().CountTotal().Return(int64(math.MaxInt64), nil)
-	migrator.EXPECT().Begin()
-	migrator.EXPECT().End()
+	migrator.EXPECT().CountTotal().Return(int64(math.MaxInt64), nil).Times(2)
+	migrator.EXPECT().Begin().Times(2)
+	migrator.EXPECT().End().Times(2)
 
 	// Migrate infinitely.
 	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).AnyTimes()
 	migrator.EXPECT().Migrate().Return([]MigrationError{}).AnyTimes()
 
 	// Act & Assert
-	initialStatus, err := service.StartMigration(context.Background(), migrator)
+	initialStatus1, err := service.StartMigration(context.Background(), migrator)
+	require.NoError(t, err)
+	initialStatus2, err := service.StartMigration(context.Background(), migrator)
 	require.NoError(t, err)
 
 	// Check the initial status.
-	require.False(t, initialStatus.Canceling)
-	require.Zero(t, initialStatus.EndDate)
-	require.NoError(t, initialStatus.GeneralError)
-	require.Nil(t, initialStatus.Context.Done())
+	require.False(t, initialStatus1.Canceling)
+	require.False(t, initialStatus2.Canceling)
+	require.Zero(t, initialStatus1.EndDate)
+	require.Zero(t, initialStatus2.EndDate)
+	require.NoError(t, initialStatus1.GeneralError)
+	require.NoError(t, initialStatus2.GeneralError)
+	require.Nil(t, initialStatus1.Context.Done())
+	require.Nil(t, initialStatus2.Context.Done())
 
 	// Close the migration service.
 	service.Close()
 
 	// Check the status after the service is closed.
-	closedStatus, ok := service.GetMigration(initialStatus.ID)
+	closedStatus, ok := service.GetMigration(initialStatus1.ID)
+	require.True(t, ok)
+	require.True(t, closedStatus.Canceling)
+	require.NotZero(t, closedStatus.EndDate)
+	require.ErrorContains(t, closedStatus.GeneralError, "canceled")
+
+	closedStatus, ok = service.GetMigration(initialStatus2.ID)
 	require.True(t, ok)
 	require.True(t, closedStatus.Canceling)
 	require.NotZero(t, closedStatus.EndDate)
