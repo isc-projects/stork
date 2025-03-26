@@ -6,6 +6,9 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// The operation-target parameter selects the host data source. The commands
+// may process data from the server configuration (i.e., memory operation
+// target), a database (database target), or both (all sources).
 type HostCmdsOperationTarget string
 
 const (
@@ -148,7 +151,6 @@ func CreateHostCmdsReservation(daemonID int64, lookup DHCPOptionDefinitionLookup
 		Reservation: *base,
 		SubnetID:    subnetID,
 	}
-
 	return
 }
 
@@ -172,7 +174,6 @@ func CreateHostCmdsDeletedReservation(daemonID int64, host HostAccessor, operati
 		SubnetID:        subnetID,
 		OperationTarget: operationTarget,
 	}
-
 	return
 }
 
