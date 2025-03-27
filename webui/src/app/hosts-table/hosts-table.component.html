@@ -217,7 +217,7 @@
                     *ngFor="let i of h.hostIdentifiers"
                     [label]="i.idType"
                     [hexValue]="i.idHexValue"
-                    [defaultHexFormat]="i.idType === 'hw-address'"
+                    [defaultHexFormat]="['hw-address', 'duid', 'client-id'].includes(i.idType)"
                     link="/dhcp/hosts/{{ h.id }}"
                 >
                 </app-identifier>

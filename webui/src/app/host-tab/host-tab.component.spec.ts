@@ -187,12 +187,24 @@ describe('HostTabComponent', () => {
             id: 1,
             hostIdentifiers: [
                 {
-                    idType: 'duid',
+                    idType: 'hw-address',
                     idHexValue: '51:52:53:54',
                 },
                 {
-                    idType: 'hw-address',
-                    idHexValue: '51:52:53:54:55:56',
+                    idType: 'duid',
+                    idHexValue: '52:53:54:55',
+                },
+                {
+                    idType: 'client-id',
+                    idHexValue: '53:54:55:56',
+                },
+                {
+                    idType: 'flex-id',
+                    idHexValue: '54:55:56:57',
+                },
+                {
+                    idType: 'circuit-id',
+                    idHexValue: '55:56:57:58',
                 },
             ],
             addressReservations: [
@@ -285,11 +297,18 @@ describe('HostTabComponent', () => {
         expect(hostIdsFieldset).toBeTruthy()
         expect(hostIdsFieldset.nativeElement.textContent).toContain('duid')
         expect(hostIdsFieldset.nativeElement.textContent).toContain('hw-address')
-        // DUID should be converted to textual form.
-        expect(hostIdsFieldset.nativeElement.textContent).toContain('QRST')
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('client-id')
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('flex-id')
         // HW address should remain in hexadecimal form.
-        expect(hostIdsFieldset.nativeElement.textContent).toContain('51:52:53:54:55:56')
-
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('51:52:53:54')
+        // DUID should remain in hexadecimal form.
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('52:53:54:55')
+        // Client ID should remain in hexadecimal form.
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('53:54:55:56')
+        // Flex ID should be converted to text.
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('TUVW')
+        // Circuit ID should be converted to text.
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('UVWX')
         const appsFieldset = fieldsets[0]
         expect(appsFieldset).toBeTruthy()
 

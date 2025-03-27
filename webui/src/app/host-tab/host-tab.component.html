@@ -75,7 +75,7 @@
                                 <td class="monospace border-none text-color-secondary">
                                     <app-identifier
                                         [hexValue]="i.idHexValue"
-                                        [defaultHexFormat]="i.idType === 'hw-address'"
+                                        [defaultHexFormat]="['hw-address', 'duid', 'client-id'].includes(i.idType)"
                                     ></app-identifier>
                                 </td>
                             </tr>

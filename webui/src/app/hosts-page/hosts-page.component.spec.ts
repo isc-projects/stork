@@ -651,8 +651,8 @@ describe('HostsPageComponent', () => {
         // Each host identifier should be a link.
         const firstIdEl = identifierEl[0].query(By.css('a'))
         expect(firstIdEl).toBeTruthy()
-        // The DUID is convertible to text.
-        expect(firstIdEl.nativeElement.textContent).toContain('duid=(abcd)')
+        // The DUID is displayed by default as a text.
+        expect(firstIdEl.nativeElement.textContent).toContain('duid=(61:62:63:64)')
         expect(firstIdEl.attributes.href).toBe('/dhcp/hosts/1')
 
         const secondIdEl = identifierEl[1].query(By.css('a'))
