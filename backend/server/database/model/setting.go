@@ -84,12 +84,18 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 		{
 			Name:    "grafana_dhcp4_dashboard_id",
 			ValType: SettingValTypeStr,
-			Value:   "hRf18FvWz",
+			// This value corresponds to the UID of the dashboard in the
+			// Grafana configuration. It is defined in the
+			// "/grafana/kea-dhcp4.json" file.
+			Value: "hRf18FvWz",
 		},
 		{
 			Name:    "grafana_dhcp6_dashboard_id",
 			ValType: SettingValTypeStr,
-			Value:   "AQPHKJUGz",
+			// This value corresponds to the UID of the dashboard in the
+			// Grafana configuration. It is defined in the
+			// "/grafana/kea-dhcp6.json" file.
+			Value: "AQPHKJUGz",
 		},
 		{
 			Name:    "enable_machine_registration",
