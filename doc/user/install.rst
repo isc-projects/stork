@@ -312,8 +312,8 @@ Installing the Stork Server
 Installing on Debian/Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Stork packages are available on CloudSmith. You must to configure your
-package manager to use it, visit 
+The Stork packages are available on CloudSmith. You must configure your
+package manager to use it. Visit 
 `setup page for Debian on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-deb>`_
 and follow the instructions.
 
@@ -328,8 +328,8 @@ Next, install the Stork server package:
 Installing on CentOS/RHEL/Fedora
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Stork packages are available on CloudSmith. You must to configure your
-package manager to use it, visit 
+The Stork packages are available on CloudSmith. You must configure your
+package manager to use it. Visit 
 `setup page for RedHat on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-rpm>`_
 and follow the instructions.
 
@@ -348,8 +348,8 @@ If ``dnf`` is not available, ``yum`` can be used instead:
 Installing on Alpine
 ~~~~~~~~~~~~~~~~~~~~
 
-The Stork packages are available on CloudSmith. You must to configure your
-package manager to use it, visit 
+The Stork packages are available on CloudSmith. You must configure your
+package manager to use it. Visit 
 `setup page for Alpine on ISC Cloudsmith repository <https://cloudsmith.io/~isc/repos/stork/setup/#formats-alpine>`_
 and follow the instructions.
 

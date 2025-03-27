@@ -1,6 +1,5 @@
 [doc] slawek
 
-    Replaced recommendations to run an external shell script to set up
-    the Cloudsmith repository with links to the Cloudsmith
-    documentation.
+    Updated Stork installation instructions in the ARM to direct
+    users to the Cloudsmith documentation for setting up the repository.
     (Gitlab #1719)
