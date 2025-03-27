@@ -1833,5 +1833,4 @@ func TestStartHostsMigrationFailed(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*rspDefault))
 	require.Equal(t, "Problem with migrating host reservations", *rspDefault.Payload.Message)
 	require.NotContains(t, "migration failed", *rspDefault.Payload.Message)
-
 }

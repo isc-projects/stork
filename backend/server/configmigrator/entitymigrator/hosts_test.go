@@ -1140,8 +1140,6 @@ func TestHostMigrationBegin(t *testing.T) {
 	gomock.InOrder(
 		statePullerMock.EXPECT().Pause(),
 		hostPullerMock.EXPECT().Pause(),
-		statePullerMock.EXPECT().WaitForStandby(),
-		hostPullerMock.EXPECT().WaitForStandby(),
 	)
 
 	// Act

@@ -11,20 +11,22 @@ import (
 // execute a function specified by a caller according to the timer
 // interval specified.
 type PeriodicExecutor struct {
-	name            string
-	executorFunc    func() error
-	interval        time.Duration
-	ticker          *time.Ticker
-	active          bool
-	pauseCount      uint16
-	done            chan bool
-	wg              sync.WaitGroup
-	mutex           sync.RWMutex
-	getIntervalFunc func() (time.Duration, error)
-	// This wait group is blocking when the executor iteration is in progress
+	name         string
+	executorFunc func() error
+	interval     time.Duration
+	ticker       *time.Ticker
+	active       bool
+	pauseCount   uint16
+	done         chan bool
+	wg           sync.WaitGroup
+	// Mutex to protect the executor state.
+	mutex sync.RWMutex
+	// Mutex that is held while the executor is executing its function.
+	// This mutex is blocking when the executor iteration is in progress
 	// and it is released when the iteration is finished. It is used to wait
 	// for the iteration to finish after pausing the executor.
-	wgIteration sync.WaitGroup
+	iterationMutex  sync.Mutex
+	getIntervalFunc func() (time.Duration, error)
 }
 
 // Interval is used while the puller is inactive to check if it was re-enabled.
@@ -88,7 +90,19 @@ func (executor *PeriodicExecutor) Shutdown() {
 // timer is resumed after calling Unpause the same number of times. This
 // is useful when the executor can be potentially paused and unpaused from
 // different parts of the code concurrently.
+// Blocks until the current iteration of the executor is finished. If there is
+// no iteration in progress, the function returns immediately.
+// It ensures there is no execution after the executor is paused.
 func (executor *PeriodicExecutor) Pause() {
+	executor.iterationMutex.Lock()
+	defer executor.iterationMutex.Unlock()
+	executor.pauseNoWait()
+}
+
+// Implements the pausing mechanism for the executor. Expects the lock to be
+// held by the caller. It doesn't block a caller until the current iteration
+// of the executor is finished.
+func (executor *PeriodicExecutor) pauseNoWait() {
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
 	executor.ticker.Stop()
@@ -121,13 +135,6 @@ func (executor *PeriodicExecutor) Unpause() {
 	}
 }
 
-// Blocks until the current iteration of the executor is finished. If there is
-// no iteration in progress, the function returns immediately.
-// It may be used to ensure there is no execution after the executor is paused.
-func (executor *PeriodicExecutor) WaitForStandby() {
-	executor.wgIteration.Wait()
-}
-
 // Return the current interval.
 func (executor *PeriodicExecutor) GetInterval() time.Duration {
 	executor.mutex.RLock()
@@ -154,18 +161,21 @@ func (executor *PeriodicExecutor) executorLoop() {
 		select {
 		// every N seconds execute user defined function
 		case <-executor.ticker.C:
-			if executor.active {
-				// Temporarily stop the executor while running the external action.
-				// It will be resumed when the action ends.
-				executor.Pause()
-				executor.wgIteration.Add(1)
+			// Blocks any Pause callers until the current iteration is finished.
+			executor.iterationMutex.Lock()
+			// Temporarily stop the executor while running the external action.
+			// It will be resumed when the action ends.
+			executor.pauseNoWait()
+			// Check if the executor is still active or it wasn't paused by
+			// someone else while the iteration was beginning.
+			if executor.active && executor.pauseCount == 1 {
 				err := executor.executorFunc()
-				executor.wgIteration.Done()
-				executor.Unpause()
 				if err != nil {
 					log.WithError(err).Errorf("Errors were encountered while pulling data from apps")
 				}
 			}
+			executor.Unpause()
+			executor.iterationMutex.Unlock()
 		// wait for done signal from shutdown function
 		case <-executor.done:
 			// Make sure this function is never called again.

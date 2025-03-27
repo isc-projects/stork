@@ -22,7 +22,6 @@ import (
 type Pauser interface {
 	Pause()
 	Unpause()
-	WaitForStandby()
 }
 
 // Implements the configmigrator.Migrator interface. Migrates the hosts from
@@ -77,9 +76,6 @@ func NewHostMigrator(
 func (m *hostMigrator) Begin() error {
 	for _, puller := range m.pullers {
 		puller.Pause()
-	}
-	for _, puller := range m.pullers {
-		puller.WaitForStandby()
 	}
 	return nil
 }

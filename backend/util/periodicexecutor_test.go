@@ -176,9 +176,9 @@ func TestGetName(t *testing.T) {
 	require.EqualValues(t, "foobar", name)
 }
 
-// Test that the caller of the wait function is blocked until the executor
+// Test that the caller of the pause function is blocked until the executor
 // finishes the current iteration.
-func TestWaitForStandby(t *testing.T) {
+func TestWaitForStandbyInPause(t *testing.T) {
 	// Emits a value when the iteration starts. It notifies that the executor
 	// goroutine reached the executor function.
 	iterationStarted := make(chan struct{})
@@ -202,7 +202,7 @@ func TestWaitForStandby(t *testing.T) {
 			<-iterationFinished
 			return nil
 		},
-		func() (time.Duration, error) { return 1 * time.Second, nil },
+		func() (time.Duration, error) { return 1 * time.Millisecond, nil },
 	)
 	defer executor.Shutdown()
 
@@ -216,7 +216,7 @@ func TestWaitForStandby(t *testing.T) {
 		// Notify the test goroutine is running.
 		waitingStarted <- struct{}{}
 		// Block until the executor finishes the current iteration.
-		executor.WaitForStandby()
+		executor.Pause()
 		// Notify the test goroutine is finished.
 		waitingFinished.Done()
 	}()
