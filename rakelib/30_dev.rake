@@ -588,7 +588,7 @@ namespace :lint do
     task :changelog => [FOLD, SED] do
         allowed_categories = ['bug', 'build', 'doc', 'func', 'sec', 'perf', 'ui']
         changelog_dir = 'changelog_unreleased'
-        files = Dir.entries(changelog_dir)
+        files = Dir.entries(changelog_dir).sort
         exit_code = 0
 
         files.each do |filename|
@@ -608,6 +608,7 @@ namespace :lint do
             if File.empty?(file)
                 puts "ERROR: Changelog entry '#{filename}' is empty. Expected a valid entry."
                 exit_code = 1
+                next
             end
 
             lines = File.readlines(file)
@@ -618,34 +619,35 @@ namespace :lint do
             if words.empty?
                 puts "ERROR: Changelog entry '#{filename}' has the first line empty. Expected format '[category] author'."
                 exit_code = 1
+                next
             end
             if not words[0].empty?
                 puts "ERROR: Changelog entry '#{filename}' has leading text '#{words[0]}' before category. Expected no leading text."
                 exit_code = 1
+                next
             end
             if words.length < 3 or words[2].empty?
                 puts "ERROR: Changelog entry '#{filename}' has no category. Expected one of: #{allowed_categories}."
+                exit_code = 1
+                next
+            end
+            category = words[2]
+            if not allowed_categories.include?(category)
+                puts "ERROR: Changelog entry '#{filename}' has wrong category '#{category}'. Expected one of: #{allowed_categories}."
                 exit_code = 1
             end
             if words.length < 4 or words[1] != "[" or words[3] != "]"
                 puts "ERROR: Changelog entry '#{filename}' has wrong format on the first line. Expected format '[category] author'."
                 exit_code = 1
+                next
             end
             if words.length < 5 or words[4].empty?
                 puts "ERROR: Changelog entry '#{filename}' has no author."
                 exit_code = 1
+                next
             end
-            if tokens[4].length - tokens[4].lstrip.length > 1
-                puts "ERROR: Changelog entry '#{filename}' has more than one space before the author. Expected only one leading space."
-                exit_code = 1
-            end
-            if tokens[4].length - tokens[4].rstrip.length > 1  # Not 0 because 1 is newline.
-                puts "ERROR: Changelog entry '#{filename}' has spaces after the author. Expected no trailing space."
-                exit_code = 1
-            end
-            category = words[2]
-            if not allowed_categories.include?(category)
-                puts "ERROR: Changelog entry '#{filename}' has wrong category '#{category}'. Expected one of: #{allowed_categories}."
+            if tokens[4].length - tokens[4].lstrip.length > 1 or tokens[4][0] != ' '
+                puts "ERROR: Changelog entry '#{filename}' has more than one space or some other type of space character before the author. Expected only one leading space."
                 exit_code = 1
             end
 
@@ -664,10 +666,10 @@ namespace :lint do
 
             # Description section
             for line, i in lines[2..gitlab_line_index].each_with_index do
-                space_count = line.length - line.lstrip.length
-                if space_count != 4
+                spaces = line[0..3]
+                if spaces != '    '
                     line_number = i + 2
-                    puts "ERROR: Changelog entry '#{filename}' has #{space_count} spaces on line #{line_number}. Expected 4."
+                    puts "ERROR: Changelog entry '#{filename}' has '#{spaces}' at the beginning of line #{line_number}. Expected 4 spaces."
                 end
             end
 
@@ -677,6 +679,10 @@ namespace :lint do
                 # Wrap rows to width 73 == 72 + newline. Historically, number 72 has something to do with punch cards.
                 if line.length > 73
                     lines_too_long.append [line_number, line]
+                    exit_code = 1
+                end
+                if line.length - line.rstrip.length > 1  # Not 0 because 1 is newline.
+                    puts "ERROR: Changelog entry '#{filename}' has trailing spaces. Expected no trailing space."
                     exit_code = 1
                 end
             end
