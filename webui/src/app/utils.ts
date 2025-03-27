@@ -117,9 +117,15 @@ export function humanCount(count: string | bigint | number) {
 }
 
 /**
- * Build URL to Grafana dashboard
+ * Builds a URL for a Grafana dashboard.
+ * 
+ * @param grafanaBaseUrl the base URL of the Grafana instance
+ * @param dashboardId the UID of the dashboard from the Grafana configuration
+ * @param subnetId Kea subnet ID
+ * @param instance The Stork agent hostname, same as configured in the Prometheus YAML (without port).
+ * @returns A link to the Grafana dashboard with the given ID and optional query parameters or an empty string if the base URL or dashboard ID is missing.
  */
-export function getGrafanaUrl(grafanaBaseUrl: string, dashboardId: string, subnet?: string, instance?: string): string {
+export function getGrafanaUrl(grafanaBaseUrl: string, dashboardId: string, subnetId?: string, instance?: string): string {
     if (!grafanaBaseUrl || !dashboardId) {
         return ''
     }
@@ -137,8 +143,8 @@ export function getGrafanaUrl(grafanaBaseUrl: string, dashboardId: string, subne
     const url = new URL(`./d/${dashboardId}/`, grafanaBaseUrl)
 
     const sp = new URLSearchParams()
-    if (subnet) {
-        sp.append('var-subnet', subnet)
+    if (subnetId) {
+        sp.append('var-subnet', subnetId)
     }
     if (instance) {
         sp.append('var-instance', instance)
