@@ -1,4 +1,4 @@
 [func] slawek
 
-    Added settings to specify the Grafana Dashboard UIDs.
+    Added server settings to specify the Grafana Dashboard IDs.
     (Gitlab #1720)
