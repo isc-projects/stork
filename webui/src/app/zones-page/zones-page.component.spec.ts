@@ -926,4 +926,14 @@ describe('ZonesPageComponent', () => {
         expect(hasFilter(component?.zonesTable?.filters)).toBeFalse()
         expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
     })
+
+    it('should have non empty enum values for all enum type of supported query param filters', () => {
+        // Arrange + Act + Assert
+        for (const paramKey in component.supportedQueryParamFilters) {
+            if (component.supportedQueryParamFilters[paramKey].type === 'enum') {
+                expect(component.supportedQueryParamFilters[paramKey].enumValues).toBeTruthy()
+                expect(component.supportedQueryParamFilters[paramKey].enumValues.length).toBeGreaterThan(0)
+            }
+        }
+    })
 })

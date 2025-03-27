@@ -373,9 +373,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * - filter matchMode (contains, equals) which corresponds to PrimeNG table filter metadata
      * - accepted enum values for enum type of filters
      * - array type; when set to true it means that the filter may use more than one value.
-     * @private
      */
-    private _supportedQueryParamFilters: {
+    supportedQueryParamFilters: {
         [k: string]: {
             type: 'numeric' | 'enum' | 'string' | 'boolean'
             matchMode: 'contains' | 'equals'
@@ -393,17 +392,18 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
     /**
      * Parses zone filters from given URL queryParamMap, validates them and applies to queryParamFilters property.
-     * Filter validation relies on correctly initialized _supportedQueryParamFilters property.
+     * Filter validation relies on correctly initialized supportedQueryParamFilters property.
      * Returns number of valid filters found.
      * @param queryParamMap URL queryParamMap that will be used for zone filters parsing
      * @return number of valid filters
      * @private
      */
     private _parseQueryParams(queryParamMap: ParamMap): number {
+        // TODO: Move the queryParams filter validation logic to table.ts to replace existing, more complicated logic.
         let validFilters = 0
         this._queryParamFilters = {}
-        for (let paramKey of queryParamMap.keys) {
-            if (!(paramKey in this._supportedQueryParamFilters)) {
+        for (const paramKey of queryParamMap.keys) {
+            if (!(paramKey in this.supportedQueryParamFilters)) {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Wrong URL parameter value',
@@ -413,16 +413,16 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 continue
             }
 
-            const paramValues = this._supportedQueryParamFilters[paramKey].arrayType
+            const paramValues = this.supportedQueryParamFilters[paramKey].arrayType
                 ? queryParamMap.getAll(paramKey)
                 : [queryParamMap.get(paramKey)]
-            for (let paramValue of paramValues) {
+            for (const paramValue of paramValues) {
                 if (!paramValue) {
                     continue
                 }
 
                 let parsedValue = null
-                switch (this._supportedQueryParamFilters[paramKey].type) {
+                switch (this.supportedQueryParamFilters[paramKey].type) {
                     case 'numeric':
                         const numV = parseInt(paramValue, 10)
                         if (Number.isNaN(numV)) {
@@ -454,17 +454,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         validFilters += 1
                         break
                     case 'enum':
-                        if ((this._supportedQueryParamFilters[paramKey].enumValues ?? []).length === 0) {
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Wrong URL parameter value',
-                                detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
-                                life: 10000,
-                            })
-                            break
-                        }
-
-                        if (this._supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
+                        if (this.supportedQueryParamFilters[paramKey].enumValues?.includes(paramValue)) {
                             parsedValue = paramValue
                             validFilters += 1
                             break
@@ -473,7 +463,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         this.messageService.add({
                             severity: 'error',
                             summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} requires one of the values: ${this._supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
+                            detail: `URL parameter ${paramKey} requires one of the values: ${this.supportedQueryParamFilters[paramKey].enumValues.join(', ')}!`,
                             life: 10000,
                         })
                         break
@@ -485,7 +475,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                         this.messageService.add({
                             severity: 'error',
                             summary: 'Wrong URL parameter value',
-                            detail: `URL parameter ${paramKey} of type ${this._supportedQueryParamFilters[paramKey].type} not supported!`,
+                            detail: `URL parameter ${paramKey} of type ${this.supportedQueryParamFilters[paramKey].type} not supported!`,
                             life: 10000,
                         })
                         break
@@ -493,7 +483,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
                 if (parsedValue !== null) {
                     const filterConstraint = {}
-                    if (this._supportedQueryParamFilters[paramKey].arrayType) {
+                    if (this.supportedQueryParamFilters[paramKey].arrayType) {
                         parsedValue = this._queryParamFilters[paramKey]?.value
                             ? [...this._queryParamFilters[paramKey]?.value, parsedValue]
                             : [parsedValue]
@@ -501,7 +491,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
                     filterConstraint[paramKey] = {
                         value: parsedValue,
-                        matchMode: this._supportedQueryParamFilters[paramKey].matchMode,
+                        matchMode: this.supportedQueryParamFilters[paramKey].matchMode,
                     }
                     this._queryParamFilters = { ...this._queryParamFilters, ...filterConstraint }
                 }
@@ -534,15 +524,15 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     ngOnInit(): void {
         // Initialize arrays that contain values for UI filter dropdowns.
-        for (let t in DNSZoneType) {
+        for (const t in DNSZoneType) {
             this.zoneTypes.push(DNSZoneType[t])
         }
 
-        for (let c in DNSClass) {
+        for (const c in DNSClass) {
             this.zoneClasses.push(DNSClass[c])
         }
 
-        for (let a in DNSAppType) {
+        for (const a in DNSAppType) {
             this.appTypes.push({ name: this._getDNSAppName(<any>a), value: DNSAppType[a] })
         }
 
