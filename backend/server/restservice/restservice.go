@@ -81,7 +81,7 @@ type RestAPI struct {
 	EndpointControl            *EndpointControl
 	DNSManager                 dnsop.Manager
 	DaemonLocker               config.DaemonLocker
-	MigrationService           configmigrator.Service
+	MigrationService           configmigrator.MigrationManager
 
 	Agents agentcomm.ConnectedAgents
 
@@ -184,8 +184,8 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 			api.DNSManager = arg.(dnsop.Manager)
 			continue
 		}
-		if argType.Implements(reflect.TypeOf((*configmigrator.Service)(nil)).Elem()) {
-			api.MigrationService = arg.(configmigrator.Service)
+		if argType.Implements(reflect.TypeOf((*configmigrator.MigrationManager)(nil)).Elem()) {
+			api.MigrationService = arg.(configmigrator.MigrationManager)
 			continue
 		}
 		if argType.Implements(reflect.TypeOf((*config.DaemonLocker)(nil)).Elem()) {

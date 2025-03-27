@@ -21,11 +21,11 @@ const (
 	generalErrorMigrationID = MigrationIdentifier(5)
 )
 
-// Creates a migration service with some predefined migrations.
-func newTestService() Service {
-	service := NewService().(*service)
+// Creates a migration manager with some predefined migrations.
+func newTestManager() MigrationManager {
+	manager := NewMigrationManager().(*manager)
 	// Migration in progress.
-	service.migrations[inProgressMigrationID] = &migration{
+	manager.migrations[inProgressMigrationID] = &migration{
 		id:             inProgressMigrationID,
 		ctx:            context.Background(),
 		startDate:      time.Date(2025, 2, 1, 12, 0, 0, 0, time.UTC),
@@ -36,13 +36,13 @@ func newTestService() Service {
 		errors:         []MigrationError{},
 		cancelDate:     time.Time{},
 		cancelFunc: func() {
-			service.migrations[inProgressMigrationID].cancelDate = time.Date(
+			manager.migrations[inProgressMigrationID].cancelDate = time.Date(
 				2025, 2, 1, 13, 0, 0, 0, time.UTC,
 			)
 		},
 	}
 	// Finished migration.
-	service.migrations[finishedMigrationID] = &migration{
+	manager.migrations[finishedMigrationID] = &migration{
 		id:             finishedMigrationID,
 		ctx:            context.Background(),
 		startDate:      time.Date(2025, 2, 2, 11, 0, 0, 0, time.UTC),
@@ -59,7 +59,7 @@ func newTestService() Service {
 		cancelDate: time.Time{},
 	}
 	// Canceled migration.
-	service.migrations[canceledMigrationID] = &migration{
+	manager.migrations[canceledMigrationID] = &migration{
 		id:             canceledMigrationID,
 		ctx:            context.Background(),
 		startDate:      time.Date(2025, 2, 3, 11, 0, 0, 0, time.UTC),
@@ -71,7 +71,7 @@ func newTestService() Service {
 		errors:         []MigrationError{},
 	}
 	// Canceling migration.
-	service.migrations[cancelingMigrationID] = &migration{
+	manager.migrations[cancelingMigrationID] = &migration{
 		id:             cancelingMigrationID,
 		ctx:            context.Background(),
 		startDate:      time.Date(2025, 2, 4, 11, 0, 0, 0, time.UTC),
@@ -83,7 +83,7 @@ func newTestService() Service {
 		errors:         []MigrationError{},
 	}
 	// General error occurred.
-	service.migrations[generalErrorMigrationID] = &migration{
+	manager.migrations[generalErrorMigrationID] = &migration{
 		id:             generalErrorMigrationID,
 		ctx:            context.Background(),
 		startDate:      time.Date(2025, 2, 5, 11, 0, 0, 0, time.UTC),
@@ -94,26 +94,26 @@ func newTestService() Service {
 		errors:         []MigrationError{},
 		cancelDate:     time.Time{},
 	}
-	return service
+	return manager
 }
 
-// Test that the service instance is created correctly.
-func TestNewService(t *testing.T) {
+// Test that the manager instance is created correctly.
+func TestNewManager(t *testing.T) {
 	// Arrange & Act
-	service := NewService().(*service)
+	manager := NewMigrationManager().(*manager)
 
 	// Assert
-	require.NotNil(t, service)
-	require.NotNil(t, service.migrations)
+	require.NotNil(t, manager)
+	require.NotNil(t, manager.migrations)
 }
 
 // Test that the migrations are listed correctly regardless their state.
 func TestGetMigrations(t *testing.T) {
 	// Arrange
-	service := newTestService()
+	manager := newTestManager()
 
 	// Act
-	migrations := service.GetMigrations()
+	migrations := manager.GetMigrations()
 
 	// Assert
 	require.Len(t, migrations, 5)
@@ -127,15 +127,15 @@ func TestGetMigrations(t *testing.T) {
 // Test that the migration is retrieved correctly.
 func TestGetMigration(t *testing.T) {
 	// Arrange
-	service := newTestService()
+	manager := newTestManager()
 
 	// Act
-	migrationInProgress, okInProgress := service.GetMigration(inProgressMigrationID)
-	migrationFinished, okFinished := service.GetMigration(finishedMigrationID)
-	migrationCanceled, okCanceled := service.GetMigration(canceledMigrationID)
-	migrationCanceling, okCanceling := service.GetMigration(cancelingMigrationID)
-	migrationGeneralError, okGeneralError := service.GetMigration(generalErrorMigrationID)
-	migrationUnknown, okUnknown := service.GetMigration(unknownMigrationID)
+	migrationInProgress, okInProgress := manager.GetMigration(inProgressMigrationID)
+	migrationFinished, okFinished := manager.GetMigration(finishedMigrationID)
+	migrationCanceled, okCanceled := manager.GetMigration(canceledMigrationID)
+	migrationCanceling, okCanceling := manager.GetMigration(cancelingMigrationID)
+	migrationGeneralError, okGeneralError := manager.GetMigration(generalErrorMigrationID)
+	migrationUnknown, okUnknown := manager.GetMigration(unknownMigrationID)
 
 	// Assert
 	require.True(t, okInProgress)
@@ -156,11 +156,11 @@ func TestGetMigration(t *testing.T) {
 // function.
 func TestStopMigrationCallsCancelFunction(t *testing.T) {
 	// Arrange
-	service := newTestService()
-	migration, _ := service.GetMigration(inProgressMigrationID)
+	manager := newTestManager()
+	migration, _ := manager.GetMigration(inProgressMigrationID)
 
 	// Act
-	status, ok := service.StopMigration(migration.ID)
+	status, ok := manager.StopMigration(migration.ID)
 
 	// Assert
 	require.True(t, ok)
@@ -172,10 +172,10 @@ func TestStopMigrationCallsCancelFunction(t *testing.T) {
 // Test that the migration that is unknown cannot be stopped.
 func TestStopUnknownMigration(t *testing.T) {
 	// Arrange
-	service := newTestService()
+	manager := newTestManager()
 
 	// Act
-	migration, ok := service.StopMigration(unknownMigrationID)
+	migration, ok := manager.StopMigration(unknownMigrationID)
 
 	// Assert
 	require.False(t, ok)
@@ -185,11 +185,11 @@ func TestStopUnknownMigration(t *testing.T) {
 // Test that the finished migration cannot be stopped again.
 func TestStopFinishedMigration(t *testing.T) {
 	// Arrange
-	service := newTestService()
-	migration, _ := service.GetMigration(finishedMigrationID)
+	manager := newTestManager()
+	migration, _ := manager.GetMigration(finishedMigrationID)
 
 	// Act
-	status, ok := service.StopMigration(migration.ID)
+	status, ok := manager.StopMigration(migration.ID)
 
 	// Assert
 	require.True(t, ok)
@@ -201,11 +201,11 @@ func TestStopFinishedMigration(t *testing.T) {
 // Test that the canceling migration cannot be stopped again.
 func TestStopCancelingMigration(t *testing.T) {
 	// Arrange
-	service := newTestService()
-	migration, _ := service.GetMigration(cancelingMigrationID)
+	manager := newTestManager()
+	migration, _ := manager.GetMigration(cancelingMigrationID)
 
 	// Act
-	status, ok := service.StopMigration(migration.ID)
+	status, ok := manager.StopMigration(migration.ID)
 
 	// Assert
 	require.True(t, ok)
@@ -217,13 +217,13 @@ func TestStopCancelingMigration(t *testing.T) {
 // Test that the finished migrations can be cleared.
 func TestClearFinishedMigrations(t *testing.T) {
 	// Arrange
-	service := newTestService()
+	manager := newTestManager()
 
 	// Act
-	service.ClearFinishedMigrations()
+	manager.ClearFinishedMigrations()
 
 	// Assert
-	migrations := service.GetMigrations()
+	migrations := manager.GetMigrations()
 	require.Len(t, migrations, 2)
 	require.EqualValues(t, inProgressMigrationID, migrations[0].ID)
 	require.EqualValues(t, cancelingMigrationID, migrations[1].ID)
@@ -233,7 +233,7 @@ func TestClearFinishedMigrations(t *testing.T) {
 // The errors should be aggregated.
 func TestStartAndExecuteMigration(t *testing.T) {
 	// Arrange
-	service := NewService()
+	manager := NewMigrationManager()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -279,7 +279,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	ctx := context.WithValue(context.Background(), contextKey("key"), "value")
 
 	// Act & Assert
-	initialStatus, err := service.StartMigration(ctx, migrator)
+	initialStatus, err := manager.StartMigration(ctx, migrator)
 	require.NoError(t, err)
 
 	// Check the initial status.
@@ -296,12 +296,12 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.Equal(t, initialStatus.ID, firstChunkStatus.ID)
 	require.False(t, firstChunkStatus.Canceling)
@@ -319,12 +319,12 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	// Wait for the second chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 200
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the second chunk is migrated.
-	secondChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	secondChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.Equal(t, initialStatus.ID, secondChunkStatus.ID)
 	require.False(t, secondChunkStatus.Canceling)
@@ -342,12 +342,12 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	// Wait for the third chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 250
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the third chunk is migrated.
-	thirdChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	thirdChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.Equal(t, initialStatus.ID, thirdChunkStatus.ID)
 	require.False(t, thirdChunkStatus.Canceling)
@@ -367,7 +367,7 @@ func TestStartAndExecuteMigration(t *testing.T) {
 // phase.
 func TestStartMigrationErrorInInitialPhase(t *testing.T) {
 	// Arrange
-	service := NewService()
+	manager := NewMigrationManager()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -376,7 +376,7 @@ func TestStartMigrationErrorInInitialPhase(t *testing.T) {
 	migrator.EXPECT().CountTotal().Return(int64(0), errors.New("error"))
 
 	// Act
-	status, err := service.StartMigration(context.Background(), migrator)
+	status, err := manager.StartMigration(context.Background(), migrator)
 
 	// Assert
 	require.Error(t, err)
@@ -386,13 +386,13 @@ func TestStartMigrationErrorInInitialPhase(t *testing.T) {
 // Test that the migration has unique ID.
 func TestStartMigrationUniqueID(t *testing.T) {
 	// Arrange
-	service := NewService().(*service)
+	manager := NewMigrationManager().(*manager)
 
 	// Act
-	id1 := service.generateUniqueMigrationID()
-	service.migrations[id1] = &migration{id: id1}
+	id1 := manager.generateUniqueMigrationID()
+	manager.migrations[id1] = &migration{id: id1}
 
-	id2 := service.generateUniqueMigrationID()
+	id2 := manager.generateUniqueMigrationID()
 
 	// Assert
 	require.NotEqual(t, id1, id2)
@@ -403,7 +403,7 @@ func TestStartMigrationUniqueID(t *testing.T) {
 // Test that the loading error interrupts the migration.
 func TestStartMigrationLoadingError(t *testing.T) {
 	// Arrange
-	service := NewService()
+	manager := NewMigrationManager()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -437,7 +437,7 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	}).Return([]MigrationError{}).Times(1)
 
 	// Act & Assert
-	initialStatus, err := service.StartMigration(context.Background(), migrator)
+	initialStatus, err := manager.StartMigration(context.Background(), migrator)
 	require.NoError(t, err)
 
 	// Check the initial status.
@@ -448,12 +448,12 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.GeneralError != nil
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.NotZero(t, firstChunkStatus.EndDate)
 	require.ErrorContains(t, firstChunkStatus.GeneralError, "loading error")
@@ -465,7 +465,7 @@ func TestStartMigrationLoadingError(t *testing.T) {
 // statuses should not include the canceling stuff.
 func TestCancelMigration(t *testing.T) {
 	// Arrange
-	service := NewService()
+	manager := NewMigrationManager()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -496,7 +496,7 @@ func TestCancelMigration(t *testing.T) {
 	}).Return([]MigrationError{}).Times(2)
 
 	// Act & Assert
-	initialStatus, err := service.StartMigration(context.Background(), migrator)
+	initialStatus, err := manager.StartMigration(context.Background(), migrator)
 	require.NoError(t, err)
 
 	// Check the initial status.
@@ -508,12 +508,12 @@ func TestCancelMigration(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.False(t, firstChunkStatus.Canceling)
 	require.Zero(t, firstChunkStatus.EndDate)
@@ -521,7 +521,7 @@ func TestCancelMigration(t *testing.T) {
 	require.Nil(t, firstChunkStatus.Context.Done())
 
 	// Cancel the migration.
-	stopStatus, ok := service.StopMigration(initialStatus.ID)
+	stopStatus, ok := manager.StopMigration(initialStatus.ID)
 
 	// Check the canceled status.
 	require.True(t, ok)
@@ -534,12 +534,12 @@ func TestCancelMigration(t *testing.T) {
 	// Wait for the cancellation to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.EndDate != time.Time{}
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the second chunk is migrated.
-	secondChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	secondChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.True(t, secondChunkStatus.Canceling)
 	require.NotZero(t, secondChunkStatus.EndDate)
@@ -550,7 +550,7 @@ func TestCancelMigration(t *testing.T) {
 // Test that canceling the parent context doesn't cancel the migration.
 func TestMigrationParentCancel(t *testing.T) {
 	// Arrange
-	service := NewService()
+	manager := NewMigrationManager()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -585,7 +585,7 @@ func TestMigrationParentCancel(t *testing.T) {
 	parentCtx, parentCancel := context.WithCancel(context.Background())
 
 	// Act & Assert
-	initialStatus, err := service.StartMigration(parentCtx, migrator)
+	initialStatus, err := manager.StartMigration(parentCtx, migrator)
 	require.NoError(t, err)
 
 	// Check the initial status.
@@ -597,12 +597,12 @@ func TestMigrationParentCancel(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.False(t, firstChunkStatus.Canceling)
 	require.Zero(t, firstChunkStatus.EndDate)
@@ -617,12 +617,12 @@ func TestMigrationParentCancel(t *testing.T) {
 	assertionFinishedChan <- struct{}{}
 
 	require.Eventually(t, func() bool {
-		status, _ := service.GetMigration(initialStatus.ID)
+		status, _ := manager.GetMigration(initialStatus.ID)
 		return status.EndDate != time.Time{}
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the second chunk is migrated.
-	secondChunkStatus, ok := service.GetMigration(initialStatus.ID)
+	secondChunkStatus, ok := manager.GetMigration(initialStatus.ID)
 	require.True(t, ok)
 	require.False(t, secondChunkStatus.Canceling)
 	require.NotZero(t, secondChunkStatus.EndDate)
@@ -630,11 +630,11 @@ func TestMigrationParentCancel(t *testing.T) {
 	require.Nil(t, secondChunkStatus.Context.Done())
 }
 
-// Test that the closing of the migration service cancels all migrations and
+// Test that the closing of the migration manager cancels all migrations and
 // waits for them to finish.
-func TestConcurrentMigrationsCloseService(t *testing.T) {
+func TestConcurrentMigrationsCloseManager(t *testing.T) {
 	// Arrange
-	service := NewService()
+	manager := NewMigrationManager()
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -649,9 +649,9 @@ func TestConcurrentMigrationsCloseService(t *testing.T) {
 	migrator.EXPECT().Migrate().Return([]MigrationError{}).AnyTimes()
 
 	// Act & Assert
-	initialStatus1, err := service.StartMigration(context.Background(), migrator)
+	initialStatus1, err := manager.StartMigration(context.Background(), migrator)
 	require.NoError(t, err)
-	initialStatus2, err := service.StartMigration(context.Background(), migrator)
+	initialStatus2, err := manager.StartMigration(context.Background(), migrator)
 	require.NoError(t, err)
 
 	// Check the initial status.
@@ -664,17 +664,17 @@ func TestConcurrentMigrationsCloseService(t *testing.T) {
 	require.Nil(t, initialStatus1.Context.Done())
 	require.Nil(t, initialStatus2.Context.Done())
 
-	// Close the migration service.
-	service.Close()
+	// Close the migration manager.
+	manager.Close()
 
-	// Check the status after the service is closed.
-	closedStatus, ok := service.GetMigration(initialStatus1.ID)
+	// Check the status after the manager is closed.
+	closedStatus, ok := manager.GetMigration(initialStatus1.ID)
 	require.True(t, ok)
 	require.True(t, closedStatus.Canceling)
 	require.NotZero(t, closedStatus.EndDate)
 	require.ErrorContains(t, closedStatus.GeneralError, "canceled")
 
-	closedStatus, ok = service.GetMigration(initialStatus2.ID)
+	closedStatus, ok = manager.GetMigration(initialStatus2.ID)
 	require.True(t, ok)
 	require.True(t, closedStatus.Canceling)
 	require.NotZero(t, closedStatus.EndDate)

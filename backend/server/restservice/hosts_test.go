@@ -26,7 +26,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-//go:generate mockgen -package=restservice -destination=migratormock_test.go -mock_names Service=MockMigrationService isc.org/stork/server/configmigrator Service
+//go:generate mockgen -package=restservice -destination=migratormock_test.go isc.org/stork/server/configmigrator MigrationManager
 
 func mockStatusError(commandName keactrl.CommandName, cmdResponses []interface{}) {
 	command := keactrl.NewCommandBase(commandName, keactrl.DHCPv4)
@@ -1723,7 +1723,7 @@ func TestStartHostsMigration(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 
 	statePuller, err := apps.NewStatePuller(db, nil, nil, nil, nil)
 	require.NoError(t, err)
@@ -1809,7 +1809,7 @@ func TestStartHostsMigrationFailed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 	pullers := &apps.Pullers{}
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService, pullers)

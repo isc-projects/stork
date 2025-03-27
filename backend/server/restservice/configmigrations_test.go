@@ -24,7 +24,7 @@ func TestGetMigrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
@@ -128,7 +128,7 @@ func TestDeleteFinishedMigrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestGetMigrationNotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
@@ -180,7 +180,7 @@ func TestGetMigration(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
@@ -236,7 +236,7 @@ func TestPutMigration(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
@@ -298,7 +298,7 @@ func TestPutMigrationNotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	migrationService := NewMockMigrationService(ctrl)
+	migrationService := NewMockMigrationManager(ctrl)
 
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)

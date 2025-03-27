@@ -56,8 +56,8 @@ type MigrationStatus struct {
 // We have three actors in the migration process:
 //  1. The external packages that want to start, stop, or get the status of the
 //     migration. In the same time, multiple external callers may want to
-//     interact with the migration service (e.g., RestAPI handlers).
-//  2. The migration service that manages the migrations. It is responsible for
+//     interact with the migration manager (e.g., RestAPI handlers).
+//  2. The migration manager that manages the migrations. It is responsible for
 //     handling the external (outside package) requests and controlling the
 //     migrations. It may receive multiple requests in parallel (e.g., from the
 //     RestAPI handlers). It may also receive multiple migration updates from
@@ -68,17 +68,17 @@ type MigrationStatus struct {
 //     end of the migration (successful or failed).
 //
 // To synchronize the access to the migration data, we use the mutexes. The
-// the migration service owns a single mutex that protects the storage of the
+// the migration manager owns a single mutex that protects the storage of the
 // migrations. This mutex is utilized in calls received from the external
 // packages.
 // Each migration owns its mutex that protects the migration data. This mutex
-// is utilized in exchanging the data between the migration service and the
+// is utilized in exchanging the data between the migration manager and the
 // migration runner.
 //
 //		+----------+           +-----------+             +-----------+
-//		|          | Service's |           | Migration's |           |
+//		|          | Manager's |           | Migration's |           |
 //		| External |   mutex   | Migration |    mutex 1  | Migration |
-//		| packages |<--------->| service   |<----------->| runner 1  |
+//		| packages |<--------->| manager   |<----------->| runner 1  |
 //		|          |           |           |             |           |
 //		+----------+           +-----------+             +-----------+
 //	                                 ^
@@ -193,10 +193,10 @@ func (m *migration) registerChunk(loadedItems int64, errs []MigrationError) {
 	m.errors = append(m.errors, errs...)
 }
 
-// Migration service interface. It provides the methods to interact with the
-// migrations. The service is responsible for starting and stopping the
+// Migration manager interface. It provides the methods to interact with the
+// migrations. The manager is responsible for starting and stopping the
 // migrations. It also provides the information about the migrations.
-type Service interface {
+type MigrationManager interface {
 	// Returns the list of all migrations.
 	GetMigrations() []MigrationStatus
 	// Returns the migration with the provided ID. If the migration is not found,
@@ -221,22 +221,22 @@ type Service interface {
 //
 // The migration data are stored in memory only. The data are lost when the
 // server is restarted.
-type service struct {
+type manager struct {
 	migrations      map[MigrationIdentifier]*migration
 	mutex           sync.RWMutex
 	nextMigrationID MigrationIdentifier
 }
 
-// Constructs a new migration service.
-func NewService() Service {
-	return &service{
+// Constructs a new migration manager.
+func NewMigrationManager() MigrationManager {
+	return &manager{
 		migrations:      make(map[MigrationIdentifier]*migration),
 		nextMigrationID: 1,
 	}
 }
 
 // Returns the list of all migrations sorted by the start date.
-func (s *service) GetMigrations() []MigrationStatus {
+func (s *manager) GetMigrations() []MigrationStatus {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -254,7 +254,7 @@ func (s *service) GetMigrations() []MigrationStatus {
 
 // Returns the migration with the provided ID. If the migration is not found,
 // the second return value is false.
-func (s *service) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
+func (s *manager) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -268,7 +268,7 @@ func (s *service) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 // Starts the migration in background. The migrator is the object that knows how to migrate
 // certain entities. The context may contain the information about the user
 // who started the migration.
-func (s *service) StartMigration(ctx context.Context, migrator Migrator) (MigrationStatus, error) {
+func (s *manager) StartMigration(ctx context.Context, migrator Migrator) (MigrationStatus, error) {
 	totalItems, err := migrator.CountTotal()
 	if err != nil {
 		return MigrationStatus{}, errors.WithMessage(err, "failed to get the total items")
@@ -332,7 +332,7 @@ func (s *service) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 }
 
 // Generates a unique migration ID.
-func (s *service) generateUniqueMigrationID() MigrationIdentifier {
+func (s *manager) generateUniqueMigrationID() MigrationIdentifier {
 	id := s.nextMigrationID
 	s.nextMigrationID++
 	return id
@@ -340,7 +340,7 @@ func (s *service) generateUniqueMigrationID() MigrationIdentifier {
 
 // Requests the migration to stop. The migration is stopped asynchronously.
 // If the migration is not found, the second return value is false.
-func (s *service) StopMigration(id MigrationIdentifier) (MigrationStatus, bool) {
+func (s *manager) StopMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 	s.mutex.RLock()
 	migration, ok := s.migrations[id]
 	s.mutex.RUnlock()
@@ -354,7 +354,7 @@ func (s *service) StopMigration(id MigrationIdentifier) (MigrationStatus, bool) 
 }
 
 // Clears the finished migrations from the memory.
-func (s *service) ClearFinishedMigrations() {
+func (s *manager) ClearFinishedMigrations() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -367,7 +367,7 @@ func (s *service) ClearFinishedMigrations() {
 
 // Cancels all the running migrations and waits for them to finish.
 // The method is blocking.
-func (s *service) Close() {
+func (s *manager) Close() {
 	for _, migration := range s.migrations {
 		migration.cancel()
 	}

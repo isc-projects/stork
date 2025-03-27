@@ -234,7 +234,7 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	dnsManager := dnsop.NewManager(ss)
 
 	// Config migration service manages list of pending migrations.
-	migrationService := configmigrator.NewService()
+	migrationService := configmigrator.NewMigrationManager()
 
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
