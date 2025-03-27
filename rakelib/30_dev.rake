@@ -658,7 +658,11 @@ namespace :lint do
 
             # Last line
             gitlab_line_index = lines.rindex { |i| not i.strip.empty? }
-            gitlab_line = lines[gitlab_line_index].delete("\n")
+            gitlab_line = lines[gitlab_line_index]
+            if gitlab_line[-1].ord != 10
+                puts "ERROR: Changelog entry '#{filename}' does not have a newline at end of file. Empty newline at EOF expected."
+            end
+            gitlab_line = gitlab_line.delete('\n')
             regex = '^    \(Gitlab #[0-9]+\)$'
             if not gitlab_line.match(/#{regex}/)
                 puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' not matched with regex '#{regex}'."
