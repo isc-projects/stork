@@ -86,7 +86,7 @@ export class SettingsPageComponent implements OnInit {
      *
      * A URL input form control is created for each setting in this array.
      */
-    urlSettings: SettingsItem[] = [
+    grafanaUrlSettings: SettingsItem[] = [
         {
             title: 'URL to Grafana',
             formControlName: 'grafanaUrl',
@@ -99,7 +99,7 @@ export class SettingsPageComponent implements OnInit {
      *
      * A text input form control is created for each setting in this array.
      */
-    textSettings: SettingsItem[] = [
+    grafanaTextSettings: SettingsItem[] = [
         {
             title: 'ID of the DHCPv4 Dashboard in Grafana',
             formControlName: 'grafanaDhcp4DashboardId',
