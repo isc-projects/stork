@@ -6,7 +6,7 @@ import { EventsService, UsersService, ServicesService } from '../backend/api/api
 import { AuthService } from '../auth.service'
 import { Subscription, filter, lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
-import { Events } from '../backend'
+import { Events, Machine } from '../backend'
 import { ServerSentEventsService } from '../server-sent-events.service'
 
 /**
@@ -72,7 +72,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     ]
 
     users: any
-    machines: any
+    machines: Machine[] = []
     appTypes = [
         { value: 'kea', name: 'Kea', id: 'kea-events' },
         { value: 'bind9', name: 'BIND 9', id: 'bind-events' },
@@ -200,9 +200,9 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                     })
                 })
         }
-        lastValueFrom(this.servicesApi.getMachines(0, 1000, null, null))
+        lastValueFrom(this.servicesApi.getMachinesDirectory())
             .then((data) => {
-                this.machines = data.items
+                this.machines = data.items ?? []
 
                 if (this.filter.machine) {
                     for (const m of this.machines) {
