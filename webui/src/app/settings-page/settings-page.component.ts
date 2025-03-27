@@ -103,12 +103,12 @@ export class SettingsPageComponent implements OnInit {
         {
             title: 'ID of the DHCPv4 Dashboard in Grafana',
             formControlName: 'grafanaDhcp4DashboardId',
-            help: 'Specifies the ID of the DHCPv4 dashboard in Grafana.',
+            help: 'This ID must match the dashboard UID in the Grafana configuration. This value is used to construct the URL to the DHCPv4 dashboard.',
         },
         {
             title: 'ID of the DHCPv6 Dashboard in Grafana',
             formControlName: 'grafanaDhcp6DashboardId',
-            help: 'Specifies the ID of the DHCPv6 dashboard in Grafana.',
+            help: 'This ID must match the dashboard UID in the Grafana configuration. This value is used to construct the URL to the DHCPv6 dashboard.',
         },
     ]
 
