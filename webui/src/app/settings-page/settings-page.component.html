@@ -93,7 +93,7 @@
                     </div>
                 </p-fieldset>
                 <p-fieldset legend="Grafana">
-                    <div *ngFor="let setting of urlSettings" class="my-2 flex flex-column">
+                    <div *ngFor="let setting of urlSettings" class="my-3 flex flex-column">
                         <label [for]="setting.formControlName">{{ setting.title }}:</label>
                         <div class="flex align-items-center">
                             <input
@@ -104,7 +104,7 @@
                             /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
                         </div>
                     </div>
-                    <div *ngFor="let setting of textSettings" class="my-2 flex flex-column">
+                    <div *ngFor="let setting of textSettings" class="my-3 flex flex-column">
                         <label [for]="setting.formControlName">{{ setting.title }}:</label>
                         <div class="flex align-items-center">
                             <input
