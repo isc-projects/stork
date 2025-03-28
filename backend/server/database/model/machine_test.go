@@ -1151,26 +1151,33 @@ func TestGetAllMachinesNoRelations(t *testing.T) {
 	machines, err := GetAllMachinesNoRelations(db, nil)
 	require.NoError(t, err)
 	require.Len(t, machines, 20)
-	require.EqualValues(t, "localhost", machines[0].Address)
-	require.EqualValues(t, "localhost", machines[19].Address)
-	require.EqualValues(t, "some error", machines[0].Error)
-	require.EqualValues(t, "some error", machines[19].Error)
-	require.EqualValues(t, 4, machines[0].State.Cpus)
-	require.EqualValues(t, 4, machines[19].State.Cpus)
-	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
 
-	// Ensure that no relations were involved.
-	require.Nil(t, machines[0].Apps)
+	for i, machine := range machines {
+		require.EqualValues(t, "localhost", machine.Address)
+		require.EqualValues(t, "some error", machine.Error)
+		require.EqualValues(t, 4, machine.State.Cpus)
+		if i > 0 {
+			require.NotEqual(t, machines[i-1].AgentPort, machine.AgentPort)
+		}
+		// Ensure that no relations were involved.
+		require.Nil(t, machine.Apps)
+	}
 
 	// get only unauthorized machines
 	authorized := false
 	machines, err = GetAllMachinesNoRelations(db, &authorized)
 	require.NoError(t, err)
 	require.Len(t, machines, 10)
+	for _, machine := range machines {
+		require.False(t, machine.Authorized)
+	}
 
 	// and now only authorized machines
 	authorized = true
 	machines, err = GetAllMachinesNoRelations(db, &authorized)
 	require.NoError(t, err)
 	require.Len(t, machines, 10)
+	for _, machine := range machines {
+		require.True(t, machine.Authorized)
+	}
 }
