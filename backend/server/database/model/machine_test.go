@@ -1095,3 +1095,82 @@ func TestGetAllMachinesSimplified(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, machines, 10)
 }
+
+// Check if getting all machines without any relations works.
+func TestGetAllMachinesNoRelations(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add 20 machines
+	for i := 1; i <= 20; i++ {
+		m := &Machine{
+			Address:   "localhost",
+			AgentPort: 8080 + int64(i),
+			Error:     "some error",
+			State: MachineState{
+				Hostname: "aaaa",
+				Cpus:     4,
+			},
+			Authorized: i%2 == 0,
+		}
+		err := AddMachine(db, m)
+		require.NoError(t, err)
+
+		a := &App{
+			MachineID: m.ID,
+			Type:      AppTypeKea,
+			AccessPoints: []*AccessPoint{
+				{
+					MachineID: m.ID,
+					Type:      "control",
+					Address:   "localhost",
+					Port:      1234,
+					Key:       "",
+				},
+			},
+			Daemons: []*Daemon{
+				{
+					Name:   "dhcp4",
+					Active: true,
+				},
+			},
+		}
+		_, err = AddApp(db, a)
+		require.NoError(t, err)
+
+		cr := &ConfigReview{
+			ConfigHash: "1234",
+			Signature:  "2345",
+			DaemonID:   a.Daemons[0].ID,
+		}
+		err = AddConfigReview(db, cr)
+		require.NoError(t, err)
+	}
+
+	// get all machines should return 20 machines
+	machines, err := GetAllMachinesNoRelations(db, nil)
+	require.NoError(t, err)
+	require.Len(t, machines, 20)
+	require.EqualValues(t, "localhost", machines[0].Address)
+	require.EqualValues(t, "localhost", machines[19].Address)
+	require.EqualValues(t, "some error", machines[0].Error)
+	require.EqualValues(t, "some error", machines[19].Error)
+	require.EqualValues(t, 4, machines[0].State.Cpus)
+	require.EqualValues(t, 4, machines[19].State.Cpus)
+	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
+
+	// Ensure that no relations were involved.
+	require.Nil(t, machines[0].Apps)
+
+	// get only unauthorized machines
+	authorized := false
+	machines, err = GetAllMachinesNoRelations(db, &authorized)
+	require.NoError(t, err)
+	require.Len(t, machines, 10)
+
+	// and now only authorized machines
+	authorized = true
+	machines, err = GetAllMachinesNoRelations(db, &authorized)
+	require.NoError(t, err)
+	require.Len(t, machines, 10)
+}

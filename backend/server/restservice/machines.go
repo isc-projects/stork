@@ -49,7 +49,7 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 
 // Tries to send HTTP GET to STORK_REST_VERSIONS_URL to retrieve versions metadata file containing information about current ISC software versions.
 // If the response to the HTTP request is successful, it tries to unmarshall received data.
-// If it succeeeds, pointer to the AppsVersions is returned. Non-nil error is returned in case of any fail.
+// If it succeeds, pointer to the AppsVersions is returned. Non-nil error is returned in case of any fail.
 func (r *RestAPI) getOnlineVersionsJSON() (*models.AppsVersions, error) {
 	url := r.Settings.VersionsURL
 	accept := "application/json"
@@ -84,7 +84,7 @@ func (r *RestAPI) getOnlineVersionsJSON() (*models.AppsVersions, error) {
 
 // Tries to read versions.json local file containing information about current ISC software versions
 // and then it tries to unmarshall read data.
-// If it succeeeds, pointer to the AppsVersions is returned. Non-nil error is returned in case of any fail.
+// If it succeeds, pointer to the AppsVersions is returned. Non-nil error is returned in case of any fail.
 func getOfflineVersionsJSON() (*models.AppsVersions, error) {
 	// Find the location of the JSON file with software versions metadata.
 	searchPaths := []string{}
@@ -346,7 +346,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 // against machines' names available in the system.
 func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetMachinesDirectoryParams) middleware.Responder {
 	authorized := true
-	dbMachines, err := dbmodel.GetAllMachines(r.DB, &authorized)
+	dbMachines, err := dbmodel.GetAllMachinesNoRelations(r.DB, &authorized)
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot get machines directory from the database"
