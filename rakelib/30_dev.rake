@@ -822,14 +822,23 @@ namespace :audit do
     desc 'Check the backend security issues'
     task :backend => [GOVULNCHECK] + go_codebase do
         Dir.chdir("backend") do
-            sh GOVULNCHECK, "./..."
+            show_opts = ["version"]
+            if ENV["CI"] != "true"
+                show_opts.append "color"
+            end
+
+            sh GOVULNCHECK, "--show", show_opts.join(","), "./..."
         end
     end
 
     desc 'Check the backend security issues (including testing codebase)'
     task :backend_tests => [GOVULNCHECK, "gen:backend:mocks"] + go_codebase do
         Dir.chdir("backend") do
-            sh GOVULNCHECK, "-test", "./..."
+            show_opts = ["version"]
+            if ENV["CI"] != "true"
+                show_opts.append "color"
+            end
+            sh GOVULNCHECK, "--show", show_opts.join(","), "-test", "./..."
         end
     end
 
