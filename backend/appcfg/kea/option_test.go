@@ -568,6 +568,7 @@ func TestSplitByComma(t *testing.T) {
 		"1,2\\",
 		"",
 		"\\",
+		"1\\t,2",
 	}
 
 	expected := [][]string{
@@ -580,6 +581,7 @@ func TestSplitByComma(t *testing.T) {
 		{"1", "2\\"},
 		{},
 		{"\\"},
+		{"1\\t", "2"},
 	}
 
 	ctrl := gomock.NewController(t)
