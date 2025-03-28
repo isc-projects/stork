@@ -173,7 +173,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 // Splits a string by comma. Supports escaping commas with a backslash.
 func splitByComma(value string) []string {
 	var (
-		slash   bool
+		backslash   bool
 		result  []string
 		current string
 	)
@@ -181,10 +181,10 @@ func splitByComma(value string) []string {
 		switch {
 		case c == '\\':
 			if !slash {
-				// Zero has been already seen. Count it.
+				// The backslash has not been seen yet. Count it.
 				slash = true
 			} else {
-				// The slash has been already seen. Add a single backslash
+				// The backslash has been already seen. Add a single backslash
 				// to the current string.
 				current += string(c)
 			}
