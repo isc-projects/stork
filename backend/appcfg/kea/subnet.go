@@ -127,8 +127,9 @@ type SettableCacheParameters struct {
 
 // Represents client-class configuration in Kea.
 type ClientClassParameters struct {
-	ClientClass          *string  `json:"client-class,omitempty"`
-	RequireClientClasses []string `json:"require-client-classes,omitempty"`
+	ClientClass               *string  `json:"client-class,omitempty"`
+	RequireClientClasses      []string `json:"require-client-classes,omitempty"`
+	EvaluateAdditionalClasses []string `json:"evaluate-additional-classes,omitempty"`
 }
 
 // Represents valid lifetime configuration parameters in Kea.
@@ -431,6 +432,7 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 				keaPool.ClientClass = params.ClientClass
 			}
 			keaPool.RequireClientClasses = params.RequireClientClasses
+			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
 			keaPool.PoolID = params.PoolID
 		}
 		// Add the pool to the subnet.
@@ -504,6 +506,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 				keaPool.ClientClass = params.ClientClass
 			}
 			keaPool.RequireClientClasses = params.RequireClientClasses
+			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
 			keaPool.PoolID = params.PoolID
 		}
 		// Add the pool to the subnet.
@@ -544,6 +547,7 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 				keaPool.ClientClass = params.ClientClass
 			}
 			keaPool.RequireClientClasses = params.RequireClientClasses
+			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
 			keaPool.PoolID = params.PoolID
 		}
 		// Add the pool to the subnet.

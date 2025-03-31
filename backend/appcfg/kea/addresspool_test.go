@@ -117,8 +117,9 @@ func TestAddressPoolGetParameters(t *testing.T) {
 		Pool:   "192.0.2.1-192.0.2.254",
 		PoolID: storkutil.Ptr(int64(1234)),
 		ClientClassParameters: ClientClassParameters{
-			ClientClass:          storkutil.Ptr("foo"),
-			RequireClientClasses: []string{"foo", "bar"},
+			ClientClass:               storkutil.Ptr("foo"),
+			RequireClientClasses:      []string{"foo", "bar"},
+			EvaluateAdditionalClasses: []string{"baz"},
 		},
 	}
 	params := pool.GetPoolParameters()
@@ -128,6 +129,8 @@ func TestAddressPoolGetParameters(t *testing.T) {
 	require.Len(t, params.RequireClientClasses, 2)
 	require.Equal(t, "foo", params.RequireClientClasses[0])
 	require.Equal(t, "bar", params.RequireClientClasses[1])
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "baz", params.EvaluateAdditionalClasses[0])
 	require.NotNil(t, params.PoolID)
 	require.EqualValues(t, 1234, *params.PoolID)
 }
@@ -141,5 +144,6 @@ func TestAddressPoolGetNoParameters(t *testing.T) {
 	require.NotNil(t, params)
 	require.Nil(t, params.ClientClass)
 	require.Empty(t, params.RequireClientClasses)
+	require.Empty(t, params.EvaluateAdditionalClasses)
 	require.Nil(t, params.PoolID)
 }

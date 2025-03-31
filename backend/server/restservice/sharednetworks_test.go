@@ -1539,8 +1539,9 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 				CacheThreshold: storkutil.Ptr[float32](0.25),
 			},
 			KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
-				ClientClass:          storkutil.Ptr("foo"),
-				RequireClientClasses: []string{"bar"},
+				ClientClass:               storkutil.Ptr("foo"),
+				RequireClientClasses:      []string{"bar"},
+				EvaluateAdditionalClasses: []string{"foo"},
 			},
 			KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
 				DdnsGeneratedPrefix:        storkutil.Ptr("abc"),
@@ -1706,6 +1707,7 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 								"cache-max-age": 1000,
 								"client-class": "foo",
 								"require-client-classes": ["bar"],
+								"evaluate-additional-classes": ["foo"],
 								"ddns-generated-prefix": "abc",
 								"ddns-override-client-update": true,
 								"ddns-override-no-update": false,
@@ -1837,6 +1839,8 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 		require.Equal(t, "foo", *lsn.KeaParameters.ClientClass)
 		require.Len(t, lsn.KeaParameters.RequireClientClasses, 1)
 		require.EqualValues(t, "bar", lsn.KeaParameters.RequireClientClasses[0])
+		require.Len(t, lsn.KeaParameters.EvaluateAdditionalClasses, 1)
+		require.EqualValues(t, "foo", lsn.KeaParameters.EvaluateAdditionalClasses[0])
 		require.NotNil(t, lsn.KeaParameters.DDNSGeneratedPrefix)
 		require.Equal(t, "abc", *lsn.KeaParameters.DDNSGeneratedPrefix)
 		require.NotNil(t, lsn.KeaParameters.DDNSOverrideClientUpdate)

@@ -5,7 +5,7 @@ import { AddressPoolForm, KeaPoolParametersForm, SubnetSetFormService } from '..
 import { SelectableDaemon } from '../forms/selectable-daemon'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
-import { getSeverityByIndex } from '../utils'
+import { getSeverityByIndex, getVersionRange } from '../utils'
 
 /**
  * A component providing a form for editing and adding an address pool.
@@ -149,7 +149,12 @@ export class AddressPoolFormComponent implements OnInit {
                 values.controls.splice(0)
             }
         }
-        this.formGroup.setControl('parameters', this.subnetSetFormService.createDefaultKeaPoolParametersForm())
+        this.formGroup.setControl(
+            'parameters',
+            this.subnetSetFormService.createDefaultKeaPoolParametersForm(
+                getVersionRange(this.selectableDaemons.map((d) => d.version))
+            )
+        )
     }
 
     /**

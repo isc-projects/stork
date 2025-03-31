@@ -49,18 +49,20 @@ describe('SubnetSetFormService', () => {
         expect(data0.length).toBe(0)
     })
 
-    it('should convert Kea pool parameters to a form group', () => {
+    it('should convert Kea pool parameters to a form group without evaluate-additional-classes', () => {
         const parameters: KeaConfigPoolParameters[] = [
             {
                 clientClass: 'foo',
                 requireClientClasses: ['foo', 'bar'],
+                evaluateAdditionalClasses: ['baz'],
             },
             {
                 clientClass: 'bar',
                 requireClientClasses: ['foo', 'bar'],
+                evaluateAdditionalClasses: ['baz'],
             },
         ]
-        const form = service.convertKeaPoolParametersToForm(parameters)
+        const form = service.convertKeaPoolParametersToForm(['2.7.0', '2.7.1'], parameters)
         let fg = form.get('clientClass') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('string')
@@ -84,6 +86,66 @@ describe('SubnetSetFormService', () => {
         expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
         expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toEqual(['foo', 'bar'])
         expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toEqual(['foo', 'bar'])
+
+        fg = form.get('evaluateAdditionalClasses') as SharedParameterFormGroup<any>
+        expect(fg).toBeFalsy
+    })
+
+    it('should convert Kea pool parameters to a form group with evaluate-additional-classes', () => {
+        const parameters: KeaConfigPoolParameters[] = [
+            {
+                clientClass: 'foo',
+                requireClientClasses: ['foo', 'bar'],
+                evaluateAdditionalClasses: ['baz'],
+            },
+            {
+                clientClass: 'bar',
+                requireClientClasses: ['foo', 'bar'],
+                evaluateAdditionalClasses: ['baz'],
+            },
+        ]
+
+        // When version is not available or when the version range includes the
+        // newer versions for which the evaluate-additional-classes is supported,
+        // the evaluateAdditionalClasses control should be shown.
+        const testCases: [string, string][] = [['2.7.0', '2.7.5'], ['2.7.6', '3.0.0'], null]
+        for (const testCase of testCases) {
+            const form = service.convertKeaPoolParametersToForm(testCase, parameters)
+            let fg = form.get('clientClass') as SharedParameterFormGroup<any>
+            expect(fg).toBeTruthy()
+            expect(fg.data.type).toBe('string')
+            expect(fg.data.min).toBeFalsy()
+            expect(fg.data.fractionDigits).toBeFalsy()
+            expect(fg.data.values).toBeFalsy()
+            expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeTrue()
+            expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
+            expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toBe('foo')
+            expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe('bar')
+
+            fg = form.get('requireClientClasses') as SharedParameterFormGroup<any>
+            expect(fg).toBeTruthy()
+            expect(fg.data.type).toBe('client-classes')
+            expect(fg.data.min).toBeFalsy()
+            expect(fg.data.max).toBeFalsy()
+            expect(fg.data.fractionDigits).toBeFalsy()
+            expect(fg.data.values).toBeFalsy()
+            expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
+            expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
+            expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toEqual(['foo', 'bar'])
+            expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toEqual(['foo', 'bar'])
+
+            fg = form.get('evaluateAdditionalClasses') as SharedParameterFormGroup<any>
+            expect(fg).toBeTruthy()
+            expect(fg.data.type).toBe('client-classes')
+            expect(fg.data.min).toBeFalsy()
+            expect(fg.data.max).toBeFalsy()
+            expect(fg.data.fractionDigits).toBeFalsy()
+            expect(fg.data.values).toBeFalsy()
+            expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
+            expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
+            expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toEqual(['baz'])
+            expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toEqual(['baz'])
+        }
     })
 
     it('should convert address pool data to a form', () => {
@@ -99,6 +161,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -123,6 +186,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -146,6 +210,7 @@ describe('SubnetSetFormService', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'bar',
                                 requireClientClasses: ['faz'],
+                                evaluateAdditionalClasses: ['faz'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -175,6 +240,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                             },
                         },
                         {
@@ -202,7 +268,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formArray = service.convertAddressPoolsToForm(subnet)
+        const formArray = service.convertAddressPoolsToForm(null, subnet)
         expect(formArray.length).toBe(3)
         expect(formArray.get('0.range.start')?.value).toBe('192.0.2.1')
         expect(formArray.get('0.range.end')?.value).toBe('192.0.2.10')
@@ -216,6 +282,10 @@ describe('SubnetSetFormService', () => {
         expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
         expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
         expect(params.get('requireClientClasses.values.1')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('evaluateAdditionalClasses.values.1')?.value).toEqual(['foo', 'bar'])
         expect(params.get('poolID.unlocked')?.value).toBeFalse()
         expect(params.get('poolID.values.0')?.value).toBe(50)
         expect(params.get('poolID.values.1')?.value).toBe(50)
@@ -240,6 +310,10 @@ describe('SubnetSetFormService', () => {
         expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
         expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
         expect(params.get('requireClientClasses.values.1')?.value).toEqual([])
+        expect(params.get('evaluateAdditionalClasses.unlocked')?.value).toBeTrue()
+        expect((params.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('evaluateAdditionalClasses.values.1')?.value).toEqual([])
         expect(params.get('poolID.unlocked')?.value).toBeTrue()
         expect(params.get('poolID.values.0')?.value).toBe(50)
         expect(params.get('poolID.values.1')?.value).toBeFalsy()
@@ -262,6 +336,9 @@ describe('SubnetSetFormService', () => {
         expect(params.get('requireClientClasses.unlocked')?.value).toBeFalse()
         expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
         expect(params.get('requireClientClasses.values.0')?.value).toEqual(['faz'])
+        expect(params.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(params.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['faz'])
         expect(params.get('poolID.unlocked')?.value).toBeFalse()
         expect(params.get('poolID.values.0')?.value).toBeFalsy()
         expect(params.get('poolID.values.1')?.value).toBeFalsy()
@@ -287,6 +364,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -311,6 +389,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 60,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -335,6 +414,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'bar',
                                 poolID: 70,
                                 requireClientClasses: ['faz'],
+                                evaluateAdditionalClasses: ['faz'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -364,6 +444,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 80,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                             },
                         },
                         {
@@ -391,7 +472,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formArray = service.convertAddressPoolsToForm(subnet)
+        let formArray = service.convertAddressPoolsToForm(null, subnet)
 
         let pools = service.convertFormToAddressPools([], subnet.localSubnets[0], formArray)
         expect(pools.length).toBe(3)
@@ -400,6 +481,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
         expect(pools[0].keaConfigPoolParameters.poolID).toBe(50)
         expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[0].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[0].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[0].keaConfigPoolParameters.options[0].code).toBe(5)
@@ -412,6 +494,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters.clientClass).toBe('foo')
         expect(pools[1].keaConfigPoolParameters.poolID).toBe(60)
         expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[1].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(5)
@@ -424,6 +507,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[2].keaConfigPoolParameters.clientClass).toBe('bar')
         expect(pools[2].keaConfigPoolParameters.poolID).toBe(70)
         expect(pools[2].keaConfigPoolParameters.requireClientClasses).toEqual(['faz'])
+        expect(pools[2].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['faz'])
         expect(pools[2].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[2].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[2].keaConfigPoolParameters.options[0].code).toBe(5)
@@ -439,12 +523,14 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
         expect(pools[0].keaConfigPoolParameters.poolID).toBe(80)
         expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[0].keaConfigPoolParameters.options).toEqual([])
         expect(pools[1].pool).toBe('192.0.2.20-192.0.2.30')
         expect(pools[1].keaConfigPoolParameters).toBeTruthy()
         expect(pools[1].keaConfigPoolParameters.clientClass).toBeFalsy()
         expect(pools[1].keaConfigPoolParameters.poolID).toBeFalsy()
         expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual([])
+        expect(pools[1].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual([])
         expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(5)
@@ -452,6 +538,15 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].fieldType).toBe('ipv4-address')
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].fields[0].values[0]).toBe('192.0.2.2')
+
+        // Make sure that the evaluateAdditionalClasses is not set for the Kea versions
+        // prior to 2.7.4.
+        formArray = service.convertAddressPoolsToForm(['2.7.3', '2.7.3'], subnet)
+        pools = service.convertFormToAddressPools([], subnet.localSubnets[0], formArray)
+        expect(pools.length).toBe(3)
+        for (const pool of pools) {
+            expect(pool.keaConfigPoolParameters.evaluateAdditionalClasses).toBeFalsy()
+        }
     })
 
     it('should convert prefix pool data to a form', () => {
@@ -469,6 +564,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -495,6 +591,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 60,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -521,6 +618,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'bar',
                                 poolID: 70,
                                 requireClientClasses: ['faz'],
+                                evaluateAdditionalClasses: ['faz'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -552,6 +650,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                             },
                         },
                         {
@@ -581,7 +680,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formArray = service.convertPrefixPoolsToForm(subnet)
+        let formArray = service.convertPrefixPoolsToForm(['2.7.0', '2.7.5'], subnet)
         expect(formArray.length).toBe(3)
         expect(formArray.get('0.prefixes.prefix')?.value).toBe('3000::/16')
         expect(formArray.get('0.prefixes.delegatedLength')?.value).toBe(112)
@@ -596,6 +695,10 @@ describe('SubnetSetFormService', () => {
         expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
         expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
         expect(params.get('requireClientClasses.values.1')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('evaluateAdditionalClasses.values.1')?.value).toEqual(['foo', 'bar'])
         expect(params.get('poolID.unlocked')?.value).toBeFalse()
         expect(params.get('poolID.values.0')?.value).toBe(50)
         expect(params.get('poolID.values.1')?.value).toBe(50)
@@ -621,6 +724,10 @@ describe('SubnetSetFormService', () => {
         expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
         expect(params.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
         expect(params.get('requireClientClasses.values.1')?.value).toEqual([])
+        expect(params.get('evaluateAdditionalClasses.unlocked')?.value).toBeTrue()
+        expect((params.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(params.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(params.get('evaluateAdditionalClasses.values.1')?.value).toEqual([])
         expect(params.get('poolID.unlocked')?.value).toBeTrue()
         expect(params.get('poolID.values.0')?.value).toBe(60)
         expect(params.get('poolID.values.1')?.value).toBeFalsy()
@@ -644,6 +751,9 @@ describe('SubnetSetFormService', () => {
         expect(params.get('requireClientClasses.unlocked')?.value).toBeFalse()
         expect((params.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
         expect(params.get('requireClientClasses.values.0')?.value).toEqual(['faz'])
+        expect(params.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((params.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(params.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['faz'])
         expect(params.get('poolID.unlocked')?.value).toBeFalse()
         expect(params.get('poolID.values.0')?.value).toBe(70)
 
@@ -653,6 +763,15 @@ describe('SubnetSetFormService', () => {
 
         selectedDaemons = formArray.get('2.selectedDaemons') as FormControl<number[]>
         expect(selectedDaemons?.value).toEqual([1])
+
+        // Make sure that the evaluateAdditionalClasses is not set for the Kea versions
+        // prior to 2.7.4.
+        formArray = service.convertPrefixPoolsToForm(['2.7.0', '2.7.3'], subnet)
+        expect(formArray.length).toBe(3)
+        for (let i = 0; i < formArray.length; i++) {
+            params = formArray.get(`${i}.parameters`) as FormGroup<KeaPoolParametersForm>
+            expect(params.get('evaluateAdditionalClasses')?.value).toBeFalsy()
+        }
     })
 
     it('should convert form to prefix pool data', () => {
@@ -670,6 +789,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -696,6 +816,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 60,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -722,6 +843,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'bar',
                                 poolID: 70,
                                 requireClientClasses: ['faz'],
+                                evaluateAdditionalClasses: ['faz'],
                                 options: [
                                     {
                                         alwaysSend: true,
@@ -753,6 +875,7 @@ describe('SubnetSetFormService', () => {
                                 clientClass: 'foo',
                                 poolID: 50,
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                             },
                         },
                         {
@@ -782,7 +905,7 @@ describe('SubnetSetFormService', () => {
                 },
             ],
         }
-        const formArray = service.convertPrefixPoolsToForm(subnet)
+        const formArray = service.convertPrefixPoolsToForm(['2.7.0', '2.7.5'], subnet)
 
         let pools = service.convertFormToPrefixPools([], subnet.localSubnets[0], formArray)
         expect(pools.length).toBe(3)
@@ -792,6 +915,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters).toBeTruthy()
         expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
         expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[0].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[0].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[0].keaConfigPoolParameters.options[0].code).toBe(23)
@@ -806,6 +930,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters).toBeTruthy()
         expect(pools[1].keaConfigPoolParameters.clientClass).toBe('foo')
         expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[1].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(23)
@@ -820,6 +945,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[2].keaConfigPoolParameters).toBeTruthy()
         expect(pools[2].keaConfigPoolParameters.clientClass).toBe('bar')
         expect(pools[2].keaConfigPoolParameters.requireClientClasses).toEqual(['faz'])
+        expect(pools[2].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['faz'])
         expect(pools[2].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[2].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[2].keaConfigPoolParameters.options[0].code).toBe(23)
@@ -837,6 +963,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[0].keaConfigPoolParameters).toBeTruthy()
         expect(pools[0].keaConfigPoolParameters.clientClass).toBe('foo')
         expect(pools[0].keaConfigPoolParameters.requireClientClasses).toEqual(['foo', 'bar'])
+        expect(pools[0].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual(['foo', 'bar'])
         expect(pools[0].keaConfigPoolParameters.options).toEqual([])
         expect(pools[0].keaConfigPoolParameters.poolID).toBe(50)
         expect(pools[1].prefix).toBe('3001::/16')
@@ -845,6 +972,7 @@ describe('SubnetSetFormService', () => {
         expect(pools[1].keaConfigPoolParameters).toBeTruthy()
         expect(pools[1].keaConfigPoolParameters.clientClass).toBeFalsy()
         expect(pools[1].keaConfigPoolParameters.requireClientClasses).toEqual([])
+        expect(pools[1].keaConfigPoolParameters.evaluateAdditionalClasses).toEqual([])
         expect(pools[1].keaConfigPoolParameters.options?.length).toBe(1)
         expect(pools[1].keaConfigPoolParameters.options[0].alwaysSend).toBeTrue()
         expect(pools[1].keaConfigPoolParameters.options[0].code).toBe(23)
@@ -856,7 +984,7 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default form for pool parameters', () => {
-        let form = service.createDefaultKeaPoolParametersForm()
+        let form = service.createDefaultKeaPoolParametersForm(['2.7.0', '2.7.1'])
         expect(Object.keys(form.controls).length).toBe(3)
 
         for (const key of Object.keys(form.controls)) {
@@ -868,17 +996,17 @@ describe('SubnetSetFormService', () => {
     })
 
     it('should create a default form for an address pool', () => {
-        const form = service.createDefaultAddressPoolForm('192.0.2.0/24')
+        const form = service.createDefaultAddressPoolForm(null, '192.0.2.0/24')
         expect(form.get('range.start')?.value).toBe('')
         expect(form.get('range.end')?.value).toBe('')
         const parameters = form.get('parameters') as FormGroup<KeaPoolParametersForm>
         expect(parameters).toBeTruthy()
-        expect(Object.keys(parameters.controls).length).toBe(3)
+        expect(Object.keys(parameters.controls).length).toBe(4)
         expect(form.get('options')).toBeTruthy()
     })
 
     it('should create a default form for a prefix pool', () => {
-        const form = service.createDefaultPrefixPoolForm()
+        const form = service.createDefaultPrefixPoolForm(['2.7.0', '2.7.1'])
         expect(form.get('prefixes.prefix')?.value).toBe('')
         expect(form.get('prefixes.delegatedLength')?.value).toBe(null)
         expect(form.get('prefixes.excludedPrefix')?.value).toBe('')
@@ -895,6 +1023,7 @@ describe('SubnetSetFormService', () => {
                 cacheMaxAge: 1000,
                 clientClass: 'foo',
                 requireClientClasses: ['foo', 'bar'],
+                evaluateAdditionalClasses: ['foo', 'bar'],
                 ddnsGeneratedPrefix: 'prefix1',
                 ddnsOverrideClientUpdate: true,
                 ddnsOverrideNoUpdate: true,
@@ -942,6 +1071,7 @@ describe('SubnetSetFormService', () => {
                 cacheMaxAge: 2000,
                 clientClass: 'bar',
                 requireClientClasses: ['foo', 'bar'],
+                evaluateAdditionalClasses: ['foo', 'bar'],
                 ddnsGeneratedPrefix: 'prefix2',
                 ddnsOverrideClientUpdate: false,
                 ddnsOverrideNoUpdate: false,
@@ -1023,6 +1153,18 @@ describe('SubnetSetFormService', () => {
         expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBe('bar')
 
         fg = form.get('requireClientClasses') as SharedParameterFormGroup<any>
+        expect(fg).toBeTruthy()
+        expect(fg.data.type).toBe('client-classes')
+        expect(fg.data.min).toBeFalsy()
+        expect(fg.data.max).toBeFalsy()
+        expect(fg.data.fractionDigits).toBeFalsy()
+        expect(fg.data.values).toBeFalsy()
+        expect((fg.get('unlocked') as UntypedFormControl)?.value).toBeFalse()
+        expect((fg.get('values') as UntypedFormArray)?.controls.length).toBe(2)
+        expect((fg.get('values') as UntypedFormArray)?.controls[0].value).toEqual(['foo', 'bar'])
+        expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toEqual(['foo', 'bar'])
+
+        fg = form.get('evaluateAdditionalClasses') as SharedParameterFormGroup<any>
         expect(fg).toBeTruthy()
         expect(fg.data.type).toBe('client-classes')
         expect(fg.data.min).toBeFalsy()
@@ -1475,6 +1617,20 @@ describe('SubnetSetFormService', () => {
         expect((fg.get('values') as UntypedFormArray)?.controls[1].value).toBeFalse()
     })
 
+    it('should exclude evaluate-additional-classes from an IPv4 subnet parameters form group for Kea versions prior to 2.7.4', () => {
+        let parameters: KeaConfigSubnetDerivedParameters[] = [
+            {
+                evaluateAdditionalClasses: ['foo', 'bar'],
+            },
+            {
+                evaluateAdditionalClasses: ['foo', 'bar'],
+            },
+        ]
+        let form = service.convertKeaSubnetParametersToForm(IPType.IPv4, ['2.0.2', '2.1.4'], 'subnet', parameters)
+        const fg = form.get('evaluateAdditionalClasses') as SharedParameterFormGroup<any>
+        expect(fg).toBeFalsy()
+    })
+
     it('it should exclude 4o6 parameters from a shared network', () => {
         let parameters: KeaConfigSubnetDerivedParameters[] = [
             {
@@ -1658,7 +1814,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv4, null)
-        expect(Object.keys(form.controls).length).toBe(36)
+        expect(Object.keys(form.controls).length).toBe(37)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1670,7 +1826,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters for for an IPv6 shared network', () => {
         let form = service.createDefaultKeaSharedNetworkParametersForm(IPType.IPv6, null)
-        expect(Object.keys(form.controls).length).toBe(37)
+        expect(Object.keys(form.controls).length).toBe(38)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1682,7 +1838,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters form for an IPv4 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv4, null)
-        expect(Object.keys(form.controls).length).toBe(39)
+        expect(Object.keys(form.controls).length).toBe(40)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1694,7 +1850,7 @@ describe('SubnetSetFormService', () => {
 
     it('should create a default Kea parameters form for an IPv6 subnet', () => {
         let form = service.createDefaultKeaSubnetParametersForm(IPType.IPv6, null)
-        expect(Object.keys(form.controls).length).toBe(37)
+        expect(Object.keys(form.controls).length).toBe(38)
 
         for (const key of Object.keys(form.controls)) {
             let control = form.get(key) as SharedParameterFormGroup<any>
@@ -1757,6 +1913,7 @@ describe('SubnetSetFormService', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                             },
                         },
                         {
@@ -1811,6 +1968,9 @@ describe('SubnetSetFormService', () => {
         expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
         expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
         expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(poolParameters.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(poolParameters.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['foo', 'bar'])
 
         poolParameters = pools.get('1.parameters') as FormGroup<KeaPoolParametersForm>
         expect(poolParameters.get('clientClass.unlocked')?.value).toBeFalse()
@@ -1819,6 +1979,9 @@ describe('SubnetSetFormService', () => {
         expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
         expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
         expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual([])
+        expect(poolParameters.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(poolParameters.get('evaluateAdditionalClasses.values.0')?.value).toEqual([])
 
         const options = formGroup.get('options.data') as UntypedFormArray
         expect(options.length).toBe(1)
@@ -1924,6 +2087,7 @@ describe('SubnetSetFormService', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                             },
                         },
                         {
@@ -1941,6 +2105,7 @@ describe('SubnetSetFormService', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'baz',
                                 requireClientClasses: ['foo'],
+                                evaluateAdditionalClasses: ['foo'],
                             },
                         },
                     ],
@@ -1979,6 +2144,7 @@ describe('SubnetSetFormService', () => {
                             pool: '2001:db8:1::20-2001:db8:1::30',
                             keaConfigPoolParameters: {
                                 requireClientClasses: ['foo'],
+                                evaluateAdditionalClasses: ['foo'],
                             },
                         },
                     ],
@@ -1990,6 +2156,7 @@ describe('SubnetSetFormService', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'bar',
                                 requireClientClasses: ['foo'],
+                                evaluateAdditionalClasses: ['foo'],
                             },
                         },
                     ],
@@ -2041,6 +2208,10 @@ describe('SubnetSetFormService', () => {
         expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
         expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual(['foo', 'bar'])
         expect(poolParameters.get('requireClientClasses.values.1')?.value).toEqual([])
+        expect(poolParameters.get('evaluateAdditionalClasses.unlocked')?.value).toBeTrue()
+        expect((poolParameters.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(poolParameters.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['foo', 'bar'])
+        expect(poolParameters.get('evaluateAdditionalClasses.values.1')?.value).toEqual([])
 
         poolParameters = pools.get('1.parameters') as FormGroup<KeaPoolParametersForm>
         expect(poolParameters.get('clientClass.unlocked')?.value).toBeFalse()
@@ -2051,6 +2222,10 @@ describe('SubnetSetFormService', () => {
         expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
         expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual([])
         expect(poolParameters.get('requireClientClasses.values.1')?.value).toEqual(['foo'])
+        expect(poolParameters.get('evaluateAdditionalClasses.unlocked')?.value).toBeTrue()
+        expect((poolParameters.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(poolParameters.get('evaluateAdditionalClasses.values.0')?.value).toEqual([])
+        expect(poolParameters.get('evaluateAdditionalClasses.values.1')?.value).toEqual(['foo'])
 
         poolParameters = pools.get('2.parameters') as FormGroup<KeaPoolParametersForm>
         expect(poolParameters.get('clientClass.unlocked')?.value).toBeFalse()
@@ -2059,6 +2234,9 @@ describe('SubnetSetFormService', () => {
         expect(poolParameters.get('requireClientClasses.unlocked')?.value).toBeFalse()
         expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(1)
         expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual([])
+        expect(poolParameters.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(1)
+        expect(poolParameters.get('evaluateAdditionalClasses.values.0')?.value).toEqual([])
 
         const prefixPools = formGroup.get('prefixPools') as UntypedFormArray
         expect(prefixPools.length).toBe(1)
@@ -2075,6 +2253,10 @@ describe('SubnetSetFormService', () => {
         expect((poolParameters.get('requireClientClasses.values') as UntypedFormArray)?.length).toBe(2)
         expect(poolParameters.get('requireClientClasses.values.0')?.value).toEqual(['foo'])
         expect(poolParameters.get('requireClientClasses.values.1')?.value).toEqual(['foo'])
+        expect(poolParameters.get('evaluateAdditionalClasses.unlocked')?.value).toBeFalse()
+        expect((poolParameters.get('evaluateAdditionalClasses.values') as UntypedFormArray)?.length).toBe(2)
+        expect(poolParameters.get('evaluateAdditionalClasses.values.0')?.value).toEqual(['foo'])
+        expect(poolParameters.get('evaluateAdditionalClasses.values.1')?.value).toEqual(['foo'])
 
         expect(formGroup.get('options.unlocked')?.value).toBeTrue()
 

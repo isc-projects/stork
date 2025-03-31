@@ -64,6 +64,7 @@ describe('SubnetFormComponent', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
                                 optionsHash: '',
                             },
@@ -148,6 +149,7 @@ describe('SubnetFormComponent', () => {
                 app: {
                     name: 'first',
                 },
+                version: '2.7.4',
             },
             {
                 id: 3,
@@ -162,6 +164,7 @@ describe('SubnetFormComponent', () => {
                 app: {
                     name: 'second',
                 },
+                version: '2.7.3',
             },
             {
                 id: 4,
@@ -232,6 +235,7 @@ describe('SubnetFormComponent', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
                                 optionsHash: '',
                             },
@@ -337,6 +341,7 @@ describe('SubnetFormComponent', () => {
                 app: {
                     name: 'first',
                 },
+                version: '2.7.4',
             },
             {
                 id: 2,
@@ -351,6 +356,7 @@ describe('SubnetFormComponent', () => {
                 app: {
                     name: 'second',
                 },
+                version: '2.7.3',
             },
             {
                 id: 5,
@@ -358,6 +364,7 @@ describe('SubnetFormComponent', () => {
                 app: {
                     name: 'third',
                 },
+                version: '2.7.3',
             },
         ],
         sharedNetworks4: [],
@@ -673,6 +680,7 @@ describe('SubnetFormComponent', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
                             },
                         },
@@ -794,6 +802,7 @@ describe('SubnetFormComponent', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
                                 requireClientClasses: ['foo', 'bar'],
+                                evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
                             },
                         },
@@ -806,6 +815,7 @@ describe('SubnetFormComponent', () => {
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
                                 requireClientClasses: [],
+                                evaluateAdditionalClasses: [],
                                 options: [],
                             },
                         },

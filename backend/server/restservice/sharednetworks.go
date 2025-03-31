@@ -28,8 +28,9 @@ func convertSharedNetworkParametersToRestAPI(keaParameters *keaconfig.SharedNetw
 			CacheMaxAge:    keaParameters.CacheMaxAge,
 		},
 		KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
-			ClientClass:          storkutil.NullifyEmptyString(keaParameters.ClientClass),
-			RequireClientClasses: keaParameters.RequireClientClasses,
+			ClientClass:               storkutil.NullifyEmptyString(keaParameters.ClientClass),
+			EvaluateAdditionalClasses: keaParameters.EvaluateAdditionalClasses,
+			RequireClientClasses:      keaParameters.RequireClientClasses,
 		},
 		KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
 			DdnsGeneratedPrefix:        storkutil.NullifyEmptyString(keaParameters.DDNSGeneratedPrefix),
@@ -189,8 +190,9 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 					CacheMaxAge:    keaParameters.CacheMaxAge,
 				},
 				ClientClassParameters: keaconfig.ClientClassParameters{
-					ClientClass:          storkutil.NullifyEmptyString(keaParameters.ClientClass),
-					RequireClientClasses: keaParameters.RequireClientClasses,
+					ClientClass:               storkutil.NullifyEmptyString(keaParameters.ClientClass),
+					EvaluateAdditionalClasses: keaParameters.EvaluateAdditionalClasses,
+					RequireClientClasses:      keaParameters.RequireClientClasses,
 				},
 				DDNSParameters: keaconfig.DDNSParameters{
 					DDNSGeneratedPrefix:        storkutil.NullifyEmptyString(keaParameters.DdnsGeneratedPrefix),

@@ -408,7 +408,12 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     onAddressPoolAdd(): void {
         const pools = this.state.group.get('pools') as FormArray<FormGroup<AddressPoolForm>>
-        pools?.push(this.subnetSetFormService.createDefaultAddressPoolForm(this.subnet))
+        pools?.push(
+            this.subnetSetFormService.createDefaultAddressPoolForm(
+                getVersionRange(this.state.savedSubnetBeginData.daemons.map((d) => d.version)),
+                this.subnet
+            )
+        )
     }
 
     /**
@@ -440,7 +445,11 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     onPrefixPoolAdd(): void {
         const pools = this.state.group.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
-        pools?.push(this.subnetSetFormService.createDefaultPrefixPoolForm())
+        pools?.push(
+            this.subnetSetFormService.createDefaultPrefixPoolForm(
+                getVersionRange(this.state.savedSubnetBeginData.daemons.map((d) => d.version))
+            )
+        )
     }
 
     /**

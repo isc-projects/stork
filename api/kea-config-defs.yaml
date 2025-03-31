@@ -20,6 +20,10 @@
         type: array
         items:
           type: string
+      evaluateAdditionalClasses:
+        type: array
+        items:
+          type: string
 
   KeaConfigDdnsParameters:
     type: object

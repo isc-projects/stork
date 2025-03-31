@@ -10,6 +10,7 @@
     "ddns-send-updates": true,
     "ddns-update-on-renew": true,
     "ddns-use-conflict-resolution": true,
+    "evaluate-additional-classes": [ "early" ],
     "hostname-char-replacement": "x",
     "hostname-char-set": "[^A-Za-z0-9.-]",
     "id": 1,

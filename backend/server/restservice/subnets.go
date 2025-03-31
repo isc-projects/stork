@@ -120,8 +120,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 						PoolID: poolDetails.KeaParameters.PoolID,
 					},
 					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
-						ClientClass:          storkutil.NullifyEmptyString(poolDetails.KeaParameters.ClientClass),
-						RequireClientClasses: poolDetails.KeaParameters.RequireClientClasses,
+						ClientClass:               storkutil.NullifyEmptyString(poolDetails.KeaParameters.ClientClass),
+						EvaluateAdditionalClasses: poolDetails.KeaParameters.EvaluateAdditionalClasses,
+						RequireClientClasses:      poolDetails.KeaParameters.RequireClientClasses,
 					},
 				}
 				// DHCP options.
@@ -147,8 +148,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 						PoolID: prefixPoolDetails.KeaParameters.PoolID,
 					},
 					KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
-						ClientClass:          storkutil.NullifyEmptyString(prefixPoolDetails.KeaParameters.ClientClass),
-						RequireClientClasses: prefixPoolDetails.KeaParameters.RequireClientClasses,
+						ClientClass:               storkutil.NullifyEmptyString(prefixPoolDetails.KeaParameters.ClientClass),
+						EvaluateAdditionalClasses: prefixPoolDetails.KeaParameters.EvaluateAdditionalClasses,
+						RequireClientClasses:      prefixPoolDetails.KeaParameters.RequireClientClasses,
 					},
 				}
 				// DHCP options.
@@ -169,8 +171,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 					CacheMaxAge:    keaParameters.CacheMaxAge,
 				},
 				KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
-					ClientClass:          storkutil.NullifyEmptyString(keaParameters.ClientClass),
-					RequireClientClasses: keaParameters.RequireClientClasses,
+					ClientClass:               storkutil.NullifyEmptyString(keaParameters.ClientClass),
+					EvaluateAdditionalClasses: keaParameters.EvaluateAdditionalClasses,
+					RequireClientClasses:      keaParameters.RequireClientClasses,
 				},
 				KeaConfigDdnsParameters: models.KeaConfigDdnsParameters{
 					DdnsGeneratedPrefix:        storkutil.NullifyEmptyString(keaParameters.DDNSGeneratedPrefix),
@@ -308,8 +311,9 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 			if poolDetails.KeaConfigPoolParameters != nil {
 				pool.KeaParameters = &keaconfig.PoolParameters{
 					ClientClassParameters: keaconfig.ClientClassParameters{
-						ClientClass:          storkutil.NullifyEmptyString(poolDetails.KeaConfigPoolParameters.ClientClass),
-						RequireClientClasses: poolDetails.KeaConfigPoolParameters.RequireClientClasses,
+						ClientClass:               storkutil.NullifyEmptyString(poolDetails.KeaConfigPoolParameters.ClientClass),
+						EvaluateAdditionalClasses: poolDetails.KeaConfigPoolParameters.EvaluateAdditionalClasses,
+						RequireClientClasses:      poolDetails.KeaConfigPoolParameters.RequireClientClasses,
 					},
 					PoolID: poolDetails.KeaConfigPoolParameters.PoolID,
 				}
@@ -331,8 +335,9 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 			if prefixPoolDetails.KeaConfigPoolParameters != nil {
 				pool.KeaParameters = &keaconfig.PoolParameters{
 					ClientClassParameters: keaconfig.ClientClassParameters{
-						ClientClass:          storkutil.NullifyEmptyString(prefixPoolDetails.KeaConfigPoolParameters.ClientClass),
-						RequireClientClasses: prefixPoolDetails.KeaConfigPoolParameters.RequireClientClasses,
+						ClientClass:               storkutil.NullifyEmptyString(prefixPoolDetails.KeaConfigPoolParameters.ClientClass),
+						EvaluateAdditionalClasses: prefixPoolDetails.KeaConfigPoolParameters.EvaluateAdditionalClasses,
+						RequireClientClasses:      prefixPoolDetails.KeaConfigPoolParameters.RequireClientClasses,
 					},
 					PoolID: prefixPoolDetails.KeaConfigPoolParameters.PoolID,
 				}
@@ -356,8 +361,9 @@ func (r *RestAPI) convertSubnetFromRestAPI(restSubnet *models.Subnet) (*dbmodel.
 					CacheMaxAge:    keaParameters.CacheMaxAge,
 				},
 				ClientClassParameters: keaconfig.ClientClassParameters{
-					ClientClass:          storkutil.NullifyEmptyString(keaParameters.ClientClass),
-					RequireClientClasses: keaParameters.RequireClientClasses,
+					ClientClass:               storkutil.NullifyEmptyString(keaParameters.ClientClass),
+					EvaluateAdditionalClasses: keaParameters.EvaluateAdditionalClasses,
+					RequireClientClasses:      keaParameters.RequireClientClasses,
 				},
 				DDNSParameters: keaconfig.DDNSParameters{
 					DDNSGeneratedPrefix:        storkutil.NullifyEmptyString(keaParameters.DdnsGeneratedPrefix),

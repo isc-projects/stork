@@ -22,6 +22,7 @@ func getAllKeysSharedNetwork4() string {
 		"authoritative": false,
 		"boot-file-name": "/dev/null",
 		"client-class": "foobar",
+		"evaluate-additional-classes": [ "early" ],
 		"ddns-generated-prefix": "myhost",
 		"ddns-override-client-update": true,
 		"ddns-override-no-update": true,
@@ -89,6 +90,7 @@ func getAllKeysSharedNetwork6() string {
 		"ddns-send-updates": true,
 		"ddns-update-on-renew": true,
 		"ddns-use-conflict-resolution": true,
+		"evaluate-additional-classes": [ "early" ],
 		"hostname-char-replacement": "x",
 		"hostname-char-set": "[^A-Za-z0-9.-]",
 		"interface": "eth0",
@@ -152,6 +154,8 @@ func TestDecodeAllKeysSharedNetwork4(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.Equal(t, "eth0", *params.Interface)
@@ -203,6 +207,8 @@ func TestDecodeAllKeysSharedNetwork6(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.Equal(t, "eth0", *params.Interface)
@@ -256,6 +262,8 @@ func TestGetParametersSharedNetwork4(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.Equal(t, "eth0", *params.Interface)
@@ -302,6 +310,8 @@ func TestGetParametersSharedNetwork6(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.Equal(t, "eth0", *params.Interface)
@@ -344,8 +354,9 @@ func TestCreateSharedNetwork4(t *testing.T) {
 			CacheThreshold: ptr[float32](0.25),
 		},
 		ClientClassParameters: keaconfig.ClientClassParameters{
-			ClientClass:          ptr("myclass"),
-			RequireClientClasses: []string{"foo"},
+			ClientClass:               ptr("myclass"),
+			EvaluateAdditionalClasses: []string{"bar"},
+			RequireClientClasses:      []string{"foo"},
 		},
 		DDNSParameters: keaconfig.DDNSParameters{
 			DDNSGeneratedPrefix:       ptr("example.com"),
@@ -441,6 +452,8 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	require.Equal(t, "never", *network4.DDNSReplaceClientName)
 	require.True(t, *network4.DDNSSendUpdates)
 	require.True(t, *network4.DDNSUseConflictResolution)
+	require.Len(t, network4.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", network4.EvaluateAdditionalClasses[0])
 	require.Equal(t, "xyz", *network4.HostnameCharReplacement)
 	require.Equal(t, "[A-z]", *network4.HostnameCharSet)
 	require.Equal(t, "etx0", *network4.Interface)
@@ -489,8 +502,9 @@ func TestCreateSharedNetwork6(t *testing.T) {
 			CacheThreshold: ptr[float32](0.25),
 		},
 		ClientClassParameters: keaconfig.ClientClassParameters{
-			ClientClass:          ptr("myclass"),
-			RequireClientClasses: []string{"foo"},
+			ClientClass:               ptr("myclass"),
+			EvaluateAdditionalClasses: []string{"bar"},
+			RequireClientClasses:      []string{"foo"},
 		},
 		DDNSParameters: keaconfig.DDNSParameters{
 			DDNSGeneratedPrefix:       ptr("example.com"),
@@ -588,6 +602,8 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	require.Equal(t, "never", *network6.DDNSReplaceClientName)
 	require.True(t, *network6.DDNSSendUpdates)
 	require.True(t, *network6.DDNSUseConflictResolution)
+	require.Len(t, network6.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", network6.EvaluateAdditionalClasses[0])
 	require.Equal(t, "xyz", *network6.HostnameCharReplacement)
 	require.Equal(t, "[A-z]", *network6.HostnameCharSet)
 	require.Equal(t, "etx0", *network6.Interface)

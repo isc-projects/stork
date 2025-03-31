@@ -236,6 +236,7 @@
                 "reservations-in-subnet": true,
                 "reservations-out-of-pool": false,
                 "require-client-classes": [ "late" ],
+                "evaluate-additional-classes": [ "early" ],
                 "store-extended-info": false,
                 "server-hostname": "",
                 "subnet4": [
@@ -257,6 +258,7 @@
                         "ddns-use-conflict-resolution": true,
                         "ddns-conflict-resolution-mode": "check-with-dhcid",
                         "ddns-ttl-percent": 0.65,
+                        "evaluate-additional-classes": [ "early" ],
                         "hostname-char-replacement": "x",
                         "hostname-char-set": "[^A-Za-z0-9.-]",
                         "id": 1,
@@ -289,13 +291,15 @@
                                 ],
                                 "pool": "192.1.0.1 - 192.1.0.200",
                                 "pool-id": 7,
-                                "require-client-classes": [ "late" ]
+                                "require-client-classes": [ "late" ],
+                                "evaluate-additional-classes": [ "early" ]
                             },
                             {
                                 "client-class": "phones_server2",
                                 "option-data": [],
                                 "pool": "192.3.0.1 - 192.3.0.200",
-                                "require-client-classes": []
+                                "require-client-classes": [],
+                                "evaluate-additional-classes": []
                             }
                         ],
                         "rebind-timer": 40,

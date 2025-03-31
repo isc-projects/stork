@@ -201,6 +201,7 @@
                 "ddns-use-conflict-resolution": true,
                 "ddns-conflict-resolution-mode": "check-with-dhcid",
                 "ddns-ttl-percent": 0.65,
+                "evaluate-additional-classes": [ "early" ],
                 "hostname-char-replacement": "x",
                 "hostname-char-set": "[^A-Za-z0-9.-]",
                 "interface": "eth0",
@@ -250,6 +251,7 @@
                         "ddns-use-conflict-resolution": true,
                         "ddns-conflict-resolution-mode": "check-with-dhcid",
                         "ddns-ttl-percent": 0.65,
+                        "evaluate-additional-classes": [ "early" ],
                         "hostname-char-replacement": "x",
                         "hostname-char-set": "[^A-Za-z0-9.-]",
                         "id": 1,
@@ -285,7 +287,8 @@
                                 "pool-id": 2,
                                 "prefix": "2001:db8:1::",
                                 "prefix-len": 48,
-                                "require-client-classes": ["bar"]
+                                "require-client-classes": ["bar"],
+                                "evaluate-additional-classes": [ "early" ]
                             }
                         ],
                         "pools": [
@@ -294,13 +297,15 @@
                                 "option-data": [],
                                 "pool": "2001:db8:0:1::/64",
                                 "pool-id": 7,
-                                "require-client-classes": [ "late" ]
+                                "require-client-classes": [ "late" ],
+                                "evaluate-additional-classes": []
                             },
                             {
                                 "client-class": "phones_server2",
                                 "option-data": [],
                                 "pool": "2001:db8:0:3::/64",
-                                "require-client-classes": []
+                                "require-client-classes": [],
+                                "evaluate-additional-classes": ["early"]
                             }
                         ],
                         "preferred-lifetime": 2000,

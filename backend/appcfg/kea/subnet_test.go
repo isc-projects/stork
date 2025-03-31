@@ -46,6 +46,8 @@ func TestDecodeAllKeysSubnet4(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.EqualValues(t, 1, params.ID)
@@ -214,6 +216,8 @@ func TestGetParametersSubnet4(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.Equal(t, "eth0", *params.Interface)
@@ -257,6 +261,8 @@ func TestDecodeAllKeysSubnet6(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.EqualValues(t, 1, params.ID)
@@ -344,6 +350,8 @@ func TestGetParametersSubnet6(t *testing.T) {
 	require.True(t, *params.DDNSSendUpdates)
 	require.True(t, *params.DDNSUpdateOnRenew)
 	require.True(t, *params.DDNSUseConflictResolution)
+	require.Len(t, params.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "early", params.EvaluateAdditionalClasses[0])
 	require.Equal(t, "x", *params.HostnameCharReplacement)
 	require.Equal(t, "[^A-Za-z0-9.-]", *params.HostnameCharSet)
 	require.Equal(t, "eth0", *params.Interface)
@@ -384,8 +392,9 @@ func TestCreateSubnet4(t *testing.T) {
 	// Return Kea specific pool parameters.
 	poolMock.EXPECT().GetKeaParameters().AnyTimes().Return(&keaconfig.PoolParameters{
 		ClientClassParameters: keaconfig.ClientClassParameters{
-			ClientClass:          ptr("baz"),
-			RequireClientClasses: []string{"foo"},
+			ClientClass:               ptr("baz"),
+			EvaluateAdditionalClasses: []string{"bar"},
+			RequireClientClasses:      []string{"foo"},
 		},
 		PoolID: ptr[int64](7),
 	})
@@ -414,8 +423,9 @@ func TestCreateSubnet4(t *testing.T) {
 			CacheThreshold: ptr[float32](0.25),
 		},
 		ClientClassParameters: keaconfig.ClientClassParameters{
-			ClientClass:          ptr("myclass"),
-			RequireClientClasses: []string{"foo"},
+			ClientClass:               ptr("myclass"),
+			EvaluateAdditionalClasses: []string{"bar"},
+			RequireClientClasses:      []string{"foo"},
 		},
 		DDNSParameters: keaconfig.DDNSParameters{
 			DDNSGeneratedPrefix:       ptr("example.com"),
@@ -504,6 +514,10 @@ func TestCreateSubnet4(t *testing.T) {
 	require.Equal(t, "never", *subnet4.DDNSReplaceClientName)
 	require.True(t, *subnet4.DDNSSendUpdates)
 	require.True(t, *subnet4.DDNSUseConflictResolution)
+	require.Len(t, subnet4.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", subnet4.EvaluateAdditionalClasses[0])
+	require.Len(t, subnet4.RequireClientClasses, 1)
+	require.Equal(t, "foo", subnet4.RequireClientClasses[0])
 	require.Equal(t, "foo-id", *subnet4.FourOverSixInterfaceID)
 	require.Equal(t, "bar-id", *subnet4.FourOverSixInterface)
 	require.Equal(t, "10.0.0.0/24", *subnet4.FourOverSixSubnet)
@@ -522,6 +536,9 @@ func TestCreateSubnet4(t *testing.T) {
 	require.Equal(t, "192.0.2.10-192.0.2.20", subnet4.GetPools()[0].Pool)
 	require.Equal(t, "baz", *subnet4.GetPools()[0].ClientClass)
 	require.Len(t, subnet4.GetPools()[0].RequireClientClasses, 1)
+	require.Equal(t, "foo", subnet4.GetPools()[0].RequireClientClasses[0])
+	require.Len(t, subnet4.GetPools()[0].EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", subnet4.GetPools()[0].EvaluateAdditionalClasses[0])
 	require.Len(t, subnet4.GetPools()[0].OptionData, 1)
 	require.EqualValues(t, 6, subnet4.GetPools()[0].OptionData[0].Code)
 	require.Equal(t, "dhcp4", subnet4.GetPools()[0].OptionData[0].Space)
@@ -560,8 +577,9 @@ func TestCreateSubnet6(t *testing.T) {
 	poolMock.EXPECT().GetUpperBound().AnyTimes().Return("2001:db8:1::20")
 	poolMock.EXPECT().GetKeaParameters().AnyTimes().Return(&keaconfig.PoolParameters{
 		ClientClassParameters: keaconfig.ClientClassParameters{
-			ClientClass:          ptr("baz"),
-			RequireClientClasses: []string{"foo"},
+			ClientClass:               ptr("baz"),
+			EvaluateAdditionalClasses: []string{"bar"},
+			RequireClientClasses:      []string{"foo"},
 		},
 		PoolID: ptr[int64](7),
 	})
@@ -583,8 +601,9 @@ func TestCreateSubnet6(t *testing.T) {
 	})
 	pdPoolMock.EXPECT().GetKeaParameters().AnyTimes().Return(&keaconfig.PoolParameters{
 		ClientClassParameters: keaconfig.ClientClassParameters{
-			ClientClass:          ptr("baz"),
-			RequireClientClasses: []string{"foo"},
+			ClientClass:               ptr("baz"),
+			EvaluateAdditionalClasses: []string{"bar"},
+			RequireClientClasses:      []string{"foo"},
 		},
 		PoolID: ptr[int64](2),
 	})
@@ -615,8 +634,9 @@ func TestCreateSubnet6(t *testing.T) {
 			CacheThreshold: ptr[float32](0.25),
 		},
 		ClientClassParameters: keaconfig.ClientClassParameters{
-			ClientClass:          ptr("myclass"),
-			RequireClientClasses: []string{"foo"},
+			ClientClass:               ptr("myclass"),
+			EvaluateAdditionalClasses: []string{"bar"},
+			RequireClientClasses:      []string{"foo"},
 		},
 		DDNSParameters: keaconfig.DDNSParameters{
 			DDNSGeneratedPrefix:       ptr("example.com"),
@@ -701,6 +721,8 @@ func TestCreateSubnet6(t *testing.T) {
 	require.Equal(t, "never", *subnet6.DDNSReplaceClientName)
 	require.True(t, *subnet6.DDNSSendUpdates)
 	require.True(t, *subnet6.DDNSUseConflictResolution)
+	require.Len(t, subnet6.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", subnet6.EvaluateAdditionalClasses[0])
 	require.Equal(t, "xyz", *subnet6.HostnameCharReplacement)
 	require.Equal(t, "[A-z]", *subnet6.HostnameCharSet)
 	require.EqualValues(t, 5, subnet6.ID)
@@ -714,6 +736,9 @@ func TestCreateSubnet6(t *testing.T) {
 	require.Equal(t, "2001:db8:1::10-2001:db8:1::20", subnet6.GetPools()[0].Pool)
 	require.Equal(t, "baz", *subnet6.GetPools()[0].ClientClass)
 	require.Len(t, subnet6.GetPools()[0].RequireClientClasses, 1)
+	require.Equal(t, "foo", subnet6.GetPools()[0].RequireClientClasses[0])
+	require.Len(t, subnet6.GetPools()[0].EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", subnet6.GetPools()[0].EvaluateAdditionalClasses[0])
 	require.Len(t, subnet6.GetPools()[0].OptionData, 1)
 	require.EqualValues(t, 6, subnet6.GetPools()[0].OptionData[0].Code)
 	require.Equal(t, "dhcp6", subnet6.GetPools()[0].OptionData[0].Space)
@@ -725,6 +750,10 @@ func TestCreateSubnet6(t *testing.T) {
 	require.Equal(t, "3001:1::", subnet6.GetPDPools()[0].ExcludedPrefix)
 	require.EqualValues(t, 64, subnet6.GetPDPools()[0].ExcludedPrefixLen)
 	require.Equal(t, "baz", *subnet6.GetPDPools()[0].ClientClass)
+	require.Len(t, subnet6.GetPDPools()[0].RequireClientClasses, 1)
+	require.Equal(t, "foo", subnet6.GetPDPools()[0].RequireClientClasses[0])
+	require.Len(t, subnet6.GetPDPools()[0].EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", subnet6.GetPDPools()[0].EvaluateAdditionalClasses[0])
 	require.Len(t, subnet6.GetPDPools()[0].OptionData, 1)
 	require.EqualValues(t, 7, subnet6.GetPDPools()[0].OptionData[0].Code)
 	require.Equal(t, "dhcp6", subnet6.GetPDPools()[0].OptionData[0].Space)
@@ -732,6 +761,8 @@ func TestCreateSubnet6(t *testing.T) {
 	require.EqualValues(t, 2, *subnet6.GetPDPools()[0].PoolID)
 	require.Len(t, subnet6.RequireClientClasses, 1)
 	require.Equal(t, "foo", subnet6.RequireClientClasses[0])
+	require.Len(t, subnet6.EvaluateAdditionalClasses, 1)
+	require.Equal(t, "bar", subnet6.EvaluateAdditionalClasses[0])
 	require.EqualValues(t, 300, *subnet6.RebindTimer)
 	require.Len(t, subnet6.Relay.IPAddresses, 1)
 	require.Equal(t, "3000::1", subnet6.Relay.IPAddresses[0])

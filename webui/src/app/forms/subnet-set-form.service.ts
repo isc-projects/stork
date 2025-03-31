@@ -69,7 +69,10 @@ export interface UserContextsForm {
 export interface KeaPoolParametersForm {
     clientClass?: SharedParameterFormGroup<string>
     poolID?: SharedParameterFormGroup<number>
+    // Deprecated since Kea 2.7.4.
     requireClientClasses?: SharedParameterFormGroup<string[]>
+    // New since Kea 2.7.4.
+    evaluateAdditionalClasses?: SharedParameterFormGroup<string[]>
 }
 
 /**
@@ -80,7 +83,10 @@ export interface KeaSubnetParametersForm {
     cacheMaxAge?: SharedParameterFormGroup<number>
     cacheThreshold?: SharedParameterFormGroup<number>
     clientClass?: SharedParameterFormGroup<string>
+    // Deprecated since Kea 2.7.4.
     requireClientClasses?: SharedParameterFormGroup<string[]>
+    // New since Kea 2.7.4.
+    evaluateAdditionalClasses?: SharedParameterFormGroup<string[]>
     ddnsGeneratedPrefix?: SharedParameterFormGroup<string>
     ddnsOverrideClientUpdate?: SharedParameterFormGroup<boolean>
     ddnsOverrideNoUpdate?: SharedParameterFormGroup<boolean>
@@ -456,10 +462,15 @@ export class SubnetSetFormService {
     /**
      * Convert Kea pool parameters to a form.
      *
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param parameters Kea-specific pool parameters.
      * @returns Created form group instance.
      */
-    convertKeaPoolParametersToForm(parameters: KeaConfigPoolParameters[]): FormGroup<KeaPoolParametersForm> {
+    convertKeaPoolParametersToForm(
+        keaVersionRange: [string, string],
+        parameters: KeaConfigPoolParameters[]
+    ): FormGroup<KeaPoolParametersForm> {
         let form: KeaPoolParametersForm = {
             clientClass: new SharedParameterFormGroup<string>(
                 {
@@ -482,6 +493,15 @@ export class SubnetSetFormService {
                 parameters?.map((params) => new FormControl<string[]>(params?.requireClientClasses ?? []))
             ),
         }
+        if (!keaVersionRange || gte(keaVersionRange[1], '2.7.4')) {
+            form.evaluateAdditionalClasses = new SharedParameterFormGroup<string[]>(
+                {
+                    type: 'client-classes',
+                    versionLowerBound: !keaVersionRange || lt(keaVersionRange[0], '2.7.4') ? '2.7.4' : undefined,
+                },
+                parameters.map((params) => new FormControl<string[]>(params?.evaluateAdditionalClasses ?? []))
+            )
+        }
         let formGroup = new FormGroup<KeaPoolParametersForm>(form)
         return formGroup
     }
@@ -489,21 +509,25 @@ export class SubnetSetFormService {
     /**
      * Creates a default parameters form for an empty pool.
      *
-     * @param ipType subnet universe (IPv4 or IPv6).
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
+
      * @returns A default form group for a subnet.
      */
-    createDefaultKeaPoolParametersForm(): UntypedFormGroup {
+    createDefaultKeaPoolParametersForm(keaVersionRange: [string, string]): UntypedFormGroup {
         let parameters: KeaConfigPoolParameters[] = [{}]
-        return this.convertKeaPoolParametersToForm(parameters)
+        return this.convertKeaPoolParametersToForm(keaVersionRange, parameters)
     }
 
     /**
      * Creates a default form for an address pool.
      *
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param subnet subnet prefix.
      * @returns A default form group for an address pool.
      */
-    createDefaultAddressPoolForm(subnet: string): FormGroup<AddressPoolForm> {
+    createDefaultAddressPoolForm(keaVersionRange: [string, string], subnet: string): FormGroup<AddressPoolForm> {
         let formGroup = new FormGroup<AddressPoolForm>({
             range: new FormGroup<AddressRangeForm>(
                 {
@@ -512,7 +536,7 @@ export class SubnetSetFormService {
                 },
                 StorkValidators.ipRangeBounds
             ),
-            parameters: this.createDefaultKeaPoolParametersForm(),
+            parameters: this.createDefaultKeaPoolParametersForm(keaVersionRange),
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl([], Validators.required),
         })
@@ -522,9 +546,11 @@ export class SubnetSetFormService {
     /**
      * Creates a default form for a prefix pool.
      *
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @returns A default form group for a prefix pool.
      */
-    createDefaultPrefixPoolForm(): FormGroup<PrefixPoolForm> {
+    createDefaultPrefixPoolForm(keaVersionRange: [string, string]): FormGroup<PrefixPoolForm> {
         let formGroup = new FormGroup<PrefixPoolForm>({
             prefixes: new FormGroup<PrefixForm>(
                 {
@@ -538,7 +564,7 @@ export class SubnetSetFormService {
                     StorkValidators.ipv6ExcludedPrefix,
                 ])
             ),
-            parameters: this.createDefaultKeaPoolParametersForm(),
+            parameters: this.createDefaultKeaPoolParametersForm(keaVersionRange),
             options: this.createDefaultOptionsForm(),
             selectedDaemons: new FormControl([], Validators.required),
         })
@@ -795,6 +821,15 @@ export class SubnetSetFormService {
                 parameters.map((params) => new FormControl<string>(params.ddnsConflictResolutionMode))
             )
         }
+        if (!keaVersionRange || gte(keaVersionRange[1], '2.7.4')) {
+            form.evaluateAdditionalClasses = new SharedParameterFormGroup<string[]>(
+                {
+                    type: 'client-classes',
+                    versionLowerBound: !keaVersionRange || lt(keaVersionRange[0], '2.7.4') ? '2.7.4' : undefined,
+                },
+                parameters.map((params) => new FormControl<string[]>(params?.evaluateAdditionalClasses))
+            )
+        }
         // DHCPv4 parameters.
         switch (ipType) {
             case IPType.IPv4:
@@ -943,10 +978,15 @@ export class SubnetSetFormService {
     /**
      * Converts a set of address pools in a subnet to a form.
      *
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param subnet a subnet instance holding the converted pools.
      * @returns An array of form groups representing address pools.
      */
-    convertAddressPoolsToForm(subnet: Subnet): FormArray<FormGroup<AddressPoolForm>> {
+    convertAddressPoolsToForm(
+        keaVersionRange: [string, string],
+        subnet: Subnet
+    ): FormArray<FormGroup<AddressPoolForm>> {
         const formArray = new FormArray<FormGroup<AddressPoolForm>>(
             [],
             [StorkValidators.ipRangeOverlaps, StorkValidators.poolIDOverlaps]
@@ -978,6 +1018,7 @@ export class SubnetSetFormService {
                     // Extract them from the local pools and pass as an array to the conversion
                     // function.
                     parameters: this.convertKeaPoolParametersToForm(
+                        keaVersionRange,
                         pool.localPools?.map((lp) => lp.keaConfigPoolParameters) || []
                     ),
                     // Convert the options to a form.
@@ -1051,10 +1092,12 @@ export class SubnetSetFormService {
     /**
      * Converts a set of delegated prefix pools in a subnet to a form.
      *
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param subnet a subnet instance holding the converted pools.
      * @returns An array of form groups representing the pools.
      */
-    convertPrefixPoolsToForm(subnet: Subnet): FormArray<FormGroup<PrefixPoolForm>> {
+    convertPrefixPoolsToForm(keaVersionRange: [string, string], subnet: Subnet): FormArray<FormGroup<PrefixPoolForm>> {
         const formArray = new FormArray<FormGroup<PrefixPoolForm>>(
             [],
             [StorkValidators.ipv6PrefixOverlaps, StorkValidators.poolIDOverlaps]
@@ -1091,6 +1134,7 @@ export class SubnetSetFormService {
                     // Extract them from the local pools and pass as an array to the conversion
                     // function.
                     parameters: this.convertKeaPoolParametersToForm(
+                        keaVersionRange,
                         pool.localPools?.map((lp) => lp.keaConfigPoolParameters) || []
                     ),
                     // Convert the options to a form.
@@ -1176,8 +1220,8 @@ export class SubnetSetFormService {
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: subnet.subnet, disabled: true }),
             sharedNetwork: new FormControl(subnet.sharedNetworkId),
-            pools: this.convertAddressPoolsToForm(subnet),
-            prefixPools: this.convertPrefixPoolsToForm(subnet),
+            pools: this.convertAddressPoolsToForm(keaVersionRange, subnet),
+            prefixPools: this.convertPrefixPoolsToForm(keaVersionRange, subnet),
             parameters: this.convertKeaSubnetParametersToForm(
                 ipType,
                 keaVersionRange,

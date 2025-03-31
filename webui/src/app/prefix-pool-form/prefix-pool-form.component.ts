@@ -3,7 +3,7 @@ import { FormGroup, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { v4 as uuidv4 } from 'uuid'
 import { KeaPoolParametersForm, PrefixPoolForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { SelectableDaemon } from '../forms/selectable-daemon'
-import { getSeverityByIndex } from '../utils'
+import { getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 
@@ -141,7 +141,12 @@ export class PrefixPoolFormComponent implements OnInit {
                 values.controls.splice(0)
             }
         }
-        this.formGroup.setControl('parameters', this.subnetSetFormService.createDefaultKeaPoolParametersForm())
+        this.formGroup.setControl(
+            'parameters',
+            this.subnetSetFormService.createDefaultKeaPoolParametersForm(
+                getVersionRange(this.selectableDaemons.map((d) => d.version))
+            )
+        )
     }
 
     /**
