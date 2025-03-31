@@ -1,3 +1,80 @@
+Stork 2.1.2 released on 2025-04-02.
+
+* 504 [build] slawek
+
+    Updated dependencies including the Go 1.24.1, Angular 18 and
+    several JavaScript, Python, Ruby and Go packages.
+    (Gitlab #1758)
+
+* 503 [bug] slawek
+
+    Fixed displaying a DHCP option value with an escaped comma.
+    (Gitlab #1617)
+
+* 502 [func] slawek
+
+    The hex identifiers with non-printable bytes can now be displayed in
+    text form.
+    (Gitlab #1682)
+
+* 501 [func] slawek
+
+    Added server settings to specify the Grafana Dashboard IDs.
+    (Gitlab #1720)
+
+* 500 [doc] slawek
+
+    Updated Stork installation instructions in the ARM to direct
+    users to the Cloudsmith documentation for setting up the repository.
+    (Gitlab #1719)
+
+* 499 [func] marcin, piotrek
+
+    Stork server now supports DNS zones filtering using new controls
+    in the zone viewer.
+    (Gitlab #1716, #1717)
+
+* 498 [func] marcin, piotrek
+
+    Implemented fetching the DNS zones from Stork agents to Stork
+    server. Implemented new view in Stork UI which retrieves and
+    displays all fetched DNS zones.
+    (Gitlab #1669, #1711)
+
+* 497 [func] marcin
+
+    BIND9 tab now shows the query hit ratio for each view.
+    (Gitlab #1675)
+
+* 496 [build] marcin
+
+    Added a PowerDNS docker container to the demo environment.
+    (Gitlab #1710)
+
+* 495 [build] tomek
+
+    Updated docker files to use older syntax for port exporting. This
+    improves compatibility with older Docker versions.
+    (Gitlab #1748)
+
+* 494 [doc] slawek
+
+    Rephrased a config review checker report to recommend using
+    'reservations-out-of-pool' option instead of the deprecated
+    'out-of-pool' option.
+    (Gitlab #1668)
+
+* 493 [build] slawek
+
+    Upgraded the Kea to version 2.7.6 in the demo.
+    (Gitlab #1686)
+
+* 492 [ui] bscott
+
+    Added a search/filter to the "Subnet" drop-down-list in the
+    "host" form used for DHCP Reservations.
+    (Gitlab #1725)
+
 Stork 2.1.1 released on 2025-02-05.
 
 * 491 [bug] slawek
