@@ -407,6 +407,8 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	randomZones := testutil.GenerateRandomZones(1000)
+
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -431,7 +433,24 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 
 	// Return an empty iterator. Getting actual zones is not in scope for this test.
 	mock.EXPECT().ReceiveZones(gomock.Any(), gomock.Any(), nil).AnyTimes().DoAndReturn(func(context.Context, *dbmodel.App, *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
-		return func(yield func(*bind9stats.ExtendedZone, error) bool) {}
+		return func(yield func(*bind9stats.ExtendedZone, error) bool) {
+			for _, zone := range randomZones {
+				zone := &bind9stats.ExtendedZone{
+					Zone: bind9stats.Zone{
+						ZoneName: zone.Name,
+						Class:    zone.Class,
+						Serial:   zone.Serial,
+						Type:     zone.Type,
+						Loaded:   time.Now().UTC(),
+					},
+					ViewName:       "foo",
+					TotalZoneCount: int64(len(randomZones)),
+				}
+				if !yield(zone, nil) {
+					return
+				}
+			}
+		}
 	})
 
 	manager := NewManager(&appstest.ManagerAccessorsWrapper{
@@ -449,6 +468,15 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 		return isFetching && appsNum == 1 && completedAppsNum == 1
 	}, time.Second, time.Millisecond)
 
+	// All zones should be in the database.
+	zones, _, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	require.NoError(t, err)
+	require.Len(t, zones, 1000)
+
+	// Reduce the number of returned zones to 100. Remaining zones
+	// should be removed from the database.
+	randomZones = randomZones[:100]
+
 	// Begin the second fetch. It should return an error.
 	_, err = manager.FetchZones(10, 1000, true)
 	var alreadyFetching *ManagerAlreadyFetchingError
@@ -458,12 +486,22 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 		return isFetching && appsNum == 1 && completedAppsNum == 1
 	}, time.Second, time.Millisecond)
 
+	// The zones should remain untouched.
+	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	require.NoError(t, err)
+	require.Len(t, zones, 1000)
+
 	// Complete the fetch.
 	<-notifyChannel
 	require.Eventually(t, func() bool {
 		isFetching, appsNum, completedAppsNum := manager.GetFetchZonesProgress()
 		return !isFetching && appsNum == 1 && completedAppsNum == 1
 	}, time.Second, time.Millisecond)
+
+	// All zones should be in the database.
+	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	require.NoError(t, err)
+	require.Len(t, zones, 1000)
 
 	// This time the new attempt should succeed.
 	notifyChannel, err = manager.FetchZones(10, 1000, true)
@@ -475,6 +513,11 @@ func TestFetchZonesMultipleTimes(t *testing.T) {
 
 	// Complete the fetch.
 	<-notifyChannel
+
+	// This time we should have only 100 zones and all other zones should be removed.
+	zones, _, err = dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
+	require.NoError(t, err)
+	require.Len(t, zones, 100)
 }
 
 // This test verifies that the manager can fetch the same zones from

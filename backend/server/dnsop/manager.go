@@ -144,6 +144,8 @@ func NewManager(owner ManagerAccessors) Manager {
 
 // Contacts all agents with DNS servers and fetches zones from these servers.
 // It implements the Manager interface.
+//
+//nolint:gocognit
 func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error) {
 	// Only start fetching if there is no other fetch in progress.
 	if !manager.fetchingState.startFetching() {
@@ -196,11 +198,16 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 				// Read next app from the channel.
 				for app := range appsChan {
 					defer wg.Done()
-					// Track views. We need to flush the batch when the view changes.
-					// Otherwise, if the new view contains the same zone name that already
-					// exists in the batch, the database will return an error on the
-					// ON CONFLICT DO UPDATE clause.
-					var view string
+					var (
+						// Track views. We need to flush the batch when the view changes.
+						// Otherwise, if the new view contains the same zone name that already
+						// exists in the batch, the database will return an error on the
+						// ON CONFLICT DO UPDATE clause.
+						view string
+						// During the first iteration we need to delete the local zones.
+						// This flag is used to identify the first iteration.
+						isFirst = true
+					)
 					// Insert zones into the database in batches. It significantly improves
 					// performance for large number of zones.
 					batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
@@ -226,6 +233,15 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 								state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 							}
 							break
+						}
+						if isFirst {
+							// Delete the local zones
+							isFirst = false
+							err = dbmodel.DeleteLocalZones(manager.db, app.Daemons[0].ID)
+							if err != nil {
+								state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+								break
+							}
 						}
 						// Successfully received the zone from the agent. Let's queue
 						// it in the database for insertion.
@@ -285,6 +301,11 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		}
 		// Wait for all the go-routines to complete.
 		wg.Wait()
+
+		// Delete orphaned zones in the database.
+		if _, err := dbmodel.DeleteOrphanedZones(manager.db); err != nil {
+			log.WithError(err).Error("Failed to delete orphaned zones in the database")
+		}
 
 		// Log the successful completion.
 		var zoneCount int64
