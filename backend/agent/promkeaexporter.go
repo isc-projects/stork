@@ -8,15 +8,17 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	versioncollector "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/version"
 	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork"
 	keactrl "isc.org/stork/appctrl/kea"
 )
 
@@ -311,19 +313,15 @@ func (l *lazySubnetPrefixLookup) setFamily(family int8) {
 // controlling elements like ticker, and mappings between kea stats
 // names to prometheus stats.
 type PromKeaExporter struct {
-	Host     string
-	Port     int
-	Interval time.Duration
+	Host string
+	Port int
 
 	EnablePerSubnetStats bool
 
 	AppMonitor AppMonitor
 	HTTPServer *http.Server
 
-	Ticker        *time.Ticker
-	DoneCollector chan bool
-	Wg            *sync.WaitGroup
-	StartTime     time.Time
+	StartTime time.Time
 
 	Registry        *prometheus.Registry
 	PktStatsMap     map[string]statisticDescriptor
@@ -339,15 +337,12 @@ type PromKeaExporter struct {
 }
 
 // Create new Prometheus Kea Exporter.
-func NewPromKeaExporter(host string, port int, interval time.Duration, enablePerSubnetStats bool, appMonitor AppMonitor) *PromKeaExporter {
+func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMonitor AppMonitor) *PromKeaExporter {
 	pke := &PromKeaExporter{
 		Host:                 host,
 		Port:                 port,
-		Interval:             interval,
 		EnablePerSubnetStats: enablePerSubnetStats,
 		AppMonitor:           appMonitor,
-		DoneCollector:        make(chan bool),
-		Wg:                   &sync.WaitGroup{},
 		Registry:             prometheus.NewRegistry(),
 		StartTime:            time.Now(),
 		Adr4StatsMap:         nil,
@@ -679,14 +674,17 @@ func NewPromKeaExporter(host string, port int, interval time.Duration, enablePer
 // Start goroutine with main loop for collecting stats
 // and http server for exposing them to Prometheus.
 func (pke *PromKeaExporter) Start() {
-	// set address for listening from config
+	// Register collectors.
+	version.Version = stork.Version
+	pke.Registry.MustRegister(pke, versioncollector.NewCollector("kea_exporter"))
+
+	// Set address for listening from config.
 	addrPort := net.JoinHostPort(pke.Host, strconv.Itoa(pke.Port))
 	pke.HTTPServer.Addr = addrPort
 
-	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %.f seconds",
-		addrPort, pke.Interval.Seconds())
+	log.Printf("Prometheus Kea Exporter listening on %s", addrPort)
 
-	// start http server for metrics
+	// Start HTTP server for metrics.
 	go func() {
 		err := pke.HTTPServer.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -694,21 +692,13 @@ func (pke *PromKeaExporter) Start() {
 				Error("Problem serving Prometheus Kea Exporter")
 		}
 	}()
-
-	// set ticker time for collecting loop from config
-	pke.Ticker = time.NewTicker(pke.Interval)
-
-	// start collecting loop as goroutine and increment WaitGroup (which is used later
-	// for stopping this goroutine)
-	pke.Wg.Add(1)
-	go pke.statsCollectorLoop()
 }
 
 // Shutdown exporter goroutines and unregister prometheus stats.
 func (pke *PromKeaExporter) Shutdown() {
 	log.Printf("Stopping Prometheus Kea Exporter")
 
-	// stop http server
+	// Stop HTTP server.
 	if pke.HTTPServer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -719,14 +709,7 @@ func (pke *PromKeaExporter) Shutdown() {
 		}
 	}
 
-	// stop stats collector
-	if pke.Ticker != nil {
-		pke.Ticker.Stop()
-		pke.DoneCollector <- true
-		pke.Wg.Wait()
-	}
-
-	// unregister kea counters from prometheus framework
+	// Unregister kea counters from prometheus framework.
 	pke.Registry.Unregister(pke.PktStatsMap["pkt4-nak-received"].Stat)
 	pke.Registry.Unregister(pke.PktStatsMap["pkt4-offer-sent"].Stat)
 	pke.Registry.Unregister(pke.PktStatsMap["pkt6-receive-drop"].Stat)
@@ -749,22 +732,24 @@ func (pke *PromKeaExporter) Shutdown() {
 	log.Printf("Stopped Prometheus Kea Exporter")
 }
 
-// Main loop for collecting stats periodically.
-func (pke *PromKeaExporter) statsCollectorLoop() {
-	defer pke.Wg.Done()
-	for {
-		select {
-		// every N seconds do stats collection from all kea and its active daemons
-		case <-pke.Ticker.C:
-			err := pke.collectStats()
-			if err != nil {
-				log.WithError(err).Error("Some errors were encountered while collecting stats from Kea")
-			}
-		// wait for done signal from shutdown function
-		case <-pke.DoneCollector:
-			return
-		}
+// Collect fetches the stats from configured location and delivers them
+// as Prometheus metrics. It implements prometheus.Collector.
+func (pke *PromKeaExporter) Collect(ch chan<- prometheus.Metric) {
+	err := pke.collectStats()
+	if err != nil {
+		log.WithError(err).Error("Some errors were encountered while collecting stats from Kea")
 	}
+}
+
+// Describe describes all exported metrics. It implements prometheus.Collector.
+func (pke *PromKeaExporter) Describe(ch chan<- *prometheus.Desc) {
+	// Nothing is put in the channel in the Collect() method, so there is
+	// nothing to describe.
+	// The function must have any line of code; otherwise, the coverage check
+	// warns about 0% coverage. This is a workaround for the coverage check.
+	// The trace log level is not officially supported by Stork. It is more
+	// verbose than debug. This message should never be printed.
+	log.Trace("Describing metrics")
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.

@@ -635,8 +635,6 @@ The following settings are specific to the Prometheus exporters:
 * ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT`` - the port the agent should use to
   receive connections from Prometheus when fetching Kea statistics; the default is
   ``9547``
-* ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL`` - this specifies how often
-  the agent collects stats from Kea, in seconds; the default is ``10``
 * ``STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS`` - this enables or disables
   the collection of per-subnet stats from Kea; the default is ``true`` (collecting enabled).
   This option can be used to limit the data passed to Prometheus/Grafana in large networks.
@@ -646,8 +644,6 @@ The following settings are specific to the Prometheus exporters:
 * ``STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT`` - the port the agent should use to
   receive connections from Prometheus fetching BIND 9 statistics; the default is
   ``9119``
-* ``STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL`` - this specifies how often
-  the agent collects stats from BIND 9, in seconds; the default is ``10``
 
 The last setting is used only when Stork agents register in the Stork server
 using an agent token:

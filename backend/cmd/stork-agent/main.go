@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/Showmax/go-fqdn"
 	"github.com/jessevdk/go-flags"
@@ -137,7 +136,6 @@ func runAgent(settings *generalSettings, reload bool) error {
 		promKeaExporter := agent.NewPromKeaExporter(
 			settings.PrometheusKeaExporterAddress,
 			settings.PrometheusKeaExporterPort,
-			time.Duration(settings.PrometheusKeaExporterInterval)*time.Second,
 			prometheusKeaExporterPerSubnetStats,
 			appMonitor,
 		)
@@ -333,7 +331,6 @@ type generalSettings struct {
 	ListenStorkOnly                     bool   `long:"listen-stork-only" description:"Listen for commands from the Stork Server only, but not for Prometheus requests" env:"STORK_AGENT_LISTEN_STORK_ONLY"`
 	PrometheusKeaExporterAddress        string `long:"prometheus-kea-exporter-address" description:"The IP or hostname to listen on for incoming Prometheus connections" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"`
 	PrometheusKeaExporterPort           int    `long:"prometheus-kea-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9547" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"`
-	PrometheusKeaExporterInterval       int    `long:"prometheus-kea-exporter-interval" description:"How often the Stork Agent collects stats from Kea, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"`
 	PrometheusKeaExporterPerSubnetStats string `long:"prometheus-kea-exporter-per-subnet-stats" description:"Enable or disable collecting per-subnet stats from Kea" optional:"true" optional-value:"true" default:"true" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS"`
 	PrometheusBind9ExporterAddress      string `long:"prometheus-bind9-exporter-address" description:"The IP or hostname to listen on for incoming Prometheus connections" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
 	PrometheusBind9ExporterPort         int    `long:"prometheus-bind9-exporter-port" description:"The port to listen on for incoming Prometheus connections" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`

@@ -55,14 +55,13 @@ func newFakeMonitorWithDefaultsDHCPv6Only() *FakeAppMonitor {
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := newFakeMonitorWithDefaults()
-	pke := NewPromKeaExporter("foo", 42, 24*time.Millisecond, true, fam)
+	pke := NewPromKeaExporter("foo", 42, true, fam)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPServer)
 
 	require.Equal(t, "foo", pke.Host)
 	require.Equal(t, 42, pke.Port)
-	require.Equal(t, 24*time.Millisecond, pke.Interval)
 	require.Len(t, pke.PktStatsMap, 31)
 	require.Len(t, pke.Adr4StatsMap, 6)
 	require.Len(t, pke.Adr6StatsMap, 9)
@@ -106,29 +105,30 @@ func TestPromKeaExporterStart(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaultsDHCPv4Only()
 
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(fam.HTTPClient.client)
 
-	// start exporter
+	// Start exporter.
 	pke.Start()
-	require.NotNil(t, pke.Ticker)
 
-	// wait for collecting is invoked at least once
-	require.Eventually(t, func() bool {
-		metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
-			prometheus.Labels{
-				"subnet":    "7",
-				"subnet_id": "7",
-				"prefix":    "",
-			},
-		)
-		return testutil.ToFloat64(metric) == 13.0
-	}, 100*time.Millisecond, 5*time.Millisecond)
+	// Trigger the stats collection.
+	c := make(chan prometheus.Metric)
+	pke.Collect(c)
+
+	// Check the collected stats.
+	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+		prometheus.Labels{
+			"subnet":    "7",
+			"subnet_id": "7",
+			"prefix":    "",
+		},
+	)
+	require.EqualValues(t, 13.0, testutil.ToFloat64(metric))
 
 	// check if pkt4-nak-received is 19
-	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
+	metric, _ = pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
 
 	require.False(t, gock.HasUnmatchedRequest())
@@ -172,26 +172,25 @@ func TestPromKeaExporterStartDemoResponse(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaultsDHCPv6Only()
 
-	pke := NewPromKeaExporter("foo", 1234, 5*time.Millisecond, true, fam)
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(fam.HTTPClient.client)
 
-	// start exporter
+	// Start exporter and trigger the stats collection.
 	pke.Start()
-	require.NotNil(t, pke.Ticker)
+	c := make(chan prometheus.Metric)
+	pke.Collect(c)
 
-	require.Eventually(t, func() bool {
-		// check if assigned-addresses is 13
-		metric, _ := pke.Adr6StatsMap["total-nas"].GetMetricWith(
-			prometheus.Labels{
-				"subnet":    "6",
-				"subnet_id": "6",
-				"prefix":    "",
-			},
-		)
-		return testutil.ToFloat64(metric) == 36893488147419103000
-	}, 500*time.Millisecond, 10*time.Millisecond)
+	// Check the collected stats.
+	metric, _ := pke.Adr6StatsMap["total-nas"].GetMetricWith(
+		prometheus.Labels{
+			"subnet":    "6",
+			"subnet_id": "6",
+			"prefix":    "",
+		},
+	)
+	require.EqualValues(t, 36893488147419103000., testutil.ToFloat64(metric))
 
 	// The response is pretty big, so some metrics are available earlier than
 	// others.
@@ -365,26 +364,27 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(fam.HTTPClient.client)
+
+	// Act
 	pke.Start()
+	c := make(chan prometheus.Metric)
+	pke.Collect(c)
 
-	// Act & Assert
-	// Wait for collecting.
-	require.Eventually(t, func() bool {
-		metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
-			prometheus.Labels{
-				"subnet_id": "7",
-				"prefix":    "10.0.0.0/8",
-				"subnet":    "10.0.0.0/8",
-			},
-		)
+	// Assert
+	metric, err := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+		prometheus.Labels{
+			"subnet_id": "7",
+			"prefix":    "10.0.0.0/8",
+			"subnet":    "10.0.0.0/8",
+		},
+	)
 
-		return testutil.ToFloat64(metric) == 13.0
-	}, 100*time.Millisecond, 5*time.Millisecond)
-
+	require.NoError(t, err)
+	require.Equal(t, 13.0, testutil.ToFloat64(metric))
 	require.NotZero(t, testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]))
 }
 
@@ -540,18 +540,17 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	fam := newFakeMonitorWithDefaultsDHCPv4Only()
 
 	// Act
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, false, fam)
+	pke := NewPromKeaExporter("foo", 1234, false, fam)
 	defer pke.Shutdown()
 	gock.InterceptClient(fam.HTTPClient.client)
 	pke.Start()
+	c := make(chan prometheus.Metric)
+	pke.Collect(c)
 
 	// Assert
-	// Wait for collecting.
-	require.Eventually(t, func() bool {
-		metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
-		// Check if pkt4-nak-received has expected value.
-		return testutil.ToFloat64(metric) == 19.0
-	}, 100*time.Millisecond, 5*time.Millisecond)
+	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
+	// Check if pkt4-nak-received has expected value.
+	require.EqualValues(t, 19.0, testutil.ToFloat64(metric))
 
 	require.Nil(t, pke.Adr4StatsMap)
 
@@ -588,18 +587,15 @@ func TestCollectingGlobalStatistics(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(fam.HTTPClient.client)
 	pke.Start()
+	c := make(chan prometheus.Metric)
+	pke.Collect(c)
 
 	// Act & Assert
-	// Wait for collecting.
-	require.Eventually(t, func() bool {
-		return testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]) > 0
-	}, 100*time.Millisecond, 5*time.Millisecond)
-
 	require.Equal(t, 13.0, testutil.ToFloat64(pke.Global4StatMap["cumulative-assigned-addresses"]))
 	require.Equal(t, 14.0, testutil.ToFloat64(pke.Global4StatMap["declined-addresses"]))
 	require.Equal(t, 15.0, testutil.ToFloat64(pke.Global4StatMap["reclaimed-leases"]))
@@ -639,7 +635,7 @@ func TestSendRequestOnlyToDetectedDaemons(t *testing.T) {
 	fam.Apps[0].(*KeaApp).ConfiguredDaemons = []string{"dhcp6"}
 	fam.Apps[0].(*KeaApp).ActiveDaemons = []string{"dhcp6"}
 
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(fam.HTTPClient.client)
@@ -677,7 +673,7 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 
 	fam := newFakeMonitorWithDefaults()
 
-	pke := NewPromKeaExporter("foo", 1234, 1*time.Millisecond, true, fam)
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(fam.HTTPClient.client)
@@ -688,4 +684,20 @@ func TestEncounteredUnsupportedStatisticsAreAppendedToIgnoreList(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Contains(t, pke.ignoredStats, "foo")
+}
+
+// Test that the Describe method does nothing.
+func TestDescribe(t *testing.T) {
+	// Arrange
+	fam := newFakeMonitorWithDefaults()
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	ch := make(chan *prometheus.Desc, 1)
+	defer close(ch)
+	defer pke.Shutdown()
+
+	// Act
+	pke.Describe(ch)
+
+	// Assert
+	require.Empty(t, ch)
 }

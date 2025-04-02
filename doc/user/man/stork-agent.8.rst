@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-agent` [**--listen-stork-only**] [**--listen-prometheus-only**] [**-v**] [**--host=**] [**--port=**] [**--skip-tls-cert-verification=**] [**--prometheus-kea-exporter-address=**] [**--prometheus-kea-exporter-port=**] [**--prometheus-kea-exporter-interval=**] [**-h**]
+:program:`stork-agent` [**--listen-stork-only**] [**--listen-prometheus-only**] [**-v**] [**--host=**] [**--port=**] [**--skip-tls-cert-verification=**] [**--prometheus-kea-exporter-address=**] [**--prometheus-kea-exporter-port=**] [**-h**]
 
 :program:`stork-agent` register [**--server-url=**] [**--server-token**] [**--agent-host=**] [**--agent-port=**] [**--non-interactive**]
 
@@ -86,9 +86,6 @@ Prometheus Kea Exporter flags:
 ``--prometheus-kea-exporter-port=``
    Specifies the port on which the Stork agent exports Kea statistics to Prometheus. The default is 9547. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT]``
 
-``--prometheus-kea-exporter-interval=``
-   Specifies how often the Stork agent collects statistics from Kea, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]``
-
 ``--prometheus-kea-exporter-per-subnet-stats=``
    Enables or disables collecting per-subnet stats from Kea. The default is true. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]``
 
@@ -141,12 +138,12 @@ To only listen to Prometheus requests, run the following command:
 
    $ stork-agent (...) --listen-prometheus-only
 
-If performance issues are observed with exporting Kea statistics to Prometheus, the interval between
-statistics collection can be increased, or collection of per-subnet stats can be disabled. For example:
+If performance issues are observed with exporting Kea statistics to Prometheus collection of per-subnet stats can be
+disabled. For example:
 
 .. code-block:: bash
 
-   $ stork-agent (...) --prometheus-kea-exporter-interval=30 --prometheus-kea-exporter-per-subnet-stats=false
+   $ stork-agent (...) --prometheus-kea-exporter-per-subnet-stats=false
 
 By default, the Stork agent reads arguments only from the command line. To read arguments from the environment
 file, run the following command:
