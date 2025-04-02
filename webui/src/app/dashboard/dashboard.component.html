@@ -424,7 +424,8 @@
                             <th>Daemon</th>
                             <th>Status</th>
                             <th>Uptime</th>
-                            <th>Zones Count</th>
+                            <th>Total Zones #</th>
+                            <th>Builtin Zones #</th>
                             <th>Zone Fetch Status</th>
                         </tr>
                     </ng-template>
@@ -462,8 +463,12 @@
                             <td>{{ showDuration(a?.details?.daemon?.uptime ?? 0) }}</td>
                             <td>
                                 <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">{{
-                                    zoneInventoryStateMap.get(a.id)?.zoneCount ||
-                                        (a?.details?.daemon?.zoneCount ?? 'unknown')
+                                    zoneCountMap?.get(a?.details?.daemon?.id).totalCount ?? 0
+                                }}</a>
+                            </td>
+                            <td>
+                                <a routerLink="/dns/zones" [queryParams]="{ appId: a.id, zoneType: 'builtin' }">{{
+                                    zoneCountMap?.get(a?.details?.daemon?.id).builtinCount ?? 0
                                 }}</a>
                             </td>
                             <td>

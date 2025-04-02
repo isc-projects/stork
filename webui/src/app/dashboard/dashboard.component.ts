@@ -16,16 +16,18 @@ import {
 } from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
-import { concatMap, lastValueFrom, Subscription } from 'rxjs'
+import { concat, lastValueFrom, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
 import {
     App,
+    Apps,
     DhcpDaemon,
     DhcpDaemonHARelationshipOverview,
     DhcpOverview,
     Settings,
     ZoneInventoryState,
+    ZonesCount,
 } from '../backend'
 import { ModifyDeep } from '../utiltypes'
 import { TableLazyLoadEvent } from 'primeng/table'
@@ -144,6 +146,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
      * Key-value map where keys are DNS app IDs and values are information about zone fetching for particular DNS server.
      */
     zoneInventoryStateMap: Map<number, ZoneInventoryState> = new Map()
+
+    /**
+     * Key-value map where keys are DNS daemon IDs and values are information with total and builtin zone count for particular DNS server.
+     */
+    zoneCountMap: Map<number, ZonesCount> = new Map()
 
     /**
      * Returns true when no kea and no bind9 apps exist among authorized machines;
@@ -322,21 +329,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.dnsServiceStatusLoading = true
         this.cd.detectChanges()
         lastValueFrom(
-            this.dnsApi.getZonesFetch().pipe(
-                concatMap((zonesFetch) => {
-                    if (zonesFetch?.items?.length > 0) {
-                        this.zoneInventoryStateMap = new Map()
-                        zonesFetch.items.forEach((s) => {
-                            this.zoneInventoryStateMap.set(s.appId, s)
-                        })
-                    }
-                    return this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'bind9')
-                })
+            concat(
+                this.dnsApi.getZonesCount().pipe(
+                    map((ret) => {
+                        const counts = ret.items ?? []
+                        if (counts.length > 0) {
+                            this.zoneCountMap = new Map()
+                            counts.forEach((count) => {
+                                this.zoneCountMap.set(count.daemonId, count)
+                            })
+                        }
+                    })
+                ),
+                this.dnsApi.getZonesFetch().pipe(
+                    map((zonesFetch) => {
+                        if (zonesFetch?.items?.length > 0) {
+                            this.zoneInventoryStateMap = new Map()
+                            zonesFetch.items.forEach((s) => {
+                                this.zoneInventoryStateMap.set(s.appId, s)
+                            })
+                        }
+                    })
+                ),
+                this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'bind9')
             )
         )
             .then((data) => {
-                this.dnsApps = data?.items ?? []
-                this.dnsAppsTotalCount = data?.total ?? 0
+                this.dnsApps = (<Apps>data)?.items ?? []
+                this.dnsAppsTotalCount = (<Apps>data)?.total ?? 0
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
