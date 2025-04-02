@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -134,14 +133,20 @@ func TestPromKeaExporterStart(t *testing.T) {
 	require.False(t, gock.HasUnmatchedRequest())
 }
 
-// The Kea statistic-get-all response fetched from the Kea DHCPv6 demo container.
+// The Kea statistic-get-all response fetched from the Kea demo containers.
 //
-//go:embed testdata/kea-dhcp6-statistic-get-all-rsp.json
-var kea6ResponseFromDemo []byte
+//go:embed testdata/kea-prior-2.4.0-dhcp6-statistic-get-all-rsp.json
+var kea6ResponsePrior2_4_0 []byte
+
+//go:embed testdata/kea-2.4.0-dhcp4-statistic-get-all-rsp.json
+var kea4Response2_4_0 []byte
+
+//go:embed testdata/kea-2.4.0-dhcp6-statistic-get-all-rsp.json
+var kea6Response2_4_0 []byte
 
 // Check starting PromKeaExporter and collecting stats using the real Kea
-// response.
-func TestPromKeaExporterStartDemoResponse(t *testing.T) {
+// response returned by the Kea prior to 2.4.0 version.
+func TestPromKeaExporterStartKeaPrior2_4_0(t *testing.T) {
 	defer gock.Off()
 	gock.CleanUnmatchedRequest()
 	defer gock.CleanUnmatchedRequest()
@@ -154,7 +159,7 @@ func TestPromKeaExporterStartDemoResponse(t *testing.T) {
 		Post("/").
 		Persist().
 		Reply(200).
-		BodyString(string(kea6ResponseFromDemo))
+		BodyString(string(kea6ResponsePrior2_4_0))
 
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
@@ -194,10 +199,173 @@ func TestPromKeaExporterStartDemoResponse(t *testing.T) {
 
 	// The response is pretty big, so some metrics are available earlier than
 	// others.
-	require.Eventually(t, func() bool {
-		metric, _ := pke.PktStatsMap["pkt6-reply-sent"].Stat.GetMetricWith(prometheus.Labels{"operation": "reply"})
-		return testutil.ToFloat64(metric) == 4489.0
-	}, 500*time.Millisecond, 10*time.Millisecond)
+	metric, _ = pke.PktStatsMap["pkt6-reply-sent"].Stat.GetMetricWith(prometheus.Labels{"operation": "reply"})
+	require.EqualValues(t, 4489.0, testutil.ToFloat64(metric))
+
+	require.False(t, gock.HasUnmatchedRequest())
+}
+
+// Check starting PromKeaExporter and collecting stats using the real Kea
+// response returned by the Kea DHCPv4 in 2.4.0 version.
+func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
+	defer gock.Off()
+	gock.CleanUnmatchedRequest()
+	defer gock.CleanUnmatchedRequest()
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp4"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(string(kea4Response2_4_0))
+
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "subnet4-list",
+			"service":   []string{"dhcp4"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result": 3,
+			"text": "Command not supported"
+		}]`)
+
+	fam := newFakeMonitorWithDefaultsDHCPv4Only()
+
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	defer pke.Shutdown()
+
+	gock.InterceptClient(fam.HTTPClient.client)
+
+	// Start exporter and trigger the stats collection.
+	pke.Start()
+	c := make(chan prometheus.Metric)
+	pke.Collect(c)
+
+	// Check the collected stats.
+	metric, _ := pke.Adr4StatsMap["total-addresses"].GetMetricWith(
+		prometheus.Labels{
+			"subnet":    "22",
+			"subnet_id": "22",
+			"prefix":    "",
+		},
+	)
+	require.EqualValues(t, 150., testutil.ToFloat64(metric))
+
+	metric, _ = pke.PktStatsMap["pkt4-ack-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "ack"})
+	require.EqualValues(t, 42.0, testutil.ToFloat64(metric))
+
+	metric, _ = pke.Adr4StatsMap["pool-total-addresses"].GetMetricWith(
+		prometheus.Labels{
+			"subnet_id": "11",
+			"prefix":    "",
+			"pool_id":   "0",
+		},
+	)
+	require.EqualValues(t, 50., testutil.ToFloat64(metric))
+
+	require.False(t, gock.HasUnmatchedRequest())
+}
+
+// Check starting PromKeaExporter and collecting stats using the real Kea
+// response returned by the Kea DHCPv6 in 2.4.0 version.
+func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
+	defer gock.Off()
+	gock.CleanUnmatchedRequest()
+	defer gock.CleanUnmatchedRequest()
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp6"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(string(kea6Response2_4_0))
+
+	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "subnet6-list",
+			"service":   []string{"dhcp6"},
+			"arguments": map[string]string{},
+		}).
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result": 3,
+			"text": "Command not supported"
+		}]`)
+
+	fam := newFakeMonitorWithDefaultsDHCPv6Only()
+
+	pke := NewPromKeaExporter("foo", 1234, true, fam)
+	defer pke.Shutdown()
+
+	gock.InterceptClient(fam.HTTPClient.client)
+
+	// Start exporter and trigger the stats collection.
+	pke.Start()
+	c := make(chan prometheus.Metric)
+	pke.Collect(c)
+
+	// Check the collected stats.
+	metric, _ := pke.Adr6StatsMap["total-nas"].GetMetricWith(
+		prometheus.Labels{
+			"subnet":    "1",
+			"subnet_id": "1",
+			"prefix":    "",
+		},
+	)
+	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
+
+	metric, _ = pke.Adr6StatsMap["total-nas"].GetMetricWith(
+		prometheus.Labels{
+			"subnet":    "1",
+			"subnet_id": "1",
+			"prefix":    "",
+		},
+	)
+	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
+
+	metric, _ = pke.Adr6StatsMap["total-pds"].GetMetricWith(
+		prometheus.Labels{
+			"subnet":    "1",
+			"subnet_id": "1",
+			"prefix":    "",
+		},
+	)
+	require.EqualValues(t, 512., testutil.ToFloat64(metric))
+
+	// The response is pretty big, so some metrics are available earlier than
+	// others.
+	metric, _ = pke.PktStatsMap["pkt6-reply-sent"].Stat.GetMetricWith(prometheus.Labels{"operation": "reply"})
+	require.EqualValues(t, 42.0, testutil.ToFloat64(metric))
+
+	metric, _ = pke.Adr6StatsMap["pool-total-nas"].GetMetricWith(
+		prometheus.Labels{
+			"subnet_id": "1",
+			"prefix":    "",
+			"pool_id":   "0",
+		},
+	)
+	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
+
+	metric, _ = pke.Adr6StatsMap["pool-pd-total-pds"].GetMetricWith(
+		prometheus.Labels{
+			"subnet_id": "1",
+			"prefix":    "",
+			"pool_id":   "0",
+		},
+	)
+	require.EqualValues(t, 512., testutil.ToFloat64(metric))
 
 	require.False(t, gock.HasUnmatchedRequest())
 }

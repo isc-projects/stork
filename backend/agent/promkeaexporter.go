@@ -917,7 +917,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 				re := regexp.MustCompile(`pd-pool\[(\d+)\]\.(.+)`)
 				matches := re.FindStringSubmatch(metricName)
 				pdPoolIDRaw := matches[1]
-				metricName = "pd-pool-" + matches[2]
+				metricName = "pool-pd-" + matches[2]
 
 				labels["pool_id"] = pdPoolIDRaw
 			default:

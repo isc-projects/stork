@@ -1,0 +1,1205 @@
+[
+    {
+        "arguments": {
+            "cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377383"
+                ]
+            ],
+            "declined-addresses": [
+                [
+                    1,
+                    "2025-04-02 10:53:37.377809"
+                ],
+                [
+                    0,
+                    "2025-04-02 10:53:37.377190"
+                ]
+            ],
+            "pkt4-ack-received": [
+                [
+                    42,
+                    "2025-04-02 10:53:37.225339"
+                ]
+            ],
+            "pkt4-ack-sent": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225680"
+                ]
+            ],
+            "pkt4-decline-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225682"
+                ]
+            ],
+            "pkt4-discover-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225683"
+                ]
+            ],
+            "pkt4-inform-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225683"
+                ]
+            ],
+            "pkt4-nak-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225684"
+                ]
+            ],
+            "pkt4-nak-sent": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225684"
+                ]
+            ],
+            "pkt4-offer-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225685"
+                ]
+            ],
+            "pkt4-offer-sent": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225686"
+                ]
+            ],
+            "pkt4-parse-failed": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225686"
+                ]
+            ],
+            "pkt4-receive-drop": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225687"
+                ]
+            ],
+            "pkt4-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225687"
+                ]
+            ],
+            "pkt4-release-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225687"
+                ]
+            ],
+            "pkt4-request-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225688"
+                ]
+            ],
+            "pkt4-sent": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225688"
+                ]
+            ],
+            "pkt4-unknown-received": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225688"
+                ]
+            ],
+            "reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377214"
+                ]
+            ],
+            "reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377382"
+                ]
+            ],
+            "subnet[11].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377498"
+                ]
+            ],
+            "subnet[11].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376567"
+                ]
+            ],
+            "subnet[11].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377500"
+                ]
+            ],
+            "subnet[11].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377503"
+                ]
+            ],
+            "subnet[11].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376574"
+                ]
+            ],
+            "subnet[11].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377504"
+                ]
+            ],
+            "subnet[11].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377506"
+                ]
+            ],
+            "subnet[11].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377507"
+                ]
+            ],
+            "subnet[11].pool[0].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376572"
+                ]
+            ],
+            "subnet[11].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377501"
+                ]
+            ],
+            "subnet[11].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377502"
+                ]
+            ],
+            "subnet[11].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376565"
+                ]
+            ],
+            "subnet[11].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376568"
+                ]
+            ],
+            "subnet[11].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376570"
+                ]
+            ],
+            "subnet[12].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377508"
+                ]
+            ],
+            "subnet[12].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376576"
+                ]
+            ],
+            "subnet[12].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377509"
+                ]
+            ],
+            "subnet[12].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377513"
+                ]
+            ],
+            "subnet[12].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376581"
+                ]
+            ],
+            "subnet[12].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377514"
+                ]
+            ],
+            "subnet[12].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377515"
+                ]
+            ],
+            "subnet[12].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377516"
+                ]
+            ],
+            "subnet[12].pool[0].total-addresses": [
+                [
+                    110,
+                    "2025-04-02 10:53:37.376584"
+                ],
+                [
+                    70,
+                    "2025-04-02 10:53:37.376582"
+                ],
+                [
+                    40,
+                    "2025-04-02 10:53:37.376580"
+                ]
+            ],
+            "subnet[12].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377510"
+                ]
+            ],
+            "subnet[12].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377511"
+                ]
+            ],
+            "subnet[12].total-addresses": [
+                [
+                    110,
+                    "2025-04-02 10:53:37.376575"
+                ]
+            ],
+            "subnet[12].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376577"
+                ]
+            ],
+            "subnet[12].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376579"
+                ]
+            ],
+            "subnet[13].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377524"
+                ]
+            ],
+            "subnet[13].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376586"
+                ]
+            ],
+            "subnet[13].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377524"
+                ]
+            ],
+            "subnet[13].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377528"
+                ]
+            ],
+            "subnet[13].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376590"
+                ]
+            ],
+            "subnet[13].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377530"
+                ]
+            ],
+            "subnet[13].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377531"
+                ]
+            ],
+            "subnet[13].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377532"
+                ]
+            ],
+            "subnet[13].pool[0].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376589"
+                ]
+            ],
+            "subnet[13].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377525"
+                ]
+            ],
+            "subnet[13].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377527"
+                ]
+            ],
+            "subnet[13].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376585"
+                ]
+            ],
+            "subnet[13].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376587"
+                ]
+            ],
+            "subnet[13].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376588"
+                ]
+            ],
+            "subnet[14].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377533"
+                ]
+            ],
+            "subnet[14].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376592"
+                ]
+            ],
+            "subnet[14].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377534"
+                ]
+            ],
+            "subnet[14].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377538"
+                ]
+            ],
+            "subnet[14].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376596"
+                ]
+            ],
+            "subnet[14].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377539"
+                ]
+            ],
+            "subnet[14].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377540"
+                ]
+            ],
+            "subnet[14].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377541"
+                ]
+            ],
+            "subnet[14].pool[0].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376595"
+                ]
+            ],
+            "subnet[14].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377535"
+                ]
+            ],
+            "subnet[14].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377535"
+                ]
+            ],
+            "subnet[14].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376592"
+                ]
+            ],
+            "subnet[14].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376593"
+                ]
+            ],
+            "subnet[14].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376594"
+                ]
+            ],
+            "subnet[15].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377542"
+                ]
+            ],
+            "subnet[15].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376598"
+                ]
+            ],
+            "subnet[15].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377543"
+                ]
+            ],
+            "subnet[15].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377547"
+                ]
+            ],
+            "subnet[15].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376601"
+                ]
+            ],
+            "subnet[15].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377548"
+                ]
+            ],
+            "subnet[15].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377549"
+                ]
+            ],
+            "subnet[15].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377551"
+                ]
+            ],
+            "subnet[15].pool[0].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376600"
+                ]
+            ],
+            "subnet[15].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377544"
+                ]
+            ],
+            "subnet[15].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377545"
+                ]
+            ],
+            "subnet[15].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376597"
+                ]
+            ],
+            "subnet[15].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376599"
+                ]
+            ],
+            "subnet[15].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376599"
+                ]
+            ],
+            "subnet[16].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377552"
+                ]
+            ],
+            "subnet[16].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376603"
+                ]
+            ],
+            "subnet[16].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377553"
+                ]
+            ],
+            "subnet[16].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377556"
+                ]
+            ],
+            "subnet[16].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376607"
+                ]
+            ],
+            "subnet[16].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377557"
+                ]
+            ],
+            "subnet[16].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377558"
+                ]
+            ],
+            "subnet[16].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377560"
+                ]
+            ],
+            "subnet[16].pool[0].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376606"
+                ]
+            ],
+            "subnet[16].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377553"
+                ]
+            ],
+            "subnet[16].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377554"
+                ]
+            ],
+            "subnet[16].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376602"
+                ]
+            ],
+            "subnet[16].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376604"
+                ]
+            ],
+            "subnet[16].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376605"
+                ]
+            ],
+            "subnet[17].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377560"
+                ]
+            ],
+            "subnet[17].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376609"
+                ]
+            ],
+            "subnet[17].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377561"
+                ]
+            ],
+            "subnet[17].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377564"
+                ]
+            ],
+            "subnet[17].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376612"
+                ]
+            ],
+            "subnet[17].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377565"
+                ]
+            ],
+            "subnet[17].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377572"
+                ]
+            ],
+            "subnet[17].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377573"
+                ]
+            ],
+            "subnet[17].pool[0].total-addresses": [
+                [
+                    3,
+                    "2025-04-02 10:53:37.376611"
+                ]
+            ],
+            "subnet[17].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377562"
+                ]
+            ],
+            "subnet[17].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377563"
+                ]
+            ],
+            "subnet[17].total-addresses": [
+                [
+                    3,
+                    "2025-04-02 10:53:37.376608"
+                ]
+            ],
+            "subnet[17].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376609"
+                ]
+            ],
+            "subnet[17].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376610"
+                ]
+            ],
+            "subnet[1].assigned-addresses": [
+                [
+                    2,
+                    "2025-04-02 10:53:37.377809"
+                ],
+                [
+                    1,
+                    "2025-04-02 10:53:37.377807"
+                ],
+                [
+                    0,
+                    "2025-04-02 10:53:37.377390"
+                ]
+            ],
+            "subnet[1].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376480"
+                ]
+            ],
+            "subnet[1].declined-addresses": [
+                [
+                    1,
+                    "2025-04-02 10:53:37.377808"
+                ],
+                [
+                    0,
+                    "2025-04-02 10:53:37.377392"
+                ]
+            ],
+            "subnet[1].pool[0].assigned-addresses": [
+                [
+                    2,
+                    "2025-04-02 10:53:37.377976"
+                ],
+                [
+                    1,
+                    "2025-04-02 10:53:37.377972"
+                ],
+                [
+                    0,
+                    "2025-04-02 10:53:37.377469"
+                ]
+            ],
+            "subnet[1].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376490"
+                ]
+            ],
+            "subnet[1].pool[0].declined-addresses": [
+                [
+                    1,
+                    "2025-04-02 10:53:37.377975"
+                ],
+                [
+                    0,
+                    "2025-04-02 10:53:37.377472"
+                ]
+            ],
+            "subnet[1].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377474"
+                ]
+            ],
+            "subnet[1].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377476"
+                ]
+            ],
+            "subnet[1].pool[0].total-addresses": [
+                [
+                    200,
+                    "2025-04-02 10:53:37.376562"
+                ],
+                [
+                    150,
+                    "2025-04-02 10:53:37.376559"
+                ],
+                [
+                    100,
+                    "2025-04-02 10:53:37.376555"
+                ],
+                [
+                    50,
+                    "2025-04-02 10:53:37.376487"
+                ]
+            ],
+            "subnet[1].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377401"
+                ]
+            ],
+            "subnet[1].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377409"
+                ]
+            ],
+            "subnet[1].total-addresses": [
+                [
+                    200,
+                    "2025-04-02 10:53:37.376464"
+                ]
+            ],
+            "subnet[1].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376482"
+                ]
+            ],
+            "subnet[1].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376483"
+                ]
+            ],
+            "subnet[21].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377575"
+                ]
+            ],
+            "subnet[21].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376614"
+                ]
+            ],
+            "subnet[21].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377576"
+                ]
+            ],
+            "subnet[21].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377579"
+                ]
+            ],
+            "subnet[21].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376618"
+                ]
+            ],
+            "subnet[21].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377581"
+                ]
+            ],
+            "subnet[21].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377584"
+                ]
+            ],
+            "subnet[21].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377585"
+                ]
+            ],
+            "subnet[21].pool[0].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376617"
+                ]
+            ],
+            "subnet[21].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377577"
+                ]
+            ],
+            "subnet[21].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377578"
+                ]
+            ],
+            "subnet[21].total-addresses": [
+                [
+                    50,
+                    "2025-04-02 10:53:37.376613"
+                ]
+            ],
+            "subnet[21].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376615"
+                ]
+            ],
+            "subnet[21].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376616"
+                ]
+            ],
+            "subnet[22].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377586"
+                ]
+            ],
+            "subnet[22].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376621"
+                ]
+            ],
+            "subnet[22].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377587"
+                ]
+            ],
+            "subnet[22].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377591"
+                ]
+            ],
+            "subnet[22].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376625"
+                ]
+            ],
+            "subnet[22].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377592"
+                ]
+            ],
+            "subnet[22].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377594"
+                ]
+            ],
+            "subnet[22].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377596"
+                ]
+            ],
+            "subnet[22].pool[0].total-addresses": [
+                [
+                    150,
+                    "2025-04-02 10:53:37.376627"
+                ],
+                [
+                    100,
+                    "2025-04-02 10:53:37.376626"
+                ],
+                [
+                    50,
+                    "2025-04-02 10:53:37.376624"
+                ]
+            ],
+            "subnet[22].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377588"
+                ]
+            ],
+            "subnet[22].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377589"
+                ]
+            ],
+            "subnet[22].total-addresses": [
+                [
+                    150,
+                    "2025-04-02 10:53:37.376619"
+                ]
+            ],
+            "subnet[22].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376622"
+                ]
+            ],
+            "subnet[22].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376622"
+                ]
+            ],
+            "subnet[23].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377606"
+                ]
+            ],
+            "subnet[23].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376630"
+                ]
+            ],
+            "subnet[23].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377607"
+                ]
+            ],
+            "subnet[23].pool[0].assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377611"
+                ]
+            ],
+            "subnet[23].pool[0].cumulative-assigned-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376634"
+                ]
+            ],
+            "subnet[23].pool[0].declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377612"
+                ]
+            ],
+            "subnet[23].pool[0].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377614"
+                ]
+            ],
+            "subnet[23].pool[0].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377615"
+                ]
+            ],
+            "subnet[23].pool[0].total-addresses": [
+                [
+                    245,
+                    "2025-04-02 10:53:37.376654"
+                ],
+                [
+                    241,
+                    "2025-04-02 10:53:37.376653"
+                ],
+                [
+                    238,
+                    "2025-04-02 10:53:37.376652"
+                ],
+                [
+                    235,
+                    "2025-04-02 10:53:37.376650"
+                ],
+                [
+                    215,
+                    "2025-04-02 10:53:37.376649"
+                ],
+                [
+                    195,
+                    "2025-04-02 10:53:37.376647"
+                ],
+                [
+                    175,
+                    "2025-04-02 10:53:37.376646"
+                ],
+                [
+                    155,
+                    "2025-04-02 10:53:37.376644"
+                ],
+                [
+                    135,
+                    "2025-04-02 10:53:37.376643"
+                ],
+                [
+                    115,
+                    "2025-04-02 10:53:37.376641"
+                ],
+                [
+                    95,
+                    "2025-04-02 10:53:37.376640"
+                ],
+                [
+                    75,
+                    "2025-04-02 10:53:37.376638"
+                ],
+                [
+                    60,
+                    "2025-04-02 10:53:37.376637"
+                ],
+                [
+                    40,
+                    "2025-04-02 10:53:37.376635"
+                ],
+                [
+                    20,
+                    "2025-04-02 10:53:37.376633"
+                ]
+            ],
+            "subnet[23].reclaimed-declined-addresses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377608"
+                ]
+            ],
+            "subnet[23].reclaimed-leases": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.377609"
+                ]
+            ],
+            "subnet[23].total-addresses": [
+                [
+                    245,
+                    "2025-04-02 10:53:37.376629"
+                ]
+            ],
+            "subnet[23].v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376631"
+                ]
+            ],
+            "subnet[23].v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.376632"
+                ]
+            ],
+            "v4-allocation-fail": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225689"
+                ]
+            ],
+            "v4-allocation-fail-classes": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225691"
+                ]
+            ],
+            "v4-allocation-fail-no-pools": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225691"
+                ]
+            ],
+            "v4-allocation-fail-shared-network": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225692"
+                ]
+            ],
+            "v4-allocation-fail-subnet": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225692"
+                ]
+            ],
+            "v4-lease-reuses": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225693"
+                ]
+            ],
+            "v4-reservation-conflicts": [
+                [
+                    0,
+                    "2025-04-02 10:53:37.225693"
+                ]
+            ]
+        },
+        "result": 0
+    }
+]
