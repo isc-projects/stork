@@ -41,7 +41,7 @@
                             id="logout-button"
                             (onClick)="signOut()"
                             [model]="userMenuItems"
-                            title="Logout"
+                            title="Logout ({{ this.currentUser.login || this.currentUser.email }})"
                         ></p-splitButton></div
                 ></ng-template>
             </p-menubar>

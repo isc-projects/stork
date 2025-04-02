@@ -5,88 +5,161 @@
   // For responsive navbar, set min-height when it becomes narrow on smaller viewports.
   min-height: 58px
 
-:host ::ng-deep .stork-menubar.p-menubar
-  // Inherit background color after .top-navbar which is a layer below the menu.
-  background-color: inherit
-  // Remove the border.
-  border-width: 0
-  // Remove unnecessary spacing.
-  padding: 0
+:host ::ng-deep
+  .stork-menubar.p-menubar
+    // Inherit background color after .top-navbar which is a layer below the menu.
+    background-color: inherit
+    // Remove the border.
+    border-width: 0
+    // Remove unnecessary spacing.
+    padding: 0
 
-  // Apply the below changes only if the hamburger menu is not used.
-  &:not(.p-menubar-mobile-active) .p-menubar-root-list
-    // Don't wrap menu items when shrinking the viewport.
-    flex-wrap: nowrap
+    // Apply the below changes only if the hamburger menu is not used.
+    &:not(.p-menubar-mobile-active) .p-menubar-root-list
+      // Don't wrap menu items when shrinking the viewport.
+      flex-wrap: nowrap
 
-    & > .p-menuitem
-      // Custom style for not highlighted menu items.
-      &:not(.p-highlight)
-        & > .p-menuitem-content .p-menuitem-link .p-menuitem-text
-          // Make text more visible on primary background of the navbar.
-          color: var(--primary-color-text)
+      & > .p-menuitem
+        // Custom style for not highlighted menu items.
+        &:not(.p-highlight)
+          & > .p-menuitem-content .p-menuitem-link .p-menuitem-text
+            // Make text more visible on primary background of the navbar.
+            color: var(--primary-color-text)
 
-        &:not(.p-disabled).p-focus > .p-menuitem-content
-          // In the newest PrimeNG version, the menu item is grayed out after clicking
-          // it. This is a workaround to restore the original color.
-          color: inherit
-          background: inherit
+          &:not(.p-disabled).p-focus > .p-menuitem-content
+            // In the newest PrimeNG version, the menu item is grayed out after clicking
+            // it. This is a workaround to restore the original color.
+            color: inherit
+            background: inherit
 
-      // Custom style for highlighted menu items.
-      &.p-highlight
-        & > .p-menuitem-content .p-menuitem-link .p-menuitem-text
-          // Highlighted menu has light background color, so use contrasting font color.
-          color: var(--text-color)
-        & > .p-menuitem-content
-          // Makes highlighted menu item more visible in light mode.
-          background-color: var(--highlight-bg)
+        // Custom style for highlighted menu items.
+        &.p-highlight
+          & > .p-menuitem-content .p-menuitem-link .p-menuitem-text
+            // Highlighted menu has light background color, so use contrasting font color.
+            color: var(--text-color)
+          & > .p-menuitem-content
+            // Makes highlighted menu item more visible in light mode.
+            background-color: var(--highlight-bg)
 
-  .p-menubar-button
-    // Use white color for the hamburger icon for better contrast on the blue
-    // background.
-    color: var(--primary-color-text) !important
+    .p-splitbutton
+      span.p-button-label
+        // Don't wrap button label when viewport shrinks.
+        white-space: nowrap
 
-    &:hover
-      // On hover the background is white, so use black text.
-      color: var(--text-color) !important
+      .p-splitbutton-defaultbutton
+        // For long username this button may become very wide and cause overflow.
+        // Limit max width.
+        max-width: 10rem
 
-  .p-splitbutton
-    span.p-button-label
-      // Don't wrap button label when viewport shrinks.
-      white-space: nowrap
+      // Responsive Logout split button.
+      @media screen and (max-width: 1270px)
+        span.p-button-label
+          // Button label is very wide, so make it disappear on smaller viewports.
+          // Logout icon remains visible.
+          display: none
+        .p-splitbutton-defaultbutton
+          // Minimize horizontal padding on smaller viewports.
+          padding-left: 0.5rem
+          padding-right: 0.5rem
 
-    .p-splitbutton-defaultbutton
-      // For long username this button may become very wide and cause overflow.
-      // Limit max width.
-      max-width: 10rem
+    @media screen and (max-width: 1380px)
+      position: relative
+      &.p-menubar-mobile-active .p-menubar-root-list
+        display: flex
+        flex-direction: column
+        top: 100%
+        left: 0
+        z-index: 1
 
-@media screen and (max-width: 1270px)
-  // Responsive Logout split button.
-  :host ::ng-deep .stork-menubar.p-menubar .p-splitbutton
-    span.p-button-label
-      // Button label is very wide, so make it disappear on smaller viewports.
-      // Logout icon remains visible.
+      .p-menubar-button
+        // Use white color for the hamburger icon for better contrast on the blue
+        // background.
+        color: var(--primary-color-text) !important
+        display: flex
+        width: 1.75rem
+        height: 1.75rem
+        border-radius: 50%
+        transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, outline-color 0.2s
+
+        &:hover
+          // On hover the background is white, so use black text.
+          color: var(--text-color) !important
+        &:focus
+          outline: 1px solid var(--p-focus-ring-color)
+          outline-offset: 2px
+          box-shadow: none
+
+      .p-menubar-root-list
+        position: absolute
+        display: none
+        padding: 0.25rem 0.25rem
+        background: var(--surface-0)
+        border: 1px solid var(--surface-border)
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)
+        width: 100%
+
+        .p-menuitem-separator
+          border-top: 1px solid var(--surface-border)
+          margin: 2px 0
+
+        .p-submenu-icon
+          font-size: 0.875rem
+
+        .p-menuitem
+          width: 100%
+          position: static
+
+          .p-menuitem-content .p-menuitem-link .p-submenu-icon
+            margin-left: auto
+            transition: transform 0.2s
+
+          &.p-menuitem-active > .p-menuitem-content > .p-menuitem-link > .p-submenu-icon
+            transform: rotate(-180deg)
+
+        .p-submenu-list
+          width: 100%
+          position: static
+          box-shadow: none
+          border: 0 none
+
+          .p-submenu-icon
+            transition: transform 0.2s
+            transform: rotate(90deg)
+
+          .p-menuitem-active > .p-menuitem-content > .p-menuitem-link > .p-submenu-icon
+            transform: rotate(-90deg)
+
+          .p-menuitem
+            .p-menuitem-content .p-menuitem-link
+              padding-left: 1.5rem
+            .p-submenu-list .p-menuitem
+              .p-menuitem-content .p-menuitem-link
+                padding-left: 2.5rem
+              .p-submenu-list .p-menuitem
+                .p-menuitem-content .p-menuitem-link
+                  padding-left: 3.5rem
+                .p-submenu-list .p-menuitem
+                  .p-menuitem-content .p-menuitem-link
+                    padding-left: 4.5rem
+                  .p-submenu-list .p-menuitem
+                    .p-menuitem-content .p-menuitem-link
+                      padding-left: 5.5rem
+  // set nice look of stork version tooltip
+  .p-tooltip.stork-version-tooltip
+    // fix position and look of stork version tooltip
+    left: 44px !important
+    // make it wider
+    max-width: 600px
+
+    .p-tooltip-arrow
+      // hide arrow
       display: none
-    .p-splitbutton-defaultbutton
-      // Minimize horizontal padding on smaller viewports.
-      padding-left: 0.5rem
-      padding-right: 0.5rem
 
 @keyframes p-progress-spinner-color
   0%
     stroke: #fff
   100%
     stroke: #fff
-
-// set nice look of stork version tooltip
-:host ::ng-deep .p-tooltip.stork-version-tooltip
-  // fix position and look of stork version tooltip
-  left: 44px !important
-  // make it wider
-  max-width: 600px
-
-  .p-tooltip-arrow
-    // hide arrow
-    display: none
 
 // logo styling
 .logo
