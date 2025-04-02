@@ -63,8 +63,8 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 	require.Equal(t, "foo", pke.Host)
 	require.Equal(t, 42, pke.Port)
 	require.Len(t, pke.PktStatsMap, 31)
-	require.Len(t, pke.Adr4StatsMap, 6)
-	require.Len(t, pke.Adr6StatsMap, 9)
+	require.Len(t, pke.Adr4StatsMap, 12)
+	require.Len(t, pke.Adr6StatsMap, 19)
 }
 
 // Check starting PromKeaExporter and collecting stats.
