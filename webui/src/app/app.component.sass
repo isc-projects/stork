@@ -37,7 +37,7 @@
     // Style defining Stork menu accessible under the "hamburger" button.
     // It is mostly a repeated PrimeNG theme style only that it has a custom breakpoint (default PrimeNG: 960px)
     // and uses CSS variables for colors.
-    @media screen and (max-width: 1380px)
+    @media screen and (max-width: 1390px)
       position: relative
       &.p-menubar-mobile-active .p-menubar-root-list
         display: flex
@@ -151,6 +151,9 @@
       span.p-button-label
         // Don't wrap button label when viewport shrinks.
         white-space: nowrap
+        // When longer login name does not fit, show the ellipsis.
+        overflow: hidden
+        text-overflow: ellipsis
         @media screen and (max-width: 1270px)
           // Button label is very wide, so make it disappear on smaller viewports.
           // Logout icon remains visible.
@@ -159,11 +162,10 @@
       .p-splitbutton-defaultbutton
         // For long username this button may become very wide and cause overflow.
         // Limit max width.
-        max-width: 10rem
-        @media screen and (max-width: 1270px)
-          // Minimize horizontal padding on smaller viewports.
-          padding-left: 0.5rem
-          padding-right: 0.5rem
+        max-width: 12rem
+        // Minimize horizontal padding.
+        padding-left: 0.5rem
+        padding-right: 0.5rem
 
   // set nice look of stork version tooltip
   .p-tooltip.stork-version-tooltip
