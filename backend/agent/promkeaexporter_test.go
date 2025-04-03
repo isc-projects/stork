@@ -402,7 +402,14 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 				"subnet[1].declined-addresses": [ [0, "2021-10-14 10:44:18.687266"] ],
 				"subnet[1].reclaimed-declined-addresses": [ [0, "2021-10-14 10:44:18.687274"] ],
 				"subnet[1].reclaimed-leases": [ [0, "2021-10-14 10:44:18.687282"] ],
-				"subnet[1].total-addresses": [ [200, "2021-10-14 10:44:18.687221"] ]
+				"subnet[1].total-addresses": [ [200, "2021-10-14 10:44:18.687221"] ],
+				"subnet[1].pool[0].assigned-addresses": [ [2, "2025-04-02 10:53:37.377976" ] ],
+				"subnet[1].pool[0].cumulative-assigned-addresses": [ [0, "2025-04-02 10:53:37.376490" ] ],
+				"subnet[1].pool[0].declined-addresses": [ [1, "2025-04-02 10:53:37.377975" ] ],
+				"subnet[1].pool[0].reclaimed-declined-addresses": [ [0, "2025-04-02 10:53:37.377474" ] ],
+				"subnet[1].pool[0].reclaimed-leases": [ [0, "2025-04-02 10:53:37.377476" ] ],
+				"subnet[1].pool[0].total-addresses": [ [200, "2025-04-02 10:53:37.376562" ] ]
+
 			},
 			"result": 0
 		},
@@ -419,11 +426,12 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, response, 2)
-	require.Len(t, response[0], 26)
+	require.Len(t, response[0], 32)
 	require.Nil(t, response[1])
 	require.EqualValues(t, 200, response[0]["subnet[1].total-addresses"].Value)
 	require.NotNil(t, response[0]["reclaimed-leases"].Timestamp)
 	require.EqualValues(t, "2021-10-14 10:44:18.687243", *response[0]["reclaimed-leases"].Timestamp)
+	require.EqualValues(t, 2, response[0]["subnet[1].pool[0].assigned-addresses"].Value)
 }
 
 // Test if the Kea JSON subnet4-list or subnet6-list response in unmarshal correctly.
@@ -702,7 +710,9 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 		Reply(200).
 		BodyString(`[{"result":0, "arguments": {
                     "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
-                    "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
+                    "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ],
+					"subnet[7].pool[0].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
+					"subnet[7].pd-pool[0].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ]
                 }}]`)
 
 	fam := newFakeMonitorWithDefaultsDHCPv4Only()
