@@ -233,10 +233,11 @@ export class JsonTreeComponent {
      * If @_value has more subnodes then paginator is shown.
      * Valid only for complex type of @_value (object or array).
      *
-     * The default value of 50 seems sufficient to show most of the nodes
-     * in Stork without pagination.
+     * The default value of 60 seems sufficient to show most of the nodes
+     * in Stork without pagination. The Kea configuration may have up to 55
+     * top-level properties now (it may change in the future).
      */
-    private _childStep = 50
+    private _childStep = 60
 
     /**
      * Number of end child (sub-node) to render.
