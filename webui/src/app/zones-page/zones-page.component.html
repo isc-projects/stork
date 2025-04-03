@@ -500,9 +500,11 @@ for each occurrence of that zone.
                     <td>
                         <div [class.bg-red-100]="getZoneSerialInfo(zone).hasMismatch">
                             {{ getZoneSerialInfo(zone).serial }}
-                            <i *ngIf="getZoneSerialInfo(zone).hasMismatch"
-                               class="pi pi-star-fill text-red-500 ml-2"
-                               pTooltip="Serial numbers mismatch across servers"></i>
+                            <i
+                                *ngIf="getZoneSerialInfo(zone).hasMismatch"
+                                class="pi pi-star-fill text-red-500 ml-2"
+                                pTooltip="Serial numbers mismatch across servers"
+                            ></i>
                         </div>
                     </td>
                     <td>

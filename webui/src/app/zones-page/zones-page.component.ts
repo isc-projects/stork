@@ -981,7 +981,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         if (!zone?.localZones?.length) {
             return []
         }
-        return [...new Set(zone.localZones.map(lz => lz.zoneType))]
+        return [...new Set(zone.localZones.map((lz) => lz.zoneType))]
     }
 
     /**
@@ -989,17 +989,17 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param zone Zone to analyze
      * @returns Object containing serial and mismatch flag
      */
-    getZoneSerialInfo(zone: Zone): { serial: string, hasMismatch: boolean } {
+    getZoneSerialInfo(zone: Zone): { serial: string; hasMismatch: boolean } {
         if (!zone?.localZones?.length) {
             return { serial: 'N/A', hasMismatch: false }
         }
 
-        const serials = zone.localZones.map(lz => lz.serial)
+        const serials = zone.localZones.map((lz) => lz.serial)
         const uniqueSerials = [...new Set(serials)]
 
         return {
             serial: uniqueSerials[0]?.toString() ?? 'N/A',
-            hasMismatch: uniqueSerials.length > 1
+            hasMismatch: uniqueSerials.length > 1,
         }
     }
 }
