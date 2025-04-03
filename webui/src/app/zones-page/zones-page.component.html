@@ -73,7 +73,7 @@
     />
 </ng-template>
 
-<ng-template #localZoneCells let-localZone>
+<ng-template #localZoneCells let-localZone let-serialInfo="serialInfo">
     <td>
         <a routerLink="/apps/bind9/{{ localZone.appId }}">{{ localZone.appName }}</a>
     </td>
@@ -92,13 +92,35 @@
             localZone.zoneType
         }}</a>
     </td>
-    <td>{{ localZone.serial }}</td>
+    <td [class.p-error]="serialInfo.hasMismatch">
+        {{ localZone.serial
+        }}<i
+            *ngIf="serialInfo.hasMismatch"
+            class="pi pi-exclamation-triangle ml-2"
+            pTooltip="Serial numbers mismatch across servers"
+        ></i>
+    </td>
     <td>
         <a routerLink="/dns/zones" [queryParams]="{ zoneClass: localZone.class }" (click)="activateFirstTab()">{{
             localZone.class
         }}</a>
     </td>
     <td>{{ localZone.loadedAt | localtime | placeholder: 'never' }}</td>
+</ng-template>
+
+<ng-template #zoneSerialInfo let-zoneSerialInfo>
+    <ng-container *ngIf="zoneSerialInfo.hasMismatch">
+        <p-tag
+            severity="danger"
+            [value]="zoneSerialInfo.serial"
+            pTooltip="Serial numbers mismatch across servers"
+            styleClass="text-base serial-mismatch"
+            icon="pi pi-exclamation-triangle"
+        />
+    </ng-container>
+    <ng-container *ngIf="!zoneSerialInfo.hasMismatch">
+        {{ zoneSerialInfo.serial }}
+    </ng-container>
 </ng-template>
 
 <p-dialog header="Zones Fetch Status" [modal]="true" [(visible)]="fetchStatusVisible" styleClass="max-w-screen">
@@ -498,20 +520,11 @@ for each occurrence of that zone.
                         <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" styleClass="px-0 md:px-2" />
                     </td>
                     <td>
-                        <div [class.bg-red-100]="getZoneSerialInfo(zone).hasMismatch">
-                            {{ getZoneSerialInfo(zone).serial }}
-                            <i
-                                *ngIf="getZoneSerialInfo(zone).hasMismatch"
-                                class="pi pi-star-fill text-red-500 ml-2"
-                                pTooltip="Serial numbers mismatch across servers"
-                            ></i>
-                        </div>
+                        <ng-container
+                            *ngTemplateOutlet="zoneSerialInfo; context: { $implicit: getZoneSerialInfo(zone) }"
+                        ></ng-container>
                     </td>
-                    <td>
-                        <span *ngFor="let type of getUniqueZoneTypes(zone); let last = last">
-                            {{ type }}{{ !last ? ', ' : '' }}
-                        </span>
-                    </td>
+                    <td>{{ getUniqueZoneTypes(zone).join(', ') }}</td>
                     <td>
                         {{ zone?.localZones?.length ?? 0 }}
                     </td>
@@ -520,7 +533,7 @@ for each occurrence of that zone.
 
             <ng-template pTemplate="rowexpansion" let-zone>
                 <tr>
-                    <td colspan="3">
+                    <td colspan="5">
                         <div class="p-2">
                             <p-table
                                 [value]="zone.localZones ?? []"
@@ -540,7 +553,10 @@ for each occurrence of that zone.
                                 <ng-template pTemplate="body" let-localZone>
                                     <tr>
                                         <ng-container
-                                            *ngTemplateOutlet="localZoneCells; context: { $implicit: localZone }"
+                                            *ngTemplateOutlet="
+                                                localZoneCells;
+                                                context: { $implicit: localZone, serialInfo: getZoneSerialInfo(zone) }
+                                            "
                                         ></ng-container>
                                     </tr>
                                 </ng-template>
@@ -561,7 +577,7 @@ for each occurrence of that zone.
                     *ngTemplateOutlet="
                         emptyMessage;
                         context: {
-                            $implicit: 3,
+                            $implicit: 5,
                             empty:
                                 'No zones were found in the Stork server database' +
                                 (hasFilter(zonesTable.filters) ? ' for the applied filter' : '') +
@@ -620,7 +636,10 @@ for each occurrence of that zone.
                         <ng-template pTemplate="body" let-localZone>
                             <tr>
                                 <ng-container
-                                    *ngTemplateOutlet="localZoneCells; context: { $implicit: localZone }"
+                                    *ngTemplateOutlet="
+                                        localZoneCells;
+                                        context: { $implicit: localZone, serialInfo: getZoneSerialInfo(tab) }
+                                    "
                                 ></ng-container>
                                 <td>
                                     <p-tag

@@ -24,3 +24,13 @@
   .p-datatable .p-datatable-header:has(.p-panel)
     padding-left: 0
     padding-right: 0
+
+  // Compensate left padding for p-tag marking zone serial mismatch.
+  .serial-mismatch
+    margin-left: -0.4rem
+
+    // Change the order inside p-tag so that the icon will be visible after the serial.
+    // And add little margin to the icon.
+    .p-tag-icon
+      order: 1
+      margin-left: 0.25rem
