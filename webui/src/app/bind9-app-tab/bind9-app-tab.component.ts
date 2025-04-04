@@ -15,7 +15,7 @@ import {
     getErrorMessage,
 } from '../utils'
 import { AppTab } from '../apps'
-import { Bind9DaemonView } from '../backend'
+import { Bind9DaemonView, DNSZoneType } from '../backend'
 
 @Component({
     selector: 'app-bind9-app-tab',
@@ -73,6 +73,11 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      */
     @Output() renameApp = new EventEmitter<string>()
 
+    /**
+     * All zone types except builtin type.
+     */
+    configuredZoneTypes: string[] = []
+
     constructor(
         private servicesApi: ServicesService,
         private serverData: ServerDataService,
@@ -100,6 +105,14 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
                 }
             })
         )
+
+        for (const t in DNSZoneType) {
+            if (DNSZoneType[t] === DNSZoneType.Builtin) {
+                continue
+            }
+
+            this.configuredZoneTypes.push(DNSZoneType[t])
+        }
     }
 
     /**

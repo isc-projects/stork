@@ -78,7 +78,11 @@
                                 </div>
                                 <div class="col-12 sm:col-3 pb-0 font-medium">Number of Zones</div>
                                 <div class="col-12 sm:col-9">
-                                    {{ daemon.zoneCount }}
+                                    <a
+                                        routerLink="/dns/zones"
+                                        [queryParams]="{ appId: appTab.app.id, zoneType: configuredZoneTypes }"
+                                        >{{ daemon.zoneCount }}</a
+                                    >
                                 </div>
                                 <ng-container *ngFor="let view of daemon.views">
                                     <div
