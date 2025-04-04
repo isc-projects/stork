@@ -625,6 +625,7 @@ describe('ZonesPageComponent', () => {
         expect(component.appTypes.length).toBeGreaterThan(0)
         expect(component.appTypes[0].value).toBeTruthy()
         expect(component.appTypes[0].name).toBeTruthy()
+        expect(component.zoneClasses).not.toContain(DNSClass.Any)
     })
 
     it('should activate first tab', () => {

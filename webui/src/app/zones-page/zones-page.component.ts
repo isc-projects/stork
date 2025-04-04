@@ -529,6 +529,10 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         for (const c in DNSClass) {
+            if (DNSClass[c] === DNSClass.Any) {
+                continue
+            }
+
             this.zoneClasses.push(DNSClass[c])
         }
 
