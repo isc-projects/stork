@@ -477,7 +477,7 @@ for each occurrence of that zone.
                 <tr>
                     <th class="w-3rem sm:w-5rem"></th>
                     <th>Zone Name</th>
-                    <th># of Associated DNS Servers</th>
+                    <th># of Associated DNS Instances</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-zone let-expanded="expanded">
@@ -530,7 +530,7 @@ for each occurrence of that zone.
                                 <ng-template pTemplate="emptymessage" let-columns>
                                     <tr>
                                         <td [attr.colspan]="columns.length">
-                                            There are no DNS servers associated with this zone.
+                                            There are no DNS instances associated with this zone.
                                         </td>
                                     </tr>
                                 </ng-template>
@@ -583,7 +583,7 @@ for each occurrence of that zone.
                 </p-fieldset>
             </div>
             <div class="mb-4">
-                <p-fieldset legend="DNS Servers Associated with the Zone">
+                <p-fieldset legend="DNS Instances Associated with the Zone">
                     <p-table
                         [value]="tab.localZones"
                         dataKey="serial"
@@ -622,7 +622,7 @@ for each occurrence of that zone.
                         <ng-template pTemplate="emptymessage">
                             <tr>
                                 <td [attr.colspan]="localZoneColumns.length + 1">
-                                    There are no DNS servers associated with this zone.
+                                    There are no DNS instances associated with this zone.
                                 </td>
                             </tr>
                         </ng-template>
