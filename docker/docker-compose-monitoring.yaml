@@ -1,0 +1,82 @@
+version: '3.8'
+
+volumes:
+  grafana_data:
+    driver: local
+  prometheus_data:
+    driver: local
+
+networks:
+  storknet:
+    external: true
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    command:
+      - '--config.file=/etc/prometheus/prometheus-prod.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./docker/config/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.110
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/config/grafana/grafana-prod.ini:/etc/grafana/grafana.ini:ro
+      - ./docker/config/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./docker/config/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.111
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.112
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.113
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

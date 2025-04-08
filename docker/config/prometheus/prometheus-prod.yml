@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  # Node exporters for machine metrics
+  - job_name: 'node'
+    static_configs:
+      - targets:
+        - 'node-exporter:9100'
+        - 'kea:9100'
+        - 'bind9:9100'
+
+  # Container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Kea DHCP metrics
+  - job_name: 'kea'
+    static_configs:
+      - targets: ['kea:9547']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+
+  # BIND9 metrics
+  - job_name: 'bind9'
+    static_configs:
+      - targets: ['bind9:9119']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+
+  # Stork Server metrics
+  - job_name: 'stork'
+    static_configs:
+      - targets: ['server:8080']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+
+  # Stork Agent metrics
+  - job_name: 'stork-agents'
+    static_configs:
+      - targets:
+        - 'agent-kea:8080'
+        - 'agent-bind9:8080'
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http

@@ -1,0 +1,305 @@
+version: '3.8'
+
+# Define named volumes for persistent data
+volumes:
+  postgres_data:
+    driver: local
+  grafana_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  stork_logs:
+    driver: local
+  authentication_icons:
+    driver: local
+
+# Define networks with explicit subnet configuration
+networks:
+  storknet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+          ip_range: 172.24.0.0/24
+          gateway: 172.24.0.1
+    driver_opts:
+      com.docker.network.bridge.name: storknet
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    networks:
+      - storknet
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_USER: stork
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: stork
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stork"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.100
+
+  server:
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: server
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
+    restart: unless-stopped
+    networks:
+      - storknet
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      STORK_DATABASE_HOST: postgres
+      STORK_DATABASE_PORT: 5432
+      STORK_DATABASE_USER: stork
+      STORK_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      STORK_DATABASE_NAME: stork
+      STORK_SERVER_PORT: 8080
+    volumes:
+      - ./certs:/etc/stork/certs:ro
+      - stork_logs:/var/log/stork
+      - authentication_icons:/usr/share/stork/www/assets/authentication-methods
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.101
+    ports:
+      - "${STORK_SERVER_PORT:-8080}:8080"
+
+  webui:
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: webui
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/webui:latest"
+    restart: unless-stopped
+    networks:
+      - storknet
+    ports:
+      - "80:80"
+    environment:
+      API_HOST: server
+      API_PORT: 8080
+    depends_on:
+      - server
+    volumes:
+      - authentication_icons:/usr/share/stork/www/assets/authentication-methods
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.102
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    restart: unless-stopped
+    networks:
+      - storknet
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    volumes:
+      - ./docker/config/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    restart: unless-stopped
+    networks:
+      - storknet
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_DOMAIN: localhost
+      GF_SMTP_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/config/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    restart: unless-stopped
+    networks:
+      - storknet
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    restart: unless-stopped
+    networks:
+      - storknet
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  kea:
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: kea
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/kea:latest"
+    environment:
+      DB_TYPE: pgsql
+      DB_HOST: postgres
+      DB_USER: kea
+      DB_PASSWORD: ${KEA_DB_PASSWORD}
+      DB_NAME: kea
+    volumes:
+      - ./docker/config/agent-kea:/etc/kea:ro
+      - ./docker/config/supervisor:/etc/supervisor:ro
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.103
+    ports:
+      - "67:67/udp"  # DHCPv4
+      - "547:547/udp"  # DHCPv6
+      - "9547:9547"  # Prometheus Kea Exporter
+
+  agent-kea:
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: agent
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
+    environment:
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-kea
+    volumes:
+      - ./docker/config/agent-kea:/etc/stork/agent-kea:ro
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.104
+    depends_on:
+      - kea
+    ports:
+      - "8888:8080"  # Agent API
+
+  bind9:
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: bind
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/bind9:latest"
+    volumes:
+      - ./docker/config/agent-bind9:/etc/bind:ro
+      - ./docker/config/supervisor:/etc/supervisor:ro
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.105
+    ports:
+      - "53:53/udp"  # DNS
+      - "53:53/tcp"  # DNS
+      - "9119:9119"  # Prometheus BIND9 Exporter
+
+  agent-bind9:
+    build:
+      context: .
+      dockerfile: docker/images/stork.Dockerfile
+      target: agent
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
+    environment:
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-bind9
+    volumes:
+      - ./docker/config/agent-bind9:/etc/stork/agent-bind9:ro
+    networks:
+      storknet:
+        ipv4_address: 172.24.0.106
+    depends_on:
+      - bind9
+    ports:
+      - "8889:8080"  # Agent API
