@@ -462,14 +462,20 @@
                             </td>
                             <td>{{ showDuration(a?.details?.daemon?.uptime ?? 0) }}</td>
                             <td>
-                                <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">{{
-                                    zoneCountMap?.get(a?.details?.daemon?.id).totalCount ?? 0
-                                }}</a>
+                                <ng-container *ngIf="zoneInventoryStateMap.get(a.id)">
+                                    <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">{{
+                                        zoneInventoryStateMap.get(a.id).distinctZoneCount ?? 0
+                                    }}</a>
+                                </ng-container>
+                                <ng-container *ngIf="!zoneInventoryStateMap.get(a.id)"> n/a </ng-container>
                             </td>
                             <td>
-                                <a routerLink="/dns/zones" [queryParams]="{ appId: a.id, zoneType: 'builtin' }">{{
-                                    zoneCountMap?.get(a?.details?.daemon?.id).builtinCount ?? 0
-                                }}</a>
+                                <ng-container *ngIf="zoneInventoryStateMap.get(a.id)">
+                                    <a routerLink="/dns/zones" [queryParams]="{ appId: a.id, zoneType: 'builtin' }">{{
+                                        zoneInventoryStateMap.get(a.id).builtinZoneCount ?? 0
+                                    }}</a>
+                                </ng-container>
+                                <ng-container *ngIf="!zoneInventoryStateMap.get(a.id)"> n/a </ng-container>
                             </td>
                             <td>
                                 <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">
