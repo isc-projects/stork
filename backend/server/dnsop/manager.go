@@ -235,7 +235,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 							break
 						}
 						if isFirst {
-							// Delete the local zones
+							// Delete the local zones.
 							isFirst = false
 							err = dbmodel.DeleteLocalZones(manager.db, app.Daemons[0].ID)
 							if err != nil {
