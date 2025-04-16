@@ -8,6 +8,7 @@ import {
     AppsVersions,
     DhcpOverview,
     DHCPService,
+    DNSService,
     ServicesService,
     SettingsService,
     UsersService,
@@ -20,7 +21,6 @@ import { By } from '@angular/platform-browser'
 import { ServerDataService } from '../server-data.service'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { PaginatorModule } from 'primeng/paginator'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
@@ -35,6 +35,8 @@ import { SettingService } from '../setting.service'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { TagModule } from 'primeng/tag'
+import { RouterModule } from '@angular/router'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -43,6 +45,8 @@ describe('DashboardComponent', () => {
     let dataService: ServerDataService
     let settingService: SettingService
     let versionServiceStub: Partial<VersionService>
+    let dnsService: DNSService
+    let servicesApi: ServicesService
 
     beforeEach(waitForAsync(() => {
         versionServiceStub = {
@@ -69,8 +73,9 @@ describe('DashboardComponent', () => {
                 PaginatorModule,
                 TooltipModule,
                 ButtonModule,
-                RouterTestingModule,
+                RouterModule.forRoot([]),
                 TableModule,
+                TagModule,
             ],
             providers: [
                 ServicesService,
@@ -91,6 +96,8 @@ describe('DashboardComponent', () => {
         dataService = TestBed.inject(ServerDataService)
         settingService = TestBed.inject(SettingService)
         TestBed.inject(VersionService)
+        dnsService = TestBed.inject(DNSService)
+        servicesApi = TestBed.inject(ServicesService)
     }))
 
     beforeEach(() => {
@@ -213,10 +220,63 @@ describe('DashboardComponent', () => {
             of({
                 keaAppsTotal: 1,
                 bind9AppsNotOk: 0,
-                bind9AppsTotal: 0,
+                bind9AppsTotal: 1,
                 keaAppsNotOk: 0,
             } as AppsStats)
         )
+
+        const zonesFetchStatusResponse = {
+            items: [
+                {
+                    appId: 11,
+                    appName: 'bind9@agent-bind9',
+                    builtinZoneCount: 104,
+                    createdAt: '2025-04-14T13:09:06.460Z',
+                    daemonId: 27,
+                    distinctZoneCount: 106,
+                    status: 'ok',
+                    zoneCount: 206,
+                },
+            ],
+            total: 1,
+        }
+        spyOn(dnsService, 'getZonesFetch').and.returnValue(of(zonesFetchStatusResponse as any))
+        const appsResponse = {
+            items: [
+                {
+                    accessPoints: [
+                        { address: '127.0.0.1', port: 953, type: 'control' },
+                        { address: '127.0.0.1', port: 8053, type: 'statistics' },
+                    ],
+                    details: {
+                        daemons: [],
+                        daemon: {
+                            active: true,
+                            agentCommErrors: 200,
+                            autoZoneCount: 200,
+                            id: 27,
+                            monitored: true,
+                            name: 'named',
+                            reloadedAt: '2025-04-12T11:58:41.000Z',
+                            uptime: 5356,
+                            version: 'BIND 9.18.35 (Extended Support Version) <id:f506f80>',
+                            views: [
+                                { name: 'guest', queryHits: 0, queryMisses: 0 },
+                                { name: 'trusted', queryHits: 0, queryMisses: 0 },
+                            ],
+                            zoneCount: 4,
+                        },
+                    },
+                    id: 11,
+                    machine: { address: 'agent-bind9', hostname: 'agent-bind9', id: 15 },
+                    name: 'bind9@agent-bind9',
+                    type: 'bind9',
+                    version: 'BIND 9.18.35 (Extended Support Version) <id:f506f80>',
+                },
+            ],
+            total: 1,
+        }
+        spyOn(servicesApi, 'getApps').and.returnValue(of(appsResponse as any))
 
         fixture = TestBed.createComponent(DashboardComponent)
         component = fixture.componentInstance
@@ -490,14 +550,94 @@ describe('DashboardComponent', () => {
         fixture.detectChanges()
         await fixture.whenRenderingDone()
 
-        // One VersionStatus for Kea dhcp4 daemon.
-        let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
+        // One VersionStatus for Kea dhcp4 daemon and one for Bind9 daemon.
+        const versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
         expect(versionStatus).toBeTruthy()
-        expect(versionStatus.length).toEqual(1)
+        expect(versionStatus.length).toEqual(2)
         // Stubbed success icon for kea 2.0.0 is expected.
         expect(versionStatus[0].properties.outerHTML).toContain('2.0.0')
         expect(versionStatus[0].properties.outerHTML).toContain('kea')
         expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
         expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
+    })
+
+    it('should return whether both dhcp and dns apps exist', () => {
+        component.appsStats.keaAppsTotal = 0
+        component.appsStats.bind9AppsTotal = 0
+        expect(component.appsStats.keaAppsTotal).toBe(0)
+        expect(component.appsStats.bind9AppsTotal).toBe(0)
+        expect(component.bothDHCPAndDNSAppsExist)
+            .withContext('in the beginning there are no dhcp nor dns apps')
+            .toBeFalse()
+        component.appsStats.bind9AppsTotal = 2
+        expect(component.bothDHCPAndDNSAppsExist).withContext('only dns apps exist').toBeFalse()
+        component.appsStats.bind9AppsTotal = 0
+        component.appsStats.keaAppsTotal = 2
+        expect(component.bothDHCPAndDNSAppsExist).withContext('only dhcp apps exist').toBeFalse()
+        component.appsStats.bind9AppsTotal = 2
+        expect(component.bothDHCPAndDNSAppsExist).withContext('both dhcp and dns apps exist').toBeTrue()
+    })
+
+    it('should return that both dhcp and dns dashboards are hidden', () => {
+        localStorage.clear()
+        expect(component.appsStats.keaAppsTotal).toBe(1)
+        expect(component.appsStats.bind9AppsTotal).toBe(1)
+        expect(localStorage.getItem('dns-dashboard-hidden'))
+            .withContext('there should be no state stored in local storage yet')
+            .toBeNull()
+        expect(localStorage.getItem('dhcp-dashboard-hidden'))
+            .withContext('there should be no state stored in local storage yet')
+            .toBeNull()
+        expect(component.isDNSDashboardHidden()).toBeTrue()
+        expect(component.isDHCPDashboardHidden()).toBeTrue()
+    })
+
+    it('should return that one dashboard is not hidden', () => {
+        localStorage.clear()
+        component.appsStats.keaAppsTotal = 2
+        component.appsStats.bind9AppsTotal = 0
+        expect(localStorage.getItem('dns-dashboard-hidden'))
+            .withContext('there should be no state stored in local storage yet')
+            .toBeNull()
+        expect(localStorage.getItem('dhcp-dashboard-hidden'))
+            .withContext('there should be no state stored in local storage yet')
+            .toBeNull()
+        expect(component.isDHCPDashboardHidden()).toBeFalse()
+        fixture.detectChanges()
+        let expandedDashboardPanels = fixture.debugElement.queryAll(
+            By.css('.p-panel.p-panel-toggleable.p-panel-expanded')
+        )
+        expect(expandedDashboardPanels).toBeTruthy()
+        expect(expandedDashboardPanels.length).toBe(1)
+        expect(expandedDashboardPanels[0].nativeElement.innerText).toContain('DHCP Dashboard')
+
+        component.appsStats.keaAppsTotal = 0
+        component.appsStats.bind9AppsTotal = 2
+        expect(component.isDNSDashboardHidden()).toBeFalse()
+        fixture.detectChanges()
+        expandedDashboardPanels = fixture.debugElement.queryAll(By.css('.p-panel.p-panel-toggleable.p-panel-expanded'))
+        expect(expandedDashboardPanels).toBeTruthy()
+        expect(expandedDashboardPanels.length).toBe(1)
+        expect(expandedDashboardPanels[0].nativeElement.innerText).toContain('DNS Dashboard')
+    })
+
+    it('should store dashboard hidden state', () => {
+        localStorage.clear()
+        component.storeDHCPDashboardHidden(true)
+        expect(localStorage.getItem('dhcp-dashboard-hidden')).toBe('true')
+        expect(localStorage.getItem('dns-dashboard-hidden')).toBeNull()
+        component.storeDNSDashboardHidden(true)
+        expect(localStorage.getItem('dns-dashboard-hidden')).toBe('true')
+        component.storeDHCPDashboardHidden(false)
+        expect(localStorage.getItem('dhcp-dashboard-hidden')).toBe('false')
+        component.storeDNSDashboardHidden(false)
+        expect(localStorage.getItem('dns-dashboard-hidden')).toBe('false')
+    })
+
+    it('should display dns dashboard', () => {
+        const dashboardPanels = fixture.debugElement.queryAll(By.css('.p-panel.p-panel-toggleable'))
+        expect(dashboardPanels).toBeTruthy()
+        expect(dashboardPanels.length).toBe(2)
+        expect(dashboardPanels[1].nativeElement.innerText).toContain('DNS Dashboard')
     })
 })

@@ -61,16 +61,16 @@
                 <div class="grid dashboard-dhcp" id="dashboard-dhcp4">
                     <div class="col-12 lg:col-4 dashboard-dhcp__subnets dashboard-section">
                         <h2 class="section-heading dashboard-section__header">
-                            Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
+                            Subnets: {{ overview.subnets4?.total ?? 0 }}
                             <app-help-tip subject="subnets listed" id="subnets4-help-button">
                                 <p>
                                     This list shows the five DHCPv4 subnets with the highest utilization. The total
-                                    number of subnets is {{ overview.subnets4.total ? overview.subnets4.total : '0' }}.
+                                    number of subnets is {{ overview.subnets4?.total ?? 0 }}.
                                 </p>
                             </app-help-tip>
                         </h2>
                         <table class="dashboard-section__data">
-                            <tr *ngFor="let sn of overview.subnets4.items" class="utilization-row">
+                            <tr *ngFor="let sn of overview.subnets4?.items ?? []" class="utilization-row">
                                 <td class="utilization-row__id">
                                     {{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}
                                 </td>
@@ -117,17 +117,17 @@
                     </div>
                     <div class="col-12 lg:col-4 dashboard-dhcp__shared-networks dashboard-section">
                         <h2 class="section-heading dashboard-section__header">
-                            Shared Networks: {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}
+                            Shared Networks: {{ overview.sharedNetworks4?.total ?? 0 }}
                             <app-help-tip subject="networks listed" id="networks4-help-button">
                                 <p>
                                     This list shows the five shared networks with the highest utilization. The total
                                     number of networks is
-                                    {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}.
+                                    {{ overview.sharedNetworks4?.total ?? 0 }}.
                                 </p>
                             </app-help-tip>
                         </h2>
                         <table class="dashboard-section__data">
-                            <tr *ngFor="let net of overview.sharedNetworks4.items" class="utilization-row">
+                            <tr *ngFor="let net of overview.sharedNetworks4?.items ?? []" class="utilization-row">
                                 <td class="utilization-row__name">
                                     <app-entity-link
                                         [showEntityName]="false"
@@ -156,13 +156,13 @@
                             <tr class="statistics-row">
                                 <td class="statistics-row__label">Addresses</td>
                                 <td class="statistics-row__value">
-                                    {{ overview.dhcp4Stats.assignedAddresses ?? 0 | humanCount }}
+                                    {{ overview.dhcp4Stats?.assignedAddresses ?? 0 | humanCount }}
                                     /
-                                    {{ overview.dhcp4Stats.totalAddresses ?? 0 | humanCount }}
+                                    {{ overview.dhcp4Stats?.totalAddresses ?? 0 | humanCount }}
                                     ({{
                                         getPercent(
-                                            overview.dhcp4Stats.assignedAddresses,
-                                            overview.dhcp4Stats.totalAddresses
+                                            overview.dhcp4Stats?.assignedAddresses,
+                                            overview.dhcp4Stats?.totalAddresses
                                         )
                                     }}% used)
                                 </td>
@@ -170,7 +170,7 @@
                             <tr class="statistics-row">
                                 <td class="statistics-row__label">Declined</td>
                                 <td class="statistics-row__value">
-                                    {{ overview.dhcp4Stats.declinedAddresses ?? 0 | humanCount }}
+                                    {{ overview.dhcp4Stats?.declinedAddresses ?? 0 | humanCount }}
                                 </td>
                             </tr>
                             <!-- TODO <tr> -->
@@ -185,16 +185,16 @@
                 <div class="grid dashboard-dhcp" id="dashboard-dhcp6">
                     <div class="col-12 lg:col-4 dashboard-dhcp__subnets dashboard-section">
                         <h2 class="section-heading dashboard-section__header">
-                            Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
+                            Subnets: {{ overview.subnets6?.total ?? 0 }}
                             <app-help-tip subject="subnets listed" id="subnets6-help-button">
                                 <p>
                                     This list shows the five DHCPv6 subnets with the highest utilization. The total
-                                    number of subnets is {{ overview.subnets6.total ? overview.subnets6.total : '0' }}.
+                                    number of subnets is {{ overview.subnets6?.total ?? 0 }}.
                                 </p>
                             </app-help-tip>
                         </h2>
                         <table class="dashboard-section__data">
-                            <tr *ngFor="let sn of overview.subnets6.items" class="utilization-row">
+                            <tr *ngFor="let sn of overview.subnets6?.items ?? []" class="utilization-row">
                                 <td class="utilization-row__id">
                                     {{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}
                                 </td>
@@ -241,17 +241,17 @@
                     </div>
                     <div class="col-12 lg:col-4 dashboard-dhcp__shared-networks dashboard-section">
                         <h2 class="section-heading dashboard-section__header">
-                            Shared Networks: {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}
+                            Shared Networks: {{ overview.sharedNetworks6?.total ?? 0 }}
                             <app-help-tip subject="networks listed" id="networks6-help-button">
                                 <p>
                                     This list shows the five shared networks with the highest utilization. The total
                                     number of networks is
-                                    {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}.
+                                    {{ overview.sharedNetworks6?.total ?? 0 }}.
                                 </p>
                             </app-help-tip>
                         </h2>
                         <table class="dashboard-section__data">
-                            <tr *ngFor="let net of overview.sharedNetworks6.items" class="utilization-row">
+                            <tr *ngFor="let net of overview.sharedNetworks6?.items ?? []" class="utilization-row">
                                 <td class="utilization-row__name">
                                     <app-entity-link
                                         [showEntityName]="false"
@@ -280,27 +280,27 @@
                             <tr class="statistics-row">
                                 <td class="statistics-row__label">Addresses</td>
                                 <td class="statistics-row__value">
-                                    {{ overview.dhcp6Stats.assignedNAs ?? 0 | humanCount }}
+                                    {{ overview.dhcp6Stats?.assignedNAs ?? 0 | humanCount }}
                                     /
-                                    {{ overview.dhcp6Stats.totalNAs ?? 0 | humanCount }}
-                                    ({{ getPercent(overview.dhcp6Stats.assignedNAs, overview.dhcp6Stats.totalNAs) }}%
+                                    {{ overview.dhcp6Stats?.totalNAs ?? 0 | humanCount }}
+                                    ({{ getPercent(overview.dhcp6Stats?.assignedNAs, overview.dhcp6Stats?.totalNAs) }}%
                                     used)
                                 </td>
                             </tr>
                             <tr class="statistics-row">
                                 <td class="statistics-row__label">Prefixes</td>
                                 <td class="statistics-row__value">
-                                    {{ overview.dhcp6Stats.assignedPDs ?? 0 | humanCount }}
+                                    {{ overview.dhcp6Stats?.assignedPDs ?? 0 | humanCount }}
                                     /
-                                    {{ overview.dhcp6Stats.totalPDs ?? 0 | humanCount }}
-                                    ({{ getPercent(overview.dhcp6Stats.assignedPDs, overview.dhcp6Stats.totalPDs) }}%
+                                    {{ overview.dhcp6Stats?.totalPDs ?? 0 | humanCount }}
+                                    ({{ getPercent(overview.dhcp6Stats?.assignedPDs, overview.dhcp6Stats?.totalPDs) }}%
                                     used)
                                 </td>
                             </tr>
                             <tr class="statistics-row">
                                 <td class="statistics-row__label">Declined</td>
                                 <td class="statistics-row__value">
-                                    {{ overview.dhcp6Stats.declinedNAs ?? 0 | humanCount }}
+                                    {{ overview.dhcp6Stats?.declinedNAs ?? 0 | humanCount }}
                                 </td>
                             </tr>
                             <!-- TODO <tr> -->
