@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	log "github.com/sirupsen/logrus"
+	agentapi "isc.org/stork/api"
 	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
@@ -81,7 +82,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 	statsOutput := NamedStatsGetResponse{}
 	ctx := context.Background()
-	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp, statsChannel.Address, statsChannel.Port, "", &statsOutput)
+	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp, statsChannel.Address, statsChannel.Port, agentapi.ForwardToNamedStatsReq_SERVER, &statsOutput)
 	if err != nil {
 		return err
 	}

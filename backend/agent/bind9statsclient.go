@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"iter"
 	"strings"
 	"time"
 
@@ -69,13 +70,27 @@ func (request *bind9StatsClientRequest) makeURL(path string) string {
 // Makes an HTTP GET request and expects JSON payload in return. The returned
 // value is unmarshalled and stored in the result. The path is the path part
 // of the URL.
-func (request *bind9StatsClientRequest) getJSON(path string, result any) (httpResponse, error) {
+func (request *bind9StatsClientRequest) getJSON(result any, path string) (httpResponse, error) {
 	url := request.makeURL(path)
 	response, err := request.innerClient.R().SetHeader("Accept", "application/json").SetResult(&result).Get(url)
 	if err == nil {
 		return response, nil
 	}
 	return nil, pkgerrors.WithStack(err)
+}
+
+// Makes sequential HTTP GET requests to the specified paths and combines the results
+// into the single structure. The paths are the path parts of the URL.
+func (request *bind9StatsClientRequest) getCombinedJSON(result any, paths ...string) iter.Seq2[httpResponse, error] {
+	return func(yield func(httpResponse, error) bool) {
+		for _, path := range paths {
+			url := request.makeURL(path)
+			response, err := request.innerClient.R().SetHeader("Accept", "application/json").SetResult(&result).Get(url)
+			if !yield(response, err) {
+				return
+			}
+		}
+	}
 }
 
 // Makes an HTTP GET request and expects JSON payload in return. The returned payload
@@ -98,7 +113,7 @@ func (request *bind9StatsClientRequest) getViews() (httpResponse, *bind9stats.Vi
 	var result struct {
 		Views *bind9stats.Views
 	}
-	response, err := request.getJSON("/zones", &result)
+	response, err := request.getJSON(&result, "/zones")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -111,7 +126,7 @@ func (request *bind9StatsClientRequest) getViews() (httpResponse, *bind9stats.Vi
 // to map[string]any.
 func (request *bind9StatsClientRequest) getRawStats() (httpResponse, any, error) {
 	var stats any
-	response, err := request.getJSON("/", &stats)
+	response, err := request.getJSON(&stats, "/")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -149,4 +164,11 @@ func (client *bind9StatsClient) createRequestFromURL(url string) *bind9StatsClie
 // Makes a request to retrieve BIND9 views over the stats channel.
 func (client *bind9StatsClient) getViews(host string, port int64) (httpResponse, *bind9stats.Views, error) {
 	return client.createRequest(host, port).getViews()
+}
+
+// Makes two sequential HTTP GET requests to retrieve server and traffic stats.
+// The results are combined into the map and returned to a caller.
+func (client *bind9StatsClient) getServerAndTrafficStats(host string, port int64) (iter.Seq2[httpResponse, error], map[string]any) {
+	result := make(map[string]any)
+	return client.createRequest(host, port).getCombinedJSON(&result, "server", "traffic"), result
 }

@@ -2,20 +2,43 @@ package bind9
 
 import (
 	"context"
+	_ "embed"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	agentcommtest "isc.org/stork/server/agentcomm/test"
+	gomock "go.uber.org/mock/gomock"
+	agentapi "isc.org/stork/api"
+	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
 
-// Named statistics-channel response.
-func mockNamed(callNo int, response interface{}) {
-	statsOutput := response.(*NamedStatsGetResponse)
-	*statsOutput = NamedStatsGetResponse{
+//go:embed testdata/rndc-output.txt
+var mockRndcOutput []byte
+
+//go:generate mockgen -package=bind9 -destination=connectedagentsmock_test.go -source=../../agentcomm/agentcomm.go ConnectedAgents
+
+// Test retrieving state of BIND 9 app.
+func TestGetAppState(t *testing.T) {
+	ctx := context.Background()
+
+	fec := &storktest.FakeEventCenter{}
+
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953, false)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000, false)
+	dbApp := dbmodel.App{
+		AccessPoints: accessPoints,
+		Machine: &dbmodel.Machine{
+			Address:   "192.0.2.0",
+			AgentPort: 1111,
+		},
+	}
+
+	// Set named stats response.
+	response := NamedStatsGetResponse{
 		Views: map[string]*ViewStatsData{
 			"_default": {
 				Resolver: ResolverData{
@@ -49,31 +72,27 @@ func mockNamed(callNo int, response interface{}) {
 			},
 		},
 	}
-}
 
-// Test retrieving state of BIND 9 app.
-func TestGetAppState(t *testing.T) {
-	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	fa := agentcommtest.NewFakeAgents(nil, mockNamed)
-	fec := &storktest.FakeEventCenter{}
+	mockConnectedAgents := NewMockConnectedAgents(ctrl)
 
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953, false)
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000, false)
-	dbApp := dbmodel.App{
-		AccessPoints: accessPoints,
-		Machine: &dbmodel.Machine{
-			Address:   "192.0.2.0",
-			AgentPort: 1111,
-		},
-	}
+	// rndc response
+	mockConnectedAgents.EXPECT().
+		ForwardRndcCommand(gomock.Any(), &dbApp, "status").
+		Times(3).
+		Return(&agentcomm.RndcOutput{Output: string(mockRndcOutput)}, nil)
 
-	GetAppState(ctx, fa, &dbApp, fec)
+	// named stats response
+	mockConnectedAgents.EXPECT().
+		ForwardToNamedStats(gomock.Any(), &dbApp, "127.0.0.1", int64(8000), agentapi.ForwardToNamedStatsReq_SERVER, gomock.Any()).
+		Times(3).
+		// Response is returned via argument pointer.
+		SetArg(5, response).
+		Return(nil)
 
-	require.Equal(t, "127.0.0.1", fa.RecordedAddress)
-	require.EqualValues(t, 953, fa.RecordedPort)
-	require.Equal(t, "abcd", fa.RecordedKey)
+	GetAppState(ctx, mockConnectedAgents, &dbApp, fec)
 
 	require.True(t, dbApp.Active)
 	require.Equal(t, dbApp.Meta.Version, "9.9.9")
@@ -104,14 +123,14 @@ func TestGetAppState(t *testing.T) {
 	// If the daemon has no ID, it means it is a new daemon that hasn't
 	// been yet added to the database. In this case, the function will rather
 	// instantiate a new daemon.
-	GetAppState(ctx, fa, &dbApp, fec)
+	GetAppState(ctx, mockConnectedAgents, &dbApp, fec)
 	require.Len(t, dbApp.Daemons, 1)
 	daemon2 := dbApp.Daemons[0]
 	require.NotSame(t, daemon, daemon2)
 
 	// Set the ID. This time, the daemon should be preserved.
 	dbApp.Daemons[0].ID = 1
-	GetAppState(ctx, fa, &dbApp, fec)
+	GetAppState(ctx, mockConnectedAgents, &dbApp, fec)
 	require.Len(t, dbApp.Daemons, 1)
 	daemon3 := dbApp.Daemons[0]
 	require.Same(t, daemon3, daemon2)

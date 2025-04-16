@@ -18,6 +18,12 @@ import (
 //go:embed testdata/bind9-stats.json
 var bind9Stats []byte
 
+//go:embed testdata/bind9-server-stats.json
+var bind9ServerStats []byte
+
+//go:embed testdata/bind9-traffic-stats.json
+var bind9TrafficStats []byte
+
 // Test creating base URL by appending the /json/v{n} path to the host and
 // port with ensuring correct slashes.
 func TestSetBind9StatsClientBasePath(t *testing.T) {
@@ -35,6 +41,112 @@ func TestMakeURL(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("http://localhost:5380/json/v%d/views/zones", bind9StatsAPIVersion), request.makeURL("/views/zones/"))
 	require.Equal(t, fmt.Sprintf("http://localhost:5380/json/v%d", bind9StatsAPIVersion), request.makeURL("/"))
 	require.Equal(t, fmt.Sprintf("http://localhost:5380/json/v%d", bind9StatsAPIVersion), request.makeURL(""))
+}
+
+// Test that two requests are sent sequentially and the results are combined.
+func TestBind9GetCombinedJSONSuccess(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("json/v1/server").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9ServerStats))
+
+	gock.New("http://localhost:5380/").
+		Get("json/v1/traffic").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9TrafficStats))
+
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
+	gock.InterceptClient(request.innerClient.GetClient())
+
+	result := make(map[string]any)
+	responses := request.getCombinedJSON(&result, "server", "traffic")
+	for response, err := range responses {
+		require.NoError(t, err)
+		require.False(t, response.IsError())
+		require.Equal(t, http.StatusOK, response.StatusCode())
+	}
+	require.Contains(t, result, "opcodes")
+	require.Contains(t, result, "rcodes")
+	require.Contains(t, result, "traffic")
+}
+
+// Test that two sequential requests can be sent and the HTTP error in the
+// first request does not affect the second one.
+func TestBind9GetCombinedJSONFirst404(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("json/v1/server").
+		Reply(404).
+		AddHeader("Content-Type", "application/json").
+		BodyString("No such URL")
+
+	gock.New("http://localhost:5380/").
+		Get("json/v1/traffic").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9TrafficStats))
+
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
+	gock.InterceptClient(request.innerClient.GetClient())
+
+	result := make(map[string]any)
+	responses := request.getCombinedJSON(&result, "server", "traffic")
+	var i int
+	for response, err := range responses {
+		require.NoError(t, err)
+		if i == 0 {
+			require.True(t, response.IsError())
+			require.Equal(t, http.StatusNotFound, response.StatusCode())
+		} else {
+			require.False(t, response.IsError())
+			require.Equal(t, http.StatusOK, response.StatusCode())
+		}
+		i++
+	}
+	require.NotContains(t, result, "opcodes")
+	require.NotContains(t, result, "rcodes")
+	require.Contains(t, result, "traffic")
+}
+
+// Test that two sequential requests can be sent and the HTTP error in the
+// second request does not affect the first one.
+func TestBind9GetCombinedJSONSecond404(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("json/v1/server").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9ServerStats))
+
+	gock.New("http://localhost:5380/").
+		Get("json/v1/traffic").
+		Reply(404).
+		AddHeader("Content-Type", "application/json").
+		BodyString("No such URL")
+
+	request := NewBind9StatsClient().createRequest("localhost", 5380)
+	gock.InterceptClient(request.innerClient.GetClient())
+
+	result := make(map[string]any)
+	responses := request.getCombinedJSON(&result, "server", "traffic")
+	var i int
+	for response, err := range responses {
+		require.NoError(t, err)
+		if i == 0 {
+			require.False(t, response.IsError())
+			require.Equal(t, http.StatusOK, response.StatusCode())
+		} else {
+			require.True(t, response.IsError())
+			require.Equal(t, http.StatusNotFound, response.StatusCode())
+		}
+		i++
+	}
+	require.Contains(t, result, "opcodes")
+	require.Contains(t, result, "rcodes")
+	require.NotContains(t, result, "traffic")
 }
 
 // Test the GET / endpoint returning raw statistics.
@@ -284,4 +396,34 @@ func TestBind9StatsClientTimeout(t *testing.T) {
 	wgClient.Wait()
 	require.NotNil(t, err)
 	require.ErrorContains(t, err, "context deadline exceeded")
+}
+
+// Test convenience function returning combined server and traffic stats.
+func TestBind9GetServerAndTrafficStats(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("json/v1/server").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9ServerStats))
+
+	gock.New("http://localhost:5380/").
+		Get("json/v1/traffic").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9TrafficStats))
+
+	client := NewBind9StatsClient()
+	gock.InterceptClient(client.innerClient.GetClient())
+
+	responses, stats := client.getServerAndTrafficStats("localhost", 5380)
+	for response, err := range responses {
+		require.NoError(t, err)
+		require.False(t, response.IsError())
+		require.Equal(t, http.StatusOK, response.StatusCode())
+	}
+
+	require.Contains(t, stats, "opcodes")
+	require.Contains(t, stats, "rcodes")
+	require.Contains(t, stats, "traffic")
 }

@@ -1,0 +1,21 @@
+{
+    "json-stats-version":"1.8",
+    "boot-time":"2024-11-26T11:42:14.235Z",
+    "config-time":"2024-11-26T11:42:14.435Z",
+    "current-time":"2024-12-04T20:46:50.927Z",
+    "version":"9.21.2",
+    "traffic":{
+      "dns-udp-requests-sizes-received-ipv4":{
+        "32-47":372
+      },
+      "dns-udp-responses-sizes-sent-ipv4":{
+        "144-159":372
+      },
+      "dns-tcp-requests-sizes-received-ipv4":{},
+      "dns-tcp-responses-sizes-sent-ipv4":{},
+      "dns-udp-requests-sizes-received-ipv6":{},
+      "dns-udp-responses-sizes-sent-ipv6":{},
+      "dns-tcp-requests-sizes-received-ipv6":{},
+      "dns-tcp-responses-sizes-sent-ipv6":{}
+    }
+}

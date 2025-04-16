@@ -1,0 +1,89 @@
+{
+    "json-stats-version": "1.2",
+    "boot-time": "2020-04-21T07:13:08.888Z",
+    "config-time": "2020-04-21T07:13:09.989Z",
+    "current-time": "2020-04-21T07:19:28.258Z",
+    "version": "9.16.2",
+    "qtypes": {
+        "A": 201,
+        "AAAA": 200,
+        "DNSKEY": 53
+    },
+    "opcodes": {
+        "QUERY": 454,
+        "IQUERY": 0,
+        "UPDATE": 1
+    },
+    "nsstats": {
+        "ReqEdns0": 100,
+        "Requestv4": 206,
+        "RespEDNS0": 123,
+        "Response": 454,
+        "QryDropped": 9,
+        "QryDuplicate": 15,
+        "QryFailure": 3,
+        "QryNoauthAns": 222,
+        "QryRecursion": 303,
+        "QryNxrrset": 5,
+        "QryNXDOMAIN": 55,
+        "QrySERVFAIL": 555,
+        "QrySuccess": 111,
+        "QryUDP": 404,
+        "QryTCP": 303,
+        "XfrFail": 2,
+        "XfrRej": 11,
+        "XfrSuccess": 22
+    },
+    "taskmgr": {
+        "tasks-running": 1,
+        "worker-threads": 4
+    },
+    "views": {
+        "_default": {
+            "resolver": {
+                "cache": {
+                    "A": 37,
+                    "AAAA": 38,
+                    "DS": 2
+                },
+                "cachestats": {
+                    "CacheHits": 40,
+                    "CacheMisses": 10,
+                    "QueryHits": 30,
+                    "QueryMisses": 20
+                },
+                "qtypes": {
+                    "A": 37,
+                    "NS": 7,
+                    "AAAA": 36,
+                    "DS": 6,
+                    "RRSIG": 21,
+                    "DNSKEY": 4
+                },
+                "stats": {
+                    "EDNS0Fail": 5,
+                    "FORMERR": 13,
+                    "NXDOMAIN": 50,
+                    "SERVFAIL": 404,
+                    "OtherError": 42,
+                    "Lame": 9,
+                    "Mismatch": 10,
+                    "Truncated": 7,
+                    "QueryAbort": 1,
+                    "QueryTimeout": 10,
+                    "QryRTT10": 2,
+                    "QryRTT100": 18,
+                    "QryRTT500": 37,
+                    "QryRTT800": 3,
+                    "QryRTT1600": 1,
+                    "QryRTT1600+": 4,
+                    "Retry": 71,
+                    "ValAttempt": 25,
+                    "ValFail": 5,
+                    "ValNegOk": 3,
+                    "ValOk": 17
+                }
+            }
+        }
+    }
+}

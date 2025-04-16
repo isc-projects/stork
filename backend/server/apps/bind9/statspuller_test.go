@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
+	agentapi "isc.org/stork/api"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
@@ -39,47 +41,52 @@ func TestStatsPullerPullStats(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// prepare fake agents
-	bind9Mock := func(callNo int, statsOutput interface{}) {
-		json := `{
-		    "json-stats-version":"1.2",
-		    "views":{
-		        "trusted":{
-		            "resolver":{
-		                "cachestats":{
-		                    "CacheHits": 60,
-		                    "CacheMisses": 40,
-		                    "QueryHits": 10,
-		                    "QueryMisses": 90
-		                }
-		            }
-		        },
-		        "guest":{
-		            "resolver":{
-		                "cachestats":{
-		                    "CacheHits": 100,
-		                    "CacheMisses": 200,
-		                    "QueryHits": 56,
-		                    "QueryMisses": 75
-		                }
-		            }
-		        },
-		        "_bind":{
-		            "resolver":{
-		                "cachestats":{
-		                    "CacheHits": 30,
-		                    "CacheMisses": 70,
-		                    "QueryHits": 20,
-		                    "QueryMisses": 80
-		                }
-		            }
-		        }
-		    }
-		}`
-
-		agentcomm.UnmarshalNamedStatsResponse(json, statsOutput)
+	// Set named stats response.
+	response := NamedStatsGetResponse{
+		Views: map[string]*ViewStatsData{
+			"trusted": {
+				Resolver: ResolverData{
+					CacheStats: CacheStatsData{
+						CacheHits:   60,
+						CacheMisses: 40,
+						QueryHits:   10,
+						QueryMisses: 90,
+					},
+				},
+			},
+			"guest": {
+				Resolver: ResolverData{
+					CacheStats: CacheStatsData{
+						CacheHits:   100,
+						CacheMisses: 200,
+						QueryHits:   56,
+						QueryMisses: 75,
+					},
+				},
+			},
+			"_bind": {
+				Resolver: ResolverData{
+					CacheStats: CacheStatsData{
+						CacheHits:   30,
+						CacheMisses: 70,
+						QueryHits:   20,
+						QueryMisses: 80,
+					},
+				},
+			},
+		},
 	}
-	fa := agentcommtest.NewFakeAgents(nil, bind9Mock)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockConnectedAgents := NewMockConnectedAgents(ctrl)
+	mockConnectedAgents.EXPECT().
+		ForwardToNamedStats(gomock.Any(), gomock.Any(), "127.0.0.1", int64(8000), agentapi.ForwardToNamedStatsReq_SERVER, gomock.Any()).
+		AnyTimes().
+		SetArg(5, response).
+		Return(nil)
+
 	fec := &storktest.FakeEventCenter{}
 
 	// prepare bind9 apps
@@ -147,7 +154,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare stats puller
-	sp, err := NewStatsPuller(db, fa, fec)
+	sp, err := NewStatsPuller(db, mockConnectedAgents, fec)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	_ "embed"
 	"math"
 	"net/http"
 	"testing"
@@ -9,6 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 )
+
+//go:embed testdata/bind9-prom-server-stats.json
+var bind9PromServerStats []byte
+
+//go:embed testdata/bind9-prom-traffic-stats.json
+var bind9PromTrafficStats []byte
 
 // Fake app monitor that returns some predefined list of apps.
 type PromFakeBind9AppMonitor struct{}
@@ -60,122 +67,25 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 func TestPromBind9ExporterStart(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://localhost:1234/").
-		Get("json/v1").
+		Get("json/(.+)/server").
 		AddMatcher(func(r1 *http.Request, r2 *gock.Request) (bool, error) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
-		BodyString(`{ "json-stats-version": "1.2",
-                              "boot-time": "2020-04-21T07:13:08.888Z",
-                              "config-time": "2020-04-21T07:13:09.989Z",
-                              "current-time": "2020-04-21T07:19:28.258Z",
-                              "version":"9.16.2",
-                              "qtypes": {
-                                  "A": 201,
-                                  "AAAA": 200,
-                                  "DNSKEY": 53
-                              },
-                              "opcodes": {
-                                  "QUERY": 454,
-                                  "IQUERY": 0,
-                                  "UPDATE": 1
-                              },
-                              "nsstats": {
-                                  "ReqEdns0":100,
-                                  "Requestv4":206,
-                                  "RespEDNS0":123,
-                                  "Response":454,
-                                  "QryDropped":9,
-                                  "QryDuplicate":15,
-                                  "QryFailure":3,
-                                  "QryNoauthAns":222,
-                                  "QryRecursion":303,
-                                  "QryNxrrset":5,
-                                  "QryNXDOMAIN":55,
-                                  "QrySERVFAIL":555,
-                                  "QrySuccess":111,
-                                  "QryUDP":404,
-                                  "QryTCP":303,
-                                  "XfrFail": 2,
-                                  "XfrRej": 11,
-                                  "XfrSuccess": 22
-                              },
-			      "taskmgr": {
-                                  "tasks-running": 1,
-                                  "worker-threads": 4
-                              },
-                              "traffic": {
-                                  "dns-udp-requests-sizes-received-ipv4":{
-                                      "32-47":206,
-                                      "128+":24
-                                  },
-                                  "dns-udp-responses-sizes-sent-ipv4":{
-                                      "96-111":196,
-                                      "112-127":10
-                                  },
-                                  "dns-tcp-requests-sizes-received-ipv4":{
-                                      "32-47":12
-                                  },
-                                  "dns-tcp-responses-sizes-sent-ipv4":{
-                                      "128-143":12
-                                  },
-                                  "dns-tcp-requests-sizes-received-ipv6":{
-                                  },
-                                  "dns-tcp-responses-sizes-sent-ipv6":{
-                                  }
-                              },
-			      "views": {
-                                "_default": {
-                                  "resolver": {
-                                    "cache": {
-                                      "A": 37,
-                                      "AAAA": 38,
-                                      "DS": 2
-                                    },
-                                    "cachestats": {
-                                      "CacheHits": 40,
-                                      "CacheMisses": 10,
-                                      "QueryHits": 30,
-                                      "QueryMisses": 20
-                                    },
-                                    "qtypes": {
-                                        "A": 37,
-                                        "NS": 7,
-                                        "AAAA": 36,
-                                        "DS": 6,
-                                        "RRSIG": 21,
-                                        "DNSKEY": 4
-                                    },
-                                    "stats": {
-                                        "EDNS0Fail": 5,
-                                        "FORMERR": 13,
-                                        "NXDOMAIN": 50,
-                                        "SERVFAIL": 404,
-                                        "OtherError": 42,
-                                        "Lame": 9,
-                                        "Mismatch": 10,
-                                        "Truncated": 7,
-                                        "QueryAbort": 1,
-                                        "QueryTimeout": 10,
-                                        "QryRTT10": 2,
-                                        "QryRTT100": 18,
-                                        "QryRTT500": 37,
-                                        "QryRTT800": 3,
-                                        "QryRTT1600": 1,
-                                        "QryRTT1600+": 4,
-                                        "Retry": 71,
-                                        "ValAttempt": 25,
-                                        "ValFail": 5,
-                                        "ValNegOk": 3,
-                                        "ValOk": 17
-                                    }
-                                  }
-                                }
-                              }
-                            }`)
+		BodyString(string(bind9PromServerStats))
+
+	gock.New("http://localhost:1234/").
+		Get("json/(.+)/traffic").
+		AddMatcher(func(r1 *http.Request, r2 *gock.Request) (bool, error) {
+			// Require empty body
+			return r1.Body == nil, nil
+		}).
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(bind9PromTrafficStats))
+
 	fam := &PromFakeBind9AppMonitor{}
 	httpClient := NewBind9StatsClient()
 	pbe := NewPromBind9Exporter("localhost", 1234, fam, httpClient)

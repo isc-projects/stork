@@ -1,0 +1,17 @@
+version: 9.9.9
+running on agent-bind9: Linux x86_64 4.15.0-72-generic
+boot time: Mon, 03 Feb 2020 13:39:36 GMT
+last configured: Mon, 03 Feb 2020 14:39:36 GMT
+configuration file: /etc/bind/named.conf
+CPUs found: 4
+worker threads: 4
+UDP listeners per interface: 3
+number of zones: 101 (96 automatic)
+debug level: 0
+xfers running: 0
+xfers deferred: 0
+soa queries in progress: 0
+query logging is OFF
+recursive clients: 0/900/1000
+tcp clients: 3/150
+server is up and running

@@ -479,8 +479,16 @@ func TestForwardToNamedStats(t *testing.T) {
 		},
 	}
 
+	// Mock the gRPC call to the Stork agent. Ensure that the request is
+	// correct by specifying a custom matcher.
 	mockAgentClient.EXPECT().
-		ForwardToNamedStats(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		ForwardToNamedStats(gomock.Any(), gomock.Cond(func(req *agentapi.ForwardToNamedStatsReq) bool {
+			//nolint:staticcheck
+			return req.Url == "http://localhost:8000/" &&
+				req.StatsAddress == "localhost" &&
+				req.StatsPort == 8000 &&
+				req.RequestType == agentapi.ForwardToNamedStatsReq_SERVER
+		}), newGZIPMatcher()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
@@ -494,7 +502,7 @@ func TestForwardToNamedStats(t *testing.T) {
 				Address:   "127.0.0.1",
 				AgentPort: 8080,
 			},
-		}, "localhost", 8000, "", &actualResponse)
+		}, "localhost", 8000, agentapi.ForwardToNamedStatsReq_SERVER, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 	require.Len(t, *actualResponse.Views, 1)
@@ -544,7 +552,7 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
 				Address:   "127.0.0.1",
 				AgentPort: 8080,
 			},
-		}, "localhost", 8000, "", &actualResponse)
+		}, "localhost", 8000, agentapi.ForwardToNamedStatsReq_DEFAULT, &actualResponse)
 	require.Error(t, err)
 
 	agent, err := agents.getConnectedAgent("127.0.0.1:8080")

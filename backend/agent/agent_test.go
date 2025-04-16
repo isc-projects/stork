@@ -454,6 +454,60 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 	require.Len(t, rsp.NamedStatsResponse.Response, 0)
 }
 
+// Test forwarding statistics request to named for different request types.
+func TestForwardToNamedStatsForDifferentRequestTypes(t *testing.T) {
+	sa, ctx, teardown := setupAgentTest()
+	defer teardown()
+
+	tests := []struct {
+		name        string
+		requestType agentapi.ForwardToNamedStatsReq_RequestType
+		paths       []string
+	}{
+		{"default", agentapi.ForwardToNamedStatsReq_DEFAULT, []string{""}},
+		{"status", agentapi.ForwardToNamedStatsReq_STATUS, []string{"/status"}},
+		{"server", agentapi.ForwardToNamedStatsReq_SERVER, []string{"/server"}},
+		{"zones", agentapi.ForwardToNamedStatsReq_ZONES, []string{"/zones"}},
+		{"network", agentapi.ForwardToNamedStatsReq_NETWORK, []string{"/net"}},
+		{"memory", agentapi.ForwardToNamedStatsReq_MEMORY, []string{"/mem"}},
+		{"traffic", agentapi.ForwardToNamedStatsReq_TRAFFIC, []string{"/traffic"}},
+		{"server and traffic", agentapi.ForwardToNamedStatsReq_SERVER_AND_TRAFFIC, []string{"/server", "/traffic"}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Expect appropriate content type and the body. If they are not matched
+			// an error will be raised.
+			defer gock.Off()
+			for _, path := range test.paths {
+				gock.New("http://localhost:45634/").
+					MatchHeader("Accept", "application/json").
+					Get(fmt.Sprintf("json/v1%s", path)).
+					Reply(200).
+					JSON(map[string]int{"result": 0})
+			}
+
+			// Forward the request with the expected body.
+			req := &agentapi.ForwardToNamedStatsReq{
+				Url:               "http://localhost:45634/",
+				RequestType:       test.requestType,
+				StatsAddress:      "localhost",
+				StatsPort:         45634,
+				NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
+			}
+
+			// Named should respond with non-empty body and the status code 200.
+			// This should result in no error and the body should be available
+			// in the response.
+			rsp, err := sa.ForwardToNamedStats(ctx, req)
+			require.NotNil(t, rsp)
+			require.NoError(t, err)
+			require.NotNil(t, rsp.NamedStatsResponse)
+			require.JSONEq(t, "{\"result\":0}", rsp.NamedStatsResponse.Response)
+		})
+	}
+}
+
 // Test a successful rndc command.
 func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx, teardown := setupAgentTest()

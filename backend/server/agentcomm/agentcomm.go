@@ -28,6 +28,9 @@ var _ agentConnector = (*agentConnectorImpl)(nil)
 // Settings specific to communication with Agents.
 type AgentsSettings struct{}
 
+// Shorter alias for ForwardToNamedStatsReq_RequestType.
+type ForwardToNamedStatsRequestType = agentapi.ForwardToNamedStatsReq_RequestType
+
 // Interface for interacting with Agents via gRPC.
 type ConnectedAgents interface {
 	Shutdown()
@@ -35,8 +38,8 @@ type ConnectedAgents interface {
 	Ping(ctx context.Context, machine dbmodel.MachineTag) error
 	GetState(ctx context.Context, machine dbmodel.MachineTag) (*State, error)
 	ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error)
-	ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
-	ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
+	ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, requestType ForwardToNamedStatsRequestType, statsOutput any) error
+	ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...any) (*KeaCmdsResult, error)
 	TailTextFile(ctx context.Context, machine dbmodel.MachineTag, path string, offset int64) ([]string, error)
 	ReceiveZones(ctx context.Context, app ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error]
 }

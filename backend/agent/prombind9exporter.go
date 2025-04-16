@@ -1084,27 +1084,22 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
-	rsp, ok := rspIfc.(map[string]interface{})
-	if !ok {
-		return pkgerrors.Errorf("problem casting rspIfc: %+v", rspIfc)
-	}
-
+func (pbe *PromBind9Exporter) setDaemonStats(stats map[string]any) (ret error) {
 	// boot_time_seconds
 	// config_time_seconds
 	// current_time_seconds
-	err := pbe.scrapeTimeStats(rsp)
+	err := pbe.scrapeTimeStats(stats)
 	if err != nil {
 		return err
 	}
 
 	// incoming_queries_total
-	pbe.stats.IncomingQueries, err = pbe.scrapeServerStat(rsp, "qtypes")
+	pbe.stats.IncomingQueries, err = pbe.scrapeServerStat(stats, "qtypes")
 	if err != nil {
 		return pkgerrors.Errorf("problem parsing 'qtypes': %+v", err)
 	}
 	// incoming_requests_total
-	pbe.stats.IncomingRequests, err = pbe.scrapeServerStat(rsp, "opcodes")
+	pbe.stats.IncomingRequests, err = pbe.scrapeServerStat(stats, "opcodes")
 	if err != nil {
 		return pkgerrors.Errorf("problem parsing 'opcodes': %+v", err)
 	}
@@ -1116,22 +1111,22 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	// zone_transfer_failure_total
 	// zone_transfer_rejected_total
 	// zone_transfer_success_total
-	pbe.stats.NsStats, err = pbe.scrapeServerStat(rsp, "nsstats")
+	pbe.stats.NsStats, err = pbe.scrapeServerStat(stats, "nsstats")
 	if err != nil {
 		return pkgerrors.Errorf("problem parsing 'nsstats': %+v", err)
 	}
 
 	// tasks_running
 	// worker_threads
-	pbe.stats.TaskMgr, err = pbe.scrapeServerStat(rsp, "taskmgr")
+	pbe.stats.TaskMgr, err = pbe.scrapeServerStat(stats, "taskmgr")
 	if err != nil {
-		return pkgerrors.Errorf("problem parsing 'nsstats': %+v", err)
+		return pkgerrors.Errorf("problem parsing 'taskmgr': %+v", err)
 	}
 
 	// Parse traffic stats.
-	trafficIfc, ok := rsp["traffic"]
+	trafficIfc, ok := stats["traffic"]
 	if !ok {
-		return pkgerrors.Errorf("no 'traffic' in response: %+v", rsp)
+		return pkgerrors.Errorf("no 'traffic' in response: %+v", stats)
 	}
 	traffic, ok := trafficIfc.(map[string]interface{})
 	if !ok {
@@ -1160,9 +1155,9 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	pbe.stats.TrafficStats = trafficMap
 
 	// Parse views.
-	viewsIfc, ok := rsp["views"]
+	viewsIfc, ok := stats["views"]
 	if !ok {
-		return pkgerrors.Errorf("no 'views' in response: %+v", rsp)
+		return pkgerrors.Errorf("no 'views' in response: %+v", stats)
 	}
 
 	views := viewsIfc.(map[string]interface{})
@@ -1182,6 +1177,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 
 	// go through all bind9 apps discovered by monitor and query them for stats
 	apps := pbe.AppMonitor.GetApps()
+APP_LOOP:
 	for _, app := range apps {
 		// ignore non-bind9 apps
 		if app.GetBaseApp().Type != AppTypeBind9 {
@@ -1196,25 +1192,27 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 			log.WithError(err).Error("Problem getting stats from BIND 9, bad access statistics point")
 			continue
 		}
-		response, rspIfc, err := pbe.HTTPClient.createRequest(sap.Address, sap.Port).getRawStats()
-		if err != nil {
-			lastErr = err
-			log.Errorf("Problem getting stats from BIND 9: %+v", err)
-			continue
-		}
+		responses, stats := pbe.HTTPClient.getServerAndTrafficStats(sap.Address, sap.Port)
+		for response, err := range responses {
+			if err != nil {
+				lastErr = err
+				log.Errorf("Problem getting stats from BIND 9: %+v", err)
+				continue APP_LOOP
+			}
 
-		// Error HTTP response received.
-		if response.IsError() {
-			errorText := fmt.Sprintf("BIND9 stats returned error status code with message: %s", response.String())
-			lastErr = pkgerrors.New(errorText)
-			log.WithFields(log.Fields{
-				"StatusCode": response.StatusCode(),
-			}).Error(errorText)
-			continue
+			// Error HTTP response received.
+			if response.IsError() {
+				errorText := fmt.Sprintf("BIND9 stats returned error status code with message: %s", response.String())
+				lastErr = pkgerrors.New(errorText)
+				log.WithFields(log.Fields{
+					"StatusCode": response.StatusCode(),
+				}).Error(errorText)
+				continue APP_LOOP
+			}
 		}
 
 		// parse response
-		err = pbe.setDaemonStats(rspIfc)
+		err = pbe.setDaemonStats(stats)
 		if err != nil {
 			lastErr = err
 			log.Errorf("Cannot get stat from daemon: %+v", err)

@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net"
 	"runtime"
@@ -329,44 +330,133 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 
 // ForwardToNamedStats forwards a statistics request to the named daemon.
 func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.ForwardToNamedStatsReq) (*agentapi.ForwardToNamedStatsRsp, error) {
-	reqURL := in.GetUrl()
-
+	innerGrpcResponse := &agentapi.NamedStatsResponse{
+		Status: &agentapi.Status{},
+	}
 	grpcResponse := &agentapi.ForwardToNamedStatsRsp{
 		Status: &agentapi.Status{
 			Code: agentapi.Status_OK, // all ok
 		},
+		NamedStatsResponse: innerGrpcResponse,
 	}
 
-	innerGrpcResponse := &agentapi.NamedStatsResponse{
-		Status: &agentapi.Status{},
+	var (
+		// This parameter is deprecated and was replaced by a set of new parameters that
+		// specify address, port and request type. However, we still support this parameter
+		// for backward compatibility with older Stork servers.
+		reqURL   string
+		response httpResponse
+		payload  []byte
+		err      error
+	)
+	// The new parameters take precedence over the request URL.
+	if in.GetStatsAddress() != "" {
+		request := sa.bind9StatsClient.createRequest(in.GetStatsAddress(), in.GetStatsPort())
+		var requestType string
+		switch in.GetRequestType() {
+		case agentapi.ForwardToNamedStatsReq_DEFAULT:
+			requestType = "default"
+			response, payload, err = request.getRawJSON("")
+		case agentapi.ForwardToNamedStatsReq_STATUS:
+			requestType = "status"
+			response, payload, err = request.getRawJSON("status")
+		case agentapi.ForwardToNamedStatsReq_SERVER:
+			requestType = "server"
+			response, payload, err = request.getRawJSON("server")
+		case agentapi.ForwardToNamedStatsReq_ZONES:
+			requestType = "zones"
+			response, payload, err = request.getRawJSON("zones")
+		case agentapi.ForwardToNamedStatsReq_NETWORK:
+			requestType = "net"
+			response, payload, err = request.getRawJSON("net")
+		case agentapi.ForwardToNamedStatsReq_MEMORY:
+			requestType = "mem"
+			response, payload, err = request.getRawJSON("mem")
+		case agentapi.ForwardToNamedStatsReq_TRAFFIC:
+			requestType = "traffic"
+			response, payload, err = request.getRawJSON("traffic")
+		case agentapi.ForwardToNamedStatsReq_SERVER_AND_TRAFFIC:
+			// This is a special case that requires sending two requests to named
+			// and combining the responses into one result. BIND can only return
+			// all the required statistics in a single response when the request
+			// is sent to the root URL. However, it also returns zones yielding
+			// a potentially very large response. To avoid this problem, we send
+			// two requests and combine the responses.
+			requestType = "server and traffic"
+			result := make(map[string]any)
+			for resp, e := range request.getCombinedJSON(&result, "server", "traffic") {
+				response = resp
+				// If there was an error, record it and break.
+				if e != nil {
+					err = e
+					break
+				}
+				// If there was an HTTP error, record the response and break.
+				if resp.IsError() {
+					break
+				}
+			}
+			// Both responses were OK. Need to convert it back to the binary form
+			// and return to the Stork server.
+			payload, err = json.Marshal(result)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"statsAddress": in.GetStatsAddress(),
+					"statsPort":    in.GetStatsPort(),
+				}).WithError(err).Error("Failed to marshal the server and traffic stats to return to the Stork server")
+				innerGrpcResponse.Status.Code = agentapi.Status_ERROR
+				innerGrpcResponse.Status.Message = fmt.Sprintf("Failed to marshal the server and traffic stats to return to the Stork server: %s", err.Error())
+				return grpcResponse, nil
+			}
+		}
+		// Log depending on whether we got an error or an HTTP error. These
+		// messages are logged with stats address, port and request type.
+		if err != nil {
+			log.WithFields(log.Fields{
+				"statsAddress": in.GetStatsAddress(),
+				"statsPort":    in.GetStatsPort(),
+				"requestType":  requestType,
+			}).WithError(err).Error("Failed to forward commands to named over the stats channel")
+		} else if response.IsError() {
+			log.WithFields(log.Fields{
+				"statsAddress": in.GetStatsAddress(),
+				"statsPort":    in.GetStatsPort(),
+				"requestType":  requestType,
+				"Status":       response.StatusCode(),
+			}).Errorf("named stats channel returned error status code with message: %s", response.String())
+		}
+	} else {
+		// The request uses deprecated URL parameter and lacks the new parameters.
+		//nolint:staticcheck
+		reqURL = in.GetUrl()
+		response, payload, err = sa.bind9StatsClient.createRequestFromURL(reqURL).getRawJSON("/")
+
+		// Log depending on whether we got an error or an HTTP error. These
+		// messages are logged with URL.
+		if err != nil {
+			log.WithFields(log.Fields{
+				"url": reqURL,
+			}).WithError(err).Error("Failed to forward commands to named over the stats channel")
+		} else if response.IsError() {
+			log.WithFields(log.Fields{
+				"url": reqURL,
+			}).Errorf("named stats channel returned error status code with message: %s", response.String())
+		}
 	}
 
-	// Try to forward the command to named daemon.
-	namedResponse, payload, err := sa.bind9StatsClient.createRequestFromURL(reqURL).getRawJSON("/")
-	if err != nil {
-		log.WithFields(log.Fields{
-			"URL": reqURL,
-		}).Errorf("Failed to forward commands to named over the stats channel: %+v", err)
+	// Set the status code and message based on the error or response.
+	switch {
+	case err != nil:
 		innerGrpcResponse.Status.Code = agentapi.Status_ERROR
 		innerGrpcResponse.Status.Message = fmt.Sprintf("Failed to forward commands to named over the stats channel: %s", err.Error())
-		grpcResponse.NamedStatsResponse = innerGrpcResponse
-		return grpcResponse, nil
-	}
-
-	// Communication successful but HTTP error code returned.
-	if namedResponse.IsError() {
-		log.WithFields(log.Fields{
-			"URL":    reqURL,
-			"Status": namedResponse.StatusCode(),
-		}).Errorf("named stats channel returned error status code with message: %s", namedResponse.String())
+	case response.IsError():
 		innerGrpcResponse.Status.Code = agentapi.Status_ERROR
-		innerGrpcResponse.Status.Message = fmt.Sprintf("named stats channel returned error status code with message: %s", namedResponse.String())
+		innerGrpcResponse.Status.Message = fmt.Sprintf("named stats channel returned error status code with message: %s", response.String())
+	default:
+		// Everything looks good, so include the body in the response.
+		innerGrpcResponse.Status.Code = agentapi.Status_OK
 	}
-
-	// Everything looks good, so include the body in the response.
 	innerGrpcResponse.Response = string(payload)
-	innerGrpcResponse.Status.Code = agentapi.Status_OK
-	grpcResponse.NamedStatsResponse = innerGrpcResponse
 	return grpcResponse, nil
 }
 

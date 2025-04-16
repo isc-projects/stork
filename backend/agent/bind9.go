@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -647,7 +648,11 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 			Address: address,
 			Port:    port,
 		})
-		inventory = newZoneInventory(newZoneInventoryStorageMemory(), NewBind9StatsClient(), address, port)
+		client := NewBind9StatsClient()
+		// For larger deployments, it may take several minutes to retrieve the
+		// zones from the BIND9 server.
+		client.SetRequestTimeout(time.Minute * 3)
+		inventory = newZoneInventory(newZoneInventoryStorageMemory(), client, address, port)
 	} else {
 		log.Warn("BIND 9 `statistics-channels` clause unparsable or not found. Neither statistics export nor zone viewer will work.")
 		log.Warn("To fix this problem, please configure `statistics-channels` in named.conf and ensure Stork-agent is able to access it.")

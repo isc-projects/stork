@@ -160,10 +160,23 @@ message NamedStatsRequest {
 }
 
 message ForwardToNamedStatsReq {
-  // URL to named statistics-channel
-  string url = 1;
+  enum RequestType {
+    DEFAULT = 0;
+    STATUS = 1;
+    SERVER = 2;
+    ZONES = 3;
+    NETWORK = 4;
+    MEMORY = 5;
+    TRAFFIC = 6;
+    SERVER_AND_TRAFFIC = 7;
+  }
 
-  NamedStatsRequest namedStatsRequest = 2;
+  // URL to named statistics-channel
+  string url = 1 [deprecated = true];
+  string statsAddress = 2;
+  int64 statsPort = 3;
+  RequestType requestType = 4;
+  NamedStatsRequest namedStatsRequest = 5;
 }
 
 // Response from named statistics-channel

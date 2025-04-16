@@ -149,8 +149,8 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.Co
 // to this function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, app agentcomm.ControlledApp, statsAddress string, statsPort int64, path string, statsOutput interface{}) error {
-	fa.RecordedStatsURL = storkutil.HostWithPortURL(statsAddress, statsPort, false) + path
+func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, app agentcomm.ControlledApp, statsAddress string, statsPort int64, requestType agentcomm.ForwardToNamedStatsRequestType, statsOutput interface{}) error {
+	fa.RecordedStatsURL = storkutil.HostWithPortURL(statsAddress, statsPort, false)
 
 	// Generate response.
 	if fa.mockNamedFunc != nil {

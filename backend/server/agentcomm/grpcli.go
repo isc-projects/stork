@@ -533,16 +533,20 @@ func (agents *connectedAgentsImpl) ForwardRndcCommand(ctx context.Context, app C
 }
 
 // Forwards a statistics request via the Stork Agent to the named daemon and
-// then parses the response. statsAddress, statsPort and statsPath are used to
-// construct the URL to the statistics-channel of the named daemon.
-func (agents *connectedAgentsImpl) ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, statsPath string, statsOutput interface{}) error {
+// then parses the response. statsAddress, statsPort are used to construct
+// base HTTP URL of the statistics channel. The requestType parameter is used
+// to specify the path (or several paths in case of sequential requests) to
+// the statistics-channel of the named daemon.
+func (agents *connectedAgentsImpl) ForwardToNamedStats(ctx context.Context, app ControlledApp, statsAddress string, statsPort int64, requestType ForwardToNamedStatsRequestType, statsOutput any) error {
 	addrPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
 	statsURL := storkutil.HostWithPortURL(statsAddress, statsPort, false)
-	statsURL += statsPath
 
 	// Prepare the on-wire representation of the commands.
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url: statsURL,
+		Url:          statsURL,
+		StatsAddress: statsAddress,
+		StatsPort:    statsPort,
+		RequestType:  requestType,
 	}
 	req.NamedStatsRequest = &agentapi.NamedStatsRequest{
 		Request: "",
