@@ -144,8 +144,6 @@ func NewManager(owner ManagerAccessors) Manager {
 
 // Contacts all agents with DNS servers and fetches zones from these servers.
 // It implements the Manager interface.
-//
-//nolint:gocognit
 func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (chan ManagerDoneNotify, error) {
 	// Only start fetching if there is no other fetch in progress.
 	if !manager.fetchingState.startFetching() {
@@ -194,108 +192,9 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		// channel and fetch the zones from the apps listed in the channel.
 		for i := 0; i < poolSize; i++ {
 			go func(appsChan <-chan dbmodel.App) {
-				state := dbmodel.NewZoneInventoryStateDetails()
 				// Read next app from the channel.
 				for app := range appsChan {
-					defer wg.Done()
-					var (
-						// Track views. We need to flush the batch when the view changes.
-						// Otherwise, if the new view contains the same zone name that already
-						// exists in the batch, the database will return an error on the
-						// ON CONFLICT DO UPDATE clause.
-						view string
-						// During the first iteration we need to delete the local zones.
-						// This flag is used to identify the first iteration.
-						isFirst = true
-					)
-					// Insert zones into the database in batches. It significantly improves
-					// performance for large number of zones.
-					batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
-					for zone, err := range manager.agents.ReceiveZones(context.Background(), &app, nil) {
-						if err != nil {
-							// Returned status depends on the returned error type. Some
-							// errors require special handling.
-							var (
-								busyError      *agentcomm.ZoneInventoryBusyError
-								notInitedError *agentcomm.ZoneInventoryNotInitedError
-							)
-							switch {
-							case errors.As(err, &busyError):
-								// Unable to fetch from the inventory because the inventory on
-								// the agent is busy running some long lasting operation.
-								state.SetStatus(dbmodel.ZoneInventoryStatusBusy, err)
-							case errors.As(err, &notInitedError):
-								// Unable to fetch from the inventory because the inventory has
-								// not been initialized yet.
-								state.SetStatus(dbmodel.ZoneInventoryStatusUninitialized, err)
-							default:
-								// Some other error.
-								state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-							}
-							break
-						}
-						if isFirst {
-							// Delete the local zones.
-							isFirst = false
-							err = dbmodel.DeleteLocalZones(manager.db, app.Daemons[0].ID)
-							if err != nil {
-								state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-								break
-							}
-						}
-						// Successfully received the zone from the agent. Let's queue
-						// it in the database for insertion.
-						dbZone := dbmodel.Zone{
-							Name: zone.Name(),
-							LocalZones: []*dbmodel.LocalZone{
-								{
-									DaemonID: app.Daemons[0].ID,
-									View:     zone.ViewName,
-									Class:    zone.Class,
-									Serial:   zone.Serial,
-									Type:     zone.Type,
-									LoadedAt: zone.Loaded,
-								},
-							},
-						}
-						// The zone also carries the total number of zones in the inventory.
-						state.SetTotalZones(zone.TotalZoneCount)
-						if view != zone.ViewName {
-							// Flush the batch to complete the view insertion. Note that
-							// this is ok even when the view is empty (first zone). In
-							// this case the FlushAndAdd will skip the flush.
-							err = batch.FlushAndAdd(&dbZone)
-							view = zone.ViewName
-						} else {
-							err = batch.Add(&dbZone)
-						}
-						if err != nil {
-							state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-							break
-						}
-					}
-					if state.Error == nil {
-						// If we successfully added zones to the database so far. There is
-						// one more batch to add with a lower number of zones than the
-						// specified batchSize.
-						if err := batch.Flush(); err != nil {
-							state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-						}
-					}
-					// Add the zone inventory state into the database for this DNS server.
-					if err := dbmodel.AddZoneInventoryState(manager.db, dbmodel.NewZoneInventoryState(app.Daemons[0].ID, state)); err != nil {
-						// This is an exceptional situation and normally shouldn't happen.
-						// Let's communicate this issue to the caller and log it. The
-						// zone inventory state won't be available for this server.
-						state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
-						log.WithFields(log.Fields{
-							"app": app.Name,
-						}).WithError(err).Error("Failed to save the zone inventory status in the database")
-					}
-					// Store the inventory state in the common map, so it can be returned
-					// to a caller.
-					storeResult(&mutex, results, app.Daemons[0].ID, state)
-					manager.fetchingState.increaseCompletedAppsCount()
+					manager.fetchZonesFromDNSServer(&app, batchSize, &wg, &mutex, results)
 				}
 			}(appsChan)
 		}
@@ -326,6 +225,116 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 		manager.fetchingState.stopFetching()
 	}()
 	return notifyChannel, nil
+}
+
+// Contacts a specified DNS server and fetches zones from it. The app
+// indicates the DNS server to contact. The batchSize parameter controls
+// the size of the batch of zones to be inserted into the database in a single
+// SQL INSERT. The wg and mutex parameters are used to synchronize the work
+// between multiple goroutines. The results parameter is a map of errors for
+// respective daemons. This function can merely be called from the
+// FetchZones function.
+func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize int, wg *sync.WaitGroup, mutex *sync.Mutex, results map[int64]*dbmodel.ZoneInventoryStateDetails) {
+	defer wg.Done()
+	var (
+		// Track views. We need to flush the batch when the view changes.
+		// Otherwise, if the new view contains the same zone name that already
+		// exists in the batch, the database will return an error on the
+		// ON CONFLICT DO UPDATE clause.
+		view string
+		// During the first iteration we need to delete the local zones.
+		// This flag is used to identify the first iteration.
+		isFirst = true
+	)
+	// Insert zones into the database in batches. It significantly improves
+	// performance for large number of zones.
+	batch := dbmodel.NewBatch(manager.db, batchSize, dbmodel.AddZones)
+	state := dbmodel.NewZoneInventoryStateDetails()
+	for zone, err := range manager.agents.ReceiveZones(context.Background(), app, nil) {
+		if err != nil {
+			// Returned status depends on the returned error type. Some
+			// errors require special handling.
+			var (
+				busyError      *agentcomm.ZoneInventoryBusyError
+				notInitedError *agentcomm.ZoneInventoryNotInitedError
+			)
+			switch {
+			case errors.As(err, &busyError):
+				// Unable to fetch from the inventory because the inventory on
+				// the agent is busy running some long lasting operation.
+				state.SetStatus(dbmodel.ZoneInventoryStatusBusy, err)
+			case errors.As(err, &notInitedError):
+				// Unable to fetch from the inventory because the inventory has
+				// not been initialized yet.
+				state.SetStatus(dbmodel.ZoneInventoryStatusUninitialized, err)
+			default:
+				// Some other error.
+				state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+			}
+			break
+		}
+		if isFirst {
+			// Delete the local zones.
+			isFirst = false
+			err = dbmodel.DeleteLocalZones(manager.db, app.Daemons[0].ID)
+			if err != nil {
+				state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+				break
+			}
+		}
+		// Successfully received the zone from the agent. Let's queue
+		// it in the database for insertion.
+		dbZone := dbmodel.Zone{
+			Name: zone.Name(),
+			LocalZones: []*dbmodel.LocalZone{
+				{
+					DaemonID: app.Daemons[0].ID,
+					View:     zone.ViewName,
+					Class:    zone.Class,
+					Serial:   zone.Serial,
+					Type:     zone.Type,
+					LoadedAt: zone.Loaded,
+				},
+			},
+		}
+		// The zone also carries the total number of zones in the inventory.
+		state.SetTotalZones(zone.TotalZoneCount)
+		if view != zone.ViewName {
+			// Flush the batch to complete the view insertion. Note that
+			// this is ok even when the view is empty (first zone). In
+			// this case the FlushAndAdd will skip the flush.
+			err = batch.FlushAndAdd(&dbZone)
+			view = zone.ViewName
+		} else {
+			err = batch.Add(&dbZone)
+		}
+		if err != nil {
+			state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+			break
+		}
+	}
+	if state.Error == nil {
+		// If we successfully added zones to the database so far. There is
+		// one more batch to add with a lower number of zones than the
+		// specified batchSize.
+		if err := batch.Flush(); err != nil {
+			state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+		}
+	}
+	// Add the zone inventory state into the database for this DNS server.
+	if err := dbmodel.AddZoneInventoryState(manager.db, dbmodel.NewZoneInventoryState(app.Daemons[0].ID, state)); err != nil {
+		// This is an exceptional situation and normally shouldn't happen.
+		// Let's communicate this issue to the caller and log it. The
+		// zone inventory state won't be available for this server.
+		state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+		log.WithFields(log.Fields{
+			"app": app.Name,
+		}).WithError(err).Error("Failed to save the zone inventory status in the database")
+	}
+	// Store the inventory state in the common map, so it can be returned
+	// to a caller.
+	storeResult(mutex, results, app.Daemons[0].ID, state)
+	manager.fetchingState.increaseCompletedAppsCount()
 }
 
 // Checks if the DNS Manager is currently fetching the zones.
