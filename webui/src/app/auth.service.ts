@@ -10,6 +10,13 @@ import { AuthenticationMethod } from './backend/model/authenticationMethod'
 import { SessionCredentials } from './backend/model/sessionCredentials'
 import { User } from './backend'
 
+export enum UserGroup {
+    SuperAdmin = 1,
+    Admin,
+    ReadOnly,
+    NoAccess,
+}
+
 @Injectable({
     providedIn: 'root',
 })
@@ -93,7 +100,7 @@ export class AuthService {
     superAdmin(): boolean {
         if (this.currentUserValue && this.currentUserValue.groups) {
             for (const i in this.currentUserValue.groups) {
-                if (this.currentUserValue.groups[i] === 1) {
+                if (this.currentUserValue.groups[i] === UserGroup.SuperAdmin) {
                     return true
                 }
             }
@@ -127,5 +134,62 @@ export class AuthService {
         const user: User = { ...this.currentUserValue, changePassword: false }
         localStorage.setItem('currentUser', JSON.stringify(user))
         this.currentUserSubject.next(user)
+    }
+
+    /**
+     * Returns whether current user has write privilege for given component.
+     * @param componentKey
+     */
+    hasWritePrivilege(componentKey: string): boolean {
+        console.log(
+            'checking whether user',
+            this.currentUserValue.login,
+            'has write privilege to the component',
+            componentKey
+        )
+        if (this.superAdmin()) {
+            // User that belongs to SuperAdmin group, has all privileges.
+            return true
+        }
+
+        // TODO: write privilege matrix for other groups
+
+        return false
+    }
+
+    /**
+     * Returns whether current user belongs to ReadOnly group.
+     */
+    isInReadOnlyGroup(): boolean {
+        for (const i in this.currentUserValue?.groups ?? []) {
+            if (this.currentUserValue.groups[i] === UserGroup.ReadOnly) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Returns whether current user has read privilege for given component.
+     * @param componentKey
+     */
+    hasReadPrivilege(componentKey: string): boolean {
+        console.log(
+            'checking whether user',
+            this.currentUserValue.login,
+            'has read privilege to the component',
+            componentKey
+        )
+        if (this.superAdmin()) {
+            // User that belongs to SuperAdmin group, has all write privileges.
+            return true
+        } else if (this.isInReadOnlyGroup()) {
+            return true
+        }
+
+        // TODO: read privilege matrix for other groups
+
+        return false
     }
 }

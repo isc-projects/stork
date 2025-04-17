@@ -13,6 +13,7 @@ import (
 const (
 	SuperAdminGroupID int = 1
 	AdminGroupID      int = 2
+	ReadOnlyGroupID   int = 3
 )
 
 // Represents a group of users having some specific permissions.

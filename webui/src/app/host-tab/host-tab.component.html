@@ -311,15 +311,20 @@
                 (click)="refreshLeases()"
             ></button>
             <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
-                <button
-                    type="button"
-                    pButton
-                    [disabled]="hostDeleted"
-                    label="Edit"
-                    icon="pi pi-pencil"
-                    class="p-button-info ml-2"
-                    (click)="onHostEditBegin()"
-                ></button>
+                <app-managed-access key="edit-host" [hideOnNoWriteAccess]="true">
+                    <ng-template appTemplate="writeAccess"
+                        ><button
+                            type="button"
+                            pButton
+                            [disabled]="hostDeleted"
+                            label="Edit"
+                            icon="pi pi-pencil"
+                            class="p-button-info ml-2"
+                            (click)="onHostEditBegin()"
+                        ></button
+                    ></ng-template>
+                </app-managed-access>
+
                 <button
                     type="button"
                     pButton

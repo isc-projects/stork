@@ -1,1 +1,10 @@
-<p>managed-access works!</p>
+<ng-container *ngIf="hasWriteAccess && writeAccessTemplate">
+    <span>Write access</span>
+    <ng-template *ngTemplateOutlet="writeAccessTemplate"></ng-template>
+</ng-container>
+<ng-container *ngIf="!hasWriteAccess && !hideOnNoWriteAccess">
+    <ng-container *ngIf="hasReadAccess && readAccessTemplate">
+        <span>Read access</span>
+        <ng-template *ngTemplateOutlet="readAccessTemplate"></ng-template>
+    </ng-container>
+</ng-container>

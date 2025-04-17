@@ -1,4 +1,4 @@
-import { Directive, Input } from '@angular/core'
+import { Directive, Input, TemplateRef } from '@angular/core'
 
 @Directive({
     selector: '[appTemplate]',
@@ -9,7 +9,12 @@ export class StorkTemplateDirective {
      * Name of the Stork template.
      */
     @Input('appTemplate') templateName: string
-    constructor() {}
+
+    /**
+     * Directive class constructor.
+     * @param template embedded Stork template content
+     */
+    constructor(public template: TemplateRef<any>) {}
 
     /**
      * Returns the name of the Stork template.
