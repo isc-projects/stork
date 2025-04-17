@@ -152,6 +152,7 @@ import { ConfigMigrationPageComponent } from './config-migration-page/config-mig
 import { ConfigMigrationTableComponent } from './config-migration-table/config-migration-table.component'
 import { ConfigMigrationTabComponent } from './config-migration-tab/config-migration-tab.component'
 import { DurationPipe } from './pipes/duration.pipe'
+import { ManagedAccessComponent } from './managed-access/managed-access.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -254,6 +255,7 @@ export function cfgFactory() {
         ConfigMigrationTableComponent,
         ConfigMigrationTabComponent,
         DurationPipe,
+        ManagedAccessComponent,
     ],
     bootstrap: [AppComponent],
     imports: [
