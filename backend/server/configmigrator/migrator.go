@@ -32,8 +32,10 @@ type MigrationError struct {
 	Error error
 }
 
-// Interface implemented by the structs that know how to migrate the particular
-// entries from the configuration to the database.
+// Interface implemented by the structs migrating entries (typically
+// configuration elements) between different storages. One of the examples is
+// the migration of the Kea configuration elements from Kea configuration file
+// to a database backend.
 type Migrator interface {
 	// Begins the migration. Returns an error if the migration cannot be
 	// started. It is called before the first LoadItems call.
