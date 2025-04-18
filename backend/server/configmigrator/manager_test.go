@@ -149,7 +149,7 @@ func TestGetMigration(t *testing.T) {
 	require.True(t, okGeneralError)
 	require.EqualValues(t, generalErrorMigrationID, migrationGeneralError.ID)
 	require.False(t, okUnknown)
-	require.EqualValues(t, MigrationStatus{}, migrationUnknown)
+	require.Nil(t, migrationUnknown)
 }
 
 // Test that the executing of the stop migration function calls the cancel
@@ -179,7 +179,7 @@ func TestStopUnknownMigration(t *testing.T) {
 
 	// Assert
 	require.False(t, ok)
-	require.EqualValues(t, MigrationStatus{}, migration)
+	require.Nil(t, migration)
 }
 
 // Test that the finished migration cannot be stopped again.

@@ -32,7 +32,7 @@ func TestGetMigrations(t *testing.T) {
 	ctxAuthor, err := rapi.SessionManager.Load(context.Background(), "")
 	require.NoError(t, err)
 
-	migrationErred := configmigrator.MigrationStatus{
+	migrationErred := &configmigrator.MigrationStatus{
 		ID:                  12341,
 		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
@@ -49,7 +49,7 @@ func TestGetMigrations(t *testing.T) {
 		EstimatedLeftTime: 1 * time.Minute,
 	}
 
-	migrationInProgress := configmigrator.MigrationStatus{
+	migrationInProgress := &configmigrator.MigrationStatus{
 		ID:                  12342,
 		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 14, 11, 25, 46, 432000000, time.UTC),
@@ -63,7 +63,7 @@ func TestGetMigrations(t *testing.T) {
 		EstimatedLeftTime:   2 * time.Minute,
 	}
 
-	migrationFinished := configmigrator.MigrationStatus{
+	migrationFinished := &configmigrator.MigrationStatus{
 		ID:                  12343,
 		Context:             ctxAuthor,
 		StartDate:           time.Date(2025, 2, 15, 12, 26, 47, 432000000, time.UTC),
@@ -78,7 +78,7 @@ func TestGetMigrations(t *testing.T) {
 	}
 
 	migrationService.EXPECT().GetMigrations().Return(
-		[]configmigrator.MigrationStatus{
+		[]*configmigrator.MigrationStatus{
 			migrationErred, migrationInProgress, migrationFinished,
 		},
 	)
@@ -160,7 +160,7 @@ func TestGetMigrationNotFound(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
 
-	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(configmigrator.MigrationStatus{}, false)
+	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(nil, false)
 
 	// Act
 	rsp := rapi.GetMigration(context.Background(), dhcp.GetMigrationParams{ID: 12341})
@@ -188,7 +188,7 @@ func TestGetMigration(t *testing.T) {
 	ctx, err := rapi.SessionManager.Load(context.Background(), "")
 	require.NoError(t, err)
 
-	migrationStatus := configmigrator.MigrationStatus{
+	migrationStatus := &configmigrator.MigrationStatus{
 		ID:                  12341,
 		Context:             ctx,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
@@ -244,7 +244,7 @@ func TestPutMigration(t *testing.T) {
 	ctx, err := rapi.SessionManager.Load(context.Background(), "")
 	require.NoError(t, err)
 
-	migrationStatus := configmigrator.MigrationStatus{
+	migrationStatus := &configmigrator.MigrationStatus{
 		ID:                  12341,
 		Context:             ctx,
 		StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
@@ -305,7 +305,7 @@ func TestPutMigrationNotFound(t *testing.T) {
 
 	migrationService.EXPECT().
 		StopMigration(configmigrator.MigrationIdentifier(12341)).
-		Return(configmigrator.MigrationStatus{}, false)
+		Return(nil, false)
 
 	// Act
 	rsp := rapi.PutMigration(

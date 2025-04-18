@@ -111,7 +111,7 @@ type migration struct {
 }
 
 // Returns the current status of the migration.
-func (m *migration) getStatus() MigrationStatus {
+func (m *migration) getStatus() *MigrationStatus {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -136,7 +136,7 @@ func (m *migration) getStatus() MigrationStatus {
 
 	// It needs to return a copy of the migration data to avoid race
 	// conditions.
-	return MigrationStatus{
+	return &MigrationStatus{
 		ID: m.id,
 		// It should be safe to return the context with cancellation or
 		// deadline but I'm not sure if it is a good idea. Let's return the
@@ -198,17 +198,17 @@ func (m *migration) registerChunk(loadedItems int64, errs []MigrationError) {
 // migrations. It also provides the information about the migrations.
 type MigrationManager interface {
 	// Returns the list of all migrations.
-	GetMigrations() []MigrationStatus
+	GetMigrations() []*MigrationStatus
 	// Returns the migration with the provided ID. If the migration is not found,
 	// the second return value is false.
-	GetMigration(id MigrationIdentifier) (MigrationStatus, bool)
+	GetMigration(id MigrationIdentifier) (*MigrationStatus, bool)
 	// Starts the migration in background. The migrator is the object that knows how to migrate
 	// certain entities. The context may contain the information about the user
 	// who started the migration.
-	StartMigration(ctx context.Context, migrator Migrator) (MigrationStatus, error)
+	StartMigration(ctx context.Context, migrator Migrator) (*MigrationStatus, error)
 	// Requests the migration to stop. The migration is stopped asynchronously.
 	// If the migration is not found, the second return value is false.
-	StopMigration(id MigrationIdentifier) (MigrationStatus, bool)
+	StopMigration(id MigrationIdentifier) (*MigrationStatus, bool)
 	// Clears the finished migrations from the memory.
 	ClearFinishedMigrations()
 	// Cancels all the running migrations and waits for them to finish.
@@ -236,11 +236,11 @@ func NewMigrationManager() MigrationManager {
 }
 
 // Returns the list of all migrations sorted by the start date.
-func (s *manager) GetMigrations() []MigrationStatus {
+func (s *manager) GetMigrations() []*MigrationStatus {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	var statuses []MigrationStatus
+	var statuses []*MigrationStatus
 	for _, m := range s.migrations {
 		statuses = append(statuses, m.getStatus())
 	}
@@ -254,13 +254,13 @@ func (s *manager) GetMigrations() []MigrationStatus {
 
 // Returns the migration with the provided ID. If the migration is not found,
 // the second return value is false.
-func (s *manager) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
+func (s *manager) GetMigration(id MigrationIdentifier) (*MigrationStatus, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	migration, ok := s.migrations[id]
 	if !ok {
-		return MigrationStatus{}, false
+		return nil, false
 	}
 	return migration.getStatus(), true
 }
@@ -268,10 +268,10 @@ func (s *manager) GetMigration(id MigrationIdentifier) (MigrationStatus, bool) {
 // Starts the migration in background. The migrator is the object that knows how to migrate
 // certain entities. The context may contain the information about the user
 // who started the migration.
-func (s *manager) StartMigration(ctx context.Context, migrator Migrator) (MigrationStatus, error) {
+func (s *manager) StartMigration(ctx context.Context, migrator Migrator) (*MigrationStatus, error) {
 	totalItems, err := migrator.CountTotal()
 	if err != nil {
-		return MigrationStatus{}, errors.WithMessage(err, "failed to get the total items")
+		return nil, errors.WithMessage(err, "failed to get the total items")
 	}
 
 	// Strip the cancel and deadline from the parent context.
@@ -332,13 +332,13 @@ func (s *manager) generateUniqueMigrationID() MigrationIdentifier {
 
 // Requests the migration to stop. The migration is stopped asynchronously.
 // If the migration is not found, the second return value is false.
-func (s *manager) StopMigration(id MigrationIdentifier) (MigrationStatus, bool) {
+func (s *manager) StopMigration(id MigrationIdentifier) (*MigrationStatus, bool) {
 	s.mutex.RLock()
 	migration, ok := s.migrations[id]
 	s.mutex.RUnlock()
 
 	if !ok {
-		return MigrationStatus{}, false
+		return nil, false
 	}
 
 	migration.cancel()

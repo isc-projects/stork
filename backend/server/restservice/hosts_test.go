@@ -1755,7 +1755,7 @@ func TestStartHostsMigration(t *testing.T) {
 			require.False(t, statePuller.Paused())
 			require.False(t, hostPuller.Paused())
 		}).
-		Return(configmigrator.MigrationStatus{
+		Return(&configmigrator.MigrationStatus{
 			ID:                  12341,
 			Context:             ctx,
 			StartDate:           time.Date(2025, 2, 13, 10, 24, 45, 432000000, time.UTC),
@@ -1819,7 +1819,7 @@ func TestStartHostsMigrationFailed(t *testing.T) {
 	require.NoError(t, err)
 
 	migrationService.EXPECT().StartMigration(gomock.Any(), gomock.Any()).
-		Return(configmigrator.MigrationStatus{}, errors.New("migration failed"))
+		Return(nil, errors.New("migration failed"))
 
 	// Act
 	rsp := rapi.StartHostsMigration(ctx, dhcp.StartHostsMigrationParams{

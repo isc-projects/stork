@@ -14,7 +14,7 @@ import (
 )
 
 // Converts the status returned by a service to the format used in REST API.
-func (r *RestAPI) convertMigrationStatusToRestAPI(status configmigrator.MigrationStatus) *models.MigrationStatus {
+func (r *RestAPI) convertMigrationStatusToRestAPI(status *configmigrator.MigrationStatus) *models.MigrationStatus {
 	errs := []*models.MigrationError{}
 	for _, err := range status.Errors {
 		errs = append(errs, &models.MigrationError{
