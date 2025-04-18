@@ -23,14 +23,13 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunkS
 	ch := make(chan migrationChunkStatus)
 
 	go func() {
-		defer close(ch)
-
 		// Begin the migration - make all necessary preparations.
 		err := migrator.Begin()
 		if err != nil {
 			ch <- migrationChunkStatus{
 				generalErr: err,
 			}
+			close(ch)
 			return
 		}
 		defer func() {
@@ -43,6 +42,7 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunkS
 				// migrated data but with the migration runner itself.
 				log.WithError(err).Error("failed to clean up after migration")
 			}
+			close(ch)
 		}()
 
 		var totalLoadedCount int64
