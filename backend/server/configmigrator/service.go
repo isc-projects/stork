@@ -305,27 +305,19 @@ func (s *manager) StartMigration(ctx context.Context, migrator Migrator) (Migrat
 		"migrationID": migrationID,
 		"totalItems":  totalItems,
 	}).Info("Starting config migration")
-	chunkChan, doneChan := runMigration(ctx, migrator)
+	chunkChan := runMigration(ctx, migrator)
 
 	go func() {
 		defer close(workerDoneChan)
-		for {
-			select {
-			case migratedCount, ok := <-chunkChan:
-				if !ok {
-					// Channel closed.
-					continue
-				}
-				migration.registerChunk(migratedCount.loadedCount, migratedCount.errs)
-			case err, ok := <-doneChan:
-				if !ok {
-					// Channel closed.
-					log.WithField("migrationID", migrationID).Info("Config migration done")
-					return
-				}
-				migration.registerStop(err)
+		for chunk := range chunkChan {
+			if chunk.generalErr != nil {
+				migration.registerStop(chunk.generalErr)
+				return
 			}
+			migration.registerChunk(chunk.loadedCount, chunk.errs)
 		}
+		log.WithField("migrationID", migrationID).Info("Config migration done")
+		migration.registerStop(nil)
 	}()
 
 	return migration.getStatus(), nil

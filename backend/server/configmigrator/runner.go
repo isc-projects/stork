@@ -9,27 +9,28 @@ import (
 type migrationChunk struct {
 	loadedCount int64
 	errs        []MigrationError
+	generalErr  error
 }
 
 // It is an asynchronous migration runner. It loads the items in chunks and
 // migrates them until there are no more items to migrate.
-// Returns the channel with the total number of migrated items that are sent
-// after each chunk of items is migrated, the channel with the errors that
-// occurred during the migration, and the done channel that is closed when the
-// migration is finished, it may contain an error if the migration was
-// interrupted by a general error.
-func runMigration(ctx context.Context, migrator Migrator) (<-chan migrationChunk, <-chan error) {
-	migrationChunkChan := make(chan migrationChunk)
-	doneChan := make(chan error)
+// Returns an output channel with the migration progress. The channel contains
+// the number of items that were migrated and the errors that occurred during
+// the migration. It may contain also a general error that interrupted the
+// migration. The channel is closed when the migration is finished or when an
+// general error occurs.
+func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunk {
+	ch := make(chan migrationChunk)
 
 	go func() {
-		defer close(migrationChunkChan)
-		defer close(doneChan)
+		defer close(ch)
 
 		// Begin the migration - make all necessary preparations.
 		err := migrator.Begin()
 		if err != nil {
-			doneChan <- err
+			ch <- migrationChunk{
+				generalErr: err,
+			}
 			return
 		}
 		defer func() {
@@ -49,18 +50,21 @@ func runMigration(ctx context.Context, migrator Migrator) (<-chan migrationChunk
 		for {
 			select {
 			case <-ctx.Done():
-				doneChan <- ctx.Err()
+				ch <- migrationChunk{
+					generalErr: ctx.Err(),
+				}
 				return
 			default:
 				loadedCount, err = migrator.LoadItems(totalLoadedCount)
 				if err != nil {
-					doneChan <- err
+					ch <- migrationChunk{
+						generalErr: err,
+					}
 					return
 				}
 
 				if loadedCount == 0 {
 					// No more items to migrate.
-					doneChan <- nil // indicate success if no more items to migrate
 					return
 				}
 
@@ -68,12 +72,12 @@ func runMigration(ctx context.Context, migrator Migrator) (<-chan migrationChunk
 
 				errs := migrator.Migrate()
 
-				migrationChunkChan <- migrationChunk{
+				ch <- migrationChunk{
 					loadedCount: loadedCount, errs: errs,
 				}
 			}
 		}
 	}()
 
-	return migrationChunkChan, doneChan
+	return ch
 }

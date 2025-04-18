@@ -13,23 +13,15 @@ import (
 //go:generate mockgen -package=configmigrator -destination=migratormock_test.go isc.org/stork/server/configmigrator Migrator
 
 // A helper function to read all items from the channels.
-func readChannels(ch <-chan migrationChunk, done <-chan error) (errs []MigrationError, generalErr error) {
+func readChannels(ch <-chan migrationChunk) (errs []MigrationError, generalErr error) {
 	errs = make([]MigrationError, 0)
 
-	for {
-		select {
-		case err, ok := <-done:
-			if err != nil {
-				generalErr = err
-			}
-			if !ok {
-				// Return when the channels are closed.
-				return
-			}
-		case chunk := <-ch:
-			errs = append(errs, chunk.errs...)
-		}
+	for chunk := range ch {
+		generalErr = chunk.generalErr
+		errs = append(errs, chunk.errs...)
 	}
+
+	return
 }
 
 // Test that runner doesn't crash if there are no items to migrate.
@@ -48,8 +40,8 @@ func TestRunMigrationEmpty(t *testing.T) {
 	ctx := context.Background()
 
 	// Act
-	chunks, done := runMigration(ctx, mock)
-	allChunks, err := readChannels(chunks, done)
+	chunks := runMigration(ctx, mock)
+	allChunks, err := readChannels(chunks)
 
 	// Assert
 	require.NoError(t, err)
@@ -79,8 +71,8 @@ func TestRunMigration(t *testing.T) {
 	ctx := context.Background()
 
 	// Act
-	chunks, done := runMigration(ctx, mock)
-	errs, err := readChannels(chunks, done)
+	chunks := runMigration(ctx, mock)
+	errs, err := readChannels(chunks)
 
 	// Assert
 	require.NoError(t, err)
@@ -99,8 +91,8 @@ func TestRunMigrateInterruptOnBeginError(t *testing.T) {
 	mock.EXPECT().Begin().Return(errors.New("begin error"))
 
 	// Act
-	chunks, done := runMigration(context.Background(), mock)
-	errs, err := readChannels(chunks, done)
+	chunks := runMigration(context.Background(), mock)
+	errs, err := readChannels(chunks)
 
 	// Assert
 	require.ErrorContains(t, err, "begin error")
@@ -124,8 +116,8 @@ func TestRunMigrationCleanupError(t *testing.T) {
 	ctx := context.Background()
 
 	// Act
-	chunks, done := runMigration(ctx, mock)
-	allChunks, err := readChannels(chunks, done)
+	chunks := runMigration(ctx, mock)
+	allChunks, err := readChannels(chunks)
 
 	// Assert
 	require.NoError(t, err)
@@ -161,8 +153,8 @@ func TestRunMigrationAggregatesErrors(t *testing.T) {
 	ctx := context.Background()
 
 	// Act
-	chunks, done := runMigration(ctx, mock)
-	errs, err := readChannels(chunks, done)
+	chunks := runMigration(ctx, mock)
+	errs, err := readChannels(chunks)
 
 	// Assert
 	require.NoError(t, err)
@@ -193,8 +185,8 @@ func TestRunMigrationInterruptOnLoadingError(t *testing.T) {
 	ctx := context.Background()
 
 	// Act
-	chunks, done := runMigration(ctx, mock)
-	errs, err := readChannels(chunks, done)
+	chunks := runMigration(ctx, mock)
+	errs, err := readChannels(chunks)
 
 	// Assert
 	require.ErrorContains(t, err, "loading error")
@@ -222,8 +214,8 @@ func TestRunMigrationCanceled(t *testing.T) {
 	)
 
 	// Act
-	chunks, done := runMigration(ctx, mock)
-	errs, err := readChannels(chunks, done)
+	chunks := runMigration(ctx, mock)
+	errs, err := readChannels(chunks)
 	cancel()
 
 	// Assert
