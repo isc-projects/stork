@@ -38,6 +38,15 @@ func authorizeAccept(t *testing.T, groupID int, path, method string) bool {
 // Verify that users belonging to the super-admin and admin group
 // has appropriate access privileges.
 func TestAuthorize(t *testing.T) {
+	// Read-only group have limited access to the users' management.
+	require.False(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/users?start=0&limit=10", "GET"))
+	require.False(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/users/list", "GET"))
+	require.False(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/users/4/password", "GET"))
+	require.False(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/users//4/password/", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/users/5", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/users/5/password", "GET"))
+	require.True(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/users//5//password", "GET"))
+
 	// Admin group have limited access to the users' management.
 	require.False(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users?start=0&limit=10", "GET"))
 	require.False(t, authorizeAccept(t, dbmodel.AdminGroupID, "/users/list", "GET"))
@@ -65,6 +74,14 @@ func TestAuthorize(t *testing.T) {
 
 	// The same in case of someone belonging to non existing group.
 	require.False(t, authorizeAccept(t, 999, "/machines/1/", "GET"))
+
+	// Read-only group users can access endpoints with GET method.
+	require.True(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/machines/1/", "GET"))
+
+	// But they can't access endpoints with POST, PUT nor DELETE method.
+	require.False(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/machines/1/", "PUT"))
+	require.False(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/machines/1/", "DELETE"))
+	require.False(t, authorizeAccept(t, dbmodel.ReadOnlyGroupID, "/hosts/new/transaction", "POST"))
 
 	// Someone who belongs to no groups would be able to log out.
 	require.True(t, authorizeAccept(t, noneGroupID, "/sessions", "DELETE"))
