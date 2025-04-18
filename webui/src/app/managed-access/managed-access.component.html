@@ -11,7 +11,7 @@
     <ng-content></ng-content>
     <ng-template *ngTemplateOutlet="hasAccessTemplate"></ng-template>
 </ng-container>
-<ng-container *ngIf="!hasAccess && !hideOnNoAccess">
+<ng-container *ngIf="!hasAccess && (!hideOnNoAccess || noAccessTemplate)">
     <ng-container *ngIf="noAccessTemplate; else defaultNoAccess">
         <ng-template *ngTemplateOutlet="noAccessTemplate"></ng-template>
     </ng-container>

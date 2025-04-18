@@ -291,11 +291,20 @@
             <p-messages severity="warn">
                 <ng-template pTemplate>
                     <p>
-                        The <span class="font-bold">Edit</span> and <span class="font-bold">Delete</span> operations
-                        affect only the configurations stored in the host database (<app-host-data-source-label
-                            dataSource="api"
-                        ></app-host-data-source-label
-                        >).
+                        <app-managed-access key="edit-host-reservation">
+                            <ng-template appTemplate="hasAccess">
+                                The <span class="font-bold">Edit</span> and
+                                <span class="font-bold">Delete</span> operations affect only the configurations stored
+                                in the host database (<app-host-data-source-label
+                                    dataSource="api"
+                                ></app-host-data-source-label
+                                >).
+                            </ng-template>
+                            <ng-template appTemplate="noAccess"
+                                >You don't have privileges to perform <span class="font-bold">Edit</span> or
+                                <span class="font-bold">Delete</span> operations.</ng-template
+                            >
+                        </app-managed-access>
                     </p>
                 </ng-template>
             </p-messages>
