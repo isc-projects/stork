@@ -311,29 +311,28 @@
                 (click)="refreshLeases()"
             ></button>
             <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
-                <app-managed-access key="edit-host" [hideOnNoWriteAccess]="true">
-                    <ng-template appTemplate="writeAccess"
-                        ><button
-                            type="button"
-                            pButton
-                            [disabled]="hostDeleted"
-                            label="Edit"
-                            icon="pi pi-pencil"
-                            class="p-button-info ml-2"
-                            (click)="onHostEditBegin()"
-                        ></button
-                    ></ng-template>
+                <app-managed-access key="edit-host-reservation">
+                    <button
+                        type="button"
+                        pButton
+                        [disabled]="hostDeleted"
+                        label="Edit"
+                        icon="pi pi-pencil"
+                        class="p-button-info ml-2"
+                        (click)="onHostEditBegin()"
+                    ></button>
                 </app-managed-access>
-
-                <button
-                    type="button"
-                    pButton
-                    [disabled]="hostDeleted"
-                    label="Delete"
-                    icon="pi pi-times"
-                    class="p-button-danger ml-2"
-                    (click)="confirmDeleteHost()"
-                ></button>
+                <app-managed-access key="delete-host-reservation">
+                    <button
+                        type="button"
+                        pButton
+                        [disabled]="hostDeleted"
+                        label="Delete"
+                        icon="pi pi-times"
+                        class="p-button-danger ml-2"
+                        (click)="confirmDeleteHost()"
+                    ></button>
+                </app-managed-access>
             </ng-container>
         </div>
     </div>

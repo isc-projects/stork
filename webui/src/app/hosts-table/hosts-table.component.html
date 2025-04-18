@@ -37,6 +37,16 @@
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
+    <app-managed-access key="add-host-reservation">
+        <a
+            label="New Host"
+            icon="pi pi-plus"
+            class="block p-button p-button-primary no-underline"
+            type="button"
+            routerLink="/dhcp/hosts/new"
+            pButton
+        ></a>
+    </app-managed-access>
 
     <p-button
         label="Migrate to Database"

@@ -1,10 +1,18 @@
-<ng-container *ngIf="hasWriteAccess && writeAccessTemplate">
-    <span>Write access</span>
-    <ng-template *ngTemplateOutlet="writeAccessTemplate"></ng-template>
+<ng-template #defaultNoAccess>
+    <p-button
+        icon="pi pi-ban"
+        severity="secondary"
+        pTooltip="You don't have {{
+            accessType
+        }} privileges to display this UI component. If you think this is unexpected, please contact your Stork system administrator."
+    />
+</ng-template>
+<ng-container *ngIf="hasAccess">
+    <ng-content></ng-content>
+    <ng-template *ngTemplateOutlet="hasAccessTemplate"></ng-template>
 </ng-container>
-<ng-container *ngIf="!hasWriteAccess && !hideOnNoWriteAccess">
-    <ng-container *ngIf="hasReadAccess && readAccessTemplate">
-        <span>Read access</span>
-        <ng-template *ngTemplateOutlet="readAccessTemplate"></ng-template>
+<ng-container *ngIf="!hasAccess && !hideOnNoAccess">
+    <ng-container *ngIf="noAccessTemplate; else defaultNoAccess">
+        <ng-template *ngTemplateOutlet="noAccessTemplate"></ng-template>
     </ng-container>
 </ng-container>

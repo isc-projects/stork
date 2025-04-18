@@ -14,8 +14,9 @@ export enum UserGroup {
     SuperAdmin = 1,
     Admin,
     ReadOnly,
-    NoAccess,
 }
+
+export type AccessType = 'read' | 'write' | 'noAccess'
 
 @Injectable({
     providedIn: 'root',
