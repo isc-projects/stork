@@ -45,6 +45,18 @@ func Authorize(user *dbmodel.SystemUser, req *http.Request) (ok bool, err error)
 		return true, err
 	}
 
+	// Customized access for Read-only group users.
+	if user.InGroup(&dbmodel.SystemGroup{ID: dbmodel.ReadOnlyGroupID}) {
+		switch method := req.Method; method {
+		case "GET":
+			// All GET endpoints are allowed for read-only group.
+			return true, nil
+		default:
+			// All other endpoints (DELETE, PUT, POST, etc.) are forbidden for read-only group.
+			return false, nil
+		}
+	}
+
 	// User who doesn't belong to any group is not allowed to access
 	// system resources.
 	return false, nil
