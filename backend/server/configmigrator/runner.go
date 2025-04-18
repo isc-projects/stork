@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type migrationChunk struct {
+type migrationChunkStatus struct {
 	loadedCount int64
 	errs        []MigrationError
 	generalErr  error
@@ -19,8 +19,8 @@ type migrationChunk struct {
 // the migration. It may contain also a general error that interrupted the
 // migration. The channel is closed when the migration is finished or when an
 // general error occurs.
-func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunk {
-	ch := make(chan migrationChunk)
+func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunkStatus {
+	ch := make(chan migrationChunkStatus)
 
 	go func() {
 		defer close(ch)
@@ -28,7 +28,7 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunk 
 		// Begin the migration - make all necessary preparations.
 		err := migrator.Begin()
 		if err != nil {
-			ch <- migrationChunk{
+			ch <- migrationChunkStatus{
 				generalErr: err,
 			}
 			return
@@ -50,14 +50,14 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunk 
 		for {
 			select {
 			case <-ctx.Done():
-				ch <- migrationChunk{
+				ch <- migrationChunkStatus{
 					generalErr: ctx.Err(),
 				}
 				return
 			default:
 				loadedCount, err = migrator.LoadItems(totalLoadedCount)
 				if err != nil {
-					ch <- migrationChunk{
+					ch <- migrationChunkStatus{
 						generalErr: err,
 					}
 					return
@@ -72,7 +72,7 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunk 
 
 				errs := migrator.Migrate()
 
-				ch <- migrationChunk{
+				ch <- migrationChunkStatus{
 					loadedCount: loadedCount, errs: errs,
 				}
 			}

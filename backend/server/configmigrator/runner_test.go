@@ -13,7 +13,7 @@ import (
 //go:generate mockgen -package=configmigrator -destination=migratormock_test.go isc.org/stork/server/configmigrator Migrator
 
 // A helper function to read all items from the channels.
-func readChannels(ch <-chan migrationChunk) (errs []MigrationError, generalErr error) {
+func readChannels(ch <-chan migrationChunkStatus) (errs []MigrationError, generalErr error) {
 	errs = make([]MigrationError, 0)
 
 	for chunk := range ch {
