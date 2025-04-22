@@ -269,7 +269,7 @@
         type: string
       label:
         type: string
-      type:
+      causeEntity:
         type: string
 
   MigrationErrors:

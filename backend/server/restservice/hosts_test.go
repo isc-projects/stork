@@ -1764,8 +1764,8 @@ func TestStartHostsMigration(t *testing.T) {
 			ProcessedItemsCount: 2,
 			TotalItemsCount:     10,
 			Errors: []configmigrator.MigrationError{
-				{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: "host"},
-				{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: "host"},
+				{Error: errors.New("foo"), ID: 4, Label: "host-4", CauseEntity: "host"},
+				{Error: errors.New("bar"), ID: 2, Label: "host-2", CauseEntity: "host"},
 			},
 			GeneralError:      nil,
 			ElapsedTime:       5 * time.Second,
@@ -1792,8 +1792,8 @@ func TestStartHostsMigration(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", CauseEntity: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", CauseEntity: "host"},
 	}, okRsp.Payload.Errors.Items)
 	require.Nil(t, okRsp.Payload.GeneralError)
 	require.Equal(t, strfmt.Duration(5*time.Second), okRsp.Payload.ElapsedTime)

@@ -18,10 +18,10 @@ func (r *RestAPI) convertMigrationStatusToRestAPI(status *configmigrator.Migrati
 	errs := []*models.MigrationError{}
 	for _, err := range status.Errors {
 		errs = append(errs, &models.MigrationError{
-			Error: err.Error.Error(),
-			ID:    err.ID,
-			Label: err.Label,
-			Type:  string(err.Type),
+			Error:       err.Error.Error(),
+			ID:          err.ID,
+			Label:       err.Label,
+			CauseEntity: string(err.CauseEntity),
 		})
 	}
 	var generalError *string

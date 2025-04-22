@@ -41,8 +41,8 @@ func TestGetMigrations(t *testing.T) {
 		ProcessedItemsCount: 2,
 		TotalItemsCount:     10,
 		Errors: []configmigrator.MigrationError{
-			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
-			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
+			{Error: errors.New("foo"), ID: 4, Label: "host-4", CauseEntity: configmigrator.ErrorCauseEntityHost},
+			{Error: errors.New("bar"), ID: 2, Label: "host-2", CauseEntity: configmigrator.ErrorCauseEntityHost},
 		},
 		GeneralError:      nil,
 		ElapsedTime:       5 * time.Second,
@@ -99,8 +99,8 @@ func TestGetMigrations(t *testing.T) {
 	require.EqualValues(t, 2, status.Errors.Total)
 	require.Len(t, status.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", CauseEntity: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", CauseEntity: "host"},
 	}, status.Errors.Items)
 
 	status = okRsp.Payload.Items[1]
@@ -197,8 +197,8 @@ func TestGetMigration(t *testing.T) {
 		ProcessedItemsCount: 2,
 		TotalItemsCount:     10,
 		Errors: []configmigrator.MigrationError{
-			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
-			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
+			{Error: errors.New("foo"), ID: 4, Label: "host-4", CauseEntity: configmigrator.ErrorCauseEntityHost},
+			{Error: errors.New("bar"), ID: 2, Label: "host-2", CauseEntity: configmigrator.ErrorCauseEntityHost},
 		},
 		GeneralError:      nil,
 		ElapsedTime:       5 * time.Second,
@@ -221,8 +221,8 @@ func TestGetMigration(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", CauseEntity: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", CauseEntity: "host"},
 	}, okRsp.Payload.Errors.Items)
 }
 
@@ -253,8 +253,8 @@ func TestPutMigration(t *testing.T) {
 		ProcessedItemsCount: 2,
 		TotalItemsCount:     10,
 		Errors: []configmigrator.MigrationError{
-			{Error: errors.New("foo"), ID: 4, Label: "host-4", Type: configmigrator.EntityTypeHost},
-			{Error: errors.New("bar"), ID: 2, Label: "host-2", Type: configmigrator.EntityTypeHost},
+			{Error: errors.New("foo"), ID: 4, Label: "host-4", CauseEntity: configmigrator.ErrorCauseEntityHost},
+			{Error: errors.New("bar"), ID: 2, Label: "host-2", CauseEntity: configmigrator.ErrorCauseEntityHost},
 		},
 		GeneralError:      nil,
 		ElapsedTime:       5 * time.Second,
@@ -282,8 +282,8 @@ func TestPutMigration(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Errors.Total)
 	require.Len(t, okRsp.Payload.Errors.Items, 2)
 	require.ElementsMatch(t, []*models.MigrationError{
-		{Error: "foo", ID: 4, Label: "host-4", Type: "host"},
-		{Error: "bar", ID: 2, Label: "host-2", Type: "host"},
+		{Error: "foo", ID: 4, Label: "host-4", CauseEntity: "host"},
+		{Error: "bar", ID: 2, Label: "host-2", CauseEntity: "host"},
 	}, okRsp.Payload.Errors.Items)
 	require.True(t, okRsp.Payload.Canceling)
 }

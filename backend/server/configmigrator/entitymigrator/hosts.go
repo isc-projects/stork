@@ -304,10 +304,10 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 		if err != nil {
 			err = errors.WithMessagef(err, "failed to create a command for host '%d' of daemon '%d'", host.ID, daemonID)
 			m.hostErrs[host.ID] = configmigrator.MigrationError{
-				ID:    host.ID,
-				Label: hostLabel,
-				Type:  configmigrator.EntityTypeHost,
-				Error: err,
+				ID:          host.ID,
+				Label:       hostLabel,
+				CauseEntity: configmigrator.ErrorCauseEntityHost,
+				Error:       err,
 			}
 			continue
 		}
@@ -366,10 +366,10 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 			i+1, len(result.CmdsErrors),
 			hostID, daemonID)
 		m.hostErrs[hostID] = configmigrator.MigrationError{
-			ID:    hostID,
-			Label: commandHostLabels[i],
-			Type:  configmigrator.EntityTypeHost,
-			Error: err,
+			ID:          hostID,
+			Label:       commandHostLabels[i],
+			CauseEntity: configmigrator.ErrorCauseEntityHost,
+			Error:       err,
 		}
 	}
 
@@ -392,10 +392,10 @@ func (m *hostMigrator) prepareAndSendHostCommands(daemon *dbmodel.Daemon, f func
 				i+1, len(responses),
 				hostID, daemonID)
 			m.hostErrs[hostID] = configmigrator.MigrationError{
-				ID:    hostID,
-				Label: commandHostLabels[i],
-				Error: err,
-				Type:  configmigrator.EntityTypeHost,
+				ID:          hostID,
+				Label:       commandHostLabels[i],
+				Error:       err,
+				CauseEntity: configmigrator.ErrorCauseEntityHost,
 			}
 		}
 	}
@@ -427,10 +427,10 @@ func (m *hostMigrator) saveConfigChanges(daemon *dbmodel.Daemon) {
 // Marks all hosts related to the daemon as errored.
 func (m *hostMigrator) setDaemonError(daemon *dbmodel.Daemon, err error) {
 	m.daemonErrs[daemon.ID] = configmigrator.MigrationError{
-		ID:    daemon.ID,
-		Label: getDaemonLabel(daemon),
-		Error: err,
-		Type:  configmigrator.EntityTypeDaemon,
+		ID:          daemon.ID,
+		Label:       getDaemonLabel(daemon),
+		Error:       err,
+		CauseEntity: configmigrator.ErrorCauseEntityDaemon,
 	}
 }
 

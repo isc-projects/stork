@@ -200,13 +200,13 @@ func TestMigrate(t *testing.T) {
 	}
 
 	getExpectedLabel := func(err configmigrator.MigrationError) string {
-		if err.Type == configmigrator.EntityTypeHost {
+		if err.CauseEntity == configmigrator.ErrorCauseEntityHost {
 			return fmt.Sprintf(
 				"hw-address=%s",
 				storkutil.BytesToHex([]byte{byte(err.ID)}),
 			)
 		}
-		if err.Type == configmigrator.EntityTypeDaemon {
+		if err.CauseEntity == configmigrator.ErrorCauseEntityDaemon {
 			return "dhcp4"
 		}
 		return "unsupported"
@@ -392,27 +392,27 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.Len(t, errs, 4)
 		sort.Slice(errs, func(i, j int) bool {
-			if errs[i].Type != errs[j].Type {
-				return len(errs[i].Type) > len(errs[j].Type)
+			if errs[i].CauseEntity != errs[j].CauseEntity {
+				return len(errs[i].CauseEntity) > len(errs[j].CauseEntity)
 			}
 			return errs[i].ID < errs[j].ID
 		})
 
 		require.EqualValues(t, daemon1.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "error adding reservation")
-		require.EqualValues(t, configmigrator.EntityTypeDaemon, errs[0].Type)
+		require.EqualValues(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
 
 		require.EqualValues(t, daemon2.ID, errs[1].ID)
 		require.ErrorContains(t, errs[1].Error, "error transferring reservation")
-		require.EqualValues(t, configmigrator.EntityTypeDaemon, errs[1].Type)
+		require.EqualValues(t, configmigrator.ErrorCauseEntityDaemon, errs[1].CauseEntity)
 
 		require.EqualValues(t, host6.ID, errs[2].ID)
 		require.ErrorContains(t, errs[2].Error, "error executing command")
-		require.EqualValues(t, configmigrator.EntityTypeHost, errs[2].Type)
+		require.EqualValues(t, configmigrator.ErrorCauseEntityHost, errs[2].CauseEntity)
 
 		require.EqualValues(t, host8.ID, errs[3].ID)
 		require.ErrorContains(t, errs[3].Error, "error as result")
-		require.EqualValues(t, configmigrator.EntityTypeHost, errs[3].Type)
+		require.EqualValues(t, configmigrator.ErrorCauseEntityHost, errs[3].CauseEntity)
 
 		for _, err := range errs {
 			require.EqualValues(t, getExpectedLabel(err), err.Label)
@@ -490,27 +490,27 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 4)
 
 		sort.Slice(errs, func(i, j int) bool {
-			if errs[i].Type != errs[j].Type {
-				return len(errs[i].Type) > len(errs[j].Type)
+			if errs[i].CauseEntity != errs[j].CauseEntity {
+				return len(errs[i].CauseEntity) > len(errs[j].CauseEntity)
 			}
 			return errs[i].ID < errs[j].ID
 		})
 
 		require.Equal(t, daemon1.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "error GRPC")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[0].Type)
+		require.EqualValues(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
 
 		require.Equal(t, daemon2.ID, errs[1].ID)
 		require.ErrorContains(t, errs[1].Error, "error Kea CA")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[1].Type)
+		require.EqualValues(t, configmigrator.ErrorCauseEntityDaemon, errs[1].CauseEntity)
 
 		require.Equal(t, host6.ID, errs[2].ID)
 		require.ErrorContains(t, errs[2].Error, "error Kea command")
-		require.Equal(t, configmigrator.EntityTypeHost, errs[2].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[2].CauseEntity)
 
 		require.Equal(t, host8.ID, errs[3].ID)
 		require.ErrorContains(t, errs[3].Error, "error is result")
-		require.Equal(t, configmigrator.EntityTypeHost, errs[3].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[3].CauseEntity)
 
 		for _, err := range errs {
 			require.EqualValues(t, getExpectedLabel(err), err.Label)
@@ -552,7 +552,7 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 1)
 		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "error adding reservation")
-		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[0].CauseEntity)
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
@@ -591,7 +591,7 @@ func TestMigrate(t *testing.T) {
 		// Assert
 		require.EqualValues(t, host.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "error adding reservation")
-		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[0].CauseEntity)
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 
 		require.True(t, ctrl.Satisfied())
@@ -656,27 +656,27 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 4)
 
 		sort.Slice(errs, func(i, j int) bool {
-			if errs[i].Type != errs[j].Type {
-				return len(errs[i].Type) > len(errs[j].Type)
+			if errs[i].CauseEntity != errs[j].CauseEntity {
+				return len(errs[i].CauseEntity) > len(errs[j].CauseEntity)
 			}
 			return errs[i].ID < errs[j].ID
 		})
 
 		require.EqualValues(t, daemon1.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "error GRPC")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[0].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
 
 		require.EqualValues(t, daemon2.ID, errs[1].ID)
 		require.ErrorContains(t, errs[1].Error, "error Kea")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[1].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[1].CauseEntity)
 
 		require.EqualValues(t, daemon3.ID, errs[2].ID)
 		require.ErrorContains(t, errs[2].Error, "error command")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[2].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[2].CauseEntity)
 
 		require.EqualValues(t, daemon4.ID, errs[3].ID)
 		require.ErrorContains(t, errs[3].Error, "error execution")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[3].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[3].CauseEntity)
 
 		for _, err := range errs {
 			require.EqualValues(t, getExpectedLabel(err), err.Label)
@@ -747,27 +747,27 @@ func TestMigrate(t *testing.T) {
 		require.Len(t, errs, 4)
 
 		sort.Slice(errs, func(i, j int) bool {
-			if errs[i].Type != errs[j].Type {
-				return len(errs[i].Type) < len(errs[j].Type)
+			if errs[i].CauseEntity != errs[j].CauseEntity {
+				return len(errs[i].CauseEntity) < len(errs[j].CauseEntity)
 			}
 			return errs[i].ID < errs[j].ID
 		})
 
 		require.EqualValues(t, host1.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "response error")
-		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[0].CauseEntity)
 
 		require.EqualValues(t, host2.ID, errs[1].ID)
 		require.ErrorContains(t, errs[1].Error, "command error")
-		require.Equal(t, configmigrator.EntityTypeHost, errs[1].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[1].CauseEntity)
 
 		require.EqualValues(t, daemon3.ID, errs[2].ID)
 		require.ErrorContains(t, errs[2].Error, "Kea CA error")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[2].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[2].CauseEntity)
 
 		require.EqualValues(t, daemon4.ID, errs[3].ID)
 		require.ErrorContains(t, errs[3].Error, "Stork agent error")
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[3].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[3].CauseEntity)
 
 		for _, err := range errs {
 			require.EqualValues(t, getExpectedLabel(err), err.Label)
@@ -850,7 +850,7 @@ func TestMigrate(t *testing.T) {
 			"local subnet id not found in host",
 		)
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
-		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[0].CauseEntity)
 		require.True(t, ctrl.Satisfied())
 	})
 
@@ -883,7 +883,7 @@ func TestMigrate(t *testing.T) {
 			errs[0].Error,
 			"local subnet id not found in host",
 		)
-		require.Equal(t, configmigrator.EntityTypeHost, errs[0].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityHost, errs[0].CauseEntity)
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
 	})
 
@@ -930,7 +930,7 @@ func TestMigrate(t *testing.T) {
 		require.EqualValues(t, daemon.ID, errs[0].ID)
 		require.ErrorContains(t, errs[0].Error, "daemon lock error")
 		require.EqualValues(t, getExpectedLabel(errs[0]), errs[0].Label)
-		require.Equal(t, configmigrator.EntityTypeDaemon, errs[0].Type)
+		require.Equal(t, configmigrator.ErrorCauseEntityDaemon, errs[0].CauseEntity)
 	})
 }
 

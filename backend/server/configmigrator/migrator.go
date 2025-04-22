@@ -2,12 +2,12 @@ package configmigrator
 
 // Indicates a type of entity for which migration error is reported. Usually, it is
 // a migrated entity or a corresponding daemon.
-type EntityType string
+type ErrorCauseEntity string
 
 const (
 	// Indicates that a specific host entity failed to migrate.
-	EntityTypeHost EntityType = "host"
-	// The daemons are not migrated itself (yet?), but the daemon is
+	ErrorCauseEntityHost ErrorCauseEntity = "host"
+	// The daemons are not migrated itself, but the daemon is
 	// responsible for processing commands that migrate an entity. The
 	// communication with the daemon can fail in various ways. It causes the
 	// migration of the entity managed by the daemon to be blocked. In such
@@ -16,7 +16,7 @@ const (
 	// by the daemon, but it would be less efficient because it would produce
 	// a lot of errors with the same error message as all of them would have
 	// the same root cause.
-	EntityTypeDaemon EntityType = "daemon"
+	ErrorCauseEntityDaemon ErrorCauseEntity = "daemon"
 )
 
 // Contains the basic information about the entity type that was failed to
@@ -27,7 +27,7 @@ type MigrationError struct {
 	// Label of the errored entity.
 	Label string
 	// Type of the errored entity.
-	Type EntityType
+	CauseEntity ErrorCauseEntity
 	// Error that occurred during the migration.
 	Error error
 }

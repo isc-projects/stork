@@ -51,10 +51,10 @@ func newTestManager() MigrationManager {
 		processedItems: 100,
 		totalItems:     100,
 		errors: []MigrationError{{
-			ID:    42,
-			Error: errors.New("error"),
-			Label: "host-finished",
-			Type:  EntityTypeHost,
+			ID:          42,
+			Error:       errors.New("error"),
+			Label:       "host-finished",
+			CauseEntity: ErrorCauseEntityHost,
 		}},
 		cancelDate: time.Time{},
 	}
@@ -269,9 +269,9 @@ func TestStartAndExecuteMigration(t *testing.T) {
 		// Return some errors.
 		callIndex++
 		return []MigrationError{
-			{ID: callIndex*100 + 1, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+1), Type: EntityTypeHost},
-			{ID: callIndex*100 + 2, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+2), Type: EntityTypeHost},
-			{ID: callIndex*100 + 3, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+3), Type: EntityTypeHost},
+			{ID: callIndex*100 + 1, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+1), CauseEntity: ErrorCauseEntityHost},
+			{ID: callIndex*100 + 2, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+2), CauseEntity: ErrorCauseEntityHost},
+			{ID: callIndex*100 + 3, Error: errors.New("error"), Label: fmt.Sprintf("host-%d", callIndex*100+3), CauseEntity: ErrorCauseEntityHost},
 		}
 	}).Times(3)
 

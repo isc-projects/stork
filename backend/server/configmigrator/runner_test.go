@@ -142,10 +142,10 @@ func TestRunMigrationAggregatesErrors(t *testing.T) {
 		callCount++
 		return []MigrationError{
 			{
-				ID:    int64(callCount),
-				Error: errors.Errorf("error %d", callCount),
-				Type:  EntityTypeHost,
-				Label: fmt.Sprintf("host %d", callCount),
+				ID:          int64(callCount),
+				Error:       errors.Errorf("error %d", callCount),
+				CauseEntity: ErrorCauseEntityHost,
+				Label:       fmt.Sprintf("host %d", callCount),
 			},
 		}
 	}).Times(2)
@@ -161,12 +161,12 @@ func TestRunMigrationAggregatesErrors(t *testing.T) {
 	require.Len(t, errs, 2)
 	require.EqualValues(t, 1, errs[0].ID)
 	require.EqualError(t, errs[0].Error, "error 1")
-	require.Equal(t, EntityTypeHost, errs[0].Type)
+	require.Equal(t, ErrorCauseEntityHost, errs[0].CauseEntity)
 	require.Equal(t, "host 1", errs[0].Label)
 	require.EqualValues(t, 2, errs[1].ID)
 	require.EqualError(t, errs[1].Error, "error 2")
 	require.Equal(t, "host 2", errs[1].Label)
-	require.Equal(t, EntityTypeHost, errs[1].Type)
+	require.Equal(t, ErrorCauseEntityHost, errs[1].CauseEntity)
 }
 
 // Test that the runner interrupts the migration after the loading error.
