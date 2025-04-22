@@ -16,14 +16,6 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Represents an object that runs a continuous process and its execution can be
-// paused and unpaused. It is implemented by the PeriodicExecutor struct that
-// is embedded in all pullers.
-type Pauser interface {
-	Pause()
-	Unpause()
-}
-
 // Implements the configmigrator.Migrator interface. Migrates the hosts from
 // the Kea JSON configuration to the host database.
 type hostMigrator struct {
