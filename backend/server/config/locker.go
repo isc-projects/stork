@@ -9,8 +9,8 @@ import (
 // A type representing a configuration lock key.
 type LockKey int64
 
-// The interface defining the locking mechanism for daemons. The locked daemon
-// should be processed only by the object that has acquired the lock.
+// The interface defining the locking mechanism for daemons. The locked daemon's
+// configuration may be modified only by the object that has acquired the lock.
 //
 // The interface may be used by other components that may wrap it with a
 // convenient API suitable for their use cases as the ManagerLocker interface
