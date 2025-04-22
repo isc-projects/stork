@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Type (alias?) for the migration ID.
+// Type for the migration ID.
 type MigrationIdentifier int64
 
 // Describes the migration process. It is common for all the entities that can
