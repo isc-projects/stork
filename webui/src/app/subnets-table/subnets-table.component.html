@@ -4,14 +4,16 @@
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
-    <a
-        label="New Subnet"
-        icon="pi pi-plus"
-        class="block p-button p-button-primary no-underline"
-        type="button"
-        routerLink="/dhcp/subnets/new"
-        pButton
-    ></a>
+    <app-managed-access key="add-subnet">
+        <a
+            label="New Subnet"
+            icon="pi pi-plus"
+            class="block p-button p-button-primary no-underline"
+            type="button"
+            routerLink="/dhcp/subnets/new"
+            pButton
+        ></a>
+    </app-managed-access>
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"

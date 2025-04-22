@@ -119,15 +119,17 @@
             </div>
         </form>
 
-        <button
-            pButton
-            type="button"
-            [disabled]="settingsForm.invalid"
-            label="Save Settings"
-            id="save-settings-button"
-            (click)="saveSettings()"
-            class="mt-2 ml-1"
-        ></button>
+        <app-managed-access key="edit-stork-settings" (hasAccessChanged)="updateHasWritePrivileges($event)">
+            <button
+                pButton
+                type="button"
+                [disabled]="settingsForm.invalid"
+                label="Save Settings"
+                id="save-settings-button"
+                (click)="saveSettings()"
+                class="mt-2 ml-1"
+            ></button>
+        </app-managed-access>
 
         <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues with the form values. </span>
     </ng-container>

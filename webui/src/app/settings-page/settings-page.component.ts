@@ -231,4 +231,17 @@ export class SettingsPageComponent implements OnInit {
     hasError(name: string, errType: string): boolean {
         return !!this.settingsForm.get(name)?.hasError(errType)
     }
+
+    /**
+     * Enables or disables settings form based on whether user has "write" settings privileges or not.
+     * @param hasPrivileges
+     */
+    updateHasWritePrivileges(hasPrivileges: boolean): void {
+        if (hasPrivileges) {
+            this.settingsForm.enable()
+            return
+        }
+
+        this.settingsForm.disable()
+    }
 }

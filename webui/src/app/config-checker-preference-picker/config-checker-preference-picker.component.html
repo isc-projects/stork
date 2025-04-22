@@ -20,7 +20,9 @@
                         The state may also be inherited from the global settings. In this case, the actual state is
                         presented in brackets.
                     </span>
-                    The state changes must be confirmed by clicking the Submit button.
+                    <app-managed-access key="update-config-checker">
+                        The state changes must be confirmed by clicking the Submit button.</app-managed-access
+                    >
                 </p>
                 <p *ngIf="!minimal">
                     The selectors define the daemon groups where the specific configuration checker runs.
@@ -93,30 +95,34 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="summary">
-        <div class="picker__buttons">
-            <button pButton label="Submit" [disabled]="!hasChanges" (click)="onSubmit()"></button>
-            <button
-                pButton
-                label="Reset"
-                [disabled]="!hasChanges"
-                class="p-button-secondary"
-                (click)="onReset()"
-            ></button>
-        </div>
+        <app-managed-access key="update-config-checker">
+            <div class="picker__buttons">
+                <button pButton label="Submit" [disabled]="!hasChanges" (click)="onSubmit()"></button>
+                <button
+                    pButton
+                    label="Reset"
+                    [disabled]="!hasChanges"
+                    class="p-button-secondary"
+                    (click)="onReset()"
+                ></button>
+            </div>
+        </app-managed-access>
     </ng-template>
 </p-table>
 
 <!-- State selector - tri-state checkbox -->
 <ng-template #stateSelector let-checker="checker" let-state="state">
     <div class="form-check">
-        <p-triStateCheckbox
-            [ngModel]="state === 'enabled' ? true : state === 'disabled' ? false : null"
-            (onChange)="onCheckerStateChanged(checker)"
-            name="select-{{ checker.name }}"
-            inputId="select-{{ checker.name }}"
-            class="mr-2"
-        >
-        </p-triStateCheckbox>
+        <app-managed-access key="update-config-checker">
+            <p-triStateCheckbox
+                [ngModel]="state === 'enabled' ? true : state === 'disabled' ? false : null"
+                (onChange)="onCheckerStateChanged(checker)"
+                name="select-{{ checker.name }}"
+                inputId="select-{{ checker.name }}"
+                class="mr-2"
+            >
+            </p-triStateCheckbox>
+        </app-managed-access>
         <label class="form-check-label p-capitalize-first" for="select-{{ checker.name }}">
             <span *ngIf="state !== 'inherit'">
                 <p-tag

@@ -50,15 +50,17 @@
                 (click)="refreshAppsList(appsTable)"
                 class="flex-none"
             ></p-button>
-            <p-button
-                *ngIf="appType === 'kea'"
-                id="sync-kea-configs-button"
-                label="Resynchronize Kea Configs"
-                icon="pi pi-file-import"
-                class="flex-none"
-                styleClass="p-button-warning"
-                (click)="onSyncKeaConfigs()"
-            ></p-button>
+            <app-managed-access key="delete-kea-config-hashes">
+                <p-button
+                    *ngIf="appType === 'kea'"
+                    id="sync-kea-configs-button"
+                    label="Resynchronize Kea Configs"
+                    icon="pi pi-file-import"
+                    class="flex-none"
+                    styleClass="p-button-warning"
+                    (click)="onSyncKeaConfigs()"
+                ></p-button>
+            </app-managed-access>
         </div>
     </div>
 

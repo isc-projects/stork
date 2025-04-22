@@ -216,23 +216,27 @@
         </div>
     </ng-container>
     <div class="flex mt-6">
-        <button
-            *ngIf="subnet.localSubnets?.length > 0"
-            type="button"
-            pButton
-            label="Edit"
-            icon="pi pi-pencil"
-            class="p-button-info ml-2"
-            (click)="onSubnetEditBegin()"
-        ></button>
-        <button
-            type="button"
-            pButton
-            [disabled]="subnetDeleting"
-            label="Delete"
-            icon="pi pi-times"
-            class="p-button-danger ml-2"
-            (click)="confirmDeleteSubnet()"
-        ></button>
+        <app-managed-access key="edit-subnet">
+            <button
+                *ngIf="subnet.localSubnets?.length > 0"
+                type="button"
+                pButton
+                label="Edit"
+                icon="pi pi-pencil"
+                class="p-button-info ml-2"
+                (click)="onSubnetEditBegin()"
+            ></button>
+        </app-managed-access>
+        <app-managed-access key="delete-subnet">
+            <button
+                type="button"
+                pButton
+                [disabled]="subnetDeleting"
+                label="Delete"
+                icon="pi pi-times"
+                class="p-button-danger ml-2"
+                (click)="confirmDeleteSubnet()"
+            ></button>
+        </app-managed-access>
     </div>
 </div>

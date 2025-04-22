@@ -1,32 +1,36 @@
 <div class="grid m-0">
-    <app-rename-app-dialog
-        [appId]="appTab.app.id"
-        [appName]="appTab.app.name"
-        [existingApps]="existingApps"
-        [existingMachines]="existingMachines"
-        [(visible)]="appRenameDialogVisible"
-        (submitted)="handleRenameDialogSubmitted($event)"
-        (hidden)="handleRenameDialogHidden()"
-    >
-    </app-rename-app-dialog>
+    <app-managed-access key="rename-kea-app">
+        <app-rename-app-dialog
+            [appId]="appTab.app.id"
+            [appName]="appTab.app.name"
+            [existingApps]="existingApps"
+            [existingMachines]="existingMachines"
+            [(visible)]="appRenameDialogVisible"
+            (submitted)="handleRenameDialogSubmitted($event)"
+            (hidden)="handleRenameDialogHidden()"
+        >
+        </app-rename-app-dialog>
+    </app-managed-access>
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
                 <div class="flex justify-content-between flex-wrap gap-2">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
-                        <i
-                            *ngIf="!showRenameDialogClicked"
-                            class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
-                            id="rename-app-icon"
-                            (click)="showRenameAppDialog()"
-                        ></i>
-                        <p-progressSpinner
-                            *ngIf="showRenameDialogClicked"
-                            [style]="{ width: '25px', height: '25px' }"
-                            styleClass="app-rename-spinner"
-                            strokeWidth="6"
-                        ></p-progressSpinner>
+                        <app-managed-access key="rename-kea-app">
+                            <i
+                                *ngIf="!showRenameDialogClicked"
+                                class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
+                                id="rename-app-icon"
+                                (click)="showRenameAppDialog()"
+                            ></i>
+                            <p-progressSpinner
+                                *ngIf="showRenameDialogClicked"
+                                [style]="{ width: '25px', height: '25px' }"
+                                styleClass="app-rename-spinner"
+                                strokeWidth="6"
+                            ></p-progressSpinner
+                        ></app-managed-access>
                     </div>
                     <button
                         type="button"

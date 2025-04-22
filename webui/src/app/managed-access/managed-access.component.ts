@@ -1,4 +1,14 @@
-import { AfterContentInit, Component, ContentChildren, Input, OnInit, QueryList, TemplateRef } from '@angular/core'
+import {
+    AfterContentInit,
+    Component,
+    ContentChildren,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    QueryList,
+    TemplateRef,
+} from '@angular/core'
 import { StorkTemplateDirective } from '../stork-template.directive'
 import { AccessType, AuthService } from '../auth.service'
 
@@ -52,6 +62,11 @@ export class ManagedAccessComponent implements AfterContentInit, OnInit {
     hasAccess: boolean = false
 
     /**
+     * Output boolean property emitting whenever hasAccess changes.
+     */
+    @Output() hasAccessChanged: EventEmitter<boolean> = new EventEmitter()
+
+    /**
      * Component class constructor.
      * @param authService service used to retrieve access privileges
      */
@@ -68,6 +83,8 @@ export class ManagedAccessComponent implements AfterContentInit, OnInit {
             default:
                 this.hasAccess = this.authService.hasWritePrivilege(this.key)
         }
+
+        this.hasAccessChanged.emit(this.hasAccess)
     }
 
     ngAfterContentInit() {

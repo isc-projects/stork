@@ -11,13 +11,14 @@
         <app-dhcp-option-set-view [options]="dhcpOptions" [levels]="['global']"></app-dhcp-option-set-view>
     </p-fieldset>
 </div>
-
-<div class="flex mt-5">
-    <p-button
-        label="Edit"
-        icon="pi pi-pencil"
-        class="p-button-info ml-2"
-        [disabled]="disableEdit"
-        (click)="onEditBegin()"
-    ></p-button>
-</div>
+<app-managed-access key="edit-kea-global-config">
+    <div class="flex mt-5">
+        <p-button
+            label="Edit"
+            icon="pi pi-pencil"
+            class="p-button-info ml-2"
+            [disabled]="disableEdit"
+            (click)="onEditBegin()"
+        ></p-button>
+    </div>
+</app-managed-access>

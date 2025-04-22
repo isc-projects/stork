@@ -136,23 +136,27 @@
         </div>
     </ng-container>
     <div class="flex mt-6">
-        <button
-            *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
-            type="button"
-            pButton
-            label="Edit"
-            icon="pi pi-pencil"
-            class="p-button-info ml-2"
-            (click)="onSharedNetworkEditBegin()"
-        ></button>
-        <button
-            type="button"
-            pButton
-            [disabled]="sharedNetworkDeleting"
-            label="Delete"
-            icon="pi pi-times"
-            class="p-button-danger ml-2"
-            (click)="confirmDeleteSharedNetwork()"
-        ></button>
+        <app-managed-access key="edit-shared-network">
+            <button
+                *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
+                type="button"
+                pButton
+                label="Edit"
+                icon="pi pi-pencil"
+                class="p-button-info ml-2"
+                (click)="onSharedNetworkEditBegin()"
+            ></button>
+        </app-managed-access>
+        <app-managed-access key="delete-shared-network">
+            <button
+                type="button"
+                pButton
+                [disabled]="sharedNetworkDeleting"
+                label="Delete"
+                icon="pi pi-times"
+                class="p-button-danger ml-2"
+                (click)="confirmDeleteSharedNetwork()"
+            ></button>
+        </app-managed-access>
     </div>
 </div>
