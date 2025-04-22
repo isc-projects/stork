@@ -33,7 +33,7 @@ func TestRunMigrationEmpty(t *testing.T) {
 	mock := NewMockMigrator(ctrl)
 	gomock.InOrder(
 		mock.EXPECT().Begin(),
-		mock.EXPECT().LoadItems(int64(0)).Return(int64(0), nil),
+		mock.EXPECT().LoadItems().Return(int64(0), nil),
 		mock.EXPECT().End(),
 	)
 
@@ -58,13 +58,13 @@ func TestRunMigration(t *testing.T) {
 
 	gomock.InOrder(
 		mock.EXPECT().Begin(),
-		mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), nil),
+		mock.EXPECT().LoadItems().Return(int64(10), nil),
 		mock.EXPECT().Migrate().Return([]MigrationError{}),
-		mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(10), nil),
+		mock.EXPECT().LoadItems().Return(int64(10), nil),
 		mock.EXPECT().Migrate().Return([]MigrationError{}),
-		mock.EXPECT().LoadItems(gomock.Eq(int64(20))).Return(int64(5), nil),
+		mock.EXPECT().LoadItems().Return(int64(5), nil),
 		mock.EXPECT().Migrate().Return([]MigrationError{}),
-		mock.EXPECT().LoadItems(gomock.Eq(int64(25))).Return(int64(0), nil),
+		mock.EXPECT().LoadItems().Return(int64(0), nil),
 		mock.EXPECT().End(),
 	)
 
@@ -109,7 +109,7 @@ func TestRunMigrationCleanupError(t *testing.T) {
 	mock := NewMockMigrator(ctrl)
 	gomock.InOrder(
 		mock.EXPECT().Begin(),
-		mock.EXPECT().LoadItems(int64(0)).Return(int64(0), nil),
+		mock.EXPECT().LoadItems().Return(int64(0), nil),
 		mock.EXPECT().End().Return(errors.New("cleanup error")),
 	)
 
@@ -133,9 +133,9 @@ func TestRunMigrationAggregatesErrors(t *testing.T) {
 	mock := NewMockMigrator(ctrl)
 	mock.EXPECT().Begin()
 	mock.EXPECT().End()
-	mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), nil)
-	mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(5), nil)
-	mock.EXPECT().LoadItems(gomock.Eq(int64(15))).Return(int64(0), nil)
+	mock.EXPECT().LoadItems().Return(int64(10), nil)
+	mock.EXPECT().LoadItems().Return(int64(5), nil)
+	mock.EXPECT().LoadItems().Return(int64(0), nil)
 
 	callCount := 0
 	mock.EXPECT().Migrate().DoAndReturn(func() []MigrationError {
@@ -178,7 +178,7 @@ func TestRunMigrationInterruptOnLoadingError(t *testing.T) {
 	mock := NewMockMigrator(ctrl)
 	gomock.InOrder(
 		mock.EXPECT().Begin(),
-		mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), errors.New("loading error")),
+		mock.EXPECT().LoadItems().Return(int64(10), errors.New("loading error")),
 		mock.EXPECT().End(),
 	)
 
@@ -204,9 +204,9 @@ func TestRunMigrationCanceled(t *testing.T) {
 
 	gomock.InOrder(
 		mock.EXPECT().Begin(),
-		mock.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(10), nil),
+		mock.EXPECT().LoadItems().Return(int64(10), nil),
 		mock.EXPECT().Migrate().Return([]MigrationError{}),
-		mock.EXPECT().LoadItems(gomock.Eq(int64(10))).Return(int64(10), nil),
+		mock.EXPECT().LoadItems().Return(int64(10), nil),
 		mock.EXPECT().Migrate().Do(func() {
 			cancel()
 		}).Return([]MigrationError{}),

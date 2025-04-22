@@ -241,12 +241,11 @@ func TestStartAndExecuteMigration(t *testing.T) {
 
 	gomock.InOrder(
 		migrator.EXPECT().CountTotal().Return(int64(250), nil),
-
 		migrator.EXPECT().Begin(),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(200))).Return(int64(50), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(250))).Return(int64(0), nil),
+		migrator.EXPECT().LoadItems().Return(int64(100), nil),
+		migrator.EXPECT().LoadItems().Return(int64(100), nil),
+		migrator.EXPECT().LoadItems().Return(int64(50), nil),
+		migrator.EXPECT().LoadItems().Return(int64(0), nil),
 		migrator.EXPECT().End(),
 	)
 
@@ -412,8 +411,8 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	gomock.InOrder(
 		migrator.EXPECT().CountTotal().Return(int64(250), nil),
 		migrator.EXPECT().Begin(),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(
+		migrator.EXPECT().LoadItems().Return(int64(100), nil),
+		migrator.EXPECT().LoadItems().Return(
 			int64(100),
 			errors.New("loading error"),
 		),
@@ -474,8 +473,8 @@ func TestCancelMigration(t *testing.T) {
 	gomock.InOrder(
 		migrator.EXPECT().CountTotal().Return(int64(250), nil),
 		migrator.EXPECT().Begin(),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil),
+		migrator.EXPECT().LoadItems().Return(int64(100), nil),
+		migrator.EXPECT().LoadItems().Return(int64(100), nil),
 		migrator.EXPECT().End(),
 	)
 
@@ -559,10 +558,10 @@ func TestMigrationParentCancel(t *testing.T) {
 	gomock.InOrder(
 		migrator.EXPECT().CountTotal().Return(int64(250), nil),
 		migrator.EXPECT().Begin(),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(0))).Return(int64(100), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(100))).Return(int64(100), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(200))).Return(int64(50), nil),
-		migrator.EXPECT().LoadItems(gomock.Eq(int64(250))).Return(int64(0), nil),
+		migrator.EXPECT().LoadItems().Return(int64(100), nil),
+		migrator.EXPECT().LoadItems().Return(int64(100), nil),
+		migrator.EXPECT().LoadItems().Return(int64(50), nil),
+		migrator.EXPECT().LoadItems().Return(int64(0), nil),
 		migrator.EXPECT().End(),
 	)
 
@@ -645,7 +644,7 @@ func TestConcurrentMigrationsCloseManager(t *testing.T) {
 	migrator.EXPECT().End().Times(2)
 
 	// Migrate infinitely.
-	migrator.EXPECT().LoadItems(gomock.Any()).Return(int64(100), nil).AnyTimes()
+	migrator.EXPECT().LoadItems().Return(int64(100), nil).AnyTimes()
 	migrator.EXPECT().Migrate().Return([]MigrationError{}).AnyTimes()
 
 	// Act & Assert

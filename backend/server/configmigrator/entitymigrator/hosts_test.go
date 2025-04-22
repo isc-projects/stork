@@ -974,6 +974,8 @@ func TestLoadAndCountItems(t *testing.T) {
 	migrator.limit = 5
 
 	t.Run("count total", func(t *testing.T) {
+		migrator.totalItemsLoaded = 0
+
 		// Act
 		total, err := migrator.CountTotal()
 
@@ -983,8 +985,10 @@ func TestLoadAndCountItems(t *testing.T) {
 	})
 
 	t.Run("load items", func(t *testing.T) {
+		migrator.totalItemsLoaded = 0
+
 		// Act
-		loaded, err := migrator.LoadItems(0)
+		loaded, err := migrator.LoadItems()
 
 		// Assert
 		require.NoError(t, err)
@@ -997,11 +1001,11 @@ func TestLoadAndCountItems(t *testing.T) {
 
 	t.Run("paginate", func(t *testing.T) {
 		var allLoaded []dbmodel.Host
+		migrator.totalItemsLoaded = 0
 
 		// Act
-		offset := int64(0)
 		for {
-			loaded, err := migrator.LoadItems(offset)
+			loaded, err := migrator.LoadItems()
 			require.NoError(t, err)
 
 			if loaded == 0 {
@@ -1010,7 +1014,6 @@ func TestLoadAndCountItems(t *testing.T) {
 
 			require.EqualValues(t, loaded, len(migrator.items))
 			allLoaded = append(allLoaded, migrator.items...)
-			offset += loaded
 		}
 
 		// Assert
@@ -1072,6 +1075,8 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 	migrator.limit = 5
 
 	t.Run("count total", func(t *testing.T) {
+		migrator.totalItemsLoaded = 0
+
 		// Act
 		total, err := migrator.CountTotal()
 
@@ -1081,8 +1086,10 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 	})
 
 	t.Run("load items", func(t *testing.T) {
+		migrator.totalItemsLoaded = 0
+
 		// Act
-		loaded, err := migrator.LoadItems(0)
+		loaded, err := migrator.LoadItems()
 
 		// Assert
 		require.NoError(t, err)
@@ -1095,11 +1102,11 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 
 	t.Run("paginate", func(t *testing.T) {
 		var allLoaded []dbmodel.Host
+		migrator.totalItemsLoaded = 0
 
 		// Act
-		offset := int64(0)
 		for {
-			loaded, err := migrator.LoadItems(offset)
+			loaded, err := migrator.LoadItems()
 			require.NoError(t, err)
 
 			if loaded == 0 {
@@ -1108,7 +1115,6 @@ func TestLoadAndCountItemsWithFilter(t *testing.T) {
 
 			require.EqualValues(t, loaded, len(migrator.items))
 			allLoaded = append(allLoaded, migrator.items...)
-			offset += loaded
 		}
 
 		// Assert

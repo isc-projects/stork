@@ -33,6 +33,7 @@ type hostMigrator struct {
 	hostErrs         map[int64]configmigrator.MigrationError
 	daemonErrs       map[int64]configmigrator.MigrationError
 	limit            int64
+	totalItemsLoaded int64
 	dhcpOptionLookup keaconfig.DHCPOptionDefinitionLookup
 	connectedAgents  agentcomm.ConnectedAgents
 	daemonLocker     config.DaemonLocker
@@ -63,6 +64,7 @@ func NewHostMigrator(
 		db:               db,
 		filter:           filter,
 		limit:            100,
+		totalItemsLoaded: 0,
 		dhcpOptionLookup: dhcpOptionLookup,
 		connectedAgents:  connectedAgents,
 		daemonLocker:     locker,
@@ -108,14 +110,16 @@ func (m *hostMigrator) CountTotal() (int64, error) {
 }
 
 // Loads a chunk of hosts from the database.
-func (m *hostMigrator) LoadItems(offset int64) (int64, error) {
-	items, _, err := dbmodel.GetHostsByPage(m.db, offset, m.limit, m.filter, "", dbmodel.SortDirAsc)
+func (m *hostMigrator) LoadItems() (int64, error) {
+	items, _, err := dbmodel.GetHostsByPage(m.db, m.totalItemsLoaded, m.limit, m.filter, "", dbmodel.SortDirAsc)
 	if err != nil {
 		// Returns the number of items tried to load.
 		return m.limit, err
 	}
 	m.items = items
-	return int64(len(m.items)), nil
+	itemsLoaded := int64(len(items))
+	m.totalItemsLoaded += itemsLoaded
+	return itemsLoaded, nil
 }
 
 // Adds the hosts to the database and removes them from the Kea configuration.

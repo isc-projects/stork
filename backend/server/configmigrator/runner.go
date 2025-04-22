@@ -45,8 +45,6 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunkS
 			close(ch)
 		}()
 
-		var totalLoadedCount int64
-		var loadedCount int64
 		for {
 			select {
 			case <-ctx.Done():
@@ -55,7 +53,7 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunkS
 				}
 				return
 			default:
-				loadedCount, err = migrator.LoadItems(totalLoadedCount)
+				loadedCount, err := migrator.LoadItems()
 				if err != nil {
 					ch <- migrationChunkStatus{
 						generalErr: err,
@@ -67,8 +65,6 @@ func runMigration(ctx context.Context, migrator Migrator) <-chan migrationChunkS
 					// No more items to migrate.
 					return
 				}
-
-				totalLoadedCount += loadedCount
 
 				errs := migrator.Migrate()
 
