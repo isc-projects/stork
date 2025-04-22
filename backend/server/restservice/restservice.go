@@ -437,7 +437,7 @@ func (r *RestAPI) Serve() (err error) {
 			// If we know the executable path we can try to search other typical
 			// locations relative to the executable path.
 			if executable, err = filepath.EvalSymlinks(executable); err == nil {
-				searchPaths = append(searchPaths, path.Join(path.Dir(executable), "..", "..", "..", "/webui/dist/stork"))
+				searchPaths = append(searchPaths, path.Join(path.Dir(executable), "..", "..", "..", "/webui/dist/stork/browser"))
 				searchPaths = append(searchPaths, path.Join(path.Dir(executable), "..", "/share/stork/www"))
 			}
 		}
