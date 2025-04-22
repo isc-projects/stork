@@ -161,6 +161,10 @@ func (executor *PeriodicExecutor) executorLoop() {
 		select {
 		// every N seconds execute user defined function
 		case <-executor.ticker.C:
+			// Early check if the executor is active to avoid unnecessary locking.
+			if !executor.active {
+				continue
+			}
 			// Blocks any Pause callers until the current iteration is finished.
 			executor.iterationMutex.Lock()
 			// Temporarily stop the executor while running the external action.
@@ -168,7 +172,7 @@ func (executor *PeriodicExecutor) executorLoop() {
 			executor.pauseNoWait()
 			// Check if the executor is still active or it wasn't paused by
 			// someone else while the iteration was beginning.
-			if executor.active && executor.pauseCount == 1 {
+			if executor.pauseCount == 1 {
 				err := executor.executorFunc()
 				if err != nil {
 					log.WithError(err).Errorf("Errors were encountered while pulling data from apps")
