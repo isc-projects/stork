@@ -905,7 +905,7 @@
     delete:
       summary: Deletes all finished migrations.
       description: >-
-        Deletes all finished (or completed) migrations from memory.
+        Deletes all finished migrations from memory.
       operationId: deleteFinishedMigrations
       tags:
         - DHCP
