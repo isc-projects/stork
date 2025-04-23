@@ -40,6 +40,7 @@ import { EventTextComponent } from '../event-text/event-text.component'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 
 class Details {
     daemons: any = [
@@ -129,6 +130,7 @@ describe('KeaAppTabComponent', () => {
                 AppOverviewComponent,
                 EventTextComponent,
                 VersionStatusComponent,
+                ManagedAccessComponent,
             ],
             imports: [
                 RouterModule,

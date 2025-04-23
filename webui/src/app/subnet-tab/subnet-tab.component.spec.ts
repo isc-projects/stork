@@ -40,6 +40,8 @@ import { PositivePipe } from '../pipes/positive.pipe'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { AuthService } from '../auth.service'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -47,6 +49,7 @@ describe('SubnetTabComponent', () => {
     let dhcpApi: DHCPService
     let msgService: MessageService
     let confirmService: ConfirmationService
+    let authService: AuthService
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -70,6 +73,7 @@ describe('SubnetTabComponent', () => {
                 UtilizationStatsChartsComponent,
                 JsonTreeRootComponent,
                 JsonTreeComponent,
+                ManagedAccessComponent,
             ],
             imports: [
                 ButtonModule,
@@ -101,6 +105,8 @@ describe('SubnetTabComponent', () => {
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         confirmService = fixture.debugElement.injector.get(ConfirmationService)
         msgService = fixture.debugElement.injector.get(MessageService)
+        authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'superAdmin').and.returnValue(true)
         fixture.detectChanges()
     })
 

@@ -28,6 +28,8 @@ import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { AuthService } from '../auth.service'
 
 describe('MachinesTableComponent', () => {
     let component: MachinesTableComponent
@@ -37,6 +39,7 @@ describe('MachinesTableComponent', () => {
     let getMachinesSpy: any
     let unauthorizedMachinesCountChangeSpy: any
     let msgService: MessageService
+    let authService: AuthService
 
     // prepare responses for api calls
     const getUnauthorizedMachinesResp: any = {
@@ -127,6 +130,7 @@ describe('MachinesTableComponent', () => {
                 LocaltimePipe,
                 PlaceholderPipe,
                 AppDaemonsStatusComponent,
+                ManagedAccessComponent,
             ],
             imports: [
                 RouterModule.forRoot([]),
@@ -152,6 +156,8 @@ describe('MachinesTableComponent', () => {
         fixture = TestBed.createComponent(MachinesTableComponent)
         component = fixture.componentInstance
         msgService = fixture.debugElement.injector.get(MessageService)
+        authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'superAdmin').and.returnValue(true)
         fixture.detectChanges()
 
         // Do not save table state between tests, because that makes tests unstable.

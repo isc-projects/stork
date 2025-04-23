@@ -17,6 +17,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 import { provideRouter, RouterModule } from '@angular/router'
 
 describe('ConfigCheckerPreferencePageComponent', () => {
@@ -31,6 +32,7 @@ describe('ConfigCheckerPreferencePageComponent', () => {
                 ConfigCheckerPreferencePageComponent,
                 ConfigCheckerPreferenceUpdaterComponent,
                 ConfigCheckerPreferencePickerComponent,
+                ManagedAccessComponent,
             ],
             imports: [
                 TableModule,
