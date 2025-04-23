@@ -2,9 +2,7 @@ package kea
 
 import (
 	"context"
-	"math"
 	"math/big"
-	"strings"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
@@ -172,24 +170,6 @@ func (statsPuller *StatsPuller) pullStats() error {
 	return lastErr
 }
 
-// Part of response for stat-lease4-get and stat-lease6-get commands.
-type ResultSetInStatLeaseGet struct {
-	Columns []string
-	Rows    [][]storkutil.BigIntJSON
-}
-
-// Part of response for stat-lease4-get and stat-lease6-get commands.
-type StatLeaseGetArgs struct {
-	ResultSet ResultSetInStatLeaseGet `json:"result-set"`
-	Timestamp string
-}
-
-// Represents unmarshaled response from Kea daemon to stat-lease4-get and stat-lease6-get commands.
-type StatLeaseGetResponse struct {
-	keactrl.ResponseHeader
-	Arguments *StatLeaseGetArgs `json:"arguments,omitempty"`
-}
-
 // A key that is used in map that is mapping from (local subnet id, inet family) to LocalSubnet struct.
 type localSubnetKey struct {
 	LocalSubnetID int64
@@ -197,75 +177,65 @@ type localSubnetKey struct {
 }
 
 // Process lease stats results from the given command response for given daemon.
-func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisticsResponse, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
-	var sr []StatLeaseGetResponse
 
-	statsResp, ok := response.(*[]StatLeaseGetResponse)
-	if !ok {
-		return errors.Errorf("response is empty: %+v", sr)
+	if len(response) == 0 {
+		return errors.Errorf("response is empty: %+v", response)
 	}
 
-	sr = *statsResp
-	if len(sr) == 0 {
-		return errors.Errorf("response is empty: %+v", sr)
+	responseStats := (response)[0]
+
+	if len(responseStats.Arguments) == 0 {
+		return errors.Errorf("missing statistics")
 	}
 
-	if sr[0].Arguments == nil {
-		return errors.Errorf("missing arguments from Lease Stats response %+v", sr[0])
-	}
-
-	resultSet := &sr[0].Arguments.ResultSet
-	if resultSet == nil {
-		return errors.Errorf("missing ResultSet from Lease Stats response %+v", sr[0])
-	}
-
-	for _, row := range resultSet.Rows {
-		stats := dbmodel.SubnetStats{}
-		var sn *dbmodel.LocalSubnet
-		var lsnID int64
-		for colIdx, val := range row {
-			name := resultSet.Columns[colIdx]
-			if name == "subnet-id" {
-				lsnID = val.BigInt().Int64()
-				sn = subnetsMap[localSubnetKey{lsnID, family}]
-			} else {
-				// handle inconsistency in stats naming in different kea versions
-				name = strings.Replace(name, "addreses", "addresses", 1)
-				value := val.BigInt()
-				if value.Sign() == -1 {
-					// Handle negative statistics from older Kea versions.
-					// Older Kea versions stored the statistics as uint64
-					// but they were returned as int64.
-					//
-					// For the negative int64 values:
-					// uint64 = maxUint64 + (int64 + 1)
-					value = big.NewInt(0).Add(
-						big.NewInt(0).SetUint64(math.MaxUint64),
-						big.NewInt(0).Add(
-							big.NewInt(1),
-							value,
-						),
-					)
-				}
-
-				// Store the value as a best fit type to preserve compatibility
-				// with the existing code. Some features expect the IPv4
-				// statistics to be always stored as uint64, while IPv6 can be
-				// uint64 or big int.
-				stats.SetBigCounter(name, storkutil.NewBigCounterFromBigInt(value))
-			}
+	// Subnet statistics.
+	statisticsPerSubnet := make(map[int64][]keactrl.GetAllStatisticResponseSample)
+	for _, statEntry := range responseStats.Arguments {
+		subnetID := statEntry.SubnetID
+		if subnetID != 0 && statEntry.PoolID == 0 {
+			statisticsPerSubnet[subnetID] = append(statisticsPerSubnet[subnetID], statEntry)
 		}
-		if sn == nil {
-			lastErr = errors.Errorf("cannot find LocalSubnet for app: %d, local subnet ID: %d, family: %d", dbApp.ID, lsnID, family)
+	}
+
+	for subnetID, statEntries := range statisticsPerSubnet {
+		stats := dbmodel.SubnetStats{}
+		subnet := subnetsMap[localSubnetKey{subnetID, family}]
+		if subnet == nil {
+			lastErr = errors.Errorf(
+				"cannot find LocalSubnet for app: %d, local subnet ID: %d, family: %d",
+				dbApp.ID, subnetID, family,
+			)
 			log.Error(lastErr.Error())
 			continue
 		}
-		err := sn.UpdateStats(statsPuller.DB, stats)
+
+		for _, statEntry := range statEntries {
+			// Store the value as a best fit type to preserve compatibility
+			// with the existing code. Some features expect the IPv4
+			// statistics to be always stored as uint64, while IPv6 can be
+			// uint64 or big int.
+			stats.SetBigCounter(
+				statEntry.Name,
+				storkutil.NewBigCounterFromBigInt(
+					statEntry.Value,
+				),
+			)
+		}
+
+		// TODO: Update pool and prefix-pool stats.
+
+		err := subnet.UpdateStats(statsPuller.DB, stats)
 		if err != nil {
-			log.Errorf("Problem updating Kea stats for local subnet ID %d, app ID %d: %s", sn.LocalSubnetID, dbApp.ID, err.Error())
+			log.Errorf(
+				"Problem updating Kea stats for local subnet ID %d, app ID %d: %s",
+				subnet.LocalSubnetID, dbApp.ID, err.Error(),
+			)
 			lastErr = err
 		}
+
+		// RPS worker stats.
 	}
 	return lastErr
 }
@@ -284,64 +254,42 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// Slices for tracking commands, the daemons they're sent to, and the responses
 	cmds := []*keactrl.Command{}
 	cmdDaemons := []*dbmodel.Daemon{}
-	responses := []interface{}{}
+	var responsesAny []any
 
 	// Iterate over active daemons, adding commands and response containers
 	// for dhcp4 and dhcp6 daemons.
 	for _, d := range dbApp.Daemons {
-		if d.KeaDaemon != nil && d.Active {
-			if d.KeaDaemon.Config != nil {
-				// Ignore the daemons without the statistic hook to avoid
-				// confusing error messages.
-				if _, _, present := d.KeaDaemon.Config.GetHookLibrary("libdhcp_stat_cmds"); !present {
-					continue
-				}
-			}
-			switch d.Name {
-			case dhcp4:
-				// Add daemon, cmd, and response for DHCP4 lease stats
-				cmdDaemons = append(cmdDaemons, d)
-				dhcp4Daemons := []string{dhcp4}
-				cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatLease4Get, dhcp4Daemons...))
+		if d.KeaDaemon == nil || !d.Active {
+			continue
+		}
 
-				responses = append(responses, &[]StatLeaseGetResponse{})
-
-				// Add daemon, cmd and response for DHCP4 RPS stats if we have an RpsWorker
-				if statsPuller.RpsWorker != nil {
-					cmdDaemons = append(cmdDaemons, d)
-					responses = append(responses, RpsAddCmd4(&cmds, dhcp4Daemons))
-				}
-			case dhcp6:
-
-				// Add daemon, cmd and response for DHCP6 lease stats
-				cmdDaemons = append(cmdDaemons, d)
-				dhcp6Daemons := []string{dhcp6}
-				cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatLease6Get, dhcp6Daemons...))
-
-				responses = append(responses, &[]StatLeaseGetResponse{})
-
-				// Add daemon, cmd and response for DHCP6 RPS stats if we have an RpsWorker
-				if statsPuller.RpsWorker != nil {
-					cmdDaemons = append(cmdDaemons, d)
-					responses = append(responses, RpsAddCmd6(&cmds, dhcp6Daemons))
-				}
+		if d.KeaDaemon.Config != nil {
+			// Ignore the daemons without the statistic hook to avoid
+			// confusing error messages.
+			if _, _, present := d.KeaDaemon.Config.GetHookLibrary("libdhcp_stat_cmds"); !present {
+				continue
 			}
 		}
+
+		cmdDaemons = append(cmdDaemons, d)
+		cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatisticGetAll, d.Name))
+		responsesAny = append(responsesAny, &keactrl.GetAllStatisticsResponse{})
 	}
 
-	// If there are no commands, nothing to do
+	// If there are no commands, nothing to do.
 	if len(cmds) == 0 {
 		return nil
 	}
 
-	// forward commands to kea
+	// Forward commands to Kea.
 	ctx := context.Background()
 
 	var serialCmds []keactrl.SerializableCommand
 	for _, cmd := range cmds {
 		serialCmds = append(serialCmds, cmd)
 	}
-	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, serialCmds, responses...)
+
+	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, serialCmds, responsesAny...)
 	if err != nil {
 		return err
 	}
@@ -350,13 +298,19 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return cmdsResult.Error
 	}
 
+	responses := make([]keactrl.GetAllStatisticsResponse, len(responsesAny))
+	for i := 0; i < len(responsesAny); i++ {
+		response, _ := responsesAny[i].(*keactrl.GetAllStatisticsResponse)
+		responses[i] = *response
+	}
+
 	// Process the response for each command for each daemon.
 	return statsPuller.processAppResponses(dbApp, cmds, cmdDaemons, responses)
 }
 
 // Iterates through the commands for each daemon and processes the command responses
 // Was part of getStatsFromApp() until lint:backend complained about cognitive complexity.
-func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []interface{}) error {
+func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []keactrl.GetAllStatisticsResponse) error {
 	// Lease statistic processing needs app's local subnets
 	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.DB, dbApp.ID)
 	if err != nil {
@@ -373,42 +327,29 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 
 	var lastErr error
 	for idx := 0; idx < len(cmds); idx++ {
-		switch cmdDaemons[idx].Name {
-		case dhcp4:
-			switch cmds[idx].Command {
-			case keactrl.StatLease4Get:
-				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 4)
-				if err != nil {
-					log.Errorf("Error handling stat-lease4-get response: %+v", err)
-					lastErr = err
-				}
-			case keactrl.StatisticGet:
-				err = statsPuller.RpsWorker.Response4Handler(cmdDaemons[idx], responses[idx])
-				if err != nil {
-					log.Errorf("Error handling statistic-get (v4) response: %+v", err)
-					lastErr = err
-				}
-			default:
-				// Impossible case.
-			}
+		family := 4
+		if cmdDaemons[idx].Name == dhcp6 {
+			family = 6
+		}
 
-		case dhcp6:
-			switch cmds[idx].Command {
-			case keactrl.StatLease6Get:
-				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 6)
-				if err != nil {
-					log.Errorf("Error handling stat-lease6-get response: %+v", err)
-					lastErr = err
-				}
-			case keactrl.StatisticGet:
-				err = statsPuller.RpsWorker.Response6Handler(cmdDaemons[idx], responses[idx])
-				if err != nil {
-					log.Errorf("Error handling statistic-get (v6) response: %+v", err)
-					lastErr = err
-				}
-			default:
-				// Impossible case.
-			}
+		response := responses[idx]
+
+		err = statsPuller.storeDaemonStats(response, subnetsMap, dbApp, family)
+		if err != nil {
+			log.WithError(err).Error("Error handling stat-lease4-get response")
+			lastErr = err
+		}
+
+		err = statsPuller.RpsWorker.Response4Handler(cmdDaemons[idx], response)
+		if err != nil {
+			log.WithError(err).Error("Error handling statistic-get (v4) response")
+			lastErr = err
+		}
+
+		err = statsPuller.RpsWorker.Response6Handler(cmdDaemons[idx], response)
+		if err != nil {
+			log.WithError(err).Error("Error handling statistic-get (v6) response")
+			lastErr = err
 		}
 	}
 

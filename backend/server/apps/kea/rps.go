@@ -25,54 +25,6 @@ type StatSample struct {
 	Value     int64     // statistic value
 }
 
-// Represents a response from the single Kea server to the statistic-get
-// for pkt4-ack-sent:
-//
-//	{
-//		"command": "statistic-get",
-//		"arguments": {
-//			"pkt4-ack-sent": [
-//				[ 125, "2019-07-30 10:11:19.498739" ],
-//					...
-//				]
-//		},
-//		"result": 0
-//	}
-type StatGetResponse4 struct {
-	keactrl.ResponseHeader
-	Arguments *ResponseArguments4 `json:"arguments,omitempty"`
-}
-
-// The list of value/timestamp pairs returned as pkt4-ack-sent
-// as the value for command response "Arguments" element.
-type ResponseArguments4 struct {
-	Samples []interface{} `json:"pkt4-ack-sent"`
-}
-
-// Represents a response from the single Kea server to the statistic-get
-// for pkt6-reply-sent:
-//
-//	{
-//		"command": "statistic-get",
-//		"arguments": {
-//			"pkt6-reply-sent": [
-//				[ 125, "2019-07-30 10:11:19.498739" ],
-//					...
-//				]
-//		},
-//		"result": 0
-//	}
-type StatGetResponse6 struct {
-	keactrl.ResponseHeader
-	Arguments *ResponseArguments6 `json:"arguments,omitempty"`
-}
-
-// The list of value/timestamp pairs returned as pkt6-reply-sent
-// as the value for command response "Arguments" element.
-type ResponseArguments6 struct {
-	Samples []interface{} `json:"pkt6-reply-sent"`
-}
-
 // Create a RpsWorker object for building Kea API commands and using
 // their responses to populate RPS statistics.
 func NewRpsWorker(db *pg.DB) (*RpsWorker, error) {
@@ -96,41 +48,18 @@ func (rpsWorker *RpsWorker) AgeOffRpsIntervals() error {
 	return err
 }
 
-// Appends the statistic-get command for DHCP4 to the given command list. It returns
-// an instance of the expected response type.
-func RpsAddCmd4(cmds *[]*keactrl.Command, dhcp4Daemons []string) interface{} {
-	dhcp4Arguments := RpsGetDhcp4Arguments()
-	*cmds = append(*cmds, &keactrl.Command{
-		Command:   "statistic-get",
-		Daemons:   dhcp4Daemons,
-		Arguments: &dhcp4Arguments,
-	})
-	return (&[]StatGetResponse4{})
-}
+// Updates the statistic-get-all command response for DHCP4.
+func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response keactrl.GetAllStatisticsResponse) error {
+	samples, err := rpsWorker.extractSamples4(response)
+	if err == nil && samples != nil {
+		// Note that rather than use the sample time in the list,
+		// We use current Stork Server time so interval times across Daemons are
+		// consistent and relative to us. In other words, we don't care when Kea
+		// modified the value, we care about when we got it.
+		sampledAt := storkutil.UTCNow()
 
-// Appends the statistic-get command for DHCP4 to the given command list. It returns
-// an instance of the expected response type.
-func RpsAddCmd6(cmds *[]*keactrl.Command, dhcp6Daemons []string) interface{} {
-	dhcp6Arguments := RpsGetDhcp6Arguments()
-	*cmds = append(*cmds, &keactrl.Command{
-		Command:   "statistic-get",
-		Daemons:   dhcp6Daemons,
-		Arguments: &dhcp6Arguments,
-	})
-	return (&[]StatGetResponse6{})
-}
-
-// Processes the statistic-get command response for DHCP4.
-func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response interface{}) error {
-	statsResp4, ok := response.(*[]StatGetResponse4)
-	if !ok {
-		return errors.Errorf("response type is invalid: %+v", response)
-	}
-
-	samples, err := rpsWorker.extractSamples4(*statsResp4)
-	if err == nil {
 		// Calculate and store the RPS interval for this daemon for this cycle
-		err = rpsWorker.updateDaemonRpsIntervals(daemon, samples)
+		err = rpsWorker.updateDaemonRpsIntervals(daemon, samples.Value.Int64(), sampledAt)
 
 		// Now we'll update the Kea RPS statistics based on the updated interval data
 		if err == nil {
@@ -146,16 +75,17 @@ func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response in
 }
 
 // Processes the statistic-get command response for DHCP4.
-func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response interface{}) error {
-	statsResp6, ok := response.(*[]StatGetResponse6)
-	if !ok {
-		return errors.Errorf("response type is invalid: %+v", response)
-	}
+func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response keactrl.GetAllStatisticsResponse) error {
+	sample, err := rpsWorker.extractSamples6(response)
+	if err == nil && sample != nil {
+		// Note that rather than use the sample time in the list,
+		// We use current Stork Server time so interval times across Daemons are
+		// consistent and relative to us. In other words, we don't care when Kea
+		// modified the value, we care about when we got it.
+		sampledAt := storkutil.UTCNow()
 
-	samples, err := rpsWorker.extractSamples6(*statsResp6)
-	if err == nil {
 		// Calculate and store the RPS interval for this daemon for this cycle
-		err = rpsWorker.updateDaemonRpsIntervals(daemon, samples)
+		err = rpsWorker.updateDaemonRpsIntervals(daemon, sample.Value.Int64(), sampledAt)
 
 		// Now we'll update the Kea RPS statistics based on the updated interval data
 		if err == nil {
@@ -164,14 +94,14 @@ func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response in
 	}
 
 	if err != nil {
-		return errors.WithMessagef(err, "could not update dhcp4 RPS data for %+v", daemon)
+		return errors.WithMessagef(err, "could not update dhcp6 RPS data for %+v", daemon)
 	}
 
 	return nil
 }
 
-// Extract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
-func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]interface{}, error) {
+// Extract the list of statistic samples from a dhcp4 statistic-get-all response if the response is valid.
+func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.GetAllStatisticsResponse) (*keactrl.GetAllStatisticResponseSample, error) {
 	if len(statsResp) == 0 {
 		err := errors.Errorf("empty RPS response")
 		return nil, err
@@ -187,16 +117,16 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]int
 		return nil, err
 	}
 
-	if statsResp[0].Arguments.Samples == nil {
-		err := errors.Errorf("missing samples from RPS response: %+v", statsResp)
-		return nil, err
+	for _, sample := range statsResp[0].Arguments {
+		if sample.Name == "pkt4-ack-sent" {
+			return &sample, nil
+		}
 	}
-
-	return statsResp[0].Arguments.Samples, nil
+	return nil, nil
 }
 
 // Extract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
-func (rpsWorker *RpsWorker) extractSamples6(statsResp []StatGetResponse6) ([]interface{}, error) {
+func (rpsWorker *RpsWorker) extractSamples6(statsResp keactrl.GetAllStatisticsResponse) (*keactrl.GetAllStatisticResponseSample, error) {
 	if len(statsResp) == 0 {
 		err := errors.Errorf("empty RPS response")
 		return nil, err
@@ -212,24 +142,24 @@ func (rpsWorker *RpsWorker) extractSamples6(statsResp []StatGetResponse6) ([]int
 		return nil, err
 	}
 
-	if statsResp[0].Arguments.Samples == nil {
+	if statsResp[0].Arguments == nil {
 		err := errors.Errorf("missing samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
-	return statsResp[0].Arguments.Samples, nil
+	for _, sample := range statsResp[0].Arguments {
+		if sample.Name == "pkt6-reply-sent" {
+			return &sample, nil
+		}
+	}
+	return nil, nil
 }
 
 // Uses the most recent Kea statistic value for packets sent to calculate and
 // store an RPS interval row for the current interval for the given daemon.
-func (rpsWorker *RpsWorker) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, samples []interface{}) error {
+func (rpsWorker *RpsWorker) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, value int64, timestamp time.Time) (err error) {
 	// The first row of the samples is the most recent value and the only
 	// one we care about. Fetch it.
-	value, sampledAt, err := getFirstSample(samples)
-	if err != nil {
-		return errors.WithMessagef(err, "could not extract RPS statistic")
-	}
-
 	daemonID := daemon.KeaDaemon.DaemonID
 	if value < 0 {
 		// Shouldn't happen but if it does, we'll record a 0.
@@ -245,7 +175,7 @@ func (rpsWorker *RpsWorker) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, sam
 		interval.StartTime = previous.SampledAt
 
 		// Calculate the time between the two samples.
-		interval.Duration = (sampledAt.Unix() - previous.SampledAt.Unix())
+		interval.Duration = (timestamp.Unix() - previous.SampledAt.Unix())
 
 		// Calculate the delta in responses sent.
 		if value >= previous.Value {
@@ -261,7 +191,7 @@ func (rpsWorker *RpsWorker) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, sam
 	}
 
 	// Always update the last reported values for the Daemon.
-	rpsWorker.PreviousRps[daemonID] = StatSample{sampledAt, value}
+	rpsWorker.PreviousRps[daemonID] = StatSample{timestamp, value}
 
 	return err
 }
@@ -312,45 +242,4 @@ func calculateRps(totals []*dbmodel.RpsInterval) float32 {
 
 	// Return the rate.
 	return float32(responses) / float32(duration)
-}
-
-// Returns the statistic value and sample time from a given row within a
-// a list of samples.  Note that rather than use the sample time in the list,
-// We use current Stork Server time so interval times across Daemons are
-// consistent and relative to us. In other words, we don't care when Kea
-// modified the value, we care about when we got it.
-func getFirstSample(samples []interface{}) (int64, time.Time, error) {
-	sampledAt := storkutil.UTCNow()
-	if samples == nil {
-		return 0, sampledAt, errors.New("samples cannot be nil")
-	}
-
-	if len(samples) == 0 {
-		// Not enough rows
-		return 0, sampledAt, errors.Errorf("sampleList is empty")
-	}
-
-	row, ok := samples[0].([]interface{})
-	if !ok {
-		return 0, sampledAt, errors.Errorf("problem casting sample row: %+v", samples[0])
-	}
-
-	if len(row) != 2 {
-		return 0, sampledAt, errors.Errorf("row has incorrect number of values: %+v", row)
-	}
-
-	// Not sure why unmarshalling makes it a float64, but we need an int64.
-	value := int64(row[0].(float64))
-
-	return value, sampledAt, nil
-}
-
-// "Static" constant for dhcp4 statistic-get command argument.
-func RpsGetDhcp4Arguments() map[string]interface{} {
-	return map[string]interface{}{"name": "pkt4-ack-sent"}
-}
-
-// "Static" constant for dhcp6 statistic-get command argument.
-func RpsGetDhcp6Arguments() map[string]interface{} {
-	return map[string]interface{}{"name": "pkt6-reply-sent"}
 }

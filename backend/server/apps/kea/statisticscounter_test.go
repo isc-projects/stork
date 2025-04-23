@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"math"
 	"math/big"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -409,95 +409,102 @@ func TestCounterAddEmptySubnet(t *testing.T) {
 // Test that the counter add extra IPv4 and IPv6 addresses, and delegated prefixes.
 func TestCounterRealKeaResponse(t *testing.T) {
 	// Arrange
-	statLease4GetResponseRaw := `{
+	statisticGetAll4ResponseRaw := `[{
 		"result": 0,
-		"text": "stat-lease4-get: 2 rows found",
 		"arguments": {
-			"result-set": {
-				"columns": [ "subnet-id",
-							"total-addresses",
-							"cumulative-assigned-addresses",
-							"assigned-addresses",
-							"declined-addresses" ],
-				"rows": [
-					[ 10, 256, 200, 111, 0 ],
-					[ 20, 4098, 5000, 2034, 4 ]
-				],
-				"timestamp": "2018-05-04 15:03:37.000000"
-			}
+			"subnet[10].total-addresses": [[256, "2025-04-22 17:59:15.328731"]],
+			"subnet[10].cumulative-assigned-addresses": [[200, "2025-04-22 17:59:15.328731"]],
+			"subnet[10].assigned-addresses": [[111, "2025-04-22 17:59:15.328731"]],
+			"subnet[10].declined-addresses": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[20].total-addresses": [[4098, "2025-04-22 17:59:15.328731"]],
+			"subnet[20].cumulative-assigned-addresses": [[5000, "2025-04-22 17:59:15.328731"]],
+			"subnet[20].assigned-addresses": [[2034, "2025-04-22 17:59:15.328731"]],
+			"subnet[20].declined-addresses": [[4, "2025-04-22 17:59:15.328731"]]
 		}
-	}`
+	}]`
 
-	statLease6GetResponseRaw := `{
+	statisticGetAll6ResponseRaw := `[{
 		"result": 0,
-		"text": "stat-lease6-get: 2 rows found",
 		"arguments": {
-			"result-set": {
-				"columns": [ "subnet-id", "total-nas", "cumulative-assigned-nas", "assigned-nas", "declined-nas", "total-pds",  "cumulative-assigned-pds", "assigned-pds" ],
-				"rows": [
-					[ 30, 4096, 3000, 2400, 3, 0, 0],
-					[ 40, 0, 0, 0, 1048, 500, 233 ],
-					[ 50, 256, 300, 60, 0, 1048, 15, 15 ]
-				],
-				"timestamp": "2018-05-04 15:03:37.000000"
-			}
+			"subnet[30].total-nas": [[4096, "2025-04-22 17:59:15.328731"]],
+			"subnet[30].cumulative-assigned-nas": [[3000, "2025-04-22 17:59:15.328731"]],
+			"subnet[30].assigned-nas": [[2400, "2025-04-22 17:59:15.328731"]],
+			"subnet[30].declined-nas": [[3, "2025-04-22 17:59:15.328731"]],
+			"subnet[30].total-pds": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[30].cumulative-assigned-pds": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[30].assigned-pds": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].total-nas": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].cumulative-assigned-nas": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].assigned-nas": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].declined-nas": [[1048, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].total-pds": [[500, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].cumulative-assigned-pds": [[233, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].assigned-pds": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[50].total-nas": [[256, "2025-04-22 17:59:15.328731"]],
+			"subnet[50].cumulative-assigned-nas": [[300, "2025-04-22 17:59:15.328731"]],
+			"subnet[50].assigned-nas": [[60, "2025-04-22 17:59:15.328731"]],
+			"subnet[50].declined-nas": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[50].total-pds": [[1048, "2025-04-22 17:59:15.328731"]],
+			"subnet[50].cumulative-assigned-pds": [[15, "2025-04-22 17:59:15.328731"]],
+			"subnet[50].assigned-pds": [[15, "2025-04-22 17:59:15.328731"]]
 		}
-	}`
+	}]`
 
-	statLease6GetResponseMaxRaw := `{
+	statisticGetAll6MaxResponseRaw := `[{
 		"result": 0,
-		"text": "stat-lease6-get: 2 rows found",
 		"arguments": {
-			"result-set": {
-				"columns": [ "subnet-id", "total-nas", "cumulative-assigned-nas", "assigned-nas", "declined-nas", "total-pds",  "cumulative-assigned-pds", "assigned-pds" ],
-				"rows": [
-					[ 60, -1, -1, 9223372036854775807, 0, -1, -1, -1]
-				],
-				"timestamp": "2018-05-04 15:03:37.000000"
-			}
+			"subnet[60].total-nas": [[-1, "2018-05-04 15:03:37.000000"]],
+			"subnet[60].cumulative-assigned-nas": [[-1, "2018-05-04 15:03:37.000000"]],
+			"subnet[60].assigned-nas": [[9223372036854775807, "2018-05-04 15:03:37.000000"]],
+			"subnet[60].declined-nas": [[0, "2018-05-04 15:03:37.000000"]],
+			"subnet[60].total-pds": [[-1, "2018-05-04 15:03:37.000000"]],
+			"subnet[60].cumulative-assigned-pds": [[-1, "2018-05-04 15:03:37.000000"]],
+			"subnet[60].assigned-pds": [[-1, "2018-05-04 15:03:37.000000"]]
 		}
-	}`
+	}]`
 
 	statResponses := []string{
-		statLease4GetResponseRaw,
-		statLease6GetResponseRaw,
-		statLease6GetResponseMaxRaw,
+		statisticGetAll4ResponseRaw,
+		statisticGetAll6ResponseRaw,
+		statisticGetAll6MaxResponseRaw,
 	}
 
 	subnets := make([]*dbmodel.Subnet, 0)
 
 	for subnetIdx, statResponseRaw := range statResponses {
-		var statResponse StatLeaseGetResponse
+		var statResponse keactrl.GetAllStatisticsResponse
 		_ = json.Unmarshal([]byte(statResponseRaw), &statResponse)
 
 		prefix := "10.0.0.0/24"
-		if strings.HasPrefix(statResponse.Text, "stat-lease6-get") {
+		if subnetIdx != 0 {
 			prefix = "88::"
 		}
 
-		localSubnets := make([]*dbmodel.LocalSubnet, 0)
-		resultSet := statResponse.Arguments.ResultSet
-		for _, row := range resultSet.Rows {
-			stats := dbmodel.SubnetStats{}
-			for colIdx, wrappedValue := range row {
-				name := resultSet.Columns[colIdx]
-				value := wrappedValue.BigInt()
-				// For the negative int64 values:
-				// uint64 = maxUint64 + (int64 + 1)
-				if value.Sign() == -1 {
-					value = big.NewInt(0).Add(
-						big.NewInt(0).SetUint64(math.MaxUint64),
-						big.NewInt(0).Add(
-							big.NewInt(1),
-							value,
-						),
-					)
-				}
+		require.Len(t, statResponse, 1)
+		statResponseItems := statResponse[0]
+		require.NotNil(t, statResponseItems.Arguments)
 
-				stats.SetBigCounter(name, storkutil.NewBigCounterFromBigInt(value))
+		localSubnets := make([]*dbmodel.LocalSubnet, 0)
+
+		statSamplesBySubnet := make(map[int64][]keactrl.GetAllStatisticResponseSample)
+		for _, statSample := range statResponseItems.Arguments {
+			statSamplesBySubnet[statSample.SubnetID] = append(
+				statSamplesBySubnet[statSample.SubnetID],
+				statSample,
+			)
+		}
+
+		for localSubnetID, statSamples := range statSamplesBySubnet {
+			stats := dbmodel.SubnetStats{}
+			for _, statSample := range statSamples {
+				stats.SetBigCounter(
+					statSample.Name,
+					storkutil.NewBigCounterFromBigInt(statSample.Value),
+				)
 			}
 			sn := &dbmodel.LocalSubnet{
 				Stats: stats,
+				ID:    localSubnetID,
 			}
 			localSubnets = append(localSubnets, sn)
 		}

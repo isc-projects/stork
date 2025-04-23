@@ -14,53 +14,30 @@ import (
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
-	storkutil "isc.org/stork/util"
 )
 
 // Prepares the Kea mock. It accepts list of serialized JSON responses in order:
-// 1. DHCPv4
-// 2. DHCPv4 RSP
-// 3. DHCPv6
-// 4. DHCPv6 RSP.
-func createKeaMock(jsonFactory func(callNo int) (jsons []string)) func(callNo int, cmdResponses []interface{}) {
+// 1. Statistic-get-all DHCPv4
+// 3. Statistic-get-all DHCPv6.
+func createKeaMock(t *testing.T, jsonFactory func(callNo int) (jsons []string)) func(callNo int, cmdResponses []interface{}) {
 	return func(callNo int, cmdResponses []interface{}) {
 		jsons := jsonFactory(callNo)
 		// DHCPv4
 		daemons := []keactrl.DaemonName{keactrl.DHCPv4}
-		command := keactrl.NewCommandBase(keactrl.StatLease4Get, daemons...)
-		keactrl.UnmarshalResponseList(command, []byte(jsons[0]), cmdResponses[0])
+		command := keactrl.NewCommandBase(keactrl.StatisticGetAll, daemons...)
+		err := keactrl.UnmarshalResponseList(command, []byte(jsons[0]), cmdResponses[0])
+		require.NoError(t, err)
 
-		// DHCPv4 RSP response
-		rpsCmd := []*keactrl.Command{}
-		_ = RpsAddCmd4(&rpsCmd, daemons)
-		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(jsons[1]), cmdResponses[1])
-
-		if len(cmdResponses) < 4 {
+		if len(cmdResponses) < 2 {
 			return
 		}
 
 		// DHCPv6
 		daemons = []keactrl.DaemonName{keactrl.DHCPv6}
-		command = keactrl.NewCommandBase(keactrl.StatLease6Get, daemons...)
-		keactrl.UnmarshalResponseList(command, []byte(jsons[2]), cmdResponses[2])
-
-		// DHCPv6 RSP response
-		rpsCmd = []*keactrl.Command{}
-		_ = RpsAddCmd6(&rpsCmd, daemons)
-		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(jsons[3]), cmdResponses[3])
+		command = keactrl.NewCommandBase(keactrl.StatisticGetAll, daemons...)
+		err = keactrl.UnmarshalResponseList(command, []byte(jsons[1]), cmdResponses[1])
+		require.NoError(t, err)
 	}
-}
-
-// Converts the list of int64s to list of the JSON-serializable big integers.
-func convertInt64SeriesToBigInts(series [][]int64) (result [][]storkutil.BigIntJSON) {
-	result = make([][]storkutil.BigIntJSON, len(series))
-	for i, row := range series {
-		result[i] = make([]storkutil.BigIntJSON, len(row))
-		for j, item := range row {
-			result[i][j] = storkutil.NewBigIntJSONFromInt64(item)
-		}
-	}
-	return
 }
 
 // Prepares the Kea mock with the statistic values compatible with the
@@ -69,90 +46,64 @@ func convertInt64SeriesToBigInts(series [][]int64) (result [][]storkutil.BigIntJ
 // applications with a single DHCPv4 daemon.
 // Accepts a parameter that indicates if the old names of the statistics should
 // be used (missing doubled "s" in "addresses" word).
-func createStandardKeaMock(oldStatsFormat bool) func(callNo int, cmdResponses []interface{}) {
-	statLeaseGetResponseDHCPv4Columns := []string{"subnet-id", "total-addresses", "assigned-addresses", "declined-addresses"}
+func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, cmdResponses []any) {
+	statistic4Names := []string{"total-addresses", "assigned-addresses", "declined-addresses"}
 	if oldStatsFormat {
-		statLeaseGetResponseDHCPv4Columns = []string{"subnet-id", "total-addreses", "assigned-addreses", "declined-addreses"}
+		statistic4Names = []string{"total-addreses", "assigned-addreses", "declined-addreses"}
 	}
 
-	return createKeaMock(func(callNo int) []string {
+	return createKeaMock(t, func(callNo int) (jsons []string) {
 		shift := int64(callNo * 100)
 		totalShift := shift * 2
-		data := []interface{}{
-			[]StatLeaseGetResponse{
-				{
-					ResponseHeader: keactrl.ResponseHeader{
-						Result: 0,
-						Text:   "Everything is fine",
-					},
-					Arguments: &StatLeaseGetArgs{
-						ResultSet: ResultSetInStatLeaseGet{
-							Columns: statLeaseGetResponseDHCPv4Columns,
-							Rows: convertInt64SeriesToBigInts([][]int64{
-								{10, 256 + totalShift, 111 + shift, 0 + shift},
-								{20, 4098 + totalShift, 2034 + shift, 4 + shift},
-							}),
-						},
-						Timestamp: "2018-05-04 15:03:37.000000",
-					},
-				},
-			},
-			[]StatGetResponse4{
-				{
-					ResponseHeader: keactrl.ResponseHeader{
-						Result: 0,
-						Text:   "Everything is fine",
-					},
-					Arguments: &ResponseArguments4{
-						Samples: []interface{}{
-							[]interface{}{44, "2019-07-30 10:13:00.000000"},
-						},
-					},
-				},
-			},
-			[]StatLeaseGetResponse{
-				{
-					ResponseHeader: keactrl.ResponseHeader{
-						Result: 0,
-						Text:   "Everything is fine",
-					},
-					Arguments: &StatLeaseGetArgs{
-						ResultSet: ResultSetInStatLeaseGet{
-							Columns: []string{"subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds"},
-							Rows: convertInt64SeriesToBigInts([][]int64{
-								{30, 4096 + totalShift, 2400 + shift, 3 + shift, 0 + totalShift, 0 + shift},
-								{40, 0 + totalShift, 0 + shift, 0 + shift, 1048 + totalShift, 233 + shift},
-								{50, 256 + totalShift, 60 + shift, 0 + shift, 1048 + totalShift, 15 + shift},
-								{60, -1, 9223372036854775807, 0, -2, -3},
-							}),
-						},
-						Timestamp: "2018-05-04 15:03:37.000000",
-					},
-				},
-			},
-			[]StatGetResponse6{
-				{
-					ResponseHeader: keactrl.ResponseHeader{
-						Result: 0,
-						Text:   "Everything is fine",
-					},
-					Arguments: &ResponseArguments6{
-						Samples: []interface{}{
-							[]interface{}{66, "2019-07-30 10:13:00.000000"},
-						},
-					},
-				},
-			},
+
+		return []string{
+			fmt.Sprintf(`[{
+				"result": 0,
+				"arguments": {
+					"subnet[10].%[1]s": [ [ %[4]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[10].%[2]s": [ [ %[5]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[10].%[3]s": [ [ %[6]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].%[1]s": [ [ %[7]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].%[2]s": [ [ %[8]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].%[3]s": [ [ %[9]d, "2019-07-30 10:13:00.000000" ] ],
+					"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
+				}
+			}]`, statistic4Names[0], statistic4Names[1], statistic4Names[2],
+				256+totalShift, 111+shift, 0+shift,
+				4098+totalShift, 2034+shift, 4+shift,
+			),
+			fmt.Sprintf(`[{
+				"result": 0,
+				"arguments": {
+					"subnet[30].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].declined-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].declined-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].declined-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].assigned-nas": [ [ %s, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].declined-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
+				}
+			}]`,
+				4096+totalShift, 2400+shift, 3+shift, 0+totalShift, 0+shift,
+				0+shift, 0+shift, 0+shift, 1048+totalShift, 233+shift,
+				256+totalShift, 60+shift, 0+shift, 1048+totalShift, 15+shift,
+				-1, "9223372036854775807", 0, -2, -3,
+			),
 		}
-
-		var jsons []string
-
-		for _, item := range data {
-			j, _ := json.Marshal(item)
-			jsons = append(jsons, string(j))
-		}
-
-		return jsons
 	})
 }
 
@@ -388,14 +339,9 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	_ = createAppWithSubnets(t, db, 0, "", "")
 
 	// prepare fake agents
-	keaMock := createKeaMock(func(callNo int) (jsons []string) {
+	keaMock := createKeaMock(t, func(callNo int) (jsons []string) {
 		return []string{
 			// simulate empty response
-			`[{
-				"result": 0,
-				"text": "Everything is fine",
-				"arguments": {}
-			}]`,
 			`[{
 				"result": 0, "text": "Everything is fine",
 				"arguments": {
@@ -404,14 +350,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 			}]`,
 			// simulate not loaded stat plugin in kea
 			`[{
-				"result": 2,
-				"text": "'stat-lease6-get' command not supported."
-			}]`,
-			`[{
-				"result": 0, "text": "Everything is fine",
-				"arguments": {
-					"pkt6-reply-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
-				}
+				"result": 2, "text": "stat_cmds hook not loaded"
 			}]`,
 		}
 	})
@@ -446,7 +385,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	v4Config, v6Config := createDhcpConfigs()
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
 
-	keaMock := createStandardKeaMock(statsFormat == "1.6")
+	keaMock := createStandardKeaMock(t, statsFormat == "1.6")
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
@@ -935,7 +874,7 @@ func TestPrepareHAEnvironment(t *testing.T) {
 
 	// Act
 	loadBalancing, hotStandby := prepareHAEnvironment(t, db)
-	keaMock := createKeaMock(func(callNo int) (jsons []string) { return []string{} })
+	keaMock := createKeaMock(t, func(callNo int) (jsons []string) { return []string{} })
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 	sp, err := NewStatsPuller(db, fa)
@@ -956,7 +895,7 @@ func TestStatsPullerPullStatsHAPairNotInitializedYet(t *testing.T) {
 
 	loadBalancing, hotStandby := prepareHAEnvironment(t, db)
 
-	keaMock := createStandardKeaMock(false)
+	keaMock := createStandardKeaMock(t, false)
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
@@ -999,7 +938,7 @@ func TestStatsPullerPullStatsHAPairHealthy(t *testing.T) {
 	_ = dbmodel.UpdateService(db, loadBalancing)
 	_ = dbmodel.UpdateService(db, hotStandby)
 
-	keaMock := createStandardKeaMock(false)
+	keaMock := createStandardKeaMock(t, false)
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
@@ -1038,7 +977,7 @@ func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsReady(t *testing.T) {
 	_ = dbmodel.UpdateService(db, loadBalancing)
 	_ = dbmodel.UpdateService(db, hotStandby)
 
-	keaMock := createStandardKeaMock(false)
+	keaMock := createStandardKeaMock(t, false)
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
@@ -1077,7 +1016,7 @@ func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsDown(t *testing.T) {
 	_ = dbmodel.UpdateService(db, loadBalancing)
 	_ = dbmodel.UpdateService(db, hotStandby)
 
-	keaMock := createStandardKeaMock(false)
+	keaMock := createStandardKeaMock(t, false)
 
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
@@ -1097,35 +1036,8 @@ func TestStatsPullerPullStatsHAPairPrimaryIsDownSecondaryIsDown(t *testing.T) {
 	verifyCountingStatisticsFromPrimary(t, db)
 }
 
-//go:embed testdata/kea-dhcp6_v2.5.5_stat-lease6-get_big-numbers.json
+//go:embed testdata/kea-dhcp6_v2.5.5_statistic-get-all_big-numbers.json
 var statisticGetAllBigNumbersJSON []byte
-
-// Test that unmarshalling of the Kea stat-lease6-get response does not lose
-// precision when the values exceed the maximum value of int64.
-func TestUnmarshalStatLeaseGetResponse(t *testing.T) {
-	// Arrange
-	var response []StatLeaseGetResponse
-	expected0, _ := big.NewInt(0).SetString("844424930131968", 10)
-	expected1, _ := big.NewInt(0).SetString("281474976710656", 10)
-	expected2, _ := big.NewInt(0).SetString("2417851639229258349412352", 10)
-	expectedValues := []*big.Int{expected0, expected1, expected2}
-
-	// Act
-	err := json.Unmarshal(statisticGetAllBigNumbersJSON, &response)
-
-	// Assert
-	require.NoError(t, err)
-	require.Equal(t, "subnet-id", response[0].Arguments.ResultSet.Columns[0])
-	require.Equal(t, "total-nas", response[0].Arguments.ResultSet.Columns[1])
-
-	for i, value := range expectedValues {
-		require.EqualValues(t, i+1, response[0].Arguments.ResultSet.Rows[i][0].BigInt().Int64())
-		require.Equal(t,
-			value,
-			response[0].Arguments.ResultSet.Rows[i][1].BigInt(),
-		)
-	}
-}
 
 // Test that the statistics with values exceeding the maximum value of int64
 // are stored without loss of precision.
@@ -1138,8 +1050,9 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	puller, _ := NewStatsPuller(db, fa)
 
-	var response []StatLeaseGetResponse
-	_ = json.Unmarshal(statisticGetAllBigNumbersJSON, &response)
+	var response keactrl.GetAllStatisticsResponse
+	err := json.Unmarshal(statisticGetAllBigNumbersJSON, &response)
+	require.NoError(t, err)
 
 	// Seed database.
 	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
@@ -1155,7 +1068,7 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	}
 	daemons, _ := dbmodel.AddApp(db, app)
 
-	for i := 1; i <= 3; i++ {
+	for i := 1; i <= 10; i++ {
 		subnet := &dbmodel.Subnet{
 			Prefix: fmt.Sprintf("3001:%d::/48", i),
 			LocalSubnets: []*dbmodel.LocalSubnet{
@@ -1172,13 +1085,16 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	}
 
 	// Act
-	err := puller.processAppResponses(app, []*keactrl.Command{keactrl.NewCommandBase(keactrl.StatLease6Get)}, daemons, []any{&response})
+	err = puller.processAppResponses(
+		app, []*keactrl.Command{keactrl.NewCommandBase(keactrl.StatLease6Get)},
+		daemons, []keactrl.GetAllStatisticsResponse{response},
+	)
 
 	// Assert
 	require.NoError(t, err)
 	subnets, err := dbmodel.GetAllSubnets(db, 0)
 	require.NoError(t, err)
-	require.Len(t, subnets, 3)
+	require.Len(t, subnets, 10)
 
 	subnet := subnets[0]
 	require.Len(t, subnet.LocalSubnets, 1)
@@ -1186,8 +1102,8 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	stats := subnet.LocalSubnets[0].Stats
 	require.Equal(t, uint64(844424930131968), stats["total-nas"])
 	require.Equal(t, uint64(0), stats["cumulative-assigned-nas"])
-	require.Equal(t, uint64(9), stats["assigned-nas"])
-	require.Equal(t, uint64(10), stats["declined-addresses"])
+	require.Equal(t, uint64(2), stats["assigned-nas"])
+	require.Equal(t, uint64(1), stats["declined-addresses"])
 
 	subnet = subnets[1]
 	require.Len(t, subnet.LocalSubnets, 1)
@@ -1198,11 +1114,11 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	require.Equal(t, uint64(0), stats["assigned-nas"])
 	require.Equal(t, uint64(0), stats["declined-addresses"])
 
-	subnet = subnets[2]
+	subnet = subnets[4]
 	require.Len(t, subnet.LocalSubnets, 1)
-	require.EqualValues(t, 3, subnet.LocalSubnets[0].LocalSubnetID)
+	require.EqualValues(t, 5, subnet.LocalSubnets[0].LocalSubnetID)
 	stats = subnet.LocalSubnets[0].Stats
-	expectedTotalNAs, _ := big.NewInt(0).SetString("2417851639229258349412352", 10)
+	expectedTotalNAs, _ := big.NewInt(0).SetString("36893488147419103232", 10)
 	require.Equal(t, expectedTotalNAs, stats["total-nas"])
 	require.Equal(t, uint64(0), stats["cumulative-assigned-nas"])
 	require.Equal(t, uint64(0), stats["assigned-nas"])

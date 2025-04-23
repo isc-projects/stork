@@ -3,9 +3,9 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -87,123 +87,6 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 		(*l)[subnet.ID] = subnet.Subnet
 	}
 
-	return nil
-}
-
-// JSON get-all-statistic response returned from Kea CA.
-// There is a response entry for each service. The order of entries is the
-// same as the order of services in the request.
-type GetAllStatisticsResponse []map[string]GetAllStatisticResponseItemValue
-
-// JSON get-all-statistic single value response returned from Kea CA.
-type GetAllStatisticResponseItemValue struct {
-	Value float64
-	// Timestamp is not used.
-	Timestamp *string
-}
-
-// UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
-// to simpler Go-friendly form.
-func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
-	// Raw structures - corresponding to real received JSON.
-	type ResponseRawItem struct {
-		keactrl.ResponseHeader
-		// In Go you cannot describe the JSON array with mixed-type items.
-		Arguments *map[string][][]interface{}
-	}
-	type ResponseRaw = []ResponseRawItem
-
-	// Standard GO unmarshal
-	var obj ResponseRaw
-	err := json.Unmarshal(b, &obj)
-	if err != nil {
-		outerError := errors.Wrapf(err, "failed to parse responses from Kea")
-		// Kea sends the error as a single item, not array,
-		var singleItem ResponseRawItem
-		err = json.Unmarshal(b, &singleItem)
-		if err != nil {
-			return outerError
-		}
-
-		err = singleItem.GetError()
-		if err != nil {
-			return err
-		}
-		return errors.Errorf("cannot parse response from Kea")
-	}
-
-	// Prepare the result. It is filled with nils to indicate that the daemon
-	// is not responding.
-	statMaps := make([]map[string]GetAllStatisticResponseItemValue, len(obj))
-
-	// Retrieve values of mixed-type arrays.
-	// Unpack the complex structure to simpler form.
-	for i, item := range obj {
-		// Indicates the situation when the daemon is active but the statistics
-		// endpoint doesn't return the data.
-		areStatisticsUnavailable := false
-
-		err := item.GetError()
-		switch {
-		case errors.As(err, &keactrl.ConnectivityIssueKeaError{}):
-			log.WithError(err).Warn("Problem connecting to dhcp daemon")
-			continue
-		case errors.As(err, &keactrl.NumberOverflowKeaError{}):
-			log.WithError(err).Warnf("Number overflow in the statistics data")
-			areStatisticsUnavailable = true
-		case err != nil:
-			return err
-		}
-
-		statMap := make(map[string]GetAllStatisticResponseItemValue)
-		statMaps[i] = statMap
-
-		if areStatisticsUnavailable {
-			// The empty but not-nil stat map indicates that the daemon is
-			// responding to the requests.
-			continue
-		}
-
-		if item.Arguments == nil {
-			return errors.Errorf("problem with arguments: %+v", item)
-		}
-
-		for statName, statValueOuterList := range *item.Arguments {
-			if len(statValueOuterList) == 0 {
-				log.Errorf("Empty list of stat values")
-				continue
-			}
-			statValueInnerList := statValueOuterList[0]
-
-			if len(statValueInnerList) == 0 {
-				log.Errorf("Empty list of stat values")
-				continue
-			}
-
-			statValue, ok := statValueInnerList[0].(float64)
-			if !ok {
-				log.Errorf("Problem casting statValueInnerList[0]: %+v", statValueInnerList[0])
-				continue
-			}
-
-			var statTimestamp *string
-			if len(statValueInnerList) > 1 {
-				castedTimestamp, ok := statValueInnerList[1].(string)
-				if ok {
-					statTimestamp = &castedTimestamp
-				}
-			}
-
-			item := GetAllStatisticResponseItemValue{
-				Value:     statValue,
-				Timestamp: statTimestamp,
-			}
-
-			statMap[statName] = item
-		}
-	}
-
-	*r = statMaps
 	return nil
 }
 
@@ -853,90 +736,80 @@ func (pke *PromKeaExporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.GaugeVec, globalStatMap map[string]prometheus.Gauge, response map[string]GetAllStatisticResponseItemValue, ignoredStats map[string]bool, prefixLookup subnetPrefixLookup) {
-	for statName, statEntry := range response {
-		// skip ignored stats
-		if ignoredStats[statName] {
-			continue
-		}
-
+func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.GaugeVec, globalStatMap map[string]prometheus.Gauge, response keactrl.GetAllStatisticArguments, ignoredStats map[string]bool, prefixLookup subnetPrefixLookup) {
+	for _, statEntry := range response {
 		// store stat value in proper prometheus object
 		switch {
-		case strings.HasPrefix(statName, "pkt"):
-			// if this is pkt stat
-			statisticDescriptor, ok := pke.PktStatsMap[statName]
-			if ok {
-				statisticDescriptor.Stat.With(prometheus.Labels{"operation": statisticDescriptor.Operation}).Set(statEntry.Value)
-			} else {
-				log.Warningf("Encountered unsupported stat: %s", statName)
-				ignoredStats[statName] = true
+		case strings.HasPrefix(statEntry.Name, "pkt"):
+			// skip ignored stats
+			if ignoredStats[statEntry.Name] {
+				continue
 			}
-		case strings.HasPrefix(statName, "subnet["):
+
+			// if this is pkt stat
+			statisticDescriptor, ok := pke.PktStatsMap[statEntry.Name]
+			if ok {
+				// Go Prometheus library does not support big integers.
+				value, _ := statEntry.Value.Float64()
+				statisticDescriptor.Stat.With(prometheus.Labels{"operation": statisticDescriptor.Operation}).Set(value)
+			} else {
+				log.Warningf("Encountered unsupported stat: %s", statEntry.Name)
+				ignoredStats[statEntry.Name] = true
+			}
+		case statEntry.SubnetID != 0:
 			// Check if collecting the per-subnet metrics is enabled.
 			// Processing subnet metrics for the Kea instance with
 			// thousands of subnets causes a significant CPU overhead.
 			// It's possible to disable collecting these metrics to limit
 			// CPU consumption.
-			if *dhcpStatMap == nil {
+			if dhcpStatMap == nil {
 				continue
 			}
-			// if this is address per subnet stat
-			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
-			matches := re.FindStringSubmatch(statName)
-			subnetIDRaw := matches[1]
-			metricName := matches[2]
-
-			subnetID, err := strconv.Atoi(subnetIDRaw)
-			subnetPrefix := ""
-			if err == nil {
-				ok := false
-				subnetPrefix, ok = prefixLookup.getPrefix(subnetID)
-				if !ok {
-					subnetPrefix = ""
-				}
+			legacyLabel := fmt.Sprint(statEntry.SubnetID) // Subnet ID or prefix if available.
+			labels := prometheus.Labels{"subnet_id": legacyLabel, "prefix": ""}
+			subnetPrefix, ok := prefixLookup.getPrefix(int(statEntry.SubnetID))
+			if ok {
+				labels["prefix"] = subnetPrefix
+				legacyLabel = subnetPrefix
 			}
-			subnetIdentifier := subnetIDRaw // Subnet ID or prefix if available.
-			if subnetPrefix != "" {
-				subnetIdentifier = subnetPrefix
-			}
+			labels["subnet"] = legacyLabel
 
-			labels := prometheus.Labels{
-				"subnet_id": subnetIDRaw,
-				"prefix":    subnetPrefix,
-				"subnet":    subnetIdentifier,
+			statName := statEntry.Name
+			// skip ignored stats
+			if ignoredStats[statName] {
+				continue
 			}
 
 			switch {
-			case strings.HasPrefix(metricName, "pool["):
-				re := regexp.MustCompile(`pool\[(\d+)\]\.(.+)`)
-				matches := re.FindStringSubmatch(metricName)
-				poolIDRaw := matches[1]
-				metricName = "pool-" + matches[2]
-
-				labels["pool_id"] = poolIDRaw
-			case strings.HasPrefix(metricName, "pd-pool["):
-				re := regexp.MustCompile(`pd-pool\[(\d+)\]\.(.+)`)
-				matches := re.FindStringSubmatch(metricName)
-				pdPoolIDRaw := matches[1]
-				metricName = "pool-pd-" + matches[2]
-
-				labels["pool_id"] = pdPoolIDRaw
+			case statEntry.PoolID != 0:
+				labels["pool_id"] = fmt.Sprint(statEntry.PoolID)
+				statName = "pool-" + statName
+			case statEntry.PrefixPoolID != 0:
+				labels["pool_id"] = fmt.Sprint(statEntry.PrefixPoolID)
+				statName = "pool-pd-" + statName
 			default:
 				// It isn't a pool stat. Just a subnet stat.
 			}
 
-			if stat, ok := (*dhcpStatMap)[metricName]; ok {
-				stat.With(labels).Set(statEntry.Value)
+			if stat, ok := dhcpStatMap[statName]; ok {
+				value, _ := statEntry.Value.Float64()
+				stat.With(labels).Set(value)
 			} else {
 				log.Warningf("Encountered unsupported stat: %s", statName)
 				ignoredStats[statName] = true
 			}
 		default:
-			if globalGauge, ok := globalStatMap[statName]; ok {
-				globalGauge.Set(statEntry.Value)
+			// skip ignored stats
+			if ignoredStats[statEntry.Name] {
+				continue
+			}
+
+			if globalGauge, ok := globalStatMap[statEntry.Name]; ok {
+				value, _ := statEntry.Value.Float64()
+				globalGauge.Set(value)
 			} else {
-				log.Warningf("Encountered unsupported stat: %s", statName)
-				ignoredStats[statName] = true
+				log.Warningf("Encountered unsupported stat: %s", statEntry.Name)
+				ignoredStats[statEntry.Name] = true
 			}
 		}
 	}
@@ -1025,7 +898,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 
 		// Parse response
-		var response GetAllStatisticsResponse
+		var response keactrl.GetAllStatisticsResponse
 		err = json.Unmarshal(responseData, &response)
 		if err != nil {
 			lastErr = err
@@ -1052,17 +925,32 @@ func (pke *PromKeaExporter) collectStats() error {
 		// Fetching also DHCP subnet prefixes. It may fail if Kea doesn't support
 		// required commands.
 		for i, service := range services {
-			serviceResponse := response[i]
-
-			if service == dhcp4 {
-				activeDHCP4DaemonsCount++
-				subnetPrefixLookup.setFamily(4)
-				pke.setDaemonStats(&pke.Adr4StatsMap, pke.Global4StatMap, serviceResponse, pke.ignoredStats, subnetPrefixLookup)
-			} else if service == dhcp6 {
-				activeDHCP6DaemonsCount++
-				subnetPrefixLookup.setFamily(6)
-				pke.setDaemonStats(&pke.Adr6StatsMap, pke.Global6StatMap, serviceResponse, pke.ignoredStats, subnetPrefixLookup)
+			adrStatsMap := pke.Adr4StatsMap
+			globalStatMap := pke.Global4StatMap
+			activeDaemonsCount := &activeDHCP4DaemonsCount
+			family := 4
+			if service == dhcp6 {
+				adrStatsMap = pke.Adr6StatsMap
+				globalStatMap = pke.Global6StatMap
+				activeDaemonsCount = &activeDHCP6DaemonsCount
+				family = 6
 			}
+
+			*activeDaemonsCount++
+
+			serviceResponse := response[i]
+			if err := serviceResponse.GetError(); err != nil {
+				if !errors.As(err, &keactrl.NumberOverflowKeaError{}) {
+					*activeDaemonsCount--
+				}
+				log.WithError(err).
+					WithField("service", service).
+					Error("Problem fetching stats from Kea")
+				continue
+			}
+
+			subnetPrefixLookup.setFamily(int8(family))
+			pke.setDaemonStats(adrStatsMap, globalStatMap, serviceResponse.Arguments, pke.ignoredStats, subnetPrefixLookup)
 		}
 	}
 
