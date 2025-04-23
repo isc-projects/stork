@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
+	bind9config "isc.org/stork/appcfg/bind9"
 	storkutil "isc.org/stork/util"
 )
 
@@ -114,12 +114,13 @@ type AppMonitor interface {
 }
 
 type appMonitor struct {
-	requests       chan chan []App // input to app monitor, ie. channel for receiving requests
-	quit           chan bool       // channel for stopping app monitor
-	running        bool
-	wg             *sync.WaitGroup
-	commander      storkutil.CommandExecutor
-	processManager ProcessManager
+	requests        chan chan []App // input to app monitor, ie. channel for receiving requests
+	quit            chan bool       // channel for stopping app monitor
+	running         bool
+	wg              *sync.WaitGroup
+	commander       storkutil.CommandExecutor
+	processManager  ProcessManager
+	bind9FileParser bind9FileParser
 	// A flag indicating if the monitor has already detected no apps and reported it.
 	isNoAppsReported bool
 
@@ -136,11 +137,12 @@ const (
 // by a dedicated method Start(). Make sure you call Start() before using app monitor.
 func NewAppMonitor() AppMonitor {
 	sm := &appMonitor{
-		requests:       make(chan chan []App),
-		quit:           make(chan bool),
-		wg:             &sync.WaitGroup{},
-		commander:      storkutil.NewSystemCommandExecutor(),
-		processManager: NewProcessManager(),
+		requests:        make(chan chan []App),
+		quit:            make(chan bool),
+		wg:              &sync.WaitGroup{},
+		commander:       storkutil.NewSystemCommandExecutor(),
+		processManager:  NewProcessManager(),
+		bind9FileParser: bind9config.NewParser(),
 	}
 	return sm
 }
@@ -310,6 +312,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 					cwd,
 					sm.commander,
 					storkAgent.ExplicitBind9ConfigPath,
+					sm.bind9FileParser,
 				)
 				if bind9App != nil {
 					// Check if this app already exists. If it does we want to use
@@ -317,6 +320,7 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 					if i := slices.IndexFunc(sm.apps, func(app App) bool {
 						return app.GetBaseApp().IsEqual(bind9App.GetBaseApp())
 					}); i >= 0 {
+						bind9App.zoneInventory.stop()
 						bind9App = sm.apps[i].(*Bind9App)
 					}
 					bind9App.GetBaseApp().Pid = p.GetPid()

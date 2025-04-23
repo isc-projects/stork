@@ -8,8 +8,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
+	bind9config "isc.org/stork/appcfg/bind9"
+	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
+
+//go:generate mockgen -package=agent -destination=bind9mock_test.go -mock_names=bind9FileParser=MockBind9FileParser isc.org/stork/agent bind9FileParser
 
 // Test the function which extracts the list of log files from the Bind9
 // application by sending the request to the Kea Control Agent and the
@@ -285,16 +290,20 @@ func (e *testCommandExecutor) IsFileExist(path string) bool {
 // Checks detection STEP 1: if BIND9 detection takes -c parameter into consideration.
 func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	// Create alternate config files for each step.
-	config1Path := "/dir/step1.conf"
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "step1.conf")
 	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write("step1.conf", config1)
+	require.NoError(t, err)
 
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(config1Path, config1)
 
 	// Now run the detection as usual.
-	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor, "")
+	app := detectBind9App([]string{"", sandbox.BasePath, fmt.Sprintf("-c %s", config1Path)}, "", executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -309,10 +318,14 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 // into consideration.
 func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	// Create alternate config files for each step.
-	config1Path := "/dir/step1.conf"
-	chrootPath := "/chroot"
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	config1Path := path.Join(sandbox.BasePath, "step1.conf")
+	chrootPath := path.Join(sandbox.BasePath, "chroot")
 	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
+	_, err := sandbox.Write(path.Join("chroot", config1Path), config1)
+	require.NoError(t, err)
 
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
@@ -321,9 +334,9 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	// Now run the detection as usual.
 	app := detectBind9App([]string{
 		"",
-		"/dir",
+		sandbox.BasePath,
 		fmt.Sprintf("-t %s -c %s", chrootPath, config1Path),
-	}, "", executor, "")
+	}, "", executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -338,7 +351,9 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 // into account.
 func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	// Create alternate config file...
-	confPath := "/dir/testing.conf"
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	confPath := path.Join(sandbox.BasePath, "testing.conf")
 	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
@@ -346,17 +361,20 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
    controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
    };`
+	_, err := sandbox.Write("testing.conf", config)
+	require.NoError(t, err)
 
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(confPath, config)
 
-	namedDir := "/dir/usr/sbin"
+	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
 	app := detectBind9App(
 		[]string{"", namedDir, "-some -params"},
 		"",
 		executor,
 		confPath,
+		bind9config.NewParser(),
 	)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
@@ -372,8 +390,10 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 // the explicit config path into account.
 func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	// Create alternate config file...
-	confPath := "/dir/testing.conf"
-	chrootPath := "/chroot"
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	confPath := path.Join(sandbox.BasePath, "testing.conf")
+	chrootPath := path.Join(sandbox.BasePath, "chroot")
 	fullConfPath := path.Join(chrootPath, confPath)
 	config := `key "foo" {
 		algorithm "hmac-sha256";
@@ -382,6 +402,8 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
 	};`
+	_, err := sandbox.Write(path.Join("chroot", confPath), config)
+	require.NoError(t, err)
 
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
@@ -392,7 +414,7 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 		"",
 		namedDir,
 		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor, fullConfPath)
+	}, "", executor, fullConfPath, bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -407,8 +429,10 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 // prefixed with the chroot directory.
 func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	// Create alternate config file...
-	confPath := "/dir/testing.conf"
-	chrootPath := "/chroot"
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	confPath := path.Join(sandbox.BasePath, "testing.conf")
+	chrootPath := path.Join(sandbox.BasePath, "chroot")
 	fullConfPath := path.Join(chrootPath, confPath)
 	config := `key "foo" {
 		algorithm "hmac-sha256";
@@ -417,24 +441,28 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
 	};`
+	_, err := sandbox.Write(path.Join("chroot", confPath), config)
+	require.NoError(t, err)
 
 	// Check BIND 9 app detection.
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config)
 
-	namedDir := "/dir/usr/sbin"
+	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
 	app := detectBind9App([]string{
 		"",
 		namedDir,
 		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor, confPath)
+	}, "", executor, confPath, bind9config.NewParser())
 	require.Nil(t, app)
 }
 
 // Checks detection STEP 3: parse output of the named -V command.
 func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	// Create alternate config file...
-	varPath := "/dir/testing.conf"
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	varPath := path.Join(sandbox.BasePath, "testing.conf")
 	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
@@ -442,6 +470,8 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
     };`
+	_, err := sandbox.Write("testing.conf", config)
+	require.NoError(t, err)
 
 	// ... and tell the fake executor to return it as the output of named -V.
 	executor := newTestCommandExecutor().
@@ -449,8 +479,8 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 		setConfigPathInNamedOutput(varPath)
 
 	// Now run the detection as usual.
-	namedDir := "/dir/usr/sbin"
-	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor, "")
+	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
+	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -464,8 +494,10 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 // Checks detection with chroot STEP 3: parse output of the named -V command.
 func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	// Create alternate config file...
-	varPath := "/dir/testing.conf"
-	chrootPath := "/chroot"
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	varPath := path.Join(sandbox.BasePath, "testing.conf")
+	chrootPath := path.Join(sandbox.BasePath, "chroot")
 	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
@@ -473,6 +505,8 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
     };`
+	_, err := sandbox.Write(path.Join("chroot", varPath), config)
+	require.NoError(t, err)
 
 	// ... and tell the fake executor to return it as the output of named -V.
 	executor := newTestCommandExecutor().
@@ -481,12 +515,12 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 		setConfigPathInNamedOutput(varPath)
 
 	// Now run the detection as usual.
-	namedDir := "/dir/usr/sbin"
+	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
 	app := detectBind9App([]string{
 		"",
 		namedDir,
 		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor, "")
+	}, "", executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -500,6 +534,8 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 // Checks detection STEP 4: look at the typical locations.
 func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
 	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
@@ -507,6 +543,8 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
     };`
+	_, err := sandbox.Write("testing.conf", config)
+	require.NoError(t, err)
 
 	executor := newTestCommandExecutor()
 
@@ -521,8 +559,15 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			setConfigPathInNamedOutput(expectedConfigPath)
 
 		t.Run(expectedConfigPath, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			parser := NewMockBind9FileParser(ctrl)
+			parser.EXPECT().ParseFile(expectedConfigPath).DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+				return bind9config.NewParser().ParseFile(path.Join(sandbox.BasePath, "testing.conf"))
+			})
+
 			// Act
-			app := detectBind9App([]string{"", "/dir", "-some -params"}, "", executor, "")
+			app := detectBind9App([]string{"", sandbox.BasePath, "-some -params"}, "", executor, "", parser)
 
 			// Assert
 			require.NotNil(t, app)
@@ -537,9 +582,11 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 	}
 }
 
-// Checks detection wit chroot STEP 4: look at the typical locations.
+// Checks detection with chroot STEP 4: look at the typical locations.
 func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 	// Arrange
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
 	config := `key "foo" {
 		algorithm "hmac-sha256";
 		secret "abcd";
@@ -547,21 +594,30 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 	controls {
 		inet 192.0.2.1 port 1234 allow { localhost; } keys { "foo"; "bar"; };
     };`
+	_, err := sandbox.Write("testing.conf", config)
+	require.NoError(t, err)
 
 	executor := newTestCommandExecutor()
-
+	chrootPath := path.Join(sandbox.BasePath, "chroot")
 	for _, expectedPath := range getPotentialNamedConfLocations() {
 		expectedConfigPath := path.Join(expectedPath, "named.conf")
 		executor.
 			clear().
-			addCheckConfOutput(path.Join("/chroot", expectedConfigPath), config).
+			addCheckConfOutput(path.Join(chrootPath, expectedConfigPath), config).
 			setConfigPathInNamedOutput(expectedConfigPath)
 
 		t.Run(expectedPath, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			parser := NewMockBind9FileParser(ctrl)
+			parser.EXPECT().ParseFile(path.Join(chrootPath, expectedConfigPath)).DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+				return bind9config.NewParser().ParseFile(path.Join(sandbox.BasePath, "testing.conf"))
+			})
+
 			// Act
 			app := detectBind9App(
-				[]string{"", "/dir", "-t /chroot -some -params"},
-				"", executor, "",
+				[]string{"", sandbox.BasePath, fmt.Sprintf("-t %s -some -params", chrootPath)},
+				"", executor, "", parser,
 			)
 
 			// Assert
@@ -597,15 +653,19 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 // - step3.conf (which is returned by named -V).
 func TestDetectBind9DetectOrder(t *testing.T) {
 	// Create alternate config files for each step...
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
 	config1 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 1.1.1.1 port 1111 allow { localhost; } keys { "foo"; "bar"; }; };`
-	config1Path := "/dir/step1.conf"
+	config1Path := path.Join(sandbox.BasePath, "step1.conf")
+	_, err := sandbox.Write("step1.conf", config1)
+	require.NoError(t, err)
 	config2 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 2.2.2.2 port 2222 allow { localhost; } keys { "foo"; "bar"; }; };`
-	config2Path := "/dir/step2.conf"
+	config2Path := path.Join(sandbox.BasePath, "step2.conf")
 	config3 := `key "foo" { algorithm "hmac-sha256"; secret "abcd";};
                 controls { inet 3.3.3.3 port 3333 allow { localhost; } keys { "foo"; "bar"; }; };`
-	config3Path := "/dir/step3.conf"
+	config3Path := path.Join(sandbox.BasePath, "step3.conf")
 
 	// ... and tell the fake executor to return it as the output of named -V
 	executor := newTestCommandExecutor().
@@ -615,7 +675,7 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 		setConfigPathInNamedOutput(config3Path)
 
 	// Now run the detection as usual
-	app := detectBind9App([]string{"", "/dir", fmt.Sprintf("-c %s", config1Path)}, "", executor, config2Path)
+	app := detectBind9App([]string{"", sandbox.BasePath, fmt.Sprintf("-c %s", config1Path)}, "", executor, config2Path, bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)

@@ -68,3 +68,13 @@ func TestParseInvalidFqdn(t *testing.T) {
 		require.Nil(t, parsed)
 	}
 }
+
+// Test that dot is appended to the name if it not present, and the name
+// gets fully qualified.
+func TestFullyQualifyName(t *testing.T) {
+	require.Equal(t, "example.org.", FullyQualifyName("example.org"))
+	require.Equal(t, "example.org.", FullyQualifyName("example.org."))
+	require.Equal(t, "example.org.com.", FullyQualifyName("example.org.com"))
+	require.Equal(t, ".", FullyQualifyName("."))
+	require.Equal(t, ".", FullyQualifyName(""))
+}

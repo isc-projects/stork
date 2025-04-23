@@ -154,3 +154,17 @@ func ParseFqdn(fqdn string) (*Fqdn, error) {
 	}
 	return parsed, nil
 }
+
+// Appends a trailing dot to the name if it is not present.
+// It expects that the specified name is trimmed. It does not
+// check if the name is valid.
+func FullyQualifyName(name string) string {
+	switch {
+	case len(name) == 0:
+		return "."
+	case name[len(name)-1] == '.':
+		return name
+	default:
+		return name + "."
+	}
+}

@@ -1,6 +1,7 @@
 package bind9config
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -8,6 +9,11 @@ import (
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/pkg/errors"
+)
+
+const (
+	ipv6MatchPattern = `(([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))`
+	ipv6RangePattern = `(?:(?:([0-9A-Fa-f]{1,4}:){7}(?:[0-9A-Fa-f]{1,4}|:))|(?:([0-9A-Fa-f]{1,4}:){6}(?::[0-9A-Fa-f]{1,4}|(?:(25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(?:(?:[0-9A-Fa-f]{1,4}:){5}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,2})|:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(?:(?:[0-9A-Fa-f]{1,4}:){4}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,3})|(?:(?::[0-9A-Fa-f]{1,4})?:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){3}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,4})|(?:(?::[0-9A-Fa-f]{1,4}){0,2}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){2}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,5})|(?:(?::[0-9A-Fa-f]{1,4}){0,3}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?:(?:[0-9A-Fa-f]{1,4}:){1}(?:(?:(?::[0-9A-Fa-f]{1,4}){1,6})|(?:(?::[0-9A-Fa-f]{1,4}){0,4}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(?::(?:(?:(?::[0-9A-Fa-f]{1,4}){1,7})|(?:(?::[0-9A-Fa-f]{1,4}){0,5}:(?:(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)(?:.(?:25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(?:%.+)?s*(?:/(?:12[0-8]|1[0-1][0-9]|[1-9][0-9]|[0-9]))?`
 )
 
 // Config is the root of the Bind9 configuration. It contains a list of
@@ -31,6 +37,9 @@ type Statement struct {
 
 	// The "key" statement is used to define a secure key.
 	Key *Key `parser:"| 'key' @@"`
+
+	// The "options" statement is used to define global options.
+	Options *Options `parser:"| 'options' @@"`
 
 	// The "view" statement is used to define a view (i.e., a logical
 	// DNS server instance)
@@ -95,7 +104,7 @@ type AddressMatchListElement struct {
 	Negation  bool   `parser:"@('!')?"`
 	ACL       *ACL   `parser:"( '{' @@ '}'"`
 	KeyID     string `parser:"| ( 'key' ( @Ident | @String ) )"`
-	IPAddress string `parser:"| ( @IPv4Address | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressQuoted )"`
+	IPAddress string `parser:"| ( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted )"`
 	ACLName   string `parser:"| ( @Ident | @String ) )"`
 }
 
@@ -124,6 +133,36 @@ type KeyClause struct {
 	Secret string `parser:"| 'secret' ( @Ident | @String )"`
 }
 
+// Options is the statement used to define global options.
+// This section has the following format:
+//
+//	options {
+//		<option-clauses> ...
+//	};
+//
+// See: https://bind9.readthedocs.io/en/stable/reference.html#options-block-grammar.
+type Options struct {
+	Clauses []*OptionClause `parser:"'{' ( @@ ';'* )* '}'"`
+}
+
+// OptionClause is a single clause of an options statement.
+type OptionClause struct {
+	// The allow-transfer clause restricting who can perform AXFR.
+	AllowTransfer *AllowTransfer `parser:"'allow-transfer' @@"`
+	// The listen-on clause specifying the addresses the server listens
+	// on the DNS requests.
+	ListenOn *ListenOn `parser:"| 'listen-on' @@"`
+	// The listen-on-v6 clause specifying the addresses the server listens
+	// on the DNS requests.
+	ListenOnV6 *ListenOn `parser:"| 'listen-on-v6' @@"`
+	// Any namedClause clause.
+	NamedClause *NamedStatement `parser:"| @@"`
+	// Any unnamedClause clause.
+	UnnamedClause *UnnamedStatement `parser:"| @@"`
+	// Any option clause.
+	Option *Option `parser:"| @@"`
+}
+
 // View is the statement used to define a DNS view. The view is a logical
 // DNS server instance including its own set of zones. The view has the
 // following format:
@@ -146,6 +185,8 @@ type View struct {
 type ViewClause struct {
 	// The match-clients clause associating the view with ACLs.
 	MatchClients *MatchClients `parser:"'match-clients' @@"`
+	// The allow-transfer clause restricting who can perform AXFR.
+	AllowTransfer *AllowTransfer `parser:"| 'allow-transfer' @@"`
 	// The zone clause associating the zone with a view.
 	Zone *Zone `parser:"| 'zone' @@"`
 	// Any namedClause clause.
@@ -174,8 +215,10 @@ type Zone struct {
 
 // ZoneClause is a single clause of a zone statement.
 type ZoneClause struct {
+	// The allow-transfer clause restricting who can perform AXFR.
+	AllowTransfer *AllowTransfer `parser:"'allow-transfer' @@"`
 	// Any namedClause clause.
-	NamedClause *NamedStatement `parser:"@@"`
+	NamedClause *NamedStatement `parser:"| @@"`
 	// Any unnamedClause clause.
 	UnnamedClause *UnnamedStatement `parser:"| @@"`
 	// Any option clause.
@@ -185,6 +228,24 @@ type ZoneClause struct {
 // MatchClients is the clause for associations with ACLs. It can be used in the
 // view to associate this view with specific ACLs.
 type MatchClients struct {
+	AdressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+}
+
+// AllowTransfer is the clause for restricting who can perform AXFR
+// globally, for a particular view or zone.
+type AllowTransfer struct {
+	Port            *int64            `parser:"( 'port' @Number )?"`
+	Transport       *string           `parser:"( 'transport' ( @String | @Ident ) )?"`
+	AdressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+}
+
+// ListenOn is the clause specifying the addresses the servers listens on the
+// DNS requests. It also contains additional options.
+type ListenOn struct {
+	Port            *int64            `parser:"( 'port' @Number )?"`
+	Proxy           *string           `parser:"( 'proxy' ( @String | @Ident ) )?"`
+	TLS             *string           `parser:"( 'tls' ( @String | @Ident ) )?"`
+	HTTP            *string           `parser:"( 'http' ( @String | @Ident ) )?"`
 	AdressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
 }
 
@@ -225,8 +286,9 @@ type UnnamedStatement struct {
 //
 // Many options in the options statement have this format.
 type Option struct {
-	Identifier string `parser:"@Ident"`
-	Contents   string `parser:"( @String | @Ident )"`
+	Identifier string                 `parser:"@Ident"`
+	Switches   []string               `parser:"( @String | @Ident | @Number | @Asterisk )*"`
+	Contents   *GenericClauseContents `parser:"( '{' @@ '}' )?"`
 }
 
 // GenericClauseContents is used to parse any type of contents. It is
@@ -263,18 +325,26 @@ func (b *GenericClauseContents) Parse(lex *lexer.PeekingLexer) error {
 	}
 }
 
-// Parses the Bind9 configuration from a file using custom lexer.
-func ParseFile(filename string) (*Config, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open Bind9 config file: %s", filename)
-	}
-	defer file.Close()
-	return Parse(filename, file)
+// Parser is a parser for the BIND 9 configuration.
+type Parser struct{}
+
+// Instantiates a new parser.
+func NewParser() *Parser {
+	return &Parser{}
 }
 
-// Parse the Bind9 configuration using custom lexer.
-func Parse(filename string, fileReader io.Reader) (*Config, error) {
+// Parses the BIND 9 configuration from a file using custom lexer.
+func (p *Parser) ParseFile(filename string) (*Config, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to open BIND 9 config file: %s", filename)
+	}
+	defer file.Close()
+	return p.Parse(filename, file)
+}
+
+// Parses the BIND 9 configuration using custom lexer.
+func (p *Parser) Parse(filename string, fileReader io.Reader) (*Config, error) {
 	// Define the custom lexer. It is used to tokenize the input stream
 	// into tokens meaningful for named configuration parser. Note that
 	// many of the rules below can be considered simplistic (e.g., the
@@ -291,13 +361,15 @@ func Parse(filename string, fileReader io.Reader) (*Config, error) {
 		// IPv4 addresses and subnets can be specified with or without quotes.
 		// This variant assumes the lack of quotes.
 		{Name: "IPv4Address", Pattern: `(?:([0-9]{1,3}\.){3}(?:[0-9]{1,3}))(?:/(?:[0-9]{1,2}))?`},
+		{Name: "IPv6AddressRange", Pattern: ipv6RangePattern},
 		// IPv6 addresses and subnets can be specified with or without quotes.
 		// This variant assumes the lack of quotes.
-		{Name: "IPv6Address", Pattern: `(?:([0-9a-fA-F]{1,4}:{1,2}){1,8})(?:/[0-9]{1,3})?`},
+		{Name: "IPv6Address", Pattern: ipv6MatchPattern},
 		// IPv4 addresses and subnets can be specified with quotes.
 		{Name: "IPv4AddressQuoted", Pattern: `"(?:([0-9]{1,3}\.){3}(?:[0-9]{1,3}))(?:/(?:[0-9]{1,2}))?"`},
+		{Name: "IPv6AddressRangeQuoted", Pattern: fmt.Sprintf(`"%s"`, ipv6RangePattern)},
 		// IPv6 addresses and subnets can be specified with quotes.
-		{Name: "IPv6AddressQuoted", Pattern: `"(?:([0-9a-fA-F]{1,4}:{1,2}){1,8})(?:/[0-9]{1,3})?"`},
+		{Name: "IPv6AddressQuoted", Pattern: fmt.Sprintf(`"%s"`, ipv6MatchPattern)},
 		// Strings are always quoted.
 		{Name: "String", Pattern: `"(\\"|[^"])*"`},
 		// Numbers.
@@ -307,8 +379,10 @@ func Parse(filename string, fileReader io.Reader) (*Config, error) {
 		// configuration element names (and values) in quotes or without quotes.
 		// The identifier handles this second case.
 		{Name: "Ident", Pattern: `[0-9a-zA-Z-_]+`},
+		// Asterisk.
+		{Name: "Asterisk", Pattern: `\*`},
 		// Punctuation characters.
-		{Name: "Punct", Pattern: `[;,.{}!]`},
+		{Name: "Punct", Pattern: `[;,.{}!*]`},
 		// Whitespace characters.
 		{Name: "Whitespace", Pattern: `[ \t\n\r]+`},
 		// End of line characters.
@@ -319,7 +393,7 @@ func Parse(filename string, fileReader io.Reader) (*Config, error) {
 		// Use custom lexer instead of the default one.
 		participle.Lexer(lexer),
 		// Remove quotes from the strings and other quoted tokens.
-		participle.Unquote("String", "IPv4AddressQuoted", "IPv6AddressQuoted"),
+		participle.Unquote("String", "IPv4AddressQuoted", "IPv6AddressQuoted", "IPv6AddressRangeQuoted"),
 		// Ignore whitespace and comments.
 		participle.Elide("Whitespace", "Comment", "CppStyleComment"),
 		// Use lookahead to improve the parsing accuracy.

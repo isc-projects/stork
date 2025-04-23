@@ -59,6 +59,8 @@ type StorkServer struct {
 
 	HookManager   *hookmanager.HookManager
 	hooksSettings map[string]hooks.HookSettings
+
+	DNSManager dnsop.Manager
 }
 
 // Parse the command line arguments into GO structures.
@@ -231,7 +233,10 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	endpointControl.SetEnabled(restservice.EndpointOpCreateNewMachine, enableMachineRegistration)
 
 	// Create DNS Manager.
-	dnsManager := dnsop.NewManager(ss)
+	ss.DNSManager, err = dnsop.NewManager(ss)
+	if err != nil {
+		return err
+	}
 
 	// Config migration service manages list of pending migrations.
 	migrationService := configmigrator.NewMigrationManager()
@@ -241,13 +246,14 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 		ss.DB, ss.Agents, ss.EventCenter,
 		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager,
 		ss.DHCPOptionDefinitionLookup, ss.HookManager, endpointControl,
-		dnsManager, migrationService, ss.DaemonLocker)
+		ss.DNSManager, migrationService, ss.DaemonLocker)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
 		ss.Pullers.KeaStatsPuller.Shutdown()
 		ss.Pullers.Bind9StatsPuller.Shutdown()
 		ss.Pullers.AppsStatePuller.Shutdown()
+		ss.DNSManager.Shutdown()
 		if ss.MetricsCollector != nil {
 			ss.MetricsCollector.Shutdown()
 		}
@@ -296,6 +302,7 @@ func (ss *StorkServer) Shutdown(reload bool) {
 		ss.Pullers.KeaStatsPuller.Shutdown()
 		ss.Pullers.Bind9StatsPuller.Shutdown()
 		ss.Pullers.AppsStatePuller.Shutdown()
+		ss.DNSManager.Shutdown()
 		ss.Agents.Shutdown()
 		ss.EventCenter.Shutdown()
 		ss.ReviewDispatcher.Shutdown()

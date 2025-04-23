@@ -8,10 +8,12 @@ import (
 	"iter"
 	"os"
 	"path"
+	"runtime"
 	"slices"
 	"sync"
 	"time"
 
+	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork/appdata/bind9stats"
@@ -23,12 +25,20 @@ var (
 	_ zoneInventoryStorage            = (*zoneInventoryStorageDisk)(nil)
 	_ zoneInventoryStorage            = (*zoneInventoryStorageMemory)(nil)
 	_ zoneInventoryStorage            = (*zoneInventoryStorageMemoryDisk)(nil)
+	_ zoneInventoryAxfrExecutor       = (*zoneInventoryAxfrExecutorImpl)(nil)
 	_ bind9stats.ZoneIteratorAccessor = (*viewIO)(nil)
 	_ bind9stats.NameAccessor         = (os.DirEntry)(nil)
 )
 
 // A file name holding zone inventory meta data.
 const zoneInventoryMetaFileName = "zone-inventory.json"
+
+// An interface to the DNS server configuration. It is DNS implementation agnostic.
+// It returns the configuration elements required by the zone inventory. For example,
+// it returns the elements required to perform zone transfers.
+type dnsConfigAccessor interface {
+	GetAxfrCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error)
+}
 
 // An interface to a REST client communicating with a DNS server and returning
 // configured zones encapsulated in views. The bind9StatsClient implements this
@@ -73,6 +83,23 @@ func newZoneInventoryBusyError(currState, newState *zoneInventoryState) error {
 // informing that such a transition is not allowed.
 func (e zoneInventoryBusyError) Error() string {
 	return fmt.Sprintf("cannot transition to the %s state while the zone inventory is in %s state", e.newState.name, e.currState.name)
+}
+
+// An error indicating that the zone transfer is currently not possible because
+// the zone inventory is performing a long lasting operation.
+type zoneInventoryAxfrBusyError struct {
+	currState *zoneInventoryState
+}
+
+// Instantiates the error. The function parameters specify the current inventory
+// state.
+func newZoneInventoryAxfrBusyError(currState *zoneInventoryState) error {
+	return &zoneInventoryAxfrBusyError{currState}
+}
+
+// Returns error string. It indicates the current inventory state.
+func (e zoneInventoryAxfrBusyError) Error() string {
+	return fmt.Sprintf("zone transfer is not possible because the zone inventory is in %s state", e.currState.name)
 }
 
 // An error indicating that the inventory hasn't been populated yet. It means that
@@ -555,6 +582,67 @@ func (state zoneInventoryState) isErred() bool {
 	}
 }
 
+// A structure encapsulating a request to perform AXFR (zone transfer)
+// from the DNS server.
+type zoneInventoryAxfrRequest struct {
+	zoneName  string
+	keyName   *string
+	algorithm *string
+	secret    *string
+	address   string
+	respChan  chan *zoneInventoryAxfrResponse
+	closeOnce sync.Once
+}
+
+// Instantiates a new AXFR request. It ensures that the zone name, key name
+// and algorithm are fully qualified, as required by the dns package.
+func newZoneInventoryAxfrRequest(zoneName string, keyName *string, algorithm *string, secret *string, address string) *zoneInventoryAxfrRequest {
+	return &zoneInventoryAxfrRequest{
+		zoneName:  zoneName,
+		keyName:   keyName,
+		algorithm: algorithm,
+		secret:    secret,
+		address:   address,
+		respChan:  make(chan *zoneInventoryAxfrResponse),
+		closeOnce: sync.Once{},
+	}
+}
+
+// Closes the response channel. Normally, the channel is closed by the
+// zone inventory. However, it is safe to call this function multiple
+// times, so the caller can also attempt to close the channel.
+func (request *zoneInventoryAxfrRequest) safeClose() {
+	request.closeOnce.Do(func() {
+		close(request.respChan)
+	})
+}
+
+// A structure encapsulating a response to AXFR request. It contains
+// an envelope holding a set of RRs. If it contains RRs the error field
+// is nil. Otherwise, if there is an error during the transfer, the err
+// field contains the error. In this case, the envelope is nil.
+type zoneInventoryAxfrResponse struct {
+	envelope *dns.Envelope
+	err      error
+}
+
+// An interface allowing for mocking the zone transfer execution.
+// The zoneInventoryAxfrExecutorImpl is a default implementation
+// using the dns library. The unit tests can provide a custom
+// implementation for testing purposes.
+type zoneInventoryAxfrExecutor interface {
+	run(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error)
+}
+
+// The default implementation of the zoneInventoryAxfrExecutor interface.
+// It uses the dns library to execute the zone transfer.
+type zoneInventoryAxfrExecutorImpl struct{}
+
+// Executes the zone transfer using the dns library.
+func (impl *zoneInventoryAxfrExecutorImpl) run(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error) {
+	return transfer.In(message, address)
+}
+
 // Metadata describing the zone inventory.
 type ZoneInventoryMeta struct {
 	// A timestamp when the zone inventory was populated.
@@ -573,15 +661,41 @@ type ZoneInventoryMeta struct {
 //
 // Please consult https://gitlab.isc.org/isc-projects/stork/-/wikis/designs/bind-zone-view#zone-inventory
 // for the state diagram.
+//
+// The zone inventory is responsible for fetching the zone contents from the
+// DNS server using AXFR. It makes the zone contents available to the callers.
+// Specifically, it returns the RRs to the Stork server via the gRPC stream.
+// The zone contents may be cached in the zone inventory to avoid excessive
+// DNS requests.
 type zoneInventory struct {
-	storage       zoneInventoryStorage
-	client        zoneFetcher
-	host          string
-	port          int64
-	state         zoneInventoryStateName
+	// The storage used to save the zone information.
+	storage zoneInventoryStorage
+	// Common interface to access DNS configuration from different DNS implementations.
+	config dnsConfigAccessor
+	// Common interface used to fetch the zone lists from different DNS implementations.
+	client zoneFetcher
+	// The host name of the DNS server.
+	host string
+	// The DNS server port.
+	port int64
+	// The current state of the zone inventory.
+	state zoneInventoryStateName
+	// The map of visited states holding errors that occurred in these states.
 	visitedStates map[zoneInventoryStateName]*zoneInventoryState
-	mutex         sync.RWMutex
-	wg            sync.WaitGroup
+	// Mutex protecting the inventory state.
+	mutex sync.RWMutex
+	// Wait group used to wait for the background tasks to complete.
+	wg sync.WaitGroup
+	// Pool of workers used to run AXFR requests.
+	axfrPool *storkutil.PausablePool
+	// Channel used to schedule and run AXFR requests in order.
+	axfrReqChan chan *zoneInventoryAxfrRequest
+	// Cancel function used to cancel pending AXFR requests.
+	axfrReqCancel context.CancelFunc
+	// A wrapper receiving a transfer, message and address and executing
+	// the zone transfer. By default, it uses the dns library but can be
+	// replaced with a custom implementation for mocking purposes.
+	axfrExecutor zoneInventoryAxfrExecutor
 }
 
 // A message sent over the channels to notify that the long lasting
@@ -602,11 +716,12 @@ type zoneInventoryReceiveZoneResult struct {
 // Instantiates the inventory. If the specified storage saves the zone information on
 // disk this function prepares required directory structures. An error is returned if
 // creating these structures fails.
-func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host string, port int64) *zoneInventory {
-	// Everything OK.
+func newZoneInventory(storage zoneInventoryStorage, config dnsConfigAccessor, client zoneFetcher, host string, port int64) (*zoneInventory, error) {
+	ctx, cancel := context.WithCancel(context.Background())
 	state := newZoneInventoryStateInitial()
-	return &zoneInventory{
+	inventory := &zoneInventory{
 		storage: storage,
+		config:  config,
 		client:  client,
 		host:    host,
 		port:    port,
@@ -614,9 +729,16 @@ func newZoneInventory(storage zoneInventoryStorage, client zoneFetcher, host str
 		visitedStates: map[zoneInventoryStateName]*zoneInventoryState{
 			zoneInventoryStateInitial: state,
 		},
-		mutex: sync.RWMutex{},
-		wg:    sync.WaitGroup{},
+		mutex:         sync.RWMutex{},
+		wg:            sync.WaitGroup{},
+		axfrReqChan:   make(chan *zoneInventoryAxfrRequest),
+		axfrReqCancel: cancel,
+		axfrExecutor:  &zoneInventoryAxfrExecutorImpl{},
 	}
+	if err := inventory.startAxfrWorkers(ctx); err != nil {
+		return nil, err
+	}
+	return inventory, nil
 }
 
 // Transitions the inventory to a new state. It returns a zoneInventoryBusyError if the
@@ -671,6 +793,11 @@ func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNot
 	if err := inventory.transition(newZoneInventoryStatePopulating()); err != nil {
 		return nil, err
 	}
+	// No zone transfers during zones population.
+	if err := inventory.axfrPool.Pause(); err != nil {
+		return nil, err
+	}
+
 	var bufLen int
 	if !block {
 		// The channel must be buffered to not block write when nobody listens.
@@ -679,7 +806,9 @@ func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNot
 	notifyChannel := make(chan zoneInventoryAsyncNotify, bufLen)
 	inventory.wg.Add(1)
 	go func() {
-		defer inventory.wg.Done()
+		defer func() {
+			inventory.wg.Done()
+		}()
 		// Fetch views and zones from the DNS server.
 		response, views, err := inventory.client.getViews(inventory.host, inventory.port)
 		if err == nil {
@@ -697,6 +826,10 @@ func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNot
 			err = inventory.transition(newZoneInventoryStatePopulated())
 		} else {
 			err = inventory.transition(newZoneInventoryStatePopulatingErred(err))
+		}
+		// Resume paused workers.
+		if errResume := inventory.axfrPool.Resume(); err != nil {
+			log.WithError(errResume).Warnf("Failed to resume AXFR worker pool")
 		}
 		// We are done populating the views. Send notification and close the channel.
 		notifyChannel <- zoneInventoryAsyncNotify{
@@ -722,6 +855,11 @@ func (inventory *zoneInventory) load(block bool) (chan zoneInventoryAsyncNotify,
 	if err := inventory.transition(newZoneInventoryStateLoading()); err != nil {
 		return nil, err
 	}
+	// No zone transfers during zones loading.
+	if err := inventory.axfrPool.Pause(); err != nil {
+		return nil, err
+	}
+
 	var bufLen int
 	if !block {
 		// The channel must be buffered to not block write when nobody listens.
@@ -730,12 +868,18 @@ func (inventory *zoneInventory) load(block bool) (chan zoneInventoryAsyncNotify,
 	notifyChannel := make(chan zoneInventoryAsyncNotify, bufLen)
 	inventory.wg.Add(1)
 	go func() {
-		defer inventory.wg.Done()
+		defer func() {
+			inventory.wg.Done()
+		}()
 		populatedAt, err := inventory.storage.loadViews()
 		if err != nil {
 			_ = inventory.transition(newZoneInventoryStateLoadingErred(err))
 		} else {
 			_ = inventory.transition(newZoneInventoryStateLoaded(populatedAt))
+		}
+		// Resume paused workers.
+		if errResume := inventory.axfrPool.Resume(); err != nil {
+			log.WithError(errResume).Warnf("Failed to resume AXFR worker pool")
 		}
 		// We are done loading the views. Send notification and close the channel.
 		notifyChannel <- zoneInventoryAsyncNotify{
@@ -776,6 +920,10 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 		totalZoneCount += zoneCount
 	}
 	channel := make(chan zoneInventoryReceiveZoneResult)
+	// No zone transfers during zones receiving.
+	if err := inventory.axfrPool.Pause(); err != nil {
+		return nil, err
+	}
 	go func() {
 	OUTER_LOOP:
 		for view, err := range inventory.storage.getViewsIterator(filter) {
@@ -806,6 +954,11 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 				}
 			}
 		}
+		// Resume paused workers.
+		if errResume := inventory.axfrPool.Resume(); errResume != nil {
+			log.WithError(errResume).Warnf("Failed to resume AXFR worker pool")
+		}
+
 		_ = inventory.transition(newZoneInventoryStateReceivedZones())
 		close(channel)
 	}()
@@ -823,9 +976,160 @@ func (inventory *zoneInventory) getZoneInView(viewName, zoneName string) (*bind9
 	return inventory.storage.getZoneInView(viewName, zoneName)
 }
 
+// Requests an AXFR (zone transfer) for the specified zone and view.
+// It returns a channel to which the caller must subscribe to receive
+// the AXFR results. The channel is closed by the zone inventory when
+// the transfer is complete.
+func (inventory *zoneInventory) requestAxfr(zoneName, viewName string) (chan *zoneInventoryAxfrResponse, error) {
+	address, keyName, algorithm, secret, err := inventory.config.GetAxfrCredentials(viewName, zoneName)
+	if err != nil {
+		return nil, err
+	}
+	// Create and queue the request. The request is picked by one of the
+	// workers and executed.
+	request := newZoneInventoryAxfrRequest(zoneName, keyName, algorithm, secret, *address)
+	inventory.axfrReqChan <- request
+	return request.respChan, nil
+}
+
+// Performs the zone transfer from the DNS server. The request contains
+// the response channel to which the results are sent. The caller must read
+// from the channel until it is closed.
+func (inventory *zoneInventory) runAxfr(request *zoneInventoryAxfrRequest) {
+	// Close the response channel when transfer done.
+	defer request.safeClose()
+
+	// Check if the zone inventory is not busy doing a long lasting operation.
+	// We're checking it here because this function is called in a worker
+	// goroutine where it is guaranteed there is no race condition between
+	// the task and the possibly new request to perform a long lasting operation.
+	// Such a request will wait for the current tasks to complete.
+	state := inventory.getCurrentState()
+	if state.isLongLasting() {
+		request.respChan <- &zoneInventoryAxfrResponse{
+			err: newZoneInventoryAxfrBusyError(state),
+		}
+		return
+	}
+	// If the zone inventory is in an erred state, we can't perform the zone
+	// transfer.
+	if state.isInitial() || state.isErred() {
+		request.respChan <- &zoneInventoryAxfrResponse{
+			err: newZoneInventoryNotInitedError(),
+		}
+		return
+	}
+
+	transfer := new(dns.Transfer)
+	message := new(dns.Msg)
+
+	// Set TSIG if provided. In some cases the TSIG is not used. Typically when
+	// there is only a default view.
+	if request.keyName != nil && request.secret != nil {
+		transfer.TsigSecret = map[string]string{
+			storkutil.FullyQualifyName(*request.keyName): *request.secret,
+		}
+	}
+	message.SetAxfr(storkutil.FullyQualifyName(request.zoneName))
+
+	// Again, set TSIG if provided.
+	if request.keyName != nil && request.algorithm != nil {
+		message.SetTsig(storkutil.FullyQualifyName(*request.keyName), storkutil.FullyQualifyName(*request.algorithm), 300, time.Now().Unix())
+	}
+
+	// Perform the zone transfer.
+	channel, err := inventory.axfrExecutor.run(transfer, message, request.address)
+	if err != nil {
+		request.respChan <- &zoneInventoryAxfrResponse{
+			err: errors.WithMessagef(err, "Failed to transfer DNS zone %s from %s", request.zoneName, request.address),
+		}
+		return
+	}
+	// Send the RRs to the caller over the channel.
+	for envelope := range channel {
+		request.respChan <- &zoneInventoryAxfrResponse{
+			envelope: envelope,
+		}
+	}
+}
+
+// Starts a pool of workers for running AXFR requests. This function must be
+// called only once. It is called internally during the zone inventory
+// initialization.
+func (inventory *zoneInventory) startAxfrWorkers(ctx context.Context) error {
+	// Create a worker pool for running AXFR requests. It guarantees that
+	// only a limited number of AXFR requests are executed concurrently.
+	pool, err := storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2)
+	if err != nil {
+		// This is highly unlikely. It returns an error when the pool size is 0
+		// or negative. It may also return an error when the expiry duration is
+		// invalid.
+		return errors.Wrap(err, "failed to create AXFR worker pool for zone inventory")
+	}
+	inventory.axfrPool = pool
+
+	go func() {
+		defer func() {
+			// Ensure that the channel is closed.
+			close(inventory.axfrReqChan)
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				// The context is cancelled when the zone inventory is destroyed.
+				return
+			case request, ok := <-inventory.axfrReqChan:
+				if !ok {
+					return
+				}
+				err := pool.Submit(func() {
+					// Schedule the AXFR request for execution.
+					inventory.runAxfr(request)
+				})
+				if err != nil {
+					// We want to be more specific with the error that the zone inventory
+					// is busy performing a long lasting operation.
+					var pausablePoolPausedError *storkutil.PausablePoolPausedError
+					if errors.As(err, &pausablePoolPausedError) {
+						err = newZoneInventoryAxfrBusyError(inventory.getCurrentState())
+					}
+					// Failed to submit the AXFR request to the worker pool.
+					// The pool is possibly exhausted.
+					log.WithError(err).
+						WithField("zone", request.zoneName).
+						Warnf("Failed to submit AXFR request to the worker pool")
+
+					if request.respChan != nil {
+						request.respChan <- &zoneInventoryAxfrResponse{
+							err: errors.WithMessage(err, "failed to submit AXFR request to the worker pool"),
+						}
+						// Close the response channel to unblock the caller.
+						request.safeClose()
+					}
+				}
+			}
+		}
+	}()
+	return nil
+}
+
+// Stops the AXFR workers and waits for them to complete their tasks.
+func (inventory *zoneInventory) stopAxfrWorkers() {
+	// Stop the pool first to ensure that no new tasks are accepted.
+	inventory.axfrPool.Stop()
+	// Cancel the context to unblock the pending tasks.
+	inventory.axfrReqCancel()
+}
+
 // This function waits for the asynchronous operations to complete.
 func (inventory *zoneInventory) awaitBackgroundTasks() {
 	inventory.wg.Wait()
+}
+
+// Stops the zone inventory and waits for the background tasks to complete.
+func (inventory *zoneInventory) stop() {
+	inventory.stopAxfrWorkers()
+	inventory.awaitBackgroundTasks()
 }
 
 // Exposes IO operations to manipulate the zone views.

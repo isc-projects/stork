@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -1010,6 +1011,101 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, app Control
 			}
 			if !yield(zone, nil) {
 				// Stop if the caller no longer iterates over the zones.
+				return
+			}
+		}
+	}
+}
+
+// Makes a request to the agent to perform a zone transfer for a specified view
+// and zone. It returns an iterator to the received RRs and error.
+func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, app ControlledApp, zoneName string, viewName string) iter.Seq2[[]dns.RR, error] {
+	return func(yield func([]dns.RR, error) bool) {
+		// Get control access point for the specified app. It will be sent
+		// in the request to the agent, so the agent can identify correct
+		// zone inventory.
+		ctrlAddress, ctrlPort, _, _, err := app.GetControlAccessPoint()
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+
+		request := &agentapi.ReceiveZoneRRsReq{
+			ControlAddress: ctrlAddress,
+			ControlPort:    ctrlPort,
+			ZoneName:       zoneName,
+			ViewName:       viewName,
+		}
+
+		// Get the agent's state. It holds the connection with the agent.
+		agentAddressPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
+		agent, err := agents.getConnectedAgent(agentAddressPort)
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+
+		// This is the same pattern we're using in the manager.go. The connection is
+		// cached so it is possible that it gets terminated or broken at some point.
+		// By trying the actual operation and retrying on failure we should be able
+		// to recover. There may be other ways to achieve recovery (e.g., getting
+		// the connection state before attempting the call). However, it is hard to
+		// say how reliable they are. This approach worked well for several years so
+		// it should be fine to continue using it.
+		var stream grpc.ServerStreamingClient[agentapi.ReceiveZoneRRsRsp]
+		if stream, err = agent.connector.createClient().ReceiveZoneRRs(ctx, request); err != nil {
+			if err = agent.connector.connect(); err == nil {
+				stream, err = agent.connector.createClient().ReceiveZoneRRs(ctx, request)
+			}
+		}
+		if err != nil {
+			// The zone inventory may signal errors indicating that it is
+			// unable to return the RRs because it is in a wrong state.
+			s := status.Convert(err)
+			for _, d := range s.Details() {
+				if info, ok := d.(*errdetails.ErrorInfo); ok {
+					switch info.Reason {
+					case "ZONE_INVENTORY_NOT_INITED":
+						// Zone inventory hasn't been initialized.
+						_ = yield(nil, NewZoneInventoryNotInitedError(agentAddressPort))
+						return
+					case "ZONE_INVENTORY_BUSY":
+						// Zone inventory is busy. Retrying later may help.
+						_ = yield(nil, NewZoneInventoryBusyError(agentAddressPort))
+						return
+					default:
+						_ = yield(nil, err)
+						return
+					}
+				}
+			}
+			// Other error.
+			_ = yield(nil, err)
+			return
+		}
+		for {
+			// Receive the zone contents from the agent.
+			receivedRRs, err := stream.Recv()
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					// Report the error excluding the EOF which is just the end of the stream.
+					_ = yield(nil, err)
+				}
+				return
+			}
+			// Convert the received RRs to the format convenient for further processing
+			// on the server side.
+			rrs := make([]dns.RR, len(receivedRRs.Rrs))
+			for i, rr := range receivedRRs.Rrs {
+				rrs[i], err = dns.NewRR(rr)
+				if err != nil {
+					// This is unlikely but we need to handle it.
+					_ = yield(nil, err)
+					return
+				}
+			}
+			if !yield(rrs, nil) {
+				// Stop if the caller no longer iterates over the RRs.
 				return
 			}
 		}

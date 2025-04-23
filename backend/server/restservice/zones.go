@@ -8,6 +8,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/dnsop"
 	"isc.org/stork/server/gen/models"
@@ -141,4 +142,58 @@ func (r *RestAPI) PutZonesFetch(ctx context.Context, params dns.PutZonesFetchPar
 		})
 		return rsp
 	}
+}
+
+// Returns the zone contents (RRs) for a specified view, zone and daemon.
+func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) middleware.Responder {
+	var (
+		restRrs               []*models.ZoneRR
+		alreadyRequestedError *dnsop.ManagerRRsAlreadyRequestedError
+		busyError             *agentcomm.ZoneInventoryBusyError
+		notInitedError        *agentcomm.ZoneInventoryNotInitedError
+	)
+	for rrs, err := range r.DNSManager.GetZoneRRs(params.ZoneID, params.DaemonID, params.ViewName) {
+		if err != nil {
+			msg := "Failed to get zone contents using zone transfer"
+			log.WithError(err).Error(msg)
+			switch {
+			case errors.As(err, &alreadyRequestedError):
+				// There is another request in progress for the same zone.
+				rsp := dns.NewGetZoneRRsDefault(http.StatusConflict).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(alreadyRequestedError, msg).Error()),
+				})
+				return rsp
+			case errors.As(err, &busyError):
+				// The zone inventory is busy populating or sending zones to the server.
+				rsp := dns.NewGetZoneRRsDefault(http.StatusConflict).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(busyError, msg).Error()),
+				})
+				return rsp
+			case errors.As(err, &notInitedError):
+				// The zone inventory is not initialized.
+				rsp := dns.NewGetZoneRRsDefault(http.StatusServiceUnavailable).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(notInitedError, msg).Error()),
+				})
+				return rsp
+			default:
+				// An unknown error occurred.
+				rsp := dns.NewGetZoneRRsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+					Message: storkutil.Ptr(errors.WithMessage(err, msg).Error()),
+				})
+				return rsp
+			}
+		}
+		for _, rr := range rrs {
+			// Convert the RR to the REST API format.
+			restRrs = append(restRrs, &models.ZoneRR{
+				Contents: rr.String(),
+			})
+		}
+	}
+	// Return the zone contents.
+	payload := models.ZoneRRs{
+		Rrs: restRrs,
+	}
+	rsp := dns.NewGetZoneRRsOK().WithPayload(&payload)
+	return rsp
 }

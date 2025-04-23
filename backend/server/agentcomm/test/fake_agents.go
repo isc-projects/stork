@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 
+	"github.com/miekg/dns"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
 	"isc.org/stork/server/agentcomm"
@@ -187,5 +188,9 @@ func (fa *FakeAgents) TailTextFile(ctx context.Context, machine dbmodel.MachineT
 // FakeAgents specific implementation of the function which gathers the zones from the
 // agents one by one.
 func (fa *FakeAgents) ReceiveZones(ctx context.Context, app agentcomm.ControlledApp, filter *bind9stats.ZoneFilter) iter.Seq2[*bind9stats.ExtendedZone, error] {
+	return nil
+}
+
+func (fa *FakeAgents) ReceiveZoneRRs(ctx context.Context, app agentcomm.ControlledApp, zoneName string, viewName string) iter.Seq2[[]dns.RR, error] {
 	return nil
 }

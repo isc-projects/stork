@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
@@ -13,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
@@ -30,6 +33,9 @@ import (
 )
 
 //go:generate mockgen -package=agent -destination=serverstreamingservermock_test.go google.golang.org/grpc ServerStreamingServer
+
+//go:embed testdata/valid-zone.json
+var validZoneData []byte
 
 type FakeAppMonitor struct {
 	Apps       []App
@@ -997,7 +1003,9 @@ func TestReceiveZonesFilterByView(t *testing.T) {
 	defer off()
 
 	// Create zone inventory.
-	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
 	defer inventory.awaitBackgroundTasks()
 
 	// Populate the zones into inventory.
@@ -1073,7 +1081,9 @@ func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 	defer off()
 
 	// Create zone inventory.
-	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
 	defer inventory.awaitBackgroundTasks()
 
 	// Populate the zones into inventory.
@@ -1132,7 +1142,9 @@ func TestReceiveZonesFilterLowerBound(t *testing.T) {
 	defer off()
 
 	// Create zone inventory.
-	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
 	defer inventory.awaitBackgroundTasks()
 
 	// Populate the zones into inventory.
@@ -1278,7 +1290,9 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	defer off()
 
 	// Create zone inventory.
-	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
 	defer inventory.awaitBackgroundTasks()
 
 	sa, _, teardown := setupAgentTest()
@@ -1303,7 +1317,7 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
 
 	// Run the actual test.
-	err := sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
 		ViewName:       "_default",
@@ -1345,16 +1359,17 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	defer off()
 
 	// Create zone inventory.
-	inventory := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
 	defer inventory.awaitBackgroundTasks()
 
-	done, err := inventory.populate(false)
+	done, err := inventory.populate(true)
 	require.NoError(t, err)
 	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
 	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
 		<-done
 	}
-
 	// Start receiving zones but don't complete it. It turns the inventory
 	// into "busy" state.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -1400,5 +1415,376 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 	require.Len(t, details, 1)
 	info, ok := details[0].(*errdetails.ErrorInfo)
 	require.True(t, ok)
-	require.Equal(t, "ZONE_INVENTORY_BUSY_ERROR", info.Reason)
+	require.Equal(t, "ZONE_INVENTORY_BUSY", info.Reason)
+}
+
+// Test successfully receiving a stream of zone RRs.
+func TestReceiveZoneRRs(t *testing.T) {
+	// Setup server response for populating the zone inventory.
+	generatedZones := generateRandomZones(10)
+	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(10)
+	response := map[string]any{
+		"views": map[string]any{
+			"trusted": map[string]any{
+				"zones": generatedZones,
+			},
+			"guest": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+	defer inventory.awaitBackgroundTasks()
+
+	// Get the example zone contents from the file.
+	var rrs []string
+	err = json.Unmarshal(validZoneData, &rrs)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Replace the default AXFR executor to mock the AXFR response.
+	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error) {
+		require.NotNil(t, transfer.TsigSecret)
+		require.Len(t, transfer.TsigSecret, 1)
+		require.Contains(t, transfer.TsigSecret, "trusted-key.")
+		require.Equal(t, transfer.TsigSecret["trusted-key."], "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=")
+		require.Len(t, message.Question, 1)
+		require.Contains(t, message.Question[0].Name, generatedZones[0].Name())
+		require.Equal(t, "127.0.0.1:53", address)
+		ch := make(chan *dns.Envelope)
+		go func() {
+			for _, rr := range rrs {
+				rr, err := dns.NewRR(rr)
+				require.NoError(t, err)
+				ch <- &dns.Envelope{
+					RR: []dns.RR{rr},
+				}
+			}
+			close(ch)
+		}()
+		return ch, nil
+	})
+	inventory.axfrExecutor = axfrExecutor
+
+	// Populate the zones into inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
+
+	// The zone RRs should be returned in order.
+	var mocks []any
+	for i, rr := range rrs {
+		rsp := &agentapi.ReceiveZoneRRsRsp{
+			Rrs: []string{rr},
+		}
+		mocks = append(mocks, mock.EXPECT().Send(rsp).DoAndReturn(func(rsp *agentapi.ReceiveZoneRRsRsp) error {
+			require.Equal(t, rr, rrs[i])
+			return nil
+		}))
+	}
+	gomock.InOrder(mocks...)
+
+	// Run the actual test.
+	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ZoneName:       generatedZones[0].Name(),
+		ViewName:       "trusted",
+	}, mock)
+	require.NoError(t, err)
+}
+
+// Test that an error is returned when zone inventory is nil.
+func TestReceiveZoneRRsNilZoneInventory(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a BIND9 app with the nil zone inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
+
+	// Run the actual test.
+	err := sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ZoneName:       "example.com",
+		ViewName:       "trusted",
+	}, mock)
+	require.Contains(t, err.Error(), "attempted to receive DNS zone RRs from an app for which zone inventory was not instantiated")
+}
+
+// Test that an error is returned when the app is not a DNS server.
+func TestReceiveZoneRRsUnsupportedApp(t *testing.T) {
+	// Setup server response for populating the zone inventory.
+	generatedZones := generateRandomZones(10)
+	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(10)
+	response := map[string]any{
+		"views": map[string]any{
+			"trusted": map[string]any{
+				"zones": generatedZones,
+			},
+			"guest": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+	defer inventory.awaitBackgroundTasks()
+
+	// Add an app that is not a DNS server.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
+
+	// Run the actual test.
+	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ZoneName:       "example.com",
+		ViewName:       "trusted",
+	}, mock)
+	require.Contains(t, err.Error(), "attempted to receive DNS zone RRs from an unsupported app")
+}
+
+// Test that specific error is returned when the zone inventory was not initialized
+// while trying to receive the zone RRs.
+func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
+	// Setup server response for populating the zone inventory.
+	generatedZones := generateRandomZones(10)
+	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(10)
+	response := map[string]any{
+		"views": map[string]any{
+			"trusted": map[string]any{
+				"zones": generatedZones,
+			},
+			"guest": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory but do not populate it.
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+	defer inventory.awaitBackgroundTasks()
+
+	// Get the example zone contents from the file.
+	var rrs []string
+	err = json.Unmarshal(validZoneData, &rrs)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Replace the default AXFR executor to mock the AXFR response.
+	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(0)
+	inventory.axfrExecutor = axfrExecutor
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
+	mock.EXPECT().Send(gomock.Any()).MaxTimes(0)
+
+	// Run the actual test.
+	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ZoneName:       generatedZones[0].Name(),
+		ViewName:       "trusted",
+	}, mock)
+	require.Contains(t, err.Error(), "rpc error: code = FailedPrecondition desc = zone inventory has not been initialized yet")
+
+	// The zone inventory was not initialized so we expect that it is returned
+	// as an error over gRPC.
+	s := status.Convert(err)
+	details := s.Details()
+	require.Len(t, details, 1)
+	info, ok := details[0].(*errdetails.ErrorInfo)
+	require.True(t, ok)
+	require.Equal(t, "ZONE_INVENTORY_NOT_INITED", info.Reason)
+}
+
+// Test that specific error is returned when the zone inventory was busy
+// while trying to receive the zone RRs.
+func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
+	// Setup server response for populating the zone inventory.
+	generatedZones := generateRandomZones(10)
+	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	bindZones := generateRandomZones(10)
+	response := map[string]any{
+		"views": map[string]any{
+			"trusted": map[string]any{
+				"zones": generatedZones,
+			},
+			"guest": map[string]any{
+				"zones": bindZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create zone inventory.
+	config := parseDefaultBind9Config(t)
+	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
+	defer inventory.awaitBackgroundTasks()
+
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	// Start receiving zones but don't complete it. It turns the inventory
+	// into "busy" state.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	_, err = inventory.receiveZones(ctx, nil)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Replace the default AXFR executor to mock the AXFR response.
+	// Expect that the AXFR request is not executed.
+	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(0)
+	inventory.axfrExecutor = axfrExecutor
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
+	mock.EXPECT().Send(gomock.Any()).MaxTimes(0)
+
+	// Run the actual test.
+	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ZoneName:       generatedZones[0].Name(),
+		ViewName:       "trusted",
+	}, mock)
+	require.Contains(t, err.Error(), "rpc error: code = Unavailable desc = failed to submit AXFR request to the worker pool: zone transfer is not possible because the zone inventory is in RECEIVING_ZONES state")
+
+	// The zone inventory was busy so we expect that it is returned as an
+	// error over gRPC.
+	s := status.Convert(err)
+	details := s.Details()
+	require.Len(t, details, 1)
+	info, ok := details[0].(*errdetails.ErrorInfo)
+	require.True(t, ok)
+	require.Equal(t, "ZONE_INVENTORY_BUSY", info.Reason)
 }

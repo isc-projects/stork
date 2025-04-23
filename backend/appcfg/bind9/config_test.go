@@ -9,7 +9,7 @@ import (
 
 // Tests that GetView returns expected view.
 func TestGetView(t *testing.T) {
-	cfg, err := ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/named.conf")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -23,7 +23,7 @@ func TestGetView(t *testing.T) {
 
 // Tests that GetKey returns expected key.
 func TestGetKey(t *testing.T) {
-	cfg, err := ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/named.conf")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -32,8 +32,10 @@ func TestGetKey(t *testing.T) {
 	require.Equal(t, "trusted-key", key.Name)
 	algorithm, secret, err := key.GetAlgorithmSecret()
 	require.NoError(t, err)
-	require.Equal(t, "hmac-sha256", algorithm)
-	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", secret)
+	require.NotNil(t, algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
 
 	key = cfg.GetKey("non-existent")
 	require.Nil(t, key)
@@ -41,7 +43,7 @@ func TestGetKey(t *testing.T) {
 
 // Tests that GetACL returns expected ACL.
 func TestGetACL(t *testing.T) {
-	cfg, err := ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/named.conf")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -69,7 +71,7 @@ func TestViewKeysTooMuchRecursion(t *testing.T) {
 			match-clients { acl1; };
 		};
 	`
-	cfg, err := Parse("", strings.NewReader(config))
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -77,14 +79,14 @@ func TestViewKeysTooMuchRecursion(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	key, err := cfg.GetViewKey("trusted")
+	key, err := cfg.GetZoneKey("trusted", "example.com")
 	require.ErrorContains(t, err, "too much recursion in address-match-list")
 	require.Nil(t, key)
 }
 
 // Tests that GetViewKey returns associated keys.
 func TestGetViewKey(t *testing.T) {
-	cfg, err := ParseFile("testdata/named.conf")
+	cfg, err := NewParser().ParseFile("testdata/named.conf")
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -92,40 +94,606 @@ func TestGetViewKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	key, err := cfg.GetViewKey("trusted")
+	key, err := cfg.GetZoneKey("trusted", "example.com")
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	require.Equal(t, "trusted-key", key.Name)
 	algorithm, secret, err := key.GetAlgorithmSecret()
 	require.NoError(t, err)
-	require.Equal(t, "hmac-sha256", algorithm)
-	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", secret)
+	require.NotNil(t, algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
 
-	key, err = cfg.GetViewKey("guest")
+	key, err = cfg.GetZoneKey("guest", "example.com")
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	require.Equal(t, "guest-key", key.Name)
 	algorithm, secret, err = key.GetAlgorithmSecret()
 	require.NoError(t, err)
-	require.Equal(t, "hmac-sha256", algorithm)
-	require.Equal(t, "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=", secret)
+	require.NotNil(t, algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.Equal(t, "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=", *secret)
 
-	key, err = cfg.GetViewKey("non-existent")
+	key, err = cfg.GetZoneKey("non-existent", "example.com")
 	require.NoError(t, err)
 	require.Nil(t, key)
 }
 
-// Tests that IsMatchExpected returns true when the element does not
-// contain negation, false otherwise.
-func TestIsMatchExpected(t *testing.T) {
-	element := AddressMatchListElement{
-		Negation:  false,
-		IPAddress: "192.168.1.1",
-	}
-	require.True(t, element.IsMatchExpected())
+// Test that that IPv4 listener address and port is used when the
+// allow-transfer clause matches.
+func TestGetAxfrCredentialsForViewListenOnIPv4(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 853 { key trusted-key; };
+			listen-on port 853 { 192.0.2.1; 127.0.0.1; };
+			listen-on port 54 { 192.0.2.1; 127.0.0.1; };
+			listen-on-v6 port 54 { 2001:db8:1::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
 
-	element.Negation = true
-	require.False(t, element.IsMatchExpected())
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	// Localhost is preferred. The port should be 853 as it matches both
+	// the listener port and the allow-transfer port.
+	require.Equal(t, "127.0.0.1:853", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the local loopback listener address is preferred even if the first
+// listen-on clause contains a different address.
+func TestGetAxfrCredentialsForViewListenOnMultipleClauses(t *testing.T) {
+	config := `
+		options {
+			allow-transfer { key trusted-key; };
+			listen-on { 192.0.2.1; };
+			listen-on-v6 { 2001:db8:1::1; };
+			listen-on port 53 { 127.0.0.1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials("trusted", "example.com")
+	require.NoError(t, err)
+	// The local loopback addresss from the second clause is preferred.
+	require.Equal(t, "127.0.0.1:53", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the IPv6 local loopback address is preferred over non-loopback
+// IPv4 addresses.
+func TestGetAxfrCredentialsForViewListenOnIPv6(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 54 { key trusted-key; };
+			listen-on port 853 { 192.0.2.1; };
+			listen-on port 54 { 192.0.2.1; };
+			listen-on-v6 port 54 { 2001:db8:1::1; ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "[::1]:54", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the address is picked that matches the port specified in the
+// allow-transfer clause.
+func TestGetAxfrCredentialsForViewListenOnAllowTransferPreferredPort(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 853 { key trusted-key; };
+			listen-on port 54 { 127.0.0.1; };
+			listen-on-v6 port 853 { 2001:db8:1::1; ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	require.NoError(t, err)
+	// If the port was not specified in the allow-transfer clause, the IPv4
+	// loopback address would have been selected. However, since the port is
+	// specified, we try to match it with the address listening on that port.
+	require.Equal(t, "[::1]:853", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the local loopback address is picked when the allow-transfer clause
+// is set to any and the listen-on clause is not specified.
+func TestGetAxfrCredentialsForViewListenOnAllowTransferAny(t *testing.T) {
+	config := `
+		options {
+			allow-transfer { any; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "127.0.0.1:53", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that IPv6 local loopback address is picked when the allow-transfer clause
+// is set to any and the listen-on-v6 clause contains the local loopback address.
+func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverride(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 854 { any; };
+			listen-on port 54 { 127.0.0.1; };
+			listen-on-v6 port 853 { 2001:db8:1::1; ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+			zone "example.com" {
+				allow-transfer port 853 { any; };
+			};
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "[::1]:853", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the errors is returned when the allow-transfer port does not match the
+// default listen-on port.
+func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideNoListener(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 854 { any; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+			zone "example.com" {
+				allow-transfer port 853 { any; };
+			};
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	require.ErrorContains(t, err, "allow-transfer port 853 does not match any listen-on setting")
+	require.Nil(t, address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that the error is returned when the allow-transfer port does not match the
+// listen-on port.
+func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideListenerMismatch(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 854 { any; };
+			listen-on port 54 { 127.0.0.1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+			zone "example.com" {
+				allow-transfer port 853 { any; };
+			};
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	require.ErrorContains(t, err, "allow-transfer port 853 does not match any listen-on setting")
+	require.Nil(t, address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that the error is returned when the allow-transfer is disabled.
+func TestGetAxfrCredentialsForViewNoAllowTransfer(t *testing.T) {
+	config := `
+		options {
+			listen-on port 54 { 192.0.2.1; 127.0.0.1; };
+			listen-on-v6 port 54 { 2001:db8:1::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			match-clients { key trusted-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	require.ErrorContains(t, err, "allow-transfer is disabled")
+	require.Nil(t, address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that the allow-transfer option is used to identify the correct key
+// for the zone transfer when match-clients is not specified.
+func TestGetAxfrCredentialsForView(t *testing.T) {
+	config := `
+		options {
+			listen-on port 54 { 192.0.2.2; };
+			listen-on-v6 port 54 { ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+
+		key "guest-key" {
+			algorithm hmac-sha256;
+			secret "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=";
+		};
+
+		view "trusted" {
+			allow-transfer port 54 transport tls { key trusted-key; };
+		};
+
+		view "guest" {
+			allow-transfer transport "tls" { key guest-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials("trusted", "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "[::1]:54", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that that IPv4 listener address and port is used when the
+// allow-transfer clause matches.
+func TestGetAxfrCredentialsForDefaultViewListenOnIPv4(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 853 { key trusted-key; };
+			listen-on port 853 { 192.0.2.1; 127.0.0.1; };
+			listen-on port 54 { 192.0.2.1; 127.0.0.1; };
+			listen-on-v6 port 54 { 2001:db8:1::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	// Localhost is preferred. The port should be 853 as it matches both
+	// the listener port and the allow-transfer port.
+	require.Equal(t, "127.0.0.1:853", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the local loopback listener address is preferred even if the first
+// listen-on clause contains a different address.
+func TestGetAxfrCredentialsForDefaultViewListenOnMultipleClauses(t *testing.T) {
+	config := `
+		options {
+			allow-transfer { key trusted-key; };
+			listen-on { 192.0.2.1; };
+			listen-on-v6 { 2001:db8:1::1; };
+			listen-on port 53 { 127.0.0.1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	// The local loopback addresss from the second clause is preferred.
+	require.Equal(t, "127.0.0.1:53", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the IPv6 local loopback address is preferred over non-loopback
+// IPv4 addresses.
+func TestGetAxfrCredentialsForDefaultViewListenOnIPv6(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 54 { key trusted-key; };
+			listen-on port 853 { 192.0.2.1; };
+			listen-on port 54 { 192.0.2.1; };
+			listen-on-v6 port 54 { 2001:db8:1::1; ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "[::1]:54", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+// Test that the address is picked that matches the port specified in the
+// allow-transfer clause.
+func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferPreferredPort(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 853 { key trusted-key; };
+			listen-on port 54 { 127.0.0.1; };
+			listen-on-v6 port 853 { 2001:db8:1::1; ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	// If the port was not specified in the allow-transfer clause, the IPv4
+	// loopback address would have been selected. However, since the port is
+	// specified, we try to match it with the address listening on that port.
+	require.Equal(t, "[::1]:853", *address)
+	require.NotNil(t, keyName)
+	require.Equal(t, "trusted-key", *keyName)
+	require.NotNil(t, algorithm)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
+}
+
+func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferAny(t *testing.T) {
+	config := `
+		options {
+			allow-transfer { any; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "127.0.0.1:53", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverride(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 854 { any; };
+			listen-on port 54 { 127.0.0.1; };
+			listen-on-v6 port 853 { 2001:db8:1::1; ::1; };
+		};
+		zone "example.com" {
+			allow-transfer port 853 { any; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "[::1]:853", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideNoListener(t *testing.T) {
+	config := `
+		options {
+			allow-transfer port 854 { any; };
+		};
+		zone "example.com" {
+			allow-transfer port 853 { any; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.ErrorContains(t, err, "allow-transfer port 853 does not match any listen-on setting")
+	require.Nil(t, address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideListenerMismatch(t *testing.T) {
+	config := `
+		zone "example.com" {
+			allow-transfer port 854 { any; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.ErrorContains(t, err, "allow-transfer port 854 does not match any listen-on setting")
+	require.Nil(t, address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+func TestGetAxfrCredentialsForDefaultViewListenOnPermissiveAllowTransferNegatedListener(t *testing.T) {
+	config := `
+		options {
+			listen-on port 53 { !127.0.0.1; 192.0.2.1; };
+		};
+		zone "example.com" {
+			allow-transfer { 192.0.2.1; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "192.0.2.1:53", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+func TestGetAxfrCredentialsForDefaultViewNoAllowTransfer(t *testing.T) {
+	config := `
+		options {
+			listen-on port 54 { 192.0.2.1; 127.0.0.1; };
+			listen-on-v6 port 54 { 2001:db8:1::1; };
+		};
+	`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	require.ErrorContains(t, err, "allow-transfer is disabled")
+	require.Nil(t, address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
 }
 
 // Tests that GetAlgorithmSecret returns parsed algorithm and secret.
@@ -141,8 +709,10 @@ func TestGetAlgorithmSecret(t *testing.T) {
 	}
 	algorithm, secret, err := key.GetAlgorithmSecret()
 	require.NoError(t, err)
-	require.Equal(t, "hmac-sha256", algorithm)
-	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", secret)
+	require.NotNil(t, algorithm)
+	require.NotNil(t, secret)
+	require.Equal(t, "hmac-sha256", *algorithm)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
 }
 
 // Tests that GetAlgorithmSecret emits an error when no algorithm is found in the key.

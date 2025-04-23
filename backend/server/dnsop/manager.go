@@ -2,13 +2,19 @@ package dnsop
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"hash/fnv"
+	"iter"
+	"runtime"
 	"sync"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/miekg/dns"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 var _ Manager = (*managerImpl)(nil)
@@ -22,6 +28,26 @@ type ManagerAlreadyFetchingError struct{}
 // Returns the error as text.
 func (error *ManagerAlreadyFetchingError) Error() string {
 	return "DNS manager is already fetching zones from the agents"
+}
+
+// An error returned upon concurrent attempts to transfer the same zone
+// for the same view and daemon.
+type ManagerRRsAlreadyRequestedError struct {
+	viewName string
+	zoneName string
+}
+
+// Instantiates a new ManagerRRsAlreadyRequestedError.
+func NewManagerRRsAlreadyRequestedError(viewName string, zoneName string) *ManagerRRsAlreadyRequestedError {
+	return &ManagerRRsAlreadyRequestedError{
+		viewName: viewName,
+		zoneName: zoneName,
+	}
+}
+
+// Returns the error as text.
+func (error *ManagerRRsAlreadyRequestedError) Error() string {
+	return fmt.Sprintf("zone transfer for view %s, zone %s has been already requested by another user", error.viewName, error.zoneName)
 }
 
 // This interface must be implemented by the instance owning the Manager.
@@ -58,6 +84,8 @@ type Manager interface {
 	// parameters indicate the number of apps from which the zones are fetched and the
 	// number of apps from which the zones have been fetched already.
 	GetFetchZonesProgress() (bool, int, int)
+	GetZoneRRs(zoneID int64, daemonID int64, viewName string) iter.Seq2[[]dns.RR, error]
+	Shutdown()
 }
 
 // A zones fetching state including the flag whether or not the fetch
@@ -115,6 +143,43 @@ func (state *fetchingState) increaseCompletedAppsCount() {
 	state.completedAppsCount += 1
 }
 
+// A state of requests sent to the agents to fetch RRs.
+type rrsRequestingState struct {
+	pool        *storkutil.PausablePool
+	cancel      context.CancelFunc
+	requestChan chan *rrsRequest
+	requests    map[uint64]bool
+	mutex       sync.Mutex
+}
+
+// A structure holding a request to fetch RRs for a zone.
+type rrsRequest struct {
+	app       *dbmodel.App
+	zoneName  string
+	viewName  string
+	respChan  chan *rrResponse
+	closeOnce sync.Once
+	key       uint64
+}
+
+// Instantiates a new RRs request.
+func newRRsRequest(key uint64, app *dbmodel.App, zoneName string, viewName string) *rrsRequest {
+	return &rrsRequest{
+		app:       app,
+		zoneName:  zoneName,
+		viewName:  viewName,
+		respChan:  make(chan *rrResponse),
+		closeOnce: sync.Once{},
+		key:       key,
+	}
+}
+
+// A structure encapsulating a set of RRs returned by the agent or an error.
+type rrResponse struct {
+	rrs []dns.RR
+	err error
+}
+
 // DNS Manager implementation. The Manager is responsible for coordinating all
 // operations pertaining to DNS in Stork server.
 type managerImpl struct {
@@ -124,6 +189,8 @@ type managerImpl struct {
 	agents agentcomm.ConnectedAgents
 	// A state of fetching zones from the DNS servers by the manager.
 	fetchingState *fetchingState
+	// A state of RRs requests.
+	rrsReqsState *rrsRequestingState
 }
 
 // A structure returned over the channel when Manager completes asynchronous task.
@@ -134,12 +201,22 @@ type ManagerDoneNotify struct {
 }
 
 // Instantiates DNS Manager.
-func NewManager(owner ManagerAccessors) Manager {
-	return &managerImpl{
+func NewManager(owner ManagerAccessors) (Manager, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	impl := &managerImpl{
 		db:            owner.GetDB(),
 		agents:        owner.GetConnectedAgents(),
 		fetchingState: &fetchingState{},
+		rrsReqsState: &rrsRequestingState{
+			requestChan: make(chan *rrsRequest),
+			requests:    make(map[uint64]bool),
+			cancel:      cancel,
+		},
 	}
+	if err := impl.startRRsRequestWorkers(ctx); err != nil {
+		return nil, err
+	}
+	return impl, nil
 }
 
 // Contacts all agents with DNS servers and fetches zones from these servers.
@@ -340,6 +417,151 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 // Checks if the DNS Manager is currently fetching the zones.
 func (manager *managerImpl) GetFetchZonesProgress() (bool, int, int) {
 	return manager.fetchingState.getFetchZonesProgress()
+}
+
+// Requests RRs for a zone from the agent's zone inventory and returns them
+// over the response channel.
+func (manager *managerImpl) runRRsRequest(request *rrsRequest) {
+	defer func() {
+		close(request.respChan)
+		manager.rrsReqsState.mutex.Lock()
+		defer manager.rrsReqsState.mutex.Unlock()
+		delete(manager.rrsReqsState.requests, request.key)
+	}()
+	for rr, err := range manager.agents.ReceiveZoneRRs(context.Background(), request.app, request.zoneName, request.viewName) {
+		if err != nil {
+			request.respChan <- &rrResponse{nil, err}
+			return
+		}
+		request.respChan <- &rrResponse{rr, nil}
+	}
+}
+
+// Requests RRs for a zone from the agent's zone inventory and returns them
+// over the response channel. The specified key should uniquely identify a
+// zone, view and daemon for which the RRs are requested. If there is an
+// ongoing request for the same key, the function returns an error.
+func (manager *managerImpl) requestZoneRRs(key uint64, app *dbmodel.App, zoneName string, viewName string) (chan *rrResponse, error) {
+	// Try to mark the request as ongoing. If the request is already present
+	// under the same key, return an error.
+	manager.rrsReqsState.mutex.Lock()
+	if _, ok := manager.rrsReqsState.requests[key]; ok {
+		manager.rrsReqsState.mutex.Unlock()
+		return nil, NewManagerRRsAlreadyRequestedError(viewName, zoneName)
+	}
+	manager.rrsReqsState.requests[key] = true
+	manager.rrsReqsState.mutex.Unlock()
+
+	// Create a new request and send it to the channel.
+	request := newRRsRequest(key, app, zoneName, viewName)
+	manager.rrsReqsState.requestChan <- request
+	// Return the response channel, so the caller can receive the RRs.
+	return request.respChan, nil
+}
+
+// Starts a pool of workers that fetch RRs for the requested zones from the
+// agents' zone inventories.
+func (manager *managerImpl) startRRsRequestWorkers(ctx context.Context) error {
+	pool, err := storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2)
+	if err != nil {
+		// This is highly unlikely. It returns an error when the pool size is 0
+		// or negative. It may also return an error when the expiry duration is
+		// invalid.
+		return errors.Wrap(err, "failed to create worker pool for fetching zone RRs")
+	}
+	manager.rrsReqsState.pool = pool
+	go func(ctx context.Context) {
+		defer func() {
+			// When the worker pool is stopped, we need to close the request channel.
+			close(manager.rrsReqsState.requestChan)
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case request, ok := <-manager.rrsReqsState.requestChan:
+				if !ok {
+					return
+				}
+				err := pool.Submit(func() {
+					manager.runRRsRequest(request)
+				})
+				if err != nil {
+					log.WithError(err).Error("Failed to submit RRs request to the worker pool")
+					request.respChan <- &rrResponse{nil, err}
+				}
+			}
+		}
+	}(ctx)
+	return nil
+}
+
+// Stops the worker pool for fetching RRs.
+func (manager *managerImpl) stopRRsRequestWorkers() {
+	manager.rrsReqsState.pool.Stop()
+	manager.rrsReqsState.cancel()
+}
+
+// Shuts down the DNS manager by stopping background tasks.
+func (manager *managerImpl) Shutdown() {
+	log.Info("Shutting down DNS Manager")
+	manager.stopRRsRequestWorkers()
+}
+
+// Returns zone contents (RRs) for a specified view, zone and daemon.
+func (manager *managerImpl) GetZoneRRs(zoneID int64, daemonID int64, viewName string) iter.Seq2[[]dns.RR, error] {
+	return func(yield func([]dns.RR, error) bool) {
+		// We need an app associated with the daemon.
+		daemon, err := dbmodel.GetDaemonByID(manager.db, daemonID)
+		if err != nil {
+			// This is unexpected and we can't proceed because we
+			// don't have the app instance.
+			_ = yield(nil, err)
+			return
+		}
+		if daemon == nil {
+			// This is also unexpected.
+			_ = yield(nil, errors.Errorf("daemon with the ID of %d not found", daemonID))
+			return
+		}
+		app := daemon.App
+
+		// We need a zone name, so let's get it from the database.
+		zone, err := dbmodel.GetZoneByID(manager.db, zoneID)
+		if err != nil {
+			// Again, it should be rare, unless someone used a link to a non-existing
+			// zone or tempered with the ID in the URL.
+			_ = yield(nil, err)
+			return
+		}
+		if zone == nil {
+			// This is also unexpected.
+			_ = yield(nil, errors.Errorf("zone with the ID of %d not found", zoneID))
+			return
+		}
+		// To avoid sending multiple requests for the same zone, we should check
+		// if any requests are already in progress. The FNV key is unique for the
+		// daemon, zone and view.
+		h := fnv.New64a()
+		h.Write([]byte(fmt.Sprintf("%d:%d:%s", daemonID, zoneID, viewName)))
+		key := h.Sum64()
+		ch, err := manager.requestZoneRRs(key, app, zone.Name, viewName)
+		if err != nil {
+			// The zone inventory is most likely busy.
+			_ = yield(nil, err)
+			return
+		}
+		// Collect the RRs and return them to the caller.
+		for r := range ch {
+			if r.err != nil {
+				_ = yield(nil, r.err)
+				return
+			}
+			if !yield(r.rrs, nil) {
+				return
+			}
+		}
+	}
 }
 
 // Convenience function storing a value in a map with mutex protection.

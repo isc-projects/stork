@@ -90,3 +90,33 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /daemons/{daemonId}/{viewName}/zones/{zoneId}/rrs:
+    get:
+      summary: Get the RRs for the zone.
+      description: >-
+        Get the RRs for the zone.
+      operationId: getZoneRRs
+      tags:
+        - DNS
+      parameters:
+        - name: daemonId
+          in: path
+          type: integer
+          required: true
+        - name: viewName
+          in: path
+          type: string
+          required: true
+        - name: zoneId
+          in: path
+          type: integer
+          required: true
+      responses:
+        200:
+          description: Zone RRs successfully returned.
+          schema:
+            $ref: "#/definitions/ZoneRRs"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

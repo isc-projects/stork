@@ -644,6 +644,60 @@ func TestGetZonesWithTextFilter(t *testing.T) {
 	})
 }
 
+// Test getting a zone by its ID.
+func TestGetZoneByID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeBind9,
+		Name:      "app",
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	addedDaemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, addedDaemons, 1)
+
+	zone := &Zone{
+		Name: "example.org",
+		LocalZones: []*LocalZone{
+			{
+				DaemonID: addedDaemons[0].ID,
+				View:     "_default",
+				Class:    "IN",
+				Serial:   123456,
+				Type:     "primary",
+				LoadedAt: time.Now().UTC(),
+			},
+		},
+	}
+	err = AddZones(db, zone)
+	require.NoError(t, err)
+
+	// Get zone by valid ID.
+	zone, err = GetZoneByID(db, zone.ID)
+	require.NoError(t, err)
+	require.NotNil(t, zone)
+	require.Equal(t, "example.org", zone.Name)
+
+	// Get zone by invalid ID.
+	zone, err = GetZoneByID(db, zone.ID+1)
+	require.NoError(t, err)
+	require.Nil(t, zone)
+}
+
 // Test deleting the zones that have no associations with the daemons.
 func TestDeleteOrphanedZones(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

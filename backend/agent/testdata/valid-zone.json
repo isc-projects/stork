@@ -1,0 +1,11 @@
+[
+    "bind9.example.com.\t172800\tIN\tSOA\tns1.bind9.example.com. admin.bind9.example.com. 2024031501 43200 900 1814400 7200",
+    "bind9.example.com.\t172800\tIN\tNS\tns1.bind9.example.com.",
+    "bind9.example.com.\t172800\tIN\tNS\tns2.bind9.example.com.",
+    "bind9.example.com.\t172800\tIN\tMX\t10 mail.bind9.example.com.",
+    "mail.bind9.example.com.\t172800\tIN\tA\t11.0.0.4",
+    "ns1.bind9.example.com.\t172800\tIN\tA\t11.0.0.2",
+    "ns2.bind9.example.com.\t172800\tIN\tA\t11.0.0.3",
+    "www.bind9.example.com.\t172800\tIN\tA\t11.0.0.5",
+    "bind9.example.com.\t172800\tIN\tSOA\tns1.bind9.example.com. admin.bind9.example.com. 2024031501 43200 900 1814400 7200"
+]

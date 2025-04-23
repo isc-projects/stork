@@ -81,6 +81,24 @@
         items:
           $ref: '#/definitions/LocalZone'
 
+  # ZoneRR
+  ZoneRR:
+    type: object
+    properties:
+      contents:
+        type: string
+
+  # ZoneRRs
+  ZoneRRs:
+    type: object
+    properties:
+      rrs:
+        type: array
+        items:
+          $ref: '#/definitions/ZoneRR'
+      total:
+        type: integer
+
   # Zones
   Zones:
     type: object

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -14,11 +15,26 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	"gopkg.in/h2non/gock.v1"
 
+	bind9config "isc.org/stork/appcfg/bind9"
 	"isc.org/stork/testutil"
 )
 
 //go:generate mockgen -source process.go -package=agent -destination=processmock_test.go isc.org/agent Process ProcessManager
 //go:generate mockgen -source monitor.go -package=agent -destination=monitormock_test.go isc.org/agent App
+
+const defaultBind9Config = `
+	key "foo" {
+		algorithm "hmac-sha256";
+		secret "abcd";
+	};
+	controls {
+		inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
+		inet * port 5454 allow { localhost; 1.2.3.4; };
+	};
+	statistics-channels {
+		inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
+		inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
+	};`
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
@@ -212,7 +228,11 @@ func TestDetectApps(t *testing.T) {
 		keaProcess, bind9Process, unknownProcess,
 	}, nil)
 
-	am := &appMonitor{processManager: processManager, commander: executor}
+	parser := NewMockBind9FileParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	})
+	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
@@ -275,8 +295,12 @@ func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
 		bind9Process,
 	}, nil)
 
+	parser := NewMockBind9FileParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	})
 	executor := newTestCommandExecutorDefault()
-	am := &appMonitor{processManager: processManager, commander: executor}
+	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
@@ -314,7 +338,13 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 	}, nil)
 
 	executor := newTestCommandExecutorDefault()
-	am := &appMonitor{processManager: processManager, commander: executor}
+
+	parser := NewMockBind9FileParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	})
+
+	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
@@ -393,26 +423,22 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 // Bind 9 response with statistic channel details.
 func newTestCommandExecutorDefault() *testCommandExecutor {
 	return newTestCommandExecutor().
-		addCheckConfOutput("/etc/named.conf", `key "foo" {
-			algorithm "hmac-sha256";
-			secret "abcd";
-		 };
-		 controls {
-			inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
-			inet * port 5454 allow { localhost; 1.2.3.4; };
-		};
-		statistics-channels {
-			inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
-			inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
-		};`).
+		addCheckConfOutput("/etc/named.conf", defaultBind9Config).
 		setConfigPathInNamedOutput("/etc/named.conf")
 }
 
 // Check BIND 9 app detection when its conf file is absolute path.
 func TestDetectBind9AppAbsPath(t *testing.T) {
 	// check BIND 9 app detection
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	parser := NewMockBind9FileParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	})
 	executor := newTestCommandExecutorDefault()
-	app := detectBind9App([]string{"", "/dir", "-c /etc/named.conf"}, "", executor, "")
+	app := detectBind9App([]string{"", "/dir", "-c /etc/named.conf"}, "", executor, "", parser)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 2)
@@ -430,8 +456,15 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 
 // Check BIND 9 app detection when its conf file is relative to CWD of its process.
 func TestDetectBind9AppRelativePath(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	parser := NewMockBind9FileParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
+	})
 	executor := newTestCommandExecutorDefault()
-	app := detectBind9App([]string{"", "/dir", "-c named.conf"}, "/etc", executor, "")
+	app := detectBind9App([]string{"", "/dir", "-c named.conf"}, "/etc", executor, "", parser)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }
@@ -911,6 +944,9 @@ func TestPopulateZoneInventories(t *testing.T) {
 	bind9StatsClient, off := setGetViewsResponseOK(t, response)
 	defer off()
 
+	config := parseDefaultBind9Config(t)
+	require.NotNil(t, config)
+
 	monitor := NewAppMonitor()
 	appMonitor, ok := monitor.(*appMonitor)
 	require.True(t, ok)
@@ -921,14 +957,16 @@ func TestPopulateZoneInventories(t *testing.T) {
 		},
 		zoneInventory: nil,
 	}
-	zi1 := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	zi1, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
 	app1 := &Bind9App{
 		BaseApp: BaseApp{
 			Type: AppTypeBind9,
 		},
 		zoneInventory: zi1,
 	}
-	zi2 := newZoneInventory(newZoneInventoryStorageMemory(), bind9StatsClient, "localhost", 5380)
+	zi2, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	require.NoError(t, err)
 	app2 := &Bind9App{
 		BaseApp: BaseApp{
 			Type: AppTypeBind9,

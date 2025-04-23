@@ -612,7 +612,7 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 		case errors.As(err, &busyError):
 			st := status.New(codes.Unavailable, err.Error())
 			ds, err := st.WithDetails(&errdetails.ErrorInfo{
-				Reason: "ZONE_INVENTORY_BUSY_ERROR",
+				Reason: "ZONE_INVENTORY_BUSY",
 			})
 			if err != nil {
 				return st.Err()
@@ -640,6 +640,89 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 				st := status.New(codes.Aborted, err.Error())
 				return st.Err()
 			}
+		}
+	}
+	return nil
+}
+
+// Generate a streaming response returning DNS zone RRs from a specified agent.
+func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grpc.ServerStreamingServer[agentapi.ReceiveZoneRRsRsp]) error {
+	appI := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, req.ControlAddress, req.ControlPort)
+	var inventory *zoneInventory
+	switch app := appI.(type) {
+	case *Bind9App:
+		inventory = app.zoneInventory
+	default:
+		// This is rather an exceptional case, so we don't necessarily need to
+		// include the detailed error message.
+		return status.Error(codes.InvalidArgument, "attempted to receive DNS zone RRs from an unsupported app")
+	}
+	if inventory == nil {
+		// This is also an exceptional case. All DNS servers should have the
+		// zone inventory initialized.
+		return status.New(codes.FailedPrecondition, "attempted to receive DNS zone RRs from an app for which zone inventory was not instantiated").Err()
+	}
+	respChan, err := inventory.requestAxfr(req.ZoneName, req.ViewName)
+	if err != nil {
+		// This error most likely indicates that the zone inventory was unable to
+		// find credentials in the DNS server configuration. This may be due to a
+		// an issue with interpretation of the configuration file or lack of it.
+		return status.Error(codes.Internal, err.Error())
+	}
+	for resp := range respChan {
+		if resp.err != nil {
+			var (
+				notInitedError *zoneInventoryNotInitedError
+				busyError      *zoneInventoryAxfrBusyError
+			)
+			// Some of the errors require special handling so the client can
+			// interpret them and take specific actions (e.g., try later).
+			switch {
+			case errors.As(resp.err, &notInitedError):
+				// The zone inventory was not initialized, so it is unaware of the
+				// configured zones. It may require explicitly initializing the
+				// inventory or restarting the agent.
+				st := status.New(codes.FailedPrecondition, resp.err.Error())
+				ds, err := st.WithDetails(&errdetails.ErrorInfo{
+					Reason: "ZONE_INVENTORY_NOT_INITED",
+				})
+				if err != nil {
+					return st.Err()
+				}
+				return ds.Err()
+			case errors.As(resp.err, &busyError):
+				// The zone inventory is busy populating or loading the zones.
+				// The client may retry later when this work is finished.
+				st := status.New(codes.Unavailable, resp.err.Error())
+				ds, err := st.WithDetails(&errdetails.ErrorInfo{
+					Reason: "ZONE_INVENTORY_BUSY",
+				})
+				if err != nil {
+					return st.Err()
+				}
+				return ds.Err()
+			default:
+				// There was some other error. Most likely something has gone wrong
+				// during the zone transfer. Maybe the connection was lost with the
+				// DNS server.
+				return status.Error(codes.Aborted, resp.err.Error())
+			}
+		}
+		if resp.envelope.Error != nil {
+			// An error occurred during the zone transfer - maybe connection was lost.
+			return status.Error(codes.Aborted, resp.envelope.Error.Error())
+		}
+		var rrs []string
+		for _, rr := range resp.envelope.RR {
+			rrs = append(rrs, rr.String())
+		}
+		// Everything looks good, so send the response.
+		rsp := &agentapi.ReceiveZoneRRsRsp{
+			Rrs: rrs,
+		}
+		err = server.Send(rsp)
+		if err != nil {
+			return status.Error(codes.Aborted, err.Error())
 		}
 	}
 	return nil

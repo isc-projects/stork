@@ -264,6 +264,19 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 	return zones, count, nil
 }
 
+// Retrieves a zone by its ID.
+func GetZoneByID(db pg.DBI, id int64) (*Zone, error) {
+	var zone Zone
+	err := db.Model(&zone).Relation("LocalZones").Where("id = ?", id).Select()
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "failed to select zone with the ID of %d", id)
+	}
+	return &zone, nil
+}
+
 // Deletes zones which are not associated with any daemons. Returns deleted zone
 // count and an error.
 func DeleteOrphanedZones(dbi dbops.DBI) (int64, error) {

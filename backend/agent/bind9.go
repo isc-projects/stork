@@ -12,10 +12,20 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	bind9config "isc.org/stork/appcfg/bind9"
 	storkutil "isc.org/stork/util"
 )
 
-var _ App = (*Bind9App)(nil)
+var (
+	_ App             = (*Bind9App)(nil)
+	_ bind9FileParser = (*bind9config.Parser)(nil)
+)
+
+// An interface for parsing BIND 9 configuration files.
+// It is mocked in the tests.
+type bind9FileParser interface {
+	ParseFile(path string) (*bind9config.Config, error)
+}
 
 // Represents the BIND 9 process metadata.
 type Bind9Daemon struct {
@@ -491,7 +501,7 @@ func parseNamedDefaultPath(output []byte) string {
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
 // error occurs.
-func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor, explicitConfigPath string) *Bind9App {
+func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) *Bind9App {
 	if len(match) < 3 {
 		log.Warnf("Problem with parsing BIND 9 cmdline: %s", match[0])
 		return nil
@@ -618,6 +628,12 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 	}
 	cfgText := string(out)
 
+	bind9Config, err := parser.ParseFile(prefixedBind9ConfPath)
+	if err != nil {
+		log.WithError(err).Warnf("Cannot parse BIND 9 config file %s", prefixedBind9ConfPath)
+		return nil
+	}
+
 	// look for control address in config
 	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
 	if ctrlPort == 0 || len(ctrlAddress) == 0 {
@@ -652,7 +668,11 @@ func detectBind9App(match []string, cwd string, executor storkutil.CommandExecut
 		// For larger deployments, it may take several minutes to retrieve the
 		// zones from the BIND9 server.
 		client.SetRequestTimeout(time.Minute * 3)
-		inventory = newZoneInventory(newZoneInventoryStorageMemory(), client, address, port)
+		inventory, err = newZoneInventory(newZoneInventoryStorageMemory(), bind9Config, client, address, port)
+		if err != nil {
+			log.Warnf("Cannot create zone inventory: %s", err)
+			return nil
+		}
 	} else {
 		log.Warn("BIND 9 `statistics-channels` clause unparsable or not found. Neither statistics export nor zone viewer will work.")
 		log.Warn("To fix this problem, please configure `statistics-channels` in named.conf and ensure Stork-agent is able to access it.")
