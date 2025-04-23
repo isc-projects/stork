@@ -12,6 +12,7 @@ import { catchError, filter } from 'rxjs/operators'
 import { MachinesTableComponent } from '../machines-table/machines-table.component'
 import { Menu } from 'primeng/menu'
 import { SelectButtonChangeEvent } from 'primeng/selectbutton'
+import { AuthService } from '../auth.service'
 
 /**
  * This component implements a page which displays authorized
@@ -123,6 +124,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private _unauthorizedMachinesCount = 0
 
     /**
+     * Boolean flag stating whether user has priovileges to edit machine authorization state.
+     */
+    private _canEditMachineAuthorization: boolean = false
+
+    /**
+     * Boolean flag stating whether user has priovileges to delete machine.
+     */
+    private _canDeleteMachine: boolean = false
+
+    /**
      * Getter of the _unauthorizedMachinesCount property.
      */
     get unauthorizedMachinesCount(): number {
@@ -220,6 +231,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      * @param settingsService Settings service used to retrieve global settings.
      * @param confirmationService Confirmation used to handle confirmation dialogs.
      * @param cd Change detection used to manually detect changes to avoid error NG0100: ExpressionChangedAfterItHasBeenCheckedError
+     * @param authService authentication and authorization service for customizing the component based on user privileges
      */
     constructor(
         private route: ActivatedRoute,
@@ -229,7 +241,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         private serverData: ServerDataService,
         private settingsService: SettingsService,
         private confirmationService: ConfirmationService,
-        private cd: ChangeDetectorRef
+        private cd: ChangeDetectorRef,
+        private authService: AuthService
     ) {}
 
     /**
@@ -383,6 +396,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     life: 10000,
                 })
             })
+
+        this._canEditMachineAuthorization = this.authService.hasPrivilege('edit-machine-authorization')
+        this._canDeleteMachine = this.authService.hasPrivilege('delete-machine')
     }
 
     /**
@@ -539,10 +555,16 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.authorizeMachine(machine)
             }
 
+            // disable the action if user has no required privileges
+            this.machineMenuItems[0].disabled = !this._canEditMachineAuthorization
+
             // connect method to delete machine
             this.machineMenuItems[1].command = () => {
                 this.deleteMachine(machine.id)
             }
+
+            // disable the action if user has no required privileges
+            this.machineMenuItems[1].disabled = !this._canDeleteMachine
         } else {
             this.machineMenuItems = this.machineMenuItemsAuthorized
             // connect method to refresh machine state
@@ -564,6 +586,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             this.machineMenuItems[2].command = () => {
                 this.deleteMachine(machine.id)
             }
+
+            // disable the action if user has no required privileges
+            this.machineMenuItems[2].disabled = !this._canDeleteMachine
         }
 
         this.machineMenu.toggle(event)

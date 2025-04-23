@@ -4,15 +4,17 @@
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
-    <p-button
-        *ngIf="unauthorizedMachinesDisplayed()"
-        [disabled]="selectedMachines?.length === 0"
-        label="Authorize selected"
-        icon="pi pi-lock"
-        styleClass="block p-button-primary no-underline"
-        (onClick)="onAuthorizeSelectedMachinesClicked(selectedMachines)"
-        id="authorize-selected-button"
-    ></p-button>
+    <app-managed-access key="edit-machine-authorization" (hasAccessChanged)="canEditMachineAuthorization = $event">
+        <p-button
+            *ngIf="unauthorizedMachinesDisplayed()"
+            [disabled]="selectedMachines?.length === 0"
+            label="Authorize selected"
+            icon="pi pi-lock"
+            styleClass="block p-button-primary no-underline"
+            (onClick)="onAuthorizeSelectedMachinesClicked(selectedMachines)"
+            id="authorize-selected-button"
+        ></p-button>
+    </app-managed-access>
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"
@@ -132,7 +134,7 @@
     </ng-template>
     <ng-template pTemplate="header">
         <tr>
-            <th *ngIf="unauthorizedMachinesDisplayed()" class="w-4rem">
+            <th *ngIf="canEditMachineAuthorization && unauthorizedMachinesDisplayed()" class="w-4rem">
                 <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
             </th>
             <th class="w-8rem">Hostname</th>
@@ -195,7 +197,7 @@
     </ng-template>
     <ng-template pTemplate="body" let-m>
         <tr>
-            <td *ngIf="unauthorizedMachinesDisplayed()">
+            <td *ngIf="canEditMachineAuthorization && unauthorizedMachinesDisplayed()">
                 <p-tableCheckbox [value]="m" [disabled]="m.authorized"></p-tableCheckbox>
             </td>
             <td>

@@ -12,6 +12,7 @@ import { App } from '../backend'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, RouterModule } from '@angular/router'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
@@ -20,7 +21,7 @@ describe('AppOverviewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [AppOverviewComponent, AccessPointKeyComponent],
+            declarations: [AppOverviewComponent, AccessPointKeyComponent, ManagedAccessComponent],
             imports: [FormsModule, NoopAnimationsModule, RouterModule, PanelModule, ButtonModule],
             providers: [
                 MessageService,
@@ -28,6 +29,7 @@ describe('AppOverviewComponent', () => {
                     provide: AuthService,
                     useValue: {
                         superAdmin: () => true,
+                        hasPrivilege: () => true,
                     },
                 },
                 provideHttpClient(withInterceptorsFromDi()),
@@ -120,18 +122,34 @@ describe('AppOverviewComponent', () => {
     })
 
     it('should hide keys for non-super-admin users', () => {
-        component.app = { type: 'bind9' }
+        spyOn(authService, 'hasPrivilege').and.returnValue(false)
         spyOn(authService, 'superAdmin').and.returnValue(false)
-        expect(component.canShowKeys).toBeFalse()
+        fixture.componentRef.setInput('app', {
+            type: 'bind9',
+            machine: { id: 1, address: '192.0.2.1:8080' },
+            accessPoints: [{ address: '192.0.2.1', port: 8080, useSecureProtocol: true, type: 'control' }],
+            id: 1,
+        })
+        fixture.detectChanges()
+        expect(authService.hasPrivilege).toHaveBeenCalled()
+        expect(fixture.debugElement.query(By.directive(AccessPointKeyComponent))).toBeFalsy()
     })
 
     it('should hide keys for non-BIND9 application', () => {
         component.app = { type: 'kea' }
-        expect(component.canShowKeys).toBeFalse()
+        expect(fixture.debugElement.query(By.directive(AccessPointKeyComponent))).toBeFalsy()
     })
 
     it('should show keys for BIND9 application and super-admin user', () => {
-        component.app = { type: 'bind9' }
-        expect(component.canShowKeys).toBeTrue()
+        spyOn(authService, 'hasPrivilege').and.returnValue(true)
+        fixture.componentRef.setInput('app', {
+            type: 'bind9',
+            machine: { id: 1, address: '192.0.2.1:8080' },
+            accessPoints: [{ address: '192.0.2.1', port: 8080, useSecureProtocol: true, type: 'control' }],
+            id: 1,
+        })
+        fixture.detectChanges()
+        expect(authService.hasPrivilege).toHaveBeenCalled()
+        expect(fixture.debugElement.query(By.directive(AccessPointKeyComponent))).toBeTruthy()
     })
 })

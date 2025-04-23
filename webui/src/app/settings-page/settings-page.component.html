@@ -119,7 +119,10 @@
             </div>
         </form>
 
-        <app-managed-access key="edit-stork-settings" (hasAccessChanged)="updateHasWritePrivileges($event)">
+        <app-managed-access
+            key="edit-stork-settings"
+            (hasAccessChanged)="$event === true ? settingsForm.enable() : settingsForm.disable()"
+        >
             <button
                 pButton
                 type="button"

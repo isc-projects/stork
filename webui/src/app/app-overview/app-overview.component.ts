@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core'
 import { App } from '../backend'
-import { AuthService } from '../auth.service'
 
 /**
  * A component that displays app overview.
@@ -18,8 +17,6 @@ export class AppOverviewComponent {
      */
     @Input() app: App = null
 
-    constructor(private auth: AuthService) {}
-
     /**
      * Conditionally formats an IP address for display.
      *
@@ -32,14 +29,5 @@ export class AppOverviewComponent {
             return addr
         }
         return `[${addr}]`
-    }
-
-    /**
-     * Indicates if the authentication keys may be presented.
-     * User must have privilege to show sensitive data and the application
-     * must support authentication keys.
-     */
-    get canShowKeys() {
-        return this.app.type === 'bind9' && this.auth.superAdmin()
     }
 }

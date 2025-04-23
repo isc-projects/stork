@@ -10,7 +10,7 @@ import {
     TemplateRef,
 } from '@angular/core'
 import { StorkTemplateDirective } from '../stork-template.directive'
-import { AccessType, AuthService } from '../auth.service'
+import { AccessType, AuthService, PrivilegeKey } from '../auth.service'
 
 @Component({
     selector: 'app-managed-access',
@@ -21,7 +21,7 @@ export class ManagedAccessComponent implements AfterContentInit, OnInit {
     /**
      * Identifies the component for which the access will be checked.
      */
-    @Input({ required: true }) key: string
+    @Input({ required: true }) key: PrivilegeKey
 
     /**
      * Required access type to display the component.
@@ -73,16 +73,7 @@ export class ManagedAccessComponent implements AfterContentInit, OnInit {
     constructor(private authService: AuthService) {}
 
     ngOnInit() {
-        switch (this.accessType) {
-            case 'write':
-                this.hasAccess = this.authService.hasWritePrivilege(this.key)
-                break
-            case 'read':
-                this.hasAccess = this.authService.hasReadPrivilege(this.key)
-                break
-            default:
-                this.hasAccess = this.authService.hasWritePrivilege(this.key)
-        }
+        this.hasAccess = this.authService.hasPrivilege(this.key, this.accessType)
 
         this.hasAccessChanged.emit(this.hasAccess)
     }

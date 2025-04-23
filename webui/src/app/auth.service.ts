@@ -16,6 +16,30 @@ export enum UserGroup {
     ReadOnly,
 }
 
+export type PrivilegeKey =
+    | 'get-machines-server-token'
+    | 'delete-kea-config-hashes'
+    | 'rename-dns-app'
+    | 'update-config-checker'
+    | 'add-host-reservation'
+    | 'edit-host-reservation'
+    | 'delete-host-reservation'
+    | 'rename-kea-app'
+    | 'edit-kea-global-config'
+    | 'edit-stork-settings'
+    | 'add-shared-network'
+    | 'edit-shared-network'
+    | 'delete-shared-network'
+    | 'add-subnet'
+    | 'edit-subnet'
+    | 'delete-subnet'
+    | 'fetch-zones'
+    | 'get-access-point-key'
+    | 'regenerate-machines-server-token'
+    | 'edit-machine-address'
+    | 'edit-machine-authorization'
+    | 'delete-machine'
+
 export type AccessType = 'read' | 'write' | 'noAccess'
 
 @Injectable({
@@ -138,22 +162,48 @@ export class AuthService {
     }
 
     /**
-     * Returns whether current user has write privilege for given component.
-     * @param componentKey
+     * Returns whether current user has given privilege for given component.
+     * @param componentKey component for which the privilege is required
+     * @param accessType access type which is required
      */
-    hasWritePrivilege(componentKey: string): boolean {
-        console.log(
-            'checking whether user',
-            this.currentUserValue.login,
-            'has write privilege to the component',
-            componentKey
-        )
+    hasPrivilege(componentKey: PrivilegeKey, accessType: AccessType = 'write'): boolean {
+        // TODO: This should all be retrieved from backend.
         if (this.superAdmin()) {
             // User that belongs to SuperAdmin group, has all privileges.
             return true
+        } else if (this.isAdmin()) {
+            switch (componentKey) {
+                case 'get-access-point-key':
+                case 'get-machines-server-token':
+                case 'regenerate-machines-server-token':
+                case 'edit-machine-authorization':
+                case 'delete-machine':
+                    return false
+                default:
+                    return true
+            }
+        } else if (this.isInReadOnlyGroup()) {
+            switch (componentKey) {
+                case 'get-machines-server-token':
+                case 'get-access-point-key':
+                    return false
+                default:
+                    return accessType === 'read'
+            }
         }
 
-        // TODO: write privilege matrix for other groups
+        return false
+    }
+
+    /**
+     * Returns whether current user belongs to Admin group.
+     */
+    isAdmin(): boolean {
+        for (const i in this.currentUserValue?.groups ?? []) {
+            if (this.currentUserValue.groups[i] === UserGroup.Admin) {
+                return true
+            }
+        }
 
         return false
     }
@@ -167,29 +217,6 @@ export class AuthService {
                 return true
             }
         }
-
-        return false
-    }
-
-    /**
-     * Returns whether current user has read privilege for given component.
-     * @param componentKey
-     */
-    hasReadPrivilege(componentKey: string): boolean {
-        console.log(
-            'checking whether user',
-            this.currentUserValue.login,
-            'has read privilege to the component',
-            componentKey
-        )
-        if (this.superAdmin()) {
-            // User that belongs to SuperAdmin group, has all write privileges.
-            return true
-        } else if (this.isInReadOnlyGroup()) {
-            return true
-        }
-
-        // TODO: read privilege matrix for other groups
 
         return false
     }
