@@ -234,8 +234,6 @@ func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisti
 			)
 			lastErr = err
 		}
-
-		// RPS worker stats.
 	}
 	return lastErr
 }

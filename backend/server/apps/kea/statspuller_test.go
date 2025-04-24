@@ -99,7 +99,7 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 				}
 			}]`,
 				4096+totalShift, 2400+shift, 3+shift, 0+totalShift, 0+shift,
-				0+shift, 0+shift, 0+shift, 1048+totalShift, 233+shift,
+				0+totalShift, 0+shift, 0+shift, 1048+totalShift, 233+shift,
 				256+totalShift, 60+shift, 0+shift, 1048+totalShift, 15+shift,
 				-1, "9223372036854775807", 0, -2, -3,
 			),
