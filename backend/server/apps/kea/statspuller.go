@@ -182,14 +182,26 @@ func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisti
 		return errors.Errorf("response is empty: %+v", response)
 	}
 
-	responseStats := (response)[0]
+	responseStats := response[0]
 
 	if len(responseStats.Arguments) == 0 {
 		return errors.Errorf("missing statistics")
 	}
 
+	var lastErr error
 	err := statsPuller.storeSubnetStats(responseStats.Arguments, subnetsMap, dbApp, family)
-	return err
+	if err != nil {
+		log.WithError(err).Error("Error handling stat-lease4-get response")
+		lastErr = err
+	}
+
+	err = statsPuller.storeAddressPoolStats(responseStats.Arguments, subnetsMap, dbApp, family)
+	if err != nil {
+		log.WithError(err).Error("Error handling stat-lease4-get response")
+		lastErr = err
+	}
+
+	return lastErr
 }
 
 // Processes statistics from the given command response for subnets belonging to the daemon.
@@ -199,7 +211,7 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.GetAllStatis
 	statisticsPerSubnet := make(map[int64][]keactrl.GetAllStatisticResponseSample)
 	for _, statEntry := range response {
 		subnetID := statEntry.SubnetID
-		if subnetID != 0 && statEntry.PoolID == 0 && statEntry.PrefixPoolID == 0 {
+		if subnetID != 0 && statEntry.AddressPoolID == 0 && statEntry.PrefixPoolID == 0 {
 			statisticsPerSubnet[subnetID] = append(statisticsPerSubnet[subnetID], statEntry)
 		}
 	}
@@ -238,6 +250,128 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.GetAllStatis
 				subnet.LocalSubnetID, dbApp.ID, err.Error(),
 			)
 			lastErr = err
+		}
+	}
+	return lastErr
+}
+
+// Process statistics from the given command response for pools belonging to
+// the daemon.
+func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.GetAllStatisticResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+	var lastErr error
+
+	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.GetAllStatisticResponseSample)
+	for _, statEntry := range response {
+		if statEntry.AddressPoolID == 0 {
+			continue
+		}
+		statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.AddressPoolID] = append(
+			statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.AddressPoolID],
+			statEntry,
+		)
+	}
+
+	for subnetID, statisticsPerPool := range statisticsPerSubnetAndPool {
+		subnet := subnetsMap[localSubnetKey{subnetID, family}]
+		if subnet == nil {
+			lastErr = errors.Errorf(
+				"cannot find LocalSubnet for app: %d, local subnet ID: %d, family: %d",
+				dbApp.ID, subnetID, family,
+			)
+			log.Error(lastErr.Error())
+			continue
+		}
+
+		for poolID, statEntries := range statisticsPerPool {
+			for _, pool := range subnet.AddressPools {
+				if pool.ID != poolID {
+					continue
+				}
+
+				stats := dbmodel.SubnetStats{}
+
+				for _, statEntry := range statEntries {
+					// Store the value as a best fit type to preserve compatibility
+					// with the existing code. Some features expect the IPv4
+					// statistics to be always stored as uint64, while IPv6 can be
+					// uint64 or big int.
+					stats.SetBigCounter(
+						statEntry.Name,
+						storkutil.NewBigCounterFromBigInt(
+							statEntry.Value,
+						),
+					)
+				}
+
+				err := pool.UpdateStats(statsPuller.DB, stats)
+				if err != nil {
+					log.Errorf(
+						"Problem updating Kea stats for address pool ID %d, app ID %d: %s",
+						pool.ID, dbApp.ID, err.Error(),
+					)
+					lastErr = err
+				}
+			}
+		}
+	}
+	return lastErr
+}
+
+func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.GetAllStatisticResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+	var lastErr error
+
+	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.GetAllStatisticResponseSample)
+	for _, statEntry := range response {
+		if statEntry.PrefixPoolID == 0 {
+			continue
+		}
+		statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.PrefixPoolID] = append(
+			statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.PrefixPoolID],
+			statEntry,
+		)
+	}
+
+	for subnetID, statisticsPerPool := range statisticsPerSubnetAndPool {
+		subnet := subnetsMap[localSubnetKey{subnetID, family}]
+		if subnet == nil {
+			lastErr = errors.Errorf(
+				"cannot find LocalSubnet for app: %d, local subnet ID: %d, family: %d",
+				dbApp.ID, subnetID, family,
+			)
+			log.Error(lastErr.Error())
+			continue
+		}
+
+		for poolID, statEntries := range statisticsPerPool {
+			for _, pool := range subnet.PrefixPools {
+				if pool.ID != poolID {
+					continue
+				}
+
+				stats := dbmodel.SubnetStats{}
+
+				for _, statEntry := range statEntries {
+					// Store the value as a best fit type to preserve compatibility
+					// with the existing code. Some features expect the IPv4
+					// statistics to be always stored as uint64, while IPv6 can be
+					// uint64 or big int.
+					stats.SetBigCounter(
+						statEntry.Name,
+						storkutil.NewBigCounterFromBigInt(
+							statEntry.Value,
+						),
+					)
+				}
+
+				err := pool.UpdateStats(statsPuller.DB, stats)
+				if err != nil {
+					log.Errorf(
+						"Problem updating Kea stats for address pool ID %d, app ID %d: %s",
+						pool.ID, dbApp.ID, err.Error(),
+					)
+					lastErr = err
+				}
+			}
 		}
 	}
 	return lastErr
@@ -339,19 +473,22 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 
 		err = statsPuller.storeDaemonStats(response, subnetsMap, dbApp, family)
 		if err != nil {
-			log.WithError(err).Error("Error handling stat-lease4-get response")
+			log.WithError(err).Error("Error handling subnet statistics  in " +
+				"the statistic-get-all response")
 			lastErr = err
 		}
 
 		err = statsPuller.RpsWorker.Response4Handler(cmdDaemons[idx], response)
 		if err != nil {
-			log.WithError(err).Error("Error handling statistic-get (v4) response")
+			log.WithError(err).Error("Error handling RPS DHCPv4 statistics " +
+				" in the statistic-get-all response")
 			lastErr = err
 		}
 
 		err = statsPuller.RpsWorker.Response6Handler(cmdDaemons[idx], response)
 		if err != nil {
-			log.WithError(err).Error("Error handling statistic-get (v6) response")
+			log.WithError(err).Error("Error handling RPS DHCPv6 statistics " +
+				" in the statistic-get-all response")
 			lastErr = err
 		}
 	}

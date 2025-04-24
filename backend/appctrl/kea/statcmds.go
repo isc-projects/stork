@@ -37,9 +37,9 @@ type GetAllStatisticResponseSample struct {
 	// Subnet ID is used for the subnet statistics.
 	// It is zero for the global statistics.
 	SubnetID int64
-	// Pool ID is used for the pool statistics.
+	// Address pool ID is used for the pool statistics.
 	// It is zero for non-pool statistics.
-	PoolID int64
+	AddressPoolID int64
 	// Prefix pool ID is used for the prefix pool statistics.
 	// It is zero for non-prefix pool statistics.
 	PrefixPoolID int64
@@ -74,7 +74,7 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 	// Unpack the complex structure to simpler form.
 	for statName, statValueOuterList := range obj {
 		var subnetID int64
-		var poolID int64
+		var addressPoolID int64
 		var prefixPoolID int64
 		// Extract the subnet ID and pool ID if present.
 		if strings.HasPrefix(statName, "subnet[") {
@@ -96,7 +96,7 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 				poolIDRaw := matches[1]
 				statName = matches[2]
 
-				poolID, err = strconv.ParseInt(poolIDRaw, 10, 64)
+				addressPoolID, err = strconv.ParseInt(poolIDRaw, 10, 64)
 				if err != nil {
 					log.Errorf("Problem converting poolID: %s", poolIDRaw)
 					continue
@@ -158,11 +158,11 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 		}
 
 		sample := GetAllStatisticResponseSample{
-			Name:         statName,
-			SubnetID:     subnetID,
-			PoolID:       poolID,
-			PrefixPoolID: prefixPoolID,
-			Value:        statValueBigInt,
+			Name:          statName,
+			SubnetID:      subnetID,
+			AddressPoolID: addressPoolID,
+			PrefixPoolID:  prefixPoolID,
+			Value:         statValueBigInt,
 		}
 
 		samples = append(samples, sample)
