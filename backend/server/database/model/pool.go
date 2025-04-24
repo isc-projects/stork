@@ -54,13 +54,6 @@ func (ap *AddressPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccesso
 	return
 }
 
-// Checks equality of the address pool's own data without database-related members
-// and references.
-func (ap *AddressPool) HasEqualData(other *AddressPool) bool {
-	return ap.LowerBound == other.LowerBound &&
-		ap.UpperBound == other.UpperBound
-}
-
 // Reflects IPv6 address pool.
 type PrefixPool struct {
 	ID                int64
@@ -72,6 +65,10 @@ type PrefixPool struct {
 	DHCPOptionSetHash string
 	LocalSubnetID     int64
 	LocalSubnet       *LocalSubnet `pg:"rel:has-one"`
+	Utilization       Utilization
+
+	Stats            SubnetStats
+	StatsCollectedAt time.Time
 
 	KeaParameters *keaconfig.PoolParameters
 }
@@ -96,14 +93,6 @@ func (pp *PrefixPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccessor
 		accessors = append(accessors, pp.DHCPOptionSet[i])
 	}
 	return
-}
-
-// Checks equality of the prefix pool's own data without database-related members
-// and references.
-func (pp *PrefixPool) HasEqualData(other *PrefixPool) bool {
-	return pp.Prefix == other.Prefix &&
-		pp.DelegatedLen == other.DelegatedLen &&
-		pp.ExcludedPrefix == other.ExcludedPrefix
 }
 
 // Creates a new address pool given the address range.
