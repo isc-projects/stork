@@ -26,6 +26,7 @@ import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 
 describe('SharedNetworksTableComponent', () => {
     let component: SharedNetworksTableComponent
@@ -44,6 +45,7 @@ describe('SharedNetworksTableComponent', () => {
                 SubnetBarComponent,
                 HumanCountPipe,
                 LocalNumberPipe,
+                ManagedAccessComponent,
             ],
             imports: [
                 TableModule,

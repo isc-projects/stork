@@ -13,10 +13,16 @@ import { TreeModule } from 'primeng/tree'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TagModule } from 'primeng/tag'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { MessageService } from 'primeng/api'
+import { AuthService } from '../auth.service'
 
 describe('KeaGlobalConfigurationViewComponent', () => {
     let component: KeaGlobalConfigurationViewComponent
     let fixture: ComponentFixture<KeaGlobalConfigurationViewComponent>
+    let authService: AuthService
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -35,11 +41,15 @@ describe('KeaGlobalConfigurationViewComponent', () => {
                 KeaGlobalConfigurationViewComponent,
                 DhcpOptionSetViewComponent,
                 HelpTipComponent,
+                ManagedAccessComponent,
             ],
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],
         }).compileComponents()
 
         fixture = TestBed.createComponent(KeaGlobalConfigurationViewComponent)
         component = fixture.componentInstance
+        authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'superAdmin').and.returnValue(true)
         fixture.detectChanges()
     })
 

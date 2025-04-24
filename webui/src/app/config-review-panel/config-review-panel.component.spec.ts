@@ -21,12 +21,15 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { FormsModule } from '@angular/forms'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { AuthService } from '../auth.service'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
     let fixture: ComponentFixture<ConfigReviewPanelComponent>
     let servicesApi: ServicesService
     let msgService: MessageService
+    let authService: AuthService
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -37,6 +40,7 @@ describe('ConfigReviewPanelComponent', () => {
                 EventTextComponent,
                 LocaltimePipe,
                 HelpTipComponent,
+                ManagedAccessComponent,
             ],
             imports: [
                 ButtonModule,
@@ -64,6 +68,8 @@ describe('ConfigReviewPanelComponent', () => {
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         msgService = fixture.debugElement.injector.get(MessageService)
+        authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'superAdmin').and.returnValue(true)
         component.daemonId = 0
         component.loading = true
         fixture.detectChanges()

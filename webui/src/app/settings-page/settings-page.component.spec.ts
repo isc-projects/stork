@@ -20,16 +20,19 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { CheckboxModule } from 'primeng/checkbox'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { AuthService } from '../auth.service'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
     let fixture: ComponentFixture<SettingsPageComponent>
     let settingsApi: SettingsService
     let messageService: MessageService
+    let authService: AuthService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
+            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent, ManagedAccessComponent],
             imports: [
                 BreadcrumbModule,
                 BrowserAnimationsModule,
@@ -64,6 +67,8 @@ describe('SettingsPageComponent', () => {
         component = fixture.componentInstance
         settingsApi = fixture.debugElement.injector.get(SettingsService)
         messageService = fixture.debugElement.injector.get(MessageService)
+        authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'superAdmin').and.returnValue(true)
         fixture.detectChanges()
     })
 

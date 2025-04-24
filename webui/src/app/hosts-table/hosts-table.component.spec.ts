@@ -20,6 +20,7 @@ import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
 import { DHCPService, Host } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -30,7 +31,7 @@ describe('HostsTableComponent', () => {
         const spy = jasmine.createSpyObj('DHCPService', ['startHostsMigration', 'getHosts'])
 
         TestBed.configureTestingModule({
-            declarations: [HostsTableComponent, HelpTipComponent, PluralizePipe],
+            declarations: [HostsTableComponent, HelpTipComponent, PluralizePipe, ManagedAccessComponent],
             imports: [
                 TableModule,
                 RouterModule.forRoot([

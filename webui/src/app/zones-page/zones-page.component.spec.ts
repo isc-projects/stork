@@ -43,6 +43,8 @@ import { DropdownModule } from 'primeng/dropdown'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { NgZone } from '@angular/core'
 import { hasFilter } from '../table'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { AuthService } from '../auth.service'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -53,6 +55,7 @@ describe('ZonesPageComponent', () => {
     let messageService: jasmine.SpyObj<MessageService>
     let messageAddSpy: any
     let getZonesFetchWithStatusSpy: any
+    let authService: AuthService
 
     const noContent = {
         status: HttpStatusCode.NoContent,
@@ -270,6 +273,7 @@ describe('ZonesPageComponent', () => {
                 PlaceholderPipe,
                 LocaltimePipe,
                 PluralizePipe,
+                ManagedAccessComponent,
             ],
             providers: [
                 { provide: MessageService, useValue: messageService },
@@ -282,6 +286,8 @@ describe('ZonesPageComponent', () => {
 
         fixture = TestBed.createComponent(ZonesPageComponent)
         component = fixture.componentInstance
+        authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'superAdmin').and.returnValue(true)
 
         // By default, fake that wasZoneFetchSent returns false from session storage.
         spyOn(component, 'wasZoneFetchSent').and.returnValue(false)

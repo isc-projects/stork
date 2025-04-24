@@ -25,6 +25,7 @@ import { HumanCountComponent } from '../human-count/human-count.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
@@ -41,6 +42,7 @@ describe('SubnetsTableComponent', () => {
                 SubnetBarComponent,
                 SubnetsTableComponent,
                 PluralizePipe,
+                ManagedAccessComponent,
             ],
             imports: [
                 TableModule,
