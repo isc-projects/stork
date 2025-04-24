@@ -1,9 +1,12 @@
 package dbmodel
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/types"
+	"github.com/pkg/errors"
 )
 
 // Defines the sorting direction.
@@ -57,4 +60,59 @@ func upsertInTransaction(tx *pg.Tx, id int64, model interface{}) (err error) {
 	}
 
 	return err
+}
+
+// Type for store utilization in the smallint column. The utilization range is
+// 0-1. The value is stored by multiplying the real utilization by 1000. For
+// example, if the utilization is 0.123456789 then the value stored in the
+// database is 123. The value is stored in the smallint column to save space
+// (2 bytes (!)).
+type Utilization float64
+
+var _ types.ValueAppender = (*Utilization)(nil)
+
+var _ types.ValueScanner = (*Utilization)(nil)
+
+// Converts the utilization to the integer value. The value is multiplied by
+// 1000 to store it in the smallint column. The value is rounded to the nearest
+// integer value.
+func (u Utilization) AppendValue(b []byte, quote int) ([]byte, error) {
+	if quote == 1 {
+		b = append(b, '\'')
+	}
+
+	// if u != nil {
+	s := strconv.FormatFloat(float64(u)*1000., 'f', 0, 64)
+	b = append(b, []byte(s)...)
+	// } else {
+	// b = append(b, "NULL"...)
+	// }
+
+	if quote == 1 {
+		b = append(b, '\'')
+	}
+	return b, nil
+}
+
+// Deserializes the utilization from the database. The value is stored in
+// the smallint column. The value is divided by 1000 to get the real
+// utilization value. The value is rounded to the nearest integer value.
+func (u *Utilization) ScanValue(rd types.Reader, n int) error {
+	if n <= 0 {
+		return nil
+	}
+
+	tmp, err := rd.ReadFullTemp()
+	if err != nil {
+		return err
+	}
+
+	i, err := strconv.ParseInt(string(tmp), 10, 64)
+	if err != nil {
+		return errors.Wrapf(err, "problem parsing utilization from DB: '%s'", string(tmp))
+	}
+
+	*u = Utilization(float64(i) / 1000.)
+
+	return nil
 }

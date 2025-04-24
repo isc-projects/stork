@@ -175,8 +175,8 @@ func TestGetSubnets(t *testing.T) {
 		"baz": 4224,
 	}
 	subnets[0].StatsCollectedAt = time.Time{}.Add(3 * time.Hour)
-	subnets[0].AddrUtilization = 240
-	subnets[0].PdUtilization = 420
+	subnets[0].AddrUtilization = 0.24
+	subnets[0].PdUtilization = 0.42
 	dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, subnets)
 
 	// get all subnets

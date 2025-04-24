@@ -87,8 +87,8 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		ID:               sn.ID,
 		Subnet:           sn.Prefix,
 		ClientClass:      sn.ClientClass,
-		AddrUtilization:  float64(sn.AddrUtilization) / 10,
-		PdUtilization:    float64(sn.PdUtilization) / 10,
+		AddrUtilization:  float64(sn.AddrUtilization) * 100.,
+		PdUtilization:    float64(sn.PdUtilization) * 100,
 		Stats:            sn.Stats,
 		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
 	}

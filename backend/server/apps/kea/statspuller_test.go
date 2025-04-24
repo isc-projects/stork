@@ -433,20 +433,20 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	for _, sn := range subnets {
 		switch sn.LocalSubnets[0].LocalSubnetID {
 		case 10:
-			require.InDelta(t, 111.0/256.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 111.0/256.0, float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case 20:
-			require.InDelta(t, 2034.0/(4098.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 2034.0/(4098.0+2), float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case 30:
-			require.InDelta(t, 2400.0/4096.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 2400.0/4096.0, float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case 40:
 			require.Zero(t, sn.AddrUtilization)
-			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization)/1000.0, 0.001)
+			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization), 0.001)
 		case 50:
-			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
-			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization)/1000.0, 0.001)
+			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization), 0.001)
+			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization), 0.001)
 		}
 	}
 
@@ -761,20 +761,20 @@ func verifyCountingStatisticsFromPrimary(t *testing.T, db *pg.DB) {
 	for _, sn := range subnets {
 		switch sn.Prefix {
 		case "192.0.2.0/24":
-			require.InDelta(t, 111.0/256.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 111.0/256.0, float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case "192.0.3.0/26":
-			require.InDelta(t, 2034.0/(4098.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 2034.0/(4098.0+2), float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case "2001:db8:1::/64":
-			require.InDelta(t, 2400.0/4096.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 2400.0/4096.0, float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case "2001:db8:2::/64":
 			require.Zero(t, sn.AddrUtilization)
-			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization)/1000.0, 0.001)
+			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization), 0.001)
 		case "2001:db8:3::/64":
-			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
-			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization)/1000.0, 0.001)
+			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization), 0.001)
+			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization), 0.001)
 		}
 	}
 
@@ -813,20 +813,20 @@ func verifyCountingStatisticsFromSecondary(t *testing.T, db *pg.DB) {
 	for _, sn := range subnets {
 		switch sn.Prefix {
 		case "192.0.2.0/24":
-			require.InDelta(t, 211.0/456.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 211.0/456.0, float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case "192.0.3.0/26":
-			require.InDelta(t, 2134.0/(4298.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 2134.0/(4298.0+2), float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
 		case "2001:db8:1::/64":
-			require.InDelta(t, 2500.0/4296.0, float64(sn.AddrUtilization)/1000.0, 0.001)
-			require.EqualValues(t, 100.0/200.0, float64(sn.PdUtilization)/1000.0, 0.001)
+			require.InDelta(t, 2500.0/4296.0, float64(sn.AddrUtilization), 0.001)
+			require.EqualValues(t, 100.0/200.0, float64(sn.PdUtilization), 0.001)
 		case "2001:db8:2::/64":
-			require.EqualValues(t, 100.0/200.0, float64(sn.AddrUtilization)/1000.0, 0.001)
-			require.InDelta(t, 333.0/1248.0, float64(sn.PdUtilization)/1000.0, 0.001)
+			require.EqualValues(t, 100.0/200.0, float64(sn.AddrUtilization), 0.001)
+			require.InDelta(t, 333.0/1248.0, float64(sn.PdUtilization), 0.001)
 		case "2001:db8:3::/64":
-			require.InDelta(t, 160.0/(456.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
-			require.InDelta(t, 115.0/(1248.0+1), float64(sn.PdUtilization)/1000.0, 0.001)
+			require.InDelta(t, 160.0/(456.0+2), float64(sn.AddrUtilization), 0.001)
+			require.InDelta(t, 115.0/(1248.0+1), float64(sn.PdUtilization), 0.001)
 		}
 	}
 

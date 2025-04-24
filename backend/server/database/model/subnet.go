@@ -207,8 +207,8 @@ type Subnet struct {
 
 	Hosts []Host `pg:"rel:has-many"`
 
-	AddrUtilization  int16
-	PdUtilization    int16
+	AddrUtilization  Utilization
+	PdUtilization    Utilization
 	Stats            SubnetStats
 	StatsCollectedAt time.Time
 }
@@ -1009,8 +1009,8 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics utilizationStats) error {
 	addrUtilization := statistics.GetAddressUtilization()
 	pdUtilization := statistics.GetDelegatedPrefixUtilization()
-	s.AddrUtilization = int16(addrUtilization * 1000)
-	s.PdUtilization = int16(pdUtilization * 1000)
+	s.AddrUtilization = Utilization(addrUtilization)
+	s.PdUtilization = Utilization(pdUtilization)
 	s.Stats = statistics.GetStatistics()
 	s.StatsCollectedAt = time.Now().UTC()
 	q := dbi.Model(s)
