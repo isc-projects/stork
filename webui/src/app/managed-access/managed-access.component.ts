@@ -11,8 +11,13 @@ import {
 } from '@angular/core'
 import { StorkTemplateDirective } from '../stork-template.directive'
 import { AccessType, AuthService, PrivilegeKey } from '../auth.service'
+import { CommonModule } from '@angular/common'
+import { ButtonModule } from 'primeng/button'
+import { TooltipModule } from 'primeng/tooltip'
 
 @Component({
+    standalone: true,
+    imports: [CommonModule, ButtonModule, TooltipModule],
     selector: 'app-managed-access',
     templateUrl: './managed-access.component.html',
     styleUrl: './managed-access.component.sass',

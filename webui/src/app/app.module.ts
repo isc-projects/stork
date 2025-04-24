@@ -311,6 +311,7 @@ export function cfgFactory() {
         BadgeModule,
         SkeletonModule,
         StorkTemplateDirective,
+        ManagedAccessComponent,
     ],
     providers: [
         {
