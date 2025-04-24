@@ -176,10 +176,8 @@ type localSubnetKey struct {
 	Family        int
 }
 
-// Process lease stats results from the given command response for given daemon.
+// Processes statistics from the given command response for given daemon.
 func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisticsResponse, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
-	var lastErr error
-
 	if len(response) == 0 {
 		return errors.Errorf("response is empty: %+v", response)
 	}
@@ -190,11 +188,18 @@ func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisti
 		return errors.Errorf("missing statistics")
 	}
 
-	// Subnet statistics.
+	err := statsPuller.storeSubnetStats(responseStats.Arguments, subnetsMap, dbApp, family)
+	return err
+}
+
+// Processes statistics from the given command response for subnets belonging to the daemon.
+func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.GetAllStatisticResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+	var lastErr error
+
 	statisticsPerSubnet := make(map[int64][]keactrl.GetAllStatisticResponseSample)
-	for _, statEntry := range responseStats.Arguments {
+	for _, statEntry := range response {
 		subnetID := statEntry.SubnetID
-		if subnetID != 0 && statEntry.PoolID == 0 {
+		if subnetID != 0 && statEntry.PoolID == 0 && statEntry.PrefixPoolID == 0 {
 			statisticsPerSubnet[subnetID] = append(statisticsPerSubnet[subnetID], statEntry)
 		}
 	}

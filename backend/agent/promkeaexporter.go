@@ -928,7 +928,7 @@ func (pke *PromKeaExporter) collectStats() error {
 			adrStatsMap := pke.Adr4StatsMap
 			globalStatMap := pke.Global4StatMap
 			activeDaemonsCount := &activeDHCP4DaemonsCount
-			family := 4
+			var family int8 = 4
 			if service == dhcp6 {
 				adrStatsMap = pke.Adr6StatsMap
 				globalStatMap = pke.Global6StatMap
@@ -949,7 +949,7 @@ func (pke *PromKeaExporter) collectStats() error {
 				continue
 			}
 
-			subnetPrefixLookup.setFamily(int8(family))
+			subnetPrefixLookup.setFamily(family)
 			pke.setDaemonStats(adrStatsMap, globalStatMap, serviceResponse.Arguments, pke.ignoredStats, subnetPrefixLookup)
 		}
 	}
