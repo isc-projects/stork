@@ -270,6 +270,12 @@
         type: string
       keaConfigPoolParameters:
         $ref: '#/definitions/KeaConfigPoolParameters'
+      stats:
+        type: object
+      statsCollectedAt:
+        type: string
+        format: date-time
+        x-nullable: true
 
 # Delegated prefix pool
 
@@ -287,6 +293,12 @@
         type: string
       keaConfigPoolParameters:
         $ref: '#/definitions/KeaConfigPoolParameters'
+      stats:
+        type: object
+      statsCollectedAt:
+        type: string
+        format: date-time
+        x-nullable: true
 
 
 # Subnet

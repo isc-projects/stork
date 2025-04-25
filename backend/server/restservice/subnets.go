@@ -112,7 +112,9 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 		}
 		for _, poolDetails := range lsn.AddressPools {
 			pool := &models.Pool{
-				Pool: storkutil.Ptr(poolDetails.LowerBound + "-" + poolDetails.UpperBound),
+				Pool:             storkutil.Ptr(poolDetails.LowerBound + "-" + poolDetails.UpperBound),
+				Stats:            poolDetails.Stats,
+				StatsCollectedAt: convertToOptionalDatetime(poolDetails.StatsCollectedAt),
 			}
 			if poolDetails.KeaParameters != nil {
 				pool.KeaConfigPoolParameters = &models.KeaConfigPoolParameters{
@@ -138,9 +140,11 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			prefix := prefixPoolDetails.Prefix
 			delegatedLength := int64(prefixPoolDetails.DelegatedLen)
 			pool := &models.DelegatedPrefixPool{
-				Prefix:          &prefix,
-				DelegatedLength: &delegatedLength,
-				ExcludedPrefix:  prefixPoolDetails.ExcludedPrefix,
+				Prefix:           &prefix,
+				DelegatedLength:  &delegatedLength,
+				ExcludedPrefix:   prefixPoolDetails.ExcludedPrefix,
+				Stats:            prefixPoolDetails.Stats,
+				StatsCollectedAt: convertToOptionalDatetime(prefixPoolDetails.StatsCollectedAt),
 			}
 			localSubnet.PrefixDelegationPools = append(localSubnet.PrefixDelegationPools, pool)
 			if prefixPoolDetails.KeaParameters != nil {
