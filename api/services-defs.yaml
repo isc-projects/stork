@@ -570,3 +570,72 @@
           $ref: '#/definitions/ConfigCheckerPreference'
       total:
         type: integer
+
+  MigrationError:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      error:
+        type: string
+      label:
+        type: string
+      causeEntity:
+        type: string
+
+  MigrationErrors:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/MigrationError'
+      total:
+        type: integer
+
+  MigrationStatus:
+    type: object
+    properties:
+      id:
+        type: integer
+      authorLogin:
+        type: string
+      authorId:
+        type: integer
+      startDate:
+        type: string
+        format: date-time
+      endDate:
+        type: string
+        format: date-time
+        x-nullable: true
+      canceling:
+        type: boolean
+      processedItemsCount:
+        type: integer
+        x-omitempty: false
+      totalItemsCount:
+        type: integer
+        x-omitempty: false
+      errors:
+        $ref: '#/definitions/MigrationErrors'
+      generalError:
+        type: string
+        x-nullable: true
+      elapsedTime:
+        type: string
+        format: duration
+      estimatedLeftTime:
+        type: string
+        format: duration
+
+  MigrationStatuses:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/MigrationStatus'
+      total:
+        type: integer
