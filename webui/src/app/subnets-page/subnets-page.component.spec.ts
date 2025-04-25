@@ -106,7 +106,6 @@ describe('SubnetsPageComponent', () => {
                 PlaceholderPipe,
                 ArrayValueSetFormComponent,
                 ParameterViewComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 AccordionModule,
@@ -137,6 +136,7 @@ describe('SubnetsPageComponent', () => {
                 ToastModule,
                 ConfirmDialogModule,
                 PanelModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 ConfirmationService,

@@ -94,7 +94,6 @@ describe('SharedNetworksPageComponent', () => {
                 UtilizationStatsChartsComponent,
                 SharedNetworksTableComponent,
                 PluralizePipe,
-                ManagedAccessComponent,
             ],
             imports: [
                 BreadcrumbModule,
@@ -129,6 +128,7 @@ describe('SharedNetworksPageComponent', () => {
                 TooltipModule,
                 PanelModule,
                 TagModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 ConfirmationService,

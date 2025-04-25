@@ -82,7 +82,6 @@ describe('HostsPageComponent', () => {
                 PluralizePipe,
                 HostsTableComponent,
                 ByteCharacterComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 ButtonModule,
@@ -119,6 +118,7 @@ describe('HostsPageComponent', () => {
                 MessagesModule,
                 InputNumberModule,
                 PanelModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 DHCPService,

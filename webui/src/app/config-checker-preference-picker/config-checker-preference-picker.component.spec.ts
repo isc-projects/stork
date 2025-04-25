@@ -33,8 +33,9 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
                 FormsModule,
                 TriStateCheckboxModule,
                 TagModule,
+                ManagedAccessComponent,
             ],
-            declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent, ManagedAccessComponent],
+            declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent],
             providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],
         }).compileComponents()
     })

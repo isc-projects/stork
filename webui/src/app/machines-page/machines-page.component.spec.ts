@@ -134,7 +134,6 @@ describe('MachinesPageComponent', () => {
                 VersionStatusComponent,
                 MachinesTableComponent,
                 PluralizePipe,
-                ManagedAccessComponent,
             ],
             imports: [
                 RouterModule.forRoot([
@@ -164,6 +163,7 @@ describe('MachinesPageComponent', () => {
                 PanelModule,
                 TriStateCheckboxModule,
                 TagModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 MessageService,

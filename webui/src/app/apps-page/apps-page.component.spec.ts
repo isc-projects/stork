@@ -50,7 +50,6 @@ describe('AppsPageComponent', () => {
                 HaStatusComponent,
                 BreadcrumbsComponent,
                 HelpTipComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 TabMenuModule,
@@ -68,6 +67,7 @@ describe('AppsPageComponent', () => {
                 NoopAnimationsModule,
                 ProgressSpinnerModule,
                 ConfirmDialogModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 ConfirmationService,

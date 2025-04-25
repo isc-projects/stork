@@ -130,7 +130,6 @@ describe('MachinesTableComponent', () => {
                 LocaltimePipe,
                 PlaceholderPipe,
                 AppDaemonsStatusComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 RouterModule.forRoot([]),
@@ -143,6 +142,7 @@ describe('MachinesTableComponent', () => {
                 FormsModule,
                 TagModule,
                 TooltipModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 MessageService,

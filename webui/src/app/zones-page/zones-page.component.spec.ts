@@ -267,6 +267,7 @@ describe('ZonesPageComponent', () => {
                 DropdownModule,
                 MultiSelectModule,
                 StorkTemplateDirective,
+                ManagedAccessComponent,
             ],
             declarations: [
                 ZonesPageComponent,
@@ -275,7 +276,6 @@ describe('ZonesPageComponent', () => {
                 PlaceholderPipe,
                 LocaltimePipe,
                 PluralizePipe,
-                ManagedAccessComponent,
             ],
             providers: [
                 { provide: MessageService, useValue: messageService },

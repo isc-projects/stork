@@ -32,7 +32,6 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 HelpTipComponent,
                 ConfigCheckerPreferenceUpdaterComponent,
                 ConfigCheckerPreferencePickerComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 TableModule,
@@ -44,6 +43,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 FormsModule,
                 TriStateCheckboxModule,
                 TagModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 MessageService,

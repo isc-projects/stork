@@ -35,13 +35,13 @@ describe('KeaGlobalConfigurationViewComponent', () => {
                 TreeModule,
                 OverlayPanelModule,
                 TagModule,
+                ManagedAccessComponent,
             ],
             declarations: [
                 CascadedParametersBoardComponent,
                 KeaGlobalConfigurationViewComponent,
                 DhcpOptionSetViewComponent,
                 HelpTipComponent,
-                ManagedAccessComponent,
             ],
             providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],
         }).compileComponents()

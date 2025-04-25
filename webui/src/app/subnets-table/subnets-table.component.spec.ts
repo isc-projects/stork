@@ -42,7 +42,6 @@ describe('SubnetsTableComponent', () => {
                 SubnetBarComponent,
                 SubnetsTableComponent,
                 PluralizePipe,
-                ManagedAccessComponent,
             ],
             imports: [
                 TableModule,
@@ -66,6 +65,7 @@ describe('SubnetsTableComponent', () => {
                     },
                 ]),
                 TooltipModule,
+                ManagedAccessComponent,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()

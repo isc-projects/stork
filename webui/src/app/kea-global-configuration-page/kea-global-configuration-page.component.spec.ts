@@ -49,7 +49,6 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 PlaceholderPipe,
                 UncamelPipe,
                 UnhyphenPipe,
-                ManagedAccessComponent,
             ],
             imports: [
                 BreadcrumbModule,
@@ -61,6 +60,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 TableModule,
                 TreeModule,
                 TagModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 {

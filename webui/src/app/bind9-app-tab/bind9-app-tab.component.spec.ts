@@ -80,7 +80,6 @@ describe('Bind9AppTabComponent', () => {
                 EventsPanelComponent,
                 EventTextComponent,
                 VersionStatusComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 FormsModule,
@@ -93,6 +92,7 @@ describe('Bind9AppTabComponent', () => {
                 OverlayPanelModule,
                 DataViewModule,
                 TableModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 UsersService,

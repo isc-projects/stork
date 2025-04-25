@@ -45,7 +45,6 @@ describe('SharedNetworksTableComponent', () => {
                 SubnetBarComponent,
                 HumanCountPipe,
                 LocalNumberPipe,
-                ManagedAccessComponent,
             ],
             imports: [
                 TableModule,
@@ -69,6 +68,7 @@ describe('SharedNetworksTableComponent', () => {
                     },
                 ]),
                 TooltipModule,
+                ManagedAccessComponent,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()

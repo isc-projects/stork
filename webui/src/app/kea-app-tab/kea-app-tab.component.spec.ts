@@ -130,7 +130,6 @@ describe('KeaAppTabComponent', () => {
                 AppOverviewComponent,
                 EventTextComponent,
                 VersionStatusComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 RouterModule,
@@ -153,6 +152,7 @@ describe('KeaAppTabComponent', () => {
                 ProgressSpinnerModule,
                 DividerModule,
                 TagModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 UsersService,

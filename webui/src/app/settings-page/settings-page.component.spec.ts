@@ -32,7 +32,7 @@ describe('SettingsPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent, ManagedAccessComponent],
+            declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
             imports: [
                 BreadcrumbModule,
                 BrowserAnimationsModule,
@@ -47,6 +47,7 @@ describe('SettingsPageComponent', () => {
                 ProgressSpinnerModule,
                 RouterModule,
                 InputNumberModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 SettingsService,

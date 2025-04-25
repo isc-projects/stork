@@ -31,7 +31,7 @@ describe('HostsTableComponent', () => {
         const spy = jasmine.createSpyObj('DHCPService', ['startHostsMigration', 'getHosts'])
 
         TestBed.configureTestingModule({
-            declarations: [HostsTableComponent, HelpTipComponent, PluralizePipe, ManagedAccessComponent],
+            declarations: [HostsTableComponent, HelpTipComponent, PluralizePipe],
             imports: [
                 TableModule,
                 RouterModule.forRoot([
@@ -56,6 +56,7 @@ describe('HostsTableComponent', () => {
                 PanelModule,
                 BrowserAnimationsModule,
                 TagModule,
+                ManagedAccessComponent,
                 ConfirmDialogModule,
             ],
             providers: [

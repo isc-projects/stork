@@ -52,7 +52,6 @@ describe('HostTabComponent', () => {
                 IdentifierComponent,
                 HostDataSourceLabelComponent,
                 ByteCharacterComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 ConfirmDialogModule,
@@ -69,6 +68,7 @@ describe('HostTabComponent', () => {
                 TagModule,
                 MessagesModule,
                 ProgressSpinnerModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 DHCPService,

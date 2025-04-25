@@ -73,7 +73,6 @@ describe('SubnetTabComponent', () => {
                 UtilizationStatsChartsComponent,
                 JsonTreeRootComponent,
                 JsonTreeComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 ButtonModule,
@@ -91,6 +90,7 @@ describe('SubnetTabComponent', () => {
                 ToastModule,
                 TooltipModule,
                 TreeModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 ConfirmationService,

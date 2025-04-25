@@ -32,7 +32,6 @@ describe('ConfigCheckerPreferencePageComponent', () => {
                 ConfigCheckerPreferencePageComponent,
                 ConfigCheckerPreferenceUpdaterComponent,
                 ConfigCheckerPreferencePickerComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 TableModule,
@@ -43,6 +42,7 @@ describe('ConfigCheckerPreferencePageComponent', () => {
                 BreadcrumbModule,
                 RouterModule,
                 ButtonModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 MessageService,

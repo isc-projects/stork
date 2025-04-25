@@ -41,7 +41,6 @@ describe('ConfigReviewPanelComponent', () => {
                 EventTextComponent,
                 LocaltimePipe,
                 HelpTipComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 ButtonModule,
@@ -55,6 +54,7 @@ describe('ConfigReviewPanelComponent', () => {
                 ToggleButtonModule,
                 DataViewModule,
                 StorkTemplateDirective,
+                ManagedAccessComponent,
             ],
             providers: [
                 ServicesService,

@@ -71,7 +71,6 @@ describe('SharedNetworkTabComponent', () => {
                 SubnetBarComponent,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
-                ManagedAccessComponent,
             ],
             imports: [
                 ButtonModule,
@@ -88,6 +87,7 @@ describe('SharedNetworkTabComponent', () => {
                 TagModule,
                 TooltipModule,
                 TreeModule,
+                ManagedAccessComponent,
             ],
             providers: [
                 ConfirmationService,
