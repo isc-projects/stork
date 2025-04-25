@@ -6,7 +6,6 @@ import (
 	"time"
 
 	errors "github.com/pkg/errors"
-	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dhcpmodel "isc.org/stork/datamodel/dhcp"
 	dbops "isc.org/stork/server/database"
@@ -266,14 +265,14 @@ func (ap *AddressPool) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 		err = errors.Wrapf(err, "problem updating stats in address pool: [%s-%s]",
 			ap.LowerBound, ap.UpperBound)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "address pool: [%s-%s] does not exist",
+		err = errors.Wrapf(ErrNotExists, "address pool: [%s-%s] does not exist",
 			ap.LowerBound, ap.UpperBound)
 	}
 	return err
 }
 
 // Update stats pulled for given prefix pool.
-func (p *PrefixPool) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
+func (pp *PrefixPool) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 	assigned := stats.GetBigCounter(SubnetStatsNameAssignedPDs)
 	total := stats.GetBigCounter(SubnetStatsNameTotalPDs)
 	var utilization Utilization
@@ -281,20 +280,20 @@ func (p *PrefixPool) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 		utilization = Utilization(assigned.DivideSafeBy(total))
 	}
 
-	p.Stats = stats
-	p.StatsCollectedAt = storkutil.UTCNow()
-	p.Utilization = utilization
+	pp.Stats = stats
+	pp.StatsCollectedAt = storkutil.UTCNow()
+	pp.Utilization = utilization
 
-	q := dbi.Model(p)
+	q := dbi.Model(pp)
 	q = q.Column("stats", "stats_collected_at", "utilization")
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {
 		err = errors.Wrapf(err, "problem updating stats in prefix pool: [%s/%d]",
-			p.Prefix, p.DelegatedLen)
+			pp.Prefix, pp.DelegatedLen)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "prefix pool: [%s/%d] does not exist",
-			p.Prefix, p.DelegatedLen)
+		err = errors.Wrapf(ErrNotExists, "prefix pool: [%s/%d] does not exist",
+			pp.Prefix, pp.DelegatedLen)
 	}
 	return err
 }

@@ -191,13 +191,19 @@ func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisti
 	var lastErr error
 	err := statsPuller.storeSubnetStats(responseStats.Arguments, subnetsMap, dbApp, family)
 	if err != nil {
-		log.WithError(err).Error("Error handling stat-lease4-get response")
+		log.WithError(err).Error("Error handling subnet statistics")
 		lastErr = err
 	}
 
 	err = statsPuller.storeAddressPoolStats(responseStats.Arguments, subnetsMap, dbApp, family)
 	if err != nil {
-		log.WithError(err).Error("Error handling stat-lease4-get response")
+		log.WithError(err).Error("Error handling address pool statistics")
+		lastErr = err
+	}
+
+	err = statsPuller.storePrefixPoolStats(responseStats.Arguments, subnetsMap, dbApp, family)
+	if err != nil {
+		log.WithError(err).Error("Error handling prefix pool statistics")
 		lastErr = err
 	}
 
