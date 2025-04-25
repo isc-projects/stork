@@ -89,8 +89,8 @@ func (r *RestAPI) DeleteFinishedMigrations(ctx context.Context, params dhcp.Dele
 // Implements the GET call to retrieve the status of a specific migration.
 func (r *RestAPI) GetMigration(ctx context.Context, params dhcp.GetMigrationParams) middleware.Responder {
 	// Fetch migration status from the migration service.
-	status, ok := r.MigrationService.GetMigration(configmigrator.MigrationIdentifier(params.ID))
-	if !ok {
+	status := r.MigrationService.GetMigration(configmigrator.MigrationIdentifier(params.ID))
+	if status == nil {
 		msg := fmt.Sprintf("Cannot find migration status with ID %d", params.ID)
 		rsp := dhcp.NewGetMigrationDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,

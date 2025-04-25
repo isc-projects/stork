@@ -200,8 +200,8 @@ type MigrationManager interface {
 	// Returns the list of all migrations.
 	GetMigrations() []*MigrationStatus
 	// Returns the migration with the provided ID. If the migration is not found,
-	// the second return value is false.
-	GetMigration(id MigrationIdentifier) (*MigrationStatus, bool)
+	// returns nil.
+	GetMigration(id MigrationIdentifier) *MigrationStatus
 	// Starts the migration in background. The migrator is the object that knows how to migrate
 	// certain entities. The context may contain the information about the user
 	// who started the migration.
@@ -254,15 +254,15 @@ func (s *manager) GetMigrations() []*MigrationStatus {
 
 // Returns the migration with the provided ID. If the migration is not found,
 // the second return value is false.
-func (s *manager) GetMigration(id MigrationIdentifier) (*MigrationStatus, bool) {
+func (s *manager) GetMigration(id MigrationIdentifier) *MigrationStatus {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	migration, ok := s.migrations[id]
 	if !ok {
-		return nil, false
+		return nil
 	}
-	return migration.getStatus(), true
+	return migration.getStatus()
 }
 
 // Starts the migration in background. The migrator is the object that knows how to migrate

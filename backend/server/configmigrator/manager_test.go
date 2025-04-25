@@ -130,25 +130,19 @@ func TestGetMigration(t *testing.T) {
 	manager := newTestManager()
 
 	// Act
-	migrationInProgress, okInProgress := manager.GetMigration(inProgressMigrationID)
-	migrationFinished, okFinished := manager.GetMigration(finishedMigrationID)
-	migrationCanceled, okCanceled := manager.GetMigration(canceledMigrationID)
-	migrationCanceling, okCanceling := manager.GetMigration(cancelingMigrationID)
-	migrationGeneralError, okGeneralError := manager.GetMigration(generalErrorMigrationID)
-	migrationUnknown, okUnknown := manager.GetMigration(unknownMigrationID)
+	migrationInProgress := manager.GetMigration(inProgressMigrationID)
+	migrationFinished := manager.GetMigration(finishedMigrationID)
+	migrationCanceled := manager.GetMigration(canceledMigrationID)
+	migrationCanceling := manager.GetMigration(cancelingMigrationID)
+	migrationGeneralError := manager.GetMigration(generalErrorMigrationID)
+	migrationUnknown := manager.GetMigration(unknownMigrationID)
 
 	// Assert
-	require.True(t, okInProgress)
 	require.EqualValues(t, inProgressMigrationID, migrationInProgress.ID)
-	require.True(t, okFinished)
 	require.EqualValues(t, finishedMigrationID, migrationFinished.ID)
-	require.True(t, okCanceled)
 	require.EqualValues(t, canceledMigrationID, migrationCanceled.ID)
-	require.True(t, okCanceling)
 	require.EqualValues(t, cancelingMigrationID, migrationCanceling.ID)
-	require.True(t, okGeneralError)
 	require.EqualValues(t, generalErrorMigrationID, migrationGeneralError.ID)
-	require.False(t, okUnknown)
 	require.Nil(t, migrationUnknown)
 }
 
@@ -157,7 +151,7 @@ func TestGetMigration(t *testing.T) {
 func TestStopMigrationCallsCancelFunction(t *testing.T) {
 	// Arrange
 	manager := newTestManager()
-	migration, _ := manager.GetMigration(inProgressMigrationID)
+	migration := manager.GetMigration(inProgressMigrationID)
 
 	// Act
 	status, ok := manager.StopMigration(migration.ID)
@@ -186,7 +180,7 @@ func TestStopUnknownMigration(t *testing.T) {
 func TestStopFinishedMigration(t *testing.T) {
 	// Arrange
 	manager := newTestManager()
-	migration, _ := manager.GetMigration(finishedMigrationID)
+	migration := manager.GetMigration(finishedMigrationID)
 
 	// Act
 	status, ok := manager.StopMigration(migration.ID)
@@ -202,7 +196,7 @@ func TestStopFinishedMigration(t *testing.T) {
 func TestStopCancelingMigration(t *testing.T) {
 	// Arrange
 	manager := newTestManager()
-	migration, _ := manager.GetMigration(cancelingMigrationID)
+	migration := manager.GetMigration(cancelingMigrationID)
 
 	// Act
 	status, ok := manager.StopMigration(migration.ID)
@@ -295,13 +289,13 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	firstChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, firstChunkStatus)
 	require.Equal(t, initialStatus.ID, firstChunkStatus.ID)
 	require.False(t, firstChunkStatus.Canceling)
 	require.Equal(t, "value", firstChunkStatus.Context.Value(contextKey("key")))
@@ -318,13 +312,13 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	// Wait for the second chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 200
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the second chunk is migrated.
-	secondChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	secondChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, secondChunkStatus)
 	require.Equal(t, initialStatus.ID, secondChunkStatus.ID)
 	require.False(t, secondChunkStatus.Canceling)
 	require.Equal(t, "value", secondChunkStatus.Context.Value(contextKey("key")))
@@ -341,13 +335,13 @@ func TestStartAndExecuteMigration(t *testing.T) {
 	// Wait for the third chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 250
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the third chunk is migrated.
-	thirdChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	thirdChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, thirdChunkStatus)
 	require.Equal(t, initialStatus.ID, thirdChunkStatus.ID)
 	require.False(t, thirdChunkStatus.Canceling)
 	require.Equal(t, "value", thirdChunkStatus.Context.Value(contextKey("key")))
@@ -447,13 +441,13 @@ func TestStartMigrationLoadingError(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.GeneralError != nil
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	firstChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, firstChunkStatus)
 	require.NotZero(t, firstChunkStatus.EndDate)
 	require.ErrorContains(t, firstChunkStatus.GeneralError, "loading error")
 	require.Empty(t, firstChunkStatus.Errors)
@@ -507,13 +501,13 @@ func TestCancelMigration(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	firstChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, firstChunkStatus)
 	require.False(t, firstChunkStatus.Canceling)
 	require.Zero(t, firstChunkStatus.EndDate)
 	require.NoError(t, firstChunkStatus.GeneralError)
@@ -533,13 +527,13 @@ func TestCancelMigration(t *testing.T) {
 	// Wait for the cancellation to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.EndDate != time.Time{}
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the second chunk is migrated.
-	secondChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	secondChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, secondChunkStatus)
 	require.True(t, secondChunkStatus.Canceling)
 	require.NotZero(t, secondChunkStatus.EndDate)
 	require.ErrorContains(t, secondChunkStatus.GeneralError, "canceled")
@@ -596,13 +590,13 @@ func TestMigrationParentCancel(t *testing.T) {
 	// Wait for the first chunk to be processed.
 	assertionFinishedChan <- struct{}{}
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.ProcessedItemsCount == 100
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the first chunk is migrated.
-	firstChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	firstChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, firstChunkStatus)
 	require.False(t, firstChunkStatus.Canceling)
 	require.Zero(t, firstChunkStatus.EndDate)
 	require.NoError(t, firstChunkStatus.GeneralError)
@@ -616,13 +610,13 @@ func TestMigrationParentCancel(t *testing.T) {
 	assertionFinishedChan <- struct{}{}
 
 	require.Eventually(t, func() bool {
-		status, _ := manager.GetMigration(initialStatus.ID)
+		status := manager.GetMigration(initialStatus.ID)
 		return status.EndDate != time.Time{}
 	}, 100*time.Millisecond, 10*time.Millisecond)
 
 	// Check the status after the second chunk is migrated.
-	secondChunkStatus, ok := manager.GetMigration(initialStatus.ID)
-	require.True(t, ok)
+	secondChunkStatus := manager.GetMigration(initialStatus.ID)
+	require.NotNil(t, secondChunkStatus)
 	require.False(t, secondChunkStatus.Canceling)
 	require.NotZero(t, secondChunkStatus.EndDate)
 	require.Nil(t, secondChunkStatus.GeneralError)
@@ -667,14 +661,14 @@ func TestConcurrentMigrationsCloseManager(t *testing.T) {
 	manager.Close()
 
 	// Check the status after the manager is closed.
-	closedStatus, ok := manager.GetMigration(initialStatus1.ID)
-	require.True(t, ok)
+	closedStatus := manager.GetMigration(initialStatus1.ID)
+	require.NotNil(t, closedStatus)
 	require.True(t, closedStatus.Canceling)
 	require.NotZero(t, closedStatus.EndDate)
 	require.ErrorContains(t, closedStatus.GeneralError, "canceled")
 
-	closedStatus, ok = manager.GetMigration(initialStatus2.ID)
-	require.True(t, ok)
+	closedStatus = manager.GetMigration(initialStatus2.ID)
+	require.NotNil(t, closedStatus)
 	require.True(t, closedStatus.Canceling)
 	require.NotZero(t, closedStatus.EndDate)
 	require.ErrorContains(t, closedStatus.GeneralError, "canceled")
