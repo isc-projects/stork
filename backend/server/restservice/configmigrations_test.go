@@ -160,7 +160,7 @@ func TestGetMigrationNotFound(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db, migrationService)
 	require.NoError(t, err)
 
-	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(nil, false)
+	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(nil)
 
 	// Act
 	rsp := rapi.GetMigration(context.Background(), dhcp.GetMigrationParams{ID: 12341})
@@ -205,7 +205,7 @@ func TestGetMigration(t *testing.T) {
 		EstimatedLeftTime: 1 * time.Minute,
 	}
 
-	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(migrationStatus, true)
+	migrationService.EXPECT().GetMigration(configmigrator.MigrationIdentifier(12341)).Return(migrationStatus)
 
 	// Act
 	rsp := rapi.GetMigration(context.Background(), dhcp.GetMigrationParams{ID: 12341})

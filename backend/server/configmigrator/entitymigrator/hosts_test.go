@@ -1022,6 +1022,17 @@ func TestLoadAndCountItems(t *testing.T) {
 			require.EqualValues(t, i, host.HostIdentifiers[0].Value[0])
 		}
 	})
+
+	t.Run("error loading items", func(t *testing.T) {
+		teardown()
+
+		// Act
+		count, err := migrator.LoadItems()
+
+		// Assert
+		require.ErrorContains(t, err, "database is closed")
+		require.Zero(t, count)
+	})
 }
 
 // Test that the hosts are loaded and counted correctly when the filter is

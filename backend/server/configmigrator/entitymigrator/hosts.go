@@ -101,12 +101,12 @@ func (m *hostMigrator) CountTotal() (int64, error) {
 	return count, err
 }
 
-// Loads a chunk of hosts from the database.
+// Loads a chunk of hosts from the database. Returns the number of loaded
+// hosts.
 func (m *hostMigrator) LoadItems() (int64, error) {
 	items, _, err := dbmodel.GetHostsByPage(m.db, m.totalItemsLoaded, m.limit, m.filter, "", dbmodel.SortDirAsc)
 	if err != nil {
-		// Returns the number of items tried to load.
-		return m.limit, err
+		return 0, err
 	}
 	m.items = items
 	itemsLoaded := int64(len(items))
