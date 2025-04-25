@@ -35,6 +35,7 @@ services:
       STORK_SERVER_HOOK_LDAP_MAP_GROUPS: 1
       STORK_SERVER_HOOK_LDAP_GROUP_SUPER_ADMIN: stork-super-admins
       STORK_SERVER_HOOK_LDAP_GROUP_ADMIN: stork-admins
+      STORK_SERVER_HOOK_LDAP_GROUP_READ_ONLY: stork-read-only-users
     volumes:
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/stork-server.conf:/etc/supervisor/conf.d/stork-server.conf

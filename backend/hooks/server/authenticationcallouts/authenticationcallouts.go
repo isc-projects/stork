@@ -39,6 +39,7 @@ type UserGroupID int
 const (
 	UserGroupIDSuperAdmin UserGroupID = 1
 	UserGroupIDAdmin      UserGroupID = 2
+	UserGroupIDReadOnly   UserGroupID = 3
 )
 
 // The logged user metadata. It's a data transfer object (DTO) to avoid using

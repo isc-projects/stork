@@ -91,3 +91,10 @@ objectClass: groupOfNames
 # User group membership
 member: cn=admin,ou=users,dc=example,dc=org
 member: cn=user2,ou=users,dc=example,dc=org
+
+# Group creation - Stork Read-only
+dn: cn=stork-read-only-users,ou=users,dc=example,dc=org
+cn: stork-read-only-users
+objectClass: groupOfNames
+# User group membership
+member: cn=user3,ou=users,dc=example,dc=org

@@ -100,6 +100,7 @@ func (r *RestAPI) externalAuthentication(ctx context.Context, params users.Creat
 	groupIDMapping := map[authenticationcallouts.UserGroupID]int{
 		authenticationcallouts.UserGroupIDSuperAdmin: dbmodel.SuperAdminGroupID,
 		authenticationcallouts.UserGroupIDAdmin:      dbmodel.AdminGroupID,
+		authenticationcallouts.UserGroupIDReadOnly:   dbmodel.ReadOnlyGroupID,
 	}
 
 	var groups []*dbmodel.SystemGroup
