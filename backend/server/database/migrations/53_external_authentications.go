@@ -101,7 +101,7 @@ func init() {
 
 			-- Recreate trigger on the password hash column.
 			CREATE TRIGGER system_user_before_insert_update
-              BEFORE INSERT OR UPDATE ON system_user_password
+              BEFORE INSERT OR UPDATE ON public.system_user
                 FOR EACH ROW EXECUTE PROCEDURE system_user_hash_password();
 
 			-- Restore the password hashes in the system user table.
