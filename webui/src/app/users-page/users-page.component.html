@@ -352,6 +352,9 @@
                             <div class="col-12 sm:col-9 sm:col-offset-3 mt-2" *ngIf="isFeedbackNeeded('userGroup')">
                                 <p-message severity="error" [text]="buildFeedbackMessage('userGroup')"></p-message>
                             </div>
+                            <div class="col-12 sm:col-offset-3 sm:col-9">
+                                <small>{{ getGroupDescription(userForm.controls.userGroup.value?.id) }}</small>
+                            </div>
                         </div>
                         <ng-container *ngIf="isInternalUser">
                             <div class="field grid">

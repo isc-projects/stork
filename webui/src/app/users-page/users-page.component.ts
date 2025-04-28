@@ -8,7 +8,7 @@ import { ServerDataService } from '../server-data.service'
 import { UsersService } from '../backend/api/api'
 import { lastValueFrom, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
-import { User } from '../backend'
+import { Group, User } from '../backend'
 
 /**
  * An enum specifying tab types in the user view
@@ -135,7 +135,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     passwordPattern: RegExp = /^[a-zA-Z0-9~`!@#$%^&*()_+\-=\[\]\\{}|;':",.\/<>?\s]+$/
 
     // ToDo: Strict typing
-    private groups: any[] = []
+    private groups: Group[] = []
     // users table
     users: any[]
     totalUsers: number
@@ -729,5 +729,13 @@ export class UsersPageComponent implements OnInit, OnDestroy {
             }
         }
         return 'unknown'
+    }
+
+    /**
+     * Returns group description for given group ID.
+     * @param groupId numeric group ID
+     */
+    public getGroupDescription(groupId: number): string {
+        return this.groups.find((group) => group.id === groupId)?.description
     }
 }
