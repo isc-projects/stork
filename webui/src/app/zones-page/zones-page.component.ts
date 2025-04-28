@@ -237,6 +237,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             if (resp.status === HttpStatusCode.Accepted) {
                 this.fetchAppsCompletedCount = resp.completedAppsCount
                 this.fetchTotalAppsCount = resp.appsCount
+                this.onLazyLoadZones(this.zonesTable?.createLazyLoadMetadata(), false)
             } else if (resp.status === HttpStatusCode.Ok) {
                 this.fetchAppsCompletedCount = this.fetchTotalAppsCount
                 this.zonesFetchStates = resp.items ?? []
@@ -793,14 +794,27 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Lazily loads paged zones data from backend.
      * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
+     * @param loadWhenPageFull when set to false, there is lazy loading optimization used; defaults to true
      */
-    onLazyLoadZones(event: TableLazyLoadEvent) {
+    onLazyLoadZones(event: TableLazyLoadEvent, loadWhenPageFull: boolean = true) {
+        const first = event?.first ?? 0
+        const rows = event?.rows ?? 10
+        if (!loadWhenPageFull) {
+            const pageBoundary = first + rows
+            if (this.zonesTotal >= pageBoundary) {
+                // console.log('no need to lazily load data')
+                return
+            }
+
+            // console.log('there is need to lazily load data')
+        }
+
         this.zonesLoading = true
         this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
         lastValueFrom(
             this.dnsService.getZones(
-                event?.first ?? 0,
-                event?.rows ?? 10,
+                first,
+                rows,
                 (event?.filters?.appType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
