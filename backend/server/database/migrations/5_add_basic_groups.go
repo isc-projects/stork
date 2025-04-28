@@ -20,10 +20,10 @@ func init() {
 	}
 
 	type systemUserToGroup struct {
-		UserID int         `pg:",pk,not_null,on_delete:CASCADE"`
+		UserID int         `pg:",pk,notnull,on_delete:CASCADE"`
 		User   *systemUser `json:"-"`
 
-		GroupID int          `pg:",pk,not_null,on_delete:CASCADE"`
+		GroupID int          `pg:",pk,notnull,on_delete:CASCADE"`
 		Group   *systemGroup `json:"-"`
 	}
 
