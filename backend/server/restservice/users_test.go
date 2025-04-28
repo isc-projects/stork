@@ -1059,7 +1059,7 @@ func TestGetGroups(t *testing.T) {
 
 	groups := rspOK.Payload
 	require.NotNil(t, groups.Items)
-	require.GreaterOrEqual(t, 2, len(groups.Items))
+	require.GreaterOrEqual(t, 3, len(groups.Items))
 }
 
 // Tests that user information can be retrieved via REST API.
