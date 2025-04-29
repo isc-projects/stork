@@ -739,6 +739,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
      */
     private _sendPutZonesFetch() {
         this._subscriptions.add(this._putZonesFetchGuard.subscribe())
+        this.fetchAppsCompletedCount = 0
 
         lastValueFrom(
             this.dnsService.putZonesFetch().pipe(
@@ -794,27 +795,18 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     /**
      * Lazily loads paged zones data from backend.
      * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
-     * @param loadWhenPageFull when set to false, there is lazy loading optimization used; defaults to true
+     * @param showLoadingState when set to false, zones table will not show loading state when data is lazily loaded from backend.
+     *                         It is useful when zones fetch is in progress and table data is refreshed every polling interval - it
+     *                         prevents table UI from flickering.
+     *                         Defaults to true.
      */
-    onLazyLoadZones(event: TableLazyLoadEvent, loadWhenPageFull: boolean = true) {
-        const first = event?.first ?? 0
-        const rows = event?.rows ?? 10
-        if (!loadWhenPageFull) {
-            const pageBoundary = first + rows
-            if (this.zonesTotal >= pageBoundary) {
-                // console.log('no need to lazily load data')
-                return
-            }
-
-            // console.log('there is need to lazily load data')
-        }
-
-        this.zonesLoading = true
+    onLazyLoadZones(event: TableLazyLoadEvent, showLoadingState: boolean = true) {
+        this.zonesLoading = showLoadingState
         this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
         lastValueFrom(
             this.dnsService.getZones(
-                first,
-                rows,
+                event?.first ?? 0,
+                event?.rows ?? 10,
                 (event?.filters?.appType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
                 (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
@@ -824,9 +816,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
             )
         )
             .then((resp) => {
-                this.zonesExpandedRows = {}
                 this.zones = resp?.items ?? []
                 this.zonesTotal = resp?.total ?? 0
+                if (!this.zonesTotal) {
+                    this.zonesExpandedRows = {}
+                }
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
