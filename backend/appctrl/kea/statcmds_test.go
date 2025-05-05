@@ -3,6 +3,7 @@ package keactrl
 import (
 	_ "embed"
 	"encoding/json"
+	"math"
 	"math/big"
 	"slices"
 	"testing"
@@ -43,12 +44,12 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 				"subnet[1].reclaimed-declined-addresses": [ [0, "2021-10-14 10:44:18.687274"] ],
 				"subnet[1].reclaimed-leases": [ [0, "2021-10-14 10:44:18.687282"] ],
 				"subnet[1].total-addresses": [ [200, "2021-10-14 10:44:18.687221"] ],
-				"subnet[1].pool[0].assigned-addresses": [ [2, "2025-04-02 10:53:37.377976" ] ],
-				"subnet[1].pool[0].cumulative-assigned-addresses": [ [0, "2025-04-02 10:53:37.376490" ] ],
-				"subnet[1].pool[0].declined-addresses": [ [1, "2025-04-02 10:53:37.377975" ] ],
-				"subnet[1].pool[0].reclaimed-declined-addresses": [ [0, "2025-04-02 10:53:37.377474" ] ],
-				"subnet[1].pool[0].reclaimed-leases": [ [0, "2025-04-02 10:53:37.377476" ] ],
-				"subnet[1].pool[0].total-addresses": [ [200, "2025-04-02 10:53:37.376562" ] ]
+				"subnet[1].pool[0].assigned-addresses": [ [2, "2025-04-22 17:59:15.339186"] ],
+				"subnet[1].pool[0].cumulative-assigned-addresses": [ [0, "2025-04-22 17:59:15.328531" ] ],
+				"subnet[1].pool[0].declined-addresses": [ [1, "2025-04-22 17:59:15.339184" ] ],
+				"subnet[1].pool[0].reclaimed-declined-addresses": [ [0, "2025-04-22 17:59:15.338433" ] ],
+				"subnet[1].pool[0].reclaimed-leases": [ [0, "2025-04-22 17:59:15.338438"] ],
+				"subnet[1].pool[0].total-addresses": [ [42, "2025-04-22 17:59:15.328653" ] ]
 			},
 			"result": 0
 		},
@@ -65,13 +66,13 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, response, 2)
-	require.Len(t, response[0].Arguments, 26)
+	require.Len(t, response[0].Arguments, 32)
 	require.Nil(t, response[1].Arguments)
 	require.NoError(t, response[0].GetError())
 	require.Error(t, response[1].GetError())
 
 	index := slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
-		return item.Name == "total-addresses" && item.SubnetID == 1 && item.PoolID == 0
+		return item.Name == "total-addresses" && item.SubnetID == 1 && item.AddressPoolID == 0
 	})
 	require.NotEqual(t, -1, index)
 	item := response[0].Arguments[index]
@@ -85,7 +86,7 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 	require.Zero(t, item.Value.Int64())
 
 	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.SubnetID == 1 && item.PoolID == 0
+		return item.Name == "assigned-addresses" && item.SubnetID == 1 && item.AddressPoolID == 0
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
@@ -94,7 +95,7 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 
 // Test that unmarshalling of the Kea statistic-get-all response does not lose
 // precision when the values exceed the maximum value of int64.
-func TestUnmarshalStatisticGetAllResponse(t *testing.T) {
+func TestUnmarshalStatisticGetAllResponseBigNumbers(t *testing.T) {
 	// Arrange
 	jsonString := `
 		[{
@@ -108,6 +109,9 @@ func TestUnmarshalStatisticGetAllResponse(t *testing.T) {
 				],
 				"subnet[4].total-nas": [
 					[36893488147419103232, "2021-10-14 10:44:18.687221"]
+				],
+				"subnet[5].total-nas": [
+					[-1, "2021-10-14 10:44:18.687221"]
 				]
 			}
 		}]
@@ -117,6 +121,7 @@ func TestUnmarshalStatisticGetAllResponse(t *testing.T) {
 	expected0, _ := big.NewInt(0).SetString("844424930131968", 10)
 	expected1, _ := big.NewInt(0).SetString("281474976710656", 10)
 	expected2, _ := big.NewInt(0).SetString("36893488147419103232", 10)
+	expected3 := big.NewInt(0).SetUint64(math.MaxUint64)
 
 	// Act
 	err := json.Unmarshal([]byte(jsonString), &response)
@@ -145,4 +150,11 @@ func TestUnmarshalStatisticGetAllResponse(t *testing.T) {
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, expected2, item.Value)
+
+	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+		return item.Name == "total-nas" && item.SubnetID == 5
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, expected3, item.Value)
 }

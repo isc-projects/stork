@@ -29,8 +29,10 @@ type GetAllStatisticResponseItem struct {
 	Arguments GetAllStatisticArguments
 }
 
+// The Golang representation of the get-all-statistic arguments.
 type GetAllStatisticArguments []GetAllStatisticResponseSample
 
+// Single statistic from the get-all-statistic response.
 type GetAllStatisticResponseSample struct {
 	// Statistic name.
 	Name string
@@ -39,18 +41,29 @@ type GetAllStatisticResponseSample struct {
 	SubnetID int64
 	// Address pool ID is used for the pool statistics.
 	// It is zero for non-pool statistics.
+	// It is mutually exclusive with the prefix pool ID.
 	AddressPoolID int64
 	// Prefix pool ID is used for the prefix pool statistics.
 	// It is zero for non-prefix pool statistics.
+	// It is mutually exclusive with the address pool ID.
 	PrefixPoolID int64
-	Value        *big.Int
+	// Statistic value.
+	// The value is a big integer because it can be larger than uint64.
+	// Warning: We expect the value to be a positive integer because in older
+	// Kea versions the statistics were stored as uint64 but returned as int64,
+	// so any negative value was expected to be a number above maxInt64.
+	// This problem was fixed in Kea 2.5.3. See kea#3068.
+	Value *big.Int
 }
 
 // UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
 // to simpler Go-friendly form.
 func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
-	// Raw structures - corresponding to real received JSON.
-	// Arguments node looks like:
+	// Arguments property of the Kea response looks like below. Its inner list
+	// contains two different types of values: number and string. The Go JSON
+	// library does not support mixed-type arrays. The workaround is to
+	// unmarshal the values manually by using the json.RawMessage type.
+	//
 	// "arguments": {
 	//     "cumulative-assigned-nas": [
 	//         [
