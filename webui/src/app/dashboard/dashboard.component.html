@@ -424,8 +424,15 @@
                             <th>Daemon</th>
                             <th>Status</th>
                             <th>Uptime</th>
-                            <th>Total Zones #</th>
-                            <th>Builtin Zones #</th>
+                            <th
+                                pTooltip="Zone config is a zone specification in the BIND9 view.
+                            If the zone appears in several views, this count is increased
+                            for each occurrence of that zone.
+                            "
+                                class="cursor-pointer"
+                            >
+                                Zone Configs #
+                            </th>
                             <th>Zone Fetch Status</th>
                         </tr>
                     </ng-template>
@@ -464,15 +471,7 @@
                             <td>
                                 <ng-container *ngIf="zoneInventoryStateMap.get(a.id)">
                                     <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">{{
-                                        zoneInventoryStateMap.get(a.id).distinctZoneCount ?? 0
-                                    }}</a>
-                                </ng-container>
-                                <ng-container *ngIf="!zoneInventoryStateMap.get(a.id)"> n/a </ng-container>
-                            </td>
-                            <td>
-                                <ng-container *ngIf="zoneInventoryStateMap.get(a.id)">
-                                    <a routerLink="/dns/zones" [queryParams]="{ appId: a.id, zoneType: 'builtin' }">{{
-                                        zoneInventoryStateMap.get(a.id).builtinZoneCount ?? 0
+                                        zoneInventoryStateMap.get(a.id).zoneCount ?? 0
                                     }}</a>
                                 </ng-container>
                                 <ng-container *ngIf="!zoneInventoryStateMap.get(a.id)"> n/a </ng-container>
