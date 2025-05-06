@@ -255,35 +255,43 @@ namespace :systemtest do
 
             kea_prior_2_3_0 = false
             kea_prior_2_7_5 = false
+            kea_prior_2_7_7 = false
 
-            # Enable legacy packages for Kea prior to 2.3.0
-            if (kea_version_info <=> [2, 3]) < 0 then
-                kea_prior_2_3_0 = true
-                puts "Use the Kea legacy packages prior to 2.3.0"
+            if (kea_version_info <=> [2, 7, 7]) < 0 then
+                kea_prior_2_7_7 = true
             end
-            if kea_prior_2_3_0
+
+            if (kea_version_info <=> [2, 7, 5]) < 0 then
                 kea_prior_2_7_5 = true
-            elsif (kea_version_info <=> [2, 7, 5]) < 0 then
-                kea_prior_2_7_5 = true
-                puts "Use the Kea legacy packages prior to 2.7.5"
+            end
+
+            if (kea_version_info <=> [2, 3, 0]) < 0 then
+                kea_prior_2_3_0 = true
             end
 
             # Use single development repository for Kea 2.7.0 and newer.
-            ENV["KEA_REPO"] = "isc/kea-#{kea_version_info[0]}-#{kea_version_info[1]}"
+            directory = "isc/kea-#{kea_version_info[0]}-#{kea_version_info[1]}"
             is_development_version = kea_version_info[1] % 2 == 1
             if is_development_version &&
                 (kea_version_info <=> [2, 7]) >= 0 then
-                ENV["KEA_REPO"] = "isc/kea-dev"
+                directory = "isc/kea-dev"
+            end
+
+            ENV["KEA_PUBLIC_REPO"] = "public/#{directory}"
+            ENV["KEA_PREMIUM_REPO"] = "#{ENV["CS_REPO_ACCESS_TOKEN"]}/#{directory}-prv"
+            if !kea_prior_2_7_7 then
+                ENV["KEA_PREMIUM_REPO"] = ENV["KEA_PUBLIC_REPO"]
             end
 
             ENV["KEA_VERSION"] = kea_version
             ENV["KEA_PRIOR_2_3_0"] = kea_prior_2_3_0 ? "true" : "false"
             ENV["KEA_PRIOR_2_7_5"] = kea_prior_2_7_5 ? "true" : "false"
+            ENV["KEA_PRIOR_2_7_7"] = kea_prior_2_7_7 ? "true" : "false"
         end
     end
 
     desc 'List the test cases'
-    task :list => [PYTEST, OPEN_API_GENERATOR_PYTHON_DIR, *OPEN_API_GENERATOR_PYTHON_DIR] do
+    task :list => [PYTEST, OPEN_API_GENERATOR_PYTHON_DIR, *OPEN_API_GENERATOR_PYTHON_DIR, *GRPC_PYTHON_API_FILES] do
         Dir.chdir(system_tests_dir) do
             sh PYTEST, "--collect-only"
         end
@@ -341,7 +349,7 @@ namespace :systemtest do
         ENV["PWD"] = Dir.pwd
 
         profiles = []
-        if ENV["CS_REPO_ACCESS_TOKEN"]
+        if ENV["CS_REPO_ACCESS_TOKEN"] || ENV["KEA_PRIOR_2_7_7"] == "false"
             puts "Use the Kea premium containers"
             profiles.append "--profile", "premium"
         end

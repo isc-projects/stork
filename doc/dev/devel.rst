@@ -531,13 +531,16 @@ This command first prepares all necessary toolkits (except these listed above)
 and configuration files. Next, it calls ``pytest``, a Python testing framework
 used in Stork for executing the system tests.
 
-Some test cases use the premium Kea hooks. They are disabled by default. To
-enable them, specify the valid `cloudsmith.io <https://cloudsmith.io>`_ access token in the
-CS_REPO_ACCESS_TOKEN variable.
+..
+    <Comment out when the system tests will support subscriber Kea hooks.>
 
-.. code-block:: console
+    Some test cases use the subscriber Kea hooks. They are disabled by default. To
+    enable them, specify the valid `cloudsmith.io <https://cloudsmith.io>`_ access token in the
+    CS_REPO_ACCESS_TOKEN variable.
 
-    $ rake systemtest CS_REPO_ACCESS_TOKEN=<access token>
+    .. code-block:: console
+
+        $ rake systemtest CS_REPO_ACCESS_TOKEN=<access token>
 
 Test results for individual test cases are shown at the end of the tests execution.
 

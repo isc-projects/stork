@@ -20,12 +20,9 @@ namespace :demo do
     def get_docker_opts(server_mode, cache, detach, services)
         opts = [
             "--project-directory", ".",
-            "-f", "docker/docker-compose.yaml"
+            "-f", "docker/docker-compose.yaml",
+            "-f", "docker/docker-compose-premium.yaml"
         ]
-
-        if ENV['CS_REPO_ACCESS_TOKEN']
-            opts += ["-f", "docker/docker-compose-premium.yaml"]
-        end
 
         cache_opts = []
         if !cache
@@ -115,7 +112,7 @@ namespace :demo do
     ### Demo tasks ###
     ##################
 
-    desc 'Build containers with everything and start all services using docker-compose. Set CS_REPO_ACCESS_TOKEN to use premium features.
+    desc 'Build containers with everything and start all services using docker-compose.
     SERVER_MODE - Server mode - choice: host, with-ui, without-ui, no-server, default, default: default
     host - Do not run the server in Docker, instead use the local one (which must be run separately on host)
     with-ui - Run server in Docker with UI
@@ -154,12 +151,8 @@ namespace :demo do
         end
 
         desc 'Build and run container with Stork Agent and Kea with host reservations in db
-        CS_REPO_ACCESS_TOKEN - CloudSmith token - required
         See "up" command for more arguments.'
         task :kea_premium => [DOCKER_COMPOSE] do
-            if !ENV["CS_REPO_ACCESS_TOKEN"]
-                fail 'You need to provide the CloudSmith access token in CS_REPO_ACCESS_TOKEN environment variable.'
-            end
             docker_up_services("agent-kea-premium-one", "agent-kea-premium-two")
         end
 

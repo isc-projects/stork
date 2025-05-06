@@ -96,7 +96,7 @@ then
     # Prompt allowed?
     if [ ${NO_PROMPT} -eq 0 ]
     then
-        echo "To run the Demo with a Kea instance that includes the premium features, you need to provide your CloudSmith access token."
+        echo "To run the Demo with a Kea instance that includes the subscribers features, you need to provide your CloudSmith access token."
         echo "Leave this value empty to use only open-source features."
         echo "Enter CloudSmith access token (or leave empty):"
         # No echo the secret
@@ -104,16 +104,6 @@ then
         read -r ACCESS_TOKEN
         stty echo
     fi
-fi
-
-PREMIUM_COMPOSE=
-if [ -n "${ACCESS_TOKEN}" ]
-then
-    PREMIUM_COMPOSE="-f${SCRIPT_DIR}/docker/docker-compose-premium.yaml"
-else
-    # This variable cannot be empty because it causes the docker-compose fails.
-    # The below line sets any default value explicitly.
-    PREMIUM_COMPOSE="--verbose"
 fi
 
 # Run the demo
@@ -124,13 +114,13 @@ CS_REPO_ACCESS_TOKEN=${ACCESS_TOKEN} \
 $DOCKER_COMPOSE \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
-    "${PREMIUM_COMPOSE}" \
+    -f "${SCRIPT_DIR}/docker/docker-compose-premium.yaml" \
     build
 # Start Docker containers
 $DOCKER_COMPOSE \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
-    "${PREMIUM_COMPOSE}" \
+    -f "${SCRIPT_DIR}/docker/docker-compose-premium.yaml" \
     up -d
 
 if [ ${NO_PROMPT} -eq 0 ]

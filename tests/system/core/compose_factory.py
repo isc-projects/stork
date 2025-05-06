@@ -64,7 +64,8 @@ def create_docker_compose(
     env_vars = base_env_vars if base_env_vars is not None else os.environ.copy()
     env_vars.update(extra_env_vars if extra_env_vars is not None else {})
 
-    if env_vars.get("CS_REPO_ACCESS_TOKEN", "") != "":
+    # The premium hooks became open source in 2.7.7.
+    if env_vars.get("CS_REPO_ACCESS_TOKEN", "") != "" or env_vars.get("KEA_PRIOR_2_7_7", "true") == "false":
         profiles.append("premium")
 
     return DockerCompose(
