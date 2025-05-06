@@ -266,3 +266,22 @@ func TestAddressPoolGetDHCPOptions(t *testing.T) {
 	require.EqualValues(t, 10, options[0].GetCode())
 	require.Equal(t, dhcpmodel.DHCPv6OptionSpace, options[0].GetSpace())
 }
+
+// Test the IsIPv6 function recognizes IPv6 address pools.
+func TestAddressPoolIsIPv6(t *testing.T) {
+	t.Run("IPv4", func(t *testing.T) {
+		v4 := AddressPool{
+			LowerBound: "192.0.2.1",
+			UpperBound: "192.0.2.10",
+		}
+		require.False(t, v4.IsIPv6())
+	})
+
+	t.Run("IPv6", func(t *testing.T) {
+		v6 := AddressPool{
+			LowerBound: "2001:db8:1::cafe",
+			UpperBound: "2001:db8:1::ffff",
+		}
+		require.True(t, v6.IsIPv6())
+	})
+}
