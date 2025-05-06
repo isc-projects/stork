@@ -1,6 +1,6 @@
 # The main purpose of this container is to run Stork Environment Simulator.
-ARG KEA_REPO=public/isc/kea-2-4
-ARG KEA_VERSION=2.4.0-isc20230630120747
+ARG KEA_REPO=public/isc/kea-dev
+ARG KEA_VERSION=2.7.8-isc20250429105336
 
 # The demo setup is not fully compatible with arm64 architectures.
 # In particular, only the amd64 image with named is available.
