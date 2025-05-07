@@ -681,10 +681,10 @@ system_test:
     reports:
       junit: tests/system/test-results/junit.xml
 
-system_test_kea_2.7.5:
+system_test_kea_2.6:
   extends: system_test
   variables:
-    KEA_VERSION: 2.7.5-isc20241206195208
+    KEA_VERSION: 2.6.2-isc20250317140612
     ONLY_KEA_TESTS: "true"
   script:
     - rake systemtest
