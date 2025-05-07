@@ -217,7 +217,7 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.GetAllStatis
 	statisticsPerSubnet := make(map[int64][]keactrl.GetAllStatisticResponseSample)
 	for _, statEntry := range response {
 		subnetID := statEntry.SubnetID
-		if subnetID != 0 && statEntry.AddressPoolID == 0 && statEntry.PrefixPoolID == 0 {
+		if statEntry.IsSubnetSample() {
 			statisticsPerSubnet[subnetID] = append(statisticsPerSubnet[subnetID], statEntry)
 		}
 	}
@@ -247,8 +247,6 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.GetAllStatis
 			)
 		}
 
-		// TODO: Update pool and prefix-pool stats.
-
 		err := subnet.UpdateStats(statsPuller.DB, stats)
 		if err != nil {
 			log.Errorf(
@@ -268,11 +266,17 @@ func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.GetAllS
 
 	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.GetAllStatisticResponseSample)
 	for _, statEntry := range response {
-		if statEntry.AddressPoolID == 0 {
+		if !statEntry.IsAddressPoolSample() {
 			continue
 		}
-		statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.AddressPoolID] = append(
-			statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.AddressPoolID],
+
+		if _, ok := statisticsPerSubnetAndPool[statEntry.SubnetID]; !ok {
+			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.GetAllStatisticResponseSample)
+		}
+
+		poolID := *statEntry.AddressPoolID
+		statisticsPerSubnetAndPool[statEntry.SubnetID][poolID] = append(
+			statisticsPerSubnetAndPool[statEntry.SubnetID][poolID],
 			statEntry,
 		)
 	}
@@ -290,7 +294,7 @@ func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.GetAllS
 
 		for poolID, statEntries := range statisticsPerPool {
 			for _, pool := range subnet.AddressPools {
-				if pool.ID != poolID {
+				if pool.KeaParameters.PoolID != poolID {
 					continue
 				}
 
@@ -328,11 +332,17 @@ func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.GetAllSt
 
 	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.GetAllStatisticResponseSample)
 	for _, statEntry := range response {
-		if statEntry.PrefixPoolID == 0 {
+		if !statEntry.IsPrefixPoolSample() {
 			continue
 		}
-		statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.PrefixPoolID] = append(
-			statisticsPerSubnetAndPool[statEntry.SubnetID][statEntry.PrefixPoolID],
+
+		if _, ok := statisticsPerSubnetAndPool[statEntry.SubnetID]; !ok {
+			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.GetAllStatisticResponseSample)
+		}
+
+		poolID := *statEntry.PrefixPoolID
+		statisticsPerSubnetAndPool[statEntry.SubnetID][poolID] = append(
+			statisticsPerSubnetAndPool[statEntry.SubnetID][poolID],
 			statEntry,
 		)
 	}
@@ -350,7 +360,7 @@ func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.GetAllSt
 
 		for poolID, statEntries := range statisticsPerPool {
 			for _, pool := range subnet.PrefixPools {
-				if pool.ID != poolID {
+				if pool.KeaParameters.PoolID != poolID {
 					continue
 				}
 

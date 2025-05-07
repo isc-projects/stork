@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	storkutil "isc.org/stork/util"
 )
 
 // Test if the Kea JSON get-all-stats response is unmarshal correctly.
@@ -72,7 +73,7 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 	require.Error(t, response[1].GetError())
 
 	index := slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
-		return item.Name == "total-addresses" && item.SubnetID == 1 && item.AddressPoolID == 0
+		return item.Name == "total-addresses" && item.IsSubnetSample() && item.SubnetID == 1
 	})
 	require.NotEqual(t, -1, index)
 	item := response[0].Arguments[index]
@@ -86,11 +87,11 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 	require.Zero(t, item.Value.Int64())
 
 	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.SubnetID == 1 && item.AddressPoolID == 0
+		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 1 && *item.AddressPoolID == 0
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
-	require.EqualValues(t, 200, item.Value.Int64())
+	require.EqualValues(t, 2, item.Value.Int64())
 }
 
 // Test that unmarshalling of the Kea statistic-get-all response does not lose
@@ -157,4 +158,174 @@ func TestUnmarshalStatisticGetAllResponseBigNumbers(t *testing.T) {
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, expected3, item.Value)
+}
+
+// Test that the pool sample is recognized correctly.
+func TestIsPoolSample(t *testing.T) {
+	// Test cases
+	testCases := []struct {
+		name          string
+		addressPoolID *int64
+		prefixPoolID  *int64
+		expected      bool
+	}{
+		{
+			name:          "address pool ID is set",
+			addressPoolID: storkutil.Ptr(int64(1)),
+			prefixPoolID:  nil,
+			expected:      true,
+		},
+		{
+			name:          "prefix pool ID is set",
+			addressPoolID: nil,
+			prefixPoolID:  storkutil.Ptr(int64(2)),
+			expected:      true,
+		},
+		{
+			name:          "both pool IDs are set",
+			addressPoolID: storkutil.Ptr(int64(1)),
+			prefixPoolID:  storkutil.Ptr(int64(2)),
+			expected:      true,
+		},
+		{
+			name:          "no pool IDs are set",
+			addressPoolID: nil,
+			prefixPoolID:  nil,
+			expected:      false,
+		},
+	}
+
+	// Run test cases
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sample := GetAllStatisticResponseSample{
+				AddressPoolID: tc.addressPoolID,
+				PrefixPoolID:  tc.prefixPoolID,
+			}
+			result := sample.IsPoolSample()
+			require.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestIsAddressPoolSample(t *testing.T) {
+	// Test cases
+	testCases := []struct {
+		name          string
+		addressPoolID *int64
+		expected      bool
+	}{
+		{
+			name:          "address pool ID is set",
+			addressPoolID: storkutil.Ptr(int64(1)),
+			expected:      true,
+		},
+		{
+			name:          "address pool ID is not set",
+			addressPoolID: nil,
+			expected:      false,
+		},
+	}
+
+	// Run test cases
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sample := GetAllStatisticResponseSample{
+				AddressPoolID: tc.addressPoolID,
+			}
+			result := sample.IsAddressPoolSample()
+			require.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestIsPrefixPoolSample(t *testing.T) {
+	// Test cases
+	testCases := []struct {
+		name         string
+		prefixPoolID *int64
+		expected     bool
+	}{
+		{
+			name:         "prefix pool ID is set",
+			prefixPoolID: storkutil.Ptr(int64(1)),
+			expected:     true,
+		},
+		{
+			name:         "prefix pool ID is not set",
+			prefixPoolID: nil,
+			expected:     false,
+		},
+	}
+
+	// Run test cases
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sample := GetAllStatisticResponseSample{
+				PrefixPoolID: tc.prefixPoolID,
+			}
+			result := sample.IsPrefixPoolSample()
+			require.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestIsSubnetSample(t *testing.T) {
+	// Test cases
+	testCases := []struct {
+		name          string
+		subnetID      int64
+		addressPoolID *int64
+		prefixPoolID  *int64
+		expected      bool
+	}{
+		{
+			name:          "subnet ID is set but not a pool",
+			subnetID:      1,
+			addressPoolID: nil,
+			prefixPoolID:  nil,
+			expected:      true,
+		},
+		{
+			name:          "subnet ID is not set",
+			subnetID:      0,
+			addressPoolID: nil,
+			prefixPoolID:  nil,
+			expected:      false,
+		},
+		{
+			name:          "subnet ID is set but address pool ID is also set",
+			subnetID:      1,
+			addressPoolID: storkutil.Ptr(int64(1)),
+			prefixPoolID:  nil,
+			expected:      false,
+		},
+		{
+			name:          "subnet ID is set but prefix pool ID is also set",
+			subnetID:      1,
+			addressPoolID: nil,
+			prefixPoolID:  storkutil.Ptr(int64(1)),
+			expected:      false,
+		},
+		{
+			name:          "subnet ID is set but both pool IDs are also set",
+			subnetID:      1,
+			addressPoolID: storkutil.Ptr(int64(1)),
+			prefixPoolID:  storkutil.Ptr(int64(2)),
+			expected:      false,
+		},
+	}
+
+	// Run test cases
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			sample := GetAllStatisticResponseSample{
+				SubnetID:      tc.subnetID,
+				AddressPoolID: tc.addressPoolID,
+				PrefixPoolID:  tc.prefixPoolID,
+			}
+			result := sample.IsSubnetSample()
+			require.Equal(t, tc.expected, result)
+		})
+	}
 }

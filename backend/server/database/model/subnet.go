@@ -744,6 +744,8 @@ func GetSubnetsWithLocalSubnets(dbi dbops.DBI) ([]*Subnet, error) {
 	// only selected columns are returned for performance reasons
 	q = q.Column("id", "shared_network_id", "prefix")
 	q = q.Relation("LocalSubnets")
+	q = q.Relation("LocalSubnets.AddressPools")
+	q = q.Relation("LocalSubnets.PrefixPools")
 	q = q.Order("shared_network_id ASC")
 
 	err := q.Select()
@@ -973,6 +975,8 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 	// only selected columns are returned while stats columns are skipped for performance reasons (they are pretty big json fields)
 	q = q.Column("local_subnet.id", "local_subnet.daemon_id", "local_subnet.subnet_id", "local_subnet.local_subnet_id")
 	q = q.Relation("Subnet")
+	q = q.Relation("AddressPools")
+	q = q.Relation("PrefixPools")
 	q = q.Relation("Daemon.App")
 	q = q.Where("d.app_id = ?", appID)
 

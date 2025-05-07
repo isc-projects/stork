@@ -115,6 +115,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 				Pool:             storkutil.Ptr(poolDetails.LowerBound + "-" + poolDetails.UpperBound),
 				Stats:            poolDetails.Stats,
 				StatsCollectedAt: convertToOptionalDatetime(poolDetails.StatsCollectedAt),
+				Utilization:      float64(poolDetails.Utilization) * 100,
 			}
 			if poolDetails.KeaParameters != nil {
 				pool.KeaConfigPoolParameters = &models.KeaConfigPoolParameters{
@@ -145,6 +146,7 @@ func (r *RestAPI) convertSubnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 				ExcludedPrefix:   prefixPoolDetails.ExcludedPrefix,
 				Stats:            prefixPoolDetails.Stats,
 				StatsCollectedAt: convertToOptionalDatetime(prefixPoolDetails.StatsCollectedAt),
+				Utilization:      float64(prefixPoolDetails.Utilization) * 100,
 			}
 			localSubnet.PrefixDelegationPools = append(localSubnet.PrefixDelegationPools, pool)
 			if prefixPoolDetails.KeaParameters != nil {

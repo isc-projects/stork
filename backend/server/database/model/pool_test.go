@@ -285,3 +285,128 @@ func TestAddressPoolIsIPv6(t *testing.T) {
 		require.True(t, v6.IsIPv6())
 	})
 }
+
+// Test that the address pool statistics are updated correctly.
+func TestAddressPoolUpdateStats(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestSubnetApps(t, db)
+	subnet := Subnet{
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+		},
+	}
+	err := AddSubnet(db, &subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	err = AddLocalSubnets(db, &subnet)
+	require.NoError(t, err)
+
+	pool := AddressPool{
+		LowerBound: "192.0.2.10",
+		UpperBound: "192.0.2.20",
+		LocalSubnet: &LocalSubnet{
+			ID: subnet.LocalSubnets[0].ID,
+		},
+	}
+	err = AddAddressPool(db, &pool)
+	require.NoError(t, err)
+
+	// Act
+	err = pool.UpdateStats(db, SubnetStats{
+		"foo":                uint64(42),
+		"total-addresses":    uint64(100),
+		"assigned-addresses": uint64(33),
+	})
+
+	// Assert
+	require.NoError(t, err)
+	subnetDB, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	poolDB := subnetDB.LocalSubnets[0].AddressPools[0]
+
+	require.Len(t, poolDB.Stats, 3)
+	require.Equal(t, uint64(42), poolDB.Stats["foo"])
+	require.NotZero(t, poolDB.StatsCollectedAt)
+	require.Equal(t, Utilization(0.33), poolDB.Utilization)
+}
+
+// Test that the prefix pool statistics are updated correctly.
+func TestPrefixPoolUpdateStats(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestSubnetApps(t, db)
+	subnet := Subnet{
+		Prefix: "fe80::/64",
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+		},
+	}
+	err := AddSubnet(db, &subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	err = AddLocalSubnets(db, &subnet)
+	require.NoError(t, err)
+
+	pdPool := PrefixPool{
+		Prefix:       "fe80::/80",
+		DelegatedLen: 96,
+		LocalSubnet: &LocalSubnet{
+			ID: subnet.LocalSubnets[0].ID,
+		},
+	}
+	err = AddPrefixPool(db, &pdPool)
+	require.NoError(t, err)
+
+	addressPool := AddressPool{
+		LowerBound: "fe80::1",
+		UpperBound: "fe80::ffff",
+		LocalSubnet: &LocalSubnet{
+			ID: subnet.LocalSubnets[0].ID,
+		},
+	}
+	err = AddAddressPool(db, &addressPool)
+	require.NoError(t, err)
+
+	// Act
+	errPD := pdPool.UpdateStats(db, SubnetStats{
+		"foo":          uint64(42),
+		"total-pds":    uint64(100),
+		"assigned-pds": uint64(33),
+	})
+
+	errAddress := addressPool.UpdateStats(db, SubnetStats{
+		"foo":          uint64(42),
+		"total-nas":    uint64(200),
+		"assigned-nas": uint64(50),
+	})
+
+	// Assert
+	require.NoError(t, errPD)
+	require.NoError(t, errAddress)
+	subnetDB, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	pdPoolDB := subnetDB.LocalSubnets[0].PrefixPools[0]
+	addressPoolDB := subnetDB.LocalSubnets[0].AddressPools[0]
+
+	require.Len(t, pdPoolDB.Stats, 3)
+	require.Equal(t, uint64(42), pdPoolDB.Stats["foo"])
+	require.NotZero(t, pdPoolDB.StatsCollectedAt)
+	require.Equal(t, Utilization(0.33), pdPoolDB.Utilization)
+
+	require.Len(t, addressPoolDB.Stats, 3)
+	require.Equal(t, uint64(42), addressPoolDB.Stats["foo"])
+	require.NotZero(t, addressPoolDB.StatsCollectedAt)
+	require.Equal(t, Utilization(0.25), addressPoolDB.Utilization)
+}

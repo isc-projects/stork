@@ -781,11 +781,11 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.Ga
 			}
 
 			switch {
-			case statEntry.PoolID != 0:
-				labels["pool_id"] = fmt.Sprint(statEntry.PoolID)
+			case statEntry.IsAddressPoolSample():
+				labels["pool_id"] = fmt.Sprint(*statEntry.AddressPoolID)
 				statName = "pool-" + statName
-			case statEntry.PrefixPoolID != 0:
-				labels["pool_id"] = fmt.Sprint(statEntry.PrefixPoolID)
+			case statEntry.IsPrefixPoolSample():
+				labels["pool_id"] = fmt.Sprint(*statEntry.PrefixPoolID)
 				statName = "pool-pd-" + statName
 			default:
 				// It isn't a pool stat. Just a subnet stat.

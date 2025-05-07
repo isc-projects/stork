@@ -276,6 +276,8 @@
         type: string
         format: date-time
         x-nullable: true
+      utilization:
+        type: number
 
 # Delegated prefix pool
 
@@ -299,6 +301,8 @@
         type: string
         format: date-time
         x-nullable: true
+      utilization:
+        type: number
 
 
 # Subnet

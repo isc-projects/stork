@@ -66,11 +66,15 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 					"subnet[20].%[1]s": [ [ %[7]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].%[2]s": [ [ %[8]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].%[3]s": [ [ %[9]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].pool[0].%[1]s": [ [ %[10]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].pool[0].%[2]s": [ [ %[11]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].pool[0].%[3]s": [ [ %[12]d, "2019-07-30 10:13:00.000000" ] ],
 					"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
 				}
 			}]`, statistic4Names[0], statistic4Names[1], statistic4Names[2],
 				256+totalShift, 111+shift, 0+shift,
 				4098+totalShift, 2034+shift, 4+shift,
+				10+totalShift, 4+shift, 2+shift,
 			),
 			fmt.Sprintf(`[{
 				"result": 0,
@@ -95,6 +99,11 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 					"subnet[60].declined-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[60].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[60].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[0].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[0].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[0].declined-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].prefix-pool[0].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].prefix-pool[0].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
 					"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
 				}
 			}]`,
@@ -102,6 +111,7 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 				0+totalShift, 0+shift, 0+shift, 1048+totalShift, 233+shift,
 				256+totalShift, 60+shift, 0+shift, 1048+totalShift, 15+shift,
 				-1, "9223372036854775807", 0, -2, -3,
+				20+totalShift, 8+shift, 4+shift, 40+totalShift, 20+shift,
 			),
 		}
 	})
@@ -244,6 +254,8 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 	localSubnets := []*dbmodel.LocalSubnet{}
 	q := db.Model(&localSubnets)
 	q = q.Relation("Daemon")
+	q = q.Relation("AddressPools")
+	q = q.Relation("PrefixPools")
 	err := q.Select()
 	require.NoError(t, err)
 	snCnt := 0
@@ -261,6 +273,12 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 			require.Equal(t, uint64(4+shift), sn.Stats["declined-addresses"])
 			require.Equal(t, uint64(4098+totalShift), sn.Stats["total-addresses"])
 			snCnt++
+
+			// Check pools.
+			require.Len(t, sn.AddressPools, 1)
+			require.Equal(t, uint64(10+totalShift), sn.AddressPools[0].Stats["total-addresses"])
+			require.Equal(t, uint64(4+shift), sn.AddressPools[0].Stats["assigned-addresses"])
+			require.Equal(t, uint64(2+shift), sn.AddressPools[0].Stats["declined-addresses"])
 		case 30:
 			require.Equal(t, uint64(2400+shift), sn.Stats["assigned-nas"])
 			require.Equal(t, uint64(0+shift), sn.Stats["assigned-pds"])
@@ -282,6 +300,16 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 			require.Equal(t, uint64(256+totalShift), sn.Stats["total-nas"])
 			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
 			snCnt++
+
+			// Check pools.
+			require.Len(t, sn.AddressPools, 1)
+			require.Equal(t, uint64(20+totalShift), sn.AddressPools[0].Stats["total-nas"])
+			require.Equal(t, uint64(8+shift), sn.AddressPools[0].Stats["assigned-nas"])
+			require.Equal(t, uint64(4+shift), sn.AddressPools[0].Stats["declined-nas"])
+
+			require.Len(t, sn.PrefixPools, 1)
+			require.Equal(t, uint64(40+totalShift), sn.PrefixPools[0].Stats["total-pds"])
+			require.Equal(t, uint64(20+shift), sn.PrefixPools[0].Stats["assigned-pds"])
 		case 60:
 			require.Equal(t, uint64(math.MaxUint64), sn.Stats["total-nas"])
 			require.Equal(t, uint64(math.MaxInt64), sn.Stats["assigned-nas"])
@@ -1082,6 +1110,18 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 		require.NoError(t, err)
 		err = dbmodel.AddLocalSubnets(db, subnet)
 		require.NoError(t, err)
+		for _, ls := range subnet.LocalSubnets {
+			for _, pool := range ls.AddressPools {
+				err = dbmodel.AddAddressPool(db, &pool)
+				require.NoError(t, err)
+			}
+		}
+		for _, ls := range subnet.LocalSubnets {
+			for _, pool := range ls.PrefixPools {
+				err = dbmodel.AddPrefixPool(db, &pool)
+				require.NoError(t, err)
+			}
+		}
 	}
 
 	// Act

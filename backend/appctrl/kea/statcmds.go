@@ -40,13 +40,13 @@ type GetAllStatisticResponseSample struct {
 	// It is zero for the global statistics.
 	SubnetID int64
 	// Address pool ID is used for the pool statistics.
-	// It is zero for non-pool statistics.
+	// It is nil for non-pool statistics.
 	// It is mutually exclusive with the prefix pool ID.
-	AddressPoolID int64
+	AddressPoolID *int64
 	// Prefix pool ID is used for the prefix pool statistics.
-	// It is zero for non-prefix pool statistics.
+	// It is nil for non-prefix pool statistics.
 	// It is mutually exclusive with the address pool ID.
-	PrefixPoolID int64
+	PrefixPoolID *int64
 	// Statistic value.
 	// The value is a big integer because it can be larger than uint64.
 	// Warning: We expect the value to be a positive integer because in older
@@ -54,6 +54,26 @@ type GetAllStatisticResponseSample struct {
 	// so any negative value was expected to be a number above maxInt64.
 	// This problem was fixed in Kea 2.5.3. See kea#3068.
 	Value *big.Int
+}
+
+// Indicates if the sample contains an address or prefix pool statistic.
+func (s *GetAllStatisticResponseSample) IsPoolSample() bool {
+	return s.AddressPoolID != nil || s.PrefixPoolID != nil
+}
+
+// Indicates if the sample contains an address pool statistic.
+func (s *GetAllStatisticResponseSample) IsAddressPoolSample() bool {
+	return s.AddressPoolID != nil
+}
+
+// Indicates if the sample contains a prefix pool statistic.
+func (s *GetAllStatisticResponseSample) IsPrefixPoolSample() bool {
+	return s.PrefixPoolID != nil
+}
+
+// Indicates if the sample contains a subnet statistic.
+func (s *GetAllStatisticResponseSample) IsSubnetSample() bool {
+	return s.SubnetID != 0 && !s.IsPoolSample()
 }
 
 // UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
@@ -87,8 +107,8 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 	// Unpack the complex structure to simpler form.
 	for statName, statValueOuterList := range obj {
 		var subnetID int64
-		var addressPoolID int64
-		var prefixPoolID int64
+		var addressPoolID *int64
+		var prefixPoolID *int64
 		// Extract the subnet ID and pool ID if present.
 		if strings.HasPrefix(statName, "subnet[") {
 			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
@@ -109,22 +129,26 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 				poolIDRaw := matches[1]
 				statName = matches[2]
 
-				addressPoolID, err = strconv.ParseInt(poolIDRaw, 10, 64)
+				parsedAddressPoolID, err := strconv.ParseInt(poolIDRaw, 10, 64)
 				if err != nil {
 					log.Errorf("Problem converting poolID: %s", poolIDRaw)
 					continue
 				}
+
+				addressPoolID = &parsedAddressPoolID
 			} else if strings.HasPrefix(statName, "prefix-pool[") {
 				re = regexp.MustCompile(`prefix-pool\[(\d+)\]\.(.+)`)
 				matches = re.FindStringSubmatch(statName)
 				prefixPoolIDRaw := matches[1]
 				statName = matches[2]
 
-				prefixPoolID, err = strconv.ParseInt(prefixPoolIDRaw, 10, 64)
+				parsedPrefixPoolID, err := strconv.ParseInt(prefixPoolIDRaw, 10, 64)
 				if err != nil {
 					log.Errorf("Problem converting prefixPoolID: %s", prefixPoolIDRaw)
 					continue
 				}
+
+				prefixPoolID = &parsedPrefixPoolID
 			}
 		}
 
