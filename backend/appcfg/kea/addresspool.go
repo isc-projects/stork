@@ -26,13 +26,13 @@ type AddressPool interface {
 // when they are implemented in Kea.
 type PoolParameters struct {
 	ClientClassParameters
-	PoolID *int64 `json:"pool-id,omitempty"`
+	PoolID int64 `json:"pool-id,omitempty"`
 }
 
 // Represents an address pool structure within a Kea configuration.
 type Pool struct {
 	Pool       string             `json:"pool"`
-	PoolID     *int64             `json:"pool-id,omitempty"`
+	PoolID     int64              `json:"pool-id,omitempty"`
 	OptionData []SingleOptionData `json:"option-data,omitempty"`
 	ClientClassParameters
 }

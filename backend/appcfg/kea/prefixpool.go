@@ -19,7 +19,7 @@ type PDPool struct {
 	DelegatedLen      int                `json:"delegated-len"`
 	ExcludedPrefix    string             `json:"excluded-prefix,omitempty"`
 	ExcludedPrefixLen int                `json:"excluded-prefix-len,omitempty"`
-	PoolID            *int64             `json:"pool-id,omitempty"`
+	PoolID            int64              `json:"pool-id,omitempty"`
 	OptionData        []SingleOptionData `json:"option-data,omitempty"`
 	ClientClassParameters
 }

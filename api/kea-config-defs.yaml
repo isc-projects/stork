@@ -273,7 +273,6 @@
       poolID:
         type: number
         format: int64
-        x-nullable: true
 
 
   KeaConfigPoolParameters:
