@@ -140,7 +140,7 @@ services:
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp4.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/hook-ha-dhcp6.json
       - $PWD/tests/system/config/kea/disabled.json:/etc/kea/kea-host-database.json
-      - $PWD/tests/system/config/kea/kea-builtin-database-driver=${KEA_PRIOR_2_7_5-true}.json:/etc/kea/hook-database-driver.json
+      - $PWD/tests/system/config/kea/kea-builtin-database-driver=${KEA_PRIOR_2_7_5-false}.json:/etc/kea/hook-database-driver.json
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
       - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
