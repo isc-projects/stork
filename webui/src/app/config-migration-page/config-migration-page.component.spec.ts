@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing'
-import { HttpEvent } from '@angular/common/http'
+import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfigMigrationPageComponent } from './config-migration-page.component'
 import { DHCPService, MigrationStatus } from '../backend'
 import { MessageService } from 'primeng/api'
@@ -13,7 +13,7 @@ import { BehaviorSubject, of, throwError, Observable } from 'rxjs'
 import { RouterTestingModule } from '@angular/router/testing'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { TabMenuModule } from 'primeng/tabmenu'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ButtonModule } from 'primeng/button'
 import { TableModule } from 'primeng/table'
@@ -83,7 +83,6 @@ describe('ConfigMigrationPageComponent', () => {
         await TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule,
-                HttpClientTestingModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 TabMenuModule,
@@ -118,6 +117,8 @@ describe('ConfigMigrationPageComponent', () => {
                         // } as ActivatedRouteSnapshot,
                     },
                 },
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
             ],
         }).compileComponents()
 
