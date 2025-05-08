@@ -14,7 +14,7 @@ import { By } from '@angular/platform-browser'
     template: `
         <app-managed-access key="edit-machine-authorization"><h1>Edit machine authorization.</h1></app-managed-access>
         <app-managed-access
-            key="get-access-point-key"
+            key="app-access-point-key"
             accessType="read"
             [hideOnNoAccess]="false"
             (hasAccessChanged)="secondHasAccess = $event"
@@ -53,7 +53,7 @@ describe('ManagedAccessComponent', () => {
         authService = fixture.debugElement.injector.get(AuthService)
         hasPrivilegeSpy = spyOn(authService, 'hasPrivilege')
         hasPrivilegeSpy.withArgs('edit-machine-authorization', 'write').and.returnValue(true)
-        hasPrivilegeSpy.withArgs('get-access-point-key', 'read').and.returnValue(true)
+        hasPrivilegeSpy.withArgs('app-access-point-key', 'read').and.returnValue(true)
         hasPrivilegeSpy.withArgs('edit-host-reservation', 'write').and.returnValue(true)
 
         expect(fixture.debugElement.children).toBeTruthy()
@@ -103,7 +103,7 @@ describe('ManagedAccessComponent', () => {
     })
 
     it('should display default limited content when no access', () => {
-        hasPrivilegeSpy.withArgs('get-access-point-key', 'read').and.returnValue(false)
+        hasPrivilegeSpy.withArgs('app-access-point-key', 'read').and.returnValue(false)
         secondComponent.ngOnInit()
         fixture.detectChanges()
         const headingDe = fixture.debugElement.query(By.css('h2'))
@@ -115,7 +115,7 @@ describe('ManagedAccessComponent', () => {
 
     it('should emit if user has access', () => {
         expect(hostComponent.secondHasAccess).toBeTrue()
-        hasPrivilegeSpy.withArgs('get-access-point-key', 'read').and.returnValue(false)
+        hasPrivilegeSpy.withArgs('app-access-point-key', 'read').and.returnValue(false)
         secondComponent.ngOnInit()
         fixture.detectChanges()
         expect(hostComponent.secondHasAccess).toBeFalse()

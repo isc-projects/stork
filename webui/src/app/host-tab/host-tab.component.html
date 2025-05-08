@@ -291,20 +291,11 @@
             <p-messages severity="warn">
                 <ng-template pTemplate>
                     <p>
-                        <app-managed-access key="edit-host-reservation">
-                            <ng-template appTemplate="hasAccess">
-                                The <span class="font-bold">Edit</span> and
-                                <span class="font-bold">Delete</span> operations affect only the configurations stored
-                                in the host database (<app-host-data-source-label
-                                    dataSource="api"
-                                ></app-host-data-source-label
-                                >).
-                            </ng-template>
-                            <ng-template appTemplate="noAccess"
-                                >You don't have privileges to perform <span class="font-bold">Edit</span> or
-                                <span class="font-bold">Delete</span> operations.</ng-template
-                            >
-                        </app-managed-access>
+                        The <span class="font-bold">Edit</span> and <span class="font-bold">Delete</span> operations
+                        affect only the configurations stored in the host database (<app-host-data-source-label
+                            dataSource="api"
+                        ></app-host-data-source-label
+                        >).
                     </p>
                 </ng-template>
             </p-messages>
@@ -320,28 +311,28 @@
                 (click)="refreshLeases()"
             ></button>
             <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
-                <app-managed-access key="edit-host-reservation">
-                    <button
-                        type="button"
-                        pButton
-                        [disabled]="hostDeleted"
-                        label="Edit"
-                        icon="pi pi-pencil"
-                        class="p-button-info ml-2"
-                        (click)="onHostEditBegin()"
-                    ></button>
-                </app-managed-access>
-                <app-managed-access key="delete-host-reservation">
-                    <button
-                        type="button"
-                        pButton
-                        [disabled]="hostDeleted"
-                        label="Delete"
-                        icon="pi pi-times"
-                        class="p-button-danger ml-2"
-                        (click)="confirmDeleteHost()"
-                    ></button>
-                </app-managed-access>
+                <button
+                    type="button"
+                    pButton
+                    [disabled]="hostDeleted"
+                    label="Edit"
+                    icon="pi pi-pencil"
+                    class="p-button-info ml-2"
+                    (click)="onHostEditBegin()"
+                    appManagedAccess="host-reservation"
+                    accessType="update"
+                ></button>
+                <button
+                    type="button"
+                    pButton
+                    [disabled]="hostDeleted"
+                    label="Delete"
+                    icon="pi pi-times"
+                    class="p-button-danger ml-2"
+                    (click)="confirmDeleteHost()"
+                    appManagedAccess="host-reservation"
+                    accessType="delete"
+                ></button>
             </ng-container>
         </div>
     </div>

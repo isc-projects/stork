@@ -39,47 +39,32 @@
                     icon="fa fa-cog"
                     (click)="selectCheckersPanel.show($event, selectCheckersPanelTarget)"
                 ></button>
-                <app-managed-access key="update-config-checker">
-                    <ng-template appTemplate="hasAccess">
-                        <button
-                            id="review-button"
-                            pButton
-                            #selectCheckersPanelTarget
-                            *ngIf="!refreshFailed; else refreshFailedElse"
-                            type="button"
-                            label="Run review"
-                            class="p-button-sm mb-2 sm:my-0"
-                            icon="fas fa-tasks"
-                            [loading]="busy"
-                            (click)="runReview()"
-                        ></button>
-                        <ng-template #refreshFailedElse>
-                            <button
-                                id="refresh-button"
-                                pButton
-                                type="button"
-                                label="Refresh reports"
-                                class="p-button-sm mb-2 sm:my-0"
-                                icon="pi pi-refresh"
-                                [loading]="busy"
-                                (click)="refreshDaemonConfigReports(null)"
-                            ></button>
-                        </ng-template>
-                    </ng-template>
-                    <ng-template appTemplate="noAccess">
-                        <button
-                            *ngIf="refreshFailed"
-                            id="refresh-button"
-                            pButton
-                            type="button"
-                            label="Refresh reports"
-                            class="p-button-sm mb-2 sm:my-0"
-                            icon="pi pi-refresh"
-                            [loading]="busy"
-                            (click)="refreshDaemonConfigReports(null)"
-                        ></button>
-                    </ng-template>
-                </app-managed-access>
+                <button
+                    id="review-button"
+                    pButton
+                    #selectCheckersPanelTarget
+                    *ngIf="!refreshFailed; else refreshFailedElse"
+                    type="button"
+                    label="Run review"
+                    class="p-button-sm mb-2 sm:my-0"
+                    icon="fas fa-tasks"
+                    [loading]="busy"
+                    (click)="runReview()"
+                    appManagedAccess="daemon-config-review"
+                    accessType="update"
+                ></button>
+                <ng-template #refreshFailedElse>
+                    <button
+                        id="refresh-button"
+                        pButton
+                        type="button"
+                        label="Refresh reports"
+                        class="p-button-sm mb-2 sm:my-0"
+                        icon="pi pi-refresh"
+                        [loading]="busy"
+                        (click)="refreshDaemonConfigReports(null)"
+                    ></button>
+                </ng-template>
             </div>
         </div>
     </ng-template>

@@ -18,29 +18,25 @@ export enum UserGroup {
 
 export type PrivilegeKey =
     | 'get-machines-server-token'
-    | 'delete-kea-config-hashes'
-    | 'rename-dns-app'
-    | 'update-config-checker'
-    | 'add-host-reservation'
-    | 'edit-host-reservation'
-    | 'delete-host-reservation'
+    | 'kea-config-hashes'
+    | 'rename-app'
+    | 'global-config-checkers'
+    | 'daemon-config-checkers'
+    | 'host-reservation'
     | 'rename-kea-app'
     | 'edit-kea-global-config'
     | 'edit-stork-settings'
-    | 'add-shared-network'
-    | 'edit-shared-network'
-    | 'delete-shared-network'
-    | 'add-subnet'
-    | 'edit-subnet'
-    | 'delete-subnet'
+    | 'shared-network'
+    | 'subnet'
     | 'fetch-zones'
-    | 'get-access-point-key'
+    | 'app-access-point-key'
     | 'regenerate-machines-server-token'
     | 'edit-machine-address'
     | 'edit-machine-authorization'
     | 'delete-machine'
+    | 'daemon-config-review'
 
-export type AccessType = 'read' | 'write' | 'noAccess'
+export type AccessType = 'create' | 'read' | 'update' | 'delete'
 
 @Injectable({
     providedIn: 'root',
@@ -166,14 +162,14 @@ export class AuthService {
      * @param componentKey component for which the privilege is required
      * @param accessType access type which is required
      */
-    hasPrivilege(componentKey: PrivilegeKey, accessType: AccessType = 'write'): boolean {
-        // TODO: This should all be retrieved from backend.
+    hasPrivilege(componentKey: PrivilegeKey, accessType: AccessType = 'read'): boolean {
+        // TODO: Privileges should be retrieved from backend when user gets authenticated. All privileges should be destroyed at logout.
         if (this.superAdmin()) {
             // User that belongs to SuperAdmin group, has all privileges.
             return true
         } else if (this.isAdmin()) {
             switch (componentKey) {
-                case 'get-access-point-key':
+                case 'app-access-point-key':
                 case 'get-machines-server-token':
                 case 'regenerate-machines-server-token':
                 case 'edit-machine-authorization':
@@ -185,7 +181,7 @@ export class AuthService {
         } else if (this.isInReadOnlyGroup()) {
             switch (componentKey) {
                 case 'get-machines-server-token':
-                case 'get-access-point-key':
+                case 'app-access-point-key':
                     return false
                 default:
                     return accessType === 'read'

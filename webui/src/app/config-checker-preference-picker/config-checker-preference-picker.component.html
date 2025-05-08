@@ -20,9 +20,7 @@
                         The state may also be inherited from the global settings. In this case, the actual state is
                         presented in brackets.
                     </span>
-                    <app-managed-access key="update-config-checker">
-                        The state changes must be confirmed by clicking the Submit button.</app-managed-access
-                    >
+                    The state changes must be confirmed by clicking the Submit button.
                 </p>
                 <p *ngIf="!minimal">
                     The selectors define the daemon groups where the specific configuration checker runs.
@@ -95,7 +93,10 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="summary">
-        <app-managed-access key="update-config-checker">
+        <app-managed-access
+            [key]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
+            accessType="update"
+        >
             <div class="picker__buttons">
                 <button pButton label="Submit" [disabled]="!hasChanges" (click)="onSubmit()"></button>
                 <button
@@ -113,7 +114,10 @@
 <!-- State selector - tri-state checkbox -->
 <ng-template #stateSelector let-checker="checker" let-state="state">
     <div class="form-check">
-        <app-managed-access key="update-config-checker">
+        <app-managed-access
+            [key]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
+            accessType="update"
+        >
             <p-triStateCheckbox
                 [ngModel]="state === 'enabled' ? true : state === 'disabled' ? false : null"
                 (onChange)="onCheckerStateChanged(checker)"

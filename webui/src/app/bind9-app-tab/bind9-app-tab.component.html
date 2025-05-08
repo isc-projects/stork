@@ -1,5 +1,5 @@
 <div class="grid m-0">
-    <app-managed-access key="rename-dns-app">
+    <app-managed-access key="rename-app" accessType="update">
         <app-rename-app-dialog
             [appId]="appTab.app.id"
             [appName]="appTab.app.name"
@@ -17,20 +17,20 @@
                 <div class="flex justify-content-between flex-wrap gap-2">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
-                        <app-managed-access key="rename-dns-app">
-                            <i
-                                *ngIf="!showRenameDialogClicked"
-                                class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
-                                id="rename-app-icon"
-                                (click)="showRenameAppDialog()"
-                            ></i>
-                            <p-progressSpinner
-                                *ngIf="showRenameDialogClicked"
-                                [style]="{ width: '25px', height: '25px' }"
-                                styleClass="app-rename-spinner"
-                                strokeWidth="6"
-                            ></p-progressSpinner>
-                        </app-managed-access>
+                        <i
+                            *ngIf="!showRenameDialogClicked"
+                            class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
+                            id="rename-app-icon"
+                            (click)="showRenameAppDialog()"
+                            appManagedAccess="rename-app"
+                            accessType="update"
+                        ></i>
+                        <p-progressSpinner
+                            *ngIf="showRenameDialogClicked"
+                            [style]="{ width: '25px', height: '25px' }"
+                            styleClass="app-rename-spinner"
+                            strokeWidth="6"
+                        ></p-progressSpinner>
                     </div>
                     <button
                         type="button"

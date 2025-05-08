@@ -30,9 +30,9 @@ export class ManagedAccessComponent implements AfterContentInit, OnInit {
 
     /**
      * Required access type to display the component.
-     * Defaults to 'write' access type.
+     * Defaults to 'read' access type.
      */
-    @Input() accessType: AccessType = 'write'
+    @Input() accessType: AccessType = 'read'
 
     /**
      * List of Stork templates used for different rendering of the component based on received

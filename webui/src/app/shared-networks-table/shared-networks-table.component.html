@@ -4,16 +4,16 @@
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
-    <app-managed-access key="add-shared-network">
-        <a
-            label="New Shared Network"
-            icon="pi pi-plus"
-            class="p-button-primary no-underline block flex-none p-button"
-            type="button"
-            routerLink="/dhcp/shared-networks/new"
-            pButton
-        ></a>
-    </app-managed-access>
+    <a
+        label="New Shared Network"
+        icon="pi pi-plus"
+        class="p-button-primary no-underline block flex-none p-button"
+        type="button"
+        routerLink="/dhcp/shared-networks/new"
+        pButton
+        appManagedAccess="subnet"
+        accessType="create"
+    ></a>
     <p-button
         label="Refresh List"
         icon="pi pi-refresh"

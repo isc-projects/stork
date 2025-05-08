@@ -154,6 +154,7 @@ import { ConfigMigrationTabComponent } from './config-migration-tab/config-migra
 import { DurationPipe } from './pipes/duration.pipe'
 import { ManagedAccessComponent } from './managed-access/managed-access.component'
 import { StorkTemplateDirective } from './stork-template.directive'
+import { ManagedAccessDirective } from './managed-access.directive'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -312,6 +313,7 @@ export function cfgFactory() {
         SkeletonModule,
         StorkTemplateDirective,
         ManagedAccessComponent,
+        ManagedAccessDirective,
     ],
     providers: [
         {

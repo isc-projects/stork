@@ -22,7 +22,7 @@
                 pTooltip="unsecured connection"
             ></span>
             <br class="block lg:hidden" />
-            <app-managed-access *ngIf="app.type === 'bind9'" accessType="read" key="get-access-point-key">
+            <app-managed-access *ngIf="app.type === 'bind9'" accessType="read" key="app-access-point-key">
                 Key:
                 <app-access-point-key [accessPointType]="ap.type" [appId]="app.id"></app-access-point-key>
             </app-managed-access>
