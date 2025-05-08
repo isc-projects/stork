@@ -51,7 +51,7 @@
             <td>
                 <a routerLink="/config-migrations/{{ m.id }}">{{ m.id }}</a>
             </td>
-            <td>{{ m.startDate | date: 'short' }}</td>
+            <td>{{ m.startDate | localtime }}</td>
             <td>
                 <div class="flex flex-wrap justify-center gap-2">
                     <p-tag *ngIf="m.endDate" severity="success" value="Completed"></p-tag>
