@@ -12,7 +12,6 @@
     <ng-template pTemplate="item" let-item let-i="index">
         <a role="menuitem" [routerLink]="item.routerLink" class="p-menuitem-link">
             <div class="flex justify-content-between">
-                <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
                 <div class="p-menuitem-text">
                     <b>{{ item.label }}</b>
                 </div>
