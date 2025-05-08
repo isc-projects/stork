@@ -53,7 +53,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      * Constructor.
      *
      * @param route activated route used to gather parameters from the URL.
-     * @param router router used to navigate between tabs.
      * @param dhcpApi server API used to gather hosts information.
      * @param messageService message service used to display error messages to a user.
      */
