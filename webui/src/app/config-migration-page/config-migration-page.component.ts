@@ -219,7 +219,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     /**
      * Function called when requested to cancel a migration.
      */
-    cancelMigration(id: number) {
+    onCancelMigration(id: number) {
         const index = this.tabs.findIndex((t, i) => this.tabItems[i].id === id)
         if (index <= 0) {
             return
@@ -244,7 +244,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     /**
      * Function called when requested to clean up finished migrations.
      */
-    cleanUpFinishedMigrations() {
+    onClearFinishedMigrations() {
         // Make an API call to clean up finished migrations.
         this.dhcpApi.deleteFinishedMigrations().subscribe({
             next: () => {
@@ -271,7 +271,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     /**
      * Function called when requested to refresh migration status.
      */
-    refreshMigration(id: number) {
+    onRefreshMigration(id: number) {
         this.dhcpApi.getMigration(id).subscribe({
             next: (status) => {
                 this.replaceItem(status)

@@ -252,7 +252,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Cancel migration
-        component.cancelMigration(1)
+        component.onCancelMigration(1)
         tick()
         fixture.detectChanges()
 
@@ -272,7 +272,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Try to cancel
-        component.cancelMigration(1)
+        component.onCancelMigration(1)
         tick()
         fixture.detectChanges()
 
@@ -304,7 +304,7 @@ describe('ConfigMigrationPageComponent', () => {
         expect(component.tabs.length).toBe(3)
 
         // Clean up
-        component.cleanUpFinishedMigrations()
+        component.onClearFinishedMigrations()
         tick()
         fixture.detectChanges()
 
@@ -319,7 +319,7 @@ describe('ConfigMigrationPageComponent', () => {
         spyOn(messageService, 'add')
         fixture.detectChanges()
 
-        component.cleanUpFinishedMigrations()
+        component.onClearFinishedMigrations()
         tick()
         fixture.detectChanges()
 
@@ -352,7 +352,7 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.getMigration.calls.reset()
 
         // Refresh status
-        component.refreshMigration(1)
+        component.onRefreshMigration(1)
         tick()
         fixture.detectChanges()
 
@@ -377,7 +377,7 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.getMigration.calls.reset()
 
         // Try to refresh
-        component.refreshMigration(1)
+        component.onRefreshMigration(1)
         tick()
         fixture.detectChanges()
 

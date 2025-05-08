@@ -104,14 +104,14 @@ export class ConfigMigrationTabComponent {
     /**
      * Emits an event to refresh migration status.
      */
-    refresh() {
+    onRefresh() {
         this.refreshMigration.emit(this.migration.id)
     }
 
     /**
      * Emits an event to cancel the migration.
      */
-    cancel() {
+    onCancel() {
         this.cancelMigration.emit(this.migration.id)
     }
 }
