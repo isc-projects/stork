@@ -121,7 +121,15 @@ export class AppComponent implements OnInit, OnDestroy {
                 label: 'DNS',
                 id: 'dns',
                 visible: false,
-                items: [{ label: 'Zones', id: 'zones', icon: 'pi pi-sitemap', routerLink: '/dns/zones' }],
+                items: [
+                    {
+                        label: 'Dashboard',
+                        id: 'dashboard',
+                        icon: 'fa fa-tachometer-alt',
+                        routerLink: '/dashboard',
+                    },
+                    { label: 'Zones', id: 'zones', icon: 'pi pi-sitemap', routerLink: '/dns/zones' },
+                ],
             },
             {
                 label: 'Services',
