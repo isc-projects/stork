@@ -102,7 +102,7 @@ describe('ConfigMigrationTableComponent', () => {
     it('should emit cancelMigrationRequest with migrationId when onCancelMigration is called', () => {
         // Arrange
         spyOn(component.cancelMigration, 'emit')
-        const migrationId = '1234-abcd'
+        const migrationId = 1234
 
         // Act
         component.cancel(migrationId)

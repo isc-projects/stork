@@ -25,7 +25,7 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
      * Event emitted when the user wants to cancel a migration.
      * Emits the ID of the migration to cancel.
      */
-    @Output() cancelMigration = new EventEmitter<string>()
+    @Output() cancelMigration = new EventEmitter<number>()
 
     /**
      * PrimeNG table instance.
@@ -104,7 +104,7 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
      *
      * @param migrationId ID of the migration to cancel
      */
-    cancel(migrationId: string) {
+    cancel(migrationId: number) {
         this.cancelMigration.emit(migrationId)
     }
 
