@@ -50,11 +50,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     activeTabIndex = 0
 
     /**
-     * Item from the selected tab.
-     */
-    activeTabItem: MigrationStatus | null = null
-
-    /**
      * Constructor.
      *
      * @param route activated route used to gather parameters from the URL.
@@ -183,7 +178,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
             return
         }
         this.activeTabIndex = tabIndex
-        this.activeTabItem = tabIndex !== 0 ? this.tabItems[tabIndex] : null
     }
 
     /**
@@ -215,9 +209,6 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
             return
         }
         this.tabItems[index] = status
-        if (this.activeTabIndex === index) {
-            this.activeTabItem = status
-        }
     }
 
     /**

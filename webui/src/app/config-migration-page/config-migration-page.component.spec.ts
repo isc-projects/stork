@@ -153,7 +153,7 @@ describe('ConfigMigrationPageComponent', () => {
         expect(dhcpApi.getMigration).toHaveBeenCalledWith(1)
         expect(component.tabs.length).toBe(2)
         expect(component.activeTabIndex).toBe(1)
-        expect(component.activeTabItem).toEqual(mockRunningMigration)
+        expect(component.tabItems[component.activeTabIndex]).toEqual(mockRunningMigration)
 
         flush()
     }))
@@ -219,7 +219,7 @@ describe('ConfigMigrationPageComponent', () => {
 
         expect(component.tabs.length).toBe(1)
         expect(component.activeTabIndex).toBe(0)
-        expect(component.activeTabItem).toBeNull()
+        expect(component.tabItems[component.activeTabIndex]).toEqual({})
 
         flush()
     }))
