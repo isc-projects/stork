@@ -36,12 +36,12 @@
 
                     <div class="flex align-items-center">
                         <span class="font-semibold w-8rem">Start Date:</span>
-                        <span>{{ migration.startDate | date: 'medium' }}</span>
+                        <span>{{ migration.startDate | localtime }}</span>
                     </div>
 
                     <div class="flex align-items-center" *ngIf="migration.endDate">
                         <span class="font-semibold w-8rem">End Date:</span>
-                        <span>{{ migration.endDate | date: 'medium' }}</span>
+                        <span>{{ migration.endDate | localtime }}</span>
                     </div>
 
                     <div class="flex align-items-center">

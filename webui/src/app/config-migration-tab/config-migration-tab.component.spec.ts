@@ -14,6 +14,7 @@ import { ProgressBar } from 'primeng/progressbar'
 import { Tag } from 'primeng/tag'
 import { Fieldset } from 'primeng/fieldset'
 import { ButtonModule } from 'primeng/button'
+import { LocaltimePipe } from '../pipes/localtime.pipe'
 
 describe('ConfigMigrationTabComponent', () => {
     let component: ConfigMigrationTabComponent
@@ -79,7 +80,7 @@ describe('ConfigMigrationTabComponent', () => {
                 RouterTestingModule,
                 ButtonModule,
             ],
-            declarations: [ConfigMigrationTabComponent, EntityLinkComponent],
+            declarations: [ConfigMigrationTabComponent, EntityLinkComponent, LocaltimePipe],
         }).compileComponents()
     })
 
