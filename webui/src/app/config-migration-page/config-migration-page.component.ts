@@ -189,8 +189,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
     /**
      * Adds a new tab.
      *
-     * @param label tab label.
-     * @param routerLink tab router link.
+     * @param status migration status to be added to the tab.
      */
     private createTab(status: MigrationStatus) {
         const routerLink = `/config-migrations/${status.id}`
