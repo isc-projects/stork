@@ -8,7 +8,7 @@ import { ConfigMigrationTableComponent } from '../config-migration-table/config-
 import { ConfigMigrationTabComponent } from '../config-migration-tab/config-migration-tab.component'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ActivatedRoute, ActivatedRouteSnapshot, convertToParamMap } from '@angular/router'
+import { ActivatedRoute, ActivatedRouteSnapshot, convertToParamMap, ParamMap } from '@angular/router'
 import { BehaviorSubject, of, throwError, Observable } from 'rxjs'
 import { RouterTestingModule } from '@angular/router/testing'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -23,13 +23,14 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { TagModule } from 'primeng/tag'
 import { ProgressBarModule } from 'primeng/progressbar'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { MockParamMap } from '../utils'
 
 describe('ConfigMigrationPageComponent', () => {
     let component: ConfigMigrationPageComponent
     let fixture: ComponentFixture<ConfigMigrationPageComponent>
     let dhcpApi: jasmine.SpyObj<DHCPService>
     let messageService: MessageService
-    let paramsSubject: BehaviorSubject<any>
+    let paramMapSubject: BehaviorSubject<ParamMap>
 
     /**
      * Wraps response in HttpEvent type.
@@ -77,7 +78,7 @@ describe('ConfigMigrationPageComponent', () => {
             'putMigration',
             'deleteFinishedMigrations',
         ])
-        paramsSubject = new BehaviorSubject({ id: 'all' })
+        paramMapSubject = new BehaviorSubject(new MockParamMap({ id: 'all' }))
 
         await TestBed.configureTestingModule({
             imports: [
@@ -109,11 +110,12 @@ describe('ConfigMigrationPageComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        params: paramsSubject,
-                        snapshot: {
-                            paramMap: convertToParamMap({}),
-                            queryParamMap: convertToParamMap({}),
-                        } as ActivatedRouteSnapshot,
+                        paramMap: paramMapSubject.asObservable(),
+                        // params: paramsSubject,
+                        // snapshot: {
+                        //     paramMap: convertToParamMap({}),
+                        //     queryParamMap: convertToParamMap({}),
+                        // } as ActivatedRouteSnapshot,
                     },
                 },
             ],
@@ -146,7 +148,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Simulate navigation to specific migration
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -163,7 +165,7 @@ describe('ConfigMigrationPageComponent', () => {
         spyOn(messageService, 'add')
         fixture.detectChanges()
 
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -181,7 +183,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab first time
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
         expect(component.tabs.length).toBe(2)
@@ -193,7 +195,7 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.getMigration.calls.reset()
 
         // Try to open same tab again
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -207,7 +209,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -244,7 +246,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -264,7 +266,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -291,10 +293,10 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open completed migration tab
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         // Open running migration tab
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -341,7 +343,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 
@@ -366,7 +368,7 @@ describe('ConfigMigrationPageComponent', () => {
         fixture.detectChanges()
 
         // Open tab
-        paramsSubject.next({ id: 1 })
+        paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
         fixture.detectChanges()
 

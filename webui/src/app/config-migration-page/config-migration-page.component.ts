@@ -24,6 +24,9 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      */
     subscriptions = new Subscription()
 
+    /**
+     * Configures the breadcrumbs for the component.
+     */
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Config Migrations' }]
 
     /**
@@ -62,6 +65,9 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
         private messageService: MessageService
     ) {}
 
+    /**
+     * Unsubscribe all subscriptions.
+     */
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
     }
@@ -87,13 +93,14 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      */
     ngAfterViewInit(): void {
         this.subscriptions.add(
-            this.route.params.subscribe((params) => {
-                if (params.hasOwnProperty('id')) {
-                    const id = params['id']
+            this.route.paramMap.subscribe((params) => {
+                if (params.has('id')) {
+                    const id = params.get('id')
                     if (id === 'all') {
                         this.switchToTab(0)
                     } else {
-                        this.openTab(params['id'])
+                        const idNumber = Number.parseInt(id, 10)
+                        this.openTab(idNumber)
                     }
                 }
             })

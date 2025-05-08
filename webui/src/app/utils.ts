@@ -507,16 +507,58 @@ export function getBaseApiPath(apiUrl: string) {
     return baseHref + '/' + apiUrl
 }
 
-// Mock of the Angular ParamMap class.
+/**
+ * Mock of the Angular ParamMap class.
+ */
 export class MockParamMap {
-    /** Always returns null. */
-    get(/* name: string */): string | null {
-        return null
+    constructor(private entries?: Record<string, string | string[]>) {}
+
+    /**
+     * Returns the value of the parameter with the given name.
+     * @param name name of the parameter to be retrieved.
+     * @returns the value of the parameter or null if not found.
+     */
+    get(name: string): string | null {
+        if (!this.entries?.[name]) {
+            return null
+        }
+
+        if (Array.isArray(this.entries[name])) {
+            return this.entries[name][0]
+        }
+        return this.entries[name] as string
     }
 
-    /** Always returns false. */
-    has(/* name: string */): boolean {
-        return false
+    /**
+     * Returns the values of the parameter with the given name.
+     * @param name name of the parameter to be retrieved.
+     * @returns the values of the parameter or null if not found.
+     */
+    getAll(name: string): string[] {
+        if (!this.entries?.[name]) {
+            return []
+        }
+
+        if (Array.isArray(this.entries[name])) {
+            return this.entries[name]
+        }
+        return [this.entries[name] as string]
+    }
+
+    /**
+     * Returns the value of the parameter with the given name.
+     * @param name name of the parameter to be retrieved.
+     * @returns the value of the parameter or null if not found.
+     */
+    has(name: string): boolean {
+        return this.entries?.hasOwnProperty(name) ?? false
+    }
+
+    /**
+     * Returns all names of the parameters.
+     */
+    get keys(): string[] {
+        return this.entries ? Object.keys(this.entries) : []
     }
 }
 
