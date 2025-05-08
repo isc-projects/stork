@@ -41,7 +41,7 @@ type Story = StoryObj<ConfigMigrationTabComponent>
 export const RunningMigration: Story = {
     args: {
         migration: {
-            id: 'migration-123',
+            id: 123,
             startDate: new Date().toISOString(),
             endDate: null,
             canceling: false,
@@ -62,7 +62,7 @@ export const RunningMigration: Story = {
 export const CancelingMigration: Story = {
     args: {
         migration: {
-            id: 'migration-456',
+            id: 456,
             startDate: new Date().toISOString(),
             endDate: null,
             canceling: true,
@@ -83,7 +83,7 @@ export const CancelingMigration: Story = {
 export const CompletedMigration: Story = {
     args: {
         migration: {
-            id: 'migration-789',
+            id: 789,
             startDate: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
             endDate: new Date().toISOString(),
             canceling: false,
@@ -104,7 +104,7 @@ export const CompletedMigration: Story = {
 export const FailedMigration: Story = {
     args: {
         migration: {
-            id: 'migration-abc',
+            id: 24,
             startDate: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
             endDate: new Date().toISOString(),
             canceling: false,
@@ -114,9 +114,14 @@ export const FailedMigration: Story = {
             errors: {
                 total: 3,
                 items: [
-                    { id: 1, error: 'Failed to process host: timeout', label: 'host-1', type: 'host' },
-                    { id: 2, error: 'Failed to process host: invalid data', label: 'host-2', type: 'host' },
-                    { id: 3, error: 'Failed to process host: connection refused', label: 'host-3', type: 'host' },
+                    { id: 1, error: 'Failed to process host: timeout', label: 'host-1', causeEntity: 'host' },
+                    { id: 2, error: 'Failed to process host: invalid data', label: 'host-2', causeEntity: 'host' },
+                    {
+                        id: 3,
+                        error: 'Failed to process host: connection refused',
+                        label: 'host-3',
+                        causeEntity: 'host',
+                    },
                 ],
             },
             elapsedTime: '10m0s',
@@ -130,7 +135,7 @@ export const FailedMigration: Story = {
 export const FailedMigrationWithManyErrors: Story = {
     args: {
         migration: {
-            id: 'migration-def',
+            id: 42,
             startDate: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
             endDate: new Date().toISOString(),
             canceling: false,
