@@ -121,6 +121,48 @@ databases. To restore the reservation, it must be re-created.
    Kea configuration files, or when the reservations are configured in the host
    database but the ``host_cmds`` hook library is not loaded.
 
+Migrate Host Reservations
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stork can migrate host reservations from the Kea JSON configuration file into
+the Kea host database. This feature is available on the host list page. The
+hosts to be migrated are selected using the list filter. The filter may be
+configured to select all hosts from a given subnet, Kea server, or by free text
+search. The migration process starts when the ``Migrate`` button is clicked and
+it is performed in the background.
+
+The host reservations that reside in the Kea JSON configuration file and in the
+host database both and are different from each other (are conflicted) cannot be
+migrated. They will be skipped and the migration process will continue with the
+remaining host reservations. The user needs to resolve the conflicts manually
+to migrate such reservations.
+
+During the migration process, the Stork server stops pulling the data from Kea
+and locks the Kea daemons for modification. The lock is released when the
+migration process is finished.
+Therefore, the changes in the host reservations cannot be immediately seen in
+the host reservations list, because the data is not pulled from Kea. Instead,
+the migration progress may be monitored in the "Config Migration" page.
+
+If any errors occur during the migration, the summary and list of them are
+displayed in the "Config Migration" page. In this case, the user should fix
+the errors and re-run the migration process. Also if the server would be shut
+down or restarted during the migration, the migration process may be safely
+repeated.
+
+The migration can be interrupted at any time by clicking the ``Cancel`` button.
+
+Stork migrates the host reservations by sending the command to the Kea. The Kea
+must be configured to use the ``host_cmds`` hook library. First the host
+reservations are recreated in the host database, and then they are removed from
+the JSON configuration. The host reservations are processed in batches of 100
+reservations.
+
+The migration process sends the ``config-write`` command at the end of each
+batch. It is not recommended to alter the Kea configuration during the
+migration process, especially the host reservations should not be modified
+or deleted.
+
 Subnets
 =======
 
