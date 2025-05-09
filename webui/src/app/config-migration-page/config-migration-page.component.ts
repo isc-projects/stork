@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core'
-import { Subscription } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
 import { MenuItem, MessageService } from 'primeng/api'
 import { DHCPService, MigrationStatus } from '../backend'
 import { ActivatedRoute } from '@angular/router'
@@ -51,6 +51,12 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      * The first tab has an index of 0.
      */
     activeTabIndex = 0
+
+    /**
+     * Stream of statuses that are being updated.
+     * The null value indicates that unknown number of statuses were updated.
+     */
+    alteredStatuses: Subject<MigrationStatus> = new Subject<MigrationStatus>()
 
     /**
      * Constructor.
@@ -229,6 +235,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
         this.dhcpApi.putMigration(id).subscribe({
             next: (status) => {
                 this.replaceItem(status)
+                this.alteredStatuses.next(status)
             },
             error: (error) => {
                 const errorMessage = getErrorMessage(error)
@@ -256,6 +263,8 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
                     }
                     this.closeTab(i)
                 }
+                // We don't know which migration statuses were deleted.
+                this.alteredStatuses.next(null)
             },
             error: (error) => {
                 const errorMessage = getErrorMessage(error)
@@ -275,6 +284,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
         this.dhcpApi.getMigration(id).subscribe({
             next: (status) => {
                 this.replaceItem(status)
+                this.alteredStatuses.next(status)
             },
             error: (error) => {
                 const errorMessage = getErrorMessage(error)

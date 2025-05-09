@@ -1,10 +1,10 @@
-import { Component, EventEmitter, Output, ViewChild } from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
 import { LazyLoadTable } from '../table'
 import { DHCPService, MigrationStatus } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
 import { MessageService } from 'primeng/api'
 import { getErrorMessage } from '../utils'
-import { lastValueFrom } from 'rxjs'
+import { lastValueFrom, Observable, Subscription } from 'rxjs'
 
 /**
  * This component implements a table of configuration migrations.
@@ -15,7 +15,12 @@ import { lastValueFrom } from 'rxjs'
     templateUrl: './config-migration-table.component.html',
     styleUrl: './config-migration-table.component.sass',
 })
-export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus> {
+export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus> implements OnInit, OnDestroy {
+    /**
+     * Keeps all the RxJS subscriptions.
+     */
+    subscriptions: Subscription = new Subscription()
+
     /**
      * Event emitted when the user wants to clear finished migrations.
      */
@@ -32,12 +37,48 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
      */
     @ViewChild('configMigrationTable') table: Table
 
+    /**
+     * Spawn of migration statuses that are being updated externally.
+     * The null value indicates that unknown number of statuses were updated.
+     */
+    @Input() alteredStatuses: Observable<MigrationStatus> = new Observable<MigrationStatus>()
+
     constructor(
         private dhcpApi: DHCPService,
         private messageService: MessageService
     ) {
         super()
         this.dataLoading = true
+    }
+
+    /**
+     * Registers for migration statuses updates.
+     */
+    ngOnInit() {
+        // Register for migration statuses updates.
+        this.subscriptions.add(
+            this.alteredStatuses.subscribe((status) => {
+                if (status && this.dataCollection) {
+                    const index = this.dataCollection.findIndex((s) => s.id === status.id)
+                    if (index !== -1) {
+                        this.dataCollection = [
+                            ...this.dataCollection.slice(0, index),
+                            status,
+                            ...this.dataCollection.slice(index + 1),
+                        ]
+                    }
+                } else {
+                    this.loadData({ first: 0, rows: this.table.rows })
+                }
+            })
+        )
+    }
+
+    /**
+     * Does a cleanup when the component is destroyed.
+     */
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
     }
 
     /**

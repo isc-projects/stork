@@ -248,6 +248,8 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.putMigration.and.returnValue(wrapInHttpResponse(canceledMigration))
         fixture.detectChanges()
 
+        spyOn(component.alteredStatuses, 'next')
+
         // Open tab
         paramMapSubject.next(new MockParamMap({ id: '1' }))
         tick()
@@ -260,6 +262,7 @@ describe('ConfigMigrationPageComponent', () => {
 
         expect(dhcpApi.putMigration).toHaveBeenCalledWith(1)
         expect(component.tabItems[1].canceling).toBeTrue()
+        expect(component.alteredStatuses.next).toHaveBeenCalledWith(canceledMigration)
     }))
 
     it('should handle error when canceling migration', fakeAsync(() => {
@@ -267,6 +270,8 @@ describe('ConfigMigrationPageComponent', () => {
         dhcpApi.putMigration.and.returnValue(throwError(() => new Error('Failed to cancel')))
         spyOn(messageService, 'add')
         fixture.detectChanges()
+
+        spyOn(component.alteredStatuses, 'next')
 
         // Open tab
         paramMapSubject.next(new MockParamMap({ id: '1' }))
@@ -284,6 +289,7 @@ describe('ConfigMigrationPageComponent', () => {
                 summary: 'Failed to cancel migration',
             })
         )
+        expect(component.alteredStatuses.next).not.toHaveBeenCalled()
     }))
 
     it('should clean up finished migrations', fakeAsync(() => {
@@ -294,6 +300,8 @@ describe('ConfigMigrationPageComponent', () => {
         )
         dhcpApi.deleteFinishedMigrations.and.returnValue(wrapEmptyResponse())
         fixture.detectChanges()
+
+        spyOn(component.alteredStatuses, 'next')
 
         // Open completed migration tab
         paramMapSubject.next(new MockParamMap({ id: '1' }))
@@ -314,12 +322,15 @@ describe('ConfigMigrationPageComponent', () => {
         expect(component.tabs.length).toBe(2)
         // Running migration tab should remain
         expect(component.tabs[1].label).toBe('Migration 1')
+        expect(component.alteredStatuses.next).toHaveBeenCalledWith(null)
     }))
 
     it('should handle error when cleaning up migrations', fakeAsync(() => {
         dhcpApi.deleteFinishedMigrations.and.returnValue(throwError(() => new Error('Failed to clean up')))
         spyOn(messageService, 'add')
         fixture.detectChanges()
+
+        spyOn(component.alteredStatuses, 'next')
 
         component.onClearFinishedMigrations()
         tick()
@@ -331,6 +342,7 @@ describe('ConfigMigrationPageComponent', () => {
                 summary: 'Failed to clean up finished migrations',
             })
         )
+        expect(component.alteredStatuses.next).not.toHaveBeenCalled()
     }))
 
     it('should refresh migration status', fakeAsync(() => {
@@ -344,6 +356,8 @@ describe('ConfigMigrationPageComponent', () => {
             wrapInHttpResponse(updatedMigration)
         )
         fixture.detectChanges()
+
+        spyOn(component.alteredStatuses, 'next')
 
         // Open tab
         paramMapSubject.next(new MockParamMap({ id: '1' }))
@@ -360,6 +374,7 @@ describe('ConfigMigrationPageComponent', () => {
 
         expect(dhcpApi.getMigration).toHaveBeenCalledWith(1)
         expect(component.tabItems[1].processedItemsCount).toBe(75)
+        expect(component.alteredStatuses.next).toHaveBeenCalledWith(updatedMigration)
     }))
 
     it('should handle error when refreshing migration status', fakeAsync(() => {
@@ -369,6 +384,8 @@ describe('ConfigMigrationPageComponent', () => {
         )
         spyOn(messageService, 'add')
         fixture.detectChanges()
+
+        spyOn(component.alteredStatuses, 'next')
 
         // Open tab
         paramMapSubject.next(new MockParamMap({ id: '1' }))
@@ -389,5 +406,6 @@ describe('ConfigMigrationPageComponent', () => {
                 summary: 'Failed to refresh migration status',
             })
         )
+        expect(component.alteredStatuses.next).not.toHaveBeenCalled()
     }))
 })

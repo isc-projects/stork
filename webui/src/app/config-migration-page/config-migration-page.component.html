@@ -33,5 +33,6 @@
         [hidden]="activeTabIndex !== 0"
         (cancelMigration)="onCancelMigration($event)"
         (clearMigrations)="onClearFinishedMigrations()"
+        [alteredStatuses]="alteredStatuses"
     ></app-config-migration-table>
 </div>
