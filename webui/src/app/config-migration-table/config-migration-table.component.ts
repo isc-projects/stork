@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } 
 import { LazyLoadTable } from '../table'
 import { DHCPService, MigrationStatus } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { getErrorMessage } from '../utils'
 import { lastValueFrom, Observable, Subscription } from 'rxjs'
 
@@ -45,7 +45,8 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
 
     constructor(
         private dhcpApi: DHCPService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private confirmationService: ConfirmationService
     ) {
         super()
         this.dataLoading = true
@@ -115,7 +116,14 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
      * Emits an event to clear finished migrations
      */
     clearFinishedMigrations() {
-        this.clearMigrations.emit()
+        this.confirmationService.confirm({
+            message: 'Are you sure you want to clear finished migrations?',
+            header: 'Clear finished migrations',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                this.clearMigrations.emit()
+            },
+        })
     }
 
     /**

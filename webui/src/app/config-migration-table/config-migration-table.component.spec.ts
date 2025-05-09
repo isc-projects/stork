@@ -1,9 +1,9 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { HttpResponse } from '@angular/common/http'
 
 import { ConfigMigrationTableComponent } from './config-migration-table.component'
 import { TableLazyLoadEvent, TableModule } from 'primeng/table'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { TagModule } from 'primeng/tag'
@@ -13,6 +13,8 @@ import { DHCPService, MigrationStatuses } from '../backend'
 import { Observable, of } from 'rxjs'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
+import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
+import { By } from '@angular/platform-browser'
 
 describe('ConfigMigrationTableComponent', () => {
     let component: ConfigMigrationTableComponent
@@ -30,7 +32,7 @@ describe('ConfigMigrationTableComponent', () => {
         spy.getMigrations.and.returnValue(of(emptyResponse))
 
         TestBed.configureTestingModule({
-            providers: [MessageService, { provide: DHCPService, useValue: spy }],
+            providers: [MessageService, { provide: DHCPService, useValue: spy }, ConfirmationService],
             imports: [
                 ButtonModule,
                 BrowserAnimationsModule,
@@ -38,7 +40,7 @@ describe('ConfigMigrationTableComponent', () => {
                 ProgressBarModule,
                 TooltipModule,
                 TableModule,
-                ProgressBarModule,
+                ConfirmDialogModule,
             ],
             declarations: [ConfigMigrationTableComponent, PluralizePipe, DurationPipe],
         }).compileComponents()
@@ -89,16 +91,21 @@ describe('ConfigMigrationTableComponent', () => {
         expect(component.totalRecords).toBe(2)
     })
 
-    it('should emit clearFinishedMigrationsRequest when onClearFinishedMigrations is called', () => {
-        // Arrange
+    it('should emit clearFinishedMigrationsRequest when onClearFinishedMigrations is called', fakeAsync(() => {
         spyOn(component.clearMigrations, 'emit')
 
-        // Act
         component.clearFinishedMigrations()
+        fixture.whenRenderingDone()
 
-        // Assert
+        const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
+        expect(dialog).not.toBeNull()
+        const confirmDialog = dialog.componentInstance as ConfirmDialog
+        expect(confirmDialog).not.toBeNull()
+        confirmDialog.accept()
+        tick()
+
         expect(component.clearMigrations.emit).toHaveBeenCalled()
-    })
+    }))
 
     it('should emit cancelMigrationRequest with migrationId when onCancelMigration is called', () => {
         // Arrange

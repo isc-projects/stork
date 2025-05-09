@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core
 import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfigMigrationPageComponent } from './config-migration-page.component'
 import { DHCPService, MigrationStatus } from '../backend'
-import { MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { ConfigMigrationTableComponent } from '../config-migration-table/config-migration-table.component'
 import { ConfigMigrationTabComponent } from '../config-migration-tab/config-migration-tab.component'
@@ -26,6 +26,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { MockParamMap } from '../utils'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 
 describe('ConfigMigrationPageComponent', () => {
     let component: ConfigMigrationPageComponent
@@ -94,6 +95,7 @@ describe('ConfigMigrationPageComponent', () => {
                 FieldsetModule,
                 TagModule,
                 ProgressBarModule,
+                ConfirmDialogModule,
             ],
             declarations: [
                 ConfigMigrationPageComponent,
@@ -121,6 +123,7 @@ describe('ConfigMigrationPageComponent', () => {
                         // } as ActivatedRouteSnapshot,
                     },
                 },
+                ConfirmationService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
             ],
