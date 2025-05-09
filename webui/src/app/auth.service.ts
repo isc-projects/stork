@@ -17,24 +17,29 @@ export enum UserGroup {
 }
 
 export type PrivilegeKey =
-    | 'get-machines-server-token'
+    | 'machines-server-token'
     | 'kea-config-hashes'
-    | 'rename-app'
+    | 'app'
     | 'global-config-checkers'
     | 'daemon-config-checkers'
     | 'host-reservation'
-    | 'rename-kea-app'
-    | 'edit-kea-global-config'
-    | 'edit-stork-settings'
+    | 'kea-global-parameters-transaction'
+    | 'stork-settings'
     | 'shared-network'
     | 'subnet'
-    | 'fetch-zones'
+    | 'zones'
     | 'app-access-point-key'
-    | 'regenerate-machines-server-token'
-    | 'edit-machine-address'
-    | 'edit-machine-authorization'
-    | 'delete-machine'
+    | 'machine-address'
+    | 'machine-authorization'
+    | 'machine'
     | 'daemon-config-review'
+    | 'daemon-global-config'
+    | 'daemon-config'
+    | 'communication'
+    | 'daemon-monitoring'
+    | 'leases'
+    | 'swagger'
+    | 'users'
 
 export type AccessType = 'create' | 'read' | 'update' | 'delete'
 
@@ -169,19 +174,22 @@ export class AuthService {
             return true
         } else if (this.isAdmin()) {
             switch (componentKey) {
-                case 'app-access-point-key':
-                case 'get-machines-server-token':
-                case 'regenerate-machines-server-token':
-                case 'edit-machine-authorization':
-                case 'delete-machine':
+                case 'app-access-point-key': // Admin role is not enough to see Access Point Key (it is secret).
+                case 'machines-server-token': // Admin role is not enough to see server token (it is secret).
+                case 'machine-authorization': // Admin role is not enough to authorize or unauthorize machine.
                     return false
+                case 'users':
+                    return accessType === 'read' // Admin group can only read users data.
+                case 'machine':
+                    return accessType !== 'delete' // Admin group can't delete machines.
                 default:
                     return true
             }
         } else if (this.isInReadOnlyGroup()) {
             switch (componentKey) {
-                case 'get-machines-server-token':
+                case 'machines-server-token':
                 case 'app-access-point-key':
+                case 'users':
                     return false
                 default:
                     return accessType === 'read'

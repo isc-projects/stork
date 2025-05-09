@@ -1,5 +1,5 @@
 <div class="grid m-0">
-    <app-managed-access key="rename-app" accessType="update">
+    <app-managed-access key="app" accessType="update">
         <app-rename-app-dialog
             [appId]="appTab.app.id"
             [appName]="appTab.app.name"
@@ -22,7 +22,7 @@
                             class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
                             id="rename-app-icon"
                             (click)="showRenameAppDialog()"
-                            appManagedAccess="rename-app"
+                            appManagedAccess="app"
                             accessType="update"
                         ></i>
                         <p-progressSpinner
@@ -64,6 +64,8 @@
                                 [ngModel]="daemon.monitored"
                                 (onChange)="changeMonitored(daemon)"
                                 inputId="monitored-switch"
+                                appManagedAccess="daemon-monitoring"
+                                accessType="update"
                             ></p-inputSwitch>
                             <label for="monitored-switch" class="ml-2 my-auto">Monitoring</label>
                         </div>
@@ -76,6 +78,7 @@
                             class="p-button-secondary mr-2 my-2"
                             type="button"
                             pButton
+                            appManagedAccess="host-reservation"
                         ></button>
                         <button
                             *ngIf="isDhcpDaemon(daemon)"
@@ -86,6 +89,7 @@
                             type="button"
                             class="p-button-secondary mr-2 my-2"
                             pButton
+                            appManagedAccess="subnet"
                         ></button>
                         <button
                             *ngIf="isDhcpDaemon(daemon)"
@@ -96,6 +100,7 @@
                             class="p-button-secondary mr-2 my-2"
                             type="button"
                             pButton
+                            appManagedAccess="shared-network"
                         ></button>
                         <button
                             *ngIf="isDhcpDaemon(daemon)"
@@ -105,6 +110,7 @@
                             class="p-button-secondary mr-2 my-2"
                             type="button"
                             pButton
+                            appManagedAccess="daemon-global-config"
                         ></button>
                         <!-- Using anchor tag allows to open page in new tab by hold Ctrl and click on it -->
                         <a
@@ -114,6 +120,7 @@
                             type="button"
                             routerLink="/apps/kea/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
                             pButton
+                            appManagedAccess="daemon-config"
                         ></a>
                     </div>
 

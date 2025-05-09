@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core'
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router'
 import { Observable } from 'rxjs'
 
-import { AuthService } from './auth.service'
+import { AccessType, AuthService, PrivilegeKey } from './auth.service'
 
 @Injectable({
     providedIn: 'root',
@@ -23,6 +23,16 @@ export class AuthGuard {
     ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
         const currentUser = this.auth.currentUserValue
         if (currentUser) {
+            if (
+                route.routeConfig?.data?.key &&
+                !this.auth.hasPrivilege(
+                    route.routeConfig.data.key as PrivilegeKey,
+                    (route.routeConfig.data?.accessType as AccessType) ?? 'read'
+                )
+            ) {
+                // If user is not authorized to access the path, redirect to Forbidden page.
+                return this.router.parseUrl('/forbidden')
+            }
             // // check if route is restricted by role
             // if (route.data.roles && route.data.roles.indexOf(currentUser.role) === -1) {
             //     // role not authorized so redirect to home page

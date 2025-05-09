@@ -25,11 +25,13 @@
         </div>
         <div *ngIf="searchResults.hosts.items.length > 0" style="margin-right: 20px; min-width: 17em">
             <h4>Hosts</h4>
-            <div *ngFor="let h of searchResults.hosts.items">
-                [{{ h.id }}]
-                <span *ngFor="let i of h.hostIdentifiers">
-                    {{ i.idType + '=' + i.idHexValue }}
-                </span>
+            <div appManagedAccess="host-reservation">
+                <div *ngFor="let h of searchResults.hosts.items">
+                    [{{ h.id }}]
+                    <span *ngFor="let i of h.hostIdentifiers">
+                        {{ i.idType + '=' + i.idHexValue }}
+                    </span>
+                </div>
             </div>
             <div style="margin-top: 10px">
                 <a routerLink="/dhcp/hosts" [queryParams]="{ text: searchText, gs: true }">more</a>

@@ -54,11 +54,13 @@ const routes: Routes = [
         path: 'machines/:id',
         component: MachinesPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'machine' },
     },
     {
         path: 'communication',
         component: CommunicationStatusPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'communication' },
     },
     {
         path: 'apps/:appType',
@@ -69,16 +71,19 @@ const routes: Routes = [
         path: 'apps/:appType/:id',
         component: AppsPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'app' },
     },
     {
         path: 'apps/kea/:appId/daemons/:daemonId/config',
         component: KeaDaemonConfigurationPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'daemon-config' },
     },
     {
         path: 'dhcp/leases',
         component: LeaseSearchPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'leases' },
     },
     {
         path: 'dhcp/hosts',
@@ -89,6 +94,7 @@ const routes: Routes = [
         path: 'dhcp/hosts/:id',
         component: HostsPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'host-reservation' },
     },
     {
         path: 'dhcp/subnets',
@@ -99,6 +105,7 @@ const routes: Routes = [
         path: 'dhcp/subnets/:id',
         component: SubnetsPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'subnet' },
     },
     {
         path: 'dhcp/shared-networks',
@@ -109,6 +116,7 @@ const routes: Routes = [
         path: 'dhcp/shared-networks/:id',
         component: SharedNetworksPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'shared-network' },
     },
     {
         path: 'dns/zones',
@@ -119,16 +127,19 @@ const routes: Routes = [
         path: 'dns/zones/:id',
         component: ZonesPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'zones' },
     },
     {
         path: 'apps/kea/:appId/daemons/:daemonId/global-config',
         component: KeaGlobalConfigurationPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'daemon-global-config' },
     },
     {
         path: 'swagger-ui',
         component: SwaggerUiComponent,
         canActivate: [AuthGuard],
+        data: { key: 'swagger' },
     },
     {
         path: 'profile',
@@ -149,21 +160,26 @@ const routes: Routes = [
         path: 'users',
         component: UsersPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'users' },
     },
     {
         path: 'users/:id',
         component: UsersPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'users', accessType: 'create' },
     },
     {
+        //TODO: check this path, it seems to have an overlap with the one above
         path: 'users/new',
         component: UsersPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'users', accessType: 'create' },
     },
     {
         path: 'settings',
         component: SettingsPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'stork-settings' },
     },
     {
         path: 'events',
@@ -183,6 +199,7 @@ const routes: Routes = [
         path: 'review-checkers',
         component: ConfigCheckerPreferencePageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'global-config-checkers' },
     },
     {
         path: 'versions',

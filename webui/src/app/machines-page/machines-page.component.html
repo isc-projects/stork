@@ -37,7 +37,7 @@
     </div>
 </app-breadcrumbs>
 
-<app-managed-access key="edit-machine-address">
+<app-managed-access key="machine-address" accessType="update">
     <p-dialog
         header="Change Machine Address"
         [(visible)]="changeMachineAddressDialogVisible"
@@ -92,7 +92,7 @@
     </p-dialog>
 </app-managed-access>
 
-<app-managed-access accessType="read" key="get-machines-server-token">
+<app-managed-access accessType="read" key="machines-server-token">
     <p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
         <p class="max-w-40rem my-2 mr-2">
             Copy these commands and paste them into a terminal on the machine where the Stork agent is being installed.
@@ -130,18 +130,18 @@ sudo ./stork-install-agent.sh</textarea
                 pTooltip="Copy server token to clipboard"
                 class="mr-1"
             ></button>
-            <app-managed-access key="regenerate-machines-server-token">
-                <button
-                    type="button"
-                    pButton
-                    icon="pi pi-refresh"
-                    label="Regenerate"
-                    pTooltip="If the server token has been compromised, regenerate it."
-                    class="p-button-secondary"
-                    (click)="regenerateServerToken()"
-                    id="regenerate-server-token-button"
-                ></button>
-            </app-managed-access>
+            <button
+                type="button"
+                pButton
+                icon="pi pi-refresh"
+                label="Regenerate"
+                pTooltip="If the server token has been compromised, regenerate it."
+                class="p-button-secondary"
+                (click)="regenerateServerToken()"
+                id="regenerate-server-token-button"
+                appManagedAccess="machines-server-token"
+                accessType="update"
+            ></button>
         </p>
         <p class="max-w-40rem mb-2 mr-2">
             Providing the token will cause the new machine to be automatically added to the Stork server and authorized.
@@ -195,17 +195,16 @@ sudo ./stork-install-agent.sh</textarea
     <div class="flex flex-wrap gap-2 justify-content-end mb-3">
         <div class="flex flex-auto gap-2 flex-wrap justify-content-end">
             <div class="flex-auto"></div>
-            <app-managed-access accessType="read" key="get-machines-server-token">
-                <button
-                    type="button"
-                    pButton
-                    label="Installing Stork Agent on a New Machine"
-                    icon="pi pi-download"
-                    (click)="showAgentInstallationInstruction()"
-                    id="show-agent-installation-instruction-button"
-                ></button>
-            </app-managed-access>
-
+            <button
+                type="button"
+                pButton
+                label="Installing Stork Agent on a New Machine"
+                icon="pi pi-download"
+                (click)="showAgentInstallationInstruction()"
+                id="show-agent-installation-instruction-button"
+                appManagedAccess="machines-server-token"
+                accessType="read"
+            ></button>
             <p-selectButton
                 [options]="selectButtonOptions"
                 [ngModel]="showAuthorized"
@@ -253,13 +252,13 @@ sudo ./stork-install-agent.sh</textarea
             <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
                 <i class="fa fa-server pr-2"></i> {{ machineTab?.address
                 }}<span class="text-primary-200">:{{ machineTab?.agentPort }}</span>
-                <app-managed-access key="edit-machine-address">
-                    <i
-                        class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
-                        id="edit-machine-icon"
-                        (click)="editAddress(machineTab)"
-                    ></i>
-                </app-managed-access>
+                <i
+                    class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
+                    id="edit-machine-icon"
+                    (click)="editAddress(machineTab)"
+                    appManagedAccess="machine-address"
+                    accessType="update"
+                ></i>
             </div>
 
             <div>

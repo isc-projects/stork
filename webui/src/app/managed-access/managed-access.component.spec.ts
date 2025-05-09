@@ -12,7 +12,9 @@ import { By } from '@angular/platform-browser'
 @Component({
     standalone: true,
     template: `
-        <app-managed-access key="edit-machine-authorization"><h1>Edit machine authorization.</h1></app-managed-access>
+        <app-managed-access key="machine-authorization" accessType="update"
+            ><h1>Edit machine authorization.</h1></app-managed-access
+        >
         <app-managed-access
             key="app-access-point-key"
             accessType="read"
@@ -52,7 +54,7 @@ describe('ManagedAccessComponent', () => {
         hostComponent = fixture.componentInstance
         authService = fixture.debugElement.injector.get(AuthService)
         hasPrivilegeSpy = spyOn(authService, 'hasPrivilege')
-        hasPrivilegeSpy.withArgs('edit-machine-authorization', 'write').and.returnValue(true)
+        hasPrivilegeSpy.withArgs('machine-authorization', 'write').and.returnValue(true)
         hasPrivilegeSpy.withArgs('app-access-point-key', 'read').and.returnValue(true)
         hasPrivilegeSpy.withArgs('edit-host-reservation', 'write').and.returnValue(true)
 
@@ -95,7 +97,7 @@ describe('ManagedAccessComponent', () => {
     })
 
     it('should display no content when no access', () => {
-        hasPrivilegeSpy.withArgs('edit-machine-authorization', 'write').and.returnValue(false)
+        hasPrivilegeSpy.withArgs('machine-authorization', 'write').and.returnValue(false)
         firstComponent.ngOnInit()
         fixture.detectChanges()
         const headingDe = fixture.debugElement.query(By.css('h1'))

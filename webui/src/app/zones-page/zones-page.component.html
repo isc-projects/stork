@@ -37,34 +37,26 @@
     <tr *ngIf="!fetchInProgress">
         <td [attr.colspan]="colspan">
             <ng-container *ngIf="!wasZoneFetchSent()">
-                <app-managed-access key="fetch-zones">
-                    <ng-template appTemplate="hasAccess">
-                        <p-message
-                            styleClass="mb-2 mx-0 md:mx-8"
-                            severity="info"
-                            [text]="
-                                'Zones were not fetched yet from DNS servers. You can now trigger zones fetch operation. ' +
-                                'This operation instructs the Stork server to fetch the zones from all DNS servers' +
-                                ' and update them in the Stork database. It may take some time, depending on the number of the ' +
-                                'DNS servers and zones. If you decide to trigger the zones fetch ' +
-                                'operation, you can use the button below.'
-                            "
-                        ></p-message>
-                        <p-button
-                            styleClass="mx-0 md:mx-8"
-                            label="Fetch Zones"
-                            icon="pi pi-download"
-                            (onClick)="sendPutZonesFetch(true)"
-                            [disabled]="fetchInProgress || putZonesFetchLocked"
-                    /></ng-template>
-                    <ng-template appTemplate="noAccess">
-                        <p-message
-                            styleClass="mb-2 mx-0 md:mx-8"
-                            severity="info"
-                            [text]="'Zones were not fetched yet from DNS servers.'"
-                        ></p-message
-                    ></ng-template>
-                </app-managed-access>
+                <p-message
+                    styleClass="mb-2 mx-0 md:mx-8"
+                    severity="info"
+                    [text]="
+                        'Zones were not fetched yet from DNS servers. You can now trigger zones fetch operation. ' +
+                        'This operation instructs the Stork server to fetch the zones from all DNS servers' +
+                        ' and update them in the Stork database. It may take some time, depending on the number of the ' +
+                        'DNS servers and zones. If you decide to trigger the zones fetch ' +
+                        'operation, you can use the button below.'
+                    "
+                ></p-message>
+                <p-button
+                    styleClass="mx-0 md:mx-8"
+                    label="Fetch Zones"
+                    icon="pi pi-download"
+                    (onClick)="sendPutZonesFetch(true)"
+                    [disabled]="fetchInProgress || putZonesFetchLocked"
+                    appManagedAccess="zones"
+                    accessType="update"
+                />
             </ng-container>
             <p *ngIf="wasZoneFetchSent()">
                 {{ empty }}
@@ -220,15 +212,15 @@ for each occurrence of that zone.
                 (onClick)="fetchStatusVisible = true"
                 id="fetch-status"
             />
-            <app-managed-access key="fetch-zones">
-                <p-button
-                    label="Fetch Zones"
-                    icon="pi pi-download"
-                    (onClick)="sendPutZonesFetch()"
-                    [disabled]="fetchInProgress || putZonesFetchLocked"
-                    id="fetch-zones"
-                />
-            </app-managed-access>
+            <p-button
+                label="Fetch Zones"
+                icon="pi pi-download"
+                (onClick)="sendPutZonesFetch()"
+                [disabled]="fetchInProgress || putZonesFetchLocked"
+                id="fetch-zones"
+                appManagedAccess="zones"
+                accessType="update"
+            />
             <p-button
                 label="Refresh List"
                 icon="pi pi-refresh"

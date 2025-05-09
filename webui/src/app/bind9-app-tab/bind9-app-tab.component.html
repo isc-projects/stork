@@ -1,5 +1,5 @@
 <div class="grid m-0">
-    <app-managed-access key="rename-app" accessType="update">
+    <app-managed-access key="app" accessType="update">
         <app-rename-app-dialog
             [appId]="appTab.app.id"
             [appName]="appTab.app.name"
@@ -22,7 +22,7 @@
                             class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
                             id="rename-app-icon"
                             (click)="showRenameAppDialog()"
-                            appManagedAccess="rename-app"
+                            appManagedAccess="app"
                             accessType="update"
                         ></i>
                         <p-progressSpinner

@@ -397,8 +397,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 })
             })
 
-        this._canEditMachineAuthorization = this.authService.hasPrivilege('edit-machine-authorization')
-        this._canDeleteMachine = this.authService.hasPrivilege('delete-machine')
+        this._canEditMachineAuthorization = this.authService.hasPrivilege('machine-authorization', 'update')
+        this._canDeleteMachine = this.authService.hasPrivilege('machine', 'delete')
     }
 
     /**

@@ -105,11 +105,6 @@ export class MachinesTableComponent extends PrefilteredTable<MachinesFilter, Mac
     private _unauthorizedInDataCollectionCount: number = 0
 
     /**
-     * Boolean flag stating whether user has priovileges to edit machine authorization state.
-     */
-    canEditMachineAuthorization: boolean = false
-
-    /**
      * Callback called when Show machine's menu button was clicked by user.
      * @param event browser's click event
      * @param machine machine for which the menu is about to be displayed
