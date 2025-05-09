@@ -1,34 +1,34 @@
+<p-confirmDialog key="migrationToDatabaseDialog">
+    <ng-template pTemplate="message">
+        <div class="block ml-3 max-w-40rem">
+            <p>Are you sure you want to migrate host reservations to the database?</p>
+            <p>
+                The number of hosts to be migrated is <strong>{{ totalRecords }}</strong
+                >. They are selected by the below filter:
+            </p>
+            <div class="w-full">
+                <div *ngFor="let entry of migrationFilterEntries" class="flex flex-row gap-2">
+                    <span class="font-bold text-right flex-1">{{ entry[0] }}</span>
+                    <span class="flex-1">{{ entry[1] }}</span>
+                </div>
+            </div>
+
+            <p>
+                This operation will lock for modifications the related daemons. During the migration the Stork server
+                will not synchronize the Kea data (i.e., the Kea configuration, subnets, shared networks, host
+                reservations).
+            </p>
+            <p>The migration can be canceled in any time.</p>
+        </div>
+    </ng-template>
+</p-confirmDialog>
+
 <div class="mb-2 flex gap-2 flex-wrap justify-content-end">
     <div class="flex align-items-center flex-auto">
         <div *ngIf="filterTextFormatErrors?.length > 0">
             <small *ngFor="let err of filterTextFormatErrors" class="p-error block">{{ err }}</small>
         </div>
     </div>
-
-    <p-confirmDialog key="migrationToDatabaseDialog">
-        <ng-template pTemplate="message">
-            <div class="block ml-3 max-w-40rem">
-                <p>Are you sure you want to migrate host reservations to the database?</p>
-                <p>
-                    The number of hosts to be migrated is <strong>{{ totalRecords }}</strong
-                    >. They are selected by the below filter:
-                </p>
-                <div class="w-full">
-                    <div *ngFor="let entry of migrationFilterEntries" class="flex flex-row gap-2">
-                        <span class="font-bold text-right flex-1">{{ entry[0] }}</span>
-                        <span class="flex-1">{{ entry[1] }}</span>
-                    </div>
-                </div>
-
-                <p>
-                    This operation will lock for modifications the related daemons. During the migration the Stork
-                    server will not synchronize the Kea data (i.e., the Kea configuration, subnets, shared networks,
-                    host reservations).
-                </p>
-                <p>The migration can be canceled in any time.</p>
-            </div>
-        </ng-template>
-    </p-confirmDialog>
 
     <p-button
         label="Migrate to Database"
