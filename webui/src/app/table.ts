@@ -275,6 +275,10 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
      * @param table table which state was saved
      */
     stateSaved(table: Table): void {
+        const state = JSON.parse(sessionStorage.getItem(this.stateKey))
+        state.selection = []
+        sessionStorage.setItem(this.stateKey, JSON.stringify(state))
+
         if (table.restoringFilter) {
             // Force set this flag to false.
             // This is a workaround of the issue in PrimeNG,
