@@ -84,7 +84,7 @@ describe('ConfigMigrationTableComponent', () => {
         await fixture.whenStable()
 
         // Verify the component state
-        expect(component.migrations.length).toBe(2)
+        expect(component.dataCollection.length).toBe(2)
         expect(component.totalRecords).toBe(2)
     })
 

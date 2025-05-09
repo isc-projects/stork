@@ -53,7 +53,7 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
 
         lastValueFrom(this.dhcpApi.getMigrations(event.first, event.rows))
             .then((data) => {
-                this.migrations = data.items ?? []
+                this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
             })
             .catch((err) => {
@@ -68,20 +68,6 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
             .finally(() => {
                 this.dataLoading = false
             })
-    }
-
-    /**
-     * Returns all currently displayed configuration migrations.
-     */
-    get migrations(): MigrationStatus[] {
-        return this.dataCollection
-    }
-
-    /**
-     * Sets configuration migrations to be displayed.
-     */
-    set migrations(migrations: MigrationStatus[]) {
-        this.dataCollection = migrations
     }
 
     /**
