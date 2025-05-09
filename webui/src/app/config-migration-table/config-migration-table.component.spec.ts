@@ -12,6 +12,7 @@ import { TooltipModule } from 'primeng/tooltip'
 import { DHCPService, MigrationStatuses } from '../backend'
 import { Observable, of } from 'rxjs'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 describe('ConfigMigrationTableComponent', () => {
     let component: ConfigMigrationTableComponent
@@ -39,7 +40,7 @@ describe('ConfigMigrationTableComponent', () => {
                 TableModule,
                 ProgressBarModule,
             ],
-            declarations: [ConfigMigrationTableComponent, PluralizePipe],
+            declarations: [ConfigMigrationTableComponent, PluralizePipe, DurationPipe],
         }).compileComponents()
 
         dhcpServiceSpy = TestBed.inject(DHCPService) as jasmine.SpyObj<DHCPService>

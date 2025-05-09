@@ -15,6 +15,7 @@ import { Tag } from 'primeng/tag'
 import { Fieldset } from 'primeng/fieldset'
 import { ButtonModule } from 'primeng/button'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 describe('ConfigMigrationTabComponent', () => {
     let component: ConfigMigrationTabComponent
@@ -80,7 +81,7 @@ describe('ConfigMigrationTabComponent', () => {
                 RouterTestingModule,
                 ButtonModule,
             ],
-            declarations: [ConfigMigrationTabComponent, EntityLinkComponent, LocaltimePipe],
+            declarations: [ConfigMigrationTabComponent, EntityLinkComponent, LocaltimePipe, DurationPipe],
         }).compileComponents()
     })
 
@@ -193,14 +194,14 @@ describe('ConfigMigrationTabComponent', () => {
         component.migration = mockRunningMigration as MigrationStatus
         fixture.detectChanges()
         let content = fixture.debugElement.nativeElement.textContent
-        expect(content).toContain('Duration:10m')
-        expect(content).toContain('Estimated Left:5m')
+        expect(content).toContain('Duration:10 minutes')
+        expect(content).toContain('Estimated Left:5 minutes')
 
         // For completed migration
         component.migration = mockCompletedMigration as MigrationStatus
         fixture.detectChanges()
         content = fixture.debugElement.nativeElement.textContent
-        expect(content).toContain('Duration:15m')
+        expect(content).toContain('Duration:15 minutes')
         expect(content).not.toContain('Estimated Left')
     })
 

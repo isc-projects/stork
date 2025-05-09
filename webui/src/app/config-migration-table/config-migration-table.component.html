@@ -77,10 +77,10 @@
                 <p-progressBar [value]="getCompletionPercentage(m)" [showValue]="true"></p-progressBar>
             </td>
             <td>
-                {{ m.elapsedTime }}
+                {{ m.elapsedTime | duration }}
             </td>
             <td>
-                {{ m.estimatedLeftTime ?? '0s' }}
+                {{ m.estimatedLeftTime | duration }}
             </td>
             <td>
                 <button

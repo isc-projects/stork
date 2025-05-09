@@ -25,6 +25,7 @@ import { ProgressBarModule } from 'primeng/progressbar'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { MockParamMap } from '../utils'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 describe('ConfigMigrationPageComponent', () => {
     let component: ConfigMigrationPageComponent
@@ -104,6 +105,7 @@ describe('ConfigMigrationPageComponent', () => {
                 PluralizePipe,
                 EntityLinkComponent,
                 LocaltimePipe,
+                DurationPipe,
             ],
             providers: [
                 { provide: DHCPService, useValue: dhcpApi },
