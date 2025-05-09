@@ -25,7 +25,7 @@ export class ConfigMigrationTabComponent {
     /**
      * Structure containing migration information to be displayed.
      */
-    @Input() migration: MigrationStatus
+    @Input({ required: true }) migration: MigrationStatus
 
     /**
      * Determines if the migration is currently running.
@@ -93,7 +93,7 @@ export class ConfigMigrationTabComponent {
     /**
      * Gets the severity level for the status tag.
      */
-    get statusSeverity(): string {
+    get statusSeverity(): 'info' | 'warning' | 'success' | 'danger' | 'secondary' {
         if (this.isRunning) return 'info'
         if (this.isCanceling) return 'warning'
         if (this.isCompleted) return 'success'

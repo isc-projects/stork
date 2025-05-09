@@ -98,6 +98,7 @@
                         [rows]="50"
                         [rowsPerPageOptions]="[10, 50, 100, 200, 500]"
                         [showCurrentPageReport]="true"
+                        [alwaysShowPaginator]="false"
                         styleClass="p-datatable-sm"
                     >
                         <ng-template pTemplate="header">
@@ -109,7 +110,7 @@
                         <ng-template pTemplate="body" let-error>
                             <tr>
                                 <td>
-                                    <ng-container [ngSwitch]="error.type">
+                                    <ng-container [ngSwitch]="error.causeEntity">
                                         <app-entity-link
                                             *ngSwitchCase="'daemon'"
                                             entity="daemon"
@@ -130,7 +131,7 @@
                         </ng-template>
                         <ng-template pTemplate="emptymessage">
                             <tr>
-                                <td colspan="4">No error details available</td>
+                                <td colspan="2">No error details available</td>
                             </tr>
                         </ng-template>
                     </p-table>
