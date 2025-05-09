@@ -151,6 +151,7 @@ import { ByteCharacterComponent } from './byte-character/byte-character.componen
 import { ConfigMigrationPageComponent } from './config-migration-page/config-migration-page.component'
 import { ConfigMigrationTableComponent } from './config-migration-table/config-migration-table.component'
 import { ConfigMigrationTabComponent } from './config-migration-tab/config-migration-tab.component'
+import { DurationPipe } from './pipes/duration.pipe'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -252,6 +253,7 @@ export function cfgFactory() {
         ConfigMigrationPageComponent,
         ConfigMigrationTableComponent,
         ConfigMigrationTabComponent,
+        DurationPipe,
     ],
     bootstrap: [AppComponent],
     imports: [
