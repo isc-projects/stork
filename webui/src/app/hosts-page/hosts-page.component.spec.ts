@@ -1153,8 +1153,8 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        // Invalid filter should not be applied, so dhcpApi.getHosts should not be called.
-        expect(dhcpApi.getHosts).not.toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with the last valid filter.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
@@ -1187,8 +1187,8 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        // Invalid filter should not be applied, so dhcpApi.getHosts should not be called.
-        expect(dhcpApi.getHosts).not.toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with the last valid filter.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
@@ -1251,8 +1251,8 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        // Invalid filter should not be applied, so dhcpApi.getHosts should not be called.
-        expect(dhcpApi.getHosts).not.toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with the last valid filter.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsg = fixture.debugElement.query(By.css('.p-error'))
         expect(errMsg).toBeTruthy()
@@ -1274,8 +1274,8 @@ describe('HostsPageComponent', () => {
         tick()
         fixture.detectChanges()
 
-        // Invalid filter should not be applied, so dhcpApi.getHosts should not be called.
-        expect(dhcpApi.getHosts).not.toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
+        // Invalid filter should not be applied, so dhcpApi.getHosts should be called with the last valid filter.
+        expect(dhcpApi.getHosts).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
 
         const errMsgs = fixture.debugElement.queryAll(By.css('.p-error'))
         expect(errMsgs.length).toBe(3)

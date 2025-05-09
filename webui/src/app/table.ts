@@ -544,10 +544,9 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
         this._subscriptions.add(
             this.filter$.subscribe((filter) => {
                 this.filterTextFormatErrors = this.validateFilter(filter)
-                if (this.filterTextFormatErrors.length !== 0) {
-                    return
+                if (this.filterTextFormatErrors.length === 0) {
+                    this.validFilter = filter
                 }
-                this.validFilter = filter
 
                 if (this.table) {
                     if (this.validatedFilterAndTableFilterDiffer()) {
