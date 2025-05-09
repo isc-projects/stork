@@ -112,11 +112,6 @@
                                 <td>
                                     <ng-container [ngSwitch]="error.causeEntity">
                                         <app-entity-link
-                                            *ngSwitchCase="'daemon'"
-                                            entity="daemon"
-                                            [attrs]="{ id: error.id, name: error.label }"
-                                        ></app-entity-link>
-                                        <app-entity-link
                                             *ngSwitchCase="'host'"
                                             entity="host"
                                             [attrs]="{ id: error.id, label: error.label }"
