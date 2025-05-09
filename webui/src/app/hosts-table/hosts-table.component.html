@@ -3,6 +3,14 @@
         <div class="block ml-3 max-w-40rem">
             <p>Are you sure you want to migrate host reservations to the database?</p>
             <p>
+                You are about to migrate host reservations defined in a configuration file to a database ("host
+                backend"). After the migration, hosts will be deleted from your configuration file and will be kept in
+                the database only. All the hosts selected by the current filter (including those on other pages, if
+                there are more hosts than fit on a single page) will be considered. Those that can't be migrated (e.g.
+                because they're already in a database or are in conflicted state) will be skipped. The migration is not
+                instantaneous and will take some time.
+            </p>
+            <p>
                 The number of hosts to be migrated is <strong>{{ totalRecords }}</strong
                 >. They are selected by the below filter:
             </p>
