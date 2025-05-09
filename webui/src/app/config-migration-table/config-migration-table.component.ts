@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, EventEmitter, Output, ViewChild } from '@angular/core'
 import { LazyLoadTable } from '../table'
 import { DHCPService, MigrationStatus } from '../backend'
 import { Table, TableLazyLoadEvent } from 'primeng/table'
@@ -15,7 +15,7 @@ import { lastValueFrom } from 'rxjs'
     templateUrl: './config-migration-table.component.html',
     styleUrl: './config-migration-table.component.sass',
 })
-export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus> implements OnInit {
+export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus> {
     /**
      * Event emitted when the user wants to clear finished migrations.
      */
@@ -37,6 +37,7 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
         private messageService: MessageService
     ) {
         super()
+        this.dataLoading = true
     }
 
     /**
@@ -67,15 +68,6 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
             .finally(() => {
                 this.dataLoading = false
             })
-    }
-
-    /**
-     * Lifecycle hook invoked when the component is initialized.
-     *
-     * Load the initial data.
-     */
-    ngOnInit() {
-        this.loadData({ first: 0, rows: 10 })
     }
 
     /**
