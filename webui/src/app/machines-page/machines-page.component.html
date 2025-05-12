@@ -37,7 +37,7 @@
     </div>
 </app-breadcrumbs>
 
-<app-managed-access key="machine-address" accessType="update">
+<div appManagedAccess="machine-address" accessType="update" [hideOnNoAccess]="true">
     <p-dialog
         header="Change Machine Address"
         [(visible)]="changeMachineAddressDialogVisible"
@@ -90,9 +90,9 @@
             ></button>
         </p-footer>
     </p-dialog>
-</app-managed-access>
+</div>
 
-<app-managed-access accessType="read" key="machines-server-token">
+<div accessType="read" appManagedAccess="machines-server-token" [hideOnNoAccess]="true">
     <p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
         <p class="max-w-40rem my-2 mr-2">
             Copy these commands and paste them into a terminal on the machine where the Stork agent is being installed.
@@ -161,7 +161,7 @@ sudo ./stork-install-agent.sh</textarea
             ></button>
         </div>
     </p-dialog>
-</app-managed-access>
+</div>
 
 <p-confirmDialog styleClass="w-28rem" />
 

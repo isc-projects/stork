@@ -6,8 +6,26 @@ import { AccessType, AuthService, PrivilegeKey } from './auth.service'
     standalone: true,
 })
 export class ManagedAccessDirective implements AfterViewInit {
-    @Input('appManagedAccess') key: PrivilegeKey
+    /**
+     * Identifies the entity for which the access will be checked.
+     */
+    @Input({ required: true }) appManagedAccess: PrivilegeKey
+
+    /**
+     * Required access type to access the entity. Possible types follow CRUD naming convention:
+     * create, read, update, delete.
+     * Defaults to 'read' access type.
+     */
     @Input() accessType: AccessType = 'read'
+
+    /**
+     * Optional input boolean flag which simplifies the directive usage. Defaults to false.
+     * When set to true, it means that the component will not be displayed at all in case of lack of privileges.
+     * When set to false (default), it means that the component will be rendered as disabled (if the component is a PrimeNG element),
+     * or warning message will be displayed informing of lack of privileges.
+     */
+    @Input() hideOnNoAccess: boolean = false
+
     /**
      * Output boolean property emitting whenever hasAccess changes.
      */
@@ -20,9 +38,14 @@ export class ManagedAccessDirective implements AfterViewInit {
     ) {}
 
     ngAfterViewInit(): void {
-        const hasAccess = this.authService.hasPrivilege(this.key, this.accessType)
+        const hasAccess = this.authService.hasPrivilege(this.appManagedAccess, this.accessType)
         this.hasAccess.emit(hasAccess)
         if (!hasAccess) {
+            if (this.hideOnNoAccess) {
+                this.elementRef.nativeElement.innerHTML = ''
+                return
+            }
+
             if (
                 this.elementRef.nativeElement.classList.contains('p-element') ||
                 this.elementRef.nativeElement.nodeName.toUpperCase() === 'I'

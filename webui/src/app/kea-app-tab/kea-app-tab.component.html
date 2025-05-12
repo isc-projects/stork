@@ -1,5 +1,5 @@
 <div class="grid m-0">
-    <app-managed-access key="app" accessType="update">
+    <div appManagedAccess="app" accessType="update" [hideOnNoAccess]="true">
         <app-rename-app-dialog
             [appId]="appTab.app.id"
             [appName]="appTab.app.name"
@@ -10,7 +10,7 @@
             (hidden)="handleRenameDialogHidden()"
         >
         </app-rename-app-dialog>
-    </app-managed-access>
+    </div>
     <div class="pl-0 pr-0 pb-4 col-12">
         <p-panel>
             <p-header>
