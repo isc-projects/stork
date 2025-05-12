@@ -28,8 +28,8 @@ import { TableModule } from 'primeng/table'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 import { provideRouter, RouterModule } from '@angular/router'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 class Daemon {
     name = 'named'
@@ -92,7 +92,7 @@ describe('Bind9AppTabComponent', () => {
                 OverlayPanelModule,
                 DataViewModule,
                 TableModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 UsersService,

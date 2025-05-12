@@ -11,7 +11,7 @@ import { ConfigCheckerPreferencePickerComponent } from './config-checker-prefere
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { FormsModule } from '@angular/forms'
 import { TagModule } from 'primeng/tag'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
@@ -33,7 +33,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
                 FormsModule,
                 TriStateCheckboxModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             declarations: [HelpTipComponent, ConfigCheckerPreferencePickerComponent],
             providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],

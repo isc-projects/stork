@@ -67,7 +67,7 @@ import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 import { SettingService } from '../setting.service'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -136,7 +136,7 @@ describe('SubnetsPageComponent', () => {
                 ToastModule,
                 ConfirmDialogModule,
                 PanelModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 ConfirmationService,

@@ -39,7 +39,7 @@ import { ParameterViewComponent } from '../parameter-view/parameter-view.compone
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
 import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { PositivePipe } from '../pipes/positive.pipe'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 
 describe('SharedNetworkTabComponent', () => {
@@ -87,7 +87,7 @@ describe('SharedNetworkTabComponent', () => {
                 TagModule,
                 TooltipModule,
                 TreeModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 ConfirmationService,

@@ -11,8 +11,8 @@ import { MessageService } from 'primeng/api'
 import { App } from '../backend'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { provideRouter, RouterModule } from '@angular/router'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
@@ -21,8 +21,15 @@ describe('AppOverviewComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [AppOverviewComponent, AccessPointKeyComponent, ManagedAccessComponent],
-            imports: [FormsModule, NoopAnimationsModule, RouterModule, PanelModule, ButtonModule],
+            declarations: [AppOverviewComponent, AccessPointKeyComponent],
+            imports: [
+                FormsModule,
+                NoopAnimationsModule,
+                RouterModule,
+                PanelModule,
+                ButtonModule,
+                ManagedAccessDirective,
+            ],
             providers: [
                 MessageService,
                 {

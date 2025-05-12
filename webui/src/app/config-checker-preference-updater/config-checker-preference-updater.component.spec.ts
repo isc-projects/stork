@@ -17,7 +17,7 @@ import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-prefer
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { FormsModule } from '@angular/forms'
 import { TagModule } from 'primeng/tag'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('ConfigCheckerPreferenceUpdaterComponent', () => {
     let component: ConfigCheckerPreferenceUpdaterComponent
@@ -43,7 +43,7 @@ describe('ConfigCheckerPreferenceUpdaterComponent', () => {
                 FormsModule,
                 TriStateCheckboxModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 MessageService,

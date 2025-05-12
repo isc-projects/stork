@@ -52,7 +52,7 @@ import { HostsTableComponent } from '../hosts-table/hosts-table.component'
 import { PanelModule } from 'primeng/panel'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -118,7 +118,7 @@ describe('HostsPageComponent', () => {
                 MessagesModule,
                 InputNumberModule,
                 PanelModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 DHCPService,

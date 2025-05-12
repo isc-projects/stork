@@ -44,7 +44,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 
 describe('MachinesPageComponent', () => {
@@ -163,7 +163,7 @@ describe('MachinesPageComponent', () => {
                 PanelModule,
                 TriStateCheckboxModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 MessageService,

@@ -28,7 +28,7 @@ import objectContaining = jasmine.objectContaining
 import { By } from '@angular/platform-browser'
 import { AppDaemonsStatusComponent } from '../app-daemons-status/app-daemons-status.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 
 describe('MachinesTableComponent', () => {
@@ -142,7 +142,7 @@ describe('MachinesTableComponent', () => {
                 FormsModule,
                 TagModule,
                 TooltipModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 MessageService,

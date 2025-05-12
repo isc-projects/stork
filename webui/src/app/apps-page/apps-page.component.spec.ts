@@ -27,7 +27,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
 import { of, throwError } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 class App {
     id: number
@@ -67,7 +67,7 @@ describe('AppsPageComponent', () => {
                 NoopAnimationsModule,
                 ProgressSpinnerModule,
                 ConfirmDialogModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 ConfirmationService,

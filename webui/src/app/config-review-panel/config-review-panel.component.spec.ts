@@ -21,7 +21,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { DataViewModule } from 'primeng/dataview'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { FormsModule } from '@angular/forms'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 import { StorkTemplateDirective } from '../stork-template.directive'
 
@@ -54,7 +54,7 @@ describe('ConfigReviewPanelComponent', () => {
                 ToggleButtonModule,
                 DataViewModule,
                 StorkTemplateDirective,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 ServicesService,

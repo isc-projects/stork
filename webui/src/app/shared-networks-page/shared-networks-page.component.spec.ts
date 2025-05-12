@@ -58,7 +58,7 @@ import { PanelModule } from 'primeng/panel'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
 import { PositivePipe } from '../pipes/positive.pipe'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -128,7 +128,7 @@ describe('SharedNetworksPageComponent', () => {
                 TooltipModule,
                 PanelModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 ConfirmationService,

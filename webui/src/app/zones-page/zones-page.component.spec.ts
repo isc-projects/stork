@@ -43,7 +43,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { NgZone } from '@angular/core'
 import { hasFilter } from '../table'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 import { StorkTemplateDirective } from '../stork-template.directive'
 
@@ -267,7 +267,7 @@ describe('ZonesPageComponent', () => {
                 DropdownModule,
                 MultiSelectModule,
                 StorkTemplateDirective,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             declarations: [
                 ZonesPageComponent,

@@ -30,7 +30,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { MessagesModule } from 'primeng/messages'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 
 describe('HostTabComponent', () => {
@@ -68,7 +68,7 @@ describe('HostTabComponent', () => {
                 TagModule,
                 MessagesModule,
                 ProgressSpinnerModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 DHCPService,

@@ -27,7 +27,7 @@ import { ButtonModule } from 'primeng/button'
 import { TreeModule } from 'primeng/tree'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { TagModule } from 'primeng/tag'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('KeaGlobalConfigurationPageComponent', () => {
     let component: KeaGlobalConfigurationPageComponent
@@ -60,7 +60,7 @@ describe('KeaGlobalConfigurationPageComponent', () => {
                 TableModule,
                 TreeModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 {

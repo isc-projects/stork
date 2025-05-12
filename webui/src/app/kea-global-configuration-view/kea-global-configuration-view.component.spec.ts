@@ -13,7 +13,7 @@ import { TreeModule } from 'primeng/tree'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TagModule } from 'primeng/tag'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
@@ -35,7 +35,7 @@ describe('KeaGlobalConfigurationViewComponent', () => {
                 TreeModule,
                 OverlayPanelModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             declarations: [
                 CascadedParametersBoardComponent,

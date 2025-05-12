@@ -20,7 +20,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { CheckboxModule } from 'primeng/checkbox'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 
 describe('SettingsPageComponent', () => {
@@ -47,7 +47,7 @@ describe('SettingsPageComponent', () => {
                 ProgressSpinnerModule,
                 RouterModule,
                 InputNumberModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 SettingsService,

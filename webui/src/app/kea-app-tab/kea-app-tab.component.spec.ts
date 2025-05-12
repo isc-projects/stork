@@ -40,7 +40,7 @@ import { EventTextComponent } from '../event-text/event-text.component'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 class Details {
     daemons: any = [
@@ -152,7 +152,7 @@ describe('KeaAppTabComponent', () => {
                 ProgressSpinnerModule,
                 DividerModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
             ],
             providers: [
                 UsersService,

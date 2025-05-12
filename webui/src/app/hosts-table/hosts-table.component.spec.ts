@@ -16,11 +16,11 @@ import { PanelModule } from 'primeng/panel'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { TagModule } from 'primeng/tag'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
 import { DHCPService, Host } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
-import { ManagedAccessComponent } from '../managed-access/managed-access.component'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -56,7 +56,7 @@ describe('HostsTableComponent', () => {
                 PanelModule,
                 BrowserAnimationsModule,
                 TagModule,
-                ManagedAccessComponent,
+                ManagedAccessDirective,
                 ConfirmDialogModule,
             ],
             providers: [
