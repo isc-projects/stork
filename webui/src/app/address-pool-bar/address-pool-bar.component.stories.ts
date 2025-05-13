@@ -19,11 +19,20 @@ export default {
 
 type Story = StoryObj<AddressPoolBarComponent>
 
-export const Primary: Story = {
+export const Range: Story = {
     args: {
         pool: {
             pool: '10.0.0.1-10.0.0.42',
             utilization: 25,
+        },
+    },
+}
+
+export const CIDR: Story = {
+    args: {
+        pool: {
+            pool: '10.0.0.1/24',
+            utilization: 60,
         },
     },
 }

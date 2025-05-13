@@ -1,4 +1,10 @@
-<div class="utilization" [ngClass]="{ 'utilization--double': isDouble }" pTooltip="{{ tooltip }}" [escape]="false">
+<div
+    class="utilization"
+    [ngClass]="{ 'utilization--double': isDouble }"
+    pTooltip="{{ tooltip }}"
+    tooltipStyleClass="text-sm"
+    [escape]="false"
+>
     <!-- Bar label -->
     <div class="utilization__label">
         <!-- Content provided by the caller component. -->
