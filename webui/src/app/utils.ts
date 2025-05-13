@@ -590,9 +590,10 @@ export function uncamelCase(key: string): string {
     text = text.replace(/([A-Z]+)/g, ' $1')
     text = text.replace(/ddns/gi, 'DDNS')
     text = text.replace(/dhcp/gi, 'DHCP')
-    text = text.replace(/^pd/gi, 'PD')
-    text = text.replace(/^ip/gi, 'IP')
-    text = text.replace(/^id/gi, 'ID')
+    text = text.replace(/\bpd(s)?\b/gi, 'PD$1')
+    text = text.replace(/\bna(s)?\b/gi, 'NA$1')
+    text = text.replace(/\bip(s)?\b/gi, 'IP$1')
+    text = text.replace(/\bid(s)?\b/gi, 'ID$1')
     text = text.charAt(0).toUpperCase() + text.slice(1)
     return text
 }

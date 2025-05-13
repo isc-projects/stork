@@ -174,7 +174,7 @@ describe('HostsTableComponent', () => {
             appId: { value: 42 },
         }
         expect(component.migrationFilterEntries).toEqual([
-            ['App Id', '42'],
+            ['App ID', '42'],
             ['Conflict', 'false'],
         ])
 
@@ -201,10 +201,10 @@ describe('HostsTableComponent', () => {
             text: { value: 'foo' },
         }
         expect(component.migrationFilterEntries).toEqual([
-            ['App Id', '1'],
+            ['App ID', '1'],
             ['Conflict', 'false'],
             ['Is Global', 'false'],
-            ['Subnet Id', '1'],
+            ['Subnet ID', '1'],
             ['Text', 'foo'],
         ])
     })
