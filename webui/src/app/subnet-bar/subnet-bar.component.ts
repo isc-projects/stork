@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core'
 import { Subnet } from '../backend'
 
-import { clamp, datetimeToLocal } from '../utils'
+import { datetimeToLocal } from '../utils'
 
 /**
  * Component that presents subnet as a bar with a sub-bar that shows utilizations in %.

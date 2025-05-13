@@ -1,6 +1,4 @@
 import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
-import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { Subnet } from '../backend'
 import { RouterTestingModule } from '@angular/router/testing'
 import { TooltipModule } from 'primeng/tooltip'
 import { UtilizationBarComponent } from './utilization-bar.component'
