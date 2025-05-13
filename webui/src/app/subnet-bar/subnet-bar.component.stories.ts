@@ -4,6 +4,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { Subnet } from '../backend'
 import { TooltipModule } from 'primeng/tooltip'
 import { provideRouter, RouterModule } from '@angular/router'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 export default {
     title: 'App/SubnetBar',
@@ -14,7 +15,7 @@ export default {
         }),
         moduleMetadata({
             imports: [RouterModule, TooltipModule],
-            declarations: [EntityLinkComponent],
+            declarations: [EntityLinkComponent, UtilizationBarComponent],
         }),
     ],
 } as Meta

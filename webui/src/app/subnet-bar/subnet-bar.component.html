@@ -1,31 +1,16 @@
-<div class="utilization" [ngClass]="{ 'utilization--ipv6': isIPv6 }" pTooltip="{{ tooltip }}" [escape]="false">
-    <!-- Subnet prefix -->
-    <app-entity-link
-        entity="subnet"
-        [attrs]="subnet"
-        [showEntityName]="false"
-        class="utilization__label"
-    ></app-entity-link>
-    <div class="utilization__bars">
-        <!-- Address/NA utilization bar -->
-        <div class="utilization__bar-wrapper" [ngClass]="{ 'utilization__bar-wrapper--no-data': hasZeroAddressStats }">
-            <span class="utilization__kind">NAs</span>
-            <div
-                class="utilization__bar {{ getUtilizationBarModificatorClass(addrUtilization) }}"
-                [ngStyle]="addrUtilizationStyle"
-            ></div>
-        </div>
-        <!-- Delegated prefix utilization bar -->
-        <div
-            class="utilization__bar-wrapper utilization__bar-wrapper--delegated-prefix"
-            [ngClass]="{ 'utilization__bar-wrapper--no-data': hasZeroDelegatedPrefixStats }"
-            *ngIf="isIPv6"
-        >
-            <span class="utilization__kind">PDs</span>
-            <div
-                class="utilization__bar {{ getUtilizationBarModificatorClass(pdUtilization) }}"
-                [ngStyle]="pdUtilizationStyle"
-            ></div>
-        </div>
-    </div>
-</div>
+<app-utilization-bar
+    [utilizationPrimary]="addrUtilization"
+    [utilizationSecondary]="pdUtilization"
+    [kindPrimary]="'NAs'"
+    [kindSecondary]="isIPv6 ? 'PDs' : null"
+    [tooltip]="tooltip"
+>
+    <utilization-label>
+        <!-- Subnet prefix -->
+        <app-entity-link
+            entity="subnet"
+            [attrs]="subnet"
+            [showEntityName]="false"
+        ></app-entity-link> 
+    </utilization-label>
+</app-utilization-bar>

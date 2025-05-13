@@ -23,8 +23,6 @@ export class SubnetBarComponent {
      */
     tooltip = ''
 
-    constructor() {}
-
     /**
      * Sets the subnet. It generates also the tooltip content.
      */
@@ -118,69 +116,5 @@ export class SubnetBarComponent {
      */
     get isIPv6() {
         return this.subnet.subnet.includes(':')
-    }
-
-    /**
-     * Returns a style for the address utilization bar.
-     */
-    get addrUtilizationStyle() {
-        return {
-            // In some cases the utilization may be incorrect - less than
-            // zero or greater than 100%. We need to truncate the value
-            // to avoid a subnet bar overlapping other elements.
-            width: clamp(Math.ceil(this.addrUtilization), 0, 100) + '%',
-        }
-    }
-
-    /**
-     * Returns a style for the delegated prefix utilization bar.
-     */
-    get pdUtilizationStyle() {
-        return {
-            // In some cases the utilization may be incorrect - less than
-            // zero or greater than 100%. We need to truncate the value
-            // to avoid a subnet bar overlapping other elements.
-            width: clamp(Math.ceil(this.pdUtilization), 0, 100) + '%',
-        }
-    }
-
-    /**
-     * Returns a proper CSS modificator class for a given utilization value.
-     */
-    getUtilizationBarModificatorClass(value: number): string {
-        if (!this.subnet.stats) {
-            return 'utilization__bar--missing'
-        }
-        if (value <= 80) {
-            return 'utilization__bar--low'
-        }
-        if (value <= 90) {
-            return 'utilization__bar--medium'
-        }
-        if (value <= 100) {
-            return 'utilization__bar--high'
-        }
-        return 'utilization__bar--exceed'
-    }
-
-    /**
-     * Returns true if there are stats with zero number of total addresses.
-     */
-    get hasZeroAddressStats(): boolean {
-        if (!this.subnet.stats) {
-            return false
-        }
-
-        return !this.subnet.stats['total-nas'] && !this.subnet.stats['total-addresses']
-    }
-
-    /**
-     * Returns true if there are stats with zero number of delegated prefixes.
-     */
-    get hasZeroDelegatedPrefixStats(): boolean {
-        if (!this.subnet.stats) {
-            return false
-        }
-        return !this.subnet.stats['total-pds']
     }
 }
