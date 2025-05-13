@@ -1,3 +1,6 @@
-<app-utilization-bar [utilizationPrimary]="pool.utilization">
+<app-utilization-bar
+    [utilizationPrimary]="pool.utilization"
+    [stats]="pool.stats"
+    [statsCollectedAt]="pool.statsCollectedAt">
     {{ pool.pool }}
 </app-utilization-bar>
