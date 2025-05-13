@@ -55,12 +55,12 @@ describe('UtilizationBarComponent', () => {
     it('has warning tooltip when utilization is greater than 100%', () => {
         component.utilizationPrimary = 101
         component.stats = {
-                'total-nas': 100.0,
-                'assigned-nas': 101.0,
-                'declined-nas': 0,
-                'total-pds': 200.0,
-                'assigned-pds': 202.0,
-            }
+            'total-nas': 100.0,
+            'assigned-nas': 101.0,
+            'declined-nas': 0,
+            'total-pds': 200.0,
+            'assigned-pds': 202.0,
+        }
 
         fixture.detectChanges()
         expect(component.tooltip).toContain('Data is unreliable')

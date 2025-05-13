@@ -27,10 +27,10 @@ export const stats: Story = {
         utilizationPrimary: 50,
         kindPrimary: 'Addresses',
         stats: {
-                'total-addresses': 50,
-                'assigned-addresses': 20,
-                'declined-addresses': 5,
-            },
+            'total-addresses': 50,
+            'assigned-addresses': 20,
+            'declined-addresses': 5,
+        },
         statsCollectedAt: '2022-12-28T14:59:00',
     },
 }

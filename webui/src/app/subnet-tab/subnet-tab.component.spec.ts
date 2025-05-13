@@ -74,7 +74,7 @@ describe('SubnetTabComponent', () => {
                 UtilizationStatsChartsComponent,
                 JsonTreeRootComponent,
                 JsonTreeComponent,
-                UtilizationBarComponent
+                UtilizationBarComponent,
             ],
             imports: [
                 ButtonModule,

@@ -17,7 +17,7 @@ describe('AddressPoolBarComponent', () => {
         fixture = TestBed.createComponent(AddressPoolBarComponent)
         component = fixture.componentInstance
         component.pool = {
-            pool: '10.0.0.1-10.0.0.42'
+            pool: '10.0.0.1-10.0.0.42',
         }
         fixture.detectChanges()
     })

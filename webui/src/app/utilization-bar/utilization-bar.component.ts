@@ -57,9 +57,10 @@ export class UtilizationBarComponent {
 
         let line = 'Utilization'
         if (this.kindPrimary) {
-          line += ` ${this.kindPrimary}`
+            line += ` ${this.kindPrimary}`
         }
         line += `: ${this.utilizationPrimary}%`
+        lines.push(line)
 
         if (this.isDouble) {
             lines.push(`Utilization ${this.kindSecondary}: ${this.utilizationSecondary}%`)
