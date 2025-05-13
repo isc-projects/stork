@@ -1,3 +1,5 @@
-<div *ngIf="pool" class="address-pool max-w-full">
-    <span class="min-w-0 overflow-auto block">{{ pool.pool }}</span>
-</div>
+<app-utilization-bar [utilizationPrimary]="pool.utilization">
+    <utilization-label>
+        {{ pool.pool }}
+    </utilization-label>
+</app-utilization-bar>

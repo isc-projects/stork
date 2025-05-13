@@ -68,7 +68,7 @@ export class UtilizationBarComponent {
      * Returns a proper CSS modificator class for a given utilization value.
      */
     getUtilizationBarModificatorClass(utilization: number | null): string {
-        if (utilization === null) {
+        if (utilization == null) {
             return 'utilization__bar--missing'
         }
         if (utilization <= 80) {
