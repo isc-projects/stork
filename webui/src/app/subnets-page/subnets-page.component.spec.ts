@@ -68,6 +68,7 @@ import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
 import { SettingService } from '../setting.service'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -106,6 +107,7 @@ describe('SubnetsPageComponent', () => {
                 PlaceholderPipe,
                 ArrayValueSetFormComponent,
                 ParameterViewComponent,
+                UtilizationBarComponent,
             ],
             imports: [
                 AccordionModule,

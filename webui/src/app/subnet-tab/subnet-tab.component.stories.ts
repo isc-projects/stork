@@ -33,6 +33,7 @@ import { ToastModule } from 'primeng/toast'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { RouterModule, provideRouter } from '@angular/router'
 import { PositivePipe } from '../pipes/positive.pipe'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 export default {
     title: 'App/SubnetTab',
@@ -81,6 +82,7 @@ export default {
                 PositivePipe,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
+                UtilizationBarComponent,
             ],
         }),
         toastDecorator,

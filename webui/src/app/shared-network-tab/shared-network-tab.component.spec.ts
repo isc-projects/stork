@@ -41,6 +41,7 @@ import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { PositivePipe } from '../pipes/positive.pipe'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
@@ -71,6 +72,7 @@ describe('SharedNetworkTabComponent', () => {
                 SubnetBarComponent,
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
+                UtilizationBarComponent,
             ],
             imports: [
                 ButtonModule,

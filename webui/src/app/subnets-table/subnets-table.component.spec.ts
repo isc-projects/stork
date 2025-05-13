@@ -26,6 +26,7 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
@@ -42,6 +43,7 @@ describe('SubnetsTableComponent', () => {
                 SubnetBarComponent,
                 SubnetsTableComponent,
                 PluralizePipe,
+                UtilizationBarComponent,
             ],
             imports: [
                 TableModule,

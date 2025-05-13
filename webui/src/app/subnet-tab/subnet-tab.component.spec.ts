@@ -42,6 +42,7 @@ import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -73,6 +74,7 @@ describe('SubnetTabComponent', () => {
                 UtilizationStatsChartsComponent,
                 JsonTreeRootComponent,
                 JsonTreeComponent,
+                UtilizationBarComponent
             ],
             imports: [
                 ButtonModule,

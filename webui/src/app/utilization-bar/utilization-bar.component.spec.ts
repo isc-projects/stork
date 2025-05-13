@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { UtilizationBarComponent } from './utilization-bar.component'
+import { TooltipModule } from 'primeng/tooltip'
 
 describe('UtilizationBarComponent', () => {
     let component: UtilizationBarComponent
@@ -8,7 +9,7 @@ describe('UtilizationBarComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [],
+            imports: [TooltipModule],
             declarations: [UtilizationBarComponent],
         }).compileComponents()
 

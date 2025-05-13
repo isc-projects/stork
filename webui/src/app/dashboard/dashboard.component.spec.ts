@@ -37,6 +37,7 @@ import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { TagModule } from 'primeng/tag'
 import { provideRouter, RouterModule } from '@angular/router'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -65,6 +66,7 @@ describe('DashboardComponent', () => {
                 SurroundPipe,
                 EntityLinkComponent,
                 VersionStatusComponent,
+                UtilizationBarComponent,
             ],
             imports: [
                 NoopAnimationsModule,

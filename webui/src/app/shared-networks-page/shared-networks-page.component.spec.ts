@@ -59,6 +59,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TagModule } from 'primeng/tag'
 import { PositivePipe } from '../pipes/positive.pipe'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -94,6 +95,7 @@ describe('SharedNetworksPageComponent', () => {
                 UtilizationStatsChartsComponent,
                 SharedNetworksTableComponent,
                 PluralizePipe,
+                UtilizationBarComponent,
             ],
             imports: [
                 BreadcrumbModule,

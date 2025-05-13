@@ -27,6 +27,7 @@ import { LocalNumberPipe } from '../pipes/local-number.pipe'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 describe('SharedNetworksTableComponent', () => {
     let component: SharedNetworksTableComponent
@@ -45,6 +46,7 @@ describe('SharedNetworksTableComponent', () => {
                 SubnetBarComponent,
                 HumanCountPipe,
                 LocalNumberPipe,
+                UtilizationBarComponent,
             ],
             imports: [
                 TableModule,
@@ -389,26 +391,18 @@ describe('SharedNetworksTableComponent', () => {
 
             switch (i) {
                 case 0:
-                    expect(bar.hasZeroAddressStats).toBeFalse()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeFalse()
                     expect(bar.addrUtilization).toBe(10)
                     expect(bar.pdUtilization).toBe(15)
                     break
                 case 1:
-                    expect(bar.hasZeroAddressStats).toBeFalse()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeTrue()
                     expect(bar.addrUtilization).toBe(20)
                     expect(bar.pdUtilization).toBe(0)
                     break
                 case 2:
-                    expect(bar.hasZeroAddressStats).toBeTrue()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeFalse()
                     expect(bar.addrUtilization).toBe(0)
                     expect(bar.pdUtilization).toBe(35)
                     break
                 case 3:
-                    expect(bar.hasZeroAddressStats).toBeTrue()
-                    expect(bar.hasZeroDelegatedPrefixStats).toBeTrue()
                     expect(bar.addrUtilization).toBe(0)
                     expect(bar.pdUtilization).toBe(0)
                     break
