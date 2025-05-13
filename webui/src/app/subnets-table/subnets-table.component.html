@@ -242,7 +242,7 @@
                 <div class="flex flex-wrap gap-2">
                     <app-address-pool-bar *ngFor="let p of sn.pools" [pool]="p"></app-address-pool-bar>
                     <app-delegated-prefix-bar
-                        [prefix]="p"
+                        [pool]="p"
                         *ngFor="let p of sn.prefixDelegationPools"
                     ></app-delegated-prefix-bar>
                 </div>

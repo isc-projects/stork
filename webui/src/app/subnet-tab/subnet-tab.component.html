@@ -125,7 +125,7 @@
                     <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
                 </ng-container>
                 <ng-container *ngFor="let pool of localSubnet.prefixDelegationPools">
-                    <app-delegated-prefix-bar [prefix]="pool"></app-delegated-prefix-bar>
+                    <app-delegated-prefix-bar [pool]="pool"></app-delegated-prefix-bar>
                 </ng-container>
             </ng-template>
         </p-fieldset>

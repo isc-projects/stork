@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { DelegatedPrefixBarComponent } from './delegated-prefix-bar.component'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { TooltipModule } from 'primeng/tooltip'
 
 describe('DelegatedPrefixBarComponent', () => {
     let component: DelegatedPrefixBarComponent
@@ -8,14 +10,14 @@ describe('DelegatedPrefixBarComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [],
-            declarations: [DelegatedPrefixBarComponent],
+            imports: [TooltipModule],
+            declarations: [DelegatedPrefixBarComponent, UtilizationBarComponent],
         }).compileComponents()
 
         fixture = TestBed.createComponent(DelegatedPrefixBarComponent)
         component = fixture.componentInstance
 
-        component.prefix = {
+        component.pool = {
             prefix: 'fe80::/64',
             delegatedLength: 80,
         }
@@ -37,22 +39,22 @@ describe('DelegatedPrefixBarComponent', () => {
     })
 
     it('should shorten the excluded prefix', () => {
-        component.prefix.excludedPrefix = 'fe80:42::/96'
+        component.pool.excludedPrefix = 'fe80:42::/96'
         expect(component.shortExcludedPrefix).toBe('~:42::/96')
     })
 
     it('should not shorten if the excluded prefix has no common part with a prefix', () => {
-        component.prefix.excludedPrefix = '3001::/96'
+        component.pool.excludedPrefix = '3001::/96'
         expect(component.shortExcludedPrefix).toBe('3001::/96')
     })
 
     it('should handle an error on the invalid excluded prefix', () => {
-        component.prefix.excludedPrefix = 'foo'
+        component.pool.excludedPrefix = 'foo'
         expect(component.shortExcludedPrefix).toBe('foo')
     })
 
     it('should display an excluded prefix', () => {
-        component.prefix.excludedPrefix = 'fe80:42::/96'
+        component.pool.excludedPrefix = 'fe80:42::/96'
         fixture.detectChanges()
         expect(
             (fixture.debugElement.nativeElement as HTMLElement).textContent

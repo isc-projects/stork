@@ -1,15 +1,21 @@
-<div class="delegated-prefix">
-    <span>{{ prefix.prefix }}</span>
-    <!-- We use explicit spaces to allow copy-and-paste of the delegated
-        prefix in a human-friendly form. -->
-    <span>&nbsp;</span>
-    <abbr class="delegated-prefix__label" title="delegated length">del.:</abbr>
-    <span>&nbsp;</span>
-    <span>{{ prefix.delegatedLength }}</span>
-    <ng-container *ngIf="!!this.prefix.excludedPrefix">
+<app-utilization-bar
+    [utilizationPrimary]="pool.utilization"
+    [stats]="pool.stats"
+    [statsCollectedAt]="pool.statsCollectedAt">
+    <div class="container">
+        <span>{{ pool.prefix }}</span>
+        <!-- We use explicit spaces to allow copy-and-paste of the delegated
+            prefix in a human-friendly form. -->
         <span>&nbsp;</span>
-        <abbr class="delegated-prefix__label" title="excluded prefix">ex.:</abbr>
+        <abbr class="label" title="delegated length">del.:</abbr>
         <span>&nbsp;</span>
-        <abbr [title]="prefix.excludedPrefix">{{ shortExcludedPrefix }}</abbr>
-    </ng-container>
-</div>
+        <span>{{ pool.delegatedLength }}</span>
+        <ng-container *ngIf="!!this.pool.excludedPrefix">
+            <span>&nbsp;</span>
+            <abbr class="label" title="excluded prefix">ex.:</abbr>
+            <span>&nbsp;</span>
+            <abbr [title]="pool.excludedPrefix">{{ shortExcludedPrefix }}</abbr>
+        </ng-container>
+    </div>
+</app-utilization-bar>
+

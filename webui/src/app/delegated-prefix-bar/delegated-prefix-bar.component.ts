@@ -16,17 +16,17 @@ export class DelegatedPrefixBarComponent {
     /**
      * The delegated prefix object. It may contain the excluded prefix.
      */
-    @Input() prefix: DelegatedPrefixPool
+    @Input() pool: DelegatedPrefixPool
 
     /**
      * Returns the short representation of the excluded prefix.
      */
     get shortExcludedPrefix(): string {
         try {
-            return formatShortExcludedPrefix(this.prefix.prefix, this.prefix.excludedPrefix)
+            return formatShortExcludedPrefix(this.pool.prefix, this.pool.excludedPrefix)
         } catch {
             // Invalid prefix.
-            return this.prefix.excludedPrefix
+            return this.pool.excludedPrefix
         }
     }
 }
