@@ -34,8 +34,11 @@ export class UtilizationBarComponent {
      */
     @Input() stats: { [key: string]: number | bigint } | null = null
 
-    @Input()
-    statsCollectedAt: string | null = null
+    /**
+     * Statistics collection time. Optional.
+     * This is used for displaying a tooltip with more details.
+     */
+    @Input() statsCollectedAt: string | null = null
 
     get tooltip(): string {
         if (this.stats == null) {
@@ -55,17 +58,25 @@ export class UtilizationBarComponent {
             lines.push('')
         }
 
-        let line = 'Utilization'
-        if (this.kindPrimary) {
-            line += ` ${this.kindPrimary}`
+        let hasUtilizationLine = false
+        if (this.utilizationPrimary != null) {
+          let line = 'Utilization'
+          if (this.kindPrimary && this.kindSecondary) {
+              line += ` ${this.kindPrimary}`
+          }
+          line += `: ${this.utilizationPrimary}%`
+          lines.push(line)
+          hasUtilizationLine = true
         }
-        line += `: ${this.utilizationPrimary}%`
-        lines.push(line)
 
-        if (this.isDouble) {
+        if (this.isDouble && this.utilizationSecondary != null) {
             lines.push(`Utilization ${this.kindSecondary}: ${this.utilizationSecondary}%`)
+            hasUtilizationLine = true
         }
-        lines.push('')
+
+        if (hasUtilizationLine) {
+          lines.push('')
+        }
 
         // Sort the statistics by the second word in the key then by the first word.
         // It allows to group the statistics by the kind.
@@ -114,7 +125,7 @@ export class UtilizationBarComponent {
             // In some cases the utilization may be incorrect - less than
             // zero or greater than 100%. We need to truncate the value
             // to avoid a subnet bar overlapping other elements.
-            width: clamp(Math.ceil(this.utilizationPrimary), 0, 100) + '%',
+            width: clamp(Math.ceil(this.utilizationPrimary ?? 0), 0, 100) + '%',
         }
     }
 
@@ -126,7 +137,7 @@ export class UtilizationBarComponent {
             // In some cases the utilization may be incorrect - less than
             // zero or greater than 100%. We need to truncate the value
             // to avoid a subnet bar overlapping other elements.
-            width: clamp(Math.ceil(this.utilizationSecondary), 0, 100) + '%',
+            width: clamp(Math.ceil(this.utilizationSecondary ?? 0), 0, 100) + '%',
         }
     }
 
