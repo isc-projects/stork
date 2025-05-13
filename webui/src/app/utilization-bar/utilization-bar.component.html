@@ -1,7 +1,8 @@
 <div class="utilization" [ngClass]="{ 'utilization--double': isDouble }" pTooltip="{{ tooltip }}" [escape]="false">
     <!-- Bar label -->
     <div class="utilization__label">
-        <ng-content select="utilization-label"></ng-content>
+        <!-- Content provided by the caller component. -->
+        <ng-content></ng-content>
     </div>
     <div class="utilization__bars">
         <!-- Primary utilization bar -->

@@ -6,8 +6,6 @@
     [stats]="subnet.stats"
     [statsCollectedAt]="subnet.statsCollectedAt"
 >
-    <utilization-label>
-        <!-- Subnet prefix -->
-        <app-entity-link entity="subnet" [attrs]="subnet" [showEntityName]="false"></app-entity-link>
-    </utilization-label>
+    <!-- Subnet prefix -->
+    <app-entity-link entity="subnet" [attrs]="subnet" [showEntityName]="false"></app-entity-link>
 </app-utilization-bar>
