@@ -3,7 +3,8 @@
     [utilizationSecondary]="pdUtilization"
     [kindPrimary]="'NAs'"
     [kindSecondary]="isIPv6 ? 'PDs' : null"
-    [tooltip]="tooltip"
+    [stats]="subnet.stats"
+    [statsCollectedAt]="subnet.statsCollectedAt"
 >
     <utilization-label>
         <!-- Subnet prefix -->
