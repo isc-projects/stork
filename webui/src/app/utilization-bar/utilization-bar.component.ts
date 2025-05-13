@@ -60,13 +60,13 @@ export class UtilizationBarComponent {
 
         let hasUtilizationLine = false
         if (this.utilizationPrimary != null) {
-          let line = 'Utilization'
-          if (this.kindPrimary && this.kindSecondary) {
-              line += ` ${this.kindPrimary}`
-          }
-          line += `: ${this.utilizationPrimary}%`
-          lines.push(line)
-          hasUtilizationLine = true
+            let line = 'Utilization'
+            if (this.kindPrimary && this.kindSecondary) {
+                line += ` ${this.kindPrimary}`
+            }
+            line += `: ${this.utilizationPrimary}%`
+            lines.push(line)
+            hasUtilizationLine = true
         }
 
         if (this.isDouble && this.utilizationSecondary != null) {
@@ -75,7 +75,7 @@ export class UtilizationBarComponent {
         }
 
         if (hasUtilizationLine) {
-          lines.push('')
+            lines.push('')
         }
 
         // Sort the statistics by the second word in the key then by the first word.

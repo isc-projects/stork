@@ -10,7 +10,7 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [TooltipModule],
-            declarations: [UtilizationBarComponent]
+            declarations: [UtilizationBarComponent],
         }),
     ],
 } as Meta

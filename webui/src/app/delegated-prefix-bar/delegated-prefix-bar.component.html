@@ -1,7 +1,8 @@
 <app-utilization-bar
     [utilizationPrimary]="pool.utilization"
     [stats]="pool.stats"
-    [statsCollectedAt]="pool.statsCollectedAt">
+    [statsCollectedAt]="pool.statsCollectedAt"
+>
     <div class="container">
         <span>{{ pool.prefix }}</span>
         <!-- We use explicit spaces to allow copy-and-paste of the delegated
@@ -18,4 +19,3 @@
         </ng-container>
     </div>
 </app-utilization-bar>
-
