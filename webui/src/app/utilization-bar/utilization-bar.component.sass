@@ -1,0 +1,146 @@
+// Main utilization container.
+.utilization
+  // This causes the subnet prefix (label) to be aligned relatively to the main
+  // utilization container.
+  position: relative
+  // A little spacing around.
+  padding: 0.2em
+
+  ::ng-deep body.dark & a
+    // In the dark mode, make the anchors lighter to be better visible on the utilization bars.
+    color: var(--primary-400) !important
+
+.utilization__bars
+  // Enable flex to order the bars.
+  display: flex
+  // Display bars vertically.
+  flex-direction: column
+  // Expand the bar container to full area.
+  height: 100%
+  width: 100%
+  // Background color when there are no data (NAs and PDs).
+  background-color: var(--surface-100)
+  // Rounded border.
+  border-radius: var(--border-radius)
+  // Overlap the subnet label from the bottom.
+  position: absolute
+  top: 0
+  bottom: 0
+  left: 0
+  right: 0
+  z-index: 0
+
+// Wrapper for the utilization bar.
+.utilization__bar-wrapper
+  // Split the available area proportionally for each bar wrapper and expand
+  // it to full size.
+  flex: 1
+  // Grayed color.
+  background-color: var(--surface-200)
+  // This causes the kind labels to be aligned relatively to this wrapper.
+  position: relative
+  // Rounded border.
+  border-radius: var(--border-radius)
+
+// Percentage utilization bar.
+.utilization__bar
+  // Rounded border to fit in the wrapper.
+  border-radius: var(--border-radius)
+  // Use full available height.
+  height: 100%
+
+// Subnet prefix label.
+.utilization__label
+  // The position cannot be static if the z-index is used.
+  position: relative
+  // Offsets the text from the edge.
+  padding-left: 4px
+  padding-right: 4px
+  // Center text vertically.
+  margin: auto
+  // It is necessary to apply the margin:auto.
+  height: 100%
+  // Place the label on the front of other overlapped items (kind labels).
+  // Otherwise, the label is invisible.
+  z-index: 1
+  // Show the kind labels for IPv6 subnet.
+  display: inline-flex
+  // Center the text vertically using flex.
+  align-items: center
+
+// Bar label indicating the kind of the utilization.
+.utilization__kind
+  // Hide by default for IPv4.
+  display: none
+  // Overlaps the bar wrapper.
+  position: absolute
+  // Full vertical size and pull to right.
+  top: 0
+  right: 0
+  bottom: 0
+  // Center text vertically.
+  margin: auto
+  // It is necessary to apply the margin:auto and prevent expanding a label
+  // over a container.
+  height: 100%
+  // Offsets the text from the edge.
+  padding-right: 4px
+  // Use a grayed color to avoid distraction from the prefix label.
+  color: var(--surface-500)
+  // Use extra small font size.
+  font-size: 75%
+
+.utilization--double
+  .utilization__kind
+    // Show the kind labels for double utilization.
+    display: inline-flex
+    // Center the text vertically using flex.
+    align-items: center
+  .utilization__label
+    // Space for the primary and secondary labels
+    margin-right: 2em
+
+.utilization__bar-wrapper--secondary
+  // Use a little different color for the secondary bar for
+  // easier differentiation.
+  filter: brightness(95%)
+
+// Modificator for the low utilization value.
+.utilization__bar--low
+  // Green bar color.
+  background-color: var(--green-200)
+
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--green-800)
+
+// Modificator for the medium utilization value.
+.utilization__bar--medium
+  // Orange bar color.
+  background-color: var(--orange-200)
+
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--orange-800)
+
+// Modificator for the high utilization value.
+.utilization__bar--high
+  // Red bar color.
+  background-color: var(--red-200)
+
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--red-800)
+
+// Modificator for the exceed utilization value.
+.utilization__bar--exceed
+  // Blue bar color.
+  background-color: var(--blue-200)
+
+  ::ng-deep body.dark &
+    // Make it darker in dark mode.
+    background-color: var(--blue-800)
+
+// Modificator for missing statistic data.
+.utilization__bar--missing
+  background-color: var(--surface-300)
