@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { AddressPoolBarComponent } from './address-pool-bar.component'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { TooltipModule } from 'primeng/tooltip'
 
 describe('AddressPoolBarComponent', () => {
     let component: AddressPoolBarComponent
@@ -8,11 +10,15 @@ describe('AddressPoolBarComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [AddressPoolBarComponent],
+            declarations: [AddressPoolBarComponent, UtilizationBarComponent],
+            imports: [TooltipModule],
         }).compileComponents()
 
         fixture = TestBed.createComponent(AddressPoolBarComponent)
         component = fixture.componentInstance
+        component.pool = {
+            pool: '10.0.0.1-10.0.0.42'
+        }
         fixture.detectChanges()
     })
 
