@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { DelegatedPrefixPool, Pool } from '../backend'
-import { RangedSet, IPv6CidrRange } from 'ip-num'
+import { RangedSet, IPv6CidrRange, IPv4, IPv6 } from 'ip-num'
 
 /**
  * A component displaying address pool and delegated prefix pool bars in a
@@ -37,14 +37,23 @@ export class PoolBarsComponent implements OnInit {
      */
     ngOnInit(): void {
         this.addressPoolsGrouped = this.sortGroups(this.groupById(this.addressPools ?? []), (a, b) => {
-            const rangeA = RangedSet.fromRangeString(a.pool)
-            const rangeB = RangedSet.fromRangeString(b.pool)
-            return Number(rangeA.bitValue - rangeB.bitValue)
+            // The IPv4 and IPv6 pools are split into separate arrays.
+            const rangeA = RangedSet.fromRangeString(a.pool) as RangedSet<IPv4> & RangedSet<IPv6>
+            const rangeB = RangedSet.fromRangeString(b.pool) as RangedSet<IPv4> & RangedSet<IPv6>
+            return rangeA.isLessThan(rangeB) ? -1 : rangeA.isGreaterThan(rangeB) ? 1 : 0
         })
         this.pdPoolsGrouped = this.sortGroups(this.groupById(this.pdPools ?? []), (a, b) => {
+            // The IPv4 and IPv6 pools are split into separate arrays.
             const prefixA = IPv6CidrRange.fromCidr(a.prefix)
             const prefixB = IPv6CidrRange.fromCidr(b.prefix)
-            let result = Number(prefixA.bitValue - prefixB.bitValue)
+            const firstA = prefixA.getFirst()
+            const firstB = prefixB.getFirst()
+            let result = firstA.isLessThan(firstB) ? -1 : firstA.isGreaterThan(firstB) ? 1 : 0
+            if (result === 0) {
+                const maskA = a.prefix.split('/')[1]
+                const maskB = b.prefix.split('/')[1]
+                result = parseInt(maskA) - parseInt(maskB)
+            }
             if (result === 0) {
                 result = a.delegatedLength - b.delegatedLength
             }
