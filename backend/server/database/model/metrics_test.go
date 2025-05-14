@@ -114,20 +114,20 @@ func TestFilledSharedNetworksDatabaseMetrics(t *testing.T) {
 	// present in the previous implementation.
 	_ = AddSharedNetwork(db, &SharedNetwork{
 		Name:            "alice",
-		AddrUtilization: 10,
-		PdUtilization:   15,
+		AddrUtilization: 0.10,
+		PdUtilization:   0.15,
 		Family:          4,
 	})
 	_ = AddSharedNetwork(db, &SharedNetwork{
 		Name:            "alice",
-		AddrUtilization: 5,
-		PdUtilization:   30,
+		AddrUtilization: 0.05,
+		PdUtilization:   0.30,
 		Family:          6,
 	})
 	_ = AddSharedNetwork(db, &SharedNetwork{
 		Name:            "bob",
-		AddrUtilization: 20,
-		PdUtilization:   25,
+		AddrUtilization: 0.20,
+		PdUtilization:   0.25,
 		Family:          4,
 	})
 	_ = AddSharedNetwork(db, &SharedNetwork{
@@ -143,18 +143,18 @@ func TestFilledSharedNetworksDatabaseMetrics(t *testing.T) {
 	require.Len(t, metrics.SharedNetworkMetrics, 4)
 
 	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[0].Label)
-	require.EqualValues(t, 0.010, float64(metrics.SharedNetworkMetrics[0].AddrUtilization))
-	require.EqualValues(t, 0.015, float64(metrics.SharedNetworkMetrics[0].PdUtilization))
+	require.EqualValues(t, 0.1, float64(metrics.SharedNetworkMetrics[0].AddrUtilization))
+	require.EqualValues(t, 0.15, float64(metrics.SharedNetworkMetrics[0].PdUtilization))
 	require.EqualValues(t, 4, metrics.SharedNetworkMetrics[0].Family)
 
 	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[1].Label)
-	require.EqualValues(t, 0.005, float64(metrics.SharedNetworkMetrics[1].AddrUtilization))
-	require.EqualValues(t, 0.030, float64(metrics.SharedNetworkMetrics[1].PdUtilization))
+	require.EqualValues(t, 0.05, float64(metrics.SharedNetworkMetrics[1].AddrUtilization))
+	require.EqualValues(t, 0.30, float64(metrics.SharedNetworkMetrics[1].PdUtilization))
 	require.EqualValues(t, 6, metrics.SharedNetworkMetrics[1].Family)
 
 	require.EqualValues(t, "bob", metrics.SharedNetworkMetrics[2].Label)
-	require.EqualValues(t, 0.020, float64(metrics.SharedNetworkMetrics[2].AddrUtilization))
-	require.EqualValues(t, 0.025, float64(metrics.SharedNetworkMetrics[2].PdUtilization))
+	require.EqualValues(t, 0.20, float64(metrics.SharedNetworkMetrics[2].AddrUtilization))
+	require.EqualValues(t, 0.25, float64(metrics.SharedNetworkMetrics[2].PdUtilization))
 	require.EqualValues(t, 4, metrics.SharedNetworkMetrics[2].Family)
 
 	require.EqualValues(t, "eva", metrics.SharedNetworkMetrics[3].Label)

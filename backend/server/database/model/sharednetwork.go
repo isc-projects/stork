@@ -29,8 +29,8 @@ type SharedNetwork struct {
 
 	LocalSharedNetworks []*LocalSharedNetwork `pg:"rel:has-many"`
 
-	AddrUtilization  int16
-	PdUtilization    int16
+	AddrUtilization  Utilization
+	PdUtilization    Utilization
 	Stats            SubnetStats
 	StatsCollectedAt time.Time
 }
@@ -480,8 +480,8 @@ func UpdateStatisticsInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, stati
 	pdUtilization := statistics.GetDelegatedPrefixUtilization()
 	net := &SharedNetwork{
 		ID:               sharedNetworkID,
-		AddrUtilization:  int16(addrUtilization * 1000),
-		PdUtilization:    int16(pdUtilization * 1000),
+		AddrUtilization:  Utilization(addrUtilization),
+		PdUtilization:    Utilization(pdUtilization),
 		Stats:            statistics.GetStatistics(),
 		StatsCollectedAt: time.Now().UTC(),
 	}

@@ -109,8 +109,8 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 		Name:             sn.Name,
 		Universe:         int64(sn.Family),
 		Subnets:          subnets,
-		AddrUtilization:  float64(sn.AddrUtilization) / 10,
-		PdUtilization:    float64(sn.PdUtilization) / 10,
+		AddrUtilization:  float64(sn.AddrUtilization) * 100,
+		PdUtilization:    float64(sn.PdUtilization) * 100,
 		Stats:            sn.Stats,
 		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
 	}
