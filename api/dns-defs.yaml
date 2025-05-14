@@ -89,7 +89,7 @@
         type: string
       ttl:
         type: integer
-      class:
+      rrClass:
         type: string
       rrType:
         type: string

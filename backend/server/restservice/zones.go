@@ -197,11 +197,11 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 			}
 			// Convert the RR to the REST API format.
 			restRrs = append(restRrs, &models.ZoneRR{
-				Name:   rr.Header().Name,
-				TTL:    int64(rr.Header().Ttl),
-				Class:  dnslib.ClassToString[rr.Header().Class],
-				RrType: dnslib.TypeToString[rr.Header().Rrtype],
-				Data:   data,
+				Name:    rr.Header().Name,
+				TTL:     int64(rr.Header().Ttl),
+				RrClass: dnslib.ClassToString[rr.Header().Class],
+				RrType:  dnslib.TypeToString[rr.Header().Rrtype],
+				Data:    data,
 			})
 		}
 	}
