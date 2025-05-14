@@ -102,8 +102,8 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 					"subnet[50].pool[0].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[50].pool[0].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[50].pool[0].declined-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].prefix-pool[0].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].prefix-pool[0].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pd-pool[0].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pd-pool[0].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
 					"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
 				}
 			}]`,

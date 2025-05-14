@@ -136,8 +136,8 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 				}
 
 				addressPoolID = &parsedAddressPoolID
-			} else if strings.HasPrefix(statName, "prefix-pool[") {
-				re = regexp.MustCompile(`prefix-pool\[(\d+)\]\.(.+)`)
+			} else if strings.HasPrefix(statName, "pd-pool[") {
+				re = regexp.MustCompile(`pd-pool\[(\d+)\]\.(.+)`)
 				matches = re.FindStringSubmatch(statName)
 				prefixPoolIDRaw := matches[1]
 				statName = matches[2]
