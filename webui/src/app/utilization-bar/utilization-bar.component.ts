@@ -1,6 +1,11 @@
 import { Component, Input } from '@angular/core'
 import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
 
+/**
+ * A component displaying a utilization bar.
+ * It can be used to display a single or double bar.
+ * It may also display a tooltip with statistics.
+ */
 @Component({
     selector: 'app-utilization-bar',
     templateUrl: './utilization-bar.component.html',
