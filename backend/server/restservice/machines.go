@@ -950,8 +950,18 @@ func (r *RestAPI) RegenerateMachinesServerToken(ctx context.Context, params serv
 	return rsp
 }
 
-// Add a machine where Stork Agent is running.
+// Delete a machine where Stork Agent is running.
 func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachineParams) middleware.Responder {
+	// Only super-admin can delete a machine.
+	_, dbUser := r.SessionManager.Logged(ctx)
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		msg := "User is forbidden to delete a machine"
+		rsp := services.NewDeleteMachineDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	dbMachine, err := dbmodel.GetMachineByIDWithRelations(r.DB, params.ID)
 	if err == nil && dbMachine == nil {
 		rsp := services.NewDeleteMachineOK()

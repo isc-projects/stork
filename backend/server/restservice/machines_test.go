@@ -1100,11 +1100,19 @@ func TestDeleteMachine(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	// setup a user session, it is required to check user role in DeleteMachine
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx2, err := rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx2, user)
+	require.NoError(t, err)
+
 	// delete non-existing machine
 	params := services.DeleteMachineParams{
 		ID: 123,
 	}
-	rsp := rapi.DeleteMachine(ctx, params)
+	rsp := rapi.DeleteMachine(ctx2, params)
 	require.IsType(t, &services.DeleteMachineOK{}, rsp)
 
 	// add machine
@@ -1119,7 +1127,7 @@ func TestDeleteMachine(t *testing.T) {
 	params2 := services.GetMachineParams{
 		ID: m.ID,
 	}
-	rsp = rapi.GetMachine(ctx, params2)
+	rsp = rapi.GetMachine(ctx2, params2)
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineOK)
 	require.Equal(t, m.ID, okRsp.Payload.ID)
@@ -1128,14 +1136,14 @@ func TestDeleteMachine(t *testing.T) {
 	params = services.DeleteMachineParams{
 		ID: m.ID,
 	}
-	rsp = rapi.DeleteMachine(ctx, params)
+	rsp = rapi.DeleteMachine(ctx2, params)
 	require.IsType(t, &services.DeleteMachineOK{}, rsp)
 
 	// get deleted machine - should return not found
 	params2 = services.GetMachineParams{
 		ID: m.ID,
 	}
-	rsp = rapi.GetMachine(ctx, params2)
+	rsp = rapi.GetMachine(ctx2, params2)
 	require.IsType(t, &services.GetMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetMachineDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
