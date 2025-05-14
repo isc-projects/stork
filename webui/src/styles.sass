@@ -57,6 +57,13 @@ p-header
   margin-left: 20px
   color: var(--text-color-secondary)
 
+// Resets default pointer-events to auto for button elements which were disabled
+// due to lack of privileges (authorization). This is to allow displaying HTML title tag
+// content when mouse hovers over disabled button. Short feedback about lack of privileges
+// should be displayed.
+button.stork-disabled.p-disabled
+  pointer-events: auto !important
+
 // Allows breaking long lines of text on small
 // screens to avoid overlapping on other UI blocks.
 .word-break-all

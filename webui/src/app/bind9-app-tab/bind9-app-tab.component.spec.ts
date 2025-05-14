@@ -30,6 +30,7 @@ import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, RouterModule } from '@angular/router'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { ButtonModule } from 'primeng/button'
 
 class Daemon {
     name = 'named'
@@ -93,6 +94,7 @@ describe('Bind9AppTabComponent', () => {
                 DataViewModule,
                 TableModule,
                 ManagedAccessDirective,
+                ButtonModule,
             ],
             providers: [
                 UsersService,

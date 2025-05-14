@@ -17,14 +17,18 @@
                 <div class="flex justify-content-between flex-wrap gap-2">
                     <div class="text-2xl font-bold text-primary-600">
                         <i class="fa fa-server pr-2"></i> {{ appTab.app.name }}
-                        <i
+                        <p-button
                             *ngIf="!showRenameDialogClicked"
-                            class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
+                            icon="pi pi-pencil"
+                            styleClass="ml-1"
                             id="rename-app-icon"
-                            (click)="showRenameAppDialog()"
+                            (onClick)="showRenameAppDialog()"
                             appManagedAccess="app"
                             accessType="update"
-                        ></i>
+                            [rounded]="true"
+                            [text]="true"
+                            severity="secondary"
+                        />
                         <p-progressSpinner
                             *ngIf="showRenameDialogClicked"
                             [style]="{ width: '25px', height: '25px' }"

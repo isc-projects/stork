@@ -205,6 +205,7 @@ sudo ./stork-install-agent.sh</textarea
                 appManagedAccess="machines-server-token"
                 accessType="read"
             ></button>
+
             <p-selectButton
                 [options]="selectButtonOptions"
                 [ngModel]="showAuthorized"
@@ -252,13 +253,17 @@ sudo ./stork-install-agent.sh</textarea
             <div class="text-2xl font-bold text-primary-600 ml-2 mt-2">
                 <i class="fa fa-server pr-2"></i> {{ machineTab?.address
                 }}<span class="text-primary-200">:{{ machineTab?.agentPort }}</span>
-                <i
-                    class="pi pi-pencil vertical-align-text-top ml-1 text-gray-400 cursor-pointer"
+                <p-button
+                    icon="pi pi-pencil"
+                    styleClass="ml-1"
                     id="edit-machine-icon"
-                    (click)="editAddress(machineTab)"
+                    (onClick)="editAddress(machineTab)"
                     appManagedAccess="machine-address"
                     accessType="update"
-                ></i>
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                />
             </div>
 
             <div>
