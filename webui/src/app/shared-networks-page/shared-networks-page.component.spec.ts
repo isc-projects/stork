@@ -60,6 +60,7 @@ import { TagModule } from 'primeng/tag'
 import { PositivePipe } from '../pipes/positive.pipe'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -96,6 +97,7 @@ describe('SharedNetworksPageComponent', () => {
                 SharedNetworksTableComponent,
                 PluralizePipe,
                 UtilizationBarComponent,
+                PoolBarsComponent,
             ],
             imports: [
                 BreadcrumbModule,

@@ -36,12 +36,12 @@ export class PoolBarsComponent implements OnInit {
      * Splits the pools into groups by their IDs and families and sorts them.
      */
     ngOnInit(): void {
-        this.addressPoolsGrouped = this.sortGroups(this.groupById(this.addressPools), (a, b) => {
+        this.addressPoolsGrouped = this.sortGroups(this.groupById(this.addressPools ?? []), (a, b) => {
             const rangeA = RangedSet.fromRangeString(a.pool)
             const rangeB = RangedSet.fromRangeString(b.pool)
             return Number(rangeA.bitValue - rangeB.bitValue)
         })
-        this.pdPoolsGrouped = this.sortGroups(this.groupById(this.pdPools), (a, b) => {
+        this.pdPoolsGrouped = this.sortGroups(this.groupById(this.pdPools ?? []), (a, b) => {
             const prefixA = IPv6CidrRange.fromCidr(a.prefix)
             const prefixB = IPv6CidrRange.fromCidr(b.prefix)
             let result = Number(prefixA.bitValue - prefixB.bitValue)

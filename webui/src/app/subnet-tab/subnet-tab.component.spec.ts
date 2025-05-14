@@ -43,6 +43,7 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 
 describe('SubnetTabComponent', () => {
     let component: SubnetTabComponent
@@ -75,6 +76,7 @@ describe('SubnetTabComponent', () => {
                 JsonTreeRootComponent,
                 JsonTreeComponent,
                 UtilizationBarComponent,
+                PoolBarsComponent,
             ],
             imports: [
                 ButtonModule,
@@ -459,11 +461,11 @@ describe('SubnetTabComponent', () => {
                     ],
                     prefixDelegationPools: [
                         {
-                            prefix: '3000::',
+                            prefix: '3000::/64',
                             delegatedLength: 80,
                         },
                         {
-                            prefix: '3000:1::',
+                            prefix: '3000:1::/64',
                             delegatedLength: 96,
                         },
                     ],

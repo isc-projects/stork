@@ -42,6 +42,7 @@ import { PositivePipe } from '../pipes/positive.pipe'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
@@ -73,6 +74,7 @@ describe('SharedNetworkTabComponent', () => {
                 UtilizationStatsChartComponent,
                 UtilizationStatsChartsComponent,
                 UtilizationBarComponent,
+                PoolBarsComponent,
             ],
             imports: [
                 ButtonModule,

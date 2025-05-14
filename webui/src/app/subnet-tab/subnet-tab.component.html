@@ -121,12 +121,10 @@
                 No pools configured.
             </div>
             <ng-template #poolsExistBlock>
-                <ng-container *ngFor="let pool of localSubnet.pools">
-                    <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
-                </ng-container>
-                <ng-container *ngFor="let pool of localSubnet.prefixDelegationPools">
-                    <app-delegated-prefix-bar [pool]="pool"></app-delegated-prefix-bar>
-                </ng-container>
+                <app-pool-bars
+                    [addressPools]="localSubnet.pools"
+                    [pdPools]="localSubnet.prefixDelegationPools"
+                ></app-pool-bars>
             </ng-template>
         </p-fieldset>
     </div>

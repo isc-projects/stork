@@ -239,13 +239,7 @@
                 <td *ngIf="sn.subnet.includes('.')">-</td>
             </ng-container>
             <td>
-                <div class="flex flex-wrap gap-2">
-                    <app-address-pool-bar *ngFor="let p of sn.pools" [pool]="p"></app-address-pool-bar>
-                    <app-delegated-prefix-bar
-                        [pool]="p"
-                        *ngFor="let p of sn.prefixDelegationPools"
-                    ></app-delegated-prefix-bar>
-                </div>
+                <app-pool-bars [addressPools]="sn.pools" [pdPools]="sn.prefixDelegationPools"></app-pool-bars>
             </td>
             <td>
                 {{ sn.sharedNetwork }}

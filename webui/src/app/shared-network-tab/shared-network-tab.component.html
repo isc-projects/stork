@@ -81,14 +81,12 @@
     </div>
     <div class="mb-4">
         <p-fieldset legend="Pools">
-            <div *ngIf="sharedNetwork.pools?.length > 0; else poolsNotExistBlock">
-                <ng-container *ngFor="let pool of sharedNetwork.pools">
-                    <app-address-pool-bar [pool]="pool"></app-address-pool-bar>
-                </ng-container>
-                <ng-container *ngFor="let pool of sharedNetwork.prefixDelegationPools">
-                    <app-delegated-prefix-bar [pool]="pool"></app-delegated-prefix-bar>
-                </ng-container>
-            </div>
+            <app-pool-bars
+                [addressPools]="sharedNetwork.pools"
+                [pdPools]="sharedNetwork.prefixDelegationPools"
+                *ngIf="sharedNetwork.pools?.length > 0; else poolsNotExistBlock"
+            >
+            </app-pool-bars>
             <ng-template #poolsNotExistBlock>
                 <div>No pools configured.</div>
             </ng-template>

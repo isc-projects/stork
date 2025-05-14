@@ -27,6 +27,7 @@ import { TooltipModule } from 'primeng/tooltip'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 
 describe('SubnetsTableComponent', () => {
     let component: SubnetsTableComponent
@@ -44,6 +45,7 @@ describe('SubnetsTableComponent', () => {
                 SubnetsTableComponent,
                 PluralizePipe,
                 UtilizationBarComponent,
+                PoolBarsComponent,
             ],
             imports: [
                 TableModule,
