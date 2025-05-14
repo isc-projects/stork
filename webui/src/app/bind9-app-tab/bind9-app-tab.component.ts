@@ -106,13 +106,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
             })
         )
 
-        for (const t in DNSZoneType) {
-            if (DNSZoneType[t] === DNSZoneType.Builtin) {
-                continue
-            }
-
-            this.configuredZoneTypes.push(DNSZoneType[t])
-        }
+        this.configuredZoneTypes = Object.values(DNSZoneType).filter((t) => t !== DNSZoneType.Builtin)
     }
 
     /**
