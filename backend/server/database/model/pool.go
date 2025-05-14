@@ -28,7 +28,7 @@ type AddressPool struct {
 	UpperBound    string
 	LocalSubnetID int64
 	LocalSubnet   *LocalSubnet `pg:"rel:has-one"`
-	Utilization   Utilization
+	Utilization   Utilization  `pg:",use_zero"`
 
 	Stats            SubnetStats
 	StatsCollectedAt time.Time
@@ -75,7 +75,7 @@ type PrefixPool struct {
 	DHCPOptionSetHash string
 	LocalSubnetID     int64
 	LocalSubnet       *LocalSubnet `pg:"rel:has-one"`
-	Utilization       Utilization
+	Utilization       Utilization  `pg:",use_zero"`
 
 	Stats            SubnetStats
 	StatsCollectedAt time.Time

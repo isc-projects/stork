@@ -207,8 +207,8 @@ type Subnet struct {
 
 	Hosts []Host `pg:"rel:has-many"`
 
-	AddrUtilization  Utilization
-	PdUtilization    Utilization
+	AddrUtilization  Utilization `pg:",use_zero"`
+	PdUtilization    Utilization `pg:",use_zero"`
 	Stats            SubnetStats
 	StatsCollectedAt time.Time
 }
