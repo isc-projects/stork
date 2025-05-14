@@ -85,14 +85,22 @@
   ZoneRR:
     type: object
     properties:
-      contents:
+      name:
+        type: string
+      ttl:
+        type: integer
+      class:
+        type: string
+      rrType:
+        type: string
+      data:
         type: string
 
   # ZoneRRs
   ZoneRRs:
     type: object
     properties:
-      rrs:
+      items:
         type: array
         items:
           $ref: '#/definitions/ZoneRR'

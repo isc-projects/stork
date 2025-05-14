@@ -3,9 +3,11 @@ package restservice
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
+	dnslib "github.com/miekg/dns"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork/server/agentcomm"
@@ -184,15 +186,28 @@ func (r *RestAPI) GetZoneRRs(ctx context.Context, params dns.GetZoneRRsParams) m
 			}
 		}
 		for _, rr := range rrs {
+			// Extract the RR data.
+			var data string
+			fields := strings.Fields(rr.String())
+			// The full RR record has the following format:
+			// <name> <ttl> <class> <type> <data>
+			// We are interested in extracting the <data> field.
+			if len(fields) > 4 {
+				data = strings.Join(fields[4:], " ")
+			}
 			// Convert the RR to the REST API format.
 			restRrs = append(restRrs, &models.ZoneRR{
-				Contents: rr.String(),
+				Name:   rr.Header().Name,
+				TTL:    int64(rr.Header().Ttl),
+				Class:  dnslib.ClassToString[rr.Header().Class],
+				RrType: dnslib.TypeToString[rr.Header().Rrtype],
+				Data:   data,
 			})
 		}
 	}
 	// Return the zone contents.
 	payload := models.ZoneRRs{
-		Rrs: restRrs,
+		Items: restRrs,
 	}
 	rsp := dns.NewGetZoneRRsOK().WithPayload(&payload)
 	return rsp

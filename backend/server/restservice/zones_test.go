@@ -8,6 +8,7 @@ import (
 	iter "iter"
 	http "net/http"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -595,10 +596,21 @@ func TestGetZoneRRs(t *testing.T) {
 	rsp := rapi.GetZoneRRs(ctx, params)
 	require.IsType(t, &dns.GetZoneRRsOK{}, rsp)
 	rspOK := (rsp).(*dns.GetZoneRRsOK)
-	require.Equal(t, len(rrs), len(rspOK.Payload.Rrs))
+	require.Equal(t, len(rrs), len(rspOK.Payload.Items))
 
 	for i, rr := range rrs {
-		require.Equal(t, rr, rspOK.Payload.Rrs[i].Contents)
+		parsedRR, err := dnslib.NewRR(rr)
+		require.NoError(t, err)
+		require.Equal(t, parsedRR.Header().Name, rspOK.Payload.Items[i].Name)
+		require.EqualValues(t, parsedRR.Header().Ttl, rspOK.Payload.Items[i].TTL)
+		require.Equal(t, dnslib.ClassToString[parsedRR.Header().Class], rspOK.Payload.Items[i].Class)
+		require.Equal(t, dnslib.TypeToString[parsedRR.Header().Rrtype], rspOK.Payload.Items[i].RrType)
+		parsedFields := strings.Fields(rr)
+		require.Greater(t, len(parsedFields), 4)
+		fields := strings.Fields(rspOK.Payload.Items[i].Data)
+		for _, field := range fields {
+			require.Contains(t, parsedFields[4:], field)
+		}
 	}
 }
 
