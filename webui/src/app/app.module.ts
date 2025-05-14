@@ -157,6 +157,7 @@ import { DurationPipe } from './pipes/duration.pipe'
 import { ManagedAccessDirective } from './managed-access.directive'
 import { NotFoundPageComponent } from './not-found-page/not-found-page.component'
 import { UtilizationBarComponent } from './utilization-bar/utilization-bar.component'
+import { PoolBarsComponent } from './pool-bars/pool-bars.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -262,7 +263,8 @@ export function cfgFactory() {
         ConfigMigrationTabComponent,
         DurationPipe,
         NotFoundPageComponent,
-        UtilizationBarComponent
+        UtilizationBarComponent,
+        PoolBarsComponent,
     ],
     bootstrap: [AppComponent],
     imports: [

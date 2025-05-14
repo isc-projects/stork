@@ -1,0 +1,57 @@
+<div class="flex flex-wrap gap-2 align-items-baseline">
+    <!-- Address pools -->
+    <ng-container *ngFor="let group of addressPoolsGrouped">
+        <!-- Single pool group. Display just as a bar. -->
+        <app-address-pool-bar
+            [pool]="group[1][0]"
+            *ngIf="group[1].length === 1; else multipleAddressPools"
+        ></app-address-pool-bar>
+        <!-- Multiple pools in a group. Wrap with a border. -->
+        <ng-template #multipleAddressPools>
+            <div class="border border-round border-dashed border-1 flex flex-row align-items-center">
+                <ng-container
+                    [ngTemplateOutlet]="poolId"
+                    [ngTemplateOutletContext]="{ poolId: group[0] }"
+                ></ng-container>
+                <!-- Display all pools in the group. -->
+                <div class="flex-1 flex flex-row flex-wrap gap-2 p-0">
+                    <app-address-pool-bar [pool]="pool" *ngFor="let pool of group[1]"></app-address-pool-bar>
+                </div>
+            </div>
+        </ng-template>
+    </ng-container>
+
+    <!-- Delegated prefix pools -->
+    <ng-container *ngFor="let group of pdPoolsGrouped">
+        <!-- Single pool group. Display just as a bar. -->
+        <app-delegated-prefix-bar
+            [pool]="group[1][0]"
+            *ngIf="group[1].length === 1; else multiplePDPools"
+        ></app-delegated-prefix-bar>
+        <!-- Multiple pools in a group. Wrap with a border. -->
+        <ng-template #multiplePDPools>
+            <div class="border border-round border-dashed border-1 flex flex-row align-items-center">
+                <ng-container
+                    [ngTemplateOutlet]="poolId"
+                    [ngTemplateOutletContext]="{ poolId: group[0] }"
+                ></ng-container>
+                <!-- Display all pools in the group. -->
+                <div class="flex-1 flex flex-row flex-wrap gap-2 p-0">
+                    <app-delegated-prefix-bar [pool]="pool" *ngFor="let pool of group[1]"></app-delegated-prefix-bar>
+                </div>
+            </div>
+        </ng-template>
+    </ng-container>
+</div>
+
+<!-- Defines how to display the pool ID label. -->
+<ng-template #poolId let-poolId="poolId">
+    <div
+        class="text-sm text-gray-500 font-semibold flex-0 p-1 cursor-pointer"
+        pTooltip="These pools share the same pool ID {{ poolId }}{{ poolId === 0 ? ' (default ID)' : '' }}.
+                    Kea merges statistics of pools with the same pool ID, so all of these pools have the same
+                    utilization. Assign them unique pool IDs to see their individual utilizations."
+    >
+        {{ poolId }}
+    </div>
+</ng-template>
