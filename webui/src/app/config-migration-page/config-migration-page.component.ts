@@ -213,6 +213,9 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
 
     /**
      * Replaces the migration status in the tab.
+     *
+     * @param status New migration status value. It must have the same ID
+     *               as the status to be replaced.
      */
     private replaceItem(status: MigrationStatus) {
         const index = this.tabs.findIndex((t, i) => this.tabItems[i].id === status.id)
