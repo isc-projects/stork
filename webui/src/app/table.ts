@@ -305,14 +305,15 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
             table.restoringFilter = false
         }
 
-        // Clear filters. Restoring filters from state is incompatible with
-        // query params.
+        // Set filters to a valid filter. Restoring filters from state is
+        // incompatible with query params.
         for (const key of Object.keys(table.filters)) {
             const meta = table.filters[key]
+            const value = this.validFilter[key as keyof TFilter]
             if (Array.isArray(meta)) {
-                meta.forEach((m) => (m.value = null))
+                meta.forEach((m) => (m.value = value))
             } else {
-                meta.value = null
+                meta.value = value
             }
         }
 
@@ -368,6 +369,8 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
      * Filter handlers are subscribed.
      */
     onInit(): void {
+        this.subscribeFilterHandlers()
+
         this.dataLoading = true
 
         const paramMap = this._route.snapshot.paramMap
@@ -381,8 +384,6 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
                 ? `${this.stateKeyPrefix}-${this.prefilterValue}`
                 : `${this.stateKeyPrefix}-all`
         }
-
-        this.subscribeFilterHandlers()
     }
 
     /**
