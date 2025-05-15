@@ -106,7 +106,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
                         this.switchToTab(0)
                     } else {
                         const idNumber = Number.parseInt(id, 10)
-                        this.openTab(idNumber)
+                        this.openTab(!Number.isNaN(idNumber) ? idNumber : 0)
                     }
                 }
             })
