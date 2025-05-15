@@ -275,6 +275,7 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
      * @param table table which state was saved
      */
     stateSaved(table: Table): void {
+        // Do not store selection as part of the table state.
         const state = JSON.parse(sessionStorage.getItem(this.stateKey))
         state.selection = []
         sessionStorage.setItem(this.stateKey, JSON.stringify(state))
@@ -314,9 +315,6 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
                 meta.value = null
             }
         }
-
-        // Ignore selection.
-        state.selection = []
 
         // Backup restored data to properties.
         // They will be used when PrimeNG table is not available.
