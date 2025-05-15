@@ -115,11 +115,6 @@ describe('ConfigMigrationPageComponent', () => {
                     provide: ActivatedRoute,
                     useValue: {
                         paramMap: paramMapSubject.asObservable(),
-                        // params: paramsSubject,
-                        // snapshot: {
-                        //     paramMap: convertToParamMap({}),
-                        //     queryParamMap: convertToParamMap({}),
-                        // } as ActivatedRouteSnapshot,
                     },
                 },
                 ConfirmationService,
