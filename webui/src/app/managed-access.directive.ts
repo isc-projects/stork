@@ -48,7 +48,8 @@ export class ManagedAccessDirective implements AfterViewInit {
         this.hasAccess.emit(hasAccess)
         if (!hasAccess) {
             if (this.hideOnNoAccess) {
-                this.htmlElement.innerHTML = ''
+                // Replace the element with an empty inline span.
+                this.htmlElement.outerHTML = '<span></span>'
                 return
             }
 

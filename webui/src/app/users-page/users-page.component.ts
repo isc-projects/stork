@@ -458,6 +458,16 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     // Deal with the case when specific user is selected or when the
                     // new user is to be created.
                     const userId = userIdStr === 'new' ? 0 : parseInt(userIdStr, 10)
+                    if (Number.isNaN(userId)) {
+                        // Given path parameter can't be parsed as number. Show list of users.
+                        this.msgSrv.add({
+                            severity: 'error',
+                            summary: 'Failed to parse user ID',
+                            detail: 'Failed to parse user ID from given: ' + userIdStr,
+                        })
+                        this.switchToTab(0)
+                        return
+                    }
 
                     // Iterate over opened tabs and check if any of them matches the
                     // given user id or is for new user.

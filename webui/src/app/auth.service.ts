@@ -39,7 +39,9 @@ export type PrivilegeKey =
     | 'daemon-monitoring'
     | 'leases'
     | 'swagger'
-    | 'users'
+    | 'all-users'
+    | 'specific-user'
+    | 'user-password'
 
 export type AccessType = 'create' | 'read' | 'update' | 'delete'
 
@@ -168,6 +170,7 @@ export class AuthService {
      * @param accessType access type which is required
      */
     hasPrivilege(componentKey: PrivilegeKey, accessType: AccessType = 'read'): boolean {
+        // For now all privileges are checked based on group that user belongs to.
         // TODO: Privileges should be retrieved from backend when user gets authenticated. All privileges should be destroyed at logout.
         if (this.superAdmin()) {
             // User that belongs to SuperAdmin group, has all privileges.
@@ -177,9 +180,10 @@ export class AuthService {
                 case 'app-access-point-key': // Admin role is not enough to see Access Point Key (it is secret).
                 case 'machines-server-token': // Admin role is not enough to see server token (it is secret).
                 case 'machine-authorization': // Admin role is not enough to authorize or unauthorize machine.
+                case 'all-users': // Admin role can't even read all users.
                     return false
-                case 'users':
-                    return accessType === 'read' // Admin group can only read users data.
+                case 'specific-user':
+                    return accessType === 'read' // Admin group can only read their own user data.
                 case 'machine':
                     return accessType !== 'delete' // Admin group can't delete machines.
                 default:
@@ -189,8 +193,10 @@ export class AuthService {
             switch (componentKey) {
                 case 'machines-server-token':
                 case 'app-access-point-key':
-                case 'users':
+                case 'all-users':
                     return false
+                case 'user-password':
+                    return true
                 default:
                     return accessType === 'read'
             }

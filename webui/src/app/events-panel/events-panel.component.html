@@ -49,7 +49,7 @@
         ></p-dropdown>
     </div>
 
-    <div class="flex align-items-center gap-2 flex-none" *ngIf="auth.superAdmin()">
+    <div class="flex align-items-center gap-2 flex-none" appManagedAccess="all-users">
         <div>User:</div>
         <p-dropdown
             [options]="users"

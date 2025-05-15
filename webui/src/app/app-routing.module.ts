@@ -155,25 +155,18 @@ const routes: Routes = [
         path: 'profile/password',
         component: PasswordChangePageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'user-password' },
     },
     {
         path: 'users',
-        component: UsersPageComponent,
-        canActivate: [AuthGuard],
-        data: { key: 'users' },
+        pathMatch: 'full',
+        redirectTo: 'users/list',
     },
     {
         path: 'users/:id',
         component: UsersPageComponent,
         canActivate: [AuthGuard],
-        data: { key: 'users', accessType: 'create' },
-    },
-    {
-        //TODO: check this path, it seems to have an overlap with the one above
-        path: 'users/new',
-        component: UsersPageComponent,
-        canActivate: [AuthGuard],
-        data: { key: 'users', accessType: 'create' },
+        data: { key: 'all-users' },
     },
     {
         path: 'settings',
