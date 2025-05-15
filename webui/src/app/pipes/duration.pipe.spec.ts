@@ -20,6 +20,9 @@ describe('DurationPipe', () => {
         expect(pipe.transform('0d')).toBe('0 seconds')
         expect(pipe.transform('')).toBe('0 seconds')
         expect(pipe.transform('1w')).toBe('1 w')
+        expect(pipe.transform('42ms')).toBe('42 milliseconds')
+        expect(pipe.transform('42µs')).toBe('42 microseconds')
+        expect(pipe.transform('42ns')).toBe('42 nanoseconds')
     })
 
     it('should not crash if the value is invalid', () => {

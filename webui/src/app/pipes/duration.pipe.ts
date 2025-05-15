@@ -12,6 +12,9 @@ export class DurationPipe implements PipeTransform {
         m: 'minute',
         h: 'hour',
         d: 'day',
+        ms: 'millisecond',
+        µs: 'microsecond',
+        ns: 'nanosecond',
     }
 
     /**
@@ -33,15 +36,23 @@ export class DurationPipe implements PipeTransform {
         const units: string[] = []
 
         const digits = []
-        for (let c of value) {
+        for (let i = 0; i < value.length; i++) {
+            const c = value[i]
             if ((c >= '0' && c <= '9') || c === '.') {
                 digits.push(c)
             } else {
+                let unit = c
+                const nextChar = value[i + 1]
+                if (nextChar === 's') {
+                    unit += nextChar
+                    i++
+                }
+
                 if (digits.length > 0) {
                     numbers.push(parseFloat(digits.join('')))
                     digits.length = 0
                 }
-                units.push(c)
+                units.push(unit)
             }
         }
 
