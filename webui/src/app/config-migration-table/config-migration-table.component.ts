@@ -93,7 +93,7 @@ export class ConfigMigrationTableComponent extends LazyLoadTable<MigrationStatus
         // Indicate that migrations refresh is in progress.
         this.dataLoading = true
 
-        lastValueFrom(this.dhcpApi.getMigrations(event.first, event.rows))
+        lastValueFrom(this.dhcpApi.getMigrations(event?.first ?? this.table.first, event?.rows ?? this.table.rows))
             .then((data) => {
                 this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
