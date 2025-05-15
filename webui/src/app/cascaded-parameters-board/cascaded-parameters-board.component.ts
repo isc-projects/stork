@@ -241,7 +241,7 @@ export class CascadedParametersBoardComponent<T> implements OnInit {
     private serializeObject(value: CascadedParameterType): CascadedParameterType {
         return JSON.stringify(
             value,
-            (key, val) => {
+            (_key, val) => {
                 if (typeof val === 'object' && !Array.isArray(val)) {
                     for (let k of Object.keys(val)) {
                         // Replace the original key with a long name.

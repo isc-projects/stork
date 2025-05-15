@@ -47,6 +47,8 @@
                 "unused-imports/no-unused-vars": [
                     "error",
                     {
+                        "args": "all",
+                        "argsIgnorePattern": "^_",
                         "destructuredArrayIgnorePattern": "^_"
                     }
                 ]

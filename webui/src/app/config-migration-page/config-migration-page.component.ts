@@ -122,7 +122,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      * @param id config migration ID.
      */
     private openTab(id: number) {
-        const index = this.tabs.findIndex((t, i) => this.tabItems[i].id === id)
+        const index = this.tabs.findIndex((_t, i) => this.tabItems[i].id === id)
         if (index >= 0) {
             this.switchToTab(index)
             return
@@ -218,7 +218,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      *               as the status to be replaced.
      */
     private replaceItem(status: MigrationStatus) {
-        const index = this.tabs.findIndex((t, i) => this.tabItems[i].id === status.id)
+        const index = this.tabs.findIndex((_t, i) => this.tabItems[i].id === status.id)
         if (index <= 0) {
             return
         }
@@ -229,7 +229,7 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      * Function called when requested to cancel a migration.
      */
     onCancelMigration(id: number) {
-        const index = this.tabs.findIndex((t, i) => this.tabItems[i].id === id)
+        const index = this.tabs.findIndex((_t, i) => this.tabItems[i].id === id)
         if (index <= 0) {
             return
         }
