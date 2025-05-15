@@ -21,7 +21,6 @@ import { TableModule } from 'primeng/table'
 import { TagModule } from 'primeng/tag'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { RouterTestingModule } from '@angular/router/testing'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ToastModule } from 'primeng/toast'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
@@ -35,6 +34,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { KeaSubnetParametersForm } from '../forms/subnet-set-form.service'
 import { By } from '@angular/platform-browser'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('SharedNetworkFormComponent', () => {
     let component: SharedNetworkFormComponent
@@ -308,11 +308,11 @@ describe('SharedNetworkFormComponent', () => {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterTestingModule,
+                RouterModule,
                 SplitButtonModule,
                 ToastModule,
             ],
-            providers: [DHCPService, MessageService, provideHttpClient(withInterceptorsFromDi())],
+            providers: [DHCPService, MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SharedNetworkFormComponent)

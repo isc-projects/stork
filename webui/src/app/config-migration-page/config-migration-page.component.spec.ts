@@ -8,9 +8,8 @@ import { ConfigMigrationTableComponent } from '../config-migration-table/config-
 import { ConfigMigrationTabComponent } from '../config-migration-tab/config-migration-tab.component'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { ActivatedRoute, ParamMap } from '@angular/router'
+import { ActivatedRoute, ParamMap, RouterModule } from '@angular/router'
 import { BehaviorSubject, of, throwError, Observable } from 'rxjs'
-import { RouterTestingModule } from '@angular/router/testing'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
@@ -85,7 +84,7 @@ describe('ConfigMigrationPageComponent', () => {
 
         await TestBed.configureTestingModule({
             imports: [
-                RouterTestingModule,
+                RouterModule,
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 TabMenuModule,

@@ -14,9 +14,9 @@ import { TableModule } from 'primeng/table'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { RouterTestingModule } from '@angular/router/testing'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
@@ -38,7 +38,7 @@ describe('EventsPageComponent', () => {
                 TableModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
-                RouterTestingModule,
+                RouterModule,
             ],
             providers: [
                 EventsService,
@@ -46,6 +46,7 @@ describe('EventsPageComponent', () => {
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

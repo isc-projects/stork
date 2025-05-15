@@ -1,32 +1,38 @@
 import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular'
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { HttpClientModule } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { AuthenticationMethod, AuthenticationMethods, GeneralService, UsersService, Version } from '../backend'
 import { MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
-import { RouterTestingModule } from '@angular/router/testing'
 import { ToastModule } from 'primeng/toast'
 import { ButtonModule } from 'primeng/button'
 import { action } from '@storybook/addon-actions'
-import { importProvidersFrom } from '@angular/core'
 import { PasswordModule } from 'primeng/password'
 import { DropdownModule } from 'primeng/dropdown'
+import { provideRouter, RouterModule } from '@angular/router'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 export default {
     title: 'App/LoginScreen',
     component: LoginScreenComponent,
     decorators: [
         applicationConfig({
-            providers: [GeneralService, UsersService, MessageService, importProvidersFrom(HttpClientModule)],
+            providers: [
+                GeneralService,
+                UsersService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
+            ],
         }),
         moduleMetadata({
             imports: [
                 ReactiveFormsModule,
                 FormsModule,
-                RouterTestingModule,
-                HttpClientModule,
+                RouterModule,
                 ProgressSpinnerModule,
                 DropdownModule,
                 ButtonModule,

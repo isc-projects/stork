@@ -1,5 +1,4 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
-import { RouterTestingModule } from '@angular/router/testing'
 import { AppComponent } from './app.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { MenubarModule } from 'primeng/menubar'
@@ -24,6 +23,7 @@ import { ServerDataService } from './server-data.service'
 import { Severity, VersionAlert, VersionService } from './version.service'
 import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('AppComponent', () => {
     let component: AppComponent
@@ -43,7 +43,7 @@ describe('AppComponent', () => {
         TestBed.configureTestingModule({
             declarations: [AppComponent, GlobalSearchComponent, PriorityErrorsPanelComponent],
             imports: [
-                RouterTestingModule.withRoutes([{ path: 'abc', component: AppComponent }]),
+                RouterModule,
                 TooltipModule,
                 MenubarModule,
                 SplitButtonModule,
@@ -65,6 +65,7 @@ describe('AppComponent', () => {
                 { provide: VersionService, useValue: versionServiceStub },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([{ path: 'abc', component: AppComponent }]),
             ],
         }).compileComponents()
         authService = TestBed.inject(AuthService)

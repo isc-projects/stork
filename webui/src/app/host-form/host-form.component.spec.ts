@@ -1,5 +1,4 @@
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
-import { RouterTestingModule } from '@angular/router/testing'
 import { UntypedFormArray, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
@@ -28,6 +27,7 @@ import { ChipsModule } from 'primeng/chips'
 import { TableModule } from 'primeng/table'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('HostFormComponent', () => {
     let component: HostFormComponent
@@ -145,7 +145,7 @@ describe('HostFormComponent', () => {
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
-                RouterTestingModule,
+                RouterModule,
                 SplitButtonModule,
                 TableModule,
                 ToggleButtonModule,
@@ -157,6 +157,7 @@ describe('HostFormComponent', () => {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     })

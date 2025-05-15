@@ -36,7 +36,7 @@ import { VersionStatusComponent } from '../version-status/version-status.compone
 import { Severity, VersionService } from '../version.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { TagModule } from 'primeng/tag'
-import { RouterModule } from '@angular/router'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('DashboardComponent', () => {
     let component: DashboardComponent
@@ -73,7 +73,7 @@ describe('DashboardComponent', () => {
                 PaginatorModule,
                 TooltipModule,
                 ButtonModule,
-                RouterModule.forRoot([]),
+                RouterModule,
                 TableModule,
                 TagModule,
             ],
@@ -89,6 +89,7 @@ describe('DashboardComponent', () => {
                 { provide: VersionService, useValue: versionServiceStub },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         })
 

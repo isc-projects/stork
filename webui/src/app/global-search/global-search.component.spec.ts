@@ -7,8 +7,8 @@ import { By } from '@angular/platform-browser'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
-import { RouterTestingModule } from '@angular/router/testing'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
@@ -17,8 +17,13 @@ describe('GlobalSearchComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [GlobalSearchComponent],
-            imports: [OverlayPanelModule, NoopAnimationsModule, FormsModule, RouterTestingModule],
-            providers: [SearchService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
+            imports: [OverlayPanelModule, NoopAnimationsModule, FormsModule, RouterModule],
+            providers: [
+                SearchService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
+            ],
         }).compileComponents()
     }))
 

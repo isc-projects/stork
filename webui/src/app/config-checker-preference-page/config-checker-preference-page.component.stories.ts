@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http'
+import { HttpClientModule, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { MessageService } from 'primeng/api'
@@ -14,9 +14,10 @@ import { ConfigCheckerPreferencePageComponent } from './config-checker-preferenc
 import { toastDecorator } from '../utils-stories'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
-import { RouterTestingModule } from '@angular/router/testing'
 import { ButtonModule } from 'primeng/button'
 import { importProvidersFrom } from '@angular/core'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { provideRouter, RouterModule } from '@angular/router'
 
 const mockPreferencesData: ConfigCheckers = {
     items: [
@@ -58,10 +59,9 @@ export default {
                 ChipModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
-                HttpClientModule,
                 ToastModule,
                 BreadcrumbModule,
-                RouterTestingModule,
+                RouterModule,
                 ButtonModule,
             ],
             declarations: [
@@ -70,6 +70,9 @@ export default {
                 ConfigCheckerPreferencePickerComponent,
                 ConfigCheckerPreferenceUpdaterComponent,
                 BreadcrumbsComponent,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }),
         toastDecorator,

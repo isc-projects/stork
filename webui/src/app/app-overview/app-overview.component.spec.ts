@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { RouterTestingModule } from '@angular/router/testing'
 import { PanelModule } from 'primeng/panel'
 import { AppOverviewComponent } from './app-overview.component'
 import { ButtonModule } from 'primeng/button'
@@ -12,6 +11,7 @@ import { MessageService } from 'primeng/api'
 import { App } from '../backend'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('AppOverviewComponent', () => {
     let component: AppOverviewComponent
@@ -21,7 +21,7 @@ describe('AppOverviewComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [AppOverviewComponent, AccessPointKeyComponent],
-            imports: [FormsModule, NoopAnimationsModule, RouterTestingModule, PanelModule, ButtonModule],
+            imports: [FormsModule, NoopAnimationsModule, RouterModule, PanelModule, ButtonModule],
             providers: [
                 MessageService,
                 {
@@ -32,6 +32,7 @@ describe('AppOverviewComponent', () => {
                 },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
         authService = TestBed.inject(AuthService)

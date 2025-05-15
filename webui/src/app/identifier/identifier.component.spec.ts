@@ -5,7 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { IdentifierComponent } from './identifier.component'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
-import { RouterTestingModule } from '@angular/router/testing'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('IdentifierComponent', () => {
     let component: IdentifierComponent
@@ -13,8 +13,9 @@ describe('IdentifierComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [FormsModule, NoopAnimationsModule, ToggleButtonModule, RouterTestingModule],
+            imports: [FormsModule, NoopAnimationsModule, ToggleButtonModule, RouterModule],
             declarations: [IdentifierComponent, ByteCharacterComponent],
+            providers: [provideRouter([])],
         }).compileComponents()
     })
 

@@ -1,7 +1,6 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute } from '@angular/router'
-import { RouterTestingModule } from '@angular/router/testing'
+import { ActivatedRoute, RouterModule } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { PaginatorModule } from 'primeng/paginator'
@@ -42,7 +41,7 @@ describe('EventsPanelComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [EventsPanelComponent, LocaltimePipe, EventTextComponent],
-            imports: [PaginatorModule, RouterTestingModule, TableModule, ToastModule, ButtonModule],
+            imports: [PaginatorModule, RouterModule, TableModule, ToastModule, ButtonModule],
             providers: [
                 EventsService,
                 UsersService,

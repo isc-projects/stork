@@ -3,8 +3,7 @@ import { HostFormComponent } from './host-form.component'
 import { StoryObj, Meta, moduleMetadata } from '@storybook/angular'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule, ReactiveFormsModule, UntypedFormBuilder } from '@angular/forms'
-import { HttpClientModule } from '@angular/common/http'
-import { RouterTestingModule } from '@angular/router/testing'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { CheckboxModule } from 'primeng/checkbox'
@@ -26,6 +25,8 @@ import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.co
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { provideRouter, RouterModule } from '@angular/router'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 const mockCreateHostBeginData: CreateHostBeginResponse = {
     id: 123,
@@ -163,7 +164,6 @@ export default {
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientModule,
                 InputNumberModule,
                 InputSwitchModule,
                 MessagesModule,
@@ -171,7 +171,7 @@ export default {
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
-                RouterTestingModule,
+                RouterModule,
                 SplitButtonModule,
                 TableModule,
                 ToastModule,
@@ -183,6 +183,9 @@ export default {
                 DhcpOptionSetFormComponent,
                 HelpTipComponent,
                 HostFormComponent,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
             ],
             providers: [UntypedFormBuilder, DHCPService, MessageService],
         }),

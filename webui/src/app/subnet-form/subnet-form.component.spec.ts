@@ -17,7 +17,6 @@ import { TagModule } from 'primeng/tag'
 import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { RouterTestingModule } from '@angular/router/testing'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
@@ -36,6 +35,7 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -432,11 +432,11 @@ describe('SubnetFormComponent', () => {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterTestingModule,
+                RouterModule,
                 SplitButtonModule,
                 ToastModule,
             ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi())],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }).compileComponents()
 
         fixture = TestBed.createComponent(SubnetFormComponent)

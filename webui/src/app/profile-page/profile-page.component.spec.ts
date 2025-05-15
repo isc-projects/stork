@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ProfilePageComponent } from './profile-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ServicesService, User, UsersService } from '../backend'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, RouterModule } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { AuthService } from '../auth.service'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -15,7 +15,6 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MenuModule } from 'primeng/menu'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { RouterTestingModule } from '@angular/router/testing'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
@@ -39,7 +38,7 @@ describe('ProfilePageComponent', () => {
                 MenuModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
-                RouterTestingModule,
+                RouterModule,
             ],
             providers: [
                 MessageService,

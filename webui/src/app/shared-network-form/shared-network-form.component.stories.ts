@@ -2,7 +2,7 @@ import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/an
 import { SharedNetworkFormComponent } from './shared-network-form.component'
 import { toastDecorator } from '../utils-stories'
 import { FieldsetModule } from 'primeng/fieldset'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideAnimations, provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
@@ -23,17 +23,17 @@ import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.co
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { DividerModule } from 'primeng/divider'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { MessagesModule } from 'primeng/messages'
-import { HttpClientModule } from '@angular/common/http'
-import { importProvidersFrom } from '@angular/core'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { provideRouter, RouterModule } from '@angular/router'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
     id: 123,
@@ -307,8 +307,11 @@ export default {
         applicationConfig({
             providers: [
                 MessageService,
-                importProvidersFrom(HttpClientModule),
-                importProvidersFrom(NoopAnimationsModule),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideNoopAnimations(),
+                provideAnimations(),
+                provideRouter([]),
             ],
         }),
         moduleMetadata({
@@ -321,7 +324,6 @@ export default {
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientModule,
                 InputNumberModule,
                 MessagesModule,
                 MultiSelectModule,
@@ -331,7 +333,7 @@ export default {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterTestingModule,
+                RouterModule,
                 SplitButtonModule,
                 ToastModule,
             ],

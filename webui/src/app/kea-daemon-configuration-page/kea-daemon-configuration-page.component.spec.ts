@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ActivatedRoute, convertToParamMap, RouterModule } from '@angular/router'
-import { RouterTestingModule } from '@angular/router/testing'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { ButtonModule } from 'primeng/button'
@@ -42,12 +41,11 @@ describe('KeaDaemonConfigurationPageComponent', () => {
             imports: [
                 PanelModule,
                 ButtonModule,
-                RouterModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
                 MessageModule,
                 BreadcrumbModule,
-                RouterTestingModule.withRoutes([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
+                RouterModule.forRoot([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
             ],
             providers: [
                 ServicesService,

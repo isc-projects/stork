@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { MessageService } from 'primeng/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -18,6 +17,7 @@ import { ServicesService } from '../backend'
 import { of, throwError } from 'rxjs'
 import { CommunicationStatusTreeComponent } from '../communication-status-tree/communication-status-tree.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('CommunicationStatusPageComponent', () => {
     let component: CommunicationStatusPageComponent
@@ -37,13 +37,18 @@ describe('CommunicationStatusPageComponent', () => {
                 BreadcrumbModule,
                 ButtonModule,
                 NoopAnimationsModule,
-                RouterTestingModule,
+                RouterModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 TooltipModule,
                 TreeModule,
             ],
-            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
+            providers: [
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(CommunicationStatusPageComponent)

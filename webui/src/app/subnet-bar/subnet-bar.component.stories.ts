@@ -2,18 +2,18 @@ import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/an
 import { SubnetBarComponent } from './subnet-bar.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { Subnet } from '../backend'
-import { RouterTestingModule } from '@angular/router/testing'
 import { TooltipModule } from 'primeng/tooltip'
+import { provideRouter, RouterModule } from '@angular/router'
 
 export default {
     title: 'App/SubnetBar',
     component: SubnetBarComponent,
     decorators: [
         applicationConfig({
-            providers: [],
+            providers: [provideRouter([])],
         }),
         moduleMetadata({
-            imports: [RouterTestingModule, TooltipModule],
+            imports: [RouterModule, TooltipModule],
             declarations: [EntityLinkComponent],
         }),
     ],

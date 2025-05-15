@@ -2,7 +2,6 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { RouterTestingModule } from '@angular/router/testing'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { ButtonModule } from 'primeng/button'
@@ -18,6 +17,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 import { ConfigCheckerPreferencePageComponent } from './config-checker-preference-page.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('ConfigCheckerPreferencePageComponent', () => {
     let component: ConfigCheckerPreferencePageComponent
@@ -39,7 +39,7 @@ describe('ConfigCheckerPreferencePageComponent', () => {
                 NoopAnimationsModule,
                 ToastModule,
                 BreadcrumbModule,
-                RouterTestingModule,
+                RouterModule,
                 ButtonModule,
             ],
             providers: [
@@ -47,6 +47,7 @@ describe('ConfigCheckerPreferencePageComponent', () => {
                 ServicesService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

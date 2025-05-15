@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { KeaAppTabComponent } from './kea-app-tab.component'
-import { ActivatedRoute } from '@angular/router'
-import { RouterTestingModule } from '@angular/router/testing'
+import { ActivatedRoute, provideRouter, RouterModule } from '@angular/router'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { TableModule } from 'primeng/table'
 import { TabViewModule } from 'primeng/tabview'
@@ -132,7 +131,7 @@ describe('KeaAppTabComponent', () => {
                 VersionStatusComponent,
             ],
             imports: [
-                RouterTestingModule,
+                RouterModule,
                 TableModule,
                 TabViewModule,
                 PanelModule,
@@ -163,6 +162,7 @@ describe('KeaAppTabComponent', () => {
                 { provide: VersionService, useValue: versionServiceStub },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

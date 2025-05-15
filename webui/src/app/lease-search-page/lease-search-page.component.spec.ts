@@ -1,8 +1,7 @@
 import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ActivatedRoute, Router } from '@angular/router'
-import { RouterTestingModule } from '@angular/router/testing'
+import { ActivatedRoute, provideRouter, Router, RouterModule } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
@@ -51,12 +50,7 @@ describe('LeaseSearchPageComponent', () => {
             ],
             imports: [
                 FormsModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        path: 'dhcp/leases',
-                        component: LeaseSearchPageComponent,
-                    },
-                ]),
+                RouterModule,
                 TableModule,
                 MessageModule,
                 ProgressSpinnerModule,
@@ -72,6 +66,12 @@ describe('LeaseSearchPageComponent', () => {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([
+                    {
+                        path: 'dhcp/leases',
+                        component: LeaseSearchPageComponent,
+                    },
+                ]),
             ],
         }).compileComponents()
     }))

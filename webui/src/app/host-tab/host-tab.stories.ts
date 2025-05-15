@@ -1,9 +1,8 @@
 import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
-import { HttpClientModule } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
-import { RouterModule } from '@angular/router'
-import { RouterTestingModule } from '@angular/router/testing'
+import { provideRouter, RouterModule } from '@angular/router'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ChipModule } from 'primeng/chip'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
@@ -22,15 +21,21 @@ import { HostTabComponent } from '../host-tab/host-tab.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { toastDecorator } from '../utils-stories'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { importProvidersFrom } from '@angular/core'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 export default {
     title: 'App/HostTab',
     component: HostTabComponent,
     decorators: [
         applicationConfig({
-            providers: [importProvidersFrom(HttpClientModule)],
+            providers: [
+                ConfirmationService,
+                MessageService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                provideRouter([]),
+            ],
         }),
         moduleMetadata({
             imports: [
@@ -38,13 +43,11 @@ export default {
                 ConfirmDialogModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 TableModule,
                 RouterModule,
-                RouterTestingModule,
                 ToastModule,
                 ToggleButtonModule,
                 TreeModule,
@@ -58,7 +61,6 @@ export default {
                 EntityLinkComponent,
                 ByteCharacterComponent,
             ],
-            providers: [ConfirmationService, MessageService],
         }),
         toastDecorator,
     ],

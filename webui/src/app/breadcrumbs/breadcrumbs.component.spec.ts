@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { BreadcrumbsComponent } from './breadcrumbs.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('BreadcrumbsComponent', () => {
     let component: BreadcrumbsComponent
@@ -12,8 +12,9 @@ describe('BreadcrumbsComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule, BreadcrumbModule, OverlayPanelModule, NoopAnimationsModule],
+            imports: [RouterModule, BreadcrumbModule, OverlayPanelModule, NoopAnimationsModule],
             declarations: [BreadcrumbsComponent, HelpTipComponent],
+            providers: [provideRouter([])],
         }).compileComponents()
     }))
 

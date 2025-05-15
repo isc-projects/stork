@@ -13,8 +13,7 @@ import { of, throwError } from 'rxjs'
 
 import { DHCPService, Host, Lease } from '../backend'
 import { HostTabComponent } from './host-tab.component'
-import { RouterModule } from '@angular/router'
-import { RouterTestingModule } from '@angular/router/testing'
+import { provideRouter, RouterModule } from '@angular/router'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { TreeModule } from 'primeng/tree'
@@ -61,7 +60,6 @@ describe('HostTabComponent', () => {
                 OverlayPanelModule,
                 TableModule,
                 RouterModule,
-                RouterTestingModule,
                 ToggleButtonModule,
                 TreeModule,
                 TagModule,
@@ -74,6 +72,7 @@ describe('HostTabComponent', () => {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

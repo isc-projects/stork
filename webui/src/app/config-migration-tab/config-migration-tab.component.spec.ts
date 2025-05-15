@@ -8,7 +8,6 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { TagModule } from 'primeng/tag'
 import { ProgressBarModule } from 'primeng/progressbar'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { Table } from 'primeng/table'
 import { ProgressBar } from 'primeng/progressbar'
 import { Tag } from 'primeng/tag'
@@ -16,6 +15,7 @@ import { Fieldset } from 'primeng/fieldset'
 import { ButtonModule } from 'primeng/button'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('ConfigMigrationTabComponent', () => {
     let component: ConfigMigrationTabComponent
@@ -78,10 +78,11 @@ describe('ConfigMigrationTabComponent', () => {
                 FieldsetModule,
                 TagModule,
                 ProgressBarModule,
-                RouterTestingModule,
                 ButtonModule,
+                RouterModule,
             ],
             declarations: [ConfigMigrationTabComponent, EntityLinkComponent, LocaltimePipe, DurationPipe],
+            providers: [provideRouter([])],
         }).compileComponents()
     })
 

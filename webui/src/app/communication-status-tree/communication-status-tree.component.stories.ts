@@ -2,29 +2,28 @@ import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/an
 import { CommunicationStatusTreeComponent } from './communication-status-tree.component'
 import { TreeModule } from 'primeng/tree'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TooltipModule } from 'primeng/tooltip'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { provideRouter, RouterModule } from '@angular/router'
 
 export default {
     title: 'App/CommunicationStatusTree',
     component: CommunicationStatusTreeComponent,
     decorators: [
         applicationConfig({
-            providers: [],
+            providers: [provideRouter([])],
         }),
         moduleMetadata({
             imports: [
                 BreadcrumbModule,
                 NoopAnimationsModule,
                 OverlayPanelModule,
-                RouterTestingModule,
+                RouterModule,
                 TooltipModule,
-                ,
                 TreeModule,
             ],
             declarations: [

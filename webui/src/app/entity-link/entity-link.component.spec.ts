@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { EntityLinkComponent } from './entity-link.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
 import { SurroundPipe } from '../pipes/surround.pipe'
+import { provideRouter, RouterModule } from '@angular/router'
 
 describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent
@@ -10,8 +10,9 @@ describe('EntityLinkComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
+            imports: [RouterModule],
             declarations: [EntityLinkComponent, SurroundPipe],
+            providers: [provideRouter([])],
         }).compileComponents()
     }))
 

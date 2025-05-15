@@ -1,6 +1,6 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, convertToParamMap, RouterModule } from '@angular/router'
+import { ActivatedRoute, convertToParamMap, provideRouter, RouterModule } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { ServicesService } from '../backend'
 import { LogViewPageComponent } from './log-view-page.component'
@@ -11,7 +11,6 @@ import { ButtonModule } from 'primeng/button'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { SharedModule } from 'primeng/api'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LogViewPageComponent', () => {
@@ -28,7 +27,6 @@ describe('LogViewPageComponent', () => {
                 ProgressSpinnerModule,
                 SharedModule,
                 RouterModule,
-                RouterTestingModule,
             ],
             providers: [
                 ServicesService,
@@ -40,6 +38,7 @@ describe('LogViewPageComponent', () => {
                 },
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([]),
             ],
         }).compileComponents()
     }))

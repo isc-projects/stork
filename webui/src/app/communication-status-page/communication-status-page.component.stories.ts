@@ -2,7 +2,6 @@ import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/an
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
 import { TreeModule } from 'primeng/tree'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { RouterTestingModule } from '@angular/router/testing'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -17,6 +16,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ButtonModule } from 'primeng/button'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { provideRouter, RouterModule } from '@angular/router'
 
 let mockGetAppsWithCommunicationIssues = {
     items: [
@@ -285,6 +285,7 @@ export default {
                 MessageService,
                 importProvidersFrom(HttpClientModule),
                 importProvidersFrom(NoopAnimationsModule),
+                provideRouter([]),
             ],
         }),
         moduleMetadata({
@@ -293,7 +294,7 @@ export default {
                 ButtonModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
-                RouterTestingModule,
+                RouterModule,
                 ToastModule,
                 TooltipModule,
                 TreeModule,

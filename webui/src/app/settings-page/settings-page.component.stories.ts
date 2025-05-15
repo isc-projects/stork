@@ -1,26 +1,26 @@
 import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SettingsPageComponent } from './settings-page.component'
-import { importProvidersFrom } from '@angular/core'
 import { provideAnimations, provideNoopAnimations } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { FieldsetModule } from 'primeng/fieldset'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { MessagesModule } from 'primeng/messages'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { RouterTestingModule } from '@angular/router/testing'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MessageService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { DividerModule } from 'primeng/divider'
 import { Settings } from '../backend'
-import { HttpClientModule } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { ToastModule } from 'primeng/toast'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { CheckboxModule } from 'primeng/checkbox'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { InputTextModule } from 'primeng/inputtext'
+import { provideRouter, RouterModule } from '@angular/router'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 let mockGetSettingsResponse: Settings = {
     bind9StatsPullerInterval: 10,
@@ -41,9 +41,11 @@ export default {
         applicationConfig({
             providers: [
                 MessageService,
-                importProvidersFrom(HttpClientModule),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
                 provideNoopAnimations(),
                 provideAnimations(),
+                provideRouter([]),
             ],
         }),
         moduleMetadata({
@@ -58,7 +60,7 @@ export default {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterTestingModule,
+                RouterModule,
                 ToastModule,
                 InputNumberModule,
                 InputTextModule,

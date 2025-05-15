@@ -7,7 +7,15 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { ActivatedRoute, Router, convertToParamMap, NavigationEnd, ActivatedRouteSnapshot } from '@angular/router'
+import {
+    ActivatedRoute,
+    Router,
+    convertToParamMap,
+    NavigationEnd,
+    ActivatedRouteSnapshot,
+    RouterModule,
+    provideRouter,
+} from '@angular/router'
 import { DHCPService, SettingsService, Subnet, UsersService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BehaviorSubject, of, throwError } from 'rxjs'
@@ -20,7 +28,6 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
-import { RouterTestingModule } from '@angular/router/testing'
 import { MessageModule } from 'primeng/message'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { TabMenu, TabMenuModule } from 'primeng/tabmenu'
@@ -105,17 +112,7 @@ describe('SubnetsPageComponent', () => {
                 DropdownModule,
                 TableModule,
                 TooltipModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        path: 'dhcp/subnets',
-                        pathMatch: 'full',
-                        redirectTo: 'dhcp/subnets/all',
-                    },
-                    {
-                        path: 'dhcp/subnets/:id',
-                        component: SubnetsPageComponent,
-                    },
-                ]),
+                RouterModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
@@ -147,6 +144,17 @@ describe('SubnetsPageComponent', () => {
                 SettingsService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([
+                    {
+                        path: 'dhcp/subnets',
+                        pathMatch: 'full',
+                        redirectTo: 'dhcp/subnets/all',
+                    },
+                    {
+                        path: 'dhcp/subnets/:id',
+                        component: SubnetsPageComponent,
+                    },
+                ]),
             ],
         })
         dhcpService = TestBed.inject(DHCPService)

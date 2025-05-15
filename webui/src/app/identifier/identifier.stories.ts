@@ -5,17 +5,17 @@ import { ToggleButtonModule } from 'primeng/togglebutton'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { FormsModule } from '@angular/forms'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
-import { RouterTestingModule } from '@angular/router/testing'
+import { provideRouter } from '@angular/router'
 
 export default {
     title: 'App/Identifier',
     component: IdentifierComponent,
     decorators: [
         applicationConfig({
-            providers: [],
+            providers: [provideRouter([])],
         }),
         moduleMetadata({
-            imports: [FormsModule, ToggleButtonModule, NoopAnimationsModule, RouterTestingModule],
+            imports: [FormsModule, ToggleButtonModule, NoopAnimationsModule],
             declarations: [ByteCharacterComponent],
         }),
     ],

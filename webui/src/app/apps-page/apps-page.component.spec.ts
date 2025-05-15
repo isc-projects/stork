@@ -13,10 +13,9 @@ import { TabViewModule } from 'primeng/tabview'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { PanelModule } from 'primeng/panel'
 import { MessageModule } from 'primeng/message'
-import { RouterModule } from '@angular/router'
+import { provideRouter, RouterModule } from '@angular/router'
 import { ServicesService } from '../backend'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { RouterTestingModule } from '@angular/router/testing'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -61,7 +60,7 @@ describe('AppsPageComponent', () => {
                 PanelModule,
                 MessageModule,
                 RouterModule,
-                RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
+                RouterModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
@@ -74,6 +73,7 @@ describe('AppsPageComponent', () => {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
+                provideRouter([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
             ],
         }).compileComponents()
     }))

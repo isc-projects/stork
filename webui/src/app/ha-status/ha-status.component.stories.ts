@@ -15,12 +15,12 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { toastDecorator } from '../utils-stories'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ToastModule } from 'primeng/toast'
-import { RouterTestingModule } from '@angular/router/testing'
 import { TagModule } from 'primeng/tag'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ProgressBarModule } from 'primeng/progressbar'
 import { TableModule } from 'primeng/table'
 import { ButtonModule } from 'primeng/button'
+import { provideRouter, RouterModule } from '@angular/router'
 
 let mockHubAndSpokeStatus: ServicesStatus = {
     items: [
@@ -144,6 +144,7 @@ export default {
             providers: [
                 importProvidersFrom(HttpClientModule),
                 importProvidersFrom(NoopAnimationsModule),
+                provideRouter([]),
                 ServicesService,
                 MessageService,
             ],
@@ -157,7 +158,7 @@ export default {
                 OverlayPanelModule,
                 ProgressBarModule,
                 ProgressSpinnerModule,
-                RouterTestingModule,
+                RouterModule,
                 TableModule,
                 TagModule,
                 ToastModule,
