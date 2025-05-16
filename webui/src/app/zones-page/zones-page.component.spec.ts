@@ -45,7 +45,6 @@ import { NgZone } from '@angular/core'
 import { hasFilter } from '../table'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { StorkTemplateDirective } from '../stork-template.directive'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -266,7 +265,6 @@ describe('ZonesPageComponent', () => {
                 FormsModule,
                 DropdownModule,
                 MultiSelectModule,
-                StorkTemplateDirective,
                 ManagedAccessDirective,
             ],
             declarations: [

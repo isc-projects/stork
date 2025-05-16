@@ -152,8 +152,6 @@ import { ConfigMigrationPageComponent } from './config-migration-page/config-mig
 import { ConfigMigrationTableComponent } from './config-migration-table/config-migration-table.component'
 import { ConfigMigrationTabComponent } from './config-migration-tab/config-migration-tab.component'
 import { DurationPipe } from './pipes/duration.pipe'
-import { ManagedAccessComponent } from './managed-access/managed-access.component'
-import { StorkTemplateDirective } from './stork-template.directive'
 import { ManagedAccessDirective } from './managed-access.directive'
 
 /** Create the OpenAPI client configuration. */
@@ -257,7 +255,6 @@ export function cfgFactory() {
         ConfigMigrationTableComponent,
         ConfigMigrationTabComponent,
         DurationPipe,
-        ManagedAccessComponent,
     ],
     bootstrap: [AppComponent],
     imports: [
@@ -311,8 +308,6 @@ export function cfgFactory() {
         TreeTableModule,
         BadgeModule,
         SkeletonModule,
-        StorkTemplateDirective,
-        ManagedAccessComponent,
         ManagedAccessDirective,
     ],
     providers: [

@@ -23,7 +23,6 @@ import { ToggleButtonModule } from 'primeng/togglebutton'
 import { FormsModule } from '@angular/forms'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
-import { StorkTemplateDirective } from '../stork-template.directive'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -53,7 +52,6 @@ describe('ConfigReviewPanelComponent', () => {
                 OverlayPanelModule,
                 ToggleButtonModule,
                 DataViewModule,
-                StorkTemplateDirective,
                 ManagedAccessDirective,
             ],
             providers: [
