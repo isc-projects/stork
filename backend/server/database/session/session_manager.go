@@ -54,12 +54,24 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 		return errors.Wrapf(err, "error while creating new session identifier")
 	}
 
+	err = s.UpdateUser(ctx, user)
+	if err != nil {
+		return errors.Wrapf(err, "error while updating user data in session")
+	}
+
+	return nil
+}
+
+// Update user data in session.
+func (s *SessionMgr) UpdateUser(ctx context.Context, user *dbmodel.SystemUser) error {
 	s.scsSessionMgr.Put(ctx, "userID", user.ID)
 	s.scsSessionMgr.Put(ctx, "userLogin", user.Login)
 	s.scsSessionMgr.Put(ctx, "userEmail", user.Email)
 	s.scsSessionMgr.Put(ctx, "userLastname", user.Lastname)
 	s.scsSessionMgr.Put(ctx, "userName", user.Name)
 	s.scsSessionMgr.Put(ctx, "authenticationMethodID", user.AuthenticationMethodID)
+	s.scsSessionMgr.Put(ctx, "externalID", user.ExternalID)
+	s.scsSessionMgr.Put(ctx, "changePassword", user.ChangePassword)
 
 	// If any user groups are associated with the user, store them
 	// as a list of comma separated values.
@@ -130,6 +142,8 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 	user.Lastname = s.scsSessionMgr.GetString(ctx, "userLastname")
 	user.Name = s.scsSessionMgr.GetString(ctx, "userName")
 	user.AuthenticationMethodID = s.scsSessionMgr.GetString(ctx, "authenticationMethodID")
+	user.ExternalID = s.scsSessionMgr.GetString(ctx, "externalID")
+	user.ChangePassword = s.scsSessionMgr.GetBool(ctx, "changePassword")
 
 	// Retrieve comma separated list of groups.
 	userGroups := s.scsSessionMgr.GetString(ctx, "userGroupIds")
