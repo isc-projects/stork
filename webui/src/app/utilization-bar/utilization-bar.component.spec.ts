@@ -62,8 +62,33 @@ describe('UtilizationBarComponent', () => {
             'assigned-pds': 202.0,
         }
 
-        fixture.detectChanges()
+        expect(component.tooltip).toContain('101%')
         expect(component.tooltip).toContain('Data is unreliable')
+    })
+
+    it('has tooltip when utilization is known but the stats are not', () => {
+        component.utilizationPrimary = 50
+
+        expect(component.tooltip).toContain('50%')
+        expect(component.tooltip).toContain('No statistics yet')
+        expect(component.tooltip).toContain('Utilization')
+    })
+
+    it('has tooltip when utilization is unknown but the stats are known', () => {
+        component.stats = {
+            'total-nas': 100.0,
+            'assigned-nas': 50.0,
+            'declined-nas': 0,
+            'total-pds': 200.0,
+            'assigned-pds': 100.0,
+        }
+        expect(component.tooltip).not.toContain('No statistics yet')
+        expect(component.tooltip).toContain('200')
+        expect(component.tooltip).not.toContain('Utilization')
+    })
+
+    it('has tooltip when utilization and stats are unknown', () => {
+        expect(component.tooltip).toBe('No statistics yet')
     })
 
     it('tooltip should be prepared for DHCPv4', () => {

@@ -45,11 +45,12 @@ export class UtilizationBarComponent {
      */
     @Input() statsCollectedAt: string | null = null
 
+    /**
+     * Returns a content of the statistics tooltip.
+     * It includes all the statistics, the collection time and the utilization
+     * values.
+     */
     get tooltip(): string {
-        if (this.stats == null) {
-            return 'No statistics yet'
-        }
-
         const lines: string[] = []
 
         if (this.utilizationPrimary > 100 || this.utilizationSecondary > 100) {
@@ -83,10 +84,14 @@ export class UtilizationBarComponent {
             lines.push('')
         }
 
+        if (this.stats == null) {
+            lines.push('No statistics yet')
+        }
+
         // Sort the statistics by the second word in the key then by the first word.
         // It allows to group the statistics by the kind.
         // For example: "assigned-addresses" and "declined-prefixes" will be grouped together.
-        const entries = Object.entries(this.stats).sort(([keyA], [keyB]) => {
+        const entries = Object.entries(this.stats ?? {}).sort(([keyA], [keyB]) => {
             const wordsA = keyA.split('-')
             const wordsB = keyB.split('-')
             if (wordsA.length <= 1 || wordsB.length <= 1) {
@@ -109,10 +114,12 @@ export class UtilizationBarComponent {
             lines.push(`${formattedKey}: ${value.toLocaleString('en-US')}`)
         }
 
-        lines.push('')
-        lines.push(`Collected at: ${datetimeToLocal(this.statsCollectedAt) || 'never'}`)
+        if (this.statsCollectedAt) {
+            lines.push('')
+            lines.push(`Collected at: ${datetimeToLocal(this.statsCollectedAt) || 'never'}`)
+        }
 
-        return lines.join('<br>')
+        return lines.join('<br>').trim()
     }
 
     /**
