@@ -50,17 +50,30 @@ export class PoolBarsComponent implements OnInit {
         )
     }
 
-    // Compares two address pools. It is expected that the pools are from the
-    // same family (IPv4 or IPv6).
-    // The pools are compared by their ranges.
+    /**
+     * Compares two address pools. It is expected that the pools are from the
+     * same family (IPv4 or IPv6).
+     * The pools are compared by their ranges.
+     *
+     * @param poolA - The first address pool to compare.
+     * @param poolB - The second address pool to compare.
+     * @returns A negative number if poolA is less than poolB, a positive number if poolA is greater than poolB, or 0 if they are equal.
+     */
     private compareAddressPools(poolA: Pool, poolB: Pool): number {
         const rangeA = RangedSet.fromRangeString(poolA.pool) as RangedSet<IPv4> & RangedSet<IPv6>
         const rangeB = RangedSet.fromRangeString(poolB.pool) as RangedSet<IPv4> & RangedSet<IPv6>
         return rangeA.isLessThan(rangeB) ? -1 : rangeA.isGreaterThan(rangeB) ? 1 : 0
     }
 
-    // Compares two delegated prefixes.
-    // The prefixes are compared by their ranges.
+    /**
+     * Compares two delegated prefix pools. It is expected that the prefixes are
+     * from the same family (IPv4 or IPv6).
+     * The pools are compared by their prefixes, delegated lengths, and excluded prefixes.
+     *
+     * @param poolA - The first delegated prefix pool to compare.
+     * @param poolB - The second delegated prefix pool to compare.
+     * @returns A negative number if poolA is less than poolB, a positive number if poolA is greater than poolB, or 0 if they are equal.
+     */
     private compareDelegatedPrefixPools(poolA: DelegatedPrefixPool, poolB: DelegatedPrefixPool): number {
         let result = this.comparePrefixes(poolA.prefix, poolB.prefix)
         if (result === 0) {
@@ -84,7 +97,13 @@ export class PoolBarsComponent implements OnInit {
         return result
     }
 
-    // Compares two prefixes in format "subnet/mask" (e.g. "2001:db8::/32").
+    /**
+     * Compares two prefixes in format "subnet/mask" (e.g. "2001:db8::/32").
+     *
+     * @param prefixAStr - The first prefix to compare
+     * @param prefixBStr - The second prefix to compare.
+     * @returns A negative number if prefixAStr is less than prefixBStr, a positive number if prefixAStr is greater than prefixBStr, or 0 if they are equal.
+     */
     private comparePrefixes(prefixAStr: string, prefixBStr: string): number {
         const prefixA = IPv6CidrRange.fromCidr(prefixAStr)
         const prefixB = IPv6CidrRange.fromCidr(prefixBStr)
@@ -104,8 +123,8 @@ export class PoolBarsComponent implements OnInit {
     /**
      * Groups pools by their IDs. The pools from various families are separated
      * into two arrays.
-     * @param pools
-     * @returns
+     * @param pools The pools to group.
+     * @returns An array of tuples containing the pool ID, the pools, and the family (4 or 6).
      */
     private groupById<T extends Pool | DelegatedPrefixPool>(pools: T[]): [number, T[], number][] {
         return (
