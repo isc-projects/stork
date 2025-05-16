@@ -203,6 +203,27 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	return users.NewCreateSessionOK().WithPayload(rspUser)
 }
 
+// Attempts to retrieve the user from the session manager.
+func (r *RestAPI) GetSession(ctx context.Context, params users.GetSessionParams) middleware.Responder {
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		return users.NewGetSessionNotFound()
+	}
+
+	if user == nil {
+		msg := "Can't retrieve user for existing session"
+		log.Error(msg)
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewGetSessionDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		return rsp
+	}
+
+	rspUser := newRestUser(*user)
+	return users.NewGetSessionOK().WithPayload(rspUser)
+}
+
 // Attempts to logout a user from the system.
 func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionParams) middleware.Responder {
 	ok, user := r.SessionManager.Logged(ctx)

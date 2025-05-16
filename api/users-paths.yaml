@@ -32,6 +32,27 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+    get:
+      summary: Get current user from existing session.
+      description: >-
+        Returns currently logged in user if the session for the user is alive.
+      operationId: getSession
+      security: []
+      tags:
+        - Users
+      responses:
+        200:
+          description: Session alive. User information returned.
+          schema:
+            $ref: "#/definitions/User"
+        404:
+          description: No session exists for the user.
+          schema:
+            $ref: "#/definitions/ApiError"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
 
   /users:
     get:
