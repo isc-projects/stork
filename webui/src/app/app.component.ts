@@ -308,7 +308,7 @@ export class AppComponent implements OnInit, OnDestroy {
         )
 
         this.subscriptions.add(
-            this.auth.currentUser.subscribe((x) => {
+            this.auth.currentUser$.subscribe((x) => {
                 this.currentUser = x
                 const menuItem = this.getMenuItem('Users')
                 if (this.auth.superAdmin()) {

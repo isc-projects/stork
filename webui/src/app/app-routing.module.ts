@@ -211,6 +211,7 @@ const routes: Routes = [
     },
 
     // otherwise redirect to home
+    // TODO: there should be a redirection to the dedicated 404 component.
     { path: '**', redirectTo: '/' },
 ]
 
