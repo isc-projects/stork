@@ -177,7 +177,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             return
         }
 
-        if (this.auth.superAdmin()) {
+        if (this.auth.hasPrivilege('all-users')) {
             lastValueFrom(this.usersApi.getUsers(0, 1000, null))
                 .then((data) => {
                     this.users = data.items

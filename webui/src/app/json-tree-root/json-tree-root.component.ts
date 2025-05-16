@@ -12,9 +12,7 @@ import { AuthService } from '../auth.service'
     templateUrl: './json-tree-root.component.html',
     styleUrls: [],
 })
-export class JsonTreeRootComponent implements OnInit, OnDestroy {
-    private subscription = new Subscription()
-
+export class JsonTreeRootComponent implements OnInit {
     private _value: any = null
 
     /**
@@ -107,17 +105,6 @@ export class JsonTreeRootComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         // Check if user can show the secrets
-        this.subscription.add(
-            this.auth.currentUser$.subscribe(() => {
-                this._canShowSecrets = this.auth.superAdmin()
-            })
-        )
-    }
-
-    /**
-     * Unsubscribe all subscriptions.
-     */
-    ngOnDestroy(): void {
-        this.subscription.unsubscribe()
+        this._canShowSecrets = this.auth.hasPrivilege('json-config-secret')
     }
 }

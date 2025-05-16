@@ -43,6 +43,7 @@ export type PrivilegeKey =
     | 'all-users'
     | 'specific-user'
     | 'user-password'
+    | 'json-config-secret'
 
 export type AccessType = 'create' | 'read' | 'update' | 'delete'
 
@@ -258,6 +259,7 @@ export class AuthService {
                 case 'machines-server-token': // Admin role is not enough to see server token (it is secret).
                 case 'machine-authorization': // Admin role is not enough to authorize or unauthorize machine.
                 case 'all-users': // Admin role can't even read all users.
+                case 'json-config-secret': // Admin role is not enough to see secrets in configs.
                     return false
                 case 'specific-user':
                     return accessType === 'read' // Admin group can only read their own user data.
@@ -271,6 +273,7 @@ export class AuthService {
                 case 'machines-server-token':
                 case 'app-access-point-key':
                 case 'all-users':
+                case 'json-config-secret':
                     return false
                 case 'user-password':
                     return true
