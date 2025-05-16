@@ -483,6 +483,10 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		}
 	}
 
+	// TODO: consider a case where users privileges were changed. E.g. a user was moved from admin
+	// group to read-only group. Session could be destroyed for that user and the user would be
+	// forced to authenticate again. New privileges would be applied for the new session.
+
 	return users.NewUpdateUserOK()
 }
 

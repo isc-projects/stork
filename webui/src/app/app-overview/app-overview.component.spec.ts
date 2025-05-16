@@ -139,7 +139,9 @@ describe('AppOverviewComponent', () => {
         })
         fixture.detectChanges()
         expect(authService.hasPrivilege).toHaveBeenCalled()
-        expect(fixture.debugElement.query(By.directive(AccessPointKeyComponent))).toBeFalsy()
+        const spanDE = fixture.debugElement.query(By.css('span#access-point-key'))
+        expect(spanDE).toBeTruthy()
+        expect(spanDE.nativeElement.innerText).toBe('')
     })
 
     it('should hide keys for non-BIND9 application', () => {

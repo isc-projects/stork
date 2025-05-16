@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core'
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router'
 import { Observable, of } from 'rxjs'
 
-import { AccessType, AuthService, PrivilegeKey } from './auth.service'
+import { AccessType, AuthService, ManagedAccessEntity } from './auth.service'
 import { mergeMap } from 'rxjs/operators'
 
 @Injectable({
@@ -36,7 +36,7 @@ export class AuthGuard {
                 if (
                     route.routeConfig?.data?.key &&
                     !this.auth.hasPrivilege(
-                        route.routeConfig.data.key as PrivilegeKey,
+                        route.routeConfig.data.key as ManagedAccessEntity,
                         (route.routeConfig.data?.accessType as AccessType) ?? 'read'
                     )
                 ) {

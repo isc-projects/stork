@@ -11,13 +11,24 @@ import { SessionCredentials } from './backend'
 import { User } from './backend'
 import { getErrorMessage } from './utils'
 
+/**
+ * System user groups enumeration.
+ * IDs match group IDs in the backend.
+ */
 export enum UserGroup {
     SuperAdmin = 1,
     Admin,
     ReadOnly,
 }
 
-export type PrivilegeKey =
+/**
+ * This type gathers entities that are subject to authorization checks.
+ * The entities relate to REST API endpoints, UI components, route paths.
+ * In the future the entities may be located in the backend DB together with
+ * granted privileges for users and group of users.
+ * Type was used instead of Enum, as Enums usage is troublesome in Angular HTML templates.
+ */
+export type ManagedAccessEntity =
     | 'machines-server-token'
     | 'kea-config-hashes'
     | 'app'
@@ -48,6 +59,10 @@ export type PrivilegeKey =
     | 'logs'
     | 'versions'
 
+/**
+ * Possible access types in authorization.
+ * Naming convention relates to CRUD operations.
+ */
 export type AccessType = 'create' | 'read' | 'update' | 'delete'
 
 @Injectable({
@@ -247,17 +262,17 @@ export class AuthService {
 
     /**
      * Returns whether current user has given privilege for given component.
-     * @param componentKey component for which the privilege is required
+     * @param entityKey component for which the privilege is required
      * @param accessType access type which is required
      */
-    hasPrivilege(componentKey: PrivilegeKey, accessType: AccessType = 'read'): boolean {
+    hasPrivilege(entityKey: ManagedAccessEntity, accessType: AccessType = 'read'): boolean {
         // For now all privileges are checked based on group that user belongs to.
         // TODO: Privileges should be retrieved from backend when user gets authenticated. All privileges should be destroyed at logout.
         if (this.superAdmin()) {
             // User that belongs to SuperAdmin group, has all privileges.
             return true
         } else if (this.isAdmin()) {
-            switch (componentKey) {
+            switch (entityKey) {
                 case 'app-access-point-key': // Admin role is not enough to see Access Point Key (it is secret).
                 case 'machines-server-token': // Admin role is not enough to see server token (it is secret).
                 case 'machine-authorization': // Admin role is not enough to authorize or unauthorize machine.
@@ -272,9 +287,9 @@ export class AuthService {
                     return true
             }
         } else if (this.isInReadOnlyGroup()) {
-            switch (componentKey) {
-                case 'machines-server-token':
+            switch (entityKey) {
                 case 'app-access-point-key':
+                case 'machines-server-token':
                 case 'all-users':
                 case 'json-config-secret':
                     return false

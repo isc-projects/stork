@@ -1,6 +1,11 @@
 import { AfterViewInit, Directive, ElementRef, EventEmitter, Input, Output, Renderer2 } from '@angular/core'
-import { AccessType, AuthService, PrivilegeKey } from './auth.service'
+import { AccessType, AuthService, ManagedAccessEntity } from './auth.service'
 
+/**
+ * This directive is meant to check authorization privileges for given entity.
+ * In case of no privileges it will alter the component rendering depending on detected component type.
+ * For most of the cases it will disable the UI element and the element will no longer be clickable.
+ */
 @Directive({
     selector: '[appManagedAccess]',
     standalone: true,
@@ -9,7 +14,7 @@ export class ManagedAccessDirective implements AfterViewInit {
     /**
      * Identifies the entity for which the access will be checked.
      */
-    @Input({ required: true }) appManagedAccess: PrivilegeKey
+    @Input({ required: true }) appManagedAccess: ManagedAccessEntity
 
     /**
      * Required access type to access the entity. Possible types follow CRUD naming convention:
@@ -49,6 +54,7 @@ export class ManagedAccessDirective implements AfterViewInit {
         if (!hasAccess) {
             if (this.hideOnNoAccess) {
                 // Replace the element with an empty inline span.
+                this.htmlElement.innerText = ''
                 this.htmlElement.outerHTML = '<span></span>'
                 return
             }
