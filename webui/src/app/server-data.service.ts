@@ -41,7 +41,7 @@ export class ServerDataService {
 
             // For each timer tick and and for each reload
             // make an http request to fetch new data
-            this.appsStats = merge(refreshTimer, this.reloadAppStats, this.auth.currentUser).pipe(
+            this.appsStats = merge(refreshTimer, this.reloadAppStats, this.auth.currentUser$).pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
                 switchMap(() => {
                     return this.servicesApi.getAppsStats().pipe(
@@ -70,7 +70,7 @@ export class ServerDataService {
      */
     getGroups() {
         if (!this.groups) {
-            this.groups = this.auth.currentUser.pipe(
+            this.groups = this.auth.currentUser$.pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
                 switchMap(() =>
                     this.usersApi.getGroups().pipe(
@@ -164,7 +164,7 @@ export class ServerDataService {
             this.reloadDaemonConfiguration[daemonId] = new Subject<number>()
             this._daemonConfigurations[daemonId] = merge(
                 this.reloadDaemonConfiguration[daemonId],
-                this.auth.currentUser
+                this.auth.currentUser$
             ).pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
                 switchMap(() => {

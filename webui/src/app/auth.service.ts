@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core'
 import { Router } from '@angular/router'
-import { BehaviorSubject, Observable, timer } from 'rxjs'
-import { map, retry, shareReplay } from 'rxjs/operators'
+import { BehaviorSubject, defer, Observable, of, tap, timeout, timer } from 'rxjs'
+import { catchError, map, mergeMap, retry, share, shareReplay } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
 
-import { UsersService } from './backend/api/users.service'
-import { AuthenticationMethod } from './backend/model/authenticationMethod'
-import { SessionCredentials } from './backend/model/sessionCredentials'
+import { UsersService } from './backend'
+import { AuthenticationMethod } from './backend'
+import { SessionCredentials } from './backend'
 import { User } from './backend'
+import { getErrorMessage } from './utils'
 
 export enum UserGroup {
     SuperAdmin = 1,
@@ -49,18 +50,84 @@ export type AccessType = 'create' | 'read' | 'update' | 'delete'
     providedIn: 'root',
 })
 export class AuthService {
-    private currentUserSubject: BehaviorSubject<User>
-    public currentUser: Observable<User>
-    private authenticationMethods: Observable<AuthenticationMethod[]>
+    /**
+     * RxJS behavior subject holding currently authenticated user. In case no user is authenticated, it holds null.
+     * @private
+     */
+    private _currentUserSubject: BehaviorSubject<User>
+
+    /**
+     * RxJS observable stream emitting either User or null whenever user gets authenticated or logged out.
+     */
+    public currentUser$: Observable<User>
+
+    /**
+     * RxJS observable used to retrieve from backend and cache authentication methods.
+     * @private
+     */
+    private readonly _authenticationMethods: Observable<AuthenticationMethod[]>
+
+    /**
+     * Returns RxJS observable which first tries to emit currently authenticated user.
+     * In case no user is authenticated, it tries to retrieve the user from the session in backend.
+     * This is useful when user closed the browser and tries to reopen Stork page again.
+     * Since Stork keeps persistent session cookie, it will send the request signed with the session token.
+     * If the session is alive, backend will send back authenticated user object. Otherwise, it will send
+     * back 404, which means that the user will have to authenticate again.
+     * In case of any error or timeout, the observable emits null, which also means
+     * that the user will have to authenticate again.
+     */
+    public getUserOrRetrieveFromSession(): Observable<User> {
+        return defer(() => of(this.currentUserValue)).pipe(
+            mergeMap((u) => {
+                if (u) {
+                    // This is normal operation when user is authenticated and browser was not closed.
+                    // User object is emitted from the _currentUserSubject.
+                    return of(u)
+                }
+
+                // No authenticated user, so let's check if it can be retrieved from backend.
+                // TODO: Check if session cookie exists. If not, there is no point in sending this request.
+                return this.api.getSession().pipe(
+                    tap((u: User) => {
+                        if (u) {
+                            this._currentUserSubject.next(u)
+                        }
+                    }),
+                    // Let's not wait too long and gracefully handle the timeout below.
+                    timeout(1000),
+                    // Let's gracefully handle all errors so that they are not propagated to the subscribers.
+                    catchError((err) => {
+                        // 404 is normal endpoint response meaning that there is no session alive for the user.
+                        if (err.status != 404) {
+                            const msg = getErrorMessage(err)
+                            this.msgSrv.add({
+                                severity: 'error',
+                                summary: 'Failed to retrieve session',
+                                detail: 'Failed to retrieve session: ' + msg,
+                            })
+                        }
+
+                        this.destroyAuthenticatedUser()
+                        return of(null)
+                    }),
+                    // In case there are more subscribers, share the response.
+                    share()
+                )
+            }),
+            // In case there are more subscribers, share the response.
+            share()
+        )
+    }
 
     constructor(
         private api: UsersService,
         private router: Router,
         private msgSrv: MessageService
     ) {
-        this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
-        this.currentUser = this.currentUserSubject.asObservable()
-        this.authenticationMethods = api.getAuthenticationMethods().pipe(
+        this._currentUserSubject = new BehaviorSubject<User>(null)
+        this.currentUser$ = this._currentUserSubject.asObservable()
+        this._authenticationMethods = api.getAuthenticationMethods().pipe(
             // Delay to limit the number of requests sent to the backend on
             // failure. Waits in sequence 1, 2, 4, 8, 16, and max. 32 seconds.
             retry({ delay: (_, count) => timer(1000 * 2 ** Math.min(count, 5)) }),
@@ -73,7 +140,7 @@ export class AuthService {
      * Returns information about currently logged user.
      */
     public get currentUserValue(): User {
-        return this.currentUserSubject.value
+        return this._currentUserSubject.value
     }
 
     /**
@@ -85,39 +152,50 @@ export class AuthService {
      * @param returnUrl URL to return to after successful login.
      */
     login(authenticationMethodId: string, identifier: string, secret: string, returnUrl: string) {
-        let user: User
         const credentials: SessionCredentials = { authenticationMethodId, identifier, secret }
-        this.api.createSession(credentials).subscribe(
-            (user) => {
-                if (user.id != null) {
-                    this.currentUserSubject.next(user)
-                    localStorage.setItem('currentUser', JSON.stringify(user))
-                    // ToDo: Unhandled exception from promise
-                    this.router.navigateByUrl(returnUrl)
-                }
-            },
-            (/* err */) => {
-                this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' })
-            }
-        )
-        return user
+        this.api
+            .createSession(credentials)
+            .pipe(shareReplay())
+            .subscribe({
+                next: (user) => {
+                    if (user.id != null) {
+                        // TODO: retrieve expiry date of the session cookie so that it can be used in the UI.
+                        this._currentUserSubject.next(user)
+                        // ToDo: Unhandled exception from promise
+                        this.router.navigateByUrl(returnUrl)
+                    }
+                },
+                error: () => this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' }),
+            })
     }
 
     /**
      * Destroys user session.
      */
     logout() {
-        this.api.deleteSession('response').subscribe((/* resp */) => {
-            this.destroyLocalSession()
-        })
+        this.api
+            .deleteSession('response')
+            .pipe(shareReplay())
+            .subscribe({
+                next: (/* resp */) => {
+                    this.destroyAuthenticatedUser()
+                },
+                error: (err) => {
+                    const msg = getErrorMessage(err)
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Failed to logout user',
+                        detail: 'Failed to logout user ' + msg,
+                    })
+                },
+            })
     }
 
     /**
-     * Destroys session information in the local storage.
+     * Destroys information about currently authenticated user.
      */
-    destroyLocalSession() {
-        localStorage.removeItem('currentUser')
-        this.currentUserSubject.next(null)
+    destroyAuthenticatedUser() {
+        this._currentUserSubject.next(null)
     }
 
     /**
@@ -152,7 +230,7 @@ export class AuthService {
      * @returns List of authentication methods supported by the backend.
      */
     getAuthenticationMethods(): Observable<AuthenticationMethod[]> {
-        return this.authenticationMethods
+        return this._authenticationMethods
     }
 
     /**
@@ -160,8 +238,7 @@ export class AuthService {
      */
     resetChangePasswordFlag() {
         const user: User = { ...this.currentUserValue, changePassword: false }
-        localStorage.setItem('currentUser', JSON.stringify(user))
-        this.currentUserSubject.next(user)
+        this._currentUserSubject.next(user)
     }
 
     /**

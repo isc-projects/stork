@@ -108,7 +108,7 @@ export class JsonTreeRootComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         // Check if user can show the secrets
         this.subscription.add(
-            this.auth.currentUser.subscribe(() => {
+            this.auth.currentUser$.subscribe(() => {
                 this._canShowSecrets = this.auth.superAdmin()
             })
         )

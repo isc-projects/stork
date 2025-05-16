@@ -26,9 +26,9 @@ export class AuthInterceptor implements HttpInterceptor {
         // field. The 'user unauthorized' means that the user is not logged in.
         if (err.status === 401 || getErrorMessage(err) === 'user unauthorized') {
             // User is apparently not logged in as it got Unauthorized error.
-            // Remove the session information from the local storage and redirect
+            // Remove the currently authenticated user context and redirect
             // the user to the login page.
-            this.auth.destroyLocalSession()
+            this.auth.destroyAuthenticatedUser()
             this.router.navigateByUrl('/login')
         } else if (err.status === 403) {
             // User has no access to the given view. Let's redirect the

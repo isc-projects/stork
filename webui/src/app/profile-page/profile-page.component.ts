@@ -29,7 +29,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
         private serverData: ServerDataService
     ) {
         this.subscriptions.add(
-            this.auth.currentUser.subscribe((user) => {
+            this.auth.currentUser$.subscribe((user) => {
                 this.currentUser = user
             })
         )

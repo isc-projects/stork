@@ -15,7 +15,7 @@ export class SettingService {
         private settingsApi: SettingsService
     ) {
         // Only get the settings when the user is logged in.
-        this.auth.currentUser.subscribe(() => {
+        this.auth.currentUser$.subscribe(() => {
             if (this.auth.currentUserValue) {
                 this.settingsApi.getSettings().subscribe(
                     (data) => {
