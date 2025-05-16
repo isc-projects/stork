@@ -94,7 +94,7 @@ describe('AuthService', () => {
         expect(methods[0].id).toBe('internal')
     })
 
-    it('should reset the change password flag in the local storage', () => {
+    it('should reset the change password flag for currently authenticated user', () => {
         // Arrange
         const service: AuthService = TestBed.inject(AuthService)
         const userService = TestBed.inject(UsersService)
@@ -109,15 +109,11 @@ describe('AuthService', () => {
         )
 
         service.login('internal', 'user', 'password', '/')
-        let userFromLocalStorage = JSON.parse(localStorage.getItem('currentUser')) as User
 
         // Act
-        expect(userFromLocalStorage.changePassword).toBeTrue()
         service.resetChangePasswordFlag()
 
         // Assert
         expect(service.currentUserValue.changePassword).toBeFalse()
-        userFromLocalStorage = JSON.parse(localStorage.getItem('currentUser')) as User
-        expect(userFromLocalStorage.changePassword).toBeFalse()
     })
 })

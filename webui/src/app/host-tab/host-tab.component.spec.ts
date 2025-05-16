@@ -89,6 +89,7 @@ describe('HostTabComponent', () => {
         msgService = fixture.debugElement.injector.get(MessageService)
         authService = fixture.debugElement.injector.get(AuthService)
         spyOn(authService, 'superAdmin').and.returnValue(true)
+        component.canGetLeases = true
         fixture.detectChanges()
     })
 
@@ -593,6 +594,7 @@ describe('HostTabComponent', () => {
         }
         fakeLeases.conflicts.push(2)
         spy.and.returnValue(of(fakeLeases))
+        component.canGetLeases = true
         component.refreshLeases()
         expect(dhcpApi.getLeases).toHaveBeenCalled()
         fixture.detectChanges()

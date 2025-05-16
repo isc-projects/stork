@@ -72,6 +72,7 @@ describe('JsonTreeRootComponent', () => {
     it('admin should not show the secrets', async () => {
         authService.logout()
         authService.login('boz', 'foo', 'bar', 'baz')
+        component.ngOnInit()
         await fixture.whenStable()
 
         expect(component.canShowSecrets).toBeTrue()
@@ -107,6 +108,7 @@ describe('JsonTreeRootComponent', () => {
     it('should initialize the inner component with correct defaults', async () => {
         authService.logout()
         authService.login('boz', 'foo', 'bar', 'baz')
+        component.ngOnInit()
         await fixture.whenStable()
         fixture.detectChanges()
 

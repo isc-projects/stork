@@ -25,7 +25,7 @@ describe('ServerDataService', () => {
                 {
                     provide: AuthService,
                     useValue: {
-                        currentUser: of({}),
+                        currentUser$: of({}),
                     },
                 },
             ],

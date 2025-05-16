@@ -16,6 +16,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessDirective } from '../managed-access.directive'
 import { provideRouter, RouterModule } from '@angular/router'
 
 describe('EventsPageComponent', () => {
@@ -38,6 +39,7 @@ describe('EventsPageComponent', () => {
                 TableModule,
                 BreadcrumbModule,
                 OverlayPanelModule,
+                ManagedAccessDirective,
                 RouterModule,
             ],
             providers: [

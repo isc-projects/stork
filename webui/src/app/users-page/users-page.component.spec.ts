@@ -26,6 +26,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { PasswordModule } from 'primeng/password'
 import { CheckboxModule } from 'primeng/checkbox'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -58,6 +59,7 @@ describe('UsersPageComponent', () => {
                 PasswordModule,
                 FormsModule,
                 CheckboxModule,
+                ManagedAccessDirective,
             ],
             providers: [
                 UntypedFormBuilder,
@@ -74,8 +76,9 @@ describe('UsersPageComponent', () => {
                 {
                     provide: AuthService,
                     useValue: {
-                        currentUser: of({}),
+                        currentUser$: of({}),
                         currentUserValue: { id: 1 },
+                        hasPrivilege: () => true,
                     },
                 },
                 {
