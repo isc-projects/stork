@@ -584,6 +584,43 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 		return rsp
 	}
 
+	su, err := dbmodel.GetUserByID(r.DB, id)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to fetch user with ID %d from the database", id)
+		log.WithFields(log.Fields{
+			"userID": id,
+		}).WithError(err).Error(msg)
+
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		return rsp
+	}
+	if su == nil {
+		msg := fmt.Sprintf("Failed to find user with ID %d in the database", id)
+		log.WithField("userID", id).Error(msg)
+
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusNotFound).WithPayload(&rspErr)
+		return rsp
+	}
+	err = r.SessionManager.UpdateUser(ctx, su)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to update session data for user with ID %d", id)
+		log.WithFields(log.Fields{
+			"userID": id,
+		}).WithError(err).Error(msg)
+
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		return rsp
+	}
+
 	// Password successfully changed.
 	return users.NewUpdateUserPasswordOK()
 }
