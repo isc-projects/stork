@@ -242,6 +242,11 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
      * Load the most recent events from Stork server
      */
     refreshEvents(event) {
+        // In case of lack of privileges, do not fetch events.
+        if (!this.auth.hasPrivilege('events')) {
+            return
+        }
+
         if (event) {
             this.start = event.first
             this.limit = event.rows

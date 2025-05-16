@@ -44,6 +44,9 @@ export type PrivilegeKey =
     | 'specific-user'
     | 'user-password'
     | 'json-config-secret'
+    | 'events'
+    | 'logs'
+    | 'versions'
 
 export type AccessType = 'create' | 'read' | 'update' | 'delete'
 

@@ -119,6 +119,11 @@ export class HostTabComponent {
     hostDeleted = false
 
     /**
+     * Flag stating whether user has privileges to get leases via Stork server.
+     */
+    canGetLeases: boolean = false
+
+    /**
      * Component constructor.
      *
      * @param msgService service displaying error messages upon a communication
@@ -291,6 +296,11 @@ export class HostTabComponent {
      * @param hostId host identifier.
      */
     private _fetchLeases(hostId) {
+        // In case of no privileges, just return.
+        if (!this.canGetLeases) {
+            return
+        }
+
         // Do not search again if the search is already in progress.
         if (this._leasesSearchStatus.get(hostId)) {
             return

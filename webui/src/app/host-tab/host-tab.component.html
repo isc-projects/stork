@@ -309,6 +309,8 @@
                 id="refresh-app-button"
                 icon="pi pi-refresh"
                 (click)="refreshLeases()"
+                appManagedAccess="leases"
+                (hasAccess)="canGetLeases = $event"
             ></button>
             <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
                 <button

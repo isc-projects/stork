@@ -178,6 +178,7 @@ const routes: Routes = [
         path: 'events',
         component: EventsPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'events' },
     },
     {
         path: 'forbidden',
@@ -187,6 +188,7 @@ const routes: Routes = [
         path: 'logs/:id',
         component: LogViewPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'logs' },
     },
     {
         path: 'review-checkers',
@@ -198,6 +200,7 @@ const routes: Routes = [
         path: 'versions',
         component: VersionPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'versions' },
     },
     {
         path: 'config-migrations',

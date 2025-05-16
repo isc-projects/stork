@@ -326,8 +326,11 @@
                                                     logTarget.output
                                                 }}</i>
                                                 <a
+                                                    pButton
+                                                    [text]="true"
                                                     *ngIf="logTargetViewable(logTarget.output)"
                                                     routerLink="/logs/{{ logTarget.id }}"
+                                                    appManagedAccess="logs"
                                                     ><i>{{ logTarget.output }}</i></a
                                                 >
                                             </td>
