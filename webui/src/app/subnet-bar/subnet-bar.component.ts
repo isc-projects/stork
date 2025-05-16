@@ -12,7 +12,7 @@ import { Subnet } from '../backend'
 })
 export class SubnetBarComponent {
     /**
-     * Sets the subnet. It generates also the tooltip content.
+     * Sets the subnet.
      */
     @Input()
     subnet: Subnet
