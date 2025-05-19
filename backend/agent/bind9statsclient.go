@@ -80,7 +80,12 @@ func (request *bind9StatsClientRequest) getJSON(result any, path string) (httpRe
 }
 
 // Makes sequential HTTP GET requests to the specified paths and combines the results
-// into the single structure. The paths are the path parts of the URL.
+// into the single structure. The paths are the path parts of the URL. The second
+// return value contains a partial result until the iterator is exhausted. Subsequent
+// calls to the DNS server may return overlapping data in which case the data from the
+// later calls will overwrite the overlapping data from the earlier calls. It should not
+// be a problem because typically the overlapping data are rather static (e.g. basic
+// information about the server).
 func (request *bind9StatsClientRequest) getCombinedJSON(result any, paths ...string) iter.Seq2[httpResponse, error] {
 	return func(yield func(httpResponse, error) bool) {
 		for _, path := range paths {
@@ -167,7 +172,8 @@ func (client *bind9StatsClient) getViews(host string, port int64) (httpResponse,
 }
 
 // Makes two sequential HTTP GET requests to retrieve server and traffic stats.
-// The results are combined into the map and returned to a caller.
+// The results are combined into the map and returned to a caller. The second
+// return value contains a partial result until the iterator is exhausted.
 func (client *bind9StatsClient) getServerAndTrafficStats(host string, port int64) (iter.Seq2[httpResponse, error], map[string]any) {
 	result := make(map[string]any)
 	return client.createRequest(host, port).getCombinedJSON(&result, "server", "traffic"), result
