@@ -67,7 +67,10 @@ export interface UserContextsForm {
  * the {@link SharedParametersForm} component.
  */
 export interface KeaPoolParametersForm {
+    // Deprecated since Kea 2.7.4.
     clientClass?: SharedParameterFormGroup<string>
+    // New since Kea 2.7.4.
+    clientClasses?: SharedParameterFormGroup<string[]>
     poolID?: SharedParameterFormGroup<number>
     // Deprecated since Kea 2.7.4.
     requireClientClasses?: SharedParameterFormGroup<string[]>
@@ -82,7 +85,10 @@ export interface KeaPoolParametersForm {
 export interface KeaSubnetParametersForm {
     cacheMaxAge?: SharedParameterFormGroup<number>
     cacheThreshold?: SharedParameterFormGroup<number>
+    // Deprecated since Kea 2.7.4.
     clientClass?: SharedParameterFormGroup<string>
+    // New since Kea 2.7.4.
+    clientClasses?: SharedParameterFormGroup<string[]>
     // Deprecated since Kea 2.7.4.
     requireClientClasses?: SharedParameterFormGroup<string[]>
     // New since Kea 2.7.4.
@@ -494,6 +500,13 @@ export class SubnetSetFormService {
             ),
         }
         if (!keaVersionRange || gte(keaVersionRange[1], '2.7.4')) {
+            form.clientClasses = new SharedParameterFormGroup<string[]>(
+                {
+                    type: 'client-classes',
+                    versionLowerBound: !keaVersionRange || lt(keaVersionRange[0], '2.7.4') ? '2.7.4' : undefined,
+                },
+                parameters.map((params) => new FormControl<string[]>(params?.clientClasses ?? []))
+            )
             form.evaluateAdditionalClasses = new SharedParameterFormGroup<string[]>(
                 {
                     type: 'client-classes',
@@ -822,6 +835,13 @@ export class SubnetSetFormService {
             )
         }
         if (!keaVersionRange || gte(keaVersionRange[1], '2.7.4')) {
+            form.clientClasses = new SharedParameterFormGroup<string[]>(
+                {
+                    type: 'client-classes',
+                    versionLowerBound: !keaVersionRange || lt(keaVersionRange[0], '2.7.4') ? '2.7.4' : undefined,
+                },
+                parameters.map((params) => new FormControl<string[]>(params?.clientClasses))
+            )
             form.evaluateAdditionalClasses = new SharedParameterFormGroup<string[]>(
                 {
                     type: 'client-classes',

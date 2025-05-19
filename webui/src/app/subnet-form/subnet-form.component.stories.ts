@@ -27,7 +27,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { MultiSelectModule } from 'primeng/multiselect'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { MessagesModule } from 'primeng/messages'
-import { HttpClientModule, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
@@ -44,7 +44,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 3,
@@ -52,7 +52,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 2,
@@ -60,7 +60,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
-            version: '2.4.0',
+            version: '2.6.0',
         },
         {
             id: 4,
@@ -68,7 +68,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 5,
@@ -76,7 +76,7 @@ let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
             app: {
                 name: 'third',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
     ],
     sharedNetworks4: [
@@ -228,7 +228,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 3,
@@ -236,7 +236,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 2,
@@ -244,7 +244,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
-            version: '2.4.0',
+            version: '2.6.0',
         },
         {
             id: 4,
@@ -252,7 +252,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 5,
@@ -260,7 +260,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'third',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
     ],
     sharedNetworks4: [
@@ -408,7 +408,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 3,
@@ -416,7 +416,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'first',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 2,
@@ -432,7 +432,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'second',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
         {
             id: 5,
@@ -440,7 +440,7 @@ let mockUpdateSubnet6BeginData: UpdateSubnetBeginResponse = {
             app: {
                 name: 'third',
             },
-            version: '2.7.0',
+            version: '2.7.8',
         },
     ],
     sharedNetworks4: [],
@@ -500,7 +500,6 @@ export default {
                 DropdownModule,
                 FieldsetModule,
                 FormsModule,
-                HttpClientModule,
                 InputNumberModule,
                 MessagesModule,
                 MultiSelectModule,
@@ -510,7 +509,7 @@ export default {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterModule,
+                RouterTestingModule,
                 SplitButtonModule,
                 ToastModule,
             ],
@@ -532,28 +531,28 @@ export default {
     parameters: {
         mockData: [
             {
-                url: 'http://localhost/api/subnets/new/transaction',
+                url: 'http://localhost/subnets/new/transaction',
                 method: 'POST',
                 status: 200,
                 delay: 2000,
                 response: mockCreateSubnetBeginData,
             },
             {
-                url: 'http://localhost/api/subnets/123/transaction',
+                url: 'http://localhost/subnets/123/transaction',
                 method: 'POST',
                 status: 200,
                 delay: 2000,
                 response: mockUpdateSubnet4BeginData,
             },
             {
-                url: 'http://localhost/api/subnets/234/transaction',
+                url: 'http://localhost/subnets/234/transaction',
                 method: 'POST',
                 status: 200,
                 delay: 2000,
                 response: mockUpdateSubnet6BeginData,
             },
             {
-                url: 'http://localhost/api/subnets/345/transaction',
+                url: 'http://localhost/subnets/345/transaction',
                 method: 'POST',
                 status: 400,
                 delay: 2000,

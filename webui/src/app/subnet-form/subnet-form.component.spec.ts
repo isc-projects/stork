@@ -63,6 +63,7 @@ describe('SubnetFormComponent', () => {
                             pool: '192.0.2.10-192.0.2.100',
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
+                                clientClasses: ['foo', 'bar'],
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
@@ -234,6 +235,7 @@ describe('SubnetFormComponent', () => {
                             pool: '2001:db8:1::10-2001:db8:1::100',
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
+                                clientClasses: ['foo', 'bar'],
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
@@ -432,7 +434,7 @@ describe('SubnetFormComponent', () => {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterModule,
+                RouterModule.forRoot([]),
                 SplitButtonModule,
                 ToastModule,
             ],
@@ -679,6 +681,7 @@ describe('SubnetFormComponent', () => {
                             pool: '192.0.2.10-192.0.2.100',
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
+                                clientClasses: ['foo', 'bar'],
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
@@ -801,6 +804,7 @@ describe('SubnetFormComponent', () => {
                             pool: '2001:db8:1::10-2001:db8:1::100',
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
+                                clientClasses: ['foo', 'bar'],
                                 requireClientClasses: ['foo', 'bar'],
                                 evaluateAdditionalClasses: ['foo', 'bar'],
                                 options: [],
@@ -814,6 +818,7 @@ describe('SubnetFormComponent', () => {
                             excludedPrefix: null,
                             keaConfigPoolParameters: {
                                 clientClass: 'foo',
+                                clientClasses: [],
                                 requireClientClasses: [],
                                 evaluateAdditionalClasses: [],
                                 options: [],
