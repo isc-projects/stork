@@ -109,13 +109,13 @@ func (r *RestAPI) GetZonesFetch(ctx context.Context, params dns.GetZonesFetchPar
 	var restStates []*models.ZoneInventoryState
 	for _, state := range states {
 		restStates = append(restStates, &models.ZoneInventoryState{
-			AppID:     state.Daemon.AppID,
-			AppName:   state.Daemon.App.Name,
-			CreatedAt: strfmt.DateTime(state.CreatedAt),
-			DaemonID:  state.DaemonID,
-			Error:     state.State.Error,
-			Status:    string(state.State.Status),
-			ZoneCount: state.State.ZoneCount,
+			AppID:            state.Daemon.AppID,
+			AppName:          state.Daemon.App.Name,
+			CreatedAt:        strfmt.DateTime(state.CreatedAt),
+			DaemonID:         state.DaemonID,
+			Error:            state.State.Error,
+			Status:           string(state.State.Status),
+			ZoneConfigsCount: state.State.ZoneCount,
 		})
 	}
 	payload := models.ZoneInventoryStates{

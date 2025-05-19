@@ -28,7 +28,7 @@
       status:
         type: string
         enum: [busy, erred, ok, uninitialized]
-      zoneCount:
+      zoneConfigsCount:
         type: integer
         x-nullable: true
 

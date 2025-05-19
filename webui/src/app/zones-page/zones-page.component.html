@@ -144,7 +144,7 @@ for each occurrence of that zone.
                     <a routerLink="/apps/bind9/{{ state.appId }}">{{ state.appName }}</a>
                 </td>
                 <td>{{ state.appId }}</td>
-                <td>{{ state.zoneCount || 'n/a' }}</td>
+                <td>{{ state.zoneConfigsCount || 'n/a' }}</td>
                 <td>
                     <p-tag
                         value="{{ state.status === 'erred' ? 'Error' : (state.status | titlecase) }} "

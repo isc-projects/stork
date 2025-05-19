@@ -439,7 +439,7 @@ func TestGetZonesFetch(t *testing.T) {
 		})
 		require.GreaterOrEqual(t, index, 0)
 		require.Equal(t, d.Error, rspOK.Payload.Items[index].Error)
-		require.Equal(t, d.ZoneCount, rspOK.Payload.Items[index].ZoneCount)
+		require.Equal(t, d.ZoneCount, rspOK.Payload.Items[index].ZoneConfigsCount)
 		require.Positive(t, rspOK.Payload.Items[index].DaemonID)
 		require.Positive(t, rspOK.Payload.Items[index].AppID)
 		require.NotZero(t, rspOK.Payload.Items[index].CreatedAt)
