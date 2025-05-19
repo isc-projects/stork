@@ -164,7 +164,7 @@ openldap
    (https://www.openldap.org/). It is preconfigured with a set of users:
    ``admin`` (password: ``admin``), ``user1``, ``user2``, ``user3`` (passwords:
    ``password1``, ``password2``,  ``password3``) and groups: ``stork-admins``,
-   ``stork-super-admins``.
+   ``stork-super-admins``, ``stork-read-only-users``.
 
 There is also a supporting container:
 

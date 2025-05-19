@@ -68,12 +68,22 @@ restrictions:
 - The ``password`` must only contain letters, digits, @, ., !, +, or -,
   and must be at least eight characters long.
 
-Currently, each user is associated with one of the two predefined groups
-(roles), which are ``super-admin`` or ``admin``; one of these must be selected
-when a user account is created. Both types of users can view Stork
-status screens, edit interval and reporting configuration settings, and
-add/remove machines for monitoring. ``super-admin`` users can also
-create and manage user accounts.
+Currently, each user is associated with one of the three predefined groups
+(roles), which are ``super-admin``, ``admin`` or ``read-only``; one of these must be selected
+when a user account is created. Both ``super-admin`` and ``admin`` types of users can view Stork
+status screens, edit interval and reporting configuration settings, and add/edit/remove
+Kea host reservations, subnets, shared networks etc.
+
+Only ``super-admin`` users can perform following actions:
+
+- create and manage user accounts
+- add/remove/authorize machines for monitoring
+- read access point keys of monitored BIND9 servers
+- read/regenerate Stork server token
+- read secrets in configs of monitored Kea servers.
+
+``read-only`` group users can only have read access to the system components and REST API endpoints.
+Users that belong to this group cannot perform Create, Update nor Delete actions.
 
 Once the new user account information has been specified and all
 requirements are met, the ``Save`` button becomes active and the new
