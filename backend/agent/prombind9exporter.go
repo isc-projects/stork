@@ -1196,7 +1196,7 @@ APP_LOOP:
 		for response, err := range responses {
 			if err != nil {
 				lastErr = err
-				log.Errorf("Problem getting stats from BIND 9: %+v", err)
+				log.WithError(err).Error("Problem getting stats from BIND 9")
 				continue APP_LOOP
 			}
 

@@ -422,7 +422,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 				"statsAddress": in.GetStatsAddress(),
 				"statsPort":    in.GetStatsPort(),
 				"requestType":  requestType,
-				"Status":       response.StatusCode(),
+				"status":       response.StatusCode(),
 			}).Errorf("named stats channel returned error status code with message: %s", response.String())
 		}
 	} else {
