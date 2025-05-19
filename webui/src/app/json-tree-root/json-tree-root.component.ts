@@ -1,5 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core'
-import { Subscription } from 'rxjs'
+import { Component, Input, OnInit, TemplateRef } from '@angular/core'
 import { AuthService } from '../auth.service'
 
 /**
