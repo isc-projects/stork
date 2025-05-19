@@ -44,6 +44,8 @@ func TestMiddlewareNewSession(t *testing.T) {
 		Lastname:               "White",
 		Name:                   "John C",
 		AuthenticationMethodID: dbmodel.AuthenticationMethodIDInternal,
+		ChangePassword:         true,
+		ExternalID:             "externalID",
 
 		Groups: []*dbmodel.SystemGroup{
 			{
@@ -75,6 +77,8 @@ func TestMiddlewareNewSession(t *testing.T) {
 		require.Equal(t, user.Lastname, userSession.Lastname)
 		require.Equal(t, user.Name, userSession.Name)
 		require.Equal(t, user.AuthenticationMethodID, userSession.AuthenticationMethodID)
+		require.Equal(t, user.ChangePassword, userSession.ChangePassword)
+		require.Equal(t, user.ExternalID, userSession.ExternalID)
 
 		require.Len(t, userSession.Groups, 2)
 		require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 5}))
@@ -212,4 +216,120 @@ func TestLogOutUser(t *testing.T) {
 	// The user should not have a valid session.
 	logged, _ = mgr.Logged(ctx)
 	require.False(t, logged)
+}
+
+func TestUpdateUser(t *testing.T) {
+	// Reset database schema.
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create session manager.
+	mgr, err := NewSessionMgr(db)
+	require.NoError(t, err)
+	defer mgr.Close()
+
+	ctx := context.Background()
+
+	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
+	w := httptest.NewRecorder()
+
+	// Create user to be logged to the system.
+	user := &dbmodel.SystemUser{
+		ID:             1,
+		Login:          "johnw",
+		Email:          "johnw@example.org",
+		Lastname:       "White",
+		Name:           "John C",
+		ChangePassword: true,
+
+		Groups: []*dbmodel.SystemGroup{
+			{
+				ID:   5,
+				Name: "abc",
+			},
+			{
+				ID:   25,
+				Name: "def",
+			},
+		},
+	}
+
+	// Flag which indicates if login should be performed on the response handler.
+	performLogin := true
+
+	// Run the middleware.
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if performLogin {
+			// Simulate user login to the system.
+			err := mgr.LoginHandler(r.Context(), user)
+			require.NoError(t, err)
+
+			// Check that the user has been logged
+			logged, userSession := mgr.Logged(r.Context())
+
+			// ... and that user data was stored in the session.
+			require.True(t, logged)
+			require.NotNil(t, userSession)
+			require.Equal(t, user.ID, userSession.ID)
+			require.Equal(t, user.Login, userSession.Login)
+			require.Equal(t, user.Email, userSession.Email)
+			require.Equal(t, user.Lastname, userSession.Lastname)
+			require.Equal(t, user.Name, userSession.Name)
+			require.Equal(t, user.ChangePassword, userSession.ChangePassword)
+
+			require.Len(t, userSession.Groups, 2)
+			require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 5}))
+			require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 25}))
+		}
+
+		// Store the context so that it can be checked after the session is
+		// stored in the database.
+		ctx = r.Context()
+	}
+
+	middlewareFunc := mgr.SessionMiddleware(http.HandlerFunc(handler))
+	middlewareFunc.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, resp.StatusCode, 200)
+
+	// The context has proper data in sync with the data in the database.
+	// The user should have a valid session.
+	logged, su := mgr.Logged(ctx)
+	require.True(t, logged)
+	require.Equal(t, user.ID, su.ID)
+
+	// Update user data in the session.
+	user.Groups = append(user.Groups, &dbmodel.SystemGroup{
+		ID:   35,
+		Name: "xyz",
+	})
+	user.ChangePassword = false
+	user.ExternalID = "externalID"
+	err = mgr.UpdateUser(ctx, user)
+
+	// Check if user data in the session was correctly updated.
+	require.NoError(t, err)
+
+	// Check that the user has been logged
+	logged, userSession := mgr.Logged(ctx)
+
+	// ... and that user data was stored in the session.
+	require.True(t, logged)
+	require.NotNil(t, userSession)
+	require.Equal(t, user.ID, userSession.ID)
+	require.Equal(t, user.Login, userSession.Login)
+	require.Equal(t, user.Email, userSession.Email)
+	require.Equal(t, user.Lastname, userSession.Lastname)
+	require.Equal(t, user.Name, userSession.Name)
+	// ChangePassword flag should be updated.
+	require.False(t, userSession.ChangePassword)
+	// ExternalID was not originally stored in the session, but now it should be there.
+	require.Equal(t, "externalID", userSession.ExternalID)
+
+	// Assignment to the new group should be stored in the session.
+	require.Len(t, userSession.Groups, 3)
+	require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 5}))
+	require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 25}))
+	require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 35}))
 }

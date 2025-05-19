@@ -937,6 +937,10 @@ func TestUpdateUserPassword(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{
 		Email:    "jan@example.org",
@@ -984,6 +988,10 @@ func TestUpdateUserPasswordResetChangePasswordFlag(t *testing.T) {
 	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{
 		Email:          "jan@example.org",
@@ -1007,6 +1015,12 @@ func TestUpdateUserPasswordResetChangePasswordFlag(t *testing.T) {
 	require.IsType(t, &users.UpdateUserPasswordOK{}, rsp)
 	user, _ = dbmodel.GetUserByID(db, user.ID)
 	require.False(t, user.ChangePassword)
+
+	// Check that the flag was updated also in the session.
+	logged, userSession := rapi.SessionManager.Logged(ctx)
+	require.True(t, logged)
+	require.NotNil(t, userSession)
+	require.False(t, userSession.ChangePassword)
 }
 
 // Tests that user password can't be updated via REST API if user account doesn't
@@ -1442,4 +1456,59 @@ func TestGetAuthenticationMethodsFromHooks(t *testing.T) {
 	for i, method := range items[:len(items)-1] {
 		require.EqualValues(t, fmt.Sprintf("mock-%d", i), method.ID)
 	}
+}
+
+// Tests that existing session can be retrieved and sent to the user.
+func TestGetSession(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	hookManager := hookmanager.NewHookManager()
+	rapi, _ := NewRestAPI(dbSettings, db, hookManager)
+
+	user := &dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+	}
+	password := "pass"
+	con, err := dbmodel.CreateUserWithPassword(db, user, password)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// for next tests there is some data required in the context, let's prepare it
+	ctx2, err := rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	params := users.CreateSessionParams{
+		Credentials: &models.SessionCredentials{
+			Identifier: &user.Email,
+			Secret:     &password,
+		},
+	}
+	// provide correct credentials - it should create a new session
+	rsp := rapi.CreateSession(ctx2, params)
+	require.IsType(t, &users.CreateSessionOK{}, rsp)
+	okRsp := rsp.(*users.CreateSessionOK)
+	require.Greater(t, *okRsp.Payload.ID, int64(0))
+
+	// Try to retrieve the session.
+	rsp = rapi.GetSession(ctx2, users.GetSessionParams{})
+	require.IsType(t, &users.GetSessionOK{}, rsp)
+	getSessionRsp := rsp.(*users.GetSessionOK)
+
+	// Check if retrieved user data is ok.
+	require.Equal(t, user.Email, getSessionRsp.Payload.Email)
+	require.Equal(t, user.Lastname, getSessionRsp.Payload.Lastname)
+	require.Equal(t, user.Name, getSessionRsp.Payload.Name)
+
+	// Delete the session - user logs out.
+	delParams := users.DeleteSessionParams{}
+	rsp = rapi.DeleteSession(ctx2, delParams)
+	require.IsType(t, &users.DeleteSessionOK{}, rsp)
+
+	// Now try to retrieve the session again. 404 not found should be returned.
+	rsp = rapi.GetSession(ctx2, users.GetSessionParams{})
+	require.IsType(t, &users.GetSessionNotFound{}, rsp)
 }
