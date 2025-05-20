@@ -84,7 +84,10 @@ describe('ConfigMigrationPageComponent', () => {
 
         await TestBed.configureTestingModule({
             imports: [
-                RouterModule,
+                RouterModule.forRoot([
+                    { path: 'config-migrations/all', component: ConfigMigrationPageComponent },
+                    { path: 'config-migrations/1', component: ConfigMigrationPageComponent },
+                ]),
                 NoopAnimationsModule,
                 BreadcrumbModule,
                 TabMenuModule,

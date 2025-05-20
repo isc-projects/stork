@@ -2,7 +2,7 @@ import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core'
 import { Subject, Subscription } from 'rxjs'
 import { MenuItem, MessageService } from 'primeng/api'
 import { DHCPService, MigrationStatus } from '../backend'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { getErrorMessage } from '../utils'
 
 /**
@@ -64,11 +64,13 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
      * @param route activated route used to gather parameters from the URL.
      * @param dhcpApi server API used to gather hosts information.
      * @param messageService message service used to display error messages to a user.
+     * @param router Angular router used to navigate to different tab path.
      */
     constructor(
         private route: ActivatedRoute,
         private dhcpApi: DHCPService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private router: Router
     ) {}
 
     /**
@@ -178,6 +180,8 @@ export class ConfigMigrationPageComponent implements OnInit, OnDestroy, AfterVie
             // to switch, but we have to adjust the active tab index.
             this.activeTabIndex--
         }
+
+        this.router.navigateByUrl(this.tabs[this.activeTabIndex].routerLink)
     }
 
     /**
