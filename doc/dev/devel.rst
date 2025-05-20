@@ -532,7 +532,7 @@ and configuration files. Next, it calls ``pytest``, a Python testing framework
 used in Stork for executing the system tests.
 
 ..
-    <Comment out when the system tests will support subscriber Kea hooks.>
+    <Remove the comment when the system tests will support subscriber Kea hooks.>
 
     Some test cases use the subscriber Kea hooks. They are disabled by default. To
     enable them, specify the valid `cloudsmith.io <https://cloudsmith.io>`_ access token in the
