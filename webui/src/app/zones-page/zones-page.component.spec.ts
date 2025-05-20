@@ -12,7 +12,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { Router, RouterModule } from '@angular/router'
-import { DNSAppType, DNSClass, DNSService, ZoneInventoryState, ZoneInventoryStates, Zones } from '../backend'
+import { DNSAppType, DNSClass, DNSService, ZoneInventoryState, ZoneInventoryStates, Zones, Zone } from '../backend'
 import { Observable, of } from 'rxjs'
 import {
     HttpEventType,
@@ -943,5 +943,121 @@ describe('ZonesPageComponent', () => {
                 expect(component.supportedQueryParamFilters[paramKey].enumValues.length).toBeGreaterThan(0)
             }
         }
+    })
+
+    it('should return unique zone types', () => {
+        // Arrange
+        const zone: Zone = {
+            name: 'example.org',
+            id: 10,
+            localZones: [
+                {
+                    zoneType: 'builtin',
+                },
+                {
+                    zoneType: 'builtin',
+                },
+                {
+                    zoneType: 'builtin',
+                },
+                {
+                    zoneType: 'primary',
+                },
+                {
+                    zoneType: 'primary',
+                },
+                {
+                    zoneType: 'secondary',
+                },
+            ],
+        }
+        const expectedTypes = ['primary', 'secondary', 'builtin']
+
+        // Act
+        const result = component.getUniqueZoneTypes(zone)
+
+        // Assert
+        expect(result).toEqual(jasmine.arrayWithExactContents(expectedTypes))
+    })
+
+    it('should return empty unique zone types', () => {
+        // Arrange
+        const zone: Zone = {
+            name: 'example.org',
+            id: 10,
+            localZones: [],
+        }
+
+        // Act
+        const result = component.getUniqueZoneTypes(zone)
+
+        // Assert
+        expect(result).toBeTruthy()
+        expect(result.length).toEqual(0)
+    })
+
+    it('should get zone serial info when there is no mismatch', () => {
+        // Arrange
+        const zone: Zone = {
+            name: 'example.org',
+            id: 10,
+            localZones: [
+                {
+                    serial: 12345,
+                },
+                {
+                    serial: 12345,
+                },
+                {
+                    serial: 12345,
+                },
+            ],
+        }
+
+        // Act
+        const result = component.getZoneSerialInfo(zone)
+
+        // Assert
+        expect(result).toEqual(jasmine.objectContaining({ serial: '12345', hasMismatch: false }))
+    })
+
+    it('should get zone serial info when there is mismatch', () => {
+        // Arrange
+        const zone: Zone = {
+            name: 'example.org',
+            id: 10,
+            localZones: [
+                {
+                    serial: 12345,
+                },
+                {
+                    serial: 12345,
+                },
+                {
+                    serial: 12344,
+                },
+            ],
+        }
+
+        // Act
+        const result = component.getZoneSerialInfo(zone)
+
+        // Assert
+        expect(result).toEqual(jasmine.objectContaining({ serial: '12345', hasMismatch: true }))
+    })
+
+    it('should get zone serial info when there are no local zones', () => {
+        // Arrange
+        const zone: Zone = {
+            name: 'example.org',
+            id: 10,
+            localZones: [],
+        }
+
+        // Act
+        const result = component.getZoneSerialInfo(zone)
+
+        // Assert
+        expect(result).toEqual(jasmine.objectContaining({ serial: 'N/A', hasMismatch: false }))
     })
 })
