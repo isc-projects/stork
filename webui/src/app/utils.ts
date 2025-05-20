@@ -277,12 +277,12 @@ export function daemonStatusErred(daemon) {
  */
 export function daemonStatusIconName(daemon: KeaDaemon) {
     if (!daemon.monitored) {
-        return 'pi-ban icon-not-monitored'
+        return 'pi pi-ban icon-not-monitored'
     }
     if (!daemon.active) {
-        return 'pi-times icon-not-active'
+        return 'pi pi-times icon-not-active'
     }
-    return 'pi-check icon-ok'
+    return 'pi pi-check icon-ok'
 }
 
 /**

@@ -345,7 +345,7 @@
                             <td>
                                 <i
                                     pTooltip="{{ daemonStatusIconTooltip(d) }}"
-                                    class="pi {{ daemonStatusIconName(d) }} text-2xl"
+                                    class="{{ daemonStatusIconName(d) }} text-2xl"
                                     [ngStyle]="{
                                         color: daemonStatusIconColor(d),
                                     }"
@@ -461,7 +461,7 @@
                                 <i
                                     *ngIf="a?.details?.daemon"
                                     pTooltip="{{ daemonStatusIconTooltip(a.details.daemon) }}"
-                                    class="pi {{ daemonStatusIconName(a.details.daemon) }} text-2xl"
+                                    class="{{ daemonStatusIconName(a.details.daemon) }} text-2xl"
                                     [ngStyle]="{
                                         color: daemonStatusIconColor(a.details.daemon),
                                     }"
