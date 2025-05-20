@@ -73,6 +73,7 @@ def serialize_subnets(subnets):
     """Serializes subnets to JSON."""
     data = {"total": subnets["total"], "items": []}
     for subnet in subnets["items"]:
+        # Get the deeply nested clientClasses value safely
         data["items"].append(
             {
                 "subnet": subnet["subnet"],
@@ -81,6 +82,7 @@ def serialize_subnets(subnets):
                 "clients": subnet["clients"],
                 "state": subnet["state"],
                 "clientClass": subnet.get("clientClass"),
+                "clientClasses": traffic.get_subnet_client_classes(subnet),
             }
         )
     return json.dumps(data)

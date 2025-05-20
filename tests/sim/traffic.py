@@ -6,7 +6,9 @@ import re
 import subprocess
 import sys
 import shlex
+import logging
 
+log = logging.getLogger(__name__)
 
 # Pattern that matches the client classes in the subnets defined in the demo
 # Kea configurations.
@@ -17,20 +19,41 @@ import shlex
 _client_class_pattern = re.compile(r"class-(\d{2})-(\d{2})")
 
 
+def get_subnet_client_classes(subnet):
+    """Returns the client classes for a subnet."""
+    return (
+        subnet.get("localSubnets", [{}])[0]
+        .get("keaConfigSubnetParameters", {})
+        .get("subnetLevelParameters", {})
+        .get("clientClasses", None)
+    )
+
+
 def start_perfdhcp(subnet):
     """Generates traffic for a given network."""
     rate, clients = subnet["rate"], subnet["clients"]
 
-    client_class_bytes = None
-    if "clientClass" not in subnet:
+    m = None
+
+    # In latest Kea versions the client classes are defined in the local-subnet
+    # under client-classes array.
+    client_classes = get_subnet_client_classes(subnet)
+    if client_classes:
+        for client_class in client_classes:
+            m = _client_class_pattern.match(client_class)
+            if m is not None:
+                break
+
+    # If client classes are not defined in client-classes let's check the
+    # client-class parameter.
+    if m is None and "clientClass" in subnet:
+        client_class = subnet["clientClass"]
+        m = _client_class_pattern.match(client_class)
+
+    if m is None:
+        # Client class not found, so we cannot generate traffic.
         raise ValueError(f"Missing client class for subnet: {subnet['subnet']}")
 
-    client_class = subnet["clientClass"]
-    m = _client_class_pattern.match(client_class)
-    if m is None:
-        raise ValueError(
-            f"Invalid client class: {subnet['clientClass']} for subnet: {subnet['subnet']}"
-        )
     client_class_bytes = m.groups()
 
     if "." in subnet["subnet"]:
