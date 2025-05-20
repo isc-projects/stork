@@ -21,7 +21,6 @@ import { map } from 'rxjs/operators'
 import { parseSubnetsStatisticValues } from '../subnets'
 import {
     App,
-    Apps,
     DhcpDaemon,
     DhcpDaemonHARelationshipOverview,
     DhcpOverview,
@@ -336,8 +335,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
             )
         )
             .then((data) => {
-                this.dnsApps = (<Apps>data)?.items ?? []
-                this.dnsAppsTotalCount = (<Apps>data)?.total ?? 0
+                this.dnsApps = data.items ?? []
+                this.dnsAppsTotalCount = data.total ?? 0
             })
             .catch((err) => {
                 const msg = getErrorMessage(err)
