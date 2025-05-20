@@ -1540,6 +1540,7 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 			},
 			KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 				ClientClass:               storkutil.Ptr("foo"),
+				ClientClasses:             []string{"foo"},
 				RequireClientClasses:      []string{"bar"},
 				EvaluateAdditionalClasses: []string{"foo"},
 			},
@@ -1706,6 +1707,7 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 								"cache-threshold": 0.25,
 								"cache-max-age": 1000,
 								"client-class": "foo",
+								"client-classes": ["foo"],
 								"require-client-classes": ["bar"],
 								"evaluate-additional-classes": ["foo"],
 								"ddns-generated-prefix": "abc",
@@ -1837,6 +1839,8 @@ func TestUpdateSharedNetwork4BeginSubmit(t *testing.T) {
 		require.EqualValues(t, 0.25, *lsn.KeaParameters.CacheThreshold)
 		require.NotNil(t, lsn.KeaParameters.ClientClass)
 		require.Equal(t, "foo", *lsn.KeaParameters.ClientClass)
+		require.Len(t, lsn.KeaParameters.ClientClasses, 1)
+		require.Equal(t, "foo", lsn.KeaParameters.ClientClasses[0])
 		require.Len(t, lsn.KeaParameters.RequireClientClasses, 1)
 		require.EqualValues(t, "bar", lsn.KeaParameters.RequireClientClasses[0])
 		require.Len(t, lsn.KeaParameters.EvaluateAdditionalClasses, 1)

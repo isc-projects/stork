@@ -2131,6 +2131,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 			},
 			KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 				ClientClass:               storkutil.Ptr("foo"),
+				ClientClasses:             []string{"foo"},
 				EvaluateAdditionalClasses: []string{"foo"},
 				RequireClientClasses:      []string{"bar"},
 			},
@@ -2225,6 +2226,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 								},
 								KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 									ClientClass:               storkutil.Ptr("foo"),
+									ClientClasses:             []string{"foo", "bar"},
 									EvaluateAdditionalClasses: []string{"foo", "bar"},
 									RequireClientClasses:      []string{"foo", "bar"},
 								},
@@ -2264,6 +2266,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 								},
 								KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 									ClientClass:               storkutil.Ptr("foo"),
+									ClientClasses:             []string{"foo", "bar"},
 									EvaluateAdditionalClasses: []string{"foo", "bar"},
 									RequireClientClasses:      []string{"foo", "bar"},
 								},
@@ -2317,6 +2320,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 									"pool": "192.0.2.10-192.0.2.20",
 									"pool-id": 1234,
 									"client-class": "foo",
+									"client-classes": [ "foo", "bar" ],
 									"evaluate-additional-classes": [ "foo", "bar" ],
 									"require-client-classes": [ "foo", "bar" ],
 									"option-data": [
@@ -2340,6 +2344,7 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 							"cache-max-age": 1000,
 							"cache-threshold": 0.25,
 							"client-class": "foo",
+							"client-classes": [ "foo" ],
 							"require-client-classes": [ "bar" ],
 							"evaluate-additional-classes": [ "foo" ],
 							"ddns-generated-prefix": "abc",
@@ -2439,6 +2444,8 @@ func TestUpdateSubnet4BeginSubmit(t *testing.T) {
 		require.EqualValues(t, 0.25, *ls.KeaParameters.CacheThreshold)
 		require.NotNil(t, ls.KeaParameters.ClientClass)
 		require.Equal(t, "foo", *ls.KeaParameters.ClientClass)
+		require.Len(t, ls.KeaParameters.ClientClasses, 1)
+		require.EqualValues(t, "foo", ls.KeaParameters.ClientClasses[0])
 		require.Len(t, ls.KeaParameters.EvaluateAdditionalClasses, 1)
 		require.EqualValues(t, "foo", ls.KeaParameters.EvaluateAdditionalClasses[0])
 		require.Len(t, ls.KeaParameters.RequireClientClasses, 1)
@@ -3273,6 +3280,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 								},
 								KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 									ClientClass:               storkutil.Ptr("foo"),
+									ClientClasses:             []string{"foo", "bar"},
 									EvaluateAdditionalClasses: []string{"foo", "bar"},
 									RequireClientClasses:      []string{"foo", "bar"},
 								},
@@ -3314,6 +3322,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 								},
 								KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 									ClientClass:               storkutil.Ptr("foo"),
+									ClientClasses:             []string{"foo", "bar"},
 									EvaluateAdditionalClasses: []string{"foo", "bar"},
 									RequireClientClasses:      []string{"foo", "bar"},
 								},
@@ -3376,6 +3385,7 @@ func TestUpdateSubnet6BeginSubmit(t *testing.T) {
 									"excluded-prefix": "2001:db8:1:2::",
 									"excluded-prefix-len": 80,
 									"client-class": "foo",
+									"client-classes": [ "foo", "bar" ],
 									"evaluate-additional-classes": [ "foo", "bar" ],
 									"require-client-classes": [ "foo", "bar" ],
 									"pool-id": 2345,

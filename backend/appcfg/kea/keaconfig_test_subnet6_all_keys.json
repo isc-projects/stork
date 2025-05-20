@@ -2,6 +2,7 @@
     "allocator": "iterative",
     "pd-allocator": "iterative",
     "client-class": "foobar",
+    "client-classes": [ "early" ],
     "ddns-generated-prefix": "myhost",
     "ddns-override-client-update": true,
     "ddns-override-no-update": true,
@@ -43,6 +44,7 @@
     "pools": [
         {
             "client-class": "phones_server1",
+            "client-classes": [ "phones_server1" ],
             "option-data": [],
             "pool": "2001:db8:0:1::/64",
             "pool-id": 7,
@@ -50,6 +52,7 @@
         },
         {
             "client-class": "phones_server2",
+            "client-classes": [],
             "option-data": [],
             "pool": "2001:db8:0:3::/64",
             "require-client-classes": []

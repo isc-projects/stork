@@ -29,6 +29,7 @@ func convertSharedNetworkParametersToRestAPI(keaParameters *keaconfig.SharedNetw
 		},
 		KeaConfigClientClassParameters: models.KeaConfigClientClassParameters{
 			ClientClass:               storkutil.NullifyEmptyString(keaParameters.ClientClass),
+			ClientClasses:             keaParameters.ClientClasses,
 			EvaluateAdditionalClasses: keaParameters.EvaluateAdditionalClasses,
 			RequireClientClasses:      keaParameters.RequireClientClasses,
 		},
@@ -191,6 +192,7 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 				},
 				ClientClassParameters: keaconfig.ClientClassParameters{
 					ClientClass:               storkutil.NullifyEmptyString(keaParameters.ClientClass),
+					ClientClasses:             keaParameters.ClientClasses,
 					EvaluateAdditionalClasses: keaParameters.EvaluateAdditionalClasses,
 					RequireClientClasses:      keaParameters.RequireClientClasses,
 				},

@@ -6,6 +6,7 @@
     "authoritative": false,
     "boot-file-name": "/tmp/boot",
     "client-class": "foobar",
+    "client-classes": [ "early" ],
     "ddns-generated-prefix": "myhost",
     "ddns-override-client-update": true,
     "ddns-override-no-update": true,
@@ -35,6 +36,7 @@
     "pools": [
         {
             "client-class": "phones_server1",
+            "client-classes": [ "phones_server1" ],
             "option-data": [],
             "pool": "192.1.0.1 - 192.1.0.200",
             "pool-id": 7,
@@ -42,6 +44,7 @@
         },
         {
             "client-class": "phones_server2",
+            "client-classes": [],
             "option-data": [],
             "pool": "192.3.0.1 - 192.3.0.200",
             "require-client-classes": []

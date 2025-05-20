@@ -22,6 +22,7 @@ func getAllKeysSharedNetwork4() string {
 		"authoritative": false,
 		"boot-file-name": "/dev/null",
 		"client-class": "foobar",
+		"client-classes": [ "early" ],
 		"evaluate-additional-classes": [ "early" ],
 		"ddns-generated-prefix": "myhost",
 		"ddns-override-client-update": true,
@@ -82,6 +83,7 @@ func getAllKeysSharedNetwork6() string {
 		"allocator": "random",
 		"pd-allocator": "iterative",
 		"client-class": "foobar",
+		"client-classes": [ "early" ],
 		"ddns-generated-prefix": "myhost",
 		"ddns-override-client-update": true,
 		"ddns-override-no-update": true,
@@ -146,6 +148,8 @@ func TestDecodeAllKeysSharedNetwork4(t *testing.T) {
 	require.Equal(t, "random", *params.Allocator)
 	require.Equal(t, "/dev/null", *params.BootFileName)
 	require.Equal(t, "foobar", *params.ClientClass)
+	require.Len(t, params.ClientClasses, 1)
+	require.Equal(t, "early", params.ClientClasses[0])
 	require.Equal(t, "myhost", *params.DDNSGeneratedPrefix)
 	require.True(t, *params.DDNSOverrideClientUpdate)
 	require.True(t, *params.DDNSOverrideNoUpdate)
@@ -199,6 +203,8 @@ func TestDecodeAllKeysSharedNetwork6(t *testing.T) {
 	require.Equal(t, "random", *params.Allocator)
 	require.Equal(t, "iterative", *params.PDAllocator)
 	require.Equal(t, "foobar", *params.ClientClass)
+	require.Len(t, params.ClientClasses, 1)
+	require.Equal(t, "early", params.ClientClasses[0])
 	require.Equal(t, "myhost", *params.DDNSGeneratedPrefix)
 	require.True(t, *params.DDNSOverrideClientUpdate)
 	require.True(t, *params.DDNSOverrideNoUpdate)
@@ -254,6 +260,8 @@ func TestGetParametersSharedNetwork4(t *testing.T) {
 	require.Equal(t, "random", *params.Allocator)
 	require.Equal(t, "/dev/null", *params.BootFileName)
 	require.Equal(t, "foobar", *params.ClientClass)
+	require.Len(t, params.ClientClasses, 1)
+	require.Equal(t, "early", params.ClientClasses[0])
 	require.Equal(t, "myhost", *params.DDNSGeneratedPrefix)
 	require.True(t, *params.DDNSOverrideClientUpdate)
 	require.True(t, *params.DDNSOverrideNoUpdate)
@@ -355,6 +363,7 @@ func TestCreateSharedNetwork4(t *testing.T) {
 		},
 		ClientClassParameters: keaconfig.ClientClassParameters{
 			ClientClass:               ptr("myclass"),
+			ClientClasses:             []string{"bar"},
 			EvaluateAdditionalClasses: []string{"bar"},
 			RequireClientClasses:      []string{"foo"},
 		},
@@ -445,6 +454,8 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	require.EqualValues(t, 0.25, *network4.CacheThreshold)
 	require.True(t, *network4.CalculateTeeTimes)
 	require.Equal(t, "myclass", *network4.ClientClass)
+	require.Len(t, network4.ClientClasses, 1)
+	require.Equal(t, "bar", network4.ClientClasses[0])
 	require.Equal(t, "example.com", *network4.DDNSGeneratedPrefix)
 	require.True(t, *network4.DDNSOverrideClientUpdate)
 	require.True(t, *network4.DDNSOverrideNoUpdate)
@@ -503,6 +514,7 @@ func TestCreateSharedNetwork6(t *testing.T) {
 		},
 		ClientClassParameters: keaconfig.ClientClassParameters{
 			ClientClass:               ptr("myclass"),
+			ClientClasses:             []string{"bar"},
 			EvaluateAdditionalClasses: []string{"bar"},
 			RequireClientClasses:      []string{"foo"},
 		},
@@ -595,6 +607,8 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	require.EqualValues(t, 0.25, *network6.CacheThreshold)
 	require.True(t, *network6.CalculateTeeTimes)
 	require.Equal(t, "myclass", *network6.ClientClass)
+	require.Len(t, network6.ClientClasses, 1)
+	require.Equal(t, "bar", network6.ClientClasses[0])
 	require.Equal(t, "example.com", *network6.DDNSGeneratedPrefix)
 	require.True(t, *network6.DDNSOverrideClientUpdate)
 	require.True(t, *network6.DDNSOverrideNoUpdate)
