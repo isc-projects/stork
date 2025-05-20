@@ -18,11 +18,9 @@ fi
 # The directory with this script
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 
-# Prompt for CloudSmith access token
 usage()
 {
-    echo "Usage: stork-demo.sh [ -f | --no-prompt ] [ -s | --stop ] [ -t | --token CLOUD_SMITH_ACCESS_TOKEN ]"
-    echo "You can also set the access token using environment variable CS_REPO_ACCESS_TOKEN."
+    echo "Usage: stork-demo.sh [ -f | --no-prompt ] [ -s | --stop ]"
 }
 
 logo()
@@ -40,23 +38,11 @@ logo()
 # Parse arguments
 NO_PROMPT=0
 STOP=0
-ACCESS_TOKEN=${CS_REPO_ACCESS_TOKEN}
-SET_ACCESS_TOKEN=0
 while [ ${#} -gt 0 ];
 do
-  # Set access token from CMD
-  if [ ${SET_ACCESS_TOKEN} -eq 1 ]
-  then
-    SET_ACCESS_TOKEN=0
-    ACCESS_TOKEN=$1
-    shift
-    continue
-  fi
-
   case "$1" in
     -f | --no-prompt)   NO_PROMPT=1        ; shift ;;
     -s | --stop)        STOP=1             ; shift ;;
-    -t | --token)       SET_ACCESS_TOKEN=1 ; shift ;;
     -h | --help)        usage              ; exit 0;;
     # -- means the end of the arguments; drop this, and break out of the while loop
     --) shift; break ;;
@@ -66,12 +52,6 @@ do
        usage ; exit 2 ;;
   esac
 done
-
-if [ ${SET_ACCESS_TOKEN} -eq 1 ]
-then
-    echo "Missing value for the access token."
-    exit 1
-fi
 
 # Stop the demo
 if [ ${STOP} -eq 1 ]
@@ -90,27 +70,10 @@ then
     exit 0
 fi
 
-# Prompt necessary?
-if [ -z "${ACCESS_TOKEN}" ]
-then
-    # Prompt allowed?
-    if [ ${NO_PROMPT} -eq 0 ]
-    then
-        echo "To run the Demo with a Kea instance that includes the subscribers features, you need to provide your CloudSmith access token."
-        echo "Leave this value empty to use only open-source features."
-        echo "Enter CloudSmith access token (or leave empty):"
-        # No echo the secret
-        stty -echo
-        read -r ACCESS_TOKEN
-        stty echo
-    fi
-fi
-
 # Run the demo
 # Build Docker containers
 DOCKER_BUILDKIT=1 \
 COMPOSE_DOCKER_CLI_BUILD=1 \
-CS_REPO_ACCESS_TOKEN=${ACCESS_TOKEN} \
 $DOCKER_COMPOSE \
     --project-directory "${SCRIPT_DIR}" \
     -f "${SCRIPT_DIR}/docker/docker-compose.yaml" \
