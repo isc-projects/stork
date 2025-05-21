@@ -204,6 +204,85 @@ namespace :unittest do
                     i.write File.read("coverage.out")
                 end
 
+                ignore_list = [
+                    'backend/server/restservice/restservice.go:Serve',
+                    'backend/server/server.go:Serve',
+                    'backend/server/database/connection.go:BeforeQuery',
+                    'backend/server/database/connection.go:AfterQuery',
+                    'backend/server/restservice/middleware.go:loggingMiddleware',
+                    'backend/server/restservice/middleware.go:GlobalMiddleware',
+                    'backend/server/restservice/middleware.go:Authorizer',
+                    'backend/server/restservice/restservice.go:Listen',
+                    'backend/server/restservice/restservice.go:Shutdown',
+                    'backend/util/util.go:SetupLogging',
+                    'backend/util/util.go:UTCNow',
+                    'backend/server/restservice/restservice.go:prepareTLS',
+                    'backend/agent/prombind9exporter.go:Collect',
+                    'backend/agent/prombind9exporter.go:collectTime',
+                    'backend/agent/prombind9exporter.go:collectResolverStat',
+                    'backend/agent/prombind9exporter.go:collectResolverLabelStat',
+
+                    # Test function is currently no-op for Kea and thus it is sometimes reported
+                    # as untested even though the actual test exists.
+                    'backend/agent/kea.go:AwaitBackgroundTasks',
+
+                    # The Output method of the "systemCommandExecutor" structure encapsulates the
+                    # "exec.Command" call to allow mocking of the system response in unit tests. The
+                    # "exec.Command" cannot be directly mocked, so it is impossible to test the "Output"
+                    # method.
+                    'backend/util/util.go:Output',
+
+                    # We spent a lot of time to try test the main agent function. It is a problematic
+                    # function because it starts listening and blocks itself until receiving SIGINT.
+                    # Unfortunately, the signal handler isn't registered immediately after the function
+                    # begins but after a short period.
+                    # The unit tests for it were very unstable and time-depends. Additionally, the value
+                    # of these tests was relatively poor. This function shouldn't be executed by the unit
+                    # tests but rather by system tests.
+                    'backend/cmd/stork-agent/main.go:runAgent',
+
+                    # this requires interacting with terminal
+                    'backend/util/util.go:GetSecretInTerminal',
+                    'backend/util/util.go:IsRunningInTerminal',
+                    'backend/cmd/stork-agent/main.go:prompt',
+                    'backend/cmd/stork-agent/main.go:promptForMissingArguments',
+
+                    # This function has no lines of code, and due to this, it isn't recognized as covered.
+                    'backend/agent/promkeaexporter.go:Describe',
+
+                    # This file contains the wrapper for the "gopsutil" package to allow mocking
+                    # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
+                    'backend/agent/process.go',
+
+                    # Skip database migrations.
+                    'backend/server/database/migrations',
+
+                    # The main server function is currently untestable.
+                    'backend/cmd/stork-server/main.go:main',
+                    'backend/cmd/stork-server/main.go:mainLoop',
+
+                    # Skip auto-generated files.
+                    'backend/server/gen',
+                    'backend/api/agent.pb.go',
+                    'backend/api/agent_grpc.pb.go',
+
+                    # Skip test utils.
+                    # Testing coverage should ignore testutil because we don't require writing
+                    # tests for testing code. They can still be written but we shouldn't fail
+                    # if they are not.
+                    'backend/server/test',
+                    'backend/server/apps/test',
+                    'backend/server/agentcomm/test',
+                    'backend/server/database/test',
+                    'backend/server/database/model/test',
+                    'backend/testutil',
+
+                    # Skip hook boilerplate,
+                    'backend/hooksutil/boilerplate'
+                ]
+
+                unused_ignore_rules = ignore_list.to_set
+
                 problem = false
                 out.each_line do |line|
                     if line.start_with? 'total:'
@@ -211,90 +290,30 @@ namespace :unittest do
                     end
 
                     items = line.gsub(/\s+/m, ' ').strip.split(" ")
-                    file = items[0]
+                    file_with_line_number = items[0][0..-2] # Trim the trailing colon.
+                    file, _, line_number = file_with_line_number.rpartition(":")
                     func = items[1]
                     cov = items[2].strip()[0..-2].to_f
                     rel_path = file.gsub("isc.org/stork/", "backend/")
+                    func_path = "#{rel_path}:#{func}"
 
-                    ignore_list = [
-                        'DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
-                        'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
-                        'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
-                        'Listen', 'Shutdown', 'SetupLogging', 'UTCNow', 'detectApps',
-                        'prepareTLS', 'handleRequest', 'pullerLoop', 'Collect',
-                        'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
-
-                        # Test function is currently no-op for Kea and thus it is sometimes reported
-                        # as untested even though the actual test exists.
-                        'AwaitBackgroundTasks',
-
-                        # The Output method of the "systemCommandExecutor" structure encapsulates the
-                        # "exec.Command" call to allow mocking of the system response in unit tests. The
-                        # "exec.Command" cannot be directly mocked, so it is impossible to test the "Output"
-                        # method.
-                        'Output',
-
-                        # We spent a lot of time to try test the main agent function. It is a problematic
-                        # function because it starts listening and blocks itself until receiving SIGINT.
-                        # Unfortunately, the signal handler isn't registered immediately after the function
-                        # begins but after a short period.
-                        # The unit tests for it were very unstable and time-depends. Additionally, the value
-                        # of these tests was relatively poor. This function shouldn't be executed by the unit
-                        # tests but rather by system tests.
-                        'runAgent',
-
-                        # this requires interacting with terminal
-                        'GetSecretInTerminal', 'IsRunningInTerminal', 'prompt',
-                        'promptForMissingArguments',
-
-                        # This function has no lines of code, and due to this, it isn't recognized as covered.
-                        'agent/promkeaexporter.go:Describe',
-
-                        # This file contains the wrapper for the "gopsutil" package to allow mocking
-                        # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
-                        'isc.org/stork/agent/process.go',
-
-                        # Skip database migrations.
-                        'isc.org/stork/server/database/migrations',
-
-                        # The main server function is currently untestable.
-                        'isc.org/stork/cmd/stork-server/main.go',
-
-                        # Skip auto-generated files.
-                        'isc.org/stork/server/gen',
-                        'isc.org/stork/api/agent.pb.go',
-                        'isc.org/stork/api/agent_grpc.pb.go',
-
-                        # Skip test utils.
-                        # Testing coverage should ignore testutil because we don't require writing
-                        # tests for testing code. They can still be written but we shouldn't fail
-                        # if they are not.
-                        'isc.org/stork/server/test',
-                        'isc.org/stork/server/apps/test',
-                        'isc.org/stork/server/agentcomm/test',
-                        'isc.org/stork/server/database/test',
-                        'isc.org/stork/server/database/model/test',
-                        'isc.org/stork/testutil',
-
-                        # Skip hook boilerplate,
-                        'isc.org/stork/hooksutil/boilerplate'
-                    ]
                     if short == 'true'
                         ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
                                             'ExportSecret'])
                     end
 
-                    if cov < 35 and not ignore_list.include? func
-                        # Check if the file the whole package is ignored.
+                    if cov < 35
+                        # Check if the function or file is ignored.
                         should_ignore = false
                         ignore_list.each { |ignored|
-                            if file.start_with? ignored
+                            if func_path.start_with? ignored
                                 should_ignore = true
+                                unused_ignore_rules.delete ignored
                                 break
                             end
                         }
                         if not should_ignore
-                            puts "FAIL: %-85s %5s%% < 35%%" % ["#{rel_path} #{func}", "#{cov}"]
+                            puts "FAIL: %-85s %5s%% < 35%%" % [ "#{rel_path}:#{line_number} #{func}", cov]
                             problem = true
                         end
                     end
@@ -307,6 +326,10 @@ namespace :unittest do
 
                 if problem
                     fail("\nFAIL: Tests coverage is too low, add some tests\n\n")
+                else
+                    unused_ignore_rules.each do |item|
+                        warn "Unused ignore rule: #{item}"
+                    end
                 end
             end
         end
