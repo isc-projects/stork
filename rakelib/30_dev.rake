@@ -247,6 +247,9 @@ namespace :unittest do
                         'GetSecretInTerminal', 'IsRunningInTerminal', 'prompt',
                         'promptForMissingArguments',
 
+                        # This function has no lines of code, and due to this, it isn't recognized as covered.
+                        'agent/promkeaexporter.go:Describe',
+
                         # This file contains the wrapper for the "gopsutil" package to allow mocking
                         # of its calls. Due to the nature of the package, it is impossible to test the wrapper.
                         'isc.org/stork/agent/process.go',

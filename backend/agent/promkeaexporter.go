@@ -849,11 +849,6 @@ func (pke *PromKeaExporter) Collect(ch chan<- prometheus.Metric) {
 func (pke *PromKeaExporter) Describe(ch chan<- *prometheus.Desc) {
 	// Nothing is put in the channel in the Collect() method, so there is
 	// nothing to describe.
-	// The function must have any line of code; otherwise, the coverage check
-	// warns about 0% coverage. This is a workaround for the coverage check.
-	// The trace log level is not officially supported by Stork. It is more
-	// verbose than debug. This message should never be printed.
-	log.Trace("Describing metrics")
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
