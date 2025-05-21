@@ -1,4 +1,13 @@
 ; base zone file for bind9.example.org
+;
+; BIND can be configured to serve a secondary zone from a file,
+; but this file must have binary format. This text file is mounted
+; to the container and transformed before named startup using
+; named-compilezone.
+;
+; The zone is intentionally outdated comparing to the zone in the
+; primary to demonstrate the serial mismatch detection.
+;
 $TTL 2d
 $ORIGIN bind9.example.org.
 

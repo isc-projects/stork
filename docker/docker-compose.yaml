@@ -394,7 +394,7 @@ services:
       - "5302:53/tcp" # Expose DNS service to the host.
     volumes:
       - ./docker/config/agent-bind9-2/db.test:/etc/bind/db.test
-      - ./docker/config/agent-bind9-2/db.bind9.example.org:/etc/bind/db.bind9.example.org
+      - ./docker/config/agent-bind9-2/db.bind9.example.org.text:/etc/bind/db.bind9.example.org.text
       - ./docker/config/agent-bind9-2/named.conf:/etc/bind/named.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
