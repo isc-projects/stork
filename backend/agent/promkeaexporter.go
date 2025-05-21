@@ -308,10 +308,7 @@ func (l *lazySubnetPrefixLookup) setFamily(family int8) {
 	l.cached = false
 }
 
-// Main structure for Prometheus Kea Exporter. It holds its settings,
-// references to app monitor, CA client, HTTP server, and main loop
-// controlling elements like ticker, and mappings between kea stats
-// names to prometheus stats.
+// Main structure for Prometheus Kea Exporter.
 type PromKeaExporter struct {
 	Host string
 	Port int
