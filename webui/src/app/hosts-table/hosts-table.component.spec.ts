@@ -140,10 +140,10 @@ describe('HostsTableComponent', () => {
     it('should ask for confirmation before migrating hosts', fakeAsync(() => {
         dhcpServiceSpy.startHostsMigration.and.returnValue(of({}) as any)
 
-        component.validFilter = {
-            appId: 1,
-            isGlobal: true,
-            text: 'foo',
+        component.table.filters = {
+            appId: { value: 1 },
+            isGlobal: { value: true },
+            text: { value: 'foo' },
         }
 
         component.migrateToDatabaseAsk()
@@ -156,49 +156,45 @@ describe('HostsTableComponent', () => {
         confirmDialog.accept()
         tick()
 
-        expect(dhcpServiceSpy.startHostsMigration).toHaveBeenCalledWith(
-            component.validFilter.appId,
-            component.validFilter.subnetId,
-            component.validFilter.keaSubnetId,
-            component.validFilter.text,
-            component.validFilter.isGlobal
-        )
+        expect(dhcpServiceSpy.startHostsMigration).toHaveBeenCalledWith(1, null, null, 'foo', true)
     }))
 
     it('should extract filter entries properly', () => {
         // Empty filter. Conflict is set to true by default.
-        component.validFilter = {}
+        component.table.filters = {
+            conflict: { value: null },
+        }
         expect(component.migrationFilterEntries).toEqual([['Conflict', 'false']])
 
-        component.validFilter = {
-            appId: 42,
+        component.table.filters = {
+            appId: { value: 42 },
         }
         expect(component.migrationFilterEntries).toEqual([
             ['App Id', '42'],
             ['Conflict', 'false'],
         ])
 
-        component.validFilter = {
-            isGlobal: true,
+        component.table.filters = {
+            isGlobal: { value: true },
         }
         expect(component.migrationFilterEntries).toEqual([
             ['Conflict', 'false'],
             ['Is Global', 'true'],
         ])
 
-        component.validFilter = {
-            isGlobal: false,
+        component.table.filters = {
+            isGlobal: { value: false },
         }
         expect(component.migrationFilterEntries).toEqual([
             ['Conflict', 'false'],
             ['Is Global', 'false'],
         ])
 
-        component.validFilter = {
-            appId: 1,
-            subnetId: 1,
-            isGlobal: false,
-            text: 'foo',
+        component.table.filters = {
+            appId: { value: 1 },
+            subnetId: { value: 1 },
+            isGlobal: { value: false },
+            text: { value: 'foo' },
         }
         expect(component.migrationFilterEntries).toEqual([
             ['App Id', '1'],

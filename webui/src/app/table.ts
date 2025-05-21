@@ -305,18 +305,6 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
             table.restoringFilter = false
         }
 
-        // Set filters to a valid filter. Restoring filters from state is
-        // incompatible with query params.
-        for (const key of Object.keys(table.filters)) {
-            const meta = table.filters[key]
-            const value = this.validFilter[key as keyof TFilter]
-            if (Array.isArray(meta)) {
-                meta.forEach((m) => (m.value = value))
-            } else {
-                meta.value = value
-            }
-        }
-
         // Backup restored data to properties.
         // They will be used when PrimeNG table is not available.
         // Use case: navigation back from detailed host view tab (index > 0)
@@ -369,8 +357,6 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
      * Filter handlers are subscribed.
      */
     onInit(): void {
-        this.subscribeFilterHandlers()
-
         this.dataLoading = true
 
         const paramMap = this._route.snapshot.paramMap
@@ -384,52 +370,28 @@ export abstract class PrefilteredTable<TFilter extends BaseQueryParamFilter, TRe
                 ? `${this.stateKeyPrefix}-${this.prefilterValue}`
                 : `${this.stateKeyPrefix}-all`
         }
+
+        this.subscribeFilterHandlers()
     }
 
     /**
      * Callback method called when PrimeNG table was filtered.
      * This method is supposed to be bound to PrimeNG Table "onFilter" output property EventEmitter.
      * e.g. (onFilter)="onFilter()"
-     * This method is called AFTER onLazyLoad() callback, so the data is already loaded.
      */
     onFilter(): void {
-        const newFilter = this.parseTableFilters(this.table.filters)
-
-        if (JSON.stringify(newFilter) === JSON.stringify(this.validFilter)) {
-            return
-        }
-
-        const errors = this.validateFilter(newFilter as TFilter)
-        if (errors.length !== 0) {
-            this.filterTextFormatErrors = errors
-            return
-        }
-
-        this.validFilter = newFilter as TFilter
-        this.updateQueryParameters()
-    }
-
-    /**
-     * Parses PrimeNG table filters and returns a new filter object.
-     *
-     * @param filters filters object provided by PrimeNG table
-     * @returns
-     */
-    private parseTableFilters(filters: Record<string, FilterMetadata | FilterMetadata[]>): TFilter {
-        const newFilter = {}
-        for (const [filterKey, filterMetadata] of Object.entries(filters)) {
-            let value: any
-            if (Array.isArray(filterMetadata)) {
-                value = filterMetadata.map((filter) => filter.value)
-            } else {
-                value = filterMetadata.value
-            }
-
-            if (value != null) {
-                newFilter[filterKey] = value
+        let change = false
+        for (const k of Object.keys(this.validFilter)) {
+            if (this.validFilter[k] != null && this.getTableFilterValue(k) != this.validFilter[k]) {
+                // This filter was either cleared or edited, so delete it from validFilter.
+                change = true
+                delete this.validFilter[k]
             }
         }
-        return newFilter as TFilter
+
+        if (change) {
+            this.updateQueryParameters()
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
 import { last, lastValueFrom } from 'rxjs'
+import { FilterMetadata } from 'primeng/api/filtermetadata'
 
 /**
  * Specifies the filter parameters for fetching hosts that may be specified
@@ -232,11 +233,11 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
                 // User confirmed the migration.
                 this.dhcpApi
                     .startHostsMigration(
-                        this.validFilter.appId,
-                        this.validFilter.subnetId,
-                        this.validFilter.keaSubnetId,
-                        this.validFilter.text,
-                        this.validFilter.isGlobal
+                        this.prefilterValue ?? this.getTableFilterValue('appId'),
+                        this.getTableFilterValue('subnetId'),
+                        this.getTableFilterValue('keaSubnetId'),
+                        this.getTableFilterValue('text'),
+                        this.getTableFilterValue('isGlobal')
                     )
                     .pipe(last())
                     .subscribe({
@@ -256,16 +257,15 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
     }
 
     /**
-     * Returns entries of the valid filter that will be used to migrate the
+     * Returns entries of the table filter that will be used to migrate the
      * hosts. The keys are uncamelized and capitalized. The conflict key is
      * always false.
      */
     get migrationFilterEntries() {
-        const migrationFilter = { ...this.validFilter }
-        migrationFilter.conflict = false
-        return Object.entries(migrationFilter)
-            .filter(([_key, value]) => value != null)
-            .map(([key, value]) => [uncamelCase(key), value.toString()])
+        const filters = { ...this.table?.filters, ...{ conflict: { value: false } } }
+        return Object.entries(filters)
+            .filter(([, filterMetadata]) => (<FilterMetadata>filterMetadata).value != null)
+            .map(([key, filterMetadata]) => [uncamelCase(key), filterMetadata.value.toString()])
             .sort(([key1], [key2]) => key1.localeCompare(key2))
     }
 }
