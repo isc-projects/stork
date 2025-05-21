@@ -2,8 +2,8 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
-import { DHCPService, DNSService, ServicesService } from '../backend/api/api'
-import { AppsStats } from '../backend/model/appsStats'
+import { DHCPService, DNSService, ServicesService } from '../backend'
+import { AppsStats } from '../backend'
 import {
     datetimeToLocal,
     durationToString,
@@ -29,7 +29,7 @@ import {
 } from '../backend'
 import { ModifyDeep } from '../utiltypes'
 import { TableLazyLoadEvent } from 'primeng/table'
-import { getSeverity, getTooltip } from '../zones-page/zones-page.component'
+import { getSeverity, getTooltip } from '../zone-inventory-utils'
 
 type DhcpOverviewParsed = ModifyDeep<
     DhcpOverview,
