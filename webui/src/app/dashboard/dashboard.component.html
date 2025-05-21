@@ -418,12 +418,11 @@
                     <ng-template pTemplate="header">
                         <tr>
                             <th>Host</th>
-                            <th>Address</th>
-                            <th>App Name</th>
                             <th>App Version</th>
+                            <th>App Name</th>
                             <th>Daemon</th>
                             <th>Status</th>
-                            <th>Uptime</th>
+                            <th>Zone Fetch Status</th>
                             <th
                                 pTooltip="Zone config is a zone specification in the BIND9 view.
                             If the zone appears in several views, this count is increased
@@ -433,22 +432,18 @@
                             >
                                 Zone Configs Count
                             </th>
-                            <th>Zone Fetch Status</th>
+                            <th>Uptime</th>
                         </tr>
                     </ng-template>
                     <ng-template pTemplate="body" let-a>
                         <tr>
                             <td>
-                                <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.hostname }}</a>
+                                <a *ngIf="a.machine?.id" routerLink="/machines/{{ a.machine.id }}">{{
+                                    a.machine?.hostname ?? 'unknown'
+                                }}</a>
                             </td>
                             <td>
-                                <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.address }}</a>
-                            </td>
-                            <td>
-                                <a routerLink="/apps/bind9/{{ a.id }}">{{ a.name }}</a>
-                            </td>
-                            <td>
-                                <a routerLink="/apps/bind9/{{ a.id }}"
+                                <a *ngIf="a.id" routerLink="/apps/bind9/{{ a.id }}"
                                     ><app-version-status
                                         [app]="a.type"
                                         [version]="a.version"
@@ -456,10 +451,13 @@
                                     ></app-version-status
                                 ></a>
                             </td>
-                            <td>{{ a?.details?.daemon?.name ?? 'unknown' }}</td>
+                            <td>
+                                <a *ngIf="a.id" routerLink="/apps/bind9/{{ a.id }}">{{ a.name ?? 'unknown' }}</a>
+                            </td>
+                            <td>{{ a.details?.daemon?.name ?? 'unknown' }}</td>
                             <td>
                                 <i
-                                    *ngIf="a?.details?.daemon"
+                                    *ngIf="a.details?.daemon"
                                     pTooltip="{{ daemonStatusIconTooltip(a.details.daemon) }}"
                                     class="{{ daemonStatusIconName(a.details.daemon) }} text-2xl"
                                     [ngStyle]="{
@@ -467,17 +465,8 @@
                                     }"
                                 ></i>
                             </td>
-                            <td>{{ showDuration(a?.details?.daemon?.uptime ?? 0) }}</td>
                             <td>
-                                <ng-container *ngIf="zoneInventoryStateMap.get(a.id)">
-                                    <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">{{
-                                        zoneInventoryStateMap.get(a.id).zoneCount ?? 0
-                                    }}</a>
-                                </ng-container>
-                                <ng-container *ngIf="!zoneInventoryStateMap.get(a.id)"> n/a </ng-container>
-                            </td>
-                            <td>
-                                <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">
+                                <a *ngIf="a.id" routerLink="/dns/zones" [queryParams]="{ appId: a.id }">
                                     {{ !zoneInventoryStateMap.get(a.id) ? 'n/a' : '' }}
                                     <p-tag
                                         *ngIf="zoneInventoryStateMap.get(a.id)"
@@ -491,6 +480,15 @@
                                     />
                                 </a>
                             </td>
+                            <td>
+                                <ng-container *ngIf="zoneInventoryStateMap.get(a.id)">
+                                    <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">{{
+                                        zoneInventoryStateMap.get(a.id).zoneCount ?? 0
+                                    }}</a>
+                                </ng-container>
+                                <ng-container *ngIf="!zoneInventoryStateMap.get(a.id)"> n/a </ng-container>
+                            </td>
+                            <td>{{ showDuration(a.details?.daemon?.uptime ?? 0) }}</td>
                         </tr>
                     </ng-template>
                 </p-table>
