@@ -51,8 +51,8 @@ export type ManagedAccessEntity =
     | 'daemon-monitoring'
     | 'leases'
     | 'swagger'
-    | 'all-users'
-    | 'specific-user'
+    | 'users'
+    | 'user'
     | 'user-password'
     | 'json-config-secret'
     | 'events'
@@ -276,10 +276,10 @@ export class AuthService {
                 case 'app-access-point-key': // Admin role is not enough to see Access Point Key (it is secret).
                 case 'machines-server-token': // Admin role is not enough to see server token (it is secret).
                 case 'machine-authorization': // Admin role is not enough to authorize or unauthorize machine.
-                case 'all-users': // Admin role can't even read all users.
+                case 'users': // Admin role can't even read all users.
                 case 'json-config-secret': // Admin role is not enough to see secrets in configs.
                     return false
-                case 'specific-user':
+                case 'user':
                     return accessType === 'read' // Admin group can only read their own user data.
                 case 'machine':
                     return accessType !== 'delete' // Admin group can't delete machines.
@@ -290,7 +290,7 @@ export class AuthService {
             switch (entityKey) {
                 case 'app-access-point-key':
                 case 'machines-server-token':
-                case 'all-users':
+                case 'users':
                 case 'json-config-secret':
                     return false
                 case 'user-password':

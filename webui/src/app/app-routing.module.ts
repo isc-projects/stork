@@ -166,7 +166,7 @@ const routes: Routes = [
         path: 'users/:id',
         component: UsersPageComponent,
         canActivate: [AuthGuard],
-        data: { key: 'all-users' },
+        data: { key: 'users' },
     },
     {
         path: 'settings',

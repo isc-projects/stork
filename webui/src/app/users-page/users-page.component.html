@@ -57,7 +57,7 @@
                 icon="pi pi-plus"
                 style="margin-right: 20px"
                 (click)="showNewUserTab()"
-                appAccessEntity="all-users"
+                appAccessEntity="users"
                 appAccessType="create"
             ></button>
         </div>
@@ -120,7 +120,7 @@
     </p-table>
 </div>
 
-<div *ngIf="existingUserTab" class="p-component" appAccessEntity="specific-user">
+<div *ngIf="existingUserTab" class="p-component" appAccessEntity="user">
     <div style="display: flex; margin: 10px">
         <div class="grid mt-2 max-w-50rem">
             <div class="col-12 sm:col-3">
@@ -193,7 +193,7 @@
                     icon="pi pi-pencil"
                     (click)="editUserInfo(userTab)"
                     class="flex-none"
-                    appAccessEntity="all-users"
+                    appAccessEntity="users"
                     appAccessType="update"
                 ></button>
                 <button
@@ -204,7 +204,7 @@
                     id="delete-user-button"
                     icon="pi pi-trash"
                     (click)="confirmDeleteUser()"
-                    appAccessEntity="specific-user"
+                    appAccessEntity="user"
                     appAccessType="delete"
                 ></button>
             </div>
@@ -443,7 +443,7 @@
                                 label="Save"
                                 id="save-button"
                                 (click)="userFormSave()"
-                                appAccessEntity="all-users"
+                                appAccessEntity="users"
                                 [appAccessType]="newUserTab ? 'create' : 'update'"
                             ></button>
                             <button
