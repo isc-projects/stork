@@ -106,7 +106,7 @@ export class AuthService {
                 }
 
                 // No authenticated user, so let's check if it can be retrieved from backend.
-                // TODO: Check if session cookie exists. If not, there is no point in sending this request.
+                // TODO: #1815 - Check if session cookie exists. If not, there is no point in sending this request.
                 return this.api.getSession().pipe(
                     tap((u: User) => {
                         if (u) {
@@ -178,7 +178,7 @@ export class AuthService {
             .subscribe({
                 next: (user) => {
                     if (user.id != null) {
-                        // TODO: retrieve expiry date of the session cookie so that it can be used in the UI.
+                        // TODO: #1815 - retrieve expiry date of the session cookie so that it can be used in the UI.
                         this._currentUserSubject.next(user)
                         // ToDo: Unhandled exception from promise
                         this.router.navigateByUrl(returnUrl)
@@ -267,7 +267,7 @@ export class AuthService {
      */
     hasPrivilege(entityKey: ManagedAccessEntity, accessType: AccessType = 'read'): boolean {
         // For now all privileges are checked based on group that user belongs to.
-        // TODO: Privileges should be retrieved from backend when user gets authenticated. All privileges should be destroyed at logout.
+        // TODO: #1794 - Privileges should be retrieved from backend as part of the User context when user gets authenticated.
         if (this.superAdmin()) {
             // User that belongs to SuperAdmin group, has all privileges.
             return true
