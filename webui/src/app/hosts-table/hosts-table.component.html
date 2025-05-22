@@ -41,7 +41,7 @@
     <p-button
         label="Migrate to Database"
         icon="pi pi-database"
-        [disabled]="!totalRecords"
+        [disabled]="!totalRecords || isFilteredByConflict()"
         styleClass="block p-button-primary no-underline"
         (onClick)="migrateToDatabaseAsk()"
     ></p-button>

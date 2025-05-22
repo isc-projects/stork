@@ -267,4 +267,11 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
             .map(([key, filterMetadata]) => [uncamelCase(key), filterMetadata.value.toString()])
             .sort(([key1], [key2]) => key1.localeCompare(key2))
     }
+
+    /**
+     * Returns true when there is filtering by hosts that are in conflict enabled; false otherwise.
+     */
+    isFilteredByConflict(): boolean {
+        return (<FilterMetadata>this.table?.filters['conflict'])?.value === true
+    }
 }
