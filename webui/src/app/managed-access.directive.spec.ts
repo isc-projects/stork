@@ -7,6 +7,7 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { By } from '@angular/platform-browser'
+import { provideAnimations } from '@angular/platform-browser/animations'
 
 @Component({
     standalone: true,
@@ -57,7 +58,12 @@ describe('ManagedAccessDirective', () => {
         await TestBed.configureTestingModule({
             declarations: [],
             imports: [TestHostComponent],
-            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting(), MessageService],
+            providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting(),
+                MessageService,
+                provideAnimations(),
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(TestHostComponent)

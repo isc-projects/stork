@@ -1,5 +1,15 @@
-import { AfterViewInit, Directive, ElementRef, EventEmitter, Input, Output, Renderer2 } from '@angular/core'
+import {
+    AfterViewInit,
+    Directive,
+    ElementRef,
+    EventEmitter,
+    Input,
+    Output,
+    Renderer2,
+    ViewContainerRef,
+} from '@angular/core'
 import { AccessType, AuthService, ManagedAccessEntity } from './auth.service'
+import { Messages } from 'primeng/messages'
 
 /**
  * This directive is meant to check authorization privileges for given entity.
@@ -45,7 +55,8 @@ export class ManagedAccessDirective implements AfterViewInit {
     constructor(
         private authService: AuthService,
         private elementRef: ElementRef,
-        private renderer: Renderer2
+        private renderer: Renderer2,
+        private viewRef: ViewContainerRef
     ) {}
 
     ngAfterViewInit(): void {
@@ -85,16 +96,18 @@ export class ManagedAccessDirective implements AfterViewInit {
                 return
             }
 
-            // If this is not a PrimeNG element and hideOnNoAccess was not set, display simple warning message.
-            this.htmlElement.innerHTML =
-                '<div role="alert" class="p-messages p-component">' +
-                '<div role="alert" class="p-message p-message-warn max-w-40rem">' +
-                '<div class="p-message-wrapper">' +
-                '<span class="p-message-summary">You don\'t have ' +
-                this.accessType +
-                ' privileges to display this UI component.<br>If you think this is unexpected, please contact your Stork system administrator.</span>' +
-                '</div>' +
-                '</div>'
+            const messages = this.viewRef.createComponent(Messages)
+            messages.instance.severity = 'warn'
+            messages.instance.closable = false
+            messages.instance.value = [
+                {
+                    severity: 'warn',
+                    summary: 'Access Denied',
+                    detail: `You don\'t have ${this.accessType} privileges to display this UI component.`,
+                    closable: false,
+                },
+            ]
+            this.htmlElement.replaceChildren(messages.instance.el.nativeElement)
         }
     }
 
