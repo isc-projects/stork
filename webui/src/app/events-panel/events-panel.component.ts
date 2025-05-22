@@ -103,6 +103,13 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
      */
     private _initialized = false
 
+    /**
+     * Returns boolean flag stating whether user has privileges to retrieve the events from backend.
+     */
+    get canReadEvents(): boolean {
+        return this.auth.hasPrivilege('events')
+    }
+
     constructor(
         private eventsApi: EventsService,
         private usersApi: UsersService,
@@ -243,7 +250,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
      */
     refreshEvents(event) {
         // In case of lack of privileges, do not fetch events.
-        if (!this.auth.hasPrivilege('events')) {
+        if (!this.canReadEvents) {
             return
         }
 

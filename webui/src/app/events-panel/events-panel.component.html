@@ -130,7 +130,11 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <tr>
-            <td colspan="4"><div class="events-table__empty">No events found</div></td>
+            <td colspan="4">
+                <div class="events-table__empty">
+                    {{ canReadEvents ? 'No events found' : "You don't have privileges to retrieve the events." }}
+                </div>
+            </td>
         </tr>
     </ng-template>
 </p-table>
