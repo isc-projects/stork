@@ -624,7 +624,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	}
 	err = r.SessionManager.UpdateUser(ctx, su)
 	if err != nil {
-		msg := fmt.Sprintf("Failed to update session data for user with ID %d", id)
+		msg := "Failed to update session data"
 		log.WithFields(log.Fields{
 			"userID": id,
 		}).WithError(err).Error(msg)
