@@ -210,16 +210,6 @@ func (r *RestAPI) GetSession(ctx context.Context, params users.GetSessionParams)
 		return users.NewGetSessionNotFound()
 	}
 
-	if user == nil {
-		msg := "Can't retrieve user for existing session"
-		log.Error(msg)
-		rspErr := models.APIError{
-			Message: &msg,
-		}
-		rsp := users.NewGetSessionDefault(http.StatusInternalServerError).WithPayload(&rspErr)
-		return rsp
-	}
-
 	rspUser := newRestUser(*user)
 	return users.NewGetSessionOK().WithPayload(rspUser)
 }
