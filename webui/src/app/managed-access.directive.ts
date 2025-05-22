@@ -17,21 +17,21 @@ import { Messages } from 'primeng/messages'
  * For most of the cases it will disable the UI element and the element will no longer be clickable.
  */
 @Directive({
-    selector: '[appManagedAccess]',
+    selector: '[appAccessEntity]',
     standalone: true,
 })
 export class ManagedAccessDirective implements AfterViewInit {
     /**
      * Identifies the entity for which the access will be checked.
      */
-    @Input({ required: true }) appManagedAccess: ManagedAccessEntity
+    @Input({ required: true }) appAccessEntity: ManagedAccessEntity
 
     /**
      * Required access type to access the entity. Possible types follow CRUD naming convention:
      * create, read, update, delete.
      * Defaults to 'read' access type.
      */
-    @Input() accessType: AccessType = 'read'
+    @Input() appAccessType: AccessType = 'read'
 
     /**
      * Optional input boolean flag which simplifies the directive usage. Defaults to false.
@@ -39,12 +39,12 @@ export class ManagedAccessDirective implements AfterViewInit {
      * When set to false (default), it means that the component will be rendered as disabled (if the component is a PrimeNG element),
      * or warning message will be displayed informing of lack of privileges.
      */
-    @Input() hideOnNoAccess: boolean = false
+    @Input() appHideIfNoAccess: boolean = false
 
     /**
      * Output boolean property emitting whenever hasAccess changes.
      */
-    @Output() hasAccess: EventEmitter<boolean> = new EventEmitter()
+    @Output() appHasAccess: EventEmitter<boolean> = new EventEmitter()
 
     /**
      * Title content set for disabled buttons.
@@ -60,10 +60,10 @@ export class ManagedAccessDirective implements AfterViewInit {
     ) {}
 
     ngAfterViewInit(): void {
-        const hasAccess = this.authService.hasPrivilege(this.appManagedAccess, this.accessType)
-        this.hasAccess.emit(hasAccess)
+        const hasAccess = this.authService.hasPrivilege(this.appAccessEntity, this.appAccessType)
+        this.appHasAccess.emit(hasAccess)
         if (!hasAccess) {
-            if (this.hideOnNoAccess) {
+            if (this.appHideIfNoAccess) {
                 // Replace the element with an empty inline span.
                 this.htmlElement.innerText = ''
                 this.htmlElement.outerHTML = '<span></span>'
@@ -76,7 +76,7 @@ export class ManagedAccessDirective implements AfterViewInit {
 
                 // If this is a <button> element with PrimeNG pButton directive applied...
                 if (this.htmlElement.nodeName.toUpperCase() === 'BUTTON') {
-                    this.setButtonAttributes(this.htmlElement)
+                    this.setDisabledAttributes(this.htmlElement)
                     return
                 }
 
@@ -87,7 +87,7 @@ export class ManagedAccessDirective implements AfterViewInit {
                 })
                 this.htmlElement.querySelectorAll('input,button').forEach((el) => {
                     // Set attributes and classes for all input and button elements found inside.
-                    this.setButtonAttributes(<HTMLElement>el)
+                    this.setDisabledAttributes(<HTMLElement>el)
                     this.setDisabledClasses(<HTMLElement>el)
                 })
 
@@ -103,7 +103,7 @@ export class ManagedAccessDirective implements AfterViewInit {
                 {
                     severity: 'warn',
                     summary: 'Access Denied',
-                    detail: `You don\'t have ${this.accessType} privileges to display this UI component.`,
+                    detail: `You don\'t have ${this.appAccessType} privileges to display this UI component.`,
                     closable: false,
                 },
             ]
@@ -124,7 +124,7 @@ export class ManagedAccessDirective implements AfterViewInit {
      * @param el button HTML element
      * @private
      */
-    private setButtonAttributes(el: HTMLElement): void {
+    private setDisabledAttributes(el: HTMLElement): void {
         this.renderer.setAttribute(el, 'disabled', 'disabled')
         this.renderer.setAttribute(el, 'title', this._title)
     }

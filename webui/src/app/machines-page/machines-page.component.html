@@ -37,7 +37,7 @@
     </div>
 </app-breadcrumbs>
 
-<div appManagedAccess="machine-address" accessType="update" [hideOnNoAccess]="true">
+<div appAccessEntity="machine-address" appAccessType="update" [appHideIfNoAccess]="true">
     <p-dialog
         header="Change Machine Address"
         [(visible)]="changeMachineAddressDialogVisible"
@@ -92,7 +92,7 @@
     </p-dialog>
 </div>
 
-<div accessType="read" appManagedAccess="machines-server-token" [hideOnNoAccess]="true">
+<div appAccessType="read" appAccessEntity="machines-server-token" [appHideIfNoAccess]="true">
     <p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
         <p class="max-w-40rem my-2 mr-2">
             Copy these commands and paste them into a terminal on the machine where the Stork agent is being installed.
@@ -139,8 +139,8 @@ sudo ./stork-install-agent.sh</textarea
                 class="p-button-secondary"
                 (click)="regenerateServerToken()"
                 id="regenerate-server-token-button"
-                appManagedAccess="machines-server-token"
-                accessType="update"
+                appAccessEntity="machines-server-token"
+                appAccessType="update"
             ></button>
         </p>
         <p class="max-w-40rem mb-2 mr-2">
@@ -202,8 +202,8 @@ sudo ./stork-install-agent.sh</textarea
                 icon="pi pi-download"
                 (click)="showAgentInstallationInstruction()"
                 id="show-agent-installation-instruction-button"
-                appManagedAccess="machines-server-token"
-                accessType="read"
+                appAccessEntity="machines-server-token"
+                appAccessType="read"
             ></button>
 
             <p-selectButton
@@ -258,8 +258,8 @@ sudo ./stork-install-agent.sh</textarea
                     styleClass="ml-1"
                     id="edit-machine-icon"
                     (onClick)="editAddress(machineTab)"
-                    appManagedAccess="machine-address"
-                    accessType="update"
+                    appAccessEntity="machine-address"
+                    appAccessType="update"
                     [rounded]="true"
                     [text]="true"
                     severity="secondary"

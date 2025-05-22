@@ -13,22 +13,22 @@ import { provideAnimations } from '@angular/platform-browser/animations'
     standalone: true,
     template: `<p-button
             label="Create"
-            appManagedAccess="subnet"
-            accessType="create"
+            appAccessEntity="subnet"
+            appAccessType="create"
             (onClick)="wasCreated = true"
-            (hasAccess)="hasCreateAccess = $event"
+            (appHasAccess)="hasCreateAccess = $event"
         />
         <p-button
             label="Read"
-            appManagedAccess="subnet"
-            accessType="read"
+            appAccessEntity="subnet"
+            appAccessType="read"
             (onClick)="wasRead = true"
-            (hasAccess)="hasReadAccess = $event"
+            (appHasAccess)="hasReadAccess = $event"
         />
-        <p-button label="Update" appManagedAccess="subnet" accessType="update" (onClick)="wasUpdated = true" />
-        <p-button label="Delete" appManagedAccess="subnet" accessType="delete" (onClick)="wasDeleted = true" />
-        <div appManagedAccess="subnet" accessType="create">This is subnet creation form.</div>
-        <div appManagedAccess="subnet" accessType="delete" [hideOnNoAccess]="true">
+        <p-button label="Update" appAccessEntity="subnet" appAccessType="update" (onClick)="wasUpdated = true" />
+        <p-button label="Delete" appAccessEntity="subnet" appAccessType="delete" (onClick)="wasDeleted = true" />
+        <div appAccessEntity="subnet" appAccessType="create">This is subnet creation form.</div>
+        <div appAccessEntity="subnet" appAccessType="delete" [appHideIfNoAccess]="true">
             This is subnet removal component.
         </div> `,
     imports: [ManagedAccessDirective, Button],

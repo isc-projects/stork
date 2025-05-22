@@ -1,5 +1,5 @@
 <div class="grid m-0">
-    <div appManagedAccess="app" accessType="update" [hideOnNoAccess]="true">
+    <div appAccessEntity="app" appAccessType="update" [appHideIfNoAccess]="true">
         <app-rename-app-dialog
             [appId]="appTab.app.id"
             [appName]="appTab.app.name"
@@ -23,8 +23,8 @@
                             styleClass="ml-1"
                             id="rename-app-icon"
                             (onClick)="showRenameAppDialog()"
-                            appManagedAccess="app"
-                            accessType="update"
+                            appAccessEntity="app"
+                            appAccessType="update"
                             [rounded]="true"
                             [text]="true"
                             severity="secondary"

@@ -45,14 +45,14 @@
         (onClick)="migrateToDatabaseAsk()"
     ></p-button>
     <a
-            label="New Host"
-            icon="pi pi-plus"
-            class="block p-button p-button-primary no-underline"
-            type="button"
-            routerLink="/dhcp/hosts/new"
-            pButton
-            appManagedAccess="host-reservation"
-            accessType="create"
+        label="New Host"
+        icon="pi pi-plus"
+        class="block p-button p-button-primary no-underline"
+        type="button"
+        routerLink="/dhcp/hosts/new"
+        pButton
+        appAccessEntity="host-reservation"
+        appAccessType="create"
     ></a>
     <p-button
         label="Refresh List"

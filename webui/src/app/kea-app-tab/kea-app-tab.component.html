@@ -1,5 +1,5 @@
 <div class="grid m-0">
-    <div appManagedAccess="app" accessType="update" [hideOnNoAccess]="true">
+    <div appAccessEntity="app" appAccessType="update" [appHideIfNoAccess]="true">
         <app-rename-app-dialog
             [appId]="appTab.app.id"
             [appName]="appTab.app.name"
@@ -23,8 +23,8 @@
                             styleClass="ml-1"
                             id="rename-app-icon"
                             (onClick)="showRenameAppDialog()"
-                            appManagedAccess="app"
-                            accessType="update"
+                            appAccessEntity="app"
+                            appAccessType="update"
                             [rounded]="true"
                             [text]="true"
                             severity="secondary"
@@ -68,8 +68,8 @@
                                 [ngModel]="daemon.monitored"
                                 (onChange)="changeMonitored(daemon)"
                                 inputId="monitored-switch"
-                                appManagedAccess="daemon-monitoring"
-                                accessType="update"
+                                appAccessEntity="daemon-monitoring"
+                                appAccessType="update"
                             ></p-inputSwitch>
                             <label for="monitored-switch" class="ml-2 my-auto">Monitoring</label>
                         </div>
@@ -82,7 +82,7 @@
                             class="p-button-secondary mr-2 my-2"
                             type="button"
                             pButton
-                            appManagedAccess="host-reservation"
+                            appAccessEntity="host-reservation"
                         ></button>
                         <button
                             *ngIf="isDhcpDaemon(daemon)"
@@ -93,7 +93,7 @@
                             type="button"
                             class="p-button-secondary mr-2 my-2"
                             pButton
-                            appManagedAccess="subnet"
+                            appAccessEntity="subnet"
                         ></button>
                         <button
                             *ngIf="isDhcpDaemon(daemon)"
@@ -104,7 +104,7 @@
                             class="p-button-secondary mr-2 my-2"
                             type="button"
                             pButton
-                            appManagedAccess="shared-network"
+                            appAccessEntity="shared-network"
                         ></button>
                         <button
                             *ngIf="isDhcpDaemon(daemon)"
@@ -114,7 +114,7 @@
                             class="p-button-secondary mr-2 my-2"
                             type="button"
                             pButton
-                            appManagedAccess="daemon-global-config"
+                            appAccessEntity="daemon-global-config"
                         ></button>
                         <!-- Using anchor tag allows to open page in new tab by hold Ctrl and click on it -->
                         <a
@@ -124,7 +124,7 @@
                             type="button"
                             routerLink="/apps/kea/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
                             pButton
-                            appManagedAccess="daemon-config"
+                            appAccessEntity="daemon-config"
                         ></a>
                     </div>
 
@@ -330,7 +330,7 @@
                                                     [text]="true"
                                                     *ngIf="logTargetViewable(logTarget.output)"
                                                     routerLink="/logs/{{ logTarget.id }}"
-                                                    appManagedAccess="logs"
+                                                    appAccessEntity="logs"
                                                     ><i>{{ logTarget.output }}</i></a
                                                 >
                                             </td>

@@ -54,8 +54,8 @@
                     icon="pi pi-download"
                     (onClick)="sendPutZonesFetch(true)"
                     [disabled]="fetchInProgress || putZonesFetchLocked"
-                    appManagedAccess="zones"
-                    accessType="update"
+                    appAccessEntity="zones"
+                    appAccessType="update"
                 />
             </ng-container>
             <p *ngIf="wasZoneFetchSent()">
@@ -218,8 +218,8 @@ for each occurrence of that zone.
                 (onClick)="sendPutZonesFetch()"
                 [disabled]="fetchInProgress || putZonesFetchLocked"
                 id="fetch-zones"
-                appManagedAccess="zones"
-                accessType="update"
+                appAccessEntity="zones"
+                appAccessType="update"
             />
             <p-button
                 label="Refresh List"

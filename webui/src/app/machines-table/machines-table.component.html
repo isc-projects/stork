@@ -12,8 +12,8 @@
         styleClass="block p-button-primary no-underline"
         (onClick)="onAuthorizeSelectedMachinesClicked(selectedMachines)"
         id="authorize-selected-button"
-        appManagedAccess="machine-authorization"
-        accessType="update"
+        appAccessEntity="machine-authorization"
+        appAccessType="update"
     ></p-button>
     <p-button
         label="Refresh List"
@@ -136,8 +136,8 @@
         <tr>
             <th *ngIf="unauthorizedMachinesDisplayed()" class="w-4rem">
                 <p-tableHeaderCheckbox
-                    appManagedAccess="machine-authorization"
-                    accessType="update"
+                    appAccessEntity="machine-authorization"
+                    appAccessType="update"
                 ></p-tableHeaderCheckbox>
             </th>
             <th class="w-8rem">Hostname</th>
@@ -204,8 +204,8 @@
                 <p-tableCheckbox
                     [value]="m"
                     [disabled]="m.authorized"
-                    appManagedAccess="machine-authorization"
-                    accessType="update"
+                    appAccessEntity="machine-authorization"
+                    appAccessType="update"
                 ></p-tableCheckbox>
             </td>
             <td>

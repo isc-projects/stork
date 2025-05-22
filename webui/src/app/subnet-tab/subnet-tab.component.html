@@ -224,8 +224,8 @@
             icon="pi pi-pencil"
             class="p-button-info ml-2"
             (click)="onSubnetEditBegin()"
-            appManagedAccess="subnet"
-            accessType="update"
+            appAccessEntity="subnet"
+            appAccessType="update"
         ></button>
         <button
             type="button"
@@ -235,8 +235,8 @@
             icon="pi pi-times"
             class="p-button-danger ml-2"
             (click)="confirmDeleteSubnet()"
-            appManagedAccess="subnet"
-            accessType="delete"
+            appAccessEntity="subnet"
+            appAccessType="delete"
         ></button>
     </div>
 </div>

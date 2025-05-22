@@ -127,9 +127,9 @@
             id="save-settings-button"
             (click)="saveSettings()"
             class="mt-2 ml-1"
-            appManagedAccess="stork-settings"
-            accessType="update"
-            (hasAccess)="$event === true ? settingsForm.enable() : settingsForm.disable()"
+            appAccessEntity="stork-settings"
+            appAccessType="update"
+            (appHasAccess)="$event === true ? settingsForm.enable() : settingsForm.disable()"
         ></button>
 
         <span *ngIf="settingsForm.invalid" class="p-error ml-3"> There are issues with the form values. </span>

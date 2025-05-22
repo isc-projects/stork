@@ -99,8 +99,8 @@
                 label="Submit"
                 [disabled]="!hasChanges"
                 (click)="onSubmit()"
-                [appManagedAccess]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
-                accessType="update"
+                [appAccessEntity]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
+                appAccessType="update"
             ></button>
             <button
                 pButton
@@ -108,8 +108,8 @@
                 [disabled]="!hasChanges"
                 class="p-button-secondary"
                 (click)="onReset()"
-                [appManagedAccess]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
-                accessType="update"
+                [appAccessEntity]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
+                appAccessType="update"
             ></button>
         </div>
     </ng-template>
@@ -124,8 +124,8 @@
             name="select-{{ checker.name }}"
             inputId="select-{{ checker.name }}"
             class="mr-2"
-            [appManagedAccess]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
-            accessType="update"
+            [appAccessEntity]="allowInheritState ? 'daemon-config-checkers' : 'global-config-checkers'"
+            appAccessType="update"
         >
         </p-triStateCheckbox>
         <label class="form-check-label p-capitalize-first" for="select-{{ checker.name }}">
