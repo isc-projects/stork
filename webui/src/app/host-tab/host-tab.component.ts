@@ -120,6 +120,7 @@ export class HostTabComponent {
 
     /**
      * Flag stating whether user has privileges to get leases via Stork server.
+     * This value is set by appHasAccess EventEmitter of the ManagedAccessDirective used in the HTML template of this component.
      */
     canGetLeases: boolean = false
 
