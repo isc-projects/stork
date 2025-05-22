@@ -46,7 +46,6 @@ export class SharedNetworksTableComponent
 
     /**
      * Array of all boolean keys that are supported when filtering shared networks via URL queryParams.
-     * Currently, no boolean key is supported in queryParams filtering.
      */
     queryParamBooleanKeys: (keyof SharedNetworksFilter)[] = []
 

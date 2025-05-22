@@ -45,7 +45,6 @@ export class SubnetsTableComponent
 
     /**
      * Array of all boolean keys that are supported when filtering subnets via URL queryParams.
-     * Currently, no boolean key is supported in queryParams filtering.
      */
     queryParamBooleanKeys: (keyof SubnetsFilter)[] = []
 
