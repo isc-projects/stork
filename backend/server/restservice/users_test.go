@@ -927,6 +927,43 @@ func TestUpdateUserPasswordMissingData(t *testing.T) {
 	require.Equal(t, "Failed to update password for user: missing data", *defaultRsp.Payload.Message)
 }
 
+// Tests that update user password with wrong user ID is rejected via REST API.
+func TestUpdateUserPasswordWrongUserID(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, err := NewRestAPI(dbSettings, db)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	user := &dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+	}
+	con, err := dbmodel.CreateUserWithPassword(db, user, "pass")
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Update user password via the API with wrong ID.
+	params := users.UpdateUserPasswordParams{
+		ID: int64(user.ID+1),
+		Passwords: &models.PasswordChange{
+			Newpassword: storkutil.Ptr(models.Password("updated")),
+			Oldpassword: storkutil.Ptr(models.Password("pass")),
+		},
+	}
+	rsp := rapi.UpdateUserPassword(ctx, params)
+	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
+	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
+
 // Tests that user password can be updated via REST API if user account has
 // assigned the password.
 func TestUpdateUserPassword(t *testing.T) {
