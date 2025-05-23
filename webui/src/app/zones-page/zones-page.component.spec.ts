@@ -1,6 +1,6 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
-import { getSeverity, getTooltip, ZonesPageComponent } from './zones-page.component'
+import { ZonesPageComponent } from './zones-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ConfirmationService, MessageService, TableState } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
@@ -33,7 +33,6 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { TagModule } from 'primeng/tag'
 import createSpyObj = jasmine.createSpyObj
 import objectContaining = jasmine.objectContaining
-import StatusEnum = ZoneInventoryState.StatusEnum
 import { FieldsetModule } from 'primeng/fieldset'
 import { take } from 'rxjs/operators'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
@@ -434,24 +433,6 @@ describe('ZonesPageComponent', () => {
         expect(messageDe.nativeElement.innerText).toContain('Zones were not fetched yet')
         expect(buttonDe.nativeElement.innerText).toContain('Fetch Zones')
         expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null, null)
-    })
-
-    it('should get severity', () => {
-        // Arrange + Act + Assert
-        expect(getSeverity(StatusEnum.Busy)).toEqual('warning')
-        expect(getSeverity(StatusEnum.Ok)).toEqual('success')
-        expect(getSeverity(StatusEnum.Erred)).toEqual('danger')
-        expect(getSeverity(StatusEnum.Uninitialized)).toEqual('secondary')
-        expect(getSeverity(<StatusEnum>'foo')).toEqual('info')
-    })
-
-    it('should get tooltip', () => {
-        // Arrange + Act + Assert
-        expect(getTooltip(StatusEnum.Busy)).toContain('Zone inventory on the agent is busy')
-        expect(getTooltip(StatusEnum.Ok)).toContain('successfully fetched all zones')
-        expect(getTooltip(StatusEnum.Erred)).toContain('Error when communicating with a zone inventory')
-        expect(getTooltip(StatusEnum.Uninitialized)).toContain('Zone inventory on the agent was not initialized')
-        expect(getTooltip(<StatusEnum>'foo')).toBeNull()
     })
 
     it('should open and close tabs', async () => {
