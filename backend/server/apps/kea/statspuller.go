@@ -445,7 +445,12 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 	responses := make([]keactrl.StatisticGetAllResponse, len(responsesAny))
 	for i := 0; i < len(responsesAny); i++ {
-		response, _ := responsesAny[i].(*keactrl.StatisticGetAllResponse)
+		response, ok := responsesAny[i].(*keactrl.StatisticGetAllResponse)
+		if !ok {
+			// This should never happen.
+			return errors.Errorf("response is not of type StatisticGetAllResponse: %T", responsesAny[i])
+		}
+
 		responses[i] = *response
 	}
 
