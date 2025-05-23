@@ -690,7 +690,7 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 		adr6StatsMap["pool-assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
 			Subsystem: "dhcp6",
-			Name:      "pool_addresses_assigned_total",
+			Name:      "pool_na_assigned_total",
 			Help:      "Total number of assigned non-temporary addresses in the DHCPv6 pool",
 		}, poolLabels)
 		adr6StatsMap["pool-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
@@ -720,7 +720,7 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 		adr6StatsMap["pool-total-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
 			Subsystem: "dhcp6",
-			Name:      "pool_addresses_total",
+			Name:      "pool_na_total",
 			Help:      "Size of non-temporary address pool",
 		}, poolLabels)
 
