@@ -61,7 +61,7 @@ func (ap *AddressPool) GetDHCPOptions() (accessors []dhcpmodel.DHCPOptionAccesso
 
 // Indicates if the pool is IPv6.
 func (ap *AddressPool) IsIPv6() bool {
-	return ap.LowerBound != "" && strings.Contains(ap.LowerBound, ":")
+	return strings.Contains(ap.LowerBound, ":")
 }
 
 // Reflects IPv6 address pool.
