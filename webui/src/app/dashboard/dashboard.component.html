@@ -483,7 +483,7 @@
                             <td>
                                 <ng-container *ngIf="zoneInventoryStateMap.get(a.id)">
                                     <a routerLink="/dns/zones" [queryParams]="{ appId: a.id }">{{
-                                        zoneInventoryStateMap.get(a.id).zoneCount ?? 0
+                                        zoneInventoryStateMap.get(a.id).zoneConfigsCount ?? 0
                                     }}</a>
                                 </ng-container>
                                 <ng-container *ngIf="!zoneInventoryStateMap.get(a.id)"> n/a </ng-container>
