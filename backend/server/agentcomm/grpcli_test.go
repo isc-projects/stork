@@ -1340,10 +1340,10 @@ func TestReceiveZoneRRs(t *testing.T) {
 
 	// Collect the RRs returned over the stream.
 	var contents []dns.RR
-	for rrs, err := range agents.ReceiveZoneRRs(context.Background(), app, "zone1", "_default") {
+	for receivedRRs, err := range agents.ReceiveZoneRRs(context.Background(), app, "zone1", "_default") {
 		require.NoError(t, err)
-		require.NotNil(t, rrs)
-		contents = append(contents, rrs...)
+		require.NotNil(t, receivedRRs)
+		contents = append(contents, receivedRRs...)
 	}
 	// Make sure all RRs have been returned.
 	require.Len(t, contents, len(rrs))
