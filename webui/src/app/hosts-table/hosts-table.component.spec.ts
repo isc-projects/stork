@@ -142,6 +142,8 @@ describe('HostsTableComponent', () => {
     it('should ask for confirmation before migrating hosts', fakeAsync(() => {
         dhcpServiceSpy.startHostsMigration.and.returnValue(of({}) as any)
 
+        component.canStartMigration = true
+
         component.table.filters = {
             appId: { value: 1 },
             isGlobal: { value: true },

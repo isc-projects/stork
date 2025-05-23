@@ -16,10 +16,15 @@ import { ButtonModule } from 'primeng/button'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
 import { provideRouter, RouterModule } from '@angular/router'
+import { ManagedAccessDirective } from '../managed-access.directive'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { MessageService } from 'primeng/api'
+import { AuthService } from '../auth.service'
 
 describe('ConfigMigrationTabComponent', () => {
     let component: ConfigMigrationTabComponent
     let fixture: ComponentFixture<ConfigMigrationTabComponent>
+    let authService: AuthService
 
     const mockRunningMigration: Partial<MigrationStatus> = {
         id: 1,
@@ -80,9 +85,10 @@ describe('ConfigMigrationTabComponent', () => {
                 ProgressBarModule,
                 ButtonModule,
                 RouterModule,
+                ManagedAccessDirective,
             ],
             declarations: [ConfigMigrationTabComponent, EntityLinkComponent, LocaltimePipe, DurationPipe],
-            providers: [provideRouter([])],
+            providers: [provideRouter([]), provideHttpClient(withInterceptorsFromDi()), MessageService],
         }).compileComponents()
     })
 
@@ -90,6 +96,8 @@ describe('ConfigMigrationTabComponent', () => {
         fixture = TestBed.createComponent(ConfigMigrationTabComponent)
         component = fixture.componentInstance
         component.migration = mockRunningMigration as MigrationStatus
+        authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'hasPrivilege').and.returnValue(true)
         fixture.detectChanges()
     })
 

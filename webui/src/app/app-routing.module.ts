@@ -206,11 +206,13 @@ const routes: Routes = [
         path: 'config-migrations',
         component: ConfigMigrationPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'migrations' },
     },
     {
         path: 'config-migrations/:id',
         component: ConfigMigrationPageComponent,
         canActivate: [AuthGuard],
+        data: { key: 'migrations' },
     },
 
     // otherwise redirect to home

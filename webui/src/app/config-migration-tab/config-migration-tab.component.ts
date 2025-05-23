@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { MigrationError, MigrationStatus } from '../backend'
+import { AuthService } from '../auth.service'
 
 /**
  * Component presenting details for a selected configuration migration.
@@ -26,6 +27,13 @@ export class ConfigMigrationTabComponent {
      * Structure containing migration information to be displayed.
      */
     @Input({ required: true }) migration: MigrationStatus
+
+    /**
+     * Boolean flag stating whether user has privileges to cancel an ongoing migration.
+     */
+    get canCancelMigration(): boolean {
+        return this.authService.hasPrivilege('migrations', 'update')
+    }
 
     /**
      * Determines if the migration is currently running.
@@ -114,4 +122,10 @@ export class ConfigMigrationTabComponent {
     onCancel() {
         this.cancelMigration.emit(this.migration.id)
     }
+
+    /**
+     * Component class constructor.
+     * @param authService Auth service used to check user authorization for canceling migrations.
+     */
+    constructor(private authService: AuthService) {}
 }

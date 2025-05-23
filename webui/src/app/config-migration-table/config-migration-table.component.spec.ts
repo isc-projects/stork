@@ -1,5 +1,5 @@
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
-import { HttpResponse } from '@angular/common/http'
+import { HttpResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 import { ConfigMigrationTableComponent } from './config-migration-table.component'
 import { TableLazyLoadEvent, TableModule } from 'primeng/table'
@@ -15,6 +15,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
 import { By } from '@angular/platform-browser'
+import { ManagedAccessDirective } from '../managed-access.directive'
 
 describe('ConfigMigrationTableComponent', () => {
     let component: ConfigMigrationTableComponent
@@ -32,7 +33,12 @@ describe('ConfigMigrationTableComponent', () => {
         spy.getMigrations.and.returnValue(of(emptyResponse))
 
         TestBed.configureTestingModule({
-            providers: [MessageService, { provide: DHCPService, useValue: spy }, ConfirmationService],
+            providers: [
+                MessageService,
+                { provide: DHCPService, useValue: spy },
+                ConfirmationService,
+                provideHttpClient(withInterceptorsFromDi()),
+            ],
             imports: [
                 ButtonModule,
                 BrowserAnimationsModule,
@@ -41,6 +47,7 @@ describe('ConfigMigrationTableComponent', () => {
                 TooltipModule,
                 TableModule,
                 ConfirmDialogModule,
+                ManagedAccessDirective,
             ],
             declarations: [ConfigMigrationTableComponent, PluralizePipe, DurationPipe],
         }).compileComponents()

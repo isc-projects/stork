@@ -6,6 +6,8 @@
         icon="pi pi-trash"
         styleClass="block p-button-warning no-underline"
         (onClick)="clearFinishedMigrations()"
+        appAccessEntity="migrations"
+        appAccessType="delete"
     ></p-button>
 
     <p-button
@@ -93,6 +95,8 @@
                     pTooltip="Cancel Migration"
                     tooltipPosition="top"
                     (click)="cancel(m.id)"
+                    appAccessEntity="migrations"
+                    appAccessType="update"
                 ></button>
             </td>
         </tr>

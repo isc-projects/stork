@@ -16,7 +16,7 @@ export class AuthGuard {
 
     /** Indicates if a user has a permission to activate a given route. */
     canActivate(
-        _route: ActivatedRouteSnapshot,
+        route: ActivatedRouteSnapshot,
         state: RouterStateSnapshot
     ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
         // Below is an async canActivate implementation. First we must retrieve an information from the auth service

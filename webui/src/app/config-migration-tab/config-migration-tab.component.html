@@ -73,8 +73,10 @@
                     label="Cancel Migration"
                     icon="pi pi-times"
                     class="p-button-danger"
-                    [disabled]="!isRunning || migration.canceling"
+                    [disabled]="!isRunning || migration.canceling || !canCancelMigration"
                     (click)="onCancel()"
+                    appAccessEntity="migrations"
+                    appAccessType="update"
                 ></button>
             </div>
         </div>

@@ -140,6 +140,12 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
     localHostsGroupedByApp: Record<number, LocalHost[][]>
 
     /**
+     * This flag states whether user has privileges to start the migration.
+     * This value comes from ManagedAccess directive which is called in the HTML template.
+     */
+    canStartMigration: boolean = false
+
+    /**
      * Returns all currently displayed host reservations.
      */
     get hosts(): Host[] {
@@ -223,6 +229,10 @@ export class HostsTableComponent extends PrefilteredTable<HostsFilter, Host> imp
      * during the migration. User can confirm or abort the migration.
      */
     migrateToDatabaseAsk(): void {
+        if (!this.canStartMigration) {
+            return
+        }
+
         // Display a confirmation dialog.
         this.confirmationService.confirm({
             key: 'migrationToDatabaseDialog',

@@ -58,6 +58,8 @@ export type ManagedAccessEntity =
     | 'events'
     | 'logs'
     | 'versions'
+    | 'migrations-hosts'
+    | 'migrations'
 
 /**
  * Possible access types in authorization.
