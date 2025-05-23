@@ -18,6 +18,15 @@ const (
 	StatisticGetAll CommandName = "statistic-get-all"
 )
 
+var (
+	// Matches a subnet ID in the Kea statistic name.
+	subnetStatNameRegex = regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
+	// Matches a pool ID in the Kea statistic name.
+	poolStatNameRegex = regexp.MustCompile(`pool\[(\d+)\]\.(.+)`)
+	// Matches a prefix pool ID in the Kea statistic name.
+	pdPoolStatNameRegex = regexp.MustCompile(`pd-pool\[(\d+)\]\.(.+)`)
+)
+
 // JSON statistic-get-all response.
 // There is a response entry for each service. The order of entries is the
 // same as the order of services in the request.
@@ -135,8 +144,7 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 		var prefixPoolID *int64
 		// Extract the subnet ID and pool ID if present.
 		if strings.HasPrefix(statName, "subnet[") {
-			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
-			matches := re.FindStringSubmatch(statName)
+			matches := subnetStatNameRegex.FindStringSubmatch(statName)
 			subnetIDRaw := matches[1]
 			statName = matches[2]
 
@@ -148,8 +156,7 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 
 			// Extract the pool (or prefix pool) ID if present.
 			if strings.HasPrefix(statName, "pool[") {
-				re = regexp.MustCompile(`pool\[(\d+)\]\.(.+)`)
-				matches = re.FindStringSubmatch(statName)
+				matches = poolStatNameRegex.FindStringSubmatch(statName)
 				poolIDRaw := matches[1]
 				statName = matches[2]
 
@@ -161,8 +168,7 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 
 				addressPoolID = &parsedAddressPoolID
 			} else if strings.HasPrefix(statName, "pd-pool[") {
-				re = regexp.MustCompile(`pd-pool\[(\d+)\]\.(.+)`)
-				matches = re.FindStringSubmatch(statName)
+				matches = pdPoolStatNameRegex.FindStringSubmatch(statName)
 				prefixPoolIDRaw := matches[1]
 				statName = matches[2]
 
