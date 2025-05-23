@@ -62,8 +62,8 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 	require.Equal(t, "foo", pke.Host)
 	require.Equal(t, 42, pke.Port)
 	require.Len(t, pke.PktStatsMap, 31)
-	require.Len(t, pke.Adr4StatsMap, 12)
-	require.Len(t, pke.Adr6StatsMap, 19)
+	require.Len(t, pke.Addr4StatsMap, 12)
+	require.Len(t, pke.Addr6StatsMap, 19)
 }
 
 // Check starting PromKeaExporter and collecting stats.
@@ -117,7 +117,7 @@ func TestPromKeaExporterStart(t *testing.T) {
 	pke.Collect(c)
 
 	// Check the collected stats.
-	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+	metric, _ := pke.Addr4StatsMap["assigned-addresses"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "7",
 			"subnet_id": "7",
@@ -188,7 +188,7 @@ func TestPromKeaExporterStartKeaPrior2_4_0(t *testing.T) {
 	pke.Collect(c)
 
 	// Check the collected stats.
-	metric, _ := pke.Adr6StatsMap["total-nas"].GetMetricWith(
+	metric, _ := pke.Addr6StatsMap["total-nas"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "6",
 			"subnet_id": "6",
@@ -249,7 +249,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 	pke.Collect(c)
 
 	// Check the collected stats.
-	metric, _ := pke.Adr4StatsMap["total-addresses"].GetMetricWith(
+	metric, _ := pke.Addr4StatsMap["total-addresses"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "22",
 			"subnet_id": "22",
@@ -261,7 +261,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 	metric, _ = pke.PktStatsMap["pkt4-ack-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "ack"})
 	require.EqualValues(t, 42.0, testutil.ToFloat64(metric))
 
-	metric, _ = pke.Adr4StatsMap["pool-total-addresses"].GetMetricWith(
+	metric, _ = pke.Addr4StatsMap["pool-total-addresses"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "11",
 			"subnet_id": "11",
@@ -318,7 +318,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	pke.Collect(c)
 
 	// Check the collected stats.
-	metric, _ := pke.Adr6StatsMap["total-nas"].GetMetricWith(
+	metric, _ := pke.Addr6StatsMap["total-nas"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "1",
 			"subnet_id": "1",
@@ -327,7 +327,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	)
 	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
 
-	metric, _ = pke.Adr6StatsMap["total-nas"].GetMetricWith(
+	metric, _ = pke.Addr6StatsMap["total-nas"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "1",
 			"subnet_id": "1",
@@ -336,7 +336,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	)
 	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
 
-	metric, _ = pke.Adr6StatsMap["total-pds"].GetMetricWith(
+	metric, _ = pke.Addr6StatsMap["total-pds"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "1",
 			"subnet_id": "1",
@@ -350,7 +350,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	metric, _ = pke.PktStatsMap["pkt6-reply-sent"].Stat.GetMetricWith(prometheus.Labels{"operation": "reply"})
 	require.EqualValues(t, 42.0, testutil.ToFloat64(metric))
 
-	metric, _ = pke.Adr6StatsMap["pool-total-nas"].GetMetricWith(
+	metric, _ = pke.Addr6StatsMap["pool-total-nas"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "1",
 			"subnet_id": "1",
@@ -360,7 +360,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	)
 	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
 
-	metric, _ = pke.Adr6StatsMap["pool-pd-total-pds"].GetMetricWith(
+	metric, _ = pke.Addr6StatsMap["pool-pd-total-pds"].GetMetricWith(
 		prometheus.Labels{
 			"subnet":    "1",
 			"subnet_id": "1",
@@ -490,7 +490,7 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	pke.Collect(c)
 
 	// Assert
-	metric, err := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(
+	metric, err := pke.Addr4StatsMap["assigned-addresses"].GetMetricWith(
 		prometheus.Labels{
 			"subnet_id": "7",
 			"prefix":    "10.0.0.0/8",
@@ -669,7 +669,7 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	// Check if pkt4-nak-received has expected value.
 	require.EqualValues(t, 19.0, testutil.ToFloat64(metric))
 
-	require.Nil(t, pke.Adr4StatsMap)
+	require.Nil(t, pke.Addr4StatsMap)
 
 	// Has no unnecessary calls.
 	require.False(t, gock.HasUnmatchedRequest())

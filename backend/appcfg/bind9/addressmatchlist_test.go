@@ -7,7 +7,7 @@ import (
 )
 
 // Test checking that the address match list excludes the specified IP address.
-func TestAdressMatchListExcludesIPAddress(t *testing.T) {
+func TestAddressMatchListExcludesIPAddress(t *testing.T) {
 	aml := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
 			{IPAddress: "127.0.0.1", Negation: true},

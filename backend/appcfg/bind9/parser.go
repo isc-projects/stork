@@ -88,7 +88,7 @@ type ACL struct {
 	// The name of the ACL.
 	Name string `parser:"( @String | @Ident )"`
 	// The list of address match list elements between curly braces.
-	AdressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+	AddressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
 }
 
 // AddressMatchList is the list of address match list elements between curly braces.
@@ -233,25 +233,25 @@ type ZoneClause struct {
 // MatchClients is the clause for associations with ACLs. It can be used in the
 // view to associate this view with specific ACLs.
 type MatchClients struct {
-	AdressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+	AddressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
 }
 
 // AllowTransfer is the clause for restricting who can perform AXFR
 // globally, for a particular view or zone.
 type AllowTransfer struct {
-	Port            *int64            `parser:"( 'port' @Number )?"`
-	Transport       *string           `parser:"( 'transport' ( @String | @Ident ) )?"`
-	AdressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+	Port             *int64            `parser:"( 'port' @Number )?"`
+	Transport        *string           `parser:"( 'transport' ( @String | @Ident ) )?"`
+	AddressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
 }
 
 // ListenOn is the clause specifying the addresses the servers listens on the
 // DNS requests. It also contains additional options.
 type ListenOn struct {
-	Port            *int64            `parser:"( 'port' @Number )?"`
-	Proxy           *string           `parser:"( 'proxy' ( @String | @Ident ) )?"`
-	TLS             *string           `parser:"( 'tls' ( @String | @Ident ) )?"`
-	HTTP            *string           `parser:"( 'http' ( @String | @Ident ) )?"`
-	AdressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+	Port             *int64            `parser:"( 'port' @Number )?"`
+	Proxy            *string           `parser:"( 'proxy' ( @String | @Ident ) )?"`
+	TLS              *string           `parser:"( 'tls' ( @String | @Ident ) )?"`
+	HTTP             *string           `parser:"( 'http' ( @String | @Ident ) )?"`
+	AddressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
 }
 
 // NamedStatement is a generic catch-all named statement. It is used to parse

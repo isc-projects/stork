@@ -13,7 +13,7 @@ type ListenOnClauses []*ListenOn
 func GetDefaultListenOnClauses() *ListenOnClauses {
 	return &ListenOnClauses{
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{
 					{
 						IPAddress: "127.0.0.1",
@@ -66,7 +66,7 @@ func (l *ListenOn) GetPreferredIPAddress(allowTransferMatchList *AddressMatchLis
 	if (l.IncludesIPAddress("::1") || l.IncludesIPAddress("::")) && !allowTransferMatchList.ExcludesIPAddress("::1") {
 		return "::1"
 	}
-	for _, element := range l.AdressMatchList.Elements {
+	for _, element := range l.AddressMatchList.Elements {
 		if element.IPAddress != "" && !element.Negation && !allowTransferMatchList.ExcludesIPAddress(element.IPAddress) {
 			return element.IPAddress
 		}
@@ -85,7 +85,7 @@ func (l *ListenOn) GetPort() int64 {
 
 // Checks if the listen-on clause includes the specified IP address.
 func (l *ListenOn) IncludesIPAddress(ipAddress string) bool {
-	for _, element := range l.AdressMatchList.Elements {
+	for _, element := range l.AddressMatchList.Elements {
 		if element.IPAddress == ipAddress && !element.Negation {
 			return true
 		}

@@ -54,7 +54,7 @@ func TestGetACL(t *testing.T) {
 	acl := cfg.GetACL("trusted-networks")
 	require.NotNil(t, acl)
 	require.Equal(t, "trusted-networks", acl.Name)
-	require.Len(t, acl.AdressMatchList.Elements, 8)
+	require.Len(t, acl.AddressMatchList.Elements, 8)
 
 	acl = cfg.GetACL("non-existent")
 	require.Nil(t, acl)

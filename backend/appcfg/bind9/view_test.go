@@ -49,7 +49,7 @@ func TestViewGetMatchClients(t *testing.T) {
 		Clauses: []*ViewClause{
 			{
 				MatchClients: &MatchClients{
-					AdressMatchList: &AddressMatchList{
+					AddressMatchList: &AddressMatchList{
 						Elements: []*AddressMatchListElement{
 							{
 								KeyID: "example.com",
@@ -67,8 +67,8 @@ func TestViewGetMatchClients(t *testing.T) {
 	}
 	matchClients := view.GetMatchClients()
 	require.NotNil(t, matchClients)
-	require.Len(t, matchClients.AdressMatchList.Elements, 1)
-	require.Equal(t, "example.com", matchClients.AdressMatchList.Elements[0].KeyID)
+	require.Len(t, matchClients.AddressMatchList.Elements, 1)
+	require.Equal(t, "example.com", matchClients.AddressMatchList.Elements[0].KeyID)
 }
 
 // Tests that match-clients is not returned when not specified.

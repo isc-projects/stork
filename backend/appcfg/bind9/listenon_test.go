@@ -12,8 +12,8 @@ import (
 func TestGetDefaultListenOnClauses(t *testing.T) {
 	listenOnClauses := GetDefaultListenOnClauses()
 	require.Len(t, *listenOnClauses, 1)
-	require.Len(t, (*listenOnClauses)[0].AdressMatchList.Elements, 1)
-	require.Equal(t, "127.0.0.1", (*listenOnClauses)[0].AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, (*listenOnClauses)[0].AddressMatchList.Elements, 1)
+	require.Equal(t, "127.0.0.1", (*listenOnClauses)[0].AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(53), (*listenOnClauses)[0].GetPort())
 	require.True(t, (*listenOnClauses)[0].IncludesIPAddress("127.0.0.1"))
 	require.False(t, (*listenOnClauses)[0].IncludesIPAddress("0.0.0.0"))
@@ -27,8 +27,8 @@ func TestGetMatchingListenOnDefault(t *testing.T) {
 	listenOn := listenOnClauses.GetMatchingListenOn(53)
 	require.NotNil(t, listenOn)
 	require.Len(t, *listenOnClauses, 1)
-	require.Len(t, (*listenOnClauses)[0].AdressMatchList.Elements, 1)
-	require.Equal(t, "127.0.0.1", (*listenOnClauses)[0].AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, (*listenOnClauses)[0].AddressMatchList.Elements, 1)
+	require.Equal(t, "127.0.0.1", (*listenOnClauses)[0].AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(53), listenOn.GetPort())
 }
 
@@ -37,20 +37,20 @@ func TestGetMatchingListenOnDefault(t *testing.T) {
 func TestGetMatchingListenOnMultipleZeroAddress(t *testing.T) {
 	listenOnClauses := ListenOnClauses{
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "192.0.2.1"}},
 			},
 		},
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "0.0.0.0"}},
 			},
 		},
 	}
 	listenOn := listenOnClauses.GetMatchingListenOn(53)
 	require.NotNil(t, listenOn)
-	require.Len(t, listenOn.AdressMatchList.Elements, 1)
-	require.Equal(t, "0.0.0.0", listenOn.AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, listenOn.AddressMatchList.Elements, 1)
+	require.Equal(t, "0.0.0.0", listenOn.AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(53), listenOn.GetPort())
 }
 
@@ -59,20 +59,20 @@ func TestGetMatchingListenOnMultipleZeroAddress(t *testing.T) {
 func TestGetMatchingListenOnMultipleLoopbackAddress(t *testing.T) {
 	listenOnClauses := ListenOnClauses{
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "192.0.2.1"}},
 			},
 		},
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "127.0.0.1"}},
 			},
 		},
 	}
 	listenOn := listenOnClauses.GetMatchingListenOn(53)
 	require.NotNil(t, listenOn)
-	require.Len(t, listenOn.AdressMatchList.Elements, 1)
-	require.Equal(t, "127.0.0.1", listenOn.AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, listenOn.AddressMatchList.Elements, 1)
+	require.Equal(t, "127.0.0.1", listenOn.AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(53), listenOn.GetPort())
 }
 
@@ -81,21 +81,21 @@ func TestGetMatchingListenOnMultipleLoopbackAddress(t *testing.T) {
 func TestGetMatchingListenOnMultipleLoopbackAddressPortNumber(t *testing.T) {
 	listenOnClauses := ListenOnClauses{
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "192.0.2.1"}},
 			},
 			Port: storkutil.Ptr(int64(853)),
 		},
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "127.0.0.1"}},
 			},
 		},
 	}
 	listenOn := listenOnClauses.GetMatchingListenOn(853)
 	require.NotNil(t, listenOn)
-	require.Len(t, listenOn.AdressMatchList.Elements, 1)
-	require.Equal(t, "192.0.2.1", listenOn.AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, listenOn.AddressMatchList.Elements, 1)
+	require.Equal(t, "192.0.2.1", listenOn.AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(853), listenOn.GetPort())
 }
 
@@ -104,20 +104,20 @@ func TestGetMatchingListenOnMultipleLoopbackAddressPortNumber(t *testing.T) {
 func TestGetMatchingListenOnMultipleZeroAddressIPv6(t *testing.T) {
 	listenOnClauses := ListenOnClauses{
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "2001:db8:1::1"}},
 			},
 		},
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "::"}},
 			},
 		},
 	}
 	listenOn := listenOnClauses.GetMatchingListenOn(53)
 	require.NotNil(t, listenOn)
-	require.Len(t, listenOn.AdressMatchList.Elements, 1)
-	require.Equal(t, "::", listenOn.AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, listenOn.AddressMatchList.Elements, 1)
+	require.Equal(t, "::", listenOn.AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(53), listenOn.GetPort())
 }
 
@@ -126,20 +126,20 @@ func TestGetMatchingListenOnMultipleZeroAddressIPv6(t *testing.T) {
 func TestGetMatchingListenOnMultipleLoopbackAddressIPv6(t *testing.T) {
 	listenOnClauses := ListenOnClauses{
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "2001:db8:1::1"}},
 			},
 		},
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "::1"}},
 			},
 		},
 	}
 	listenOn := listenOnClauses.GetMatchingListenOn(53)
 	require.NotNil(t, listenOn)
-	require.Len(t, listenOn.AdressMatchList.Elements, 1)
-	require.Equal(t, "::1", listenOn.AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, listenOn.AddressMatchList.Elements, 1)
+	require.Equal(t, "::1", listenOn.AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(53), listenOn.GetPort())
 }
 
@@ -147,20 +147,20 @@ func TestGetMatchingListenOnMultipleLoopbackAddressIPv6(t *testing.T) {
 func TestGetMatchingListenOnMultipleLoopbackAddressPortNumberIPv6(t *testing.T) {
 	listenOnClauses := ListenOnClauses{
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "2001:db8:1::1"}},
 			},
 			Port: storkutil.Ptr(int64(853)),
 		},
 		&ListenOn{
-			AdressMatchList: &AddressMatchList{
+			AddressMatchList: &AddressMatchList{
 				Elements: []*AddressMatchListElement{{IPAddress: "::1"}},
 			},
 		},
 	}
 	listenOn := listenOnClauses.GetMatchingListenOn(853)
 	require.NotNil(t, listenOn)
-	require.Len(t, listenOn.AdressMatchList.Elements, 1)
-	require.Equal(t, "2001:db8:1::1", listenOn.AdressMatchList.Elements[0].IPAddress)
+	require.Len(t, listenOn.AddressMatchList.Elements, 1)
+	require.Equal(t, "2001:db8:1::1", listenOn.AddressMatchList.Elements[0].IPAddress)
 	require.Equal(t, int64(853), listenOn.GetPort())
 }

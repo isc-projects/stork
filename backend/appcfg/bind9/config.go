@@ -77,12 +77,12 @@ func (c *Config) getKeyFromAddressMatchList(level int, addressMatchList *Address
 			return c.GetKey(element.KeyID), nil
 		case element.ACL != nil:
 			// Recursively search for a key in the inline ACL.
-			return c.getKeyFromAddressMatchList(level+1, element.ACL.AdressMatchList)
+			return c.getKeyFromAddressMatchList(level+1, element.ACL.AddressMatchList)
 		case element.ACLName != "":
 			// Recursively search for a key in the referenced ACL.
 			acl := c.GetACL(element.ACLName)
 			if acl != nil {
-				return c.getKeyFromAddressMatchList(level+1, acl.AdressMatchList)
+				return c.getKeyFromAddressMatchList(level+1, acl.AddressMatchList)
 			}
 		default:
 			continue
@@ -123,7 +123,7 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address *str
 	// The allow-transfer may specify the key that is allowed to run the zone transfer.
 	// If that key is specified the client will use it.
 	var key *Key
-	if key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AdressMatchList); err != nil {
+	if key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AddressMatchList); err != nil {
 		return nil, nil, nil, nil, errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
 	}
 
@@ -165,7 +165,7 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address *str
 	}
 
 	// Return the address and port to connect to.
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AdressMatchList)
+	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AddressMatchList)
 	if preferredIPAddress == "" {
 		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
@@ -222,7 +222,7 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	// Check if the match-clients clause contains a reference to the key.
 	var key *Key
 	if matchClients != nil {
-		key, err = c.getKeyFromAddressMatchList(0, matchClients.AdressMatchList)
+		key, err = c.getKeyFromAddressMatchList(0, matchClients.AddressMatchList)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
@@ -231,7 +231,7 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	if key == nil {
 		// Allow transfer may specify the key that is allowed to run the zone transfer.
 		// If this key is specified the client will use it.
-		key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AdressMatchList)
+		key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AddressMatchList)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
@@ -279,7 +279,7 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	}
 
 	// Return the address and port to connect to.
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AdressMatchList)
+	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AddressMatchList)
 	if preferredIPAddress == "" {
 		return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
@@ -331,7 +331,7 @@ func (c *Config) GetZoneKey(viewName string, zoneName string) (*Key, error) {
 	// Check if there is match-clients clause. Use it if present.
 	for _, clause := range view.Clauses {
 		if clause.MatchClients != nil {
-			return c.getKeyFromAddressMatchList(0, clause.MatchClients.AdressMatchList)
+			return c.getKeyFromAddressMatchList(0, clause.MatchClients.AddressMatchList)
 		}
 	}
 	// If there was no match-clients clause, look for the allow-transfer clause
@@ -343,7 +343,7 @@ func (c *Config) GetZoneKey(viewName string, zoneName string) (*Key, error) {
 	// clause. Use it if present.
 	for _, clause := range view.Clauses {
 		if clause.AllowTransfer != nil {
-			return c.getKeyFromAddressMatchList(0, clause.AllowTransfer.AdressMatchList)
+			return c.getKeyFromAddressMatchList(0, clause.AllowTransfer.AddressMatchList)
 		}
 	}
 	return nil, nil

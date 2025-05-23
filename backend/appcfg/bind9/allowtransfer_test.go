@@ -9,7 +9,7 @@ import (
 // Test that zone transfer is disabled when allow-transfer is not specified.
 func TestAllowTransferIsDisabledEmpty(t *testing.T) {
 	at := &AllowTransfer{
-		AdressMatchList: &AddressMatchList{
+		AddressMatchList: &AddressMatchList{
 			Elements: []*AddressMatchListElement{},
 		},
 	}
@@ -19,7 +19,7 @@ func TestAllowTransferIsDisabledEmpty(t *testing.T) {
 // Test that zone transfer is disabled when allow-transfer is specified as none.
 func TestAllowTransferIsDisabledNone(t *testing.T) {
 	at := &AllowTransfer{
-		AdressMatchList: &AddressMatchList{
+		AddressMatchList: &AddressMatchList{
 			Elements: []*AddressMatchListElement{
 				{
 					ACLName: "none",
@@ -34,7 +34,7 @@ func TestAllowTransferIsDisabledNone(t *testing.T) {
 // even if another ACL contains none.
 func TestAllowTransferIsNotDisabled(t *testing.T) {
 	at := &AllowTransfer{
-		AdressMatchList: &AddressMatchList{
+		AddressMatchList: &AddressMatchList{
 			Elements: []*AddressMatchListElement{
 				{
 					ACLName: "none",
