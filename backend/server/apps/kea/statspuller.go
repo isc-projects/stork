@@ -176,7 +176,7 @@ type localSubnetKey struct {
 	Family        int
 }
 
-// Processes statistics from the given command response for given daemon.
+// Processes statistics from the `statistic-get-all` response for the given daemon.
 func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisticsResponse, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	if len(response) == 0 {
 		return errors.Errorf("response is empty: %+v", response)

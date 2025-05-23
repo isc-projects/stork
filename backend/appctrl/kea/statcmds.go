@@ -18,7 +18,7 @@ const (
 	StatisticGetAll CommandName = "statistic-get-all"
 )
 
-// JSON get-all-statistic response.
+// JSON statistic-get-all response.
 // There is a response entry for each service. The order of entries is the
 // same as the order of services in the request.
 type GetAllStatisticsResponse = []GetAllStatisticResponseItem
@@ -58,7 +58,7 @@ type GetAllStatisticResponseSample struct {
 
 // Indicates if the sample contains an address or prefix pool statistic.
 func (s *GetAllStatisticResponseSample) IsPoolSample() bool {
-	return s.AddressPoolID != nil || s.PrefixPoolID != nil
+	return s.IsAddressPoolSample() || s.PrefixPoolSample()
 }
 
 // Indicates if the sample contains an address pool statistic.

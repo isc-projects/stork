@@ -62,7 +62,7 @@ func upsertInTransaction(tx *pg.Tx, id int64, model interface{}) (err error) {
 	return err
 }
 
-// Type for store utilization in the smallint column. The utilization range is
+// Type for storing utilization in a smallint column. The utilization range is
 // 0-1. The value is stored by multiplying the real utilization by 1000. For
 // example, if the utilization is 0.123456789 then the value stored in the
 // database is 123. The value is stored in the smallint column to save space

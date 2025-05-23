@@ -79,7 +79,7 @@ func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response ke
 	sample, err := rpsWorker.extractSamples6(response)
 	if err == nil && sample != nil {
 		// Note that rather than use the sample time in the list,
-		// We use current Stork Server time so interval times across Daemons are
+		// we use current Stork Server time so interval times across Daemons are
 		// consistent and relative to us. In other words, we don't care when Kea
 		// modified the value, we care about when we got it.
 		sampledAt := storkutil.UTCNow()
