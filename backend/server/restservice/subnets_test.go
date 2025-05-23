@@ -390,7 +390,6 @@ func TestGetSubnet4(t *testing.T) {
 	require.Len(t, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].Values, 1)
 	require.Equal(t, "192.0.3.10", ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Fields[0].Values[0])
 	require.EqualValues(t, storkutil.IPv4, ls.Pools[0].KeaConfigPoolParameters.DHCPOptions.Options[0].Universe)
-	require.NotNil(t, ls.Pools[0].KeaConfigPoolParameters.PoolID)
 	require.EqualValues(t, 7, ls.Pools[0].KeaConfigPoolParameters.PoolID)
 
 	require.NotNil(t, ls.Pools[1].Pool)
@@ -890,7 +889,6 @@ func TestGetSubnet6(t *testing.T) {
 	poolParams := ls.PrefixDelegationPools[0].KeaConfigPoolParameters
 	require.Equal(t, "phones_server1", *poolParams.ClientClass)
 	require.Len(t, poolParams.RequireClientClasses, 1)
-	require.NotNil(t, poolParams.PoolID)
 	require.EqualValues(t, 2, poolParams.PoolID)
 
 	// DHCP options in a prefix pool.
