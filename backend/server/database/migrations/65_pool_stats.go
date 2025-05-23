@@ -10,7 +10,7 @@ func init() {
 			-- Make sure that when stats are stored then timestamp is also set.
 			ALTER TABLE public.address_pool
 				ADD COLUMN stats JSONB,
-				ADD COLUMN stats_collected_at TIMESTAMP WITHOUT TIME ZONE,
+				ADD COLUMN stats_collected_at TIMESTAMP WITHOUT TIME ZONE DEFAULT timezone('utc'::text, now()),
 				ADD COLUMN utilization SMALLINT DEFAULT 0,
 				ADD CONSTRAINT stats_and_stats_collected_at_both_not_null CHECK (
 					(stats IS NOT NULL AND stats_collected_at IS NOT NULL)
