@@ -1671,17 +1671,22 @@ func TestZoneInventoryGetZoneInViewDisk(t *testing.T) {
 // Test requesting a successful zone transfer.
 func TestZoneInventoryRequestAXFR(t *testing.T) {
 	// Setup server response.
-	defaultZones := generateRandomZones(100)
+	zone := &bind9stats.Zone{
+		ZoneName: "example.com",
+		Class:    "IN",
+		Serial:   1234567890,
+		Type:     "SOA",
+		Loaded:   time.Date(2025, 1, 1, 15, 19, 20, 0, time.UTC),
+	}
 	response := map[string]any{
 		"views": map[string]any{
-			"_default": map[string]any{
-				"zones": defaultZones,
+			"trusted": map[string]any{
+				"zones": []*bind9stats.Zone{
+					zone,
+				},
 			},
 		},
 	}
-	// Get a random zone from the existing ones.
-	randomZone := defaultZones[rand.Int64()%100]
-
 	bind9StatsClient, off := setGetViewsResponseOK(t, response)
 	defer off()
 
@@ -1702,7 +1707,7 @@ func TestZoneInventoryRequestAXFR(t *testing.T) {
 		require.Contains(t, transfer.TsigSecret, "trusted-key.")
 		require.Equal(t, transfer.TsigSecret["trusted-key."], "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=")
 		require.Len(t, message.Question, 1)
-		require.Contains(t, message.Question[0].Name, randomZone.Name())
+		require.Contains(t, message.Question[0].Name, zone.ZoneName)
 		require.Equal(t, "127.0.0.1:53", address)
 		ch := make(chan *dns.Envelope)
 		go func() {
@@ -1731,10 +1736,10 @@ func TestZoneInventoryRequestAXFR(t *testing.T) {
 	require.NoError(t, err)
 
 	// Request zone transfer twice in a row. It should be ok.
-	channel1, err := inventory.requestAXFR(randomZone.Name(), "trusted")
+	channel1, err := inventory.requestAXFR(zone.ZoneName, "trusted")
 	require.NoError(t, err)
 
-	channel2, err := inventory.requestAXFR(randomZone.Name(), "trusted")
+	channel2, err := inventory.requestAXFR(zone.ZoneName, "trusted")
 	require.NoError(t, err)
 
 	// Read the responses.
@@ -1750,16 +1755,22 @@ func TestZoneInventoryRequestAXFR(t *testing.T) {
 // Test requesting a zone transfer when error is returned in the envelope.
 func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 	// Setup server response.
-	defaultZones := generateRandomZones(100)
+	zone := &bind9stats.Zone{
+		ZoneName: "example.com",
+		Class:    "IN",
+		Serial:   1234567890,
+		Type:     "SOA",
+		Loaded:   time.Date(2025, 1, 1, 15, 19, 20, 0, time.UTC),
+	}
 	response := map[string]any{
 		"views": map[string]any{
-			"_default": map[string]any{
-				"zones": defaultZones,
+			"trusted": map[string]any{
+				"zones": []*bind9stats.Zone{
+					zone,
+				},
 			},
 		},
 	}
-	// Get a random zone from the existing ones.
-	randomZone := defaultZones[rand.Int64()%100]
 
 	bind9StatsClient, off := setGetViewsResponseOK(t, response)
 	defer off()
@@ -1803,7 +1814,7 @@ func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Request zone transfer and expect an error.
-	channel, err := inventory.requestAXFR(randomZone.Name(), "trusted")
+	channel, err := inventory.requestAXFR(zone.ZoneName, "trusted")
 	require.NoError(t, err)
 
 	// Read the response from the channel.
@@ -1816,16 +1827,22 @@ func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 // transfer is started.
 func TestZoneInventoryRequestAXFRResponseError(t *testing.T) {
 	// Setup server response.
-	defaultZones := generateRandomZones(100)
+	zone := &bind9stats.Zone{
+		ZoneName: "example.com",
+		Class:    "IN",
+		Serial:   1234567890,
+		Type:     "SOA",
+		Loaded:   time.Date(2025, 1, 1, 15, 19, 20, 0, time.UTC),
+	}
 	response := map[string]any{
 		"views": map[string]any{
-			"_default": map[string]any{
-				"zones": defaultZones,
+			"trusted": map[string]any{
+				"zones": []*bind9stats.Zone{
+					zone,
+				},
 			},
 		},
 	}
-	// Get a random zone from the existing ones.
-	randomZone := defaultZones[rand.Int64()%100]
 
 	bind9StatsClient, off := setGetViewsResponseOK(t, response)
 	defer off()
@@ -1862,7 +1879,7 @@ func TestZoneInventoryRequestAXFRResponseError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Request zone transfer and expect an error.
-	channel, err := inventory.requestAXFR(randomZone.Name(), "trusted")
+	channel, err := inventory.requestAXFR(zone.ZoneName, "trusted")
 	require.NoError(t, err)
 
 	// Read the response from the channel.
