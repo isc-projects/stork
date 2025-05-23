@@ -416,14 +416,6 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			continue
 		}
 
-		if d.KeaDaemon.Config != nil {
-			// Ignore the daemons without the statistic hook to avoid
-			// confusing error messages.
-			if _, _, present := d.KeaDaemon.Config.GetHookLibrary("libdhcp_stat_cmds"); !present {
-				continue
-			}
-		}
-
 		cmdDaemons = append(cmdDaemons, d)
 		cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatisticGetAll, d.Name))
 		responsesAny = append(responsesAny, &keactrl.StatisticGetAllResponse{})

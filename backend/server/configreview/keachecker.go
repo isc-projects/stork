@@ -14,24 +14,6 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// The checker verifying if the stat_cmds hooks library is loaded.
-func statCmdsPresence(ctx *ReviewContext) (*Report, error) {
-	config := ctx.subjectDaemon.KeaDaemon.Config
-	if _, _, present := config.GetHookLibrary("libdhcp_stat_cmds"); !present {
-		r, err := NewReport(ctx, "The Kea Statistics Commands library "+
-			"(libdhcp_stat_cmds) provides commands for retrieving accurate "+
-			"DHCP lease statistics for Kea DHCP servers. Stork sends these "+
-			"commands to fetch lease statistics displayed in the dashboard, "+
-			"subnet, and shared-network views. Stork found that {daemon} is "+
-			"not using this hook library. Some statistics will not be "+
-			"available until the library is loaded.").
-			referencingDaemon(ctx.subjectDaemon).
-			create()
-		return r, err
-	}
-	return nil, nil
-}
-
 // The checker verifying if the lease_cmds hooks library is loaded.
 func leaseCmdsPresence(ctx *ReviewContext) (*Report, error) {
 	config := ctx.subjectDaemon.KeaDaemon.Config
@@ -1272,19 +1254,11 @@ func controlSocketsCA(ctx *ReviewContext) (*Report, error) {
 //     version the problem was introduced) and 2.5.3 (exclusive).
 //  2. There is configured a subnet or shared network with more than 2^63-1
 //     addresses or a delegated prefix pool with more than 2^63-1 prefixes.
-//  3. The stat_cmds hook is loaded.
 func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Report, error) {
 	// Check the daemon type.
 	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
 		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
-	}
-
-	// Check the statistics hook presence.
-	config := ctx.subjectDaemon.KeaDaemon.Config
-	if _, _, present := config.GetHookLibrary("libdhcp_stat_cmds"); !present {
-		// The stat hook is not loaded.
-		return nil, nil
 	}
 
 	// Check the Kea version.
@@ -1296,6 +1270,7 @@ func gatheringStatisticsUnavailableDueToNumberOverflow(ctx *ReviewContext) (*Rep
 
 	// Look for the subnets and shared networks with the number of addresses
 	// that cause the statistics overflow.
+	config := ctx.subjectDaemon.KeaDaemon.Config
 	sharedNetworks := config.GetSharedNetworks(true)
 	isOverflow, overflowReason, err := findSharedNetworkExceedingAddressLimit(sharedNetworks)
 	if err != nil {

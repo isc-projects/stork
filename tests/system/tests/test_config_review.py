@@ -26,9 +26,8 @@ def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea
     issue_reports = {
         report.checker: report for report in data.items if report.content is not None
     }
-    assert len(issue_reports) == 6
+    assert len(issue_reports) == 5
 
-    assert "stat_cmds_presence" in issue_reports
     assert "overlapping_subnet" in issue_reports
     assert "canonical_prefix" in issue_reports
     assert "address_pools_exhausted_by_reservations" in issue_reports

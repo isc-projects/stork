@@ -160,8 +160,6 @@ export class ConfigCheckerPreferencePickerComponent {
      */
     getCheckerDescription(checkerName: string): string {
         switch (checkerName) {
-            case 'stat_cmds_presence':
-                return 'This checker verifies whether the stat_cmds hook library is loaded.'
             case 'lease_cmds_presence':
                 return 'This checker verifies whether the lease_cmds hook library is loaded.'
             case 'host_cmds_presence':

@@ -126,34 +126,6 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	require.NoError(t, err)
 }
 
-// Tests that the checker checking stat_cmds hooks library presence
-// returns nil when the library is loaded.
-func TestStatCmdsPresent(t *testing.T) {
-	configStr := `{
-        "Dhcp4": {
-            "hooks-libraries": [
-                {
-                    "library": "/usr/lib/kea/libdhcp_stat_cmds.so"
-                }
-            ]
-        }
-    }`
-	report, err := statCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
-	require.NoError(t, err)
-	require.Nil(t, report)
-}
-
-// Tests that the checker checking stat_cmds hooks library presence
-// returns the report when the library is not loaded.
-func TestStatCmdsAbsent(t *testing.T) {
-	configStr := `{"Dhcp4": { }}`
-	report, err := statCmdsPresence(createReviewContext(t, nil, configStr, "2.2.0"))
-	require.NoError(t, err)
-	require.NotNil(t, report)
-	require.NotNil(t, report.content)
-	require.Contains(t, *report.content, "The Kea Statistics Commands library")
-}
-
 // Tests that the checker checking lease_cmds hooks library presence returns
 // nil when the library is loaded.
 func TestLeaseCmdsPresent(t *testing.T) {
@@ -4113,31 +4085,11 @@ func TestGatheringStatsUnavailableForNonDHCPDaemon(t *testing.T) {
 }
 
 // Test that the checker for the unavailable gathering statics capabilities
-// does nothing if the stats hook is missing.
-func TestGatheringStatsUnavailableForMissingStatsHook(t *testing.T) {
-	// Arrange
-	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
-		"subnet6": [ {
-			"subnet": "fe80::/16",
-			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
-		} ]
-	} }`, "2.2.0")
-
-	// Act
-	report, err := gatheringStatisticsUnavailableDueToNumberOverflow(ctx)
-
-	// Assert
-	require.NoError(t, err)
-	require.Nil(t, report)
-}
-
-// Test that the checker for the unavailable gathering statics capabilities
 // does nothing if the stat hook is present and the Kea version is 2.5.3 or
 // above.
 func TestGatheringStatsUnavailableForKea253OrAbove(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
-		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
 		"subnet6": [ {
 			"subnet": "fe80::/16",
 			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
@@ -4158,7 +4110,6 @@ func TestGatheringStatsUnavailableForOverflowingSharedNetwork(t *testing.T) {
 	// Arrange
 	// Shared network with 2^112-1 addresses.
 	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
-		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
 		"shared-networks": [ {
 			"name": "foo",
 			"subnet6": [ {
@@ -4186,7 +4137,6 @@ func TestGatheringStatsUnavailableForOverflowingGlobalSubnets(t *testing.T) {
 	// Arrange
 	// Global subnet with 2^112-1 addresses.
 	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
-		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
 		"subnet6": [ {
 			"subnet": "fe80::/16",
 			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]
@@ -4212,7 +4162,6 @@ func TestGatheringStatsUnavailableForOverflowingSharedNetworkDelegatedPrefixes(t
 	// Arrange
 	// Shared network with 2^63 prefixes.
 	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
-		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
 		"shared-networks": [ {
 			"name": "foo",
 			"subnet6": [ {
@@ -4241,7 +4190,6 @@ func TestGatheringStatsUnavailableForOverflowingGlobalDelegatedPrefixes(t *testi
 	// Arrange
 	// Global subnet with 2^63 prefixes.
 	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
-		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
 		"subnet6": [ {
 			"subnet": "fe80::/16",
 			"pd-pools": [ { "prefix": "fe80::", "prefix-len": 64, "delegated-len": 127 } ]
@@ -4266,7 +4214,6 @@ func TestGatheringStatsUnavailableForOverflowingGlobalDelegatedPrefixes(t *testi
 func TestGatheringStatsUnavailableForNonOverflowingConfig(t *testing.T) {
 	// Arrange
 	ctx := createReviewContext(t, nil, `{ "Dhcp6": {
-		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
 		"subnet6": [ {
 			"subnet": "fe80::/16",
 			"pools": [ { "pool": "fe80::1-fe80::2" } ],
@@ -4295,7 +4242,6 @@ func TestGatheringStatsUnavailableForNonOverflowingConfig(t *testing.T) {
 func TestGatheringStatsUnavailableReportForDifferentKeaVersions(t *testing.T) {
 	// Arrange
 	config := `{ "Dhcp6": {
-		"hooks-libraries": [ { "library": "/usr/lib/kea/libdhcp_stat_cmds.so" } ],
 		"subnet6": [ {
 			"subnet": "fe80::/16",
 			"pools": [ { "pool": "fe80::1-fe80:ffff:ffff:ffff:ffff:ffff:ffff:fff" } ]

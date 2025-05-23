@@ -57,10 +57,6 @@ to manage the subnets and shared networks. Stork can fetch and present subnets a
 hook library; however, adding, updating, or deleting a subnet or shared network requires the ``subnet_cmds``
 hook library to be loaded on all Kea instances where this subnet or shared network belongs.
 
-Stork requires the Statistics Commands (``stat_cmds``) hook library to be loaded by the Kea instance to retrieve lease
-statistics. Stork works without the Stat Commands hook library, but is not able to show pool utilization and other
-statistics.
-
 Stork uses the Go implementation to handle TLS connections, certificates, and keys. The secrets are stored in the PostgreSQL
 database, in the ``secret`` table.
 

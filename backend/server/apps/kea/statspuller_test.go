@@ -122,11 +122,7 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 func createDhcpConfigs() (string, string) {
 	dhcp4 := `{
 		"Dhcp4": {
-			"hooks-libraries": [
-				{
-					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
-				}
-			],
+			"hooks-libraries": [],
 			"reservations": [
 				{
 					"hw-address": "01:bb:cc:dd:ee:ff",
@@ -171,11 +167,7 @@ func createDhcpConfigs() (string, string) {
 	}`
 	dhcp6 := `{
 		"Dhcp6": {
-			"hooks-libraries": [
-				{
-					"library": "/usr/lib/kea/libdhcp_stat_cmds.so"
-				}
-			],
+			"hooks-libraries": [],
 			"reservations": [
 				{
 					"hw-address": "03:bb:cc:dd:ee:ff",
@@ -357,7 +349,7 @@ func TestStatsPullerBasic(t *testing.T) {
 }
 
 // Check if Kea response to stat-leaseX-get command is handled correctly when it is
-// empty or when stats hooks library is not loaded.  The RPS responses are valid,
+// empty or when Kea returns an error.  The RPS responses are valid,
 // they have their own unit tests in rps_test.go.
 func TestStatsPullerEmptyResponse(t *testing.T) {
 	// Arrange
@@ -376,9 +368,9 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 					"pkt4-ack-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
 				}
 			}]`,
-			// simulate not loaded stat plugin in kea
+			// simulate an error is returned from Kea
 			`[{
-				"result": 2, "text": "stat_cmds hook not loaded"
+				"result": 1, "text": "error occurred"
 			}]`,
 		}
 	})
@@ -505,51 +497,6 @@ func TestStatsPullerPullStatsKea16Format(t *testing.T) {
 
 func TestStatsPullerPullStatsKea18Format(t *testing.T) {
 	checkStatsPullerPullStats(t, "1.8")
-}
-
-// Stork should not attempt to get statistics from  the Kea application without the
-// stat_cmds hook library.
-func TestGetStatsFromAppWithoutStatCmd(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-	dbmodel.InitializeSettings(db, 0)
-
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-
-	app := &dbmodel.App{
-		ID:   1,
-		Type: dbmodel.AppTypeKea,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Active: true,
-				Name:   "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{},
-					}),
-				},
-			},
-			{
-				Active: true,
-				Name:   "dhcp6",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{},
-					}),
-				},
-			},
-		},
-	}
-
-	sp, _ := NewStatsPuller(db, fa)
-
-	// Act
-	err := sp.getStatsFromApp(app)
-
-	// Assert
-	require.NoError(t, err)
-	require.Zero(t, fa.CallNo)
 }
 
 // Prepares the Kea configuration file with HA hook and some subnets.
