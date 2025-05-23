@@ -281,7 +281,7 @@ namespace :unittest do
                     'backend/hooksutil/boilerplate'
                 ]
 
-                unused_ignore_rules = ignore_list.to_set
+                unused_ignore_rules = ignore_list.dup
 
                 problem = false
                 out.each_line do |line|
@@ -306,12 +306,20 @@ namespace :unittest do
                         # Check if the function or file is ignored.
                         should_ignore = false
                         ignore_list.each { |ignored|
-                            if func_path.start_with? ignored
-                                should_ignore = true
+                            if ignored.include? ":"
+                                # It is an ignore for a function.
+                                should_ignore = func_path == ignored
+                            else
+                                # It is an ignore for a directory or file.
+                                should_ignore = rel_path.start_with? ignored
+                            end
+
+                            if should_ignore
                                 unused_ignore_rules.delete ignored
                                 break
                             end
                         }
+
                         if not should_ignore
                             puts "FAIL: %-85s %5s%% < 35%%" % [ "#{rel_path}:#{line_number} #{func}", cov]
                             problem = true
