@@ -81,12 +81,8 @@ func (u Utilization) AppendValue(b []byte, quote int) ([]byte, error) {
 		b = append(b, '\'')
 	}
 
-	// if u != nil {
 	s := strconv.FormatFloat(float64(u)*1000., 'f', 0, 64)
 	b = append(b, []byte(s)...)
-	// } else {
-	// b = append(b, "NULL"...)
-	// }
 
 	if quote == 1 {
 		b = append(b, '\'')
