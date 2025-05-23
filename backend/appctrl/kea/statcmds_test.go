@@ -13,7 +13,7 @@ import (
 )
 
 // Test if the Kea JSON get-all-stats response is unmarshal correctly.
-func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
+func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 	// Arrange
 	rawResponse := `
 	[
@@ -61,7 +61,7 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 	]`
 
 	// Act
-	var response GetAllStatisticsResponse
+	var response StatisticGetAllResponse
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
@@ -72,21 +72,21 @@ func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
 	require.NoError(t, response[0].GetError())
 	require.Error(t, response[1].GetError())
 
-	index := slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+	index := slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "total-addresses" && item.IsSubnetSample() && item.SubnetID == 1
 	})
 	require.NotEqual(t, -1, index)
 	item := response[0].Arguments[index]
 	require.EqualValues(t, 200, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "reclaimed-leases"
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.Zero(t, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 1 && *item.AddressPoolID == 0
 	})
 	require.NotEqual(t, -1, index)
@@ -118,7 +118,7 @@ func TestUnmarshalStatisticGetAllResponseBigNumbers(t *testing.T) {
 		}]
 	`
 
-	var response GetAllStatisticsResponse
+	var response StatisticGetAllResponse
 	expected0, _ := big.NewInt(0).SetString("844424930131968", 10)
 	expected1, _ := big.NewInt(0).SetString("281474976710656", 10)
 	expected2, _ := big.NewInt(0).SetString("36893488147419103232", 10)
@@ -131,28 +131,28 @@ func TestUnmarshalStatisticGetAllResponseBigNumbers(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, response, 1)
 
-	index := slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+	index := slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 1
 	})
 	require.NotEqual(t, -1, index)
 	item := response[0].Arguments[index]
 	require.EqualValues(t, expected0, item.Value)
 
-	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 2
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, expected1, item.Value)
 
-	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 4
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, expected2, item.Value)
 
-	index = slices.IndexFunc(response[0].Arguments, func(item GetAllStatisticResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 5
 	})
 	require.NotEqual(t, -1, index)
@@ -198,7 +198,7 @@ func TestIsPoolSample(t *testing.T) {
 	// Run test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sample := GetAllStatisticResponseSample{
+			sample := StatisticGetAllResponseSample{
 				AddressPoolID: tc.addressPoolID,
 				PrefixPoolID:  tc.prefixPoolID,
 			}
@@ -230,7 +230,7 @@ func TestIsAddressPoolSample(t *testing.T) {
 	// Run test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sample := GetAllStatisticResponseSample{
+			sample := StatisticGetAllResponseSample{
 				AddressPoolID: tc.addressPoolID,
 			}
 			result := sample.IsAddressPoolSample()
@@ -261,7 +261,7 @@ func TestIsPrefixPoolSample(t *testing.T) {
 	// Run test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sample := GetAllStatisticResponseSample{
+			sample := StatisticGetAllResponseSample{
 				PrefixPoolID: tc.prefixPoolID,
 			}
 			result := sample.IsPrefixPoolSample()
@@ -319,7 +319,7 @@ func TestIsSubnetSample(t *testing.T) {
 	// Run test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sample := GetAllStatisticResponseSample{
+			sample := StatisticGetAllResponseSample{
 				SubnetID:      tc.subnetID,
 				AddressPoolID: tc.addressPoolID,
 				PrefixPoolID:  tc.prefixPoolID,

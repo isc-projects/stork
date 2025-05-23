@@ -736,7 +736,7 @@ func (pke *PromKeaExporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.GaugeVec, globalStatMap map[string]prometheus.Gauge, response keactrl.GetAllStatisticArguments, ignoredStats map[string]bool, prefixLookup subnetPrefixLookup) {
+func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.GaugeVec, globalStatMap map[string]prometheus.Gauge, response keactrl.StatisticGetAllResponseArguments, ignoredStats map[string]bool, prefixLookup subnetPrefixLookup) {
 	for _, statEntry := range response {
 		// store stat value in proper prometheus object
 		switch {
@@ -864,7 +864,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		// avoid sending requests to non-existing daemons.
 		var services []string
 		for _, daemon := range keaApp.ActiveDaemons {
-			// Select services (daemons) that support the get-statistics-all
+			// Select services (daemons) that support the statistic-get-all
 			// command.
 			if daemon == dhcp4 {
 				services = append(services, daemon)
@@ -898,7 +898,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 
 		// Parse response
-		var response keactrl.GetAllStatisticsResponse
+		var response keactrl.StatisticGetAllResponse
 		err = json.Unmarshal(responseData, &response)
 		if err != nil {
 			lastErr = err

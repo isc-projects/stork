@@ -1078,7 +1078,7 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	puller, _ := NewStatsPuller(db, fa)
 
-	var response keactrl.GetAllStatisticsResponse
+	var response keactrl.StatisticGetAllResponse
 	err := json.Unmarshal(statisticGetAllBigNumbersJSON, &response)
 	require.NoError(t, err)
 
@@ -1127,7 +1127,7 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	// Act
 	err = puller.processAppResponses(
 		app, []*keactrl.Command{keactrl.NewCommandBase(keactrl.StatLease6Get)},
-		daemons, []keactrl.GetAllStatisticsResponse{response},
+		daemons, []keactrl.StatisticGetAllResponse{response},
 	)
 
 	// Assert

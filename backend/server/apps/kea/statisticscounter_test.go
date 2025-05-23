@@ -472,7 +472,7 @@ func TestCounterRealKeaResponse(t *testing.T) {
 	subnets := make([]*dbmodel.Subnet, 0)
 
 	for subnetIdx, statResponseRaw := range statResponses {
-		var statResponse keactrl.GetAllStatisticsResponse
+		var statResponse keactrl.StatisticGetAllResponse
 		_ = json.Unmarshal([]byte(statResponseRaw), &statResponse)
 
 		prefix := "10.0.0.0/24"
@@ -486,7 +486,7 @@ func TestCounterRealKeaResponse(t *testing.T) {
 
 		localSubnets := make([]*dbmodel.LocalSubnet, 0)
 
-		statSamplesBySubnet := make(map[int64][]keactrl.GetAllStatisticResponseSample)
+		statSamplesBySubnet := make(map[int64][]keactrl.StatisticGetAllResponseSample)
 		for _, statSample := range statResponseItems.Arguments {
 			statSamplesBySubnet[statSample.SubnetID] = append(
 				statSamplesBySubnet[statSample.SubnetID],

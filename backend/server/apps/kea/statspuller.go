@@ -177,7 +177,7 @@ type localSubnetKey struct {
 }
 
 // Processes statistics from the `statistic-get-all` response for the given daemon.
-func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisticsResponse, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.StatisticGetAllResponse, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	if len(response) == 0 {
 		return errors.Errorf("response is empty: %+v", response)
 	}
@@ -211,10 +211,10 @@ func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.GetAllStatisti
 }
 
 // Processes statistics from the given command response for subnets belonging to the daemon.
-func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.GetAllStatisticResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
 
-	statisticsPerSubnet := make(map[int64][]keactrl.GetAllStatisticResponseSample)
+	statisticsPerSubnet := make(map[int64][]keactrl.StatisticGetAllResponseSample)
 	for _, statEntry := range response {
 		subnetID := statEntry.SubnetID
 		if statEntry.IsSubnetSample() {
@@ -261,17 +261,17 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.GetAllStatis
 
 // Process statistics from the given command response for pools belonging to
 // the daemon.
-func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.GetAllStatisticResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
 
-	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.GetAllStatisticResponseSample)
+	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.StatisticGetAllResponseSample)
 	for _, statEntry := range response {
 		if !statEntry.IsAddressPoolSample() {
 			continue
 		}
 
 		if _, ok := statisticsPerSubnetAndPool[statEntry.SubnetID]; !ok {
-			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.GetAllStatisticResponseSample)
+			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.StatisticGetAllResponseSample)
 		}
 
 		poolID := *statEntry.AddressPoolID
@@ -327,17 +327,17 @@ func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.GetAllS
 	return lastErr
 }
 
-func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.GetAllStatisticResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
 
-	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.GetAllStatisticResponseSample)
+	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.StatisticGetAllResponseSample)
 	for _, statEntry := range response {
 		if !statEntry.IsPrefixPoolSample() {
 			continue
 		}
 
 		if _, ok := statisticsPerSubnetAndPool[statEntry.SubnetID]; !ok {
-			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.GetAllStatisticResponseSample)
+			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.StatisticGetAllResponseSample)
 		}
 
 		poolID := *statEntry.PrefixPoolID
@@ -426,7 +426,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 		cmdDaemons = append(cmdDaemons, d)
 		cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatisticGetAll, d.Name))
-		responsesAny = append(responsesAny, &keactrl.GetAllStatisticsResponse{})
+		responsesAny = append(responsesAny, &keactrl.StatisticGetAllResponse{})
 	}
 
 	// If there are no commands, nothing to do.
@@ -451,9 +451,9 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return cmdsResult.Error
 	}
 
-	responses := make([]keactrl.GetAllStatisticsResponse, len(responsesAny))
+	responses := make([]keactrl.StatisticGetAllResponse, len(responsesAny))
 	for i := 0; i < len(responsesAny); i++ {
-		response, _ := responsesAny[i].(*keactrl.GetAllStatisticsResponse)
+		response, _ := responsesAny[i].(*keactrl.StatisticGetAllResponse)
 		responses[i] = *response
 	}
 
@@ -463,7 +463,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 // Iterates through the commands for each daemon and processes the command responses
 // Was part of getStatsFromApp() until lint:backend complained about cognitive complexity.
-func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []keactrl.GetAllStatisticsResponse) error {
+func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []keactrl.StatisticGetAllResponse) error {
 	// Lease statistic processing needs app's local subnets
 	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.DB, dbApp.ID)
 	if err != nil {

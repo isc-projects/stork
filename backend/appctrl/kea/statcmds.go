@@ -21,19 +21,19 @@ const (
 // JSON statistic-get-all response.
 // There is a response entry for each service. The order of entries is the
 // same as the order of services in the request.
-type GetAllStatisticsResponse = []GetAllStatisticResponseItem
+type StatisticGetAllResponse = []StatisticGetAllResponseItem
 
-// JSON get-all-statistic single item response returned.
-type GetAllStatisticResponseItem struct {
+// JSON statistic-get-all single item response returned.
+type StatisticGetAllResponseItem struct {
 	ResponseHeader
-	Arguments GetAllStatisticArguments
+	Arguments StatisticGetAllResponseArguments
 }
 
-// The Golang representation of the get-all-statistic arguments.
-type GetAllStatisticArguments []GetAllStatisticResponseSample
+// The Golang representation of the statistic-get-all arguments.
+type StatisticGetAllResponseArguments []StatisticGetAllResponseSample
 
-// Single statistic from the get-all-statistic response.
-type GetAllStatisticResponseSample struct {
+// Single statistic from the statistic-get-all response.
+type StatisticGetAllResponseSample struct {
 	// Statistic name.
 	Name string
 	// Subnet ID is used for the subnet statistics.
@@ -57,28 +57,28 @@ type GetAllStatisticResponseSample struct {
 }
 
 // Indicates if the sample contains an address or prefix pool statistic.
-func (s *GetAllStatisticResponseSample) IsPoolSample() bool {
+func (s *StatisticGetAllResponseSample) IsPoolSample() bool {
 	return s.IsAddressPoolSample() || s.IsPrefixPoolSample()
 }
 
 // Indicates if the sample contains an address pool statistic.
-func (s *GetAllStatisticResponseSample) IsAddressPoolSample() bool {
+func (s *StatisticGetAllResponseSample) IsAddressPoolSample() bool {
 	return s.AddressPoolID != nil
 }
 
 // Indicates if the sample contains a prefix pool statistic.
-func (s *GetAllStatisticResponseSample) IsPrefixPoolSample() bool {
+func (s *StatisticGetAllResponseSample) IsPrefixPoolSample() bool {
 	return s.PrefixPoolID != nil
 }
 
 // Indicates if the sample contains a subnet statistic.
-func (s *GetAllStatisticResponseSample) IsSubnetSample() bool {
+func (s *StatisticGetAllResponseSample) IsSubnetSample() bool {
 	return s.SubnetID != 0 && !s.IsPoolSample()
 }
 
 // UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
 // to simpler Go-friendly form.
-func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
+func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 	// Arguments property of the Kea response looks like below. Its inner list
 	// contains two different types of values: number and string. The Go JSON
 	// library does not support mixed-type arrays. The workaround is to
@@ -101,7 +101,7 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	var samples []GetAllStatisticResponseSample
+	var samples []StatisticGetAllResponseSample
 
 	// Retrieve values of mixed-type arrays.
 	// Unpack the complex structure to simpler form.
@@ -153,7 +153,7 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 		}
 
 		// Fix typo for legacy Kea versions.
-		statName = strings.Replace(statName, "addreses", "addresses", 1)
+		statName = strings.Replace(statName, "addreses", "addresses", 1) // cspell:disable-line
 
 		if len(statValueOuterList) == 0 {
 			log.Errorf("Empty list of stat values")
@@ -194,7 +194,7 @@ func (r *GetAllStatisticArguments) UnmarshalJSON(b []byte) error {
 			)
 		}
 
-		sample := GetAllStatisticResponseSample{
+		sample := StatisticGetAllResponseSample{
 			Name:          statName,
 			SubnetID:      subnetID,
 			AddressPoolID: addressPoolID,

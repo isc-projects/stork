@@ -308,7 +308,7 @@ func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) float32 {
 
 // Marshall a given json response to a DHCP4 command and pass that into Response4Handler.
 func rpsTestInvokeResponse4Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonResponse string) error {
-	var response keactrl.GetAllStatisticsResponse
+	var response keactrl.StatisticGetAllResponse
 	cmd := keactrl.NewCommandBase(keactrl.StatisticGetAll, daemon.Name)
 	keactrl.UnmarshalResponseList(cmd, []byte(jsonResponse), &response)
 
@@ -318,7 +318,7 @@ func rpsTestInvokeResponse4Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonR
 
 // Marshall a given json response to a DHCP6 command and pass that into Response6Handler.
 func rpsTestInvokeResponse6Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonResponse string) error {
-	var response keactrl.GetAllStatisticsResponse
+	var response keactrl.StatisticGetAllResponse
 	cmd := keactrl.NewCommandBase(keactrl.StatisticGetAll, daemon.Name)
 	keactrl.UnmarshalResponseList(cmd, []byte(jsonResponse), &response)
 

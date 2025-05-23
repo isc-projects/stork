@@ -49,7 +49,7 @@ func (rpsWorker *RpsWorker) AgeOffRpsIntervals() error {
 }
 
 // Updates the statistic-get-all command response for DHCP4.
-func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response keactrl.GetAllStatisticsResponse) error {
+func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response keactrl.StatisticGetAllResponse) error {
 	samples, err := rpsWorker.extractSamples4(response)
 	if err == nil && samples != nil {
 		// Note that rather than use the sample time in the list,
@@ -75,7 +75,7 @@ func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response ke
 }
 
 // Processes the statistic-get command response for DHCP4.
-func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response keactrl.GetAllStatisticsResponse) error {
+func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response keactrl.StatisticGetAllResponse) error {
 	sample, err := rpsWorker.extractSamples6(response)
 	if err == nil && sample != nil {
 		// Note that rather than use the sample time in the list,
@@ -101,7 +101,7 @@ func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response ke
 }
 
 // Extract the list of statistic samples from a dhcp4 statistic-get-all response if the response is valid.
-func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.GetAllStatisticsResponse) (*keactrl.GetAllStatisticResponseSample, error) {
+func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.StatisticGetAllResponse) (*keactrl.StatisticGetAllResponseSample, error) {
 	if len(statsResp) == 0 {
 		err := errors.Errorf("empty RPS response")
 		return nil, err
@@ -126,7 +126,7 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.GetAllStatisticsRe
 }
 
 // Extract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
-func (rpsWorker *RpsWorker) extractSamples6(statsResp keactrl.GetAllStatisticsResponse) (*keactrl.GetAllStatisticResponseSample, error) {
+func (rpsWorker *RpsWorker) extractSamples6(statsResp keactrl.StatisticGetAllResponse) (*keactrl.StatisticGetAllResponseSample, error) {
 	if len(statsResp) == 0 {
 		err := errors.Errorf("empty RPS response")
 		return nil, err
