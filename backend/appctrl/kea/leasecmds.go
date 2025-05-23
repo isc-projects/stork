@@ -16,8 +16,6 @@ const (
 	Lease4GetByHostname  CommandName = "lease4-get-by-hostname"
 	Lease6GetByHostname  CommandName = "lease6-get-by-hostname"
 	Lease4GetByHWAddress CommandName = "lease4-get-by-hw-address"
-	StatLease4Get        CommandName = "stat-lease4-get"
-	StatLease6Get        CommandName = "stat-lease6-get"
 )
 
 // Creates lease4-get command.

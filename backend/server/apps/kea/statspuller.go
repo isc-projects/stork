@@ -461,6 +461,11 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 // Iterates through the commands for each daemon and processes the command responses
 // Was part of getStatsFromApp() until lint:backend complained about cognitive complexity.
 func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []keactrl.StatisticGetAllResponse) error {
+	// Check if we have the same number of commands and responses.
+	if len(cmds) != len(responses) {
+		return errors.Errorf("number of commands (%d) does not match number of responses (%d)", len(cmds), len(responses))
+	}
+
 	// Lease statistic processing needs app's local subnets
 	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.DB, dbApp.ID)
 	if err != nil {

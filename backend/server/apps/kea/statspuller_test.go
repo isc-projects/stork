@@ -1073,7 +1073,7 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 
 	// Act
 	err = puller.processAppResponses(
-		app, []*keactrl.Command{keactrl.NewCommandBase(keactrl.StatLease6Get)},
+		app, []*keactrl.Command{keactrl.NewCommandBase(keactrl.StatisticGetAll)},
 		daemons, []keactrl.StatisticGetAllResponse{response},
 	)
 
@@ -1110,4 +1110,46 @@ func TestProcessAppResponsesForResponseWithBigNumbers(t *testing.T) {
 	require.Equal(t, uint64(0), stats["cumulative-assigned-nas"])
 	require.Equal(t, uint64(0), stats["assigned-nas"])
 	require.Equal(t, uint64(0), stats["declined-addresses"])
+}
+
+// Test that an error is returned when the number of responses does not match
+// the number of commands.
+func TestProcessAppResponsesWithDifferentNumberOfResponses(t *testing.T) {
+	// Arrange
+	puller := &StatsPuller{}
+
+	responses := []keactrl.StatisticGetAllResponse{{}, {}}
+	commandsCases := [][]*keactrl.Command{
+		// More responses than commands.
+		{keactrl.NewCommandBase(keactrl.StatisticGetAll)},
+		// More commands than responses.
+		{
+			keactrl.NewCommandBase(keactrl.StatisticGetAll),
+			keactrl.NewCommandBase(keactrl.StatisticGetAll),
+			keactrl.NewCommandBase(keactrl.StatisticGetAll),
+		},
+	}
+	caseLabels := []string{
+		"More responses than commands", "More commands than responses",
+	}
+
+	for i, label := range caseLabels {
+		t.Run(label, func(t *testing.T) {
+			commands := commandsCases[i]
+
+			// Act
+			err := puller.processAppResponses(
+				nil, commands, nil, responses,
+			)
+
+			// Assert
+			require.ErrorContains(
+				t, err,
+				fmt.Sprintf(
+					"number of commands (%d) does not match number of responses (%d)",
+					len(commands), len(responses),
+				),
+			)
+		})
+	}
 }
