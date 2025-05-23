@@ -1416,18 +1416,18 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 // Test successfully receiving a stream of zone RRs.
 func TestReceiveZoneRRs(t *testing.T) {
 	// Setup server response for populating the zone inventory.
-	generatedZones := generateRandomZones(10)
-	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+	trustedZones := generateRandomZones(10)
+	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
-	bindZones := generateRandomZones(10)
+	guestZones := generateRandomZones(10)
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": generatedZones,
+				"zones": trustedZones,
 			},
 			"guest": map[string]any{
-				"zones": bindZones,
+				"zones": guestZones,
 			},
 		},
 	}
@@ -1458,7 +1458,7 @@ func TestReceiveZoneRRs(t *testing.T) {
 		require.Contains(t, transfer.TsigSecret, "trusted-key.")
 		require.Equal(t, transfer.TsigSecret["trusted-key."], "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=")
 		require.Len(t, message.Question, 1)
-		require.Contains(t, message.Question[0].Name, generatedZones[0].Name())
+		require.Contains(t, message.Question[0].Name, trustedZones[0].Name())
 		require.Equal(t, "127.0.0.1:53", address)
 		ch := make(chan *dns.Envelope)
 		go func() {
@@ -1516,7 +1516,7 @@ func TestReceiveZoneRRs(t *testing.T) {
 	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
-		ZoneName:       generatedZones[0].Name(),
+		ZoneName:       trustedZones[0].Name(),
 		ViewName:       "trusted",
 	}, mock)
 	require.NoError(t, err)
@@ -1558,18 +1558,18 @@ func TestReceiveZoneRRsNilZoneInventory(t *testing.T) {
 // Test that an error is returned when the app is not a DNS server.
 func TestReceiveZoneRRsUnsupportedApp(t *testing.T) {
 	// Setup server response for populating the zone inventory.
-	generatedZones := generateRandomZones(10)
-	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+	trustedZones := generateRandomZones(10)
+	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
-	bindZones := generateRandomZones(10)
+	guestZones := generateRandomZones(10)
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": generatedZones,
+				"zones": trustedZones,
 			},
 			"guest": map[string]any{
-				"zones": bindZones,
+				"zones": guestZones,
 			},
 		},
 	}
@@ -1616,18 +1616,18 @@ func TestReceiveZoneRRsUnsupportedApp(t *testing.T) {
 // while trying to receive the zone RRs.
 func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 	// Setup server response for populating the zone inventory.
-	generatedZones := generateRandomZones(10)
-	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+	trustedZones := generateRandomZones(10)
+	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
-	bindZones := generateRandomZones(10)
+	guestZones := generateRandomZones(10)
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": generatedZones,
+				"zones": trustedZones,
 			},
 			"guest": map[string]any{
-				"zones": bindZones,
+				"zones": guestZones,
 			},
 		},
 	}
@@ -1676,7 +1676,7 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
-		ZoneName:       generatedZones[0].Name(),
+		ZoneName:       trustedZones[0].Name(),
 		ViewName:       "trusted",
 	}, mock)
 	require.Contains(t, err.Error(), "rpc error: code = FailedPrecondition desc = zone inventory has not been initialized yet")
@@ -1695,18 +1695,18 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 // while trying to receive the zone RRs.
 func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	// Setup server response for populating the zone inventory.
-	generatedZones := generateRandomZones(10)
-	slices.SortFunc(generatedZones, func(zone1, zone2 *bind9stats.Zone) int {
+	trustedZones := generateRandomZones(10)
+	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
 		return storkutil.CompareNames(zone1.Name(), zone2.Name())
 	})
-	bindZones := generateRandomZones(10)
+	guestZones := generateRandomZones(10)
 	response := map[string]any{
 		"views": map[string]any{
 			"trusted": map[string]any{
-				"zones": generatedZones,
+				"zones": trustedZones,
 			},
 			"guest": map[string]any{
-				"zones": bindZones,
+				"zones": guestZones,
 			},
 		},
 	}
@@ -1765,7 +1765,7 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
-		ZoneName:       generatedZones[0].Name(),
+		ZoneName:       trustedZones[0].Name(),
 		ViewName:       "trusted",
 	}, mock)
 	require.Contains(t, err.Error(), "rpc error: code = Unavailable desc = failed to submit AXFR request to the worker pool: zone transfer is not possible because the zone inventory is in RECEIVING_ZONES state")
