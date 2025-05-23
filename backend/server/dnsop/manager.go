@@ -213,9 +213,7 @@ func NewManager(owner ManagerAccessors) (Manager, error) {
 			cancel:      cancel,
 		},
 	}
-	if err := impl.startRRsRequestWorkers(ctx); err != nil {
-		return nil, err
-	}
+	impl.startRRsRequestWorkers(ctx)
 	return impl, nil
 }
 
@@ -461,14 +459,8 @@ func (manager *managerImpl) requestZoneRRs(key uint64, app *dbmodel.App, zoneNam
 
 // Starts a pool of workers that fetch RRs for the requested zones from the
 // agents' zone inventories.
-func (manager *managerImpl) startRRsRequestWorkers(ctx context.Context) error {
-	pool, err := storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2)
-	if err != nil {
-		// This is highly unlikely. It returns an error when the pool size is 0
-		// or negative. It may also return an error when the expiry duration is
-		// invalid.
-		return errors.Wrap(err, "failed to create worker pool for fetching zone RRs")
-	}
+func (manager *managerImpl) startRRsRequestWorkers(ctx context.Context) {
+	pool := storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2)
 	manager.rrsReqsState.pool = pool
 	go func(ctx context.Context) {
 		defer func() {
@@ -493,7 +485,6 @@ func (manager *managerImpl) startRRsRequestWorkers(ctx context.Context) error {
 			}
 		}
 	}(ctx)
-	return nil
 }
 
 // Stops the worker pool for fetching RRs.

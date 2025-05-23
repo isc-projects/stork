@@ -686,7 +686,8 @@ type zoneInventory struct {
 	mutex sync.RWMutex
 	// Wait group used to wait for the background tasks to complete.
 	wg sync.WaitGroup
-	// Pool of workers used to run AXFR requests.
+	// Pool of workers used to run AXFR requests. It guarantees that
+	// only a limited number of AXFR requests are executed concurrently.
 	axfrPool *storkutil.PausablePool
 	// Channel used to schedule and run AXFR requests in order.
 	axfrReqChan chan *zoneInventoryAXFRRequest
@@ -716,7 +717,7 @@ type zoneInventoryReceiveZoneResult struct {
 // Instantiates the inventory. If the specified storage saves the zone information on
 // disk this function prepares required directory structures. An error is returned if
 // creating these structures fails.
-func newZoneInventory(storage zoneInventoryStorage, config dnsConfigAccessor, client zoneFetcher, host string, port int64) (*zoneInventory, error) {
+func newZoneInventory(storage zoneInventoryStorage, config dnsConfigAccessor, client zoneFetcher, host string, port int64) *zoneInventory {
 	ctx, cancel := context.WithCancel(context.Background())
 	state := newZoneInventoryStateInitial()
 	inventory := &zoneInventory{
@@ -734,11 +735,11 @@ func newZoneInventory(storage zoneInventoryStorage, config dnsConfigAccessor, cl
 		axfrReqChan:   make(chan *zoneInventoryAXFRRequest),
 		axfrReqCancel: cancel,
 		axfrExecutor:  &zoneInventoryAXFRExecutorImpl{},
+		axfrPool:      storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2),
 	}
-	if err := inventory.startAXFRWorkers(ctx); err != nil {
-		return nil, err
-	}
-	return inventory, nil
+	// Start the workers performing AXFR requests.
+	inventory.startAXFRWorkers(ctx)
+	return inventory
 }
 
 // Transitions the inventory to a new state. It returns a zoneInventoryBusyError if the
@@ -1054,18 +1055,7 @@ func (inventory *zoneInventory) runAXFR(request *zoneInventoryAXFRRequest) {
 // Starts a pool of workers for running AXFR requests. This function must be
 // called only once. It is called internally during the zone inventory
 // initialization.
-func (inventory *zoneInventory) startAXFRWorkers(ctx context.Context) error {
-	// Create a worker pool for running AXFR requests. It guarantees that
-	// only a limited number of AXFR requests are executed concurrently.
-	pool, err := storkutil.NewPausablePool(runtime.GOMAXPROCS(0) * 2)
-	if err != nil {
-		// This is highly unlikely. It returns an error when the pool size is 0
-		// or negative. It may also return an error when the expiry duration is
-		// invalid.
-		return errors.Wrap(err, "failed to create AXFR worker pool for zone inventory")
-	}
-	inventory.axfrPool = pool
-
+func (inventory *zoneInventory) startAXFRWorkers(ctx context.Context) {
 	go func() {
 		defer func() {
 			// Ensure that the channel is closed.
@@ -1080,7 +1070,7 @@ func (inventory *zoneInventory) startAXFRWorkers(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				err := pool.Submit(func() {
+				err := inventory.axfrPool.Submit(func() {
 					// Schedule the AXFR request for execution.
 					inventory.runAXFR(request)
 				})
@@ -1108,7 +1098,6 @@ func (inventory *zoneInventory) startAXFRWorkers(ctx context.Context) error {
 			}
 		}
 	}()
-	return nil
 }
 
 // Stops the AXFR workers and waits for them to complete their tasks.

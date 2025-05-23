@@ -549,8 +549,7 @@ func TestNewZoneInventory(t *testing.T) {
 	storage := newZoneInventoryStorageMemory()
 	config := parseDefaultBind9Config(t)
 	client := NewBind9StatsClient()
-	inventory, err := newZoneInventory(storage, config, client, "myhost", 1234)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, client, "myhost", 1234)
 	defer inventory.stop()
 	require.NotNil(t, inventory)
 	require.Equal(t, storage, inventory.storage)
@@ -594,8 +593,7 @@ func TestZoneInventoryTransition(t *testing.T) {
 	storage := newZoneInventoryStorageMemory()
 	config := parseDefaultBind9Config(t)
 	client := NewBind9StatsClient()
-	inventory, err := newZoneInventory(storage, config, client, "myhost", 1234)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, client, "myhost", 1234)
 	defer inventory.stop()
 
 	inventory.transition(newZoneInventoryStateLoaded(time.Time{}))
@@ -648,8 +646,7 @@ func TestZoneInventoryPopulateMemoryDisk(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones into inventory.
@@ -696,8 +693,7 @@ func TestZoneInventoryPopulateMemory(t *testing.T) {
 
 	// Create zone inventory with memory only.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones into inventory/memory.
@@ -737,8 +733,7 @@ func TestZoneInventoryPopulateDisk(t *testing.T) {
 	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones into inventory/disk.
@@ -787,8 +782,7 @@ func TestZoneInventoryPopulateLongLastingTaskConflict(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones into inventory/disk.
@@ -848,8 +842,7 @@ func TestZoneInventoryPopulateAwaitBackgroundTasks(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones into inventory/disk.
 	done, err := inventory.populate(true)
@@ -901,8 +894,7 @@ func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones into disk.
@@ -961,8 +953,7 @@ func TestZoneInventoryLoadMemory(t *testing.T) {
 	// Create zone inventory without persistent storage.
 	storage := newZoneInventoryStorageMemory()
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the views/zones from DNS server to memory.
@@ -1011,8 +1002,7 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 	storage, err := newZoneInventoryStorageDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the views/zones from DNS server to disk.
@@ -1076,8 +1066,7 @@ func TestZoneInventoryLoadAwaitBackgroundTasks(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones into inventory/disk.
 	done, err := inventory.populate(false)
@@ -1137,8 +1126,7 @@ func TestGetZoneInViewDuringLongLastingTask(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the views/zones from DNS server to disk.
@@ -1210,8 +1198,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1357,8 +1344,7 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1499,8 +1485,7 @@ func TestZoneInventoryReceiveZonesCancel(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1552,12 +1537,11 @@ func TestZoneInventoryReceiveZonesCancel(t *testing.T) {
 func TestZoneInventoryReceiveZonesNotInited(t *testing.T) {
 	// Create the inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, nil, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, nil, "localhost", 5380)
 	defer inventory.stop()
 
 	// Collect the received zones in this slice.
-	_, err = inventory.receiveZones(context.Background(), nil)
+	_, err := inventory.receiveZones(context.Background(), nil)
 	require.Error(t, err)
 	var notInitedError *zoneInventoryNotInitedError
 	require.ErrorAs(t, err, &notInitedError)
@@ -1580,8 +1564,7 @@ func TestZoneInventoryGetZoneInViewMemory(t *testing.T) {
 
 	// Create zone inventory in memory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1636,8 +1619,7 @@ func TestZoneInventoryGetZoneInViewDisk(t *testing.T) {
 	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
 	require.NoError(t, err)
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Populate the zones from the DNS server to the inventory.
@@ -1693,8 +1675,7 @@ func TestZoneInventoryRequestAXFR(t *testing.T) {
 	// Create zone inventory in memory.
 	storage := newZoneInventoryStorageMemory()
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Mock the zone transfer execution.
@@ -1778,8 +1759,7 @@ func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 	// Create zone inventory in memory.
 	storage := newZoneInventoryStorageMemory()
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Mock the zone transfer execution.
@@ -1850,8 +1830,7 @@ func TestZoneInventoryRequestAXFRResponseError(t *testing.T) {
 	// Create zone inventory in memory.
 	storage := newZoneInventoryStorageMemory()
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 	defer inventory.stop()
 
 	// Mock the zone transfer execution.
@@ -1912,10 +1891,7 @@ func BenchmarkZoneInventoryLoad(b *testing.B) {
 				b.Fatal(err)
 			}
 			config := parseBenchmarkDefaultBind9Config(b)
-			inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-			if err != nil {
-				b.Fatal(err)
-			}
+			inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 
 			// Populate the zones to disk.
 			done, err := inventory.populate(false)
@@ -1968,10 +1944,7 @@ func BenchmarkZoneInventoryReceiveZonesMemory(b *testing.B) {
 
 			// Create the inventory.
 			config := parseBenchmarkDefaultBind9Config(b)
-			inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-			if err != nil {
-				b.Fatal(err)
-			}
+			inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 
 			// Populate the zones from the DNS server to the inventory.
 			done, err := inventory.populate(false)
@@ -2036,10 +2009,7 @@ func BenchmarkZoneInventoryReceiveZonesDisk(b *testing.B) {
 				b.Fatal(err)
 			}
 			config := parseBenchmarkDefaultBind9Config(b)
-			inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-			if err != nil {
-				b.Fatal(err)
-			}
+			inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 
 			// Populate the zones from the DNS server to the inventory.
 			done, err := inventory.populate(false)
@@ -2094,10 +2064,7 @@ func BenchmarkZoneInventoryGetZoneInView(b *testing.B) {
 
 	// Create zone inventory in memory.
 	config := parseBenchmarkDefaultBind9Config(b)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	if err != nil {
-		b.Fatal(err)
-	}
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones from the DNS server to the inventory.
 	done, err := inventory.populate(false)
@@ -2148,10 +2115,7 @@ func BenchmarkZoneInventoryGetZoneInViewDiskStorage(b *testing.B) {
 		b.Fatal(err)
 	}
 	config := parseBenchmarkDefaultBind9Config(b)
-	inventory, err := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
-	if err != nil {
-		b.Fatal(err)
-	}
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
 
 	// Populate the zones into the inventory.
 	done, err := inventory.populate(false)

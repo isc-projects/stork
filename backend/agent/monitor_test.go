@@ -957,16 +957,14 @@ func TestPopulateZoneInventories(t *testing.T) {
 		},
 		zoneInventory: nil,
 	}
-	zi1, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	zi1 := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	app1 := &Bind9App{
 		BaseApp: BaseApp{
 			Type: AppTypeBind9,
 		},
 		zoneInventory: zi1,
 	}
-	zi2, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	zi2 := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	app2 := &Bind9App{
 		BaseApp: BaseApp{
 			Type: AppTypeBind9,

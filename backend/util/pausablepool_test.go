@@ -24,8 +24,7 @@ func TestPausablePoolStoppedError(t *testing.T) {
 // Test that the pool can be started, paused, resumed and stopped.
 func TestPausablePool(t *testing.T) {
 	// Create the pool.
-	pool, err := NewPausablePool(10)
-	require.NoError(t, err)
+	pool := NewPausablePool(10)
 
 	// Create communication channels for each task.
 	var (
@@ -74,7 +73,7 @@ func TestPausablePool(t *testing.T) {
 	require.Eventually(t, paused.Load, time.Second*1, time.Millisecond*10)
 
 	// When the pool is paused, submitting new tasks should fail.
-	err = pool.Submit(func() {})
+	err := pool.Submit(func() {})
 	require.Error(t, err)
 	pausablePoolPausedError := &PausablePoolPausedError{}
 	require.ErrorAs(t, err, &pausablePoolPausedError)

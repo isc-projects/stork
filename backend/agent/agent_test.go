@@ -1004,8 +1004,7 @@ func TestReceiveZonesFilterByView(t *testing.T) {
 
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	// Populate the zones into inventory.
@@ -1082,8 +1081,7 @@ func TestReceiveZonesFilterByLoadedAfter(t *testing.T) {
 
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	// Populate the zones into inventory.
@@ -1143,8 +1141,7 @@ func TestReceiveZonesFilterLowerBound(t *testing.T) {
 
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	// Populate the zones into inventory.
@@ -1291,8 +1288,7 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	sa, _, teardown := setupAgentTest()
@@ -1317,7 +1313,7 @@ func TestReceiveZonesZoneInventoryNotInited(t *testing.T) {
 	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
 
 	// Run the actual test.
-	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+	err := sa.ReceiveZones(&agentapi.ReceiveZonesReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
 		ViewName:       "_default",
@@ -1360,8 +1356,7 @@ func TestReceiveZonesZoneInventoryBusy(t *testing.T) {
 
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	done, err := inventory.populate(true)
@@ -1441,13 +1436,12 @@ func TestReceiveZoneRRs(t *testing.T) {
 
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	// Get the example zone contents from the file.
 	var rrs []string
-	err = json.Unmarshal(validZoneData, &rrs)
+	err := json.Unmarshal(validZoneData, &rrs)
 	require.NoError(t, err)
 
 	ctrl := gomock.NewController(t)
@@ -1589,8 +1583,7 @@ func TestReceiveZoneRRsUnsupportedApp(t *testing.T) {
 	defer teardown()
 
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	// Add an app that is not a DNS server.
@@ -1610,7 +1603,7 @@ func TestReceiveZoneRRsUnsupportedApp(t *testing.T) {
 	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
 
 	// Run the actual test.
-	err = sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
+	err := sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
 		ZoneName:       "example.com",
@@ -1643,13 +1636,12 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 
 	// Create zone inventory but do not populate it.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	// Get the example zone contents from the file.
 	var rrs []string
-	err = json.Unmarshal(validZoneData, &rrs)
+	err := json.Unmarshal(validZoneData, &rrs)
 	require.NoError(t, err)
 
 	ctrl := gomock.NewController(t)
@@ -1723,8 +1715,7 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 
 	// Create zone inventory.
 	config := parseDefaultBind9Config(t)
-	inventory, err := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	require.NoError(t, err)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
 	defer inventory.awaitBackgroundTasks()
 
 	done, err := inventory.populate(false)

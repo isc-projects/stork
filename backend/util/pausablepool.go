@@ -46,7 +46,7 @@ type PausablePool struct {
 }
 
 // Instantiates a new pool with the specified number of workers.
-func NewPausablePool(size int) (*PausablePool, error) {
+func NewPausablePool(size int) *PausablePool {
 	pool := &PausablePool{
 		tasks:       make(chan func()),
 		ctrlSignals: make([]chan pausablePoolCtrlSignal, size),
@@ -63,7 +63,7 @@ func NewPausablePool(size int) (*PausablePool, error) {
 	}
 	// Ensure that all workers are started before returning.
 	wg.Wait()
-	return pool, nil
+	return pool
 }
 
 // Worker function reading the tasks from the task channel and executing them.
