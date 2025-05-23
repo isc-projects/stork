@@ -84,6 +84,8 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 	// library does not support mixed-type arrays. The workaround is to
 	// unmarshal the values manually by using the json.RawMessage type.
 	//
+	// Example of the arguments property for Kea DHCPv6 2.7.6:
+	//
 	// "arguments": {
 	//     "cumulative-assigned-nas": [
 	//         [
@@ -91,6 +93,28 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 	//             "2025-04-22 17:59:15.338212"
 	//         ]
 	//     ],
+	//     "subnet[10].assigned-nas": [
+	//         [
+	//             0,
+	//             "2024-10-04 14:24:04.401919"
+	//         ]
+	//      ],
+	//      "subnet[10].pool[0].total-nas": [
+	//          [
+	//              4,
+	//              "2024-10-04 14:24:04.401216"
+	//          ]
+	//      ],
+	//      "subnet[1].pd-pool[0].total-pds": [
+	//          [
+	//              512,
+	//              "2024-10-04 14:24:04.401035"
+	//          ],
+	//          [
+	//              256,
+	//              "2024-10-04 14:24:04.401028"
+	//          ]
+	//      ],
 	// }
 
 	var obj map[string][][]json.RawMessage
