@@ -23,7 +23,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-//go:generate mockgen -package=agent -destination=zoneinventorymock_test.go -mock_names=zoneInventoryAxfrExecutor=MockZoneInventoryAxfrExecutor isc.org/stork/agent zoneInventoryAxfrExecutor
+//go:generate mockgen -package=agent -destination=zoneinventorymock_test.go -mock_names=zoneInventoryAXFRExecutor=MockZoneInventoryAXFRExecutor isc.org/stork/agent zoneInventoryAXFRExecutor
 
 // This function generates a collection of zones used in the benchmarks.
 // The function argument specifies the number of zones to be generated.
@@ -113,9 +113,9 @@ func TestZoneInventoryBusyError(t *testing.T) {
 		"cannot transition to the RECEIVING_ZONES state while the zone inventory is in INITIAL state")
 }
 
-// Test zoneInventoryAxfrBusyError.
-func TestZoneInventoryAxfrBusyError(t *testing.T) {
-	require.ErrorContains(t, newZoneInventoryAxfrBusyError(newZoneInventoryStateInitial()),
+// Test zoneInventoryAXFRBusyError.
+func TestZoneInventoryAXFRBusyError(t *testing.T) {
+	require.ErrorContains(t, newZoneInventoryAXFRBusyError(newZoneInventoryStateInitial()),
 		"zone transfer is not possible because the zone inventory is in INITIAL state")
 }
 
@@ -533,8 +533,8 @@ func TestZoneInventoryDiskStorageGetViewsIteratorError(t *testing.T) {
 }
 
 // Basic check on the zone inventory default AXFR executor.
-func TestZoneInventoryAxfrExecutor(t *testing.T) {
-	executor := &zoneInventoryAxfrExecutorImpl{}
+func TestZoneInventoryAXFRExecutor(t *testing.T) {
+	executor := &zoneInventoryAXFRExecutorImpl{}
 	transfer := new(dns.Transfer)
 	message := new(dns.Msg)
 	message.SetAxfr("example.org")
@@ -1669,7 +1669,7 @@ func TestZoneInventoryGetZoneInViewDisk(t *testing.T) {
 }
 
 // Test requesting a successful zone transfer.
-func TestZoneInventoryRequestAxfr(t *testing.T) {
+func TestZoneInventoryRequestAXFR(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(100)
 	response := map[string]any{
@@ -1695,7 +1695,7 @@ func TestZoneInventoryRequestAxfr(t *testing.T) {
 	// Mock the zone transfer execution.
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor := NewMockZoneInventoryAXFRExecutor(ctrl)
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error) {
 		require.NotNil(t, transfer.TsigSecret)
 		require.Len(t, transfer.TsigSecret, 1)
@@ -1731,10 +1731,10 @@ func TestZoneInventoryRequestAxfr(t *testing.T) {
 	require.NoError(t, err)
 
 	// Request zone transfer twice in a row. It should be ok.
-	channel1, err := inventory.requestAxfr(randomZone.Name(), "trusted")
+	channel1, err := inventory.requestAXFR(randomZone.Name(), "trusted")
 	require.NoError(t, err)
 
-	channel2, err := inventory.requestAxfr(randomZone.Name(), "trusted")
+	channel2, err := inventory.requestAXFR(randomZone.Name(), "trusted")
 	require.NoError(t, err)
 
 	// Read the responses.
@@ -1748,7 +1748,7 @@ func TestZoneInventoryRequestAxfr(t *testing.T) {
 }
 
 // Test requesting a zone transfer when error is returned in the envelope.
-func TestZoneInventoryRequestAxfrEnvelopeError(t *testing.T) {
+func TestZoneInventoryRequestAXFREnvelopeError(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(100)
 	response := map[string]any{
@@ -1774,7 +1774,7 @@ func TestZoneInventoryRequestAxfrEnvelopeError(t *testing.T) {
 	// Mock the zone transfer execution.
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor := NewMockZoneInventoryAXFRExecutor(ctrl)
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error) {
 		ch := make(chan *dns.Envelope)
 		go func() {
@@ -1803,7 +1803,7 @@ func TestZoneInventoryRequestAxfrEnvelopeError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Request zone transfer and expect an error.
-	channel, err := inventory.requestAxfr(randomZone.Name(), "trusted")
+	channel, err := inventory.requestAXFR(randomZone.Name(), "trusted")
 	require.NoError(t, err)
 
 	// Read the response from the channel.
@@ -1814,7 +1814,7 @@ func TestZoneInventoryRequestAxfrEnvelopeError(t *testing.T) {
 
 // Test requesting a zone transfer when error is returned before the zone
 // transfer is started.
-func TestZoneInventoryRequestAxfrResponseError(t *testing.T) {
+func TestZoneInventoryRequestAXFRResponseError(t *testing.T) {
 	// Setup server response.
 	defaultZones := generateRandomZones(100)
 	response := map[string]any{
@@ -1840,7 +1840,7 @@ func TestZoneInventoryRequestAxfrResponseError(t *testing.T) {
 	// Mock the zone transfer execution.
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor := NewMockZoneInventoryAXFRExecutor(ctrl)
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error) {
 		return nil, errors.New("some error")
 	})
@@ -1862,7 +1862,7 @@ func TestZoneInventoryRequestAxfrResponseError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Request zone transfer and expect an error.
-	channel, err := inventory.requestAxfr(randomZone.Name(), "trusted")
+	channel, err := inventory.requestAXFR(randomZone.Name(), "trusted")
 	require.NoError(t, err)
 
 	// Read the response from the channel.

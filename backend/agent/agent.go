@@ -662,7 +662,7 @@ func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grp
 		// zone inventory initialized.
 		return status.New(codes.FailedPrecondition, "attempted to receive DNS zone RRs from an app for which zone inventory was not instantiated").Err()
 	}
-	respChan, err := inventory.requestAxfr(req.ZoneName, req.ViewName)
+	respChan, err := inventory.requestAXFR(req.ZoneName, req.ViewName)
 	if err != nil {
 		// This error most likely indicates that the zone inventory was unable to
 		// find credentials in the DNS server configuration. This may be due to a
@@ -673,7 +673,7 @@ func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grp
 		if resp.err != nil {
 			var (
 				notInitedError *zoneInventoryNotInitedError
-				busyError      *zoneInventoryAxfrBusyError
+				busyError      *zoneInventoryAXFRBusyError
 			)
 			// Some of the errors require special handling so the client can
 			// interpret them and take specific actions (e.g., try later).

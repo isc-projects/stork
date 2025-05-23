@@ -1457,7 +1457,7 @@ func TestReceiveZoneRRs(t *testing.T) {
 	defer teardown()
 
 	// Replace the default AXFR executor to mock the AXFR response.
-	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor := NewMockZoneInventoryAXFRExecutor(ctrl)
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(transfer *dns.Transfer, message *dns.Msg, address string) (chan *dns.Envelope, error) {
 		require.NotNil(t, transfer.TsigSecret)
 		require.Len(t, transfer.TsigSecret, 1)
@@ -1659,7 +1659,7 @@ func TestReceiveZoneRRsZoneInventoryNotInited(t *testing.T) {
 	defer teardown()
 
 	// Replace the default AXFR executor to mock the AXFR response.
-	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor := NewMockZoneInventoryAXFRExecutor(ctrl)
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(0)
 	inventory.axfrExecutor = axfrExecutor
 
@@ -1749,7 +1749,7 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 
 	// Replace the default AXFR executor to mock the AXFR response.
 	// Expect that the AXFR request is not executed.
-	axfrExecutor := NewMockZoneInventoryAxfrExecutor(ctrl)
+	axfrExecutor := NewMockZoneInventoryAXFRExecutor(ctrl)
 	axfrExecutor.EXPECT().run(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(0)
 	inventory.axfrExecutor = axfrExecutor
 

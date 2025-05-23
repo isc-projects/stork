@@ -93,7 +93,7 @@ func (c *Config) getKeyFromAddressMatchList(level int, addressMatchList *Address
 }
 
 // Gets credentials for the zone transfer for the given zone in the default view.
-func (c *Config) getAxfrCredentialsForDefaultView(zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
 	// The allow-transfer enables zone transfers and can be specified at the
 	// zone or global level.
 	var allowTransfer *AllowTransfer
@@ -174,7 +174,7 @@ func (c *Config) getAxfrCredentialsForDefaultView(zoneName string) (address *str
 }
 
 // Gets credentials for the zone transfer for the given view and zone.
-func (c *Config) getAxfrCredentialsForView(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
 	// View is required as it may contain the match-clients clause. This clause should
 	// contain a reference to the key the client should use to discriminate between the
 	// zones from different views.
@@ -313,11 +313,11 @@ func (c *Config) getAxfrCredentialsForView(viewName string, zoneName string) (ad
 // may not be handled. It typically involves the cross check between the ACLs and the
 // listen-on clauses. Especially when they refer to ACLs. As a result, some AXFR attempts
 // may fail in BIND 9 when misconfigurations aren't caught by Stork.
-func (c *Config) GetAxfrCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
 	if viewName != DefaultViewName {
-		return c.getAxfrCredentialsForView(viewName, zoneName)
+		return c.getAXFRCredentialsForView(viewName, zoneName)
 	}
-	return c.getAxfrCredentialsForDefaultView(zoneName)
+	return c.getAXFRCredentialsForDefaultView(zoneName)
 }
 
 // Returns the key associated with the given view or nil if the view is not found.

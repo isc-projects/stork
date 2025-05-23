@@ -123,7 +123,7 @@ func TestGetViewKey(t *testing.T) {
 
 // Test that that IPv4 listener address and port is used when the
 // allow-transfer clause matches.
-func TestGetAxfrCredentialsForViewListenOnIPv4(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnIPv4(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 853 { key trusted-key; };
@@ -140,7 +140,7 @@ func TestGetAxfrCredentialsForViewListenOnIPv4(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	// Localhost is preferred. The port should be 853 as it matches both
 	// the listener port and the allow-transfer port.
@@ -155,7 +155,7 @@ func TestGetAxfrCredentialsForViewListenOnIPv4(t *testing.T) {
 
 // Test that the local loopback listener address is preferred even if the first
 // listen-on clause contains a different address.
-func TestGetAxfrCredentialsForViewListenOnMultipleClauses(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnMultipleClauses(t *testing.T) {
 	config := `
 		options {
 			allow-transfer { key trusted-key; };
@@ -175,7 +175,7 @@ func TestGetAxfrCredentialsForViewListenOnMultipleClauses(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials("trusted", "example.com")
 	require.NoError(t, err)
 	// The local loopback addresss from the second clause is preferred.
 	require.Equal(t, "127.0.0.1:53", *address)
@@ -189,7 +189,7 @@ func TestGetAxfrCredentialsForViewListenOnMultipleClauses(t *testing.T) {
 
 // Test that the IPv6 local loopback address is preferred over non-loopback
 // IPv4 addresses.
-func TestGetAxfrCredentialsForViewListenOnIPv6(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnIPv6(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 54 { key trusted-key; };
@@ -209,7 +209,7 @@ func TestGetAxfrCredentialsForViewListenOnIPv6(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.getAXFRCredentialsForView("trusted", "example.com")
 	require.NoError(t, err)
 	require.Equal(t, "[::1]:54", *address)
 	require.NotNil(t, keyName)
@@ -222,7 +222,7 @@ func TestGetAxfrCredentialsForViewListenOnIPv6(t *testing.T) {
 
 // Test that the address is picked that matches the port specified in the
 // allow-transfer clause.
-func TestGetAxfrCredentialsForViewListenOnAllowTransferPreferredPort(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnAllowTransferPreferredPort(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 853 { key trusted-key; };
@@ -241,7 +241,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferPreferredPort(t *testing.
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.getAXFRCredentialsForView("trusted", "example.com")
 	require.NoError(t, err)
 	// If the port was not specified in the allow-transfer clause, the IPv4
 	// loopback address would have been selected. However, since the port is
@@ -257,7 +257,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferPreferredPort(t *testing.
 
 // Test that the local loopback address is picked when the allow-transfer clause
 // is set to any and the listen-on clause is not specified.
-func TestGetAxfrCredentialsForViewListenOnAllowTransferAny(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnAllowTransferAny(t *testing.T) {
 	config := `
 		options {
 			allow-transfer { any; };
@@ -274,7 +274,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferAny(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.getAXFRCredentialsForView("trusted", "example.com")
 	require.NoError(t, err)
 	require.Equal(t, "127.0.0.1:53", *address)
 	require.NotNil(t, keyName)
@@ -287,7 +287,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferAny(t *testing.T) {
 
 // Test that IPv6 local loopback address is picked when the allow-transfer clause
 // is set to any and the listen-on-v6 clause contains the local loopback address.
-func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverride(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnAllowTransferZoneOverride(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 854 { any; };
@@ -309,7 +309,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverride(t *testing.T
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.getAXFRCredentialsForView("trusted", "example.com")
 	require.NoError(t, err)
 	require.Equal(t, "[::1]:853", *address)
 	require.NotNil(t, keyName)
@@ -322,7 +322,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverride(t *testing.T
 
 // Test that the errors is returned when the allow-transfer port does not match the
 // default listen-on port.
-func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideNoListener(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnAllowTransferZoneOverrideNoListener(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 854 { any; };
@@ -342,7 +342,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideNoListener(t 
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.getAXFRCredentialsForView("trusted", "example.com")
 	require.ErrorContains(t, err, "allow-transfer port 853 does not match any listen-on setting")
 	require.Nil(t, address)
 	require.Nil(t, keyName)
@@ -352,7 +352,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideNoListener(t 
 
 // Test that the error is returned when the allow-transfer port does not match the
 // listen-on port.
-func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideListenerMismatch(t *testing.T) {
+func TestGetAXFRCredentialsForViewListenOnAllowTransferZoneOverrideListenerMismatch(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 854 { any; };
@@ -373,7 +373,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideListenerMisma
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.getAXFRCredentialsForView("trusted", "example.com")
 	require.ErrorContains(t, err, "allow-transfer port 853 does not match any listen-on setting")
 	require.Nil(t, address)
 	require.Nil(t, keyName)
@@ -382,7 +382,7 @@ func TestGetAxfrCredentialsForViewListenOnAllowTransferZoneOverrideListenerMisma
 }
 
 // Test that the error is returned when the allow-transfer is disabled.
-func TestGetAxfrCredentialsForViewNoAllowTransfer(t *testing.T) {
+func TestGetAXFRCredentialsForViewNoAllowTransfer(t *testing.T) {
 	config := `
 		options {
 			listen-on port 54 { 192.0.2.1; 127.0.0.1; };
@@ -400,7 +400,7 @@ func TestGetAxfrCredentialsForViewNoAllowTransfer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.getAxfrCredentialsForView("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.getAXFRCredentialsForView("trusted", "example.com")
 	require.ErrorContains(t, err, "allow-transfer is disabled")
 	require.Nil(t, address)
 	require.Nil(t, keyName)
@@ -410,7 +410,7 @@ func TestGetAxfrCredentialsForViewNoAllowTransfer(t *testing.T) {
 
 // Test that the allow-transfer option is used to identify the correct key
 // for the zone transfer when match-clients is not specified.
-func TestGetAxfrCredentialsForView(t *testing.T) {
+func TestGetAXFRCredentialsForView(t *testing.T) {
 	config := `
 		options {
 			listen-on port 54 { 192.0.2.2; };
@@ -438,7 +438,7 @@ func TestGetAxfrCredentialsForView(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials("trusted", "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials("trusted", "example.com")
 	require.NoError(t, err)
 	require.NotNil(t, address)
 	require.Equal(t, "[::1]:54", *address)
@@ -452,7 +452,7 @@ func TestGetAxfrCredentialsForView(t *testing.T) {
 
 // Test that that IPv4 listener address and port is used when the
 // allow-transfer clause matches.
-func TestGetAxfrCredentialsForDefaultViewListenOnIPv4(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnIPv4(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 853 { key trusted-key; };
@@ -469,7 +469,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnIPv4(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	// Localhost is preferred. The port should be 853 as it matches both
 	// the listener port and the allow-transfer port.
@@ -484,7 +484,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnIPv4(t *testing.T) {
 
 // Test that the local loopback listener address is preferred even if the first
 // listen-on clause contains a different address.
-func TestGetAxfrCredentialsForDefaultViewListenOnMultipleClauses(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnMultipleClauses(t *testing.T) {
 	config := `
 		options {
 			allow-transfer { key trusted-key; };
@@ -501,7 +501,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnMultipleClauses(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	// The local loopback addresss from the second clause is preferred.
 	require.Equal(t, "127.0.0.1:53", *address)
@@ -515,7 +515,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnMultipleClauses(t *testing.T) {
 
 // Test that the IPv6 local loopback address is preferred over non-loopback
 // IPv4 addresses.
-func TestGetAxfrCredentialsForDefaultViewListenOnIPv6(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnIPv6(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 54 { key trusted-key; };
@@ -532,7 +532,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnIPv6(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	require.Equal(t, "[::1]:54", *address)
 	require.NotNil(t, keyName)
@@ -545,7 +545,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnIPv6(t *testing.T) {
 
 // Test that the address is picked that matches the port specified in the
 // allow-transfer clause.
-func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferPreferredPort(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferPreferredPort(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 853 { key trusted-key; };
@@ -561,7 +561,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferPreferredPort(t *t
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	// If the port was not specified in the allow-transfer clause, the IPv4
 	// loopback address would have been selected. However, since the port is
@@ -575,7 +575,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferPreferredPort(t *t
 	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", *secret)
 }
 
-func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferAny(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferAny(t *testing.T) {
 	config := `
 		options {
 			allow-transfer { any; };
@@ -585,7 +585,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferAny(t *testing.T) 
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	require.Equal(t, "127.0.0.1:53", *address)
 	require.Nil(t, keyName)
@@ -593,7 +593,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferAny(t *testing.T) 
 	require.Nil(t, secret)
 }
 
-func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverride(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferZoneOverride(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 854 { any; };
@@ -608,7 +608,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverride(t *te
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	require.Equal(t, "[::1]:853", *address)
 	require.Nil(t, keyName)
@@ -616,7 +616,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverride(t *te
 	require.Nil(t, secret)
 }
 
-func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideNoListener(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferZoneOverrideNoListener(t *testing.T) {
 	config := `
 		options {
 			allow-transfer port 854 { any; };
@@ -629,7 +629,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideNoList
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.ErrorContains(t, err, "allow-transfer port 853 does not match any listen-on setting")
 	require.Nil(t, address)
 	require.Nil(t, keyName)
@@ -637,7 +637,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideNoList
 	require.Nil(t, secret)
 }
 
-func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideListenerMismatch(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferZoneOverrideListenerMismatch(t *testing.T) {
 	config := `
 		zone "example.com" {
 			allow-transfer port 854 { any; };
@@ -647,7 +647,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideListen
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.ErrorContains(t, err, "allow-transfer port 854 does not match any listen-on setting")
 	require.Nil(t, address)
 	require.Nil(t, keyName)
@@ -655,7 +655,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnAllowTransferZoneOverrideListen
 	require.Nil(t, secret)
 }
 
-func TestGetAxfrCredentialsForDefaultViewListenOnPermissiveAllowTransferNegatedListener(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewListenOnPermissiveAllowTransferNegatedListener(t *testing.T) {
 	config := `
 		options {
 			listen-on port 53 { !127.0.0.1; 192.0.2.1; };
@@ -668,7 +668,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnPermissiveAllowTransferNegatedL
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.NoError(t, err)
 	require.NotNil(t, address)
 	require.Equal(t, "192.0.2.1:53", *address)
@@ -677,7 +677,7 @@ func TestGetAxfrCredentialsForDefaultViewListenOnPermissiveAllowTransferNegatedL
 	require.Nil(t, secret)
 }
 
-func TestGetAxfrCredentialsForDefaultViewNoAllowTransfer(t *testing.T) {
+func TestGetAXFRCredentialsForDefaultViewNoAllowTransfer(t *testing.T) {
 	config := `
 		options {
 			listen-on port 54 { 192.0.2.1; 127.0.0.1; };
@@ -688,7 +688,7 @@ func TestGetAxfrCredentialsForDefaultViewNoAllowTransfer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	address, keyName, algorithm, secret, err := cfg.GetAxfrCredentials(DefaultViewName, "example.com")
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
 	require.ErrorContains(t, err, "allow-transfer is disabled")
 	require.Nil(t, address)
 	require.Nil(t, keyName)
