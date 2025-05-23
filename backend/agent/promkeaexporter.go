@@ -647,7 +647,8 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 			Help:      "Cumulative number of assigned PD prefixes since server startup",
 		}, subnetLabels)
 
-		poolLabels := []string{"subnet_id", "prefix", "pool_id"}
+		poolLabels := []string{"pool_id"}
+		poolLabels = append(poolLabels, subnetLabels...)
 
 		adr4StatsMap["pool-assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: AppTypeKea,
@@ -894,8 +895,16 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 					subnetPrefix = ""
 				}
 			}
+			subnetIdentifier := subnetIDRaw // Subnet ID or prefix if available.
+			if subnetPrefix != "" {
+				subnetIdentifier = subnetPrefix
+			}
 
-			labels := prometheus.Labels{"subnet_id": subnetIDRaw, "prefix": subnetPrefix}
+			labels := prometheus.Labels{
+				"subnet_id": subnetIDRaw,
+				"prefix":    subnetPrefix,
+				"subnet":    subnetIdentifier,
+			}
 
 			switch {
 			case strings.HasPrefix(metricName, "pool["):
@@ -913,11 +922,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 
 				labels["pool_id"] = pdPoolIDRaw
 			default:
-				legacyLabel := subnetIDRaw // Subnet ID or prefix if available.
-				if subnetPrefix != "" {
-					legacyLabel = subnetPrefix
-				}
-				labels["subnet"] = legacyLabel
+				// It isn't a pool stat. Just a subnet stat.
 			}
 
 			if stat, ok := (*dhcpStatMap)[metricName]; ok {

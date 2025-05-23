@@ -263,6 +263,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 
 	metric, _ = pke.Adr4StatsMap["pool-total-addresses"].GetMetricWith(
 		prometheus.Labels{
+			"subnet":    "11",
 			"subnet_id": "11",
 			"prefix":    "",
 			"pool_id":   "0",
@@ -351,6 +352,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 
 	metric, _ = pke.Adr6StatsMap["pool-total-nas"].GetMetricWith(
 		prometheus.Labels{
+			"subnet":    "1",
 			"subnet_id": "1",
 			"prefix":    "",
 			"pool_id":   "0",
@@ -360,6 +362,7 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 
 	metric, _ = pke.Adr6StatsMap["pool-pd-total-pds"].GetMetricWith(
 		prometheus.Labels{
+			"subnet":    "1",
 			"subnet_id": "1",
 			"prefix":    "",
 			"pool_id":   "0",
