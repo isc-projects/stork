@@ -67,7 +67,10 @@ func NewPausablePool(size int) (*PausablePool, error) {
 }
 
 // Worker function reading the tasks from the task channel and executing them.
-// It also receives the pause signal over the channels.
+// It also receives the pause signal over the channels. The wg parameter is used
+// to wait for all the workers to start before returning the PausablePool instance.
+// The i parameter is the index of the worker. It is used to select the correct
+// control signal channel.
 func (p *PausablePool) worker(wg *sync.WaitGroup, i int) {
 	wg.Done()
 	for {
