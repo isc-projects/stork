@@ -36,7 +36,7 @@ type PausablePool struct {
 	tasks chan func()
 	// Worker receives the pause signals over these channels. There is one
 	// channel per worker.
-	ctrls []chan pausablePoolCtrlSignal
+	ctrlSignals []chan pausablePoolCtrlSignal
 	// Indicates that the pool is paused.
 	paused bool
 	// Indicates that the pool is stopped.
@@ -48,17 +48,17 @@ type PausablePool struct {
 // Instantiates a new pool with the specified number of workers.
 func NewPausablePool(size int) (*PausablePool, error) {
 	pool := &PausablePool{
-		tasks:   make(chan func()),
-		ctrls:   make([]chan pausablePoolCtrlSignal, size),
-		paused:  false,
-		stopped: false,
-		mutex:   sync.Mutex{},
+		tasks:       make(chan func()),
+		ctrlSignals: make([]chan pausablePoolCtrlSignal, size),
+		paused:      false,
+		stopped:     false,
+		mutex:       sync.Mutex{},
 	}
 	// Initialize the wait group to be waited for starting the pool.
 	var wg sync.WaitGroup
 	wg.Add(size)
 	for i := 0; i < size; i++ {
-		pool.ctrls[i] = make(chan pausablePoolCtrlSignal)
+		pool.ctrlSignals[i] = make(chan pausablePoolCtrlSignal)
 		go pool.worker(&wg, i)
 	}
 	// Ensure that all workers are started before returning.
@@ -72,7 +72,7 @@ func (p *PausablePool) worker(wg *sync.WaitGroup, i int) {
 	wg.Done()
 	for {
 		select {
-		case signal, ok := <-p.ctrls[i]:
+		case signal, ok := <-p.ctrlSignals[i]:
 			if !ok {
 				// The channel is closed when the pool is stopped.
 				return
@@ -83,7 +83,7 @@ func (p *PausablePool) worker(wg *sync.WaitGroup, i int) {
 			}
 			// Wait for the resume signal in the inner loop.
 			for {
-				signal, ok := <-p.ctrls[i]
+				signal, ok := <-p.ctrlSignals[i]
 				if !ok {
 					// The channel is closed when the pool is stopped.
 					return
@@ -114,7 +114,7 @@ func (p *PausablePool) Pause() error {
 	if !p.paused {
 		p.paused = true
 		// Send the pause signal to all workers and wait for them to pause.
-		for _, c := range p.ctrls {
+		for _, c := range p.ctrlSignals {
 			c <- pausablePoolCtrlSignalPause
 		}
 	}
@@ -131,7 +131,7 @@ func (p *PausablePool) Resume() error {
 	if p.paused {
 		p.paused = false
 		// Send the resume signal to all workers.
-		for _, c := range p.ctrls {
+		for _, c := range p.ctrlSignals {
 			c <- pausablePoolCtrlSignalResume
 		}
 	}
@@ -144,7 +144,7 @@ func (p *PausablePool) Stop() {
 	defer p.mutex.Unlock()
 	if !p.stopped {
 		p.stopped = true
-		for _, c := range p.ctrls {
+		for _, c := range p.ctrlSignals {
 			close(c)
 		}
 		close(p.tasks)
