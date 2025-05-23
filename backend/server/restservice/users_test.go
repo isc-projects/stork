@@ -952,7 +952,7 @@ func TestUpdateUserPasswordWrongUserID(t *testing.T) {
 
 	// Update user password via the API with wrong ID.
 	params := users.UpdateUserPasswordParams{
-		ID: int64(user.ID+1),
+		ID: int64(user.ID + 1),
 		Passwords: &models.PasswordChange{
 			Newpassword: storkutil.Ptr(models.Password("updated")),
 			Oldpassword: storkutil.Ptr(models.Password("pass")),
