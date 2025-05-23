@@ -58,7 +58,7 @@ type GetAllStatisticResponseSample struct {
 
 // Indicates if the sample contains an address or prefix pool statistic.
 func (s *GetAllStatisticResponseSample) IsPoolSample() bool {
-	return s.IsAddressPoolSample() || s.PrefixPoolSample()
+	return s.IsAddressPoolSample() || s.IsPrefixPoolSample()
 }
 
 // Indicates if the sample contains an address pool statistic.
