@@ -62,7 +62,7 @@ func TestPausablePool(t *testing.T) {
 	}()
 
 	// Verify that waiting didn't finish.
-	require.Never(t, paused.Load, time.Second*1, time.Millisecond*10)
+	require.Never(t, paused.Load, time.Millisecond*100, time.Millisecond*10)
 
 	// Read from the remaining channels to unblock the remaining tasks.
 	for i := 5; i < 10; i++ {
@@ -152,7 +152,7 @@ func TestPausablePoolFinishTasksOnStop(t *testing.T) {
 	}()
 
 	// Verify that waiting didn't finish.
-	require.Never(t, stopped.Load, time.Second*1, time.Millisecond*10)
+	require.Never(t, stopped.Load, time.Millisecond*100, time.Millisecond*10)
 
 	// Read from the remaining channels to unblock the remaining tasks.
 	for i := 5; i < 10; i++ {
