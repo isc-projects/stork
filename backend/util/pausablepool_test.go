@@ -105,3 +105,68 @@ func TestPausablePool(t *testing.T) {
 	pausablePoolStoppedError := &PausablePoolStoppedError{}
 	require.ErrorAs(t, err, &pausablePoolStoppedError)
 }
+
+// Test that stopped pool allows for finishing the running tasks.
+func TestPausablePoolFinishTasksOnStop(t *testing.T) {
+	// Create the pool.
+	pool := NewPausablePool(10)
+
+	// Create communication channels for each task.
+	var (
+		channels    []chan int
+		wg          sync.WaitGroup
+		taskResults sync.Map
+	)
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		ch := make(chan int)
+		channels = append(channels, ch)
+		value := i
+		pool.Submit(func() {
+			wg.Done()
+			// This is the blocking write to the channel.
+			// The task is guaranteed to be blocked until we read
+			// from the channel.
+			ch <- value
+			// When the task is finished store the result so the
+			// test can verify that the task was executed after
+			// the pool had been stopped.
+			taskResults.Store(value, value)
+		})
+	}
+	wg.Wait()
+
+	// Read from several channels to unblock selected tasks.
+	for i := 0; i < 5; i++ {
+		v := <-channels[i]
+		require.Equal(t, v, i)
+	}
+
+	// Schedule waiting for the pool to complete running tasks.
+	var stopped atomic.Bool
+	go func() {
+		// This call should block until all tasks are finished.
+		pool.Stop()
+		// Indicate that we finished waiting for the pool.
+		stopped.Store(true)
+	}()
+
+	// Verify that waiting didn't finish.
+	require.Never(t, stopped.Load, time.Second*1, time.Millisecond*10)
+
+	// Read from the remaining channels to unblock the remaining tasks.
+	for i := 5; i < 10; i++ {
+		<-channels[i]
+	}
+
+	// This time waiting should finish successfully.
+	require.Eventually(t, stopped.Load, time.Second*1, time.Millisecond*10)
+
+	// Verify that all tasks were executed.
+	var count int
+	taskResults.Range(func(key, value any) bool {
+		count++
+		return true
+	})
+	require.Equal(t, 10, count)
+}

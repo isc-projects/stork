@@ -28,6 +28,7 @@ type pausablePoolCtrlSignal int
 const (
 	pausablePoolCtrlSignalPause pausablePoolCtrlSignal = iota
 	pausablePoolCtrlSignalResume
+	pausablePoolCtrlSignalStop
 )
 
 // PausablePool is a pool of workers with the capability to pause and resume.
@@ -73,6 +74,7 @@ func NewPausablePool(size int) *PausablePool {
 // control signal channel.
 func (p *PausablePool) worker(wg *sync.WaitGroup, i int) {
 	wg.Done()
+	running := true
 	for {
 		select {
 		case signal, ok := <-p.ctrlSignals[i]:
@@ -80,29 +82,24 @@ func (p *PausablePool) worker(wg *sync.WaitGroup, i int) {
 				// The channel is closed when the pool is stopped.
 				return
 			}
-			// Ignore unpause signals, as we're not paused here.
-			if signal != pausablePoolCtrlSignalPause {
-				continue
-			}
-			// Wait for the resume signal in the inner loop.
-			for {
-				signal, ok := <-p.ctrlSignals[i]
-				if !ok {
-					// The channel is closed when the pool is stopped.
-					return
-				}
-				if signal == pausablePoolCtrlSignalResume {
-					// Expect the resume signal in the inner loop.
-					break
-				}
+			switch signal {
+			case pausablePoolCtrlSignalResume:
+				running = true
+			case pausablePoolCtrlSignalPause:
+				running = false
+			default:
+				// Stop the worker after receiving the stop signal.
+				return
 			}
 		case task, ok := <-p.tasks:
 			if !ok {
 				// The channel is closed when the pool is stopped.
 				return
 			}
-			// The worker is not paused. Let's execute the next task.
-			task()
+			if running {
+				// The worker is in the running state. Let's execute the next task.
+				task()
+			}
 		}
 	}
 }
@@ -148,6 +145,7 @@ func (p *PausablePool) Stop() {
 	if !p.stopped {
 		p.stopped = true
 		for _, c := range p.ctrlSignals {
+			c <- pausablePoolCtrlSignalStop
 			close(c)
 		}
 		close(p.tasks)
