@@ -329,3 +329,59 @@ func TestIsSubnetSample(t *testing.T) {
 		})
 	}
 }
+
+// Test that the pool ID is retrieved from a statistic sample properly.
+func TestStatisticGetAllResponseSampleGetPoolID(t *testing.T) {
+	t.Run("empty sample", func(t *testing.T) {
+		// Arrange
+		sample := &StatisticGetAllResponseSample{}
+
+		// Act & Assert
+		require.Nil(t, sample.GetPoolID())
+	})
+
+	t.Run("subnet sample", func(t *testing.T) {
+		// Arrange
+		sample := &StatisticGetAllResponseSample{SubnetID: 42}
+
+		// Act & Assert
+		require.Nil(t, sample.GetPoolID())
+	})
+
+	t.Run("address pool sample", func(t *testing.T) {
+		// Arrange
+		sample := &StatisticGetAllResponseSample{
+			AddressPoolID: storkutil.Ptr(int64(42)),
+		}
+
+		// Act & Assert
+		require.NotNil(t, sample.GetPoolID())
+		require.EqualValues(t, 42, *sample.GetPoolID())
+	})
+
+	t.Run("delegated prefix pool sample", func(t *testing.T) {
+		// Arrange
+		sample := &StatisticGetAllResponseSample{
+			PrefixPoolID: storkutil.Ptr(int64(42)),
+		}
+
+		// Act & Assert
+		require.NotNil(t, sample.GetPoolID())
+		require.EqualValues(t, 42, *sample.GetPoolID())
+	})
+
+	// This case should never happen. The statistic sample must contain
+	// only single pool ID. This test checks if Stork doesn't crash in such
+	// case.
+	t.Run("both pool sample", func(t *testing.T) {
+		// Arrange
+		sample := &StatisticGetAllResponseSample{
+			AddressPoolID: storkutil.Ptr(int64(42)),
+			PrefixPoolID:  storkutil.Ptr(int64(24)),
+		}
+
+		// Act & Assert
+		require.NotNil(t, sample.GetPoolID())
+		require.EqualValues(t, 42, *sample.GetPoolID())
+	})
+}

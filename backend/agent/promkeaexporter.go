@@ -766,19 +766,18 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.Ga
 				continue
 			}
 			legacyLabel := fmt.Sprint(statEntry.SubnetID) // Subnet ID or prefix if available.
-			labels := prometheus.Labels{"subnet_id": legacyLabel, "prefix": ""}
+			labels := prometheus.Labels{
+				"subnet":    legacyLabel,
+				"subnet_id": legacyLabel,
+				"prefix":    "",
+			}
 			subnetPrefix, ok := prefixLookup.getPrefix(int(statEntry.SubnetID))
 			if ok {
 				labels["prefix"] = subnetPrefix
-				legacyLabel = subnetPrefix
+				labels["subnet"] = subnetPrefix
 			}
-			labels["subnet"] = legacyLabel
 
 			statName := statEntry.Name
-			// skip ignored stats
-			if ignoredStats[statName] {
-				continue
-			}
 
 			switch {
 			case statEntry.IsAddressPoolSample():
@@ -789,6 +788,11 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.Ga
 				statName = "pool-pd-" + statName
 			default:
 				// It isn't a pool stat. Just a subnet stat.
+			}
+
+			// skip ignored stats
+			if ignoredStats[statName] {
+				continue
 			}
 
 			if stat, ok := dhcpStatMap[statName]; ok {

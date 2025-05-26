@@ -85,6 +85,18 @@ func (s *StatisticGetAllResponseSample) IsSubnetSample() bool {
 	return s.SubnetID != 0 && !s.IsPoolSample()
 }
 
+// Returns a pool ID related to the sample. If sample is not a pool sample,
+// returns nil.
+func (s *StatisticGetAllResponseSample) GetPoolID() *int64 {
+	if s.IsAddressPoolSample() {
+		return s.AddressPoolID
+	}
+	if s.IsPrefixPoolSample() {
+		return s.PrefixPoolID
+	}
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
 // to simpler Go-friendly form.
 func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {

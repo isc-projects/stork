@@ -7,8 +7,10 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -259,80 +261,68 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.StatisticGet
 	return lastErr
 }
 
-// Process statistics from the given command response for pools belonging to
-// the daemon.
-func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
-	var lastErr error
-
-	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.StatisticGetAllResponseSample)
-	for _, statEntry := range response {
-		if !statEntry.IsAddressPoolSample() {
-			continue
-		}
-
-		if _, ok := statisticsPerSubnetAndPool[statEntry.SubnetID]; !ok {
-			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.StatisticGetAllResponseSample)
-		}
-
-		poolID := *statEntry.AddressPoolID
-		statisticsPerSubnetAndPool[statEntry.SubnetID][poolID] = append(
-			statisticsPerSubnetAndPool[statEntry.SubnetID][poolID],
-			statEntry,
-		)
-	}
-
-	for subnetID, statisticsPerPool := range statisticsPerSubnetAndPool {
-		subnet := subnetsMap[localSubnetKey{subnetID, family}]
-		if subnet == nil {
-			lastErr = errors.Errorf(
-				"cannot find LocalSubnet for app: %d, local subnet ID: %d, family: %d",
-				dbApp.ID, subnetID, family,
-			)
-			log.Error(lastErr.Error())
-			continue
-		}
-
-		for poolID, statEntries := range statisticsPerPool {
-			for _, pool := range subnet.AddressPools {
-				if pool.KeaParameters.PoolID != poolID {
-					continue
-				}
-
-				stats := dbmodel.SubnetStats{}
-
-				for _, statEntry := range statEntries {
-					// Store the value as a best fit type to preserve compatibility
-					// with the existing code. Some features expect the IPv4
-					// statistics to be always stored as uint64, while IPv6 can be
-					// uint64 or big int.
-					stats.SetBigCounter(
-						statEntry.Name,
-						storkutil.NewBigCounterFromBigInt(
-							statEntry.Value,
-						),
-					)
-				}
-
-				err := pool.UpdateStats(statsPuller.DB, stats)
-				if err != nil {
-					log.Errorf(
-						"Problem updating Kea stats for address pool ID %d, app ID %d: %s",
-						pool.ID, dbApp.ID, err.Error(),
-					)
-					lastErr = err
-				}
-			}
-		}
-	}
-	return lastErr
+// Defines a common interface for address and prefix pools to update their
+// statistics.
+type measurablePools interface {
+	UpdateStats(dbi dbops.DBI, stats dbmodel.SubnetStats) error
+	GetKeaParameters() *keaconfig.PoolParameters
 }
 
+// Process statistics from the given command response for address pools
+// belonging to the daemon.
+func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+	return statsPuller.storePoolStats(
+		response, subnetsMap, dbApp, family,
+		func(ls *dbmodel.LocalSubnet) []measurablePools {
+			pools := make([]measurablePools, len(ls.AddressPools))
+			for i := 0; i < len(ls.AddressPools); i++ {
+				pools[i] = &ls.AddressPools[i]
+			}
+			return pools
+		},
+		func(sample keactrl.StatisticGetAllResponseSample) bool {
+			return sample.IsAddressPoolSample()
+		},
+	)
+}
+
+// Process statistics from the given command response for delegated prefix
+// pools belonging to the daemon.
 func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+	return statsPuller.storePoolStats(
+		response, subnetsMap, dbApp, family,
+		func(ls *dbmodel.LocalSubnet) []measurablePools {
+			pools := make([]measurablePools, len(ls.PrefixPools))
+			for i := 0; i < len(ls.PrefixPools); i++ {
+				pools[i] = &ls.PrefixPools[i]
+			}
+			return pools
+		},
+		func(sample keactrl.StatisticGetAllResponseSample) bool {
+			return sample.IsPrefixPoolSample()
+		},
+	)
+}
+
+// Process statistics from the given command response for pools belonging to
+// the daemon.
+//
+// It is a generic function that handles any pool. It accepts a pool
+// accessor that defines how to extract the pools from the local subnet, and a
+// predicate specifies how to select statistic samples corresponding to the
+// pools.
+func (statsPuller *StatsPuller) storePoolStats(
+	response []keactrl.StatisticGetAllResponseSample,
+	subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet,
+	dbApp *dbmodel.App, family int,
+	poolAccessor func(*dbmodel.LocalSubnet) []measurablePools,
+	statPredicate func(keactrl.StatisticGetAllResponseSample) bool,
+) error {
 	var lastErr error
 
 	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.StatisticGetAllResponseSample)
 	for _, statEntry := range response {
-		if !statEntry.IsPrefixPoolSample() {
+		if !statPredicate(statEntry) {
 			continue
 		}
 
@@ -340,7 +330,7 @@ func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.Statisti
 			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.StatisticGetAllResponseSample)
 		}
 
-		poolID := *statEntry.PrefixPoolID
+		poolID := *statEntry.GetPoolID()
 		statisticsPerSubnetAndPool[statEntry.SubnetID][poolID] = append(
 			statisticsPerSubnetAndPool[statEntry.SubnetID][poolID],
 			statEntry,
@@ -358,9 +348,12 @@ func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.Statisti
 			continue
 		}
 
-		for poolID, statEntries := range statisticsPerPool {
-			for _, pool := range subnet.PrefixPools {
-				if pool.KeaParameters.PoolID != poolID {
+		pools := poolAccessor(subnet)
+
+		for statPoolID, statEntries := range statisticsPerPool {
+			for _, pool := range pools {
+				dbPoolID := pool.GetKeaParameters().PoolID
+				if dbPoolID != statPoolID {
 					continue
 				}
 
@@ -383,7 +376,7 @@ func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.Statisti
 				if err != nil {
 					log.Errorf(
 						"Problem updating Kea stats for address pool ID %d, app ID %d: %s",
-						pool.ID, dbApp.ID, err.Error(),
+						statPoolID, dbApp.ID, err.Error(),
 					)
 					lastErr = err
 				}
