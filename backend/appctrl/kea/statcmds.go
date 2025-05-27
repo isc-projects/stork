@@ -126,7 +126,7 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 	//              "2024-10-04 14:24:04.401216"
 	//          ]
 	//      ],
-	//      "subnet[1].pd-pool[0].total-pds": [
+	//      "subnet[1].pd-pool[42].total-pds": [
 	//          [
 	//              512,
 	//              "2024-10-04 14:24:04.401035"
