@@ -25,7 +25,7 @@ func init() {
 					(stats IS NOT NULL AND stats_collected_at IS NOT NULL)
 					OR
 					(stats IS NULL AND stats_collected_at IS NULL)
-             	);
+			);
 		`)
 		return err
 	}, func(db migrations.DB) error {
