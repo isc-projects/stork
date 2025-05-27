@@ -29,7 +29,7 @@ service Agent {
   // Receives stream of zones from the agent.
   rpc ReceiveZones(ReceiveZonesReq) returns (stream Zone) {}
 
-  // Retrieves the zone from the agent by returning cached RRs or running zone
+  // Retrieves the zone from the agent by returning cached resource records or running zone
   // transfer if the zone has not been cached yet.
   rpc ReceiveZoneRRs(ReceiveZoneRRsReq) returns (stream ReceiveZoneRRsRsp) {}
 }
@@ -265,7 +265,7 @@ message ReceiveZoneRRsReq {
   // Control port of the DNS server from which the zones are to
   // be returned.
   int64 controlPort = 2;
-  // Name of the zone for which the RRs are to be returned.
+  // Name of the zone for which the resource records are to be returned.
   string zoneName = 3;
   // Name of the view where the zone belongs.
   string viewName = 4;

@@ -92,9 +92,9 @@
 
   /daemons/{daemonId}/{viewName}/zones/{zoneId}/rrs:
     get:
-      summary: Get the RRs for the zone.
+      summary: Get the resource records for the zone.
       description: >-
-        Get the RRs for the zone.
+        Get the resource records for the zone.
       operationId: getZoneRRs
       tags:
         - DNS
@@ -113,7 +113,7 @@
           required: true
       responses:
         200:
-          description: Zone RRs successfully returned.
+          description: Zone resource records successfully returned.
           schema:
             $ref: "#/definitions/ZoneRRs"
         default:
