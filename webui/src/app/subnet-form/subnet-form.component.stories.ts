@@ -479,11 +479,7 @@ export default {
     component: SubnetFormComponent,
     decorators: [
         applicationConfig({
-            providers: [
-                MessageService,
-                provideHttpClient(withInterceptorsFromDi()),
-                provideNoopAnimations(),
-            ],
+            providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideNoopAnimations()],
         }),
         moduleMetadata({
             imports: [
