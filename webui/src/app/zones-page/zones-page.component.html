@@ -636,6 +636,7 @@ for each occurrence of that zone.
                             <tr>
                                 <th *ngFor="let col of columns">{{ col }}</th>
                                 <th>Fetch Status</th>
+                                <th>Show Zone</th>
                             </tr>
                         </ng-template>
                         <ng-template pTemplate="body" let-localZone>
@@ -657,6 +658,70 @@ for each occurrence of that zone.
                                         [severity]="getSeverity(zoneInventoryStateMap.get(localZone.daemonId).status)"
                                         [pTooltip]="getTooltip(zoneInventoryStateMap.get(localZone.daemonId).status)"
                                     />
+                                </td>
+                                <td>
+                                    <p-button
+                                        type="button"
+                                        [disabled]="localZone.zoneType === 'builtin'"
+                                        severity="secondary"
+                                        icon="pi pi-file-import"
+                                        (click)="
+                                            setZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id, true)
+                                        "
+                                    />
+                                    <!-- Dialog displaying a zone viewer for a selected view and daemon -->
+                                    <p-dialog
+                                        *ngIf="localZone.zoneType !== 'builtin'"
+                                        header="Header"
+                                        [modal]="true"
+                                        [visible]="
+                                            getZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id)
+                                        "
+                                        [maximizable]="true"
+                                        [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
+                                        styleClass="h-screen"
+                                        [draggable]="false"
+                                        [resizable]="false"
+                                        (visibleChange)="
+                                            setZoneViewerDialogVisible(
+                                                localZone.daemonId,
+                                                localZone.view,
+                                                tab.id,
+                                                $event
+                                            )
+                                        "
+                                    >
+                                        <ng-template pTemplate="header">
+                                            <div class="inline-flex align-items-center justify-content-center gap-2">
+                                                <span>
+                                                    <span class="font-bold text-2xl">{{ tab.name }}</span>
+                                                    <span class="text-lg">
+                                                        for
+                                                        <a routerLink="/apps/bind9/{{ localZone.appId }}">{{
+                                                            localZone.appName
+                                                        }}</a
+                                                        >, view: {{ localZone.view }}</span
+                                                    >
+                                                </span>
+                                            </div>
+                                        </ng-template>
+                                        <app-zone-viewer-feeder
+                                            [daemonId]="localZone.daemonId"
+                                            [viewName]="localZone.view"
+                                            [zoneId]="tab.id"
+                                            [active]="
+                                                getZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id)
+                                            "
+                                            (viewerError)="
+                                                setZoneViewerDialogVisible(
+                                                    localZone.daemonId,
+                                                    localZone.view,
+                                                    tab.id,
+                                                    false
+                                                )
+                                            "
+                                        ></app-zone-viewer-feeder>
+                                    </p-dialog>
                                 </td>
                             </tr>
                         </ng-template>

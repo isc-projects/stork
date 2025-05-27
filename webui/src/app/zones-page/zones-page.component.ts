@@ -250,6 +250,11 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     private _zonesTableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
+     * Map keeping zone viewer dialog visibility state for each zone viewer dialog.
+     */
+    zoneViewerDialogVisible: Map<string, boolean> = new Map()
+
+    /**
      * Class constructor.
      * @param cd Angular change detection required to manually trigger detectChanges in this component
      * @param dnsService service providing DNS REST APIs
@@ -931,6 +936,44 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
         // Apply filters to the zones table.
         this.zone.run(() => this.router.navigate([], { queryParams: this._zoneFiltersToQueryParams() }))
+    }
+
+    /**
+     * Creates a unique key for the zone viewer dialog visibility map.
+     *
+     * @param daemonId daemon ID.
+     * @param viewName view name.
+     * @param zoneId zone ID.
+     * @returns unique key.
+     */
+    private _getZoneViewerKey(daemonId: number, viewName: string, zoneId: number): string {
+        return `${daemonId}:${viewName}:${zoneId}`
+    }
+
+    /**
+     * Sets the visibility state of the zone viewer dialog.
+     *
+     * @param daemonId daemon ID.
+     * @param viewName view name.
+     * @param zoneId zone ID.
+     * @param visible visibility state.
+     */
+    setZoneViewerDialogVisible(daemonId: number, viewName: string, zoneId: number, visible: boolean) {
+        const key = this._getZoneViewerKey(daemonId, viewName, zoneId)
+        this.zoneViewerDialogVisible.set(key, visible)
+    }
+
+    /**
+     * Returns the visibility state of the zone viewer dialog.
+     *
+     * @param daemonId daemon ID.
+     * @param viewName view name.
+     * @param zoneId zone ID.
+     * @returns visibility state.
+     */
+    getZoneViewerDialogVisible(daemonId: number, viewName: string, zoneId: number): boolean {
+        const key = this._getZoneViewerKey(daemonId, viewName, zoneId)
+        return this.zoneViewerDialogVisible.get(key) ?? false
     }
 
     /**

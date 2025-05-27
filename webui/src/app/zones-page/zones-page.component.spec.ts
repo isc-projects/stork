@@ -12,7 +12,17 @@ import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { Router, RouterModule } from '@angular/router'
-import { DNSAppType, DNSClass, DNSService, ZoneInventoryState, ZoneInventoryStates, Zones, Zone } from '../backend'
+import {
+    DNSAppType,
+    DNSClass,
+    DNSService,
+    ZoneInventoryState,
+    ZoneInventoryStates,
+    ZoneRR,
+    ZoneRRs,
+    Zones,
+    Zone,
+} from '../backend'
 import { Observable, of } from 'rxjs'
 import {
     HttpEventType,
@@ -22,6 +32,7 @@ import {
     provideHttpClient,
     withInterceptorsFromDi,
 } from '@angular/common/http'
+
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { MessageModule } from 'primeng/message'
 import { ProgressBarModule } from 'primeng/progressbar'
@@ -45,6 +56,9 @@ import { NgZone } from '@angular/core'
 import { hasFilter } from '../table'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
+import { ZoneViewerFeederComponent } from '../zone-viewer-feeder/zone-viewer-feeder.component'
+import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -52,6 +66,7 @@ describe('ZonesPageComponent', () => {
     let dnsApi: jasmine.SpyObj<DNSService>
     let putZonesFetchSpy: any
     let getZonesSpy: any
+    let getZoneRRsSpy: any
     let messageService: jasmine.SpyObj<MessageService>
     let messageAddSpy: any
     let getZonesFetchWithStatusSpy: any
@@ -157,7 +172,7 @@ describe('ZonesPageComponent', () => {
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
-                        zoneType: 'builtin',
+                        zoneType: 'primary',
                     },
                     {
                         appId: 31,
@@ -167,7 +182,7 @@ describe('ZonesPageComponent', () => {
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
-                        zoneType: 'builtin',
+                        zoneType: 'primary',
                     },
                 ],
                 name: 'EMPTY.AS112.ARPA',
@@ -184,7 +199,7 @@ describe('ZonesPageComponent', () => {
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
-                        zoneType: 'builtin',
+                        zoneType: 'primary',
                     },
                     {
                         appId: 31,
@@ -194,7 +209,7 @@ describe('ZonesPageComponent', () => {
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
-                        zoneType: 'builtin',
+                        zoneType: 'primary',
                     },
                 ],
                 name: 'HOME.ARPA',
@@ -211,7 +226,7 @@ describe('ZonesPageComponent', () => {
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
-                        zoneType: 'builtin',
+                        zoneType: 'primary',
                     },
                     {
                         appId: 31,
@@ -221,7 +236,7 @@ describe('ZonesPageComponent', () => {
                         loadedAt: '2025-03-03T17:36:14.000Z',
                         serial: 0,
                         view: '_default',
-                        zoneType: 'builtin',
+                        zoneType: 'primary',
                     },
                 ],
                 name: '0.IN-ADDR.ARPA',
@@ -231,15 +246,37 @@ describe('ZonesPageComponent', () => {
         total: 3,
     }
 
+    const zoneRRs: ZoneRRs = {
+        items: [
+            {
+                name: 'example.com.',
+                ttl: 3600,
+                rrClass: 'IN',
+                rrType: 'SOA',
+                data: 'ns1.example.com. admin.example.com. 2024031501 3600 900 1209600 300',
+            } as ZoneRR,
+            {
+                name: 'www.example.com.',
+                ttl: 3600,
+                rrClass: 'IN',
+                rrType: 'A',
+                data: '192.0.2.1',
+            } as ZoneRR,
+        ],
+    }
+
     beforeEach(async () => {
-        dnsApi = createSpyObj('DNSService', ['getZonesFetch', 'putZonesFetch', 'getZones'])
+        dnsApi = createSpyObj('DNSService', ['getZonesFetch', 'putZonesFetch', 'getZones', 'getZoneRRs'])
         putZonesFetchSpy = dnsApi.putZonesFetch
         getZonesSpy = dnsApi.getZones
+        getZoneRRsSpy = dnsApi.getZoneRRs
 
         // By default, emits null response and completes without any error.
         putZonesFetchSpy.and.returnValue(of(null))
         // Returns replies in order: no Zones, 3 Zones.
         getZonesSpy.and.returnValues(of(noZones), of(fakeZones))
+        // Returns zone RRs.
+        getZoneRRsSpy.and.returnValue(of(zoneRRs))
 
         messageService = createSpyObj('MessageService', ['add'])
         messageAddSpy = messageService.add
@@ -265,9 +302,12 @@ describe('ZonesPageComponent', () => {
                 FormsModule,
                 DropdownModule,
                 MultiSelectModule,
+                ProgressSpinnerModule,
                 ManagedAccessDirective,
             ],
             declarations: [
+                ZoneViewerComponent,
+                ZoneViewerFeederComponent,
                 ZonesPageComponent,
                 BreadcrumbsComponent,
                 HelpTipComponent,
@@ -1046,5 +1086,79 @@ describe('ZonesPageComponent', () => {
 
         // Assert
         expect(result).toEqual(jasmine.objectContaining({ serial: 'N/A', hasMismatch: false }))
+    })
+
+    it('should open zone viewer dialog', async () => {
+        // Arrange the zones list.
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        const refreshBtnDe = fixture.debugElement.query(By.css('#refresh-zones-data button'))
+        expect(refreshBtnDe).toBeTruthy()
+        // Click on Refresh List button
+        refreshBtnDe.nativeElement.click()
+        fixture.detectChanges()
+        expect(component.zonesLoading).withContext('zones data loads').toBeTrue()
+        await fixture.whenStable()
+        expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
+        expect(component.zones).toEqual(fakeZones.items)
+        expect(component.zonesTotal).toEqual(fakeZones.total)
+        fixture.detectChanges()
+
+        // There are all 3 zones listed.
+        const tableRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tr'))
+        expect(tableRows).toBeTruthy()
+        expect(tableRows.length).toEqual(3)
+
+        const zonesTabDe = fixture.debugElement.query(By.css('ul.p-tabview-nav li:first-child a'))
+        expect(zonesTabDe).toBeTruthy()
+
+        // Try to open a tab.
+        const firstRowBtns = tableRows[0].queryAll(By.css('button'))
+        expect(firstRowBtns).toBeTruthy()
+        // There are 2 buttons per row: 1. expand/collapse row; 2. anchor to detailed zone view
+        expect(firstRowBtns.length).toEqual(2)
+        firstRowBtns[1].nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+        expect(component.activeTabIdx).toEqual(1)
+        expect(component.openTabs.length).toEqual(1)
+        expect(component.openTabs).toContain(component.zones[0])
+
+        // Initially, the zone details should not be loaded.
+        expect(dnsApi.getZoneRRs).toHaveBeenCalledTimes(0)
+
+        // Get the table of DNS servers associated with the zone.
+        const dnsServersFieldset = fixture.debugElement.query(By.css('[legend="DNS Views Associated with the Zone"]'))
+        expect(dnsServersFieldset).toBeTruthy()
+
+        // Get the button to show the zone viewer dialog.
+        const showViewerBtns = dnsServersFieldset.queryAll(By.css('button'))
+        expect(showViewerBtns.length).toEqual(2)
+        showViewerBtns[1].nativeElement.click()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        // It should result in getting the zone RRs.
+        expect(dnsApi.getZoneRRs).toHaveBeenCalledOnceWith(
+            fakeZones.items[0].localZones[1].daemonId,
+            fakeZones.items[0].localZones[1].view,
+            fakeZones.items[0].id
+        )
+
+        // Wait for the zone viewer dialog to be displayed.
+        expect(
+            component.getZoneViewerDialogVisible(
+                fakeZones.items[0].localZones[1].daemonId,
+                fakeZones.items[0].localZones[1].view,
+                fakeZones.items[0].id
+            )
+        ).toBeTrue()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        const zoneViewer = fixture.debugElement.query(By.css('app-zone-viewer'))
+        expect(zoneViewer).toBeTruthy()
+        expect(zoneViewer.nativeElement.innerText).toContain(
+            'ns1.example.com. admin.example.com. 2024031501 3600 900 1209600 300'
+        )
     })
 })

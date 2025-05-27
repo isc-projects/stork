@@ -148,6 +148,8 @@ import { BadgeModule } from 'primeng/badge'
 import { MachinesTableComponent } from './machines-table/machines-table.component'
 import { ZonesPageComponent } from './zones-page/zones-page.component'
 import { ByteCharacterComponent } from './byte-character/byte-character.component'
+import { ZoneViewerComponent } from './zone-viewer/zone-viewer.component'
+import { ZoneViewerFeederComponent } from './zone-viewer-feeder/zone-viewer-feeder.component'
 import { ConfigMigrationPageComponent } from './config-migration-page/config-migration-page.component'
 import { ConfigMigrationTableComponent } from './config-migration-table/config-migration-table.component'
 import { ConfigMigrationTabComponent } from './config-migration-tab/config-migration-tab.component'
@@ -251,6 +253,8 @@ export function cfgFactory() {
         MachinesTableComponent,
         ZonesPageComponent,
         ByteCharacterComponent,
+        ZoneViewerComponent,
+        ZoneViewerFeederComponent,
         ConfigMigrationPageComponent,
         ConfigMigrationTableComponent,
         ConfigMigrationTabComponent,

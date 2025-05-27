@@ -1,0 +1,13 @@
+<div *ngIf="data?.items">
+    <p-table [value]="data.items" styleClass="datatable-responsive">
+        <ng-template pTemplate="body" let-rr>
+            <tr>
+                <td class="font-bold">{{ rr.name }}</td>
+                <td>{{ rr.ttl }}</td>
+                <td>{{ rr.rrClass }}</td>
+                <td [ngClass]="'rr-type-' + rr.rrType.toLowerCase()">{{ rr.rrType }}</td>
+                <td>{{ rr.data }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
