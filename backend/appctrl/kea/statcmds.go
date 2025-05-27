@@ -162,7 +162,8 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 
 			subnetID, err = strconv.ParseInt(subnetIDRaw, 10, 64)
 			if err != nil {
-				log.Errorf("Problem converting subnetID: %s", subnetIDRaw)
+				log.WithField("statistic", statName).
+					Errorf("Problem converting subnet ID: %s", subnetIDRaw)
 				continue
 			}
 
@@ -174,7 +175,8 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 
 				parsedAddressPoolID, err := strconv.ParseInt(poolIDRaw, 10, 64)
 				if err != nil {
-					log.Errorf("Problem converting poolID: %s", poolIDRaw)
+					log.WithField("statistic", statName).
+						Errorf("Problem converting pool ID: %s", poolIDRaw)
 					continue
 				}
 
@@ -186,7 +188,8 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 
 				parsedPrefixPoolID, err := strconv.ParseInt(prefixPoolIDRaw, 10, 64)
 				if err != nil {
-					log.Errorf("Problem converting prefixPoolID: %s", prefixPoolIDRaw)
+					log.WithField("statistic", statName).
+						Errorf("Problem converting prefix pool ID: %s", prefixPoolIDRaw)
 					continue
 				}
 
