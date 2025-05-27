@@ -2,7 +2,7 @@ import { StoryObj, Meta, moduleMetadata, applicationConfig } from '@storybook/an
 import { SubnetFormComponent } from './subnet-form.component'
 import { toastDecorator } from '../utils-stories'
 import { FieldsetModule } from 'primeng/fieldset'
-import { provideAnimations, provideNoopAnimations } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
@@ -32,8 +32,6 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { provideRouter, RouterModule } from '@angular/router'
-import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
     id: 123,
@@ -484,10 +482,7 @@ export default {
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
-                provideHttpClientTesting(),
                 provideNoopAnimations(),
-                provideAnimations(),
-                provideRouter([]),
             ],
         }),
         moduleMetadata({
@@ -509,7 +504,6 @@ export default {
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
-                RouterTestingModule,
                 SplitButtonModule,
                 ToastModule,
             ],
