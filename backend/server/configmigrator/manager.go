@@ -311,6 +311,9 @@ func (s *manager) StartMigration(ctx context.Context, migrator Migrator) (*Migra
 		defer close(workerDoneChan)
 		for chunk := range chunkChan {
 			if chunk.generalErr != nil {
+				// Waiting for chunkChan to be closed to ensure the migration
+				// has been ended.
+				<-chunkChan
 				migration.registerStop(chunk.generalErr)
 				return
 			}
