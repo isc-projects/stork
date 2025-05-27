@@ -16,7 +16,7 @@ func TestNewHasher(t *testing.T) {
 // Test that generated hashes depend on the input value.
 func TestHash(t *testing.T) {
 	hasher := NewHasher()
-	require.Equal(t, "66ac590193757277b806e89cd2a7da1a", hasher.Hash("abc"))
-	require.Equal(t, "66ac5977c3757277b806e89cd2f09aea", hasher.Hash(123))
-	require.Equal(t, "3de6abaeb865995b12060efa3356c58f", hasher.Hash([]int{2, 3, 4}))
+	require.Equal(t, "66ac55acd8757277b806e89cd189adfb", hasher.Hash("abc"))
+	require.Equal(t, "66ac54e7a8757277b806e89cd1102b6b", hasher.Hash(123))
+	require.Equal(t, "b42dc2db2b65995b0f767c3ff883e7e6", hasher.Hash([]int{2, 3, 4}))
 }

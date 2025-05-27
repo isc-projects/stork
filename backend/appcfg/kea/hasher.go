@@ -12,7 +12,7 @@ import storkutil "isc.org/stork/util"
 // configurations to take effect. In such cases, a developer willing
 // to force configuration fetch, should bump this value causing the
 // hashes change.
-const hasherSequence int64 = 1
+const hasherSequence int64 = 2
 
 var _ storkutil.Hasher = (*Hasher)(nil)
 
