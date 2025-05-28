@@ -1088,6 +1088,7 @@ func TestUpdateMachine(t *testing.T) {
 	require.Equal(t, "Cannot parse address", *defaultRsp.Payload.Message)
 }
 
+// Test deleting a machine and its associations.
 func TestDeleteMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1100,7 +1101,7 @@ func TestDeleteMachine(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// setup a user session, it is required to check user role in DeleteMachine
+	// Setup a user session, it is required to check user role in DeleteMachine.
 	user, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
 	ctx2, err := rapi.SessionManager.Load(ctx, "")
@@ -1108,14 +1109,14 @@ func TestDeleteMachine(t *testing.T) {
 	err = rapi.SessionManager.LoginHandler(ctx2, user)
 	require.NoError(t, err)
 
-	// delete non-existing machine
+	// Delete a non-existing machine.
 	params := services.DeleteMachineParams{
 		ID: 123,
 	}
 	rsp := rapi.DeleteMachine(ctx2, params)
 	require.IsType(t, &services.DeleteMachineOK{}, rsp)
 
-	// add machine
+	// Add a machine.
 	m := &dbmodel.Machine{
 		Address:   "localhost:1010",
 		AgentPort: 1010,
@@ -1123,7 +1124,41 @@ func TestDeleteMachine(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// get added machine
+	// Add an app.
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
+	app := &dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeBind9,
+		Name:         "test-app",
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewBind9Daemon(true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Add a zone associated with the app. We will later check if its deleted
+	// when the machine is deleted.
+	zone := &dbmodel.Zone{
+		Name: "example.org",
+		LocalZones: []*dbmodel.LocalZone{
+			{
+				DaemonID: app.Daemons[0].ID,
+				View:     "default",
+				Class:    "IN",
+				Serial:   1,
+				Type:     "master",
+				LoadedAt: time.Now(),
+			},
+		},
+	}
+	err = dbmodel.AddZones(db, zone)
+	require.NoError(t, err)
+
+	// Get the machine.
 	params2 := services.GetMachineParams{
 		ID: m.ID,
 	}
@@ -1132,14 +1167,14 @@ func TestDeleteMachine(t *testing.T) {
 	okRsp := rsp.(*services.GetMachineOK)
 	require.Equal(t, m.ID, okRsp.Payload.ID)
 
-	// delete added machine
+	// Delete the machine.
 	params = services.DeleteMachineParams{
 		ID: m.ID,
 	}
 	rsp = rapi.DeleteMachine(ctx2, params)
 	require.IsType(t, &services.DeleteMachineOK{}, rsp)
 
-	// get deleted machine - should return not found
+	// Get the deleted machine - should return not found.
 	params2 = services.GetMachineParams{
 		ID: m.ID,
 	}
@@ -1147,6 +1182,11 @@ func TestDeleteMachine(t *testing.T) {
 	require.IsType(t, &services.GetMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetMachineDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+
+	// Make sure that the zone associations are deleted.
+	zones, _, err := dbmodel.GetZones(db, nil)
+	require.NoError(t, err)
+	require.Empty(t, zones)
 }
 
 func TestGetApp(t *testing.T) {

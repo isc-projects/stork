@@ -962,7 +962,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 		return rsp
 	}
 
-	dbMachine, err := dbmodel.GetMachineByIDWithRelations(r.DB, params.ID)
+	dbMachine, err := dbmodel.GetMachineByIDWithRelations(r.DB, params.ID, dbmodel.MachineRelationApps)
 	if err == nil && dbMachine == nil {
 		rsp := services.NewDeleteMachineOK()
 		return rsp

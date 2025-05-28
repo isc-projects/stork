@@ -881,6 +881,144 @@ func TestDeleteMachineWithConfigReport(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Test deleting a machine and cascaded deletion of the orphaned
+// objects such as subnets, hosts and shared networks.
+func TestDeleteMachineWithKeaDaemonOrphans(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	m := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add an app.
+	a := &App{
+		MachineID: m.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			NewKeaDaemon("dhcp4", true),
+		},
+	}
+	_, err = AddApp(db, a)
+	require.NoError(t, err)
+
+	m, err = GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+
+	// Add shared network.
+	sharedNetwork := &SharedNetwork{
+		Name:   "my-shared-network",
+		Family: 4,
+	}
+	err = AddSharedNetwork(db, sharedNetwork)
+	require.NoError(t, err)
+
+	// Add subnet.
+	subnet := &Subnet{
+		Prefix:          "192.0.2.0/24",
+		SharedNetworkID: sharedNetwork.ID,
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: a.Daemons[0].ID,
+			},
+		},
+	}
+	err = AddSubnet(db, subnet)
+	require.NoError(t, err)
+
+	// Add host.
+	host := &Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			},
+		},
+		LocalHosts: []LocalHost{
+			{
+				DataSource: HostDataSourceAPI,
+				DaemonID:   a.Daemons[0].ID,
+			},
+		},
+	}
+	err = AddHost(db, host)
+	require.NoError(t, err)
+
+	// Deleting the machine should cause deletion of the associated shared
+	// networks, subnets and hosts.
+	err = DeleteMachine(db, m)
+	require.NoError(t, err)
+
+	returnedSharedNetworks, err := GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Empty(t, returnedSharedNetworks)
+
+	returnedSubnets, err := GetAllSubnets(db, 0)
+	require.NoError(t, err)
+	require.Empty(t, returnedSubnets)
+
+	returnedHosts, err := GetAllHosts(db, 0)
+	require.NoError(t, err)
+	require.Empty(t, returnedHosts)
+}
+
+// Test deleting a machine and cascaded deletion of the orphaned
+// objects such as zones.
+func TestDeleteMachineWithBind9DaemonOrphans(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	m := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add an app.
+	a := &App{
+		MachineID: m.ID,
+		Type:      AppTypeBind9,
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	_, err = AddApp(db, a)
+	require.NoError(t, err)
+
+	m, err = GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+
+	// Add a zone.
+	zone := &Zone{
+		Name: "example.org",
+		LocalZones: []*LocalZone{
+			{
+				DaemonID: a.Daemons[0].ID,
+				Class:    "IN",
+				Type:     "master",
+				Serial:   1,
+				LoadedAt: time.Now(),
+			},
+		},
+	}
+	err = AddZones(db, zone)
+	require.NoError(t, err)
+
+	// Deleting the machine should cause deletion of the associated zone.
+	err = DeleteMachine(db, m)
+	require.NoError(t, err)
+
+	returnedZones, _, err := GetZones(db, nil)
+	require.NoError(t, err)
+	require.Empty(t, returnedZones)
+}
+
 // Check if refreshing machine works.
 func TestRefreshMachineFromDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
