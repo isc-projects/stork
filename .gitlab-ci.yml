@@ -4,7 +4,7 @@ image: registry.gitlab.isc.org/isc-projects/stork/ci-base:3
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+/)'
 
 variables:
   POSTGRES_ADDR: postgres:5432
@@ -644,7 +644,7 @@ system_test:
   services:
     - docker:dind
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+/)'
       when: always
     - when: manual
       allow_failure: true
@@ -906,7 +906,7 @@ packages_hooks:
 upload_to_repo:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+/)'
       when: manual
     - when: manual
       allow_failure: true
@@ -977,7 +977,7 @@ deploy_demo:
 upload_packages:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_NAME =~ /^stork_v[0-9]+_[0-9]+/)'
       when: manual
     - when: manual
       allow_failure: true
