@@ -154,7 +154,8 @@ import { ConfigMigrationPageComponent } from './config-migration-page/config-mig
 import { ConfigMigrationTableComponent } from './config-migration-table/config-migration-table.component'
 import { ConfigMigrationTabComponent } from './config-migration-tab/config-migration-tab.component'
 import { DurationPipe } from './pipes/duration.pipe'
-import { ManagedAccessDirective } from './managed-access.directive'
+import { ManagedAccessDirective } from './managed-access.directive';
+import { NotFoundPageComponent } from './not-found-page/not-found-page.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -259,6 +260,7 @@ export function cfgFactory() {
         ConfigMigrationTableComponent,
         ConfigMigrationTabComponent,
         DurationPipe,
+        NotFoundPageComponent,
     ],
     bootstrap: [AppComponent],
     imports: [
