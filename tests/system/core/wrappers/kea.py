@@ -76,9 +76,7 @@ class Kea(Agent):
         daemons can be specified.
         """
 
-        @wait_for_success(
-            wait_msg="Waiting for the Kea applications to be detected...", max_tries=5
-        )
+        @wait_for_success(wait_msg="Waiting for the Kea applications to be detected...")
         def worker():
             metrics = self.wait_for_next_prometheus_metrics()
 

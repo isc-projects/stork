@@ -4,6 +4,7 @@ import logging
 import time
 import traceback
 from typing import Any, Callable, Dict, Hashable
+import urllib3
 
 
 def setup_logger(name):
@@ -50,7 +51,12 @@ class NoSuccessException(Exception):
 
 
 # Get a tuple of transient exceptions for which we'll retry. Other exceptions will be raised.
-TRANSIENT_EXCEPTIONS = (TimeoutError, ConnectionError, NoSuccessException)
+TRANSIENT_EXCEPTIONS = (
+    TimeoutError,
+    ConnectionError,
+    urllib3.exceptions.MaxRetryError,
+    NoSuccessException,
+)
 logger = setup_logger(__file__)
 
 

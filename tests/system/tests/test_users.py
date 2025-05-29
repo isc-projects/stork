@@ -18,10 +18,11 @@ def test_users_management(server_service: Server):
     assert users.items[0].name == "admin"
 
     groups = server_service.list_groups()
-    assert groups.total == 2
-    assert len(groups.items) == 2
-    assert groups.items[0].name in ["super-admin", "admin"]
-    assert groups.items[1].name in ["super-admin", "admin"]
+    assert groups.total == 3
+    assert len(groups.items) == 3
+    assert groups.items[0].name in ["super-admin", "admin", "read-only"]
+    assert groups.items[1].name in ["super-admin", "admin", "read-only"]
+    assert groups.items[2].name in ["super-admin", "admin", "read-only"]
 
     server_service.create_user(
         User(
