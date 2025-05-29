@@ -20,9 +20,8 @@ func TestRpsWorkerEmptyOrInvalidResponses(t *testing.T) {
 
 	// JSON response to send per call number
 	jsonResponses := []string{
-		`[{ "result": 0, "text": "Samples missing", "arguments": {} }]`,
-		`[{ "result": 0, "text": "No Arguments", }]`,
-		`[{ "result": 1, "text": "Error response", }]`,
+		`[{ "result": 0, "text": "No Arguments" }]`,
+		`[{ "result": 1, "text": "Error response" }]`,
 	}
 
 	// Create a machine with one app and two kea daemons
@@ -312,7 +311,7 @@ func rpsTestInvokeResponse4Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonR
 	cmd := keactrl.NewCommandBase(keactrl.StatisticGetAll, daemon.Name)
 	keactrl.UnmarshalResponseList(cmd, []byte(jsonResponse), &response)
 
-	err := rps.Response4Handler(daemon, response)
+	err := rps.Response4Handler(daemon, response[0])
 	return err
 }
 
@@ -322,6 +321,6 @@ func rpsTestInvokeResponse6Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonR
 	cmd := keactrl.NewCommandBase(keactrl.StatisticGetAll, daemon.Name)
 	keactrl.UnmarshalResponseList(cmd, []byte(jsonResponse), &response)
 
-	err := rps.Response6Handler(daemon, response)
+	err := rps.Response6Handler(daemon, response[0])
 	return err
 }

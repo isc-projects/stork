@@ -20,7 +20,8 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 		{
 			"arguments": {
 				"cumulative-assigned-addresses": [ [0, "2021-10-14 10:44:18.687247"] ],
-				"declined-addresses": [ [0, "2021-10-14 10:44:18.687235"] ],
+				"declined-addresses": [ [50, "2021-10-14 10:44:18.687235"] ],
+				"assigned-addresses": [ [150, "2021-10-14 10:44:18.687235"] ],
 				"pkt4-ack-received": [ [0, "2021-10-14 10:44:18.672377"] ],
 				"pkt4-ack-sent": [ [0, "2021-10-14 10:44:18.672378"] ],
 				"pkt4-decline-received": [ [0, "2021-10-14 10:44:18.672379"] ],
@@ -39,18 +40,24 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 				"pkt4-unknown-received": [ [0, "2021-10-14 10:44:18.672392"] ],
 				"reclaimed-declined-addresses": [ [0, "2021-10-14 10:44:18.687239"] ],
 				"reclaimed-leases": [ [0, "2021-10-14 10:44:18.687243"] ],
-				"subnet[1].assigned-addresses": [ [0, "2021-10-14 10:44:18.687253"] ],
+				"subnet[1].assigned-addresses": [ [10, "2021-10-14 10:44:18.687253"] ],
 				"subnet[1].cumulative-assigned-addresses": [ [0, "2021-10-14 10:44:18.687229"] ],
-				"subnet[1].declined-addresses": [ [0, "2021-10-14 10:44:18.687266"] ],
+				"subnet[1].declined-addresses": [ [3, "2021-10-14 10:44:18.687266"] ],
 				"subnet[1].reclaimed-declined-addresses": [ [0, "2021-10-14 10:44:18.687274"] ],
 				"subnet[1].reclaimed-leases": [ [0, "2021-10-14 10:44:18.687282"] ],
 				"subnet[1].total-addresses": [ [200, "2021-10-14 10:44:18.687221"] ],
-				"subnet[1].pool[0].assigned-addresses": [ [2, "2025-04-22 17:59:15.339186"] ],
+				"subnet[1].pool[0].assigned-addresses": [ [7, "2025-04-22 17:59:15.339186"] ],
 				"subnet[1].pool[0].cumulative-assigned-addresses": [ [0, "2025-04-22 17:59:15.328531" ] ],
-				"subnet[1].pool[0].declined-addresses": [ [1, "2025-04-22 17:59:15.339184" ] ],
+				"subnet[1].pool[0].declined-addresses": [ [2, "2025-04-22 17:59:15.339184" ] ],
 				"subnet[1].pool[0].reclaimed-declined-addresses": [ [0, "2025-04-22 17:59:15.338433" ] ],
 				"subnet[1].pool[0].reclaimed-leases": [ [0, "2025-04-22 17:59:15.338438"] ],
-				"subnet[1].pool[0].total-addresses": [ [42, "2025-04-22 17:59:15.328653" ] ]
+				"subnet[1].pool[0].total-addresses": [ [42, "2025-04-22 17:59:15.328653" ] ],
+				"declined-nas": [ [150, "2021-10-14 10:44:18.687235"] ],
+				"assigned-nas": [ [450, "2021-10-14 10:44:18.687235"] ],
+				"subnet[2].assigned-addresses": [ [230, "2021-10-14 10:44:18.687253"] ],
+				"subnet[2].declined-addresses": [ [5, "2021-10-14 10:44:18.687266"] ],
+				"subnet[2].pool[1].assigned-addresses": [ [36, "2025-04-22 17:59:15.339186"] ],
+				"subnet[2].pool[1].declined-addresses": [ [6, "2025-04-22 17:59:15.339184" ] ]
 			},
 			"result": 0
 		},
@@ -67,7 +74,7 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, response, 2)
-	require.Len(t, response[0].Arguments, 32)
+	require.Len(t, response[0].Arguments, 39)
 	require.Nil(t, response[1].Arguments)
 	require.NoError(t, response[0].GetError())
 	require.Error(t, response[1].GetError())
@@ -86,12 +93,48 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 	item = response[0].Arguments[index]
 	require.Zero(t, item.Value.Int64())
 
+	// It must adjust the assigned addresses.
 	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 1 && *item.AddressPoolID == 0
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
-	require.EqualValues(t, 2, item.Value.Int64())
+	require.EqualValues(t, 5, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 1
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 7, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && !item.IsSubnetSample() && !item.IsPoolSample()
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 100, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 2 && *item.AddressPoolID == 1
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 30, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 2
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 225, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-nas" && !item.IsSubnetSample() && !item.IsPoolSample()
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 300, item.Value.Int64())
 }
 
 // Test that unmarshalling of the Kea statistic-get-all response does not lose

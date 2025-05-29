@@ -179,31 +179,21 @@ type localSubnetKey struct {
 }
 
 // Processes statistics from the `statistic-get-all` response for the given daemon.
-func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.StatisticGetAllResponse, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
-	if len(response) == 0 {
-		return errors.Errorf("response is empty: %+v", response)
-	}
-
-	responseStats := response[0]
-
-	if len(responseStats.Arguments) == 0 {
-		return errors.Errorf("missing statistics")
-	}
-
+func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.StatisticGetAllResponseItem, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
-	err := statsPuller.storeSubnetStats(responseStats.Arguments, subnetsMap, dbApp, family)
+	err := statsPuller.storeSubnetStats(response.Arguments, subnetsMap, dbApp, family)
 	if err != nil {
 		log.WithError(err).Error("Error handling subnet statistics")
 		lastErr = err
 	}
 
-	err = statsPuller.storeAddressPoolStats(responseStats.Arguments, subnetsMap, dbApp, family)
+	err = statsPuller.storeAddressPoolStats(response.Arguments, subnetsMap, dbApp, family)
 	if err != nil {
 		log.WithError(err).Error("Error handling address pool statistics")
 		lastErr = err
 	}
 
-	err = statsPuller.storePrefixPoolStats(responseStats.Arguments, subnetsMap, dbApp, family)
+	err = statsPuller.storePrefixPoolStats(response.Arguments, subnetsMap, dbApp, family)
 	if err != nil {
 		log.WithError(err).Error("Error handling prefix pool statistics")
 		lastErr = err
@@ -408,6 +398,9 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		if d.KeaDaemon == nil || !d.Active {
 			continue
 		}
+		if d.Name != dbmodel.DaemonNameDHCPv4 && d.Name != dbmodel.DaemonNameDHCPv6 {
+			continue
+		}
 
 		cmdDaemons = append(cmdDaemons, d)
 		cmds = append(cmds, keactrl.NewCommandBase(keactrl.StatisticGetAll, d.Name))
@@ -436,7 +429,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return cmdsResult.Error
 	}
 
-	responses := make([]keactrl.StatisticGetAllResponse, len(responsesAny))
+	responseItems := make([]keactrl.StatisticGetAllResponseItem, len(responsesAny))
 	for i := 0; i < len(responsesAny); i++ {
 		response, ok := responsesAny[i].(*keactrl.StatisticGetAllResponse)
 		if !ok {
@@ -444,16 +437,32 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			return errors.Errorf("response is not of type StatisticGetAllResponse: %T", responsesAny[i])
 		}
 
-		responses[i] = *response
+		if len(*response) != 1 {
+			// Each request is sent to a single daemon.
+			return errors.Errorf("too many entries in the response")
+		}
+
+		responseItem := (*response)[0]
+
+		err := responseItem.GetError()
+		if err != nil {
+			return errors.WithMessage(err, "the statistic-get-all command returned an error")
+		}
+
+		if responseItem.Arguments == nil {
+			return errors.Errorf("arguments missing in the statistic-get-all response")
+		}
+
+		responseItems[i] = responseItem
 	}
 
 	// Process the response for each command for each daemon.
-	return statsPuller.processAppResponses(dbApp, cmds, cmdDaemons, responses)
+	return statsPuller.processAppResponses(dbApp, cmds, cmdDaemons, responseItems)
 }
 
 // Iterates through the commands for each daemon and processes the command responses
 // Was part of getStatsFromApp() until lint:backend complained about cognitive complexity.
-func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []keactrl.StatisticGetAllResponse) error {
+func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []keactrl.StatisticGetAllResponseItem) error {
 	// Check if we have the same number of commands and responses.
 	if len(cmds) != len(responses) {
 		return errors.Errorf("number of commands (%d) does not match number of responses (%d)", len(cmds), len(responses))

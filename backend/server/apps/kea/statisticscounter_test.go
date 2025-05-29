@@ -418,7 +418,7 @@ func TestCounterRealKeaResponse(t *testing.T) {
 			"subnet[10].declined-addresses": [[0, "2025-04-22 17:59:15.328731"]],
 			"subnet[20].total-addresses": [[4098, "2025-04-22 17:59:15.328731"]],
 			"subnet[20].cumulative-assigned-addresses": [[5000, "2025-04-22 17:59:15.328731"]],
-			"subnet[20].assigned-addresses": [[2034, "2025-04-22 17:59:15.328731"]],
+			"subnet[20].assigned-addresses": [[2038, "2025-04-22 17:59:15.328731"]],
 			"subnet[20].declined-addresses": [[4, "2025-04-22 17:59:15.328731"]]
 		}
 	}]`
@@ -428,14 +428,14 @@ func TestCounterRealKeaResponse(t *testing.T) {
 		"arguments": {
 			"subnet[30].total-nas": [[4096, "2025-04-22 17:59:15.328731"]],
 			"subnet[30].cumulative-assigned-nas": [[3000, "2025-04-22 17:59:15.328731"]],
-			"subnet[30].assigned-nas": [[2400, "2025-04-22 17:59:15.328731"]],
+			"subnet[30].assigned-nas": [[2403, "2025-04-22 17:59:15.328731"]],
 			"subnet[30].declined-nas": [[3, "2025-04-22 17:59:15.328731"]],
 			"subnet[30].total-pds": [[0, "2025-04-22 17:59:15.328731"]],
 			"subnet[30].cumulative-assigned-pds": [[0, "2025-04-22 17:59:15.328731"]],
 			"subnet[30].assigned-pds": [[0, "2025-04-22 17:59:15.328731"]],
 			"subnet[40].total-nas": [[0, "2025-04-22 17:59:15.328731"]],
 			"subnet[40].cumulative-assigned-nas": [[0, "2025-04-22 17:59:15.328731"]],
-			"subnet[40].assigned-nas": [[0, "2025-04-22 17:59:15.328731"]],
+			"subnet[40].assigned-nas": [[1048, "2025-04-22 17:59:15.328731"]],
 			"subnet[40].declined-nas": [[1048, "2025-04-22 17:59:15.328731"]],
 			"subnet[40].total-pds": [[500, "2025-04-22 17:59:15.328731"]],
 			"subnet[40].cumulative-assigned-pds": [[233, "2025-04-22 17:59:15.328731"]],

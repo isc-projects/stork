@@ -49,7 +49,7 @@ func (rpsWorker *RpsWorker) AgeOffRpsIntervals() error {
 }
 
 // Updates the statistic-get-all command response for DHCP4.
-func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response keactrl.StatisticGetAllResponse) error {
+func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response keactrl.StatisticGetAllResponseItem) error {
 	samples, err := rpsWorker.extractSamples4(response)
 	if err == nil && samples != nil {
 		// Note that rather than use the sample time in the list,
@@ -75,7 +75,7 @@ func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response ke
 }
 
 // Processes the statistic-get command response for DHCP4.
-func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response keactrl.StatisticGetAllResponse) error {
+func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response keactrl.StatisticGetAllResponseItem) error {
 	sample, err := rpsWorker.extractSamples6(response)
 	if err == nil && sample != nil {
 		// Note that rather than use the sample time in the list,
@@ -101,23 +101,18 @@ func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response ke
 }
 
 // Extract the list of statistic samples from a dhcp4 statistic-get-all response if the response is valid.
-func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.StatisticGetAllResponse) (*keactrl.StatisticGetAllResponseSample, error) {
-	if len(statsResp) == 0 {
-		err := errors.Errorf("empty RPS response")
-		return nil, err
-	}
-
-	if err := statsResp[0].GetError(); err != nil {
+func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.StatisticGetAllResponseItem) (*keactrl.StatisticGetAllResponseSample, error) {
+	if err := statsResp.GetError(); err != nil {
 		err := errors.WithMessage(err, "error result in RPS response")
 		return nil, err
 	}
 
-	if statsResp[0].Arguments == nil {
+	if statsResp.Arguments == nil {
 		err := errors.Errorf("missing arguments from RPS response %+v", statsResp)
 		return nil, err
 	}
 
-	for _, sample := range statsResp[0].Arguments {
+	for _, sample := range statsResp.Arguments {
 		if sample.Name == "pkt4-ack-sent" {
 			return &sample, nil
 		}
@@ -126,28 +121,23 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.StatisticGetAllRes
 }
 
 // Extract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
-func (rpsWorker *RpsWorker) extractSamples6(statsResp keactrl.StatisticGetAllResponse) (*keactrl.StatisticGetAllResponseSample, error) {
-	if len(statsResp) == 0 {
-		err := errors.Errorf("empty RPS response")
-		return nil, err
-	}
-
-	if err := statsResp[0].GetError(); err != nil {
+func (rpsWorker *RpsWorker) extractSamples6(statsResp keactrl.StatisticGetAllResponseItem) (*keactrl.StatisticGetAllResponseSample, error) {
+	if err := statsResp.GetError(); err != nil {
 		err := errors.WithMessage(err, "error result in RPS response")
 		return nil, err
 	}
 
-	if statsResp[0].Arguments == nil {
+	if statsResp.Arguments == nil {
 		err := errors.Errorf("missing arguments from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
-	if statsResp[0].Arguments == nil {
+	if statsResp.Arguments == nil {
 		err := errors.Errorf("missing samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
-	for _, sample := range statsResp[0].Arguments {
+	for _, sample := range statsResp.Arguments {
 		if sample.Name == "pkt6-reply-sent" {
 			return &sample, nil
 		}

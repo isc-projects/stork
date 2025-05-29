@@ -146,7 +146,7 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	var samples []StatisticGetAllResponseSample
+	var samples []*StatisticGetAllResponseSample
 
 	// Retrieve values of mixed-type arrays.
 	// Unpack the complex structure to simpler form.
@@ -239,7 +239,7 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 			)
 		}
 
-		sample := StatisticGetAllResponseSample{
+		sample := &StatisticGetAllResponseSample{
 			Name:          statName,
 			SubnetID:      subnetID,
 			AddressPoolID: addressPoolID,
@@ -250,6 +250,103 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 		samples = append(samples, sample)
 	}
 
-	*r = samples
+	// Adjust the assigned addresses. The statistic-get-all command presents
+	// the assigned addresses (or NAs) as a sum of assigned and declined
+	// leases.
+	adjustAssignedStatistics(samples)
+
+	readOnlySamples := make([]StatisticGetAllResponseSample, len(samples))
+	for i, sample := range samples {
+		readOnlySamples[i] = *sample
+	}
+
+	*r = readOnlySamples
 	return nil
+}
+
+// The type of a statistic.
+type statisticType int
+
+const (
+	statisticTypeGlobal      statisticType = iota
+	statisticTypeSubnet      statisticType = iota
+	statisticTypeAddressPool statisticType = iota
+	statisticTypePrefixPool  statisticType = iota
+)
+
+// A key of sample index.
+type indexKey struct {
+	subnetID   int64
+	poolID     int64
+	sampleType statisticType
+	family     int
+}
+
+// A map representing the sample index.
+type sampleIndex map[indexKey]*StatisticGetAllResponseSample
+
+// The statistic-get-all command presents the assigned addresses (or NAs) as a
+// sum of assigned and declined leases.
+// This function combines samples into pair of assigned and declined, and
+// subtract a number of declined leases from the assigned ones.
+//
+// Note: I'm unsure if any other statistics don't share similar logic in Kea.
+func adjustAssignedStatistics(samples []*StatisticGetAllResponseSample) {
+	declinedSampleIndex := sampleIndex{}
+	assignedSampleIndex := sampleIndex{}
+	for _, sample := range samples {
+		var family int
+		isDeclined := false
+		switch sample.Name {
+		case "assigned-addresses":
+			family = 4
+		case "assigned-nas":
+			family = 6
+		case "declined-addresses":
+			family = 4
+			isDeclined = true
+		case "declined-nas":
+			family = 6
+			isDeclined = true
+		default:
+			// Unsupported statistic.
+			continue
+		}
+
+		poolIDPtr := sample.GetPoolID()
+		poolID := int64(0)
+		if poolIDPtr != nil {
+			poolID = *poolIDPtr
+		}
+		sampleType := statisticTypeGlobal
+		switch {
+		case sample.IsAddressPoolSample():
+			sampleType = statisticTypeAddressPool
+		case sample.IsPrefixPoolSample():
+			sampleType = statisticTypePrefixPool
+		case sample.IsSubnetSample():
+			sampleType = statisticTypeSubnet
+		}
+
+		key := indexKey{
+			subnetID:   sample.SubnetID,
+			poolID:     poolID,
+			sampleType: sampleType,
+			family:     family,
+		}
+		if isDeclined {
+			declinedSampleIndex[key] = sample
+		} else {
+			assignedSampleIndex[key] = sample
+		}
+	}
+
+	// Iterate over assigned statistics and adjust their values.
+	for key, assignedSample := range assignedSampleIndex {
+		declinedSample, ok := declinedSampleIndex[key]
+		if !ok {
+			continue
+		}
+		assignedSample.Value = big.NewInt(0).Sub(assignedSample.Value, declinedSample.Value)
+	}
 }
