@@ -314,8 +314,15 @@ func GetUnauthorizedMachinesCount(db *pg.DB) (int, error) {
 	return count, pkgerrors.Wrapf(err, "problem counting unauthorized machines")
 }
 
-// Delete a machine from database.
+// Delete a machine from database. The machine must include non-nil Apps
+// field (though it may be an empty slice). The Apps field is used to
+// delete orphaned objects (e.g., subnets, zones) after the machine is deleted.
+// The whole operation is transactional, so it is rolled back if it fails at
+// any stage.
 func DeleteMachine(db *pg.DB, machine *Machine) error {
+	if machine.Apps == nil {
+		return pkgerrors.Errorf("deleted machine with ID %d has no apps relation", machine.ID)
+	}
 	return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 		result, err := db.Model(machine).WherePK().Delete()
 		if err != nil {

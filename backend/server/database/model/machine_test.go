@@ -737,7 +737,8 @@ func TestGetUnauthorizedMachinesCount(t *testing.T) {
 	require.EqualValues(t, 8, count)
 }
 
-// Check if deleting only machine works.
+// Check if an attempt to delete a machine without specifying the apps
+// relation fails.
 func TestDeleteMachineOnly(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -752,16 +753,8 @@ func TestDeleteMachineOnly(t *testing.T) {
 
 	// delete machine
 	err = DeleteMachine(db, m)
-	require.Nil(t, err)
-
-	// delete non-existing machine
-	m2 := &Machine{
-		ID:        123,
-		Address:   "localhost",
-		AgentPort: 123,
-	}
-	err = DeleteMachine(db, m2)
-	require.Contains(t, err.Error(), "database entry not found")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "deleted machine with ID 1 has no apps relation")
 }
 
 // Check if deleting machine and its apps works.
@@ -787,6 +780,8 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	require.NoError(t, err)
 	appID := a.ID
 	require.NotEqual(t, 0, appID)
+
+	m.Apps = []*App{a}
 
 	// reload machine from db to get apps relation loaded
 	err = RefreshMachineFromDB(db, m)
@@ -834,6 +829,8 @@ func TestDeleteMachineWithEmptyConfigReport(t *testing.T) {
 	err := AddConfigReport(db, configReport)
 	require.NoError(t, err)
 
+	machine.Apps = []*App{app}
+
 	// Act
 	err = DeleteMachine(db, machine)
 
@@ -873,6 +870,8 @@ func TestDeleteMachineWithConfigReport(t *testing.T) {
 	}
 	err := AddConfigReport(db, configReport)
 	require.NoError(t, err)
+
+	machine.Apps = []*App{app}
 
 	// Act
 	err = DeleteMachine(db, machine)
