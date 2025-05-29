@@ -25,6 +25,7 @@ import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-
 import { VersionPageComponent } from './version-page/version-page.component'
 import { ZonesPageComponent } from './zones-page/zones-page.component'
 import { ConfigMigrationPageComponent } from './config-migration-page/config-migration-page.component'
+import { NotFoundPageComponent } from './not-found-page/not-found-page.component'
 
 const routes: Routes = [
     {
@@ -214,10 +215,11 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: { key: 'migrations' },
     },
-
-    // otherwise redirect to home
-    // TODO: #1816 - there should be a redirection to the dedicated 404 component.
-    { path: '**', redirectTo: '/' },
+    {
+        path: '**',
+        component: NotFoundPageComponent,
+        canActivate: [AuthGuard],
+    },
 ]
 
 @NgModule({
