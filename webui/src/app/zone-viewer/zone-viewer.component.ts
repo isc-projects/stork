@@ -64,7 +64,20 @@ export class ZoneViewerComponent {
     }
 
     /**
-     * Transforms the resource record.
+     * Transforms the resource record to an abbreviated form.
+     *
+     * The zone transfer returns a set of full resource records (i.e., they include
+     * fully qualified names, the names are included for all zone records etc.).
+     * The abbreviated form is often used in the zone files and the purpose of
+     * transforming the resource records is to display them in the abbreviated form.
+     *
+     * The transformation to the abbreviated form is done in the following way:
+     * - Use 'at' character as name for the SOA record.
+     * - Remove the zone name from the name of the non-SOA record (leave partial name
+     *   instead of the fully qualified name).
+     * - Omit the name of the resource record if the previous resource record has the
+     *   same name.
+     * - Remove the trailing SOA record.
      *
      * @param rr resource record to transform.
      * @param isFirst flag indicating if the resource record is the first one.
