@@ -672,7 +672,6 @@ for each occurrence of that zone.
                                     <!-- Dialog displaying a zone viewer for a selected view and daemon -->
                                     <p-dialog
                                         *ngIf="localZone.zoneType !== 'builtin'"
-                                        header="Header"
                                         [modal]="true"
                                         [visible]="
                                             getZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id)
