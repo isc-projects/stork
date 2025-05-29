@@ -11,7 +11,7 @@ Some of these checks and updates can be made before the actual freeze.
 
 1. [ ] Check jenkins job status:
     1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
-    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest). <mark>Stable and Maintenance Releases</mark>: check [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_v*_*/latest) instead (draft link, edit).
         - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
     1. [ ] Upload necessary changes and fixes.
 1. [ ] Do some quick checks on https://demo.stork.isc.org/. There should be an old version deployed at this time, but there may be bugs worth pointing out to the Stork team, or other bugs that affect the normal release workflow to fix.
@@ -21,7 +21,7 @@ Some of these checks and updates can be made before the actual freeze.
     - Hover over the logo in the top left corner, and check that the tooltip shows the expected version and build date.
     - Check that the page is loading outside VPN.
 1. Check if ReadTheDocs can build Stork documentation.
-    1. [ ] Check if the latest build was successful and if its time matches the merge time of the release changes.
+    1. [ ] Check if [the latest build](https://app.readthedocs.org/projects/stork/builds/?version__slug=latest) was successful and if its time matches the merge time of the release changes. <mark>Stable and Maintenance Releases</mark>: check [the stable build](https://app.readthedocs.org/projects/stork/builds/?version__slug=v2.4.6) instead (draft link, edit).
     1. If not, trigger rebuilding docs on [readthedocs.org](https://app.readthedocs.org/projects/stork/builds) and wait for the build to complete.
 1. Prepare release notes.
     1. [ ] Create a draft of the release notes on the [Stork GitLab wiki](https://gitlab.isc.org/isc-projects/stork/-/wikis/home). It should be created under [the Releases directory](https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases), like this one: https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-2.0.0.
@@ -32,7 +32,7 @@ The following steps may involve changing files in the repository.
 
 1. [ ] Prepare release changes. Run QA script [stork/release/update-code-for-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/update-code-for-release.py).
     * e.g. `GITLAB_TOKEN='...' ./update-code-for-release.py --release-date 'Feb 07, 2030' --version=2.3.4 --repo-dir=/home/wlodek/stork`
-    * [ ] <mark>Stable and Maintenance Releases Only</mark>: please use `--branch=stork_v2_2` option
+    * [ ] <mark>Stable and Maintenance Releases Only</mark>: please run from `stork_v*_*` branch of `qa-dhcp`.
 1. [ ] If any systems were added or removed in Jenkins since the latest release, update `doc/user/compatible-systems.csv`. The columns that could be modified are: `Unit Tests`, `System Tests`, `Installation & Upgrade & Run (with systemd)`. The legend for what `X`, `D`, `U` mean is in `doc/user/install.rst` or below the table at https://stork.readthedocs.io/en/latest/install.html#compatible-systems.
 1. [ ] Check correctness of changes applied and commit changes by rerunning `./update-code-for-release.py` with `--upload-only` option (script will skip all steps related to applying code changes).
     * e.g.  `GITLAB_TOKEN='...' ./update-code-for-release.py --repo-dir=/home/wlodek/stork --upload-only`.
@@ -97,7 +97,7 @@ Release notes: {release_notes}
     1. Run `upload_packages`.
     1. Run `upload_packages_hooks`.
     1. Wait for the jobs to complete.
-    1. [ ] Check that the packages were uploaded to Cloudsmith: https://cloudsmith.io/~isc/repos/stork/packages/. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 2 (agent + server + ldap)` total packages.
+    1. [ ] Check that the packages were uploaded to Cloudsmith: https://cloudsmith.io/~isc/repos/stork-dev/packages/. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 2 (agent + server + ldap)` total packages. <mark>Stable and Maintenance Releases Only</mark>: check https://cloudsmith.io/~isc/repos/stork/packages instead.
 1. [ ] Sign the tarballs. Run QA script [stork/release/sign-tarballs.sh](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/sign-tarballs.sh).
     * Example command: `./sign-tarballs.sh 1.2.0 wlodek 0259A33B5F5A3A4466CF345C7A5E084CACA51884`
     * To get the fingerprint, run `gpg --list-keys wlodek@isc.org`.
@@ -120,6 +120,7 @@ Release notes: {release_notes}
         1. Tag the selected commit at the top with the proper version tag in the `vx.y.z` format on. Put there a link to the release notes page (e.g. https://gitlab.isc.org/isc-projects/stork/-/wikis/releases/Release-notes-1.2.0) and a link to the ARM (e.g. https://stork.readthedocs.io/en/v1.2.0/). Then click on `Create release`. Do this for:
             1. https://gitlab.isc.org/isc-projects/stork/-/tags.
             1. https://gitlab.isc.org/isc-projects/stork-hook-ldap/-/tags.
+
         1. Send a message to [the Stork channel](https://mattermost.isc.org/isc/channels/stork). Include the path to the release artifacts and a checklist. Here is a template:
             ```
             #### Stork 1.2.0 is ready to be published.
@@ -145,12 +146,14 @@ Release notes: {release_notes}
 
             Code freeze is over.
             ```
+1. [ ] <mark>Latest Stable Release Only</mark>: Recreate the `stable` tag. Go to [the stable tag](https://gitlab.isc.org/isc-projects/stork/-/tags/stable), click `Delete tag`, then `New tag`, `Tag name`: `stable`, `Create from`: `stork_v*_*`.
 1. [ ] Update docs on https://app.readthedocs.org/projects/stork/.
     1. Click the triple dot button on the `latest` build -> click `Rebuild version`. This is really a workaround for RTD to pull the repo and discover the new tag.
     1. Go to `Versions` -> `Add version` -> find the tag name in the dropdown menu -> check `Active` -> click `Update version`. Wait for the build to complete.
-    1. [ ] <mark>Stable and Maintenance Releases Only</mark>: change default version:
+    1. [ ] <mark>Latest Stable Release Only</mark>: change default version:
         1. Go to `Settings` -> `Default version:` -> choose the new version as default.
         1. Check that https://stork.readthedocs.io/ redirects to the new version.
+    1. [ ] <mark>Latest Stable Release Only</mark>: Rebuild the `stable` version. Go to [the stable build](https://app.readthedocs.org/projects/kea/builds/?version__slug=stable), click `Rebuild version`.
 
 1. [ ] <mark>Stable and Maintenance Releases Only</mark>: follow [those instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update public demo
 
