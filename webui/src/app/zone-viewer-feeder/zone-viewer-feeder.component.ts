@@ -94,9 +94,6 @@ export class ZoneViewerFeederComponent {
                 this.zoneData.items = data.items
             })
             .catch((error) => {
-                // Since we failed loading the zone resource records we need to disable
-                // this flag to allow the user to retry.
-                this.active = false
                 // Show the error message.
                 const errorMsg = getErrorMessage(error)
                 this._messageService.add({
