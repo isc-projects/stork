@@ -351,7 +351,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         """Get zone inventory states."""
         api_instance = DNSApi(self._api_client)
 
-        http_info = api_instance.get_zone_inventory_states_with_http_info()
+        http_info = api_instance.get_zones_fetch_with_http_info()
 
         status = http_info.status_code
         zone_inventory_states = http_info.data

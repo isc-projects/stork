@@ -399,6 +399,7 @@ services:
       - ./docker/config/agent-bind9-2/named.conf:/etc/bind/named.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
+      - ./docker/config/supervisor/named-compilezone.conf:/etc/supervisor/conf.d/named-compilezone.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
       - ./docker/config/supervisor/prometheus-alpine.conf:/etc/supervisor/conf.d/prometheus.conf
       - ./docker/config/supervisor/supervisor_monitor.conf:/etc/supervisor/conf.d/supervisor_monitor.conf
