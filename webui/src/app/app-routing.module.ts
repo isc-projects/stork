@@ -184,6 +184,7 @@ const routes: Routes = [
     {
         path: 'forbidden',
         component: ForbiddenPageComponent,
+        canActivate: [AuthGuard],
     },
     {
         path: 'logs/:id',

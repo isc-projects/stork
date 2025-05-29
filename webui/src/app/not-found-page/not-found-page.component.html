@@ -1,7 +1,9 @@
-<p-panel header="Page Not Found">
-    <p class="m-0 flex align-items-baseline gap-1">
-        The page you have tried to open doesn't exist. Please check the URL address or go back to
-        <a routerLink="/" class="p-button p-button-outlined"> Dashboard </a>
-        .
-    </p>
-</p-panel>
+<div class="ml-2 mt-2 flex flex-column gap-1 max-w-40rem">
+    <p-message
+        severity="warn"
+        text="The page you have tried to open doesn't exist. Please check
+              the URL address."
+    >
+    </p-message>
+    <a class="ml-2" routerLink="/">Go to Dashboard page</a>
+</div>
