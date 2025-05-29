@@ -40,9 +40,41 @@ if os.environ.get("PYTEST_XDIST_WORKER", False):
     sys.stdout = sys.stderr
 
 
+@pytest.fixture(autouse=True, scope="session")
+def get_number_of_tests(request):
+    """Get the total number of tests.
+
+    Function is called automatically, but after the first test
+    so test_count will be != 0 from the second test onward.
+
+    :param request: pytest request to run a test
+    :type request: pytest.SubRequest
+    """
+    pytest.test_count = len(request.node.items)
+
+
+def get_test_progress():
+    """Return a textual representation of the total test progress e.g. '#8/24'.
+
+    Before running the first test, it's always just '#1'.
+    :return: textual representation of the total test progress
+    :rtype: str
+    """
+    result = f"#{pytest.current_test_index}"
+    if pytest.test_count != 0:
+        result += f"/{pytest.test_count}"
+    return result
+
+
+def pytest_configure():
+    """Initialize variables used in indexing tests."""
+    pytest.current_test_index = 1
+    pytest.test_count = 0
+
+
 def pytest_runtest_logstart(nodeid, location):  # pylint: disable=unused-argument
     """Called at the start of running the runtest protocol for a single item."""
-    banner = f"\n\n************ START   {nodeid} "
+    banner = f"\n\n************ START {get_test_progress()}: {nodeid} "
     banner += "*" * (140 - len(banner))
     banner += "\n"
     banner = f"\u001b[36m{banner}\u001b[0m"
@@ -51,9 +83,10 @@ def pytest_runtest_logstart(nodeid, location):  # pylint: disable=unused-argumen
 
 def pytest_runtest_logfinish(nodeid, location):  # pylint: disable=unused-argument
     """Called at the end of running the runtest protocol for a single item."""
-    banner = f"\n************ END   {nodeid} "
+    banner = f"\n************ END {get_test_progress()}: {nodeid} "
     banner += "*" * (140 - len(banner))
     banner = f"\u001b[36;1m{banner}\u001b[0m"
+    pytest.current_test_index += 1
     print(banner)
 
 
@@ -61,7 +94,7 @@ def pytest_runtest_logreport(report):
     """Process the TestReport produced for each of the setup, call and teardown runtest phases of an item."""
     if report.when == "call":
         duration = datetime.timedelta(seconds=int(report.duration))
-        banner = f"\n************ RESULT {report.outcome.upper()}   {report.nodeid}  took {duration}  "
+        banner = f"\n************ RESULT {report.outcome.upper()} {get_test_progress()}: {report.nodeid} took {duration} "
         banner += "*" * (140 - len(banner))
         if report.outcome == "passed":
             banner = f"\u001b[32;1m{banner}\u001b[0m"
