@@ -699,8 +699,22 @@ for each occurrence of that zone.
                                                         <a routerLink="/apps/bind9/{{ localZone.appId }}">{{
                                                             localZone.appName
                                                         }}</a
-                                                        >, view: {{ localZone.view }}</span
-                                                    >
+                                                        >, view:
+                                                        <a
+                                                            routerLink="/dns/zones"
+                                                            [queryParams]="{ text: localZone.view }"
+                                                            (click)="
+                                                                setZoneViewerDialogVisible(
+                                                                    localZone.daemonId,
+                                                                    localZone.view,
+                                                                    tab.id,
+                                                                    false
+                                                                );
+                                                                activateFirstTab()
+                                                            "
+                                                            >{{ localZone.view }}</a
+                                                        >
+                                                    </span>
                                                 </span>
                                             </div>
                                         </ng-template>
