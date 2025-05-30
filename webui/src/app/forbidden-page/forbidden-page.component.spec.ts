@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { MessageModule } from 'primeng/message'
 
 import { ForbiddenPageComponent } from './forbidden-page.component'
 import { MessagesModule } from 'primeng/messages'
@@ -10,7 +9,7 @@ describe('ForbiddenPageComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [MessageModule, MessagesModule],
+            imports: [MessagesModule],
             declarations: [ForbiddenPageComponent],
         }).compileComponents()
     }))

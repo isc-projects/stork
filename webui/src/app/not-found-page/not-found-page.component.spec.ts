@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { NotFoundPageComponent } from './not-found-page.component'
-import { MessageModule } from 'primeng/message'
 import { MessagesModule } from 'primeng/messages'
 
 describe('NotFoundPageComponent', () => {
@@ -10,7 +9,7 @@ describe('NotFoundPageComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [MessageModule, MessagesModule],
+            imports: [MessagesModule],
             declarations: [NotFoundPageComponent],
         }).compileComponents()
 
