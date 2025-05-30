@@ -484,9 +484,11 @@ func TestCounterRealKeaResponse(t *testing.T) {
 		statResponseItems := statResponse[0]
 		require.NotNil(t, statResponseItems.Arguments)
 
+		keactrl.AdjustAssignedStatistics(statResponseItems.Arguments)
+
 		localSubnets := make([]*dbmodel.LocalSubnet, 0)
 
-		statSamplesBySubnet := make(map[int64][]keactrl.StatisticGetAllResponseSample)
+		statSamplesBySubnet := make(map[int64][]*keactrl.StatisticGetAllResponseSample)
 		for _, statSample := range statResponseItems.Arguments {
 			statSamplesBySubnet[statSample.SubnetID] = append(
 				statSamplesBySubnet[statSample.SubnetID],

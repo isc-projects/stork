@@ -114,7 +114,7 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp keactrl.StatisticGetAllRes
 
 	for _, sample := range statsResp.Arguments {
 		if sample.Name == "pkt4-ack-sent" {
-			return &sample, nil
+			return sample, nil
 		}
 	}
 	return nil, nil
@@ -139,7 +139,7 @@ func (rpsWorker *RpsWorker) extractSamples6(statsResp keactrl.StatisticGetAllRes
 
 	for _, sample := range statsResp.Arguments {
 		if sample.Name == "pkt6-reply-sent" {
-			return &sample, nil
+			return sample, nil
 		}
 	}
 	return nil, nil

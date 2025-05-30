@@ -79,57 +79,104 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 	require.NoError(t, response[0].GetError())
 	require.Error(t, response[1].GetError())
 
-	index := slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index := slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "total-addresses" && item.IsSubnetSample() && item.SubnetID == 1
 	})
 	require.NotEqual(t, -1, index)
 	item := response[0].Arguments[index]
 	require.EqualValues(t, 200, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "reclaimed-leases"
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.Zero(t, item.Value.Int64())
 
-	// It must adjust the assigned addresses.
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	// Check the assigned lease statistics. They should count the assigned and
+	// declined leases together.
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 1 && *item.AddressPoolID == 0
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 7, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 1
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 10, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && !item.IsSubnetSample() && !item.IsPoolSample()
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 150, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 2 && *item.AddressPoolID == 1
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 36, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 2
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 230, item.Value.Int64())
+
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-nas" && !item.IsSubnetSample() && !item.IsPoolSample()
+	})
+	require.NotEqual(t, -1, index)
+	item = response[0].Arguments[index]
+	require.EqualValues(t, 450, item.Value.Int64())
+
+	// Check if the statistics can be adjusted to exclude the declined leases
+	// from the assigned ones.
+	AdjustAssignedStatistics(response[0].Arguments)
+
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 1 && *item.AddressPoolID == 0
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 5, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 1
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 7, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-addresses" && !item.IsSubnetSample() && !item.IsPoolSample()
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 100, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 2 && *item.AddressPoolID == 1
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 30, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 2
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 225, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-nas" && !item.IsSubnetSample() && !item.IsPoolSample()
 	})
 	require.NotEqual(t, -1, index)
@@ -174,28 +221,28 @@ func TestUnmarshalStatisticGetAllResponseBigNumbers(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, response, 1)
 
-	index := slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index := slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 1
 	})
 	require.NotEqual(t, -1, index)
 	item := response[0].Arguments[index]
 	require.EqualValues(t, expected0, item.Value)
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 2
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, expected1, item.Value)
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 4
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, expected2, item.Value)
 
-	index = slices.IndexFunc(response[0].Arguments, func(item StatisticGetAllResponseSample) bool {
+	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "total-nas" && item.SubnetID == 5
 	})
 	require.NotEqual(t, -1, index)

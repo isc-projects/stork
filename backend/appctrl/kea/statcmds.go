@@ -39,7 +39,7 @@ type StatisticGetAllResponseItem struct {
 }
 
 // The Golang representation of the statistic-get-all arguments.
-type StatisticGetAllResponseArguments []StatisticGetAllResponseSample
+type StatisticGetAllResponseArguments []*StatisticGetAllResponseSample
 
 // Single statistic from the statistic-get-all response.
 type StatisticGetAllResponseSample struct {
@@ -250,17 +250,7 @@ func (r *StatisticGetAllResponseArguments) UnmarshalJSON(b []byte) error {
 		samples = append(samples, sample)
 	}
 
-	// Adjust the assigned addresses. The statistic-get-all command presents
-	// the assigned addresses (or NAs) as a sum of assigned and declined
-	// leases.
-	adjustAssignedStatistics(samples)
-
-	readOnlySamples := make([]StatisticGetAllResponseSample, len(samples))
-	for i, sample := range samples {
-		readOnlySamples[i] = *sample
-	}
-
-	*r = readOnlySamples
+	*r = samples
 	return nil
 }
 
@@ -287,11 +277,16 @@ type sampleIndex map[indexKey]*StatisticGetAllResponseSample
 
 // The statistic-get-all command presents the assigned addresses (or NAs) as a
 // sum of assigned and declined leases.
-// This function combines samples into pair of assigned and declined, and
-// subtract a number of declined leases from the assigned ones.
+// This function subtracts declined leases from the assigned ones.
+//
+// This function is called on demand (not automatically during the
+// statistic-get-all response parsing) because the statistic puller of the
+// Stork server expects the assigned lease statistics don't count declined
+// leases and the Prometheus exporter of the Stork agent expects the assigned
+// lease statistics to be the sum of assigned and declined leases.
 //
 // Note: I'm unsure if any other statistics don't share similar logic in Kea.
-func adjustAssignedStatistics(samples []*StatisticGetAllResponseSample) {
+func AdjustAssignedStatistics(samples []*StatisticGetAllResponseSample) {
 	declinedSampleIndex := sampleIndex{}
 	assignedSampleIndex := sampleIndex{}
 	for _, sample := range samples {

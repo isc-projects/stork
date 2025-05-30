@@ -203,10 +203,10 @@ func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.StatisticGetAl
 }
 
 // Processes statistics from the given command response for subnets belonging to the daemon.
-func (statsPuller *StatsPuller) storeSubnetStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeSubnetStats(response []*keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
 
-	statisticsPerSubnet := make(map[int64][]keactrl.StatisticGetAllResponseSample)
+	statisticsPerSubnet := make(map[int64][]*keactrl.StatisticGetAllResponseSample)
 	for _, statEntry := range response {
 		subnetID := statEntry.SubnetID
 		if statEntry.IsSubnetSample() {
@@ -260,7 +260,7 @@ type measurablePools interface {
 
 // Process statistics from the given command response for address pools
 // belonging to the daemon.
-func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeAddressPoolStats(response []*keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	return statsPuller.storePoolStats(
 		response, subnetsMap, dbApp, family,
 		func(ls *dbmodel.LocalSubnet) []measurablePools {
@@ -270,7 +270,7 @@ func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.Statist
 			}
 			return pools
 		},
-		func(sample keactrl.StatisticGetAllResponseSample) bool {
+		func(sample *keactrl.StatisticGetAllResponseSample) bool {
 			return sample.IsAddressPoolSample()
 		},
 	)
@@ -278,7 +278,7 @@ func (statsPuller *StatsPuller) storeAddressPoolStats(response []keactrl.Statist
 
 // Process statistics from the given command response for delegated prefix
 // pools belonging to the daemon.
-func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storePrefixPoolStats(response []*keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	return statsPuller.storePoolStats(
 		response, subnetsMap, dbApp, family,
 		func(ls *dbmodel.LocalSubnet) []measurablePools {
@@ -288,7 +288,7 @@ func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.Statisti
 			}
 			return pools
 		},
-		func(sample keactrl.StatisticGetAllResponseSample) bool {
+		func(sample *keactrl.StatisticGetAllResponseSample) bool {
 			return sample.IsPrefixPoolSample()
 		},
 	)
@@ -302,22 +302,22 @@ func (statsPuller *StatsPuller) storePrefixPoolStats(response []keactrl.Statisti
 // predicate specifies how to select statistic samples corresponding to the
 // pools.
 func (statsPuller *StatsPuller) storePoolStats(
-	response []keactrl.StatisticGetAllResponseSample,
+	response []*keactrl.StatisticGetAllResponseSample,
 	subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet,
 	dbApp *dbmodel.App, family int,
 	poolAccessor func(*dbmodel.LocalSubnet) []measurablePools,
-	statPredicate func(keactrl.StatisticGetAllResponseSample) bool,
+	statPredicate func(*keactrl.StatisticGetAllResponseSample) bool,
 ) error {
 	var lastErr error
 
-	statisticsPerSubnetAndPool := make(map[int64]map[int64][]keactrl.StatisticGetAllResponseSample)
+	statisticsPerSubnetAndPool := make(map[int64]map[int64][]*keactrl.StatisticGetAllResponseSample)
 	for _, statEntry := range response {
 		if !statPredicate(statEntry) {
 			continue
 		}
 
 		if _, ok := statisticsPerSubnetAndPool[statEntry.SubnetID]; !ok {
-			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]keactrl.StatisticGetAllResponseSample)
+			statisticsPerSubnetAndPool[statEntry.SubnetID] = make(map[int64][]*keactrl.StatisticGetAllResponseSample)
 		}
 
 		poolID := *statEntry.GetPoolID()
@@ -452,6 +452,10 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		if responseItem.Arguments == nil {
 			return errors.Errorf("arguments missing in the statistic-get-all response")
 		}
+
+		// The Stork server expects the statistics of assigned leases will not
+		// count the declined leases.
+		keactrl.AdjustAssignedStatistics(responseItem.Arguments)
 
 		responseItems[i] = responseItem
 	}
