@@ -118,6 +118,23 @@ describe('PoolBarsComponent', () => {
                 excludedPrefix: '2001:db8:6:3::/80',
                 keaConfigPoolParameters: { poolID: 6 },
             },
+            // Non-canonical prefixes should be handled as well. I'm unsure if this is a case allowed by the Kea DHCPv6
+            // server but we are prepared for it.
+            {
+                prefix: '2001:db8:7:2:2:2:2:2::/64',
+                delegatedLength: 80,
+                keaConfigPoolParameters: { poolID: 7 },
+            },
+            {
+                prefix: '2001:db8:7:1:1:1:1:1::/64',
+                delegatedLength: 80,
+                keaConfigPoolParameters: { poolID: 7 },
+            },
+            {
+                prefix: '2001:db8:7:3::/64',
+                delegatedLength: 80,
+                keaConfigPoolParameters: { poolID: 7 },
+            },
         ]
 
         // Act
@@ -125,7 +142,7 @@ describe('PoolBarsComponent', () => {
         component.ngOnInit()
 
         // Assert
-        expect(component.pdPoolsGrouped.length).toBe(6)
+        expect(component.pdPoolsGrouped.length).toBe(7)
         // The groups with a single pool takes precedence over the group with multiple pools.
         // They are sorted by their prefixes.
         expect(component.pdPoolsGrouped[0][0]).toBe(3)
@@ -161,5 +178,10 @@ describe('PoolBarsComponent', () => {
         expect(component.pdPoolsGrouped[5][1][5].excludedPrefix).toBe('2001:db8:6:3::/80')
         expect(component.pdPoolsGrouped[5][1][6].prefix).toBe('2001:db8:6:3::/64')
         expect(component.pdPoolsGrouped[5][1][6].excludedPrefix).toBe('2001:db8:6:3::/96')
+        expect(component.pdPoolsGrouped[6][0]).toBe(7)
+        expect(component.pdPoolsGrouped[6][1].length).toBe(3)
+        expect(component.pdPoolsGrouped[6][1][0].prefix).toBe('2001:db8:7:3::/64')
+        expect(component.pdPoolsGrouped[6][1][1].prefix).toBe('2001:db8:7:1:1:1:1:1::/64')
+        expect(component.pdPoolsGrouped[6][1][2].prefix).toBe('2001:db8:7:2:2:2:2:2::/64')
     })
 })

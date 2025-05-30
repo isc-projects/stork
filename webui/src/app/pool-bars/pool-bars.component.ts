@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { DelegatedPrefixPool, Pool } from '../backend'
-import { RangedSet, IPv6CidrRange, IPv4, IPv6 } from 'ip-num'
+import { RangedSet, IPv6CidrRange, IPv4, IPv6, IPCidrRange } from 'ip-num'
 
 /**
  * A component displaying address pool and delegated prefix pool bars in a
@@ -107,11 +107,37 @@ export class PoolBarsComponent implements OnInit {
      *
      * @param prefixAStr - The first prefix to compare
      * @param prefixBStr - The second prefix to compare.
-     * @returns A negative number if prefixAStr is less than prefixBStr, a positive number if prefixAStr is greater than prefixBStr, or 0 if they are equal.
+     * @returns A negative number if prefixAStr is less than prefixBStr, a
+     *          positive number if prefixAStr is greater than prefixBStr, or 0
+     *          if they are equal.
      */
     private comparePrefixes(prefixAStr: string, prefixBStr: string): number {
-        const prefixA = IPv6CidrRange.fromCidr(prefixAStr)
-        const prefixB = IPv6CidrRange.fromCidr(prefixBStr)
+        let prefixA: IPv6CidrRange = null
+        let prefixB: IPv6CidrRange = null
+        try {
+            prefixA = IPv6CidrRange.fromCidr(prefixAStr)
+        } catch (e) {
+            // Prefix is invalid. Set to null to handle it gracefully.
+        }
+        try {
+            prefixB = IPv6CidrRange.fromCidr(prefixBStr)
+        } catch (e) {
+            // Prefix is invalid. Set to null to handle it gracefully.
+        }
+
+        // Check if the prefixes are valid. Valid prefixes take precedence over
+        // invalid ones.
+        if (prefixA == null && prefixB == null) {
+            // Both invalid. Compare as strings.
+            return prefixAStr.localeCompare(prefixBStr)
+        } else if (prefixA == null) {
+            // Valid prefixB, invalid prefixA.
+            return 1
+        } else if (prefixB == null) {
+            // Valid prefixA, invalid prefixB.
+            return -1
+        }
+
         const firstA = prefixA.getFirst()
         const firstB = prefixB.getFirst()
         // Compare the first addresses of the prefixes.
