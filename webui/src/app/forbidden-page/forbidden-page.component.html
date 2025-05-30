@@ -3,7 +3,10 @@
         <p-messages styleClass="text-xl" severity="error">
             <ng-template pTemplate>
                 <div class="flex flex-column gap-3">
-                    <div class="text-3xl">Forbidden</div>
+                    <div class="flex justify-content-top">
+                        <span class="text-3xl flex-1">Forbidden</span>
+                        <span class="text-sm flex-0">HTTP 403 Forbidden</span>
+                    </div>
                     <div>
                         Access to this page is forbidden for the current user. If you think you should have access to
                         this page, please contact your system administrator to verify your permissions
