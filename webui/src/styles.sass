@@ -57,6 +57,10 @@ p-header
   margin-left: 20px
   color: var(--text-color-secondary)
 
+.p-tooltip .p-tooltip-text
+  // Don't preserve the new lines in tooltip text. The line still can be broken by using <br> tag.
+  white-space: normal
+
 // Resets default pointer-events to auto for button elements which were disabled
 // due to lack of privileges (authorization). This is to allow displaying HTML title tag
 // content when mouse hovers over disabled button. Short feedback about lack of privileges

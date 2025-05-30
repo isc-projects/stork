@@ -12,8 +12,11 @@
                 class="border border-round border-dashed border-1 flex flex-row align-items-center"
                 pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
                     Kea merges statistics of pools with the same pool ID, so all of these pools have the same
-                    utilization. Assign them unique pool IDs to see their individual utilizations."
+                    utilization. It means that the bars in each group do not reflect the utilization for the individual
+                    pools. Each utilization bar in the group reflects the utilization within the entire group of pools.
+                    Assign them unique pool IDs to see their individual utilizations."
                 tooltipPosition="bottom"
+                tooltipStyleClass="max-w-40rem"
             >
                 <ng-container
                     [ngTemplateOutlet]="poolId"
@@ -40,8 +43,11 @@
                 class="border border-round border-dashed border-1 flex flex-row align-items-center"
                 pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
                     Kea merges statistics of pools with the same pool ID, so all of these pools have the same
-                    utilization. Assign them unique pool IDs to see their individual utilizations."
+                    utilization. It means that the bars in each group do not reflect the utilization for the individual
+                    pools. Each utilization bar in the group reflects the utilization within the entire group of pools.
+                    Assign them unique pool IDs to see their individual utilizations."
                 tooltipPosition="bottom"
+                tooltipStyleClass="max-w-40rem"
             >
                 <ng-container
                     [ngTemplateOutlet]="poolId"
