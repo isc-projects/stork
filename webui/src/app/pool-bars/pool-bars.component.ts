@@ -76,25 +76,30 @@ export class PoolBarsComponent implements OnInit {
      */
     private compareDelegatedPrefixPools(poolA: DelegatedPrefixPool, poolB: DelegatedPrefixPool): number {
         let result = this.comparePrefixes(poolA.prefix, poolB.prefix)
-        if (result === 0) {
-            // If equal, compare the delegated lengths.
-            result = poolA.delegatedLength - poolB.delegatedLength
+        if (result !== 0) {
+            // If the prefixes are not equal, return the result.
+            return result
         }
-        if (result === 0) {
-            // If equal, compare the excluded prefixes. Remember that the
-            // excluded prefixes are optional.
-            if (!poolA.excludedPrefix && !poolB.excludedPrefix) {
-                result = 0
-            } else if (!poolA.excludedPrefix) {
-                result = -1
-            } else if (!poolB.excludedPrefix) {
-                result = 1
-            } else {
-                // Compare the excluded prefixes.
-                result = this.comparePrefixes(poolA.excludedPrefix, poolB.excludedPrefix)
-            }
+
+        // If equal, compare the delegated lengths.
+        result = poolA.delegatedLength - poolB.delegatedLength
+        if (result !== 0) {
+            // If the delegated lengths are not equal, return the result.
+            return result
         }
-        return result
+
+        // If equal, compare the excluded prefixes. Remember that the
+        // excluded prefixes are optional.
+        if (!poolA.excludedPrefix && !poolB.excludedPrefix) {
+            return 0
+        } else if (!poolA.excludedPrefix) {
+            return -1
+        } else if (!poolB.excludedPrefix) {
+            return 1
+        } else {
+            // Compare the excluded prefixes.
+            return this.comparePrefixes(poolA.excludedPrefix, poolB.excludedPrefix)
+        }
     }
 
     /**
