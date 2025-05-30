@@ -269,7 +269,6 @@ type indexKey struct {
 	subnetID   int64
 	poolID     int64
 	sampleType statisticType
-	family     int
 }
 
 // A map representing the sample index.
@@ -290,18 +289,10 @@ func AdjustAssignedStatistics(samples []*StatisticGetAllResponseSample) {
 	declinedSampleIndex := sampleIndex{}
 	assignedSampleIndex := sampleIndex{}
 	for _, sample := range samples {
-		var family int
 		isDeclined := false
 		switch sample.Name {
-		case "assigned-addresses":
-			family = 4
-		case "assigned-nas":
-			family = 6
+		case "assigned-addresses", "assigned-nas":
 		case "declined-addresses":
-			family = 4
-			isDeclined = true
-		case "declined-nas":
-			family = 6
 			isDeclined = true
 		default:
 			// Unsupported statistic.
@@ -327,7 +318,6 @@ func AdjustAssignedStatistics(samples []*StatisticGetAllResponseSample) {
 			subnetID:   sample.SubnetID,
 			poolID:     poolID,
 			sampleType: sampleType,
-			family:     family,
 		}
 		if isDeclined {
 			declinedSampleIndex[key] = sample

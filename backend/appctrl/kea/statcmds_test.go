@@ -12,8 +12,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Test if the Kea JSON get-all-stats response is unmarshal correctly.
-func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
+// Test if the Kea DHCPv4 JSON statistic-get-all response is unmarshal correctly.
+func TestUnmarshalKeaDHCPv4StatisticGetAllResponse(t *testing.T) {
 	// Arrange
 	rawResponse := `
 	[
@@ -51,13 +51,7 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 				"subnet[1].pool[0].declined-addresses": [ [2, "2025-04-22 17:59:15.339184" ] ],
 				"subnet[1].pool[0].reclaimed-declined-addresses": [ [0, "2025-04-22 17:59:15.338433" ] ],
 				"subnet[1].pool[0].reclaimed-leases": [ [0, "2025-04-22 17:59:15.338438"] ],
-				"subnet[1].pool[0].total-addresses": [ [42, "2025-04-22 17:59:15.328653" ] ],
-				"declined-nas": [ [150, "2021-10-14 10:44:18.687235"] ],
-				"assigned-nas": [ [450, "2021-10-14 10:44:18.687235"] ],
-				"subnet[2].assigned-addresses": [ [230, "2021-10-14 10:44:18.687253"] ],
-				"subnet[2].declined-addresses": [ [5, "2021-10-14 10:44:18.687266"] ],
-				"subnet[2].pool[1].assigned-addresses": [ [36, "2025-04-22 17:59:15.339186"] ],
-				"subnet[2].pool[1].declined-addresses": [ [6, "2025-04-22 17:59:15.339184" ] ]
+				"subnet[1].pool[0].total-addresses": [ [42, "2025-04-22 17:59:15.328653" ] ]
 			},
 			"result": 0
 		},
@@ -74,7 +68,7 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, response, 2)
-	require.Len(t, response[0].Arguments, 39)
+	require.Len(t, response[0].Arguments, 33)
 	require.Nil(t, response[1].Arguments)
 	require.NoError(t, response[0].GetError())
 	require.Error(t, response[1].GetError())
@@ -116,27 +110,6 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 150, item.Value.Int64())
 
-	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 2 && *item.AddressPoolID == 1
-	})
-	require.NotEqual(t, -1, index)
-	item = response[0].Arguments[index]
-	require.EqualValues(t, 36, item.Value.Int64())
-
-	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 2
-	})
-	require.NotEqual(t, -1, index)
-	item = response[0].Arguments[index]
-	require.EqualValues(t, 230, item.Value.Int64())
-
-	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-nas" && !item.IsSubnetSample() && !item.IsPoolSample()
-	})
-	require.NotEqual(t, -1, index)
-	item = response[0].Arguments[index]
-	require.EqualValues(t, 450, item.Value.Int64())
-
 	// Check if the statistics can be adjusted to exclude the declined leases
 	// from the assigned ones.
 	AdjustAssignedStatistics(response[0].Arguments)
@@ -161,16 +134,47 @@ func TestUnmarshalKeaStatisticGetAllResponse(t *testing.T) {
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 100, item.Value.Int64())
+}
 
-	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 2 && *item.AddressPoolID == 1
+// Test that the assigned NAs can be assigned correctly for the Kea DHCPv6.
+func TestAdjustAssignedStatisticsForKeaDHCPv6(t *testing.T) {
+	// Arrange
+	rawResponse := `
+	[
+		{
+			"arguments": {
+				"declined-addresses": [ [150, "2021-10-14 10:44:18.687235"] ],
+				"assigned-nas": [ [450, "2021-10-14 10:44:18.687235"] ],
+				"subnet[2].assigned-nas": [ [230, "2021-10-14 10:44:18.687253"] ],
+				"subnet[2].declined-addresses": [ [5, "2021-10-14 10:44:18.687266"] ],
+				"subnet[2].pool[1].assigned-nas": [ [36, "2025-04-22 17:59:15.339186"] ],
+				"subnet[2].pool[1].declined-addresses": [ [6, "2025-04-22 17:59:15.339184" ] ]
+			},
+			"result": 0
+		},
+		{
+			"result": 1,
+			"text": "Unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline"
+		}
+	]`
+
+	// Act
+	var response StatisticGetAllResponse
+	err := json.Unmarshal([]byte(rawResponse), &response)
+	AdjustAssignedStatistics(response[0].Arguments)
+
+	// Assert
+	require.NoError(t, err)
+
+	index := slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
+		return item.Name == "assigned-nas" && item.IsAddressPoolSample() && item.SubnetID == 2 && *item.AddressPoolID == 1
 	})
 	require.NotEqual(t, -1, index)
-	item = response[0].Arguments[index]
+	item := response[0].Arguments[index]
 	require.EqualValues(t, 30, item.Value.Int64())
 
 	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 2
+		return item.Name == "assigned-nas" && item.IsSubnetSample() && item.SubnetID == 2
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
