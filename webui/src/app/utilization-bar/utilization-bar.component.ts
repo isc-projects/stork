@@ -3,8 +3,15 @@ import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
 
 /**
  * A component displaying a utilization bar.
- * It can be used to display a single or double bar.
- * It may also display a tooltip with statistics.
+ * 
+ * It can be displayed as a single bar or as a double bar. The single bar
+ * displays the utilization of a single kind (e.g. addresses, delegated
+ * prefixes). The double bar displays the utilization of two kinds (e.g.
+ * addresses and delegated prefixes) in a compact form. The bars are stacked
+ * vertically and each of them occupy 50% of height. The both bars share the
+ * same main label (e.g. subnet prefix) and each bar has its own kind label.
+ * 
+ * The utilization bar may also display a tooltip with statistics on hover.
  */
 @Component({
     selector: 'app-utilization-bar',
