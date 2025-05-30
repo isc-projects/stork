@@ -1,10 +1,16 @@
-<div class="ml-2 mt-2 flex flex-column gap-1 max-w-40rem">
-    <p-message
-        severity="warn"
-        text="HTTP Error 403 Forbidden. Access to this page is forbidden for the current
-                  user. If you think you should have access to this page, please contact
-                  your system administrator to verify your permissions."
-    >
-    </p-message>
-    <a class="ml-2" routerLink="/">Go to Dashboard page</a>
+<div class="flex justify-content-center min-h-screen">
+    <div class="ml-2 mt-2 max-w-50rem">
+        <p-messages styleClass="text-xl" severity="error">
+            <ng-template pTemplate>
+                <div class="flex flex-column gap-3">
+                    <div class="text-3xl">Forbidden</div>
+                    <div>
+                        Access to this page is forbidden for the current user. If you think you should have access to
+                        this page, please contact your system administrator to verify your permissions
+                    </div>
+                    <a class="text-xl" routerLink="/">Go to Dashboard page</a>
+                </div>
+            </ng-template>
+        </p-messages>
+    </div>
 </div>
