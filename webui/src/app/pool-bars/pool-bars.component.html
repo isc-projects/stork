@@ -8,7 +8,13 @@
         ></app-address-pool-bar>
         <!-- Multiple pools in a group. Wrap with a border. -->
         <ng-template #multipleAddressPools>
-            <div class="border border-round border-dashed border-1 flex flex-row align-items-center">
+            <div
+                class="border border-round border-dashed border-1 flex flex-row align-items-center"
+                pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
+                    Kea merges statistics of pools with the same pool ID, so all of these pools have the same
+                    utilization. Assign them unique pool IDs to see their individual utilizations."
+                tooltipPosition="bottom"
+            >
                 <ng-container
                     [ngTemplateOutlet]="poolId"
                     [ngTemplateOutletContext]="{ poolId: group[0] }"
@@ -30,7 +36,13 @@
         ></app-delegated-prefix-bar>
         <!-- Multiple pools in a group. Wrap with a border. -->
         <ng-template #multiplePDPools>
-            <div class="border border-round border-dashed border-1 flex flex-row align-items-center">
+            <div
+                class="border border-round border-dashed border-1 flex flex-row align-items-center"
+                pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
+                    Kea merges statistics of pools with the same pool ID, so all of these pools have the same
+                    utilization. Assign them unique pool IDs to see their individual utilizations."
+                tooltipPosition="bottom"
+            >
                 <ng-container
                     [ngTemplateOutlet]="poolId"
                     [ngTemplateOutletContext]="{ poolId: group[0] }"
@@ -46,12 +58,7 @@
 
 <!-- Defines how to display the pool ID label. -->
 <ng-template #poolId let-poolId="poolId">
-    <div
-        class="text-xs text-gray-500 font-semibold flex-0 p-1 cursor-pointer"
-        pTooltip="These pools share the same pool ID {{ poolId }}{{ poolId === 0 ? ' (default ID)' : '' }}.
-                    Kea merges statistics of pools with the same pool ID, so all of these pools have the same
-                    utilization. Assign them unique pool IDs to see their individual utilizations."
-    >
+    <div class="text-xs text-gray-500 font-semibold flex-0 p-1">
         {{ poolId }}
     </div>
 </ng-template>
