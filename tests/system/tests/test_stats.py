@@ -34,13 +34,14 @@ def test_get_kea_stats(
 
     # 9 leases are initially store in the lease database
     assert int(data.dhcp4_stats.assigned_addresses) > 9
+    assert int(data.dhcp4_stats.declined_addresses) == 10
     assert data.subnets4.items is not None
     # ToDo: When we add support for IPv6 traffic generation
     # we will be able to test the number of assigned addresses
     # is greater than 9.
     assert int(data.dhcp6_stats.assigned_nas) == 9
+    assert int(data.dhcp6_stats.declined_nas) == 10
     assert data.subnets6.items is not None
 
     # Check if Stork Agent handles all metrics returned by Kea.
-    # The pool statistics are currently not supported.
-    assert kea_service.has_encountered_unsupported_statistic()
+    assert not kea_service.has_encountered_unsupported_statistic()

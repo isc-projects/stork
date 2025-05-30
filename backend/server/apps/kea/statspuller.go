@@ -457,6 +457,20 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		// count the declined leases.
 		keactrl.AdjustAssignedStatistics(responseItem.Arguments)
 
+		// Due to historical reasons, Stork server expects the statistic of
+		// declined leases for DHCPv6 will be named as "declined-nas" instead
+		// of "declined-addresses". We cannot change the name in our structures
+		// because code handling the global statistics expects the IPv4 and
+		// IPv6 statistics to have unique names. So we need to rename the
+		// statistic name in the response.
+		if cmdDaemons[i].Name == dbmodel.DaemonNameDHCPv6 {
+			for _, sample := range responseItem.Arguments {
+				if sample.Name == "declined-addresses" {
+					sample.Name = "declined-nas"
+				}
+			}
+		}
+
 		responseItems[i] = responseItem
 	}
 
