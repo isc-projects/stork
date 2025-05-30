@@ -568,10 +568,11 @@ export class MockParamMap {
  * The words in the long names begin with upper case and are separated with
  * space characters. For example: 'cacheThreshold' becomes 'Cache Threshold'.
  *
- * It also handles several special cases. When the converted name begins with:
- * - pd - it is converted to PD,
- * - ip - it is converted to IP,
- * - underscore character - it is removed.
+ * It also handles several special cases. When the converted name begins with
+ * underscore character, it is removed. When one of the words in the name
+ * is one of the following: `id`, `na`, `pd`, `ip`, it is converted to
+ * upper case: `ID`, `NA`, `PD`, `IP`. It handles plural forms as well,
+ * i.e. `ids`, `nas`, `pds`, `ips` are converted to `IDs`, `NAs`, `PDs`, `IPs`.
  *
  * When the name contains:
  * - ddns - it is converted to DDNS,
