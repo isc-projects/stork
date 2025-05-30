@@ -21,21 +21,23 @@ import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
 export class UtilizationBarComponent {
     /**
      * Utilization value for the primary (top) bar.
+     *
+     * Value in percentages in range from 0 to 100.
+     * It may be greater than 100[%] but such values are displayed with a
+     * warning in the tooltip and special color on the bar.
      */
     @Input() utilizationPrimary: number | null = null
     /**
-     * Kind label for the primary (top) bar. Value in percentages in range
-     * from 0 to 100.
-     * It may be greater than 100[%] but such values are displayed with a
-     * warning in the tooltip and special color on the bar.
+     * Kind label for the primary (top) bar.
      */
     @Input() kindPrimary: string | null = null
 
     /**
      * Utilization value for the secondary (bottom) bar.
      * This is used for displaying a double bar.
-     * It may be null if the secondary bar is not used. Value in percentages
-     * in range from 0 to 100.
+     * It may be null if the secondary bar is not used.
+     *
+     * Value in percentages in range from 0 to 100.
      * It may be greater than 100[%] but such values are displayed with a
      * warning in the tooltip and special color on the bar.
      */
