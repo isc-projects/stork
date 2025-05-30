@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { DelegatedPrefixPool, Pool } from '../backend'
-import { RangedSet, IPv6CidrRange, IPv4, IPv6, IPCidrRange } from 'ip-num'
+import { RangedSet, IPv6CidrRange, IPv4, IPv6 } from 'ip-num'
 
 /**
  * A component displaying address pool and delegated prefix pool bars in a
@@ -116,13 +116,13 @@ export class PoolBarsComponent implements OnInit {
         let prefixB: IPv6CidrRange = null
         try {
             prefixA = IPv6CidrRange.fromCidr(prefixAStr)
-        } catch (e) {
-            // Prefix is invalid. Set to null to handle it gracefully.
+        } catch {
+            /* Prefix is invalid. Set to null to handle it gracefully. */
         }
         try {
             prefixB = IPv6CidrRange.fromCidr(prefixBStr)
-        } catch (e) {
-            // Prefix is invalid. Set to null to handle it gracefully.
+        } catch {
+            /* Prefix is invalid. Set to null to handle it gracefully. */
         }
 
         // Check if the prefixes are valid. Valid prefixes take precedence over
