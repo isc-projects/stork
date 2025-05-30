@@ -96,7 +96,7 @@ services:
   agent-kea:
     extends: agent-kea-base
     ports:
-      - "42888:8080"
+      - "42888:42888"
       - "42547:9547"
     networks:
       storknet:
@@ -121,7 +121,8 @@ services:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_LISTEN_PROMETHEUS_ONLY: ${STORK_AGENT_LISTEN_PROMETHEUS_ONLY-false}
-      STORK_AGENT_HOST: 172.42.42.100
+      STORK_AGENT_HOST: agent-kea
+      STORK_AGENT_PORT: "42888"
     healthcheck:
       interval: 250ms
       timeout: 1s
@@ -168,7 +169,7 @@ services:
       - 8080
       - "42548:9547"
     environment:
-      STORK_AGENT_HOST: 172.42.42.101
+      STORK_AGENT_HOST: agent-kea2
     networks:
       storknet:
         ipv4_address: 172.42.42.101
@@ -194,8 +195,6 @@ services:
     networks:
       storknet:
         ipv6_address: 3009:db8:1:42::100
-    environment:
-      STORK_AGENT_HOST: 3009:db8:1:42::100
 
   agent-kea-tls-optional-client-cert-no-verify:
     extends: agent-kea
@@ -314,7 +313,7 @@ services:
       - 8080
       - "42548:9547"
     environment:
-      STORK_AGENT_HOST: 172.42.42.101
+      STORK_AGENT_HOST: agent-kea-ha2
     networks:
       storknet:
         ipv4_address: 172.42.42.101
@@ -366,10 +365,12 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_LISTEN_PROMETHEUS_ONLY: ${STORK_AGENT_LISTEN_PROMETHEUS_ONLY-false}
-      STORK_AGENT_HOST: 172.42.42.53
+      STORK_AGENT_HOST: agent-bind9
+      STORK_AGENT_PORT: "42988"
       STORK_LOG_LEVEL: DEBUG
     ports:
       - "42119:9119"
+      - "42988:42988"
     volumes:
       - $PWD/tests/system/config/bind/db.test:/etc/bind/db.test
       - $PWD/tests/system/config/bind/named.conf:/etc/bind/named.conf
