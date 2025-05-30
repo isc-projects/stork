@@ -3,14 +3,14 @@ import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
 
 /**
  * A component displaying a utilization bar.
- * 
+ *
  * It can be displayed as a single bar or as a double bar. The single bar
  * displays the utilization of a single kind (e.g. addresses, delegated
  * prefixes). The double bar displays the utilization of two kinds (e.g.
  * addresses and delegated prefixes) in a compact form. The bars are stacked
  * vertically and each of them occupy 50% of height. The both bars share the
  * same main label (e.g. subnet prefix) and each bar has its own kind label.
- * 
+ *
  * The utilization bar may also display a tooltip with statistics on hover.
  */
 @Component({
@@ -24,13 +24,20 @@ export class UtilizationBarComponent {
      */
     @Input() utilizationPrimary: number | null = null
     /**
-     * Kind label for the primary (top) bar.
+     * Kind label for the primary (top) bar. Value in percentages in range
+     * from 0 to 100.
+     * It may be greater than 100[%] but such values are displayed with a
+     * warning in the tooltip and special color on the bar.
      */
     @Input() kindPrimary: string | null = null
 
     /**
      * Utilization value for the secondary (bottom) bar.
      * This is used for displaying a double bar.
+     * It may be null if the secondary bar is not used. Value in percentages
+     * in range from 0 to 100.
+     * It may be greater than 100[%] but such values are displayed with a
+     * warning in the tooltip and special color on the bar.
      */
     @Input() utilizationSecondary: number | null = null
 
