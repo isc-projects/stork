@@ -119,9 +119,10 @@ func TestPromKeaExporterStart(t *testing.T) {
 	// Check the collected stats.
 	metric, _ := pke.Addr4StatsMap["assigned-addresses"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "7",
-			"subnet_id": "7",
-			"prefix":    "",
+			"subnet":         "7",
+			"subnet_id":      "7",
+			"prefix":         "",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 13.0, testutil.ToFloat64(metric))
@@ -190,9 +191,10 @@ func TestPromKeaExporterStartKeaPrior2_4_0(t *testing.T) {
 	// Check the collected stats.
 	metric, _ := pke.Addr6StatsMap["total-nas"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "6",
-			"subnet_id": "6",
-			"prefix":    "",
+			"subnet":         "6",
+			"subnet_id":      "6",
+			"prefix":         "",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 36893488147419103000., testutil.ToFloat64(metric))
@@ -251,9 +253,10 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 	// Check the collected stats.
 	metric, _ := pke.Addr4StatsMap["total-addresses"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "22",
-			"subnet_id": "22",
-			"prefix":    "",
+			"subnet":         "22",
+			"subnet_id":      "22",
+			"prefix":         "",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 150., testutil.ToFloat64(metric))
@@ -263,10 +266,11 @@ func TestPromKeaExporterStartKea2_4_0DHCPv4(t *testing.T) {
 
 	metric, _ = pke.Addr4StatsMap["pool-total-addresses"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "11",
-			"subnet_id": "11",
-			"prefix":    "",
-			"pool_id":   "0",
+			"subnet":         "11",
+			"subnet_id":      "11",
+			"prefix":         "",
+			"pool_id":        "0",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 50., testutil.ToFloat64(metric))
@@ -320,27 +324,30 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	// Check the collected stats.
 	metric, _ := pke.Addr6StatsMap["total-nas"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "1",
-			"subnet_id": "1",
-			"prefix":    "",
+			"subnet":         "1",
+			"subnet_id":      "1",
+			"prefix":         "",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
 
 	metric, _ = pke.Addr6StatsMap["total-nas"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "1",
-			"subnet_id": "1",
-			"prefix":    "",
+			"subnet":         "1",
+			"subnet_id":      "1",
+			"prefix":         "",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
 
 	metric, _ = pke.Addr6StatsMap["total-pds"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "1",
-			"subnet_id": "1",
-			"prefix":    "",
+			"subnet":         "1",
+			"subnet_id":      "1",
+			"prefix":         "",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 512., testutil.ToFloat64(metric))
@@ -352,20 +359,22 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 
 	metric, _ = pke.Addr6StatsMap["pool-total-nas"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "1",
-			"subnet_id": "1",
-			"prefix":    "",
-			"pool_id":   "0",
+			"subnet":         "1",
+			"subnet_id":      "1",
+			"prefix":         "",
+			"pool_id":        "0",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 844424930131968., testutil.ToFloat64(metric))
 
 	metric, _ = pke.Addr6StatsMap["pool-pd-total-pds"].GetMetricWith(
 		prometheus.Labels{
-			"subnet":    "1",
-			"subnet_id": "1",
-			"prefix":    "",
-			"pool_id":   "0",
+			"subnet":         "1",
+			"subnet_id":      "1",
+			"prefix":         "",
+			"pool_id":        "0",
+			"shared_network": "",
 		},
 	)
 	require.EqualValues(t, 512., testutil.ToFloat64(metric))
