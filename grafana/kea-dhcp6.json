@@ -216,6 +216,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -300,8 +301,10 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "kea_dhcp6_na_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "kea_dhcp6_na_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -310,6 +313,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -397,10 +401,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "kea_dhcp6_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "kea_dhcp6_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -409,6 +415,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -493,8 +500,10 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "kea_dhcp6_pd_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "kea_dhcp6_pd_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -503,6 +512,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -590,10 +600,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "kea_dhcp6_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "kea_dhcp6_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -602,6 +614,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -693,8 +706,10 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "100 * kea_dhcp6_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\"} / kea_dhcp6_na_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "100 * kea_dhcp6_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"} / kea_dhcp6_na_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -703,6 +718,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -794,8 +810,10 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "100 * kea_dhcp6_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\"} / kea_dhcp6_pd_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "100 * kea_dhcp6_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"} / kea_dhcp6_pd_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -893,7 +911,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "rate(kea_dhcp6_addresses_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\"}[10m])",
+          "expr": "rate(kea_dhcp6_addresses_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}[10m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
@@ -906,6 +924,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -993,10 +1012,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "kea_dhcp6_addresses_declined_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "kea_dhcp6_addresses_declined_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1005,6 +1026,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -1091,10 +1113,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "kea_dhcp6_addresses_declined_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "kea_dhcp6_addresses_declined_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "subnet \"{{subnet}}\" on {{instance}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1103,6 +1127,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -1231,8 +1256,10 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "storkserver_subnet_address_utilization{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "editorMode": "code",
+          "expr": "storkserver_subnet_address_utilization{instance=~\"$instance\", subnet=~\"$subnet\", family=~\"6\", name=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{subnet}}\"",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1371,7 +1398,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "storkserver_subnet_pd_utilization{instance=~\"$instance\", subnet=~\"$subnet\"}",
+          "expr": "storkserver_subnet_pd_utilization{instance=~\"$instance\", subnet=~\"$subnet\", name=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{subnet}}\"",
           "range": true,
           "refId": "A"
@@ -1382,6 +1409,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -1469,8 +1497,10 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "storkserver_shared_network_address_utilization{instance=~\"$instance\"}",
+          "editorMode": "code",
+          "expr": "storkserver_shared_network_address_utilization{instance=~\"$instance\", family=~\"6\", name=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{name}}\"",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1479,6 +1509,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
@@ -1566,8 +1597,10 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "storkserver_shared_network_pd_utilization{instance=~\"$instance\"}",
+          "editorMode": "code",
+          "expr": "storkserver_shared_network_pd_utilization{instance=~\"$instance\", name=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{name}}\"",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1774,7 +1807,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "kea_dhcp6_pool_na_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\"}",
+          "expr": "kea_dhcp6_pool_na_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\", shared_network=~\"$shared_network\"}",
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
           "range": true,
           "refId": "A"
@@ -1874,7 +1907,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "kea_dhcp6_pool_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\"}",
+          "expr": "kea_dhcp6_pool_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
@@ -1973,7 +2006,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "kea_dhcp6_pool_pd_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\"}",
+          "expr": "kea_dhcp6_pool_pd_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\", shared_network=~\"$shared_network\"}",
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
           "range": true,
           "refId": "A"
@@ -2073,7 +2106,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "kea_dhcp6_pool_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\"}",
+          "expr": "kea_dhcp6_pool_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
@@ -2179,7 +2212,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "100 * kea_dhcp6_pool_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\"} / kea_dhcp6_pool_na_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\"}",
+          "expr": "100 * kea_dhcp6_pool_na_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\", shared_network=~\"$shared_network\"} / kea_dhcp6_pool_na_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\", shared_network=~\"$shared_network\"}",
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
           "range": true,
           "refId": "A"
@@ -2283,7 +2316,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "100 * kea_dhcp6_pool_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\"} / kea_dhcp6_pool_pd_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\"}",
+          "expr": "100 * kea_dhcp6_pool_pd_assigned_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\", shared_network=~\"$shared_network\"} / kea_dhcp6_pool_pd_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pd_pool\", shared_network=~\"$shared_network\"}",
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
           "range": true,
           "refId": "A"
@@ -2383,7 +2416,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "rate(kea_dhcp6_pool_addresses_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\"}[10m])",
+          "expr": "rate(kea_dhcp6_pool_addresses_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\", shared_network=~\"$shared_network\"}[10m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
@@ -2485,7 +2518,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "kea_dhcp6_pool_addresses_declined_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\"}",
+          "expr": "kea_dhcp6_pool_addresses_declined_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
@@ -2586,7 +2619,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "kea_dhcp6_pool_addresses_declined_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\"}",
+          "expr": "kea_dhcp6_pool_addresses_declined_reclaimed_total{instance=~\"$instance\", subnet=~\"$subnet\", pool_id=~\"$pool\", shared_network=~\"$shared_network\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "pool \"{{pool_id}}\" in subnet \"{{subnet}}\" on {{instance}}",
@@ -2687,6 +2720,10 @@
             "$__all"
           ]
         },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
         "definition": "kea_dhcp6_pool_na_total",
         "hide": 0,
         "includeAll": true,
@@ -2716,6 +2753,10 @@
             "$__all"
           ]
         },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
         "definition": "kea_dhcp6_pool_pd_total",
         "hide": 0,
         "includeAll": true,
@@ -2730,6 +2771,31 @@
         },
         "refresh": 1,
         "regex": "/.*pool_id=\"([^\"]*).*/",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "definition": "kea_dhcp6_na_total",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Shared Network",
+        "multi": true,
+        "name": "shared_network",
+        "options": [],
+        "query": {
+          "qryType": 4,
+          "query": "kea_dhcp6_na_total",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "/.*shared_network=\"([^\"]*).*/",
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
