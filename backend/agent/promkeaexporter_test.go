@@ -373,8 +373,9 @@ func TestPromKeaExporterStartKea2_4_0DHCPv6(t *testing.T) {
 	require.False(t, gock.HasUnmatchedRequest())
 }
 
-// Test if the Kea JSON subnet4-list or subnet6-list response in unmarshal correctly.
-func TestUnmarshalSubnetListOKResponse(t *testing.T) {
+// Test if the Kea JSON subnet4-list or subnet6-list response in unmarshal
+// correctly. Uses the response from Kea prior to 2.7.8 version.
+func TestUnmarshalSubnetListOKResponsePriorKea2_7_8(t *testing.T) {
 	// Arrange
 	rawResponse := `[{
 		"result": 0,
@@ -394,13 +395,49 @@ func TestUnmarshalSubnetListOKResponse(t *testing.T) {
 	}]`
 
 	// Act
-	response := NewSubnetList()
+	response := newSubnetList()
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, response, 2)
-	require.EqualValues(t, "192.0.2.0/24", response[100])
+	require.Contains(t, response, 100)
+	require.EqualValues(t, "192.0.2.0/24", response[100].prefix)
+	require.Empty(t, response[100].sharedNetwork)
+}
+
+// Test if the Kea JSON subnet4-list or subnet6-list response in unmarshal
+// correctly. Uses the response from Kea 2.7.8 version.
+func TestUnmarshalSubnetListOKResponseKea2_7_8(t *testing.T) {
+	// Arrange
+	rawResponse := `[{
+		"result": 0,
+		"text": "2 IPv4 subnets found",
+		"arguments": {
+			"subnets": [
+				{
+					"id": 10,
+					"subnet": "10.0.0.0/8"
+				},
+				{
+					"id": 100,
+					"subnet": "192.0.2.0/24",
+					"shared-network-name": "foo"
+				}
+			]
+		}
+	}]`
+
+	// Act
+	response := newSubnetList()
+	err := json.Unmarshal([]byte(rawResponse), &response)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, response, 2)
+	require.Contains(t, response, 100)
+	require.EqualValues(t, "192.0.2.0/24", response[100].prefix)
+	require.EqualValues(t, "foo", response[100].sharedNetwork)
 }
 
 // Test the Kea JSON subnet4-list or subnet6-list response when the hook is not installed.
@@ -414,7 +451,7 @@ func TestUnmarshalSubnetListUnsupportedResponse(t *testing.T) {
 	]`
 
 	// Act
-	response := NewSubnetList()
+	response := newSubnetList()
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
@@ -428,7 +465,7 @@ func TestUnmarshalSubnetListErrorResponse(t *testing.T) {
 	rawResponse := ""
 
 	// Act
-	response := NewSubnetList()
+	response := newSubnetList()
 	err := json.Unmarshal([]byte(rawResponse), &response)
 
 	// Assert
@@ -471,7 +508,8 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 				"subnets": [
 					{
 						"id": 7,
-						"subnet": "10.0.0.0/8"
+						"subnet": "10.0.0.0/8",
+						"shared-network-name": "foobar"
 					}
 				]
 			}
@@ -492,9 +530,10 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 	// Assert
 	metric, err := pke.Addr4StatsMap["assigned-addresses"].GetMetricWith(
 		prometheus.Labels{
-			"subnet_id": "7",
-			"prefix":    "10.0.0.0/8",
-			"subnet":    "10.0.0.0/8",
+			"subnet_id":      "7",
+			"prefix":         "10.0.0.0/8",
+			"subnet":         "10.0.0.0/8",
+			"shared_network": "foobar",
 		},
 	)
 
@@ -524,8 +563,9 @@ func newFakeKeaCASender() *FakeKeaCASender {
 						Subnet: "foo",
 					},
 					{
-						ID:     42,
-						Subnet: "bar",
+						ID:                42,
+						Subnet:            "bar",
+						SharedNetworkName: "baz",
 					},
 				},
 			},
@@ -542,94 +582,96 @@ func (s *FakeKeaCASender) sendCommandRaw(request []byte) ([]byte, error) {
 	return s.payload, s.err
 }
 
-// Test that the lazy subnet name lookup is constructed properly.
-func TestNewLazySubnetPrefixLookup(t *testing.T) {
+// Test that the lazy subnet lookup is constructed properly.
+func TestNewLazySubnetLookup(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
 
 	// Act
-	lookup := newLazySubnetPrefixLookup(sender)
+	lookup := newLazySubnetLookup(sender)
 
 	// Assert
 	require.NotNil(t, lookup)
 	require.Zero(t, sender.callCount)
 }
 
-// Test that the subnet names are retrieved.
-func TestLazySubnetNameLookupFetchesNames(t *testing.T) {
+// Test that the subnet data are retrieved.
+func TestLazySubnetLookupFetchesData(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
-	lookup := newLazySubnetPrefixLookup(sender)
+	lookup := newLazySubnetLookup(sender)
 
 	// Act
-	name1, ok1 := lookup.getPrefix(1)
-	name42, ok42 := lookup.getPrefix(42)
-	name0, ok0 := lookup.getPrefix(0)
-	nameMinus1, okMinus1 := lookup.getPrefix(-1)
+	info1, ok1 := lookup.getSubnetInfo(1)
+	info42, ok42 := lookup.getSubnetInfo(42)
+	info0, ok0 := lookup.getSubnetInfo(0)
+	infoMinus1, okMinus1 := lookup.getSubnetInfo(-1)
 
 	// Assert
 	require.True(t, ok1)
-	require.EqualValues(t, "foo", name1)
+	require.EqualValues(t, "foo", info1.prefix)
+	require.Empty(t, info1.sharedNetwork)
 
 	require.True(t, ok42)
-	require.EqualValues(t, "bar", name42)
+	require.EqualValues(t, "bar", info42.prefix)
+	require.EqualValues(t, "baz", info42.sharedNetwork)
 
 	require.False(t, ok0)
-	require.Empty(t, name0)
+	require.Empty(t, info0.prefix)
 
 	require.False(t, okMinus1)
-	require.Empty(t, nameMinus1)
+	require.Empty(t, infoMinus1.prefix)
 }
 
-// Test that subnet names are fetched only once.
-func TestLazySubnetNameLookupFetchesOnlyOnce(t *testing.T) {
+// Test that subnets are fetched only once.
+func TestLazySubnetLookupFetchesOnlyOnce(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
-	lookup := newLazySubnetPrefixLookup(sender)
+	lookup := newLazySubnetLookup(sender)
 
 	// Act
-	_, _ = lookup.getPrefix(1)
-	_, _ = lookup.getPrefix(1)
-	_, _ = lookup.getPrefix(1)
-	_, _ = lookup.getPrefix(42)
-	_, _ = lookup.getPrefix(100)
+	_, _ = lookup.getSubnetInfo(1)
+	_, _ = lookup.getSubnetInfo(1)
+	_, _ = lookup.getSubnetInfo(1)
+	_, _ = lookup.getSubnetInfo(42)
+	_, _ = lookup.getSubnetInfo(100)
 
 	// Assert
 	require.EqualValues(t, 1, sender.callCount)
 }
 
-// Test that subnet names are fetched only once even if an error occurs.
-func TestLazySubnetNameLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
+// Test that subnets are fetched only once even if an error occurs.
+func TestLazySubnetLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
 	sender.payload = nil
 	sender.err = errors.New("baz")
-	lookup := newLazySubnetPrefixLookup(sender)
+	lookup := newLazySubnetLookup(sender)
 
 	for _, subnetID := range []int{1, 1, 1, 42, 100} {
 		// Act
-		_, ok := lookup.getPrefix(subnetID)
+		_, ok := lookup.getSubnetInfo(subnetID)
 		// Assert
 		require.False(t, ok)
 	}
 	require.EqualValues(t, 1, sender.callCount)
 }
 
-// Test that subnet names are fetched again after changing the family.
-func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
+// Test that subnets are fetched again after changing the family.
+func TestLazySubnetLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
-	lookup := newLazySubnetPrefixLookup(sender)
+	lookup := newLazySubnetLookup(sender)
 
 	// Act
-	_, _ = lookup.getPrefix(1)
+	_, _ = lookup.getSubnetInfo(1)
 	lookup.setFamily(6)
 	sender.payload = nil
-	name, ok := lookup.getPrefix(1)
+	info, ok := lookup.getSubnetInfo(1)
 
 	// Assert
 	require.False(t, ok)
-	require.Empty(t, name)
+	require.Empty(t, info.prefix)
 	require.EqualValues(t, 2, sender.callCount)
 }
 

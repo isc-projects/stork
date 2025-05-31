@@ -22,18 +22,28 @@ import (
 	keactrl "isc.org/stork/appctrl/kea"
 )
 
-// Parsed subnet list from Kea `subnet4-list` and `subnet6-list` response.
-type SubnetList map[int]string
+// Parsed subnet list item.
+type subnetListItem struct {
+	// Subnet prefix.
+	prefix string
+	// Shared network name.
+	sharedNetwork string
+}
 
-// Constructor of the SubnetList type.
-func NewSubnetList() SubnetList {
-	return make(SubnetList)
+// Parsed subnet list from Kea `subnet4-list` and `subnet6-list` response.
+type subnetList map[int]subnetListItem
+
+// Constructor of the subnetList type.
+func newSubnetList() subnetList {
+	return make(subnetList)
 }
 
 // JSON structures of Kea `subnet4-list` and `subnet6-list` response.
 type subnetListJSONArgumentsSubnet struct {
 	ID     int
 	Subnet string
+	// Added in Kea 2.7.8.
+	SharedNetworkName string `json:"shared-network-name"`
 }
 
 type subnetListJSONArguments struct {
@@ -47,10 +57,10 @@ type subnetListJSON struct {
 
 // UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
 // to map.
-func (l *SubnetList) UnmarshalJSON(b []byte) error {
+func (l *subnetList) UnmarshalJSON(b []byte) error {
 	// Unmarshal must be called with existing instance.
 	if *l == nil {
-		*l = NewSubnetList()
+		*l = newSubnetList()
 	}
 
 	// Standard unmarshal
@@ -84,7 +94,10 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 	}
 
 	for _, subnet := range dhcpLabelsJSON.Arguments.Subnets {
-		(*l)[subnet.ID] = subnet.Subnet
+		(*l)[subnet.ID] = subnetListItem{
+			prefix:        subnet.Subnet,
+			sharedNetwork: subnet.SharedNetworkName,
+		}
 	}
 
 	return nil
@@ -97,11 +110,11 @@ type statisticDescriptor struct {
 	Operation string
 }
 
-// subnetPrefixLookup is the interface that wraps the subnet prefix lookup methods.
-type subnetPrefixLookup interface {
-	// Returns the subnet prefix based on the subnet ID and IP family.
-	// If the prefix isn't available returns the empty string and false value.
-	getPrefix(subnetID int) (string, bool)
+// subnetLookup is the interface that wraps the subnet lookup methods.
+type subnetLookup interface {
+	// Returns the subnet details based on the subnet ID and IP family.
+	// If the details aren't available returns the empty struct and false value.
+	getSubnetInfo(subnetID int) (subnetListItem, bool)
 	// Sets the IP family to use during lookup (4 or 6).
 	setFamily(int8)
 }
@@ -111,31 +124,31 @@ type keaCommandSender interface {
 	sendCommandRaw(command []byte) ([]byte, error)
 }
 
-// Subnet prefix lookup that fetches the subnet prefixes only if necessary.
-// The subnet prefixes are fetched on the first call getPrefix() for an IP
+// Subnet lookup that fetches the subnet data only if necessary.
+// The subnet data is fetched on the first call getSubnetInfo() for an IP
 // family. The results are cached; no more requests are made until IP family
 // change. Therefore, the lifetime of instances should be short to avoid
-// out-of-date prefixes in a cache.
-type lazySubnetPrefixLookup struct {
+// out-of-date data in a cache.
+type lazySubnetLookup struct {
 	sender keaCommandSender
-	// Cached subnet prefixes from current family.
-	cachedPrefixes SubnetList
-	// Indicates that the subnet prefixes were fetched for current family.
+	// Cached subnet list from current family.
+	cachedList subnetList
+	// Indicates that the subnet data was fetched for current family.
 	cached bool
 	// Family to use during lookups.
 	family int8
 }
 
-// Constructs the lazySubnetPrefixLookup instance. It accepts the Kea CA request sender.
-func newLazySubnetPrefixLookup(sender keaCommandSender) subnetPrefixLookup {
-	return &lazySubnetPrefixLookup{sender, nil, false, 4}
+// Constructs the lazySubnetLookup instance. It accepts the Kea CA request sender.
+func newLazySubnetLookup(sender keaCommandSender) subnetLookup {
+	return &lazySubnetLookup{sender, nil, false, 4}
 }
 
-// Fetches the subnet prefixes from Kea CA and stores the response in a cache.
-// If any error occurs or prefixes are unavailable then the cache for specific
-// family is set to nil. Returns fetched subnet prefixes.
+// Fetches the subnet list from Kea CA and stores the response in a cache.
+// If any error occurs or list is unavailable then the cache for specific
+// family is set to nil. Returns fetched subnet list.
 // Family should be 4 or 6.
-func (l *lazySubnetPrefixLookup) fetchAndCachePrefixes() SubnetList {
+func (l *lazySubnetLookup) fetchAndCacheList() subnetList {
 	// Request to subnet prefixes.
 	var request string
 	if l.family == 4 {
@@ -153,9 +166,9 @@ func (l *lazySubnetPrefixLookup) fetchAndCachePrefixes() SubnetList {
 	}
 
 	response, err := l.sender.sendCommandRaw([]byte(request))
-	var target SubnetList
+	var list subnetList
 	if err == nil {
-		err = json.Unmarshal(response, &target)
+		err = json.Unmarshal(response, &list)
 		if err != nil {
 			log.WithError(err).Errorf(
 				"Problem parsing DHCPv%d prefixes from Kea",
@@ -165,28 +178,28 @@ func (l *lazySubnetPrefixLookup) fetchAndCachePrefixes() SubnetList {
 	}
 
 	// Cache results
-	l.cachedPrefixes = target
+	l.cachedList = list
 	l.cached = true
-	return target
+	return list
 }
 
-// Returns the subnet prefix for specific subnet ID and IP family (4 or 6).
-// If the prefix is unavailable then it returns empty string and false.
-func (l *lazySubnetPrefixLookup) getPrefix(subnetID int) (string, bool) {
-	prefixes := l.cachedPrefixes
+// Returns the subnet details for specific subnet ID and IP family (4 or 6).
+// If the info is unavailable then it returns empty struct and false.
+func (l *lazySubnetLookup) getSubnetInfo(subnetID int) (subnetListItem, bool) {
+	list := l.cachedList
 	if !l.cached {
-		prefixes = l.fetchAndCachePrefixes()
+		list = l.fetchAndCacheList()
 	}
-	if prefixes == nil {
-		return "", false
+	if list == nil {
+		return subnetListItem{}, false
 	}
 
-	prefix, ok := prefixes[subnetID]
-	return prefix, ok
+	item, ok := list[subnetID]
+	return item, ok
 }
 
 // Sets the family used during prefix lookups.
-func (l *lazySubnetPrefixLookup) setFamily(family int8) {
+func (l *lazySubnetLookup) setFamily(family int8) {
 	l.family = family
 	l.cached = false
 }
@@ -433,7 +446,7 @@ func NewPromKeaExporter(host string, port int, enablePerSubnetStats bool, appMon
 			"Per-subnet statistics are enabled. You may consider turning it" +
 				" off if you observe the performance problems for Kea" +
 				" deployments with many subnets.")
-		subnetLabels := []string{"subnet", "subnet_id", "prefix"}
+		subnetLabels := []string{"subnet", "subnet_id", "prefix", "shared_network"}
 		// addresses dhcp4
 		addr4StatsMap := make(map[string]*prometheus.GaugeVec)
 		addr4StatsMap["assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
@@ -736,7 +749,7 @@ func (pke *PromKeaExporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.GaugeVec, globalStatMap map[string]prometheus.Gauge, response keactrl.StatisticGetAllResponseArguments, ignoredStats map[string]bool, prefixLookup subnetPrefixLookup) {
+func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.GaugeVec, globalStatMap map[string]prometheus.Gauge, response keactrl.StatisticGetAllResponseArguments, ignoredStats map[string]bool, subnetLookup subnetLookup) {
 	for _, statEntry := range response {
 		// store stat value in proper prometheus object
 		switch {
@@ -767,14 +780,16 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap map[string]*prometheus.Ga
 			}
 			legacyLabel := fmt.Sprint(statEntry.SubnetID) // Subnet ID or prefix if available.
 			labels := prometheus.Labels{
-				"subnet":    legacyLabel,
-				"subnet_id": legacyLabel,
-				"prefix":    "",
+				"subnet":         legacyLabel,
+				"subnet_id":      legacyLabel,
+				"prefix":         "",
+				"shared_network": "",
 			}
-			subnetPrefix, ok := prefixLookup.getPrefix(int(statEntry.SubnetID))
+			subnetInfo, ok := subnetLookup.getSubnetInfo(int(statEntry.SubnetID))
 			if ok {
-				labels["prefix"] = subnetPrefix
-				labels["subnet"] = subnetPrefix
+				labels["prefix"] = subnetInfo.prefix
+				labels["subnet"] = subnetInfo.prefix
+				labels["shared_network"] = subnetInfo.sharedNetwork
 			}
 
 			statName := statEntry.Name
@@ -921,8 +936,8 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 
-		// Prepare subnet prefix lookup
-		subnetPrefixLookup := newLazySubnetPrefixLookup(keaApp)
+		// Prepare subnet lookup
+		subnetLookup := newLazySubnetLookup(keaApp)
 
 		// Go though responses from daemons (it can have none or some responses from dhcp4/dhcp6)
 		// and store collected stats in Prometheus structures.
@@ -953,8 +968,8 @@ func (pke *PromKeaExporter) collectStats() error {
 				continue
 			}
 
-			subnetPrefixLookup.setFamily(family)
-			pke.setDaemonStats(addrStatsMap, globalStatMap, serviceResponse.Arguments, pke.ignoredStats, subnetPrefixLookup)
+			subnetLookup.setFamily(family)
+			pke.setDaemonStats(addrStatsMap, globalStatMap, serviceResponse.Arguments, pke.ignoredStats, subnetLookup)
 		}
 	}
 
