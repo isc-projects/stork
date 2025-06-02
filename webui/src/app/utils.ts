@@ -574,8 +574,8 @@ export class MockParamMap {
  * upper case: `ID`, `NA`, `PD`, `IP`. It handles plural forms as well,
  * i.e. `ids`, `nas`, `pds`, `ips` are converted to `IDs`, `NAs`, `PDs`, `IPs`.
  *
- * When the name contains ddns, it is converted to DDNS. If it contains dhcp,
- * it is converted to DHCP.
+ * When the name contains `ddns`, it is converted to `DDNS`. If it contains `dhcp`,
+ * it is converted to `DHCP`.
  *
  * The case of the converted special case strings is ignored.
  *
