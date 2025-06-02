@@ -40,6 +40,13 @@ if os.environ.get("PYTEST_XDIST_WORKER", False):
     sys.stdout = sys.stderr
 
 
+# A dictionary used to count the executed tests.
+test_progress = {
+    "current_test_index": 0,
+    "test_count": 0,
+}
+
+
 @pytest.fixture(autouse=True, scope="session")
 def get_number_of_tests(request):
     """Get the total number of tests.
@@ -50,7 +57,7 @@ def get_number_of_tests(request):
     :param request: pytest request to run a test
     :type request: pytest.SubRequest
     """
-    pytest.test_count = len(request.node.items)
+    test_progress["test_count"] = len(request.node.items)
 
 
 def get_test_progress():
@@ -60,16 +67,16 @@ def get_test_progress():
     :return: textual representation of the total test progress
     :rtype: str
     """
-    result = f"#{pytest.current_test_index}"
-    if pytest.test_count != 0:
-        result += f"/{pytest.test_count}"
+    result = f"#{test_progress['current_test_index']}"
+    if test_progress["test_count"] != 0:
+        result += f"/{test_progress['test_count']}"
     return result
 
 
 def pytest_configure():
     """Initialize variables used in indexing tests."""
-    pytest.current_test_index = 1
-    pytest.test_count = 0
+    test_progress["current_test_index"] = 1
+    test_progress["test_count"] = 0
 
 
 def pytest_runtest_logstart(nodeid, location):  # pylint: disable=unused-argument
@@ -86,7 +93,7 @@ def pytest_runtest_logfinish(nodeid, location):  # pylint: disable=unused-argume
     banner = f"\n************ END {get_test_progress()}: {nodeid} "
     banner += "*" * (140 - len(banner))
     banner = f"\u001b[36;1m{banner}\u001b[0m"
-    pytest.current_test_index += 1
+    test_progress["current_test_index"] += 1
     print(banner)
 
 
