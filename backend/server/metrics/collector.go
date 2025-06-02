@@ -67,7 +67,7 @@ type prometheusCollector struct {
 	// this.
 	//
 	// The metrics must be iterated in the strict order.
-	// The default map's iteration order in Golang is indeterministic. It isn't
+	// The default map's iteration order in Golang is nondeterministic. It isn't
 	// specified if the order is preserved for subsequent iterations. The
 	// collector iterates the metrics twice: in the Desc and the Collect
 	// methods. The iteration order must be the same. Otherwise, the samples
@@ -108,12 +108,12 @@ func NewCollector(source MetricsSource) (Collector, error) {
 		subnetAddressUtilizationDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "subnet", "address_utilization"),
 			"Subnet address utilization",
-			[]string{"subnet"}, nil,
+			[]string{"subnet", "name"}, nil,
 		),
 		subnetPdUtilizationDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "subnet", "pd_utilization"),
 			"Subnet delegated-prefix utilization",
-			[]string{"subnet"}, nil,
+			[]string{"subnet", "name"}, nil,
 		),
 		sharedNetworkAddressUtilizationDescriptor: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "shared_network", "address_utilization"),
@@ -212,25 +212,25 @@ func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, networkMetrics := range calculatedMetrics.SubnetMetrics {
 		ch <- prometheus.MustNewConstMetric(c.subnetAddressUtilizationDescriptor,
-			prometheus.GaugeValue, float64(networkMetrics.AddrUtilization)/1000.,
-			networkMetrics.Label)
+			prometheus.GaugeValue, float64(networkMetrics.AddrUtilization),
+			networkMetrics.Prefix, networkMetrics.SharedNetwork)
 		ch <- prometheus.MustNewConstMetric(c.subnetPdUtilizationDescriptor,
 			prometheus.GaugeValue,
-			float64(networkMetrics.PdUtilization)/1000.,
-			networkMetrics.Label)
+			float64(networkMetrics.PdUtilization),
+			networkMetrics.Prefix, networkMetrics.SharedNetwork)
 	}
 
 	for _, networkMetrics := range calculatedMetrics.SharedNetworkMetrics {
 		ch <- prometheus.MustNewConstMetric(c.sharedNetworkAddressUtilizationDescriptor,
 			prometheus.GaugeValue,
-			float64(networkMetrics.AddrUtilization)/1000.,
-			networkMetrics.Label, fmt.Sprint(networkMetrics.Family))
+			float64(networkMetrics.AddrUtilization),
+			networkMetrics.SharedNetwork, fmt.Sprint(networkMetrics.Family))
 
 		if networkMetrics.Family == 6 {
 			ch <- prometheus.MustNewConstMetric(c.sharedNetworkPdUtilizationDescriptor,
 				prometheus.GaugeValue,
-				float64(networkMetrics.PdUtilization)/1000.,
-				networkMetrics.Label)
+				float64(networkMetrics.PdUtilization),
+				networkMetrics.SharedNetwork)
 		}
 
 		// Statistics.
@@ -246,7 +246,7 @@ func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
 				continue
 			}
 
-			labels := []string{networkMetrics.Label}
+			labels := []string{networkMetrics.SharedNetwork}
 			if _, ok := v6OnlyStats[name]; !ok {
 				labels = append(labels, fmt.Sprint(networkMetrics.Family))
 			} else if networkMetrics.Family != 6 {

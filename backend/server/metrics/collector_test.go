@@ -184,15 +184,15 @@ func TestCollectorDescribe(t *testing.T) {
 			UnauthorizedMachines: 2,
 			UnreachableMachines:  3,
 			SubnetMetrics: []dbmodel.CalculatedNetworkMetrics{{
-				Label:           "subnet4",
-				AddrUtilization: 5,
-				PdUtilization:   6,
+				Prefix:          "4.0.0.0/4",
+				AddrUtilization: 0.05,
+				PdUtilization:   0.06,
 				Family:          7,
 			}},
 			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{{
-				Label:           "shared8",
-				AddrUtilization: 9,
-				PdUtilization:   10,
+				SharedNetwork:   "shared8",
+				AddrUtilization: 0.09,
+				PdUtilization:   0.10,
 				Family:          11,
 				SharedNetworkStats: dbmodel.SubnetStats{
 					dbmodel.SubnetStatsNameTotalNAs:    uint64(12),
@@ -242,17 +242,15 @@ func TestCollectorCollect(t *testing.T) {
 			UnauthorizedMachines: 2,
 			UnreachableMachines:  3,
 			SubnetMetrics: []dbmodel.CalculatedNetworkMetrics{{
-				Label: "subnet",
-				// The utilizations are stored in DB multiplied by 1000.
-				// 1000 (in DB) = 100% = 1.0 (in real)
-				AddrUtilization: 4000,
-				PdUtilization:   5000,
+				Prefix:          "4.0.0.0/4",
+				AddrUtilization: 4,
+				PdUtilization:   5,
 				Family:          4,
 			}},
 			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{{
-				Label:           "shared",
-				AddrUtilization: 6000,
-				PdUtilization:   7000,
+				SharedNetwork:   "shared",
+				AddrUtilization: 6,
+				PdUtilization:   7,
 				Family:          6,
 				SharedNetworkStats: dbmodel.SubnetStats{
 					dbmodel.SubnetStatsNameTotalNAs:    uint64(8),
@@ -288,24 +286,22 @@ func TestCollectorCollect(t *testing.T) {
 			UnreachableMachines:  3,
 			SubnetMetrics: []dbmodel.CalculatedNetworkMetrics{
 				{
-					Label: "subnetA",
-					// The utilizations are stored in DB multiplied by 1000.
-					// 1000 (in DB) = 100% = 1.0 (in real)
-					AddrUtilization: 4000,
-					PdUtilization:   5000,
+					Prefix:          "4.0.0.0/4",
+					AddrUtilization: 4,
+					PdUtilization:   5,
 					Family:          4,
 				},
 				{
-					Label:           "subnetB",
-					AddrUtilization: 6000,
-					PdUtilization:   7000,
+					Prefix:          "8.0.0.0/8",
+					AddrUtilization: 6,
+					PdUtilization:   7,
 					Family:          6,
 				},
 			},
 			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{
 				{
-					Label:           "sharedA",
-					AddrUtilization: 8000,
+					SharedNetwork:   "sharedA",
+					AddrUtilization: 8,
 					PdUtilization:   0,
 					Family:          4,
 					SharedNetworkStats: dbmodel.SubnetStats{
@@ -316,9 +312,9 @@ func TestCollectorCollect(t *testing.T) {
 					},
 				},
 				{
-					Label:           "sharedB",
-					AddrUtilization: 11000,
-					PdUtilization:   12000,
+					SharedNetwork:   "sharedB",
+					AddrUtilization: 11,
+					PdUtilization:   12,
 					Family:          6,
 					SharedNetworkStats: dbmodel.SubnetStats{
 						dbmodel.SubnetStatsNameTotalNAs:    uint64(13),
@@ -352,9 +348,9 @@ func TestCollectorCollect(t *testing.T) {
 		source.Set(dbmodel.CalculatedMetrics{
 			SharedNetworkMetrics: []dbmodel.CalculatedNetworkMetrics{
 				{
-					Label:           "shared",
-					AddrUtilization: 1000,
-					PdUtilization:   2000,
+					SharedNetwork:   "shared",
+					AddrUtilization: 0.01,
+					PdUtilization:   0.02,
 					Family:          4,
 					SharedNetworkStats: dbmodel.SubnetStats{
 						dbmodel.SubnetStatsNameTotalNAs:    uint64(3),
@@ -364,9 +360,9 @@ func TestCollectorCollect(t *testing.T) {
 					},
 				},
 				{
-					Label:           "shared",
-					AddrUtilization: 7000,
-					PdUtilization:   8000,
+					SharedNetwork:   "shared",
+					AddrUtilization: 0.07,
+					PdUtilization:   0.08,
 					Family:          6,
 					SharedNetworkStats: dbmodel.SubnetStats{
 						dbmodel.SubnetStatsNameTotalNAs:    uint64(10),
@@ -404,7 +400,7 @@ func TestCollectorCollect(t *testing.T) {
 				continue
 			case 4:
 				// Address utilization IPv4.
-				require.EqualValues(t, 1, *metricDTO.Gauge.Value)
+				require.EqualValues(t, 0.01, *metricDTO.Gauge.Value)
 				require.Len(t, metricDTO.Label, 2)
 				require.Contains(t, labelNames, "name")
 				require.Contains(t, labelNames, "family")
@@ -416,13 +412,13 @@ func TestCollectorCollect(t *testing.T) {
 				require.Contains(t, labelNames, "family")
 			case 7:
 				// Address utilization IPv6.
-				require.EqualValues(t, 7, *metricDTO.Gauge.Value)
+				require.EqualValues(t, 0.07, *metricDTO.Gauge.Value)
 				require.Len(t, metricDTO.Label, 2)
 				require.Contains(t, labelNames, "name")
 				require.Contains(t, labelNames, "family")
 			case 8:
 				// PD utilization IPv6.
-				require.EqualValues(t, 8, *metricDTO.Gauge.Value)
+				require.EqualValues(t, 0.08, *metricDTO.Gauge.Value)
 				// PD utilization hasn't the family label.
 				require.Len(t, metricDTO.Label, 1)
 				require.Contains(t, labelNames, "name")

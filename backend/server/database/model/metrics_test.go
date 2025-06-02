@@ -64,15 +64,22 @@ func TestFilledSubnetsDatabaseMetrics(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+
 	_ = AddSubnet(db, &Subnet{
 		Prefix:          "3001:1::/64",
 		AddrUtilization: Utilization(0.10),
 		PdUtilization:   Utilization(0.15),
 	})
-	_ = AddSubnet(db, &Subnet{
-		Prefix:          "3001:2::/64",
-		AddrUtilization: Utilization(0.20),
-		PdUtilization:   Utilization(0.25),
+	_ = AddSharedNetwork(db, &SharedNetwork{
+		Name:   "alice",
+		Family: 6,
+		Subnets: []Subnet{
+			{
+				Prefix:          "3001:2::/64",
+				AddrUtilization: Utilization(0.20),
+				PdUtilization:   Utilization(0.25),
+			},
+		},
 	})
 	_ = AddSubnet(db, &Subnet{
 		Prefix:          "192.168.2.1/32",
@@ -87,17 +94,20 @@ func TestFilledSubnetsDatabaseMetrics(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, metrics.SubnetMetrics, 3)
 
-	require.EqualValues(t, "3001:1::/64", metrics.SubnetMetrics[0].Label)
+	require.EqualValues(t, "3001:1::/64", metrics.SubnetMetrics[0].Prefix)
+	require.Empty(t, metrics.SubnetMetrics[0].SharedNetwork)
 	require.EqualValues(t, 0.1, metrics.SubnetMetrics[0].AddrUtilization)
 	require.EqualValues(t, 0.15, metrics.SubnetMetrics[0].PdUtilization)
 	require.EqualValues(t, 6, metrics.SubnetMetrics[0].Family)
 
-	require.EqualValues(t, "3001:2::/64", metrics.SubnetMetrics[1].Label)
+	require.EqualValues(t, "3001:2::/64", metrics.SubnetMetrics[1].Prefix)
+	require.Equal(t, "alice", metrics.SubnetMetrics[1].SharedNetwork)
 	require.EqualValues(t, 0.20, metrics.SubnetMetrics[1].AddrUtilization)
 	require.EqualValues(t, 0.25, metrics.SubnetMetrics[1].PdUtilization)
 	require.EqualValues(t, 6, metrics.SubnetMetrics[1].Family)
 
-	require.EqualValues(t, "192.168.2.1/32", metrics.SubnetMetrics[2].Label)
+	require.EqualValues(t, "192.168.2.1/32", metrics.SubnetMetrics[2].Prefix)
+	require.Empty(t, metrics.SubnetMetrics[2].SharedNetwork)
 	require.Zero(t, metrics.SubnetMetrics[2].AddrUtilization)
 	require.Zero(t, metrics.SubnetMetrics[2].PdUtilization)
 	require.EqualValues(t, 4, metrics.SubnetMetrics[2].Family)
@@ -142,22 +152,26 @@ func TestFilledSharedNetworksDatabaseMetrics(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, metrics.SharedNetworkMetrics, 4)
 
-	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[0].Label)
+	require.Empty(t, metrics.SharedNetworkMetrics[0].Prefix)
+	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[0].SharedNetwork)
 	require.EqualValues(t, 0.1, float64(metrics.SharedNetworkMetrics[0].AddrUtilization))
 	require.EqualValues(t, 0.15, float64(metrics.SharedNetworkMetrics[0].PdUtilization))
 	require.EqualValues(t, 4, metrics.SharedNetworkMetrics[0].Family)
 
-	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[1].Label)
+	require.Empty(t, metrics.SharedNetworkMetrics[1].Prefix)
+	require.EqualValues(t, "alice", metrics.SharedNetworkMetrics[1].SharedNetwork)
 	require.EqualValues(t, 0.05, float64(metrics.SharedNetworkMetrics[1].AddrUtilization))
 	require.EqualValues(t, 0.30, float64(metrics.SharedNetworkMetrics[1].PdUtilization))
 	require.EqualValues(t, 6, metrics.SharedNetworkMetrics[1].Family)
 
-	require.EqualValues(t, "bob", metrics.SharedNetworkMetrics[2].Label)
+	require.Empty(t, metrics.SharedNetworkMetrics[2].Prefix)
+	require.EqualValues(t, "bob", metrics.SharedNetworkMetrics[2].SharedNetwork)
 	require.EqualValues(t, 0.20, float64(metrics.SharedNetworkMetrics[2].AddrUtilization))
 	require.EqualValues(t, 0.25, float64(metrics.SharedNetworkMetrics[2].PdUtilization))
 	require.EqualValues(t, 4, metrics.SharedNetworkMetrics[2].Family)
 
-	require.EqualValues(t, "eva", metrics.SharedNetworkMetrics[3].Label)
+	require.Empty(t, metrics.SharedNetworkMetrics[3].Prefix)
+	require.EqualValues(t, "eva", metrics.SharedNetworkMetrics[3].SharedNetwork)
 	require.Zero(t, metrics.SharedNetworkMetrics[3].AddrUtilization)
 	require.Zero(t, metrics.SharedNetworkMetrics[3].PdUtilization)
 	require.EqualValues(t, 6, metrics.SharedNetworkMetrics[3].Family)
