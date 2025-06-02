@@ -72,9 +72,9 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 					"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
 				}
 			}]`, statistic4Names[0], statistic4Names[1], statistic4Names[2],
-				256+totalShift, 111+shift+0+shift, 0+shift,
-				4098+totalShift, 2034+shift+4+shift, 4+shift,
-				10+totalShift, 4+shift+2+shift, 2+shift,
+				256+totalShift, 111+shift, 0+shift,
+				4098+totalShift, 2034+shift, 4+shift,
+				10+totalShift, 4+shift, 2+shift,
 			),
 			fmt.Sprintf(`[{
 				"result": 0,
@@ -107,11 +107,11 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 					"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
 				}
 			}]`,
-				4096+totalShift, 2400+shift+3+shift, 3+shift, 0+totalShift, 0+shift,
-				0+totalShift, 0+shift+0+shift, 0+shift, 1048+totalShift, 233+shift,
-				256+totalShift, 60+shift+0+shift, 0+shift, 1048+totalShift, 15+shift,
+				4096+totalShift, 2400+shift, 3+shift, 0+totalShift, 0+shift,
+				0+totalShift, 0+shift, 0+shift, 1048+totalShift, 233+shift,
+				256+totalShift, 60+shift, 0+shift, 1048+totalShift, 15+shift,
 				-1, "9223372036854775807", 0, -2, -3,
-				20+totalShift, 8+shift+4+shift, 4+shift, 40+totalShift, 20+shift,
+				20+totalShift, 8+shift, 4+shift, 40+totalShift, 20+shift,
 			),
 		}
 	})

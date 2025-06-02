@@ -109,35 +109,10 @@ func TestUnmarshalKeaDHCPv4StatisticGetAllResponse(t *testing.T) {
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
 	require.EqualValues(t, 150, item.Value.Int64())
-
-	// Check if the statistics can be adjusted to exclude the declined leases
-	// from the assigned ones.
-	AdjustAssignedStatistics(response[0].Arguments)
-
-	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.IsAddressPoolSample() && item.SubnetID == 1 && *item.AddressPoolID == 0
-	})
-	require.NotEqual(t, -1, index)
-	item = response[0].Arguments[index]
-	require.EqualValues(t, 5, item.Value.Int64())
-
-	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-addresses" && item.IsSubnetSample() && item.SubnetID == 1
-	})
-	require.NotEqual(t, -1, index)
-	item = response[0].Arguments[index]
-	require.EqualValues(t, 7, item.Value.Int64())
-
-	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
-		return item.Name == "assigned-addresses" && !item.IsSubnetSample() && !item.IsPoolSample()
-	})
-	require.NotEqual(t, -1, index)
-	item = response[0].Arguments[index]
-	require.EqualValues(t, 100, item.Value.Int64())
 }
 
-// Test that the assigned NAs can be assigned correctly for the Kea DHCPv6.
-func TestAdjustAssignedStatisticsForKeaDHCPv6(t *testing.T) {
+// Test if the Kea DHCPv6 JSON statistic-get-all response is unmarshalled correctly.
+func TestUnmarshalKeaDHCPv6StatisticGetAllResponse(t *testing.T) {
 	// Arrange
 	rawResponse := `
 	[
@@ -161,7 +136,6 @@ func TestAdjustAssignedStatisticsForKeaDHCPv6(t *testing.T) {
 	// Act
 	var response StatisticGetAllResponse
 	err := json.Unmarshal([]byte(rawResponse), &response)
-	AdjustAssignedStatistics(response[0].Arguments)
 
 	// Assert
 	require.NoError(t, err)
@@ -171,21 +145,21 @@ func TestAdjustAssignedStatisticsForKeaDHCPv6(t *testing.T) {
 	})
 	require.NotEqual(t, -1, index)
 	item := response[0].Arguments[index]
-	require.EqualValues(t, 30, item.Value.Int64())
+	require.EqualValues(t, 36, item.Value.Int64())
 
 	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-nas" && item.IsSubnetSample() && item.SubnetID == 2
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
-	require.EqualValues(t, 225, item.Value.Int64())
+	require.EqualValues(t, 230, item.Value.Int64())
 
 	index = slices.IndexFunc(response[0].Arguments, func(item *StatisticGetAllResponseSample) bool {
 		return item.Name == "assigned-nas" && !item.IsSubnetSample() && !item.IsPoolSample()
 	})
 	require.NotEqual(t, -1, index)
 	item = response[0].Arguments[index]
-	require.EqualValues(t, 300, item.Value.Int64())
+	require.EqualValues(t, 450, item.Value.Int64())
 }
 
 // Test that unmarshalling of the Kea statistic-get-all response does not lose

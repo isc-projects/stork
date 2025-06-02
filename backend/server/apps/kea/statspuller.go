@@ -453,10 +453,6 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			return errors.Errorf("arguments missing in the statistic-get-all response")
 		}
 
-		// The Stork server expects the statistics of assigned leases will not
-		// count the declined leases.
-		keactrl.AdjustAssignedStatistics(responseItem.Arguments)
-
 		// Due to historical reasons, Stork server expects the statistic of
 		// declined leases for DHCPv6 will be named as "declined-nas" instead
 		// of "declined-addresses". We cannot change the name in our structures
