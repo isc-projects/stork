@@ -144,7 +144,7 @@ func newLazySubnetLookup(sender keaCommandSender) subnetLookup {
 	return &lazySubnetLookup{sender, nil, false, 4}
 }
 
-// Fetches the subnet list from Kea CA and stores the response in a cache.
+// Fetches the subnet list from Kea and stores the response in a cache.
 // If any error occurs or list is unavailable then the cache for specific
 // family is set to nil. Returns fetched subnet list.
 // Family should be 4 or 6.
