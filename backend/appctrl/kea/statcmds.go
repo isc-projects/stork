@@ -259,9 +259,9 @@ type statisticType int
 
 const (
 	statisticTypeGlobal      statisticType = iota
-	statisticTypeSubnet      statisticType = iota
-	statisticTypeAddressPool statisticType = iota
-	statisticTypePrefixPool  statisticType = iota
+	statisticTypeSubnet
+	statisticTypeAddressPool
+	statisticTypePrefixPool
 )
 
 // A key of sample index.

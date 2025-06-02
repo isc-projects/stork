@@ -12,7 +12,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Test if the Kea DHCPv4 JSON statistic-get-all response is unmarshal correctly.
+// Test if the Kea DHCPv4 JSON statistic-get-all response is unmarshalled correctly.
 func TestUnmarshalKeaDHCPv4StatisticGetAllResponse(t *testing.T) {
 	// Arrange
 	rawResponse := `
