@@ -1062,7 +1062,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "storkserver_subnet_address_utilization{instance=~\"$instance\", subnet=~\"$subnet\", family=~\"4\", name=~\"$shared_network\"}",
+          "expr": "storkserver_subnet_address_utilization{instance=~\"$instance\", subnet=~\"$subnet\", name=~\"$shared_network\"}",
           "legendFormat": "subnet \"{{subnet}}\"",
           "range": true,
           "refId": "A"
