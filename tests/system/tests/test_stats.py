@@ -32,7 +32,7 @@ def test_get_kea_stats(
     server_service.wait_for_kea_statistics_pulling()
     data = server_service.overview()
 
-    # 19 leases (9 assigned and 10 declined) are initially store in the lease
+    # 19 leases (9 assigned and 10 declined) are initially stored in the lease
     # database
     assert int(data.dhcp4_stats.assigned_addresses) > 19
     assert int(data.dhcp4_stats.declined_addresses) == 10
