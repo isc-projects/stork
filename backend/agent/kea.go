@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -75,6 +76,11 @@ func (ka *KeaApp) sendCommandRaw(command []byte) ([]byte, error) {
 	response, err := ka.HTTPClient.Call(caURL, bytes.NewBuffer(command))
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to send command to Kea: %s", caURL)
+	}
+
+	// Kea returned a non-success status code.
+	if response.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("received non-success status code %d from Kea, with status text: %s; url: %s", response.StatusCode, response.Status, caURL)
 	}
 
 	// Read the response.

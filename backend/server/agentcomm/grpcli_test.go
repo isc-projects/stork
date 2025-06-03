@@ -454,6 +454,62 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonD2))
 }
 
+// Test that the error is returned when the response to the forwarded Kea command
+// contains a non-success HTTP status code.
+func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	rsp := agentapi.ForwardToKeaOverHTTPRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		KeaResponses: []*agentapi.KeaResponse{{
+			Status: &agentapi.Status{
+				Code:    agentapi.Status_ERROR,
+				Message: "received non-success status code 400 from Kea, with status text: 400 Bad Request; url: http://localhost:45634/",
+			},
+		}},
+	}
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		Return(&rsp, nil)
+
+	ctx := context.Background()
+	command := keactrl.NewCommandBase(keactrl.CommandName("test-command"))
+	actualResponse := keactrl.ResponseList{}
+	dbApp := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &actualResponse)
+	require.NoError(t, err)
+	require.NotNil(t, cmdsResult)
+	require.NoError(t, cmdsResult.Error)
+	require.Len(t, cmdsResult.CmdsErrors, 1)
+	require.Error(t, cmdsResult.CmdsErrors[0])
+	require.Contains(t, cmdsResult.CmdsErrors[0].Error(), "received non-success status code 400 from Kea")
+
+	agent, err := agents.getConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.stats.GetTotalErrorCount())
+	keaCommErrors := agent.stats.GetKeaCommErrorStats(0)
+	require.EqualValues(t, 1, keaCommErrors.GetErrorCount(KeaDaemonCA))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv4))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonDHCPv6))
+	require.Zero(t, keaCommErrors.GetErrorCount(KeaDaemonD2))
+}
+
 // Test that a statistics request can be successfully forwarded to named
 // statistics-channel and the output can be parsed.
 func TestForwardToNamedStats(t *testing.T) {

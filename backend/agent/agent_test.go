@@ -304,7 +304,8 @@ func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
-	require.JSONEq(t, "[{\"HttpCode\":\"Bad Request\"}]", string(rsp.KeaResponses[0].Response))
+	require.Equal(t, agentapi.Status_ERROR, rsp.KeaResponses[0].Status.Code)
+	require.Equal(t, "failed to forward commands to Kea: received non-success status code 400 from Kea, with status text: 400 Bad Request; url: http://localhost:45634/", rsp.KeaResponses[0].Status.Message)
 }
 
 // Test forwarding command to Kea when no body is returned.
@@ -627,7 +628,7 @@ func TestForwardRndcCommandNoApp(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Equal(t, agentapi.Status_ERROR, rsp.Status.Code)
-	require.EqualValues(t, "Cannot find BIND 9 app", rsp.Status.Message)
+	require.EqualValues(t, "cannot find BIND 9 app", rsp.Status.Message)
 }
 
 // Test rndc command successfully forwarded, but bad response.

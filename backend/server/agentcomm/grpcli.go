@@ -201,15 +201,18 @@ func (agents *connectedAgentsImpl) checkKeaCommState(stats *KeaAppCommErrorStats
 		if controlAgentErr < 0 {
 			controlAgentErr = 0
 		}
-		var controlAgentErrMessageBuilder strings.Builder
 		if daemonResp.Status.Code != agentapi.Status_OK {
 			controlAgentErr++
 			if daemonResp.Status.Message != "" {
-				fmt.Fprintln(&controlAgentErrMessageBuilder, daemonResp.Status.Message)
+				state.controlAgentErrors = append(state.controlAgentErrors, errors.Errorf("received error while sending the command %s: %s", commands[idx].GetCommand(), daemonResp.Status.Message))
 			}
 			continue
 		}
-		var parsedResp []keactrl.ResponseHeader
+
+		var (
+			controlAgentErrMessageBuilder strings.Builder
+			parsedResp                    []keactrl.ResponseHeader
+		)
 		err := keactrl.UnmarshalResponseList(commands[idx], daemonResp.Response, &parsedResp)
 		if err != nil {
 			controlAgentErr++

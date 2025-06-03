@@ -294,7 +294,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port)
 	if app == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
-		rndcRsp.Status.Message = "Cannot find BIND 9 app"
+		rndcRsp.Status.Message = "cannot find BIND 9 app"
 		response.Status = rndcRsp.Status
 		return response, nil
 	}
@@ -302,7 +302,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	bind9App := app.(*Bind9App)
 	if bind9App == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
-		rndcRsp.Status.Message = fmt.Sprintf("Incorrect app found: %s instead of BIND 9", app.GetBaseApp().Type)
+		rndcRsp.Status.Message = fmt.Sprintf("incorrect app found: %s instead of BIND 9", app.GetBaseApp().Type)
 		response.Status = rndcRsp.Status
 		return response, nil
 	}
@@ -318,7 +318,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 				"Port":    in.Port,
 			}).Errorf("Failed to forward commands to rndc")
 		rndcRsp.Status.Code = agentapi.Status_ERROR
-		rndcRsp.Status.Message = fmt.Sprintf("Failed to forward commands to rndc: %s", err.Error())
+		rndcRsp.Status.Message = fmt.Sprintf("failed to forward commands to rndc: %s", err.Error())
 	} else {
 		rndcRsp.Status.Code = agentapi.Status_OK
 		rndcRsp.Response = string(output)
@@ -405,7 +405,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 					"statsPort":    in.GetStatsPort(),
 				}).WithError(err).Error("Failed to marshal the server and traffic stats to return to the Stork server")
 				innerGrpcResponse.Status.Code = agentapi.Status_ERROR
-				innerGrpcResponse.Status.Message = fmt.Sprintf("Failed to marshal the server and traffic stats to return to the Stork server: %s", err.Error())
+				innerGrpcResponse.Status.Message = fmt.Sprintf("failed to marshal the server and traffic stats to return to the Stork server: %s", err.Error())
 				return grpcResponse, nil
 			}
 		}
@@ -448,7 +448,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	switch {
 	case err != nil:
 		innerGrpcResponse.Status.Code = agentapi.Status_ERROR
-		innerGrpcResponse.Status.Message = fmt.Sprintf("Failed to forward commands to named over the stats channel: %s", err.Error())
+		innerGrpcResponse.Status.Message = fmt.Sprintf("failed to forward commands to named over the stats channel: %s", err.Error())
 	case response.IsError():
 		innerGrpcResponse.Status.Code = agentapi.Status_ERROR
 		innerGrpcResponse.Status.Message = fmt.Sprintf("named stats channel returned error status code with message: %s", response.String())
@@ -479,7 +479,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 	reqURL := in.GetUrl()
 	if reqURL == "" {
 		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = "Incorrect URL to Kea CA"
+		response.Status.Message = "incorrect URL to Kea CA"
 		return response, nil
 	}
 
@@ -487,13 +487,13 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 	app := sa.AppMonitor.GetApp(AppTypeKea, AccessPointControl, host, port)
 	if app == nil {
 		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = "Cannot find Kea app"
+		response.Status.Message = "cannot find Kea app"
 		return response, nil
 	}
 	keaApp := app.(*KeaApp)
 	if keaApp == nil {
 		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = fmt.Sprintf("Incorrect app found: %s instead of Kea", app.GetBaseApp().Type)
+		response.Status.Message = fmt.Sprintf("incorrect app found: %s instead of Kea", app.GetBaseApp().Type)
 		return response, nil
 	}
 
@@ -511,7 +511,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 				"URL": reqURL,
 			}).Errorf("Failed to forward commands to Kea CA: %+v", err)
 			rsp.Status.Code = agentapi.Status_ERROR
-			rsp.Status.Message = fmt.Sprintf("Failed to forward commands to Kea: %s", err.Error())
+			rsp.Status.Message = fmt.Sprintf("failed to forward commands to Kea: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
 			continue
 		}
