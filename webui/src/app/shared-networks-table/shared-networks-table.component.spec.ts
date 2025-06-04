@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
 import { SharedNetworksTableComponent } from './shared-networks-table.component'
 import { MessageService } from 'primeng/api'
@@ -424,9 +424,9 @@ describe('SharedNetworksTableComponent', () => {
         expect(errors[1].nativeElement.innerText).toBe('Filter dhcpVersion allows only values: 4, 6.')
     })
 
-    it('should filter table records', async () => {
+    it('should filter table records', fakeAsync(() => {
         // Initial data was loaded.
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, null)
 
@@ -436,46 +436,41 @@ describe('SharedNetworksTableComponent', () => {
 
         // First is filter by appId, second is text search filter.
         expect(filterInputs.length).toBe(2)
-        let input = filterInputs[1].nativeElement
+        const input = filterInputs[1].nativeElement
 
         // Filter by text.
         input.value = 'cat'
         input.dispatchEvent(new Event('input'))
 
         // Verify that the API was called for that filter.
-        await fixture.whenStable()
+        tick(300)
         fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, null, null, 'cat')
 
         // Filter by kea app id.
-        const pressFiveEvent = new KeyboardEvent('event', {
-            code: 'Digit5',
-            key: '5',
-            keyCode: '5'.charCodeAt(0),
-        })
         const inputNumberEls = fixture.debugElement.queryAll(By.css('.p-column-filter p-inputnumber'))
         expect(inputNumberEls).toBeTruthy()
         expect(inputNumberEls.length).toBe(1)
-        let inputComponent = inputNumberEls[0].componentInstance
-        inputComponent.onInputKeyPress(pressFiveEvent)
+        const inputComponent = inputNumberEls[0].componentInstance
+        inputComponent.handleOnInput(new InputEvent('input'), '', 5)
 
         // Verify that the API was called for that filter.
-        await fixture.whenStable()
+        tick(300)
         fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 5, null, 'cat')
 
         // Filter by DHCP version.
         const dropdownContainer = fixture.debugElement.query(By.css('.p-column-filter .p-dropdown')).nativeElement
         dropdownContainer.click()
-        await fixture.whenStable()
+        tick()
         fixture.detectChanges()
         const items = fixture.debugElement.query(By.css('.p-dropdown-items'))
         // Click second option.
         items.children[1].children[0].nativeElement.click()
 
         // Verify that the API was called for that filter.
-        await fixture.whenStable()
+        tick(300)
         fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 5, 6, 'cat')
-    })
+    }))
 })
