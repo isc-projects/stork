@@ -10,7 +10,7 @@ import (
 
 // Represents a statistic held in statistic table in the database.
 type Statistic struct {
-	Name SubnetStatsName `pg:",pk"`
+	Name StatName `pg:",pk"`
 	// The maximal IPv6 prefix is 128.
 	// How many decimal digits we need to store the total number of available addresses?
 	// 2^128 = 10^x
@@ -38,14 +38,14 @@ type Statistic struct {
 func InitializeStats(db *pg.DB) error {
 	// list of all stork global statistics
 	statsList := []Statistic{
-		{Name: SubnetStatsNameAssignedAddresses, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsNameTotalAddresses, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsNameDeclinedAddresses, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsNameAssignedNAs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsNameTotalNAs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsNameAssignedPDs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsNameTotalPDs, Value: newIntegerDecimalZero()},
-		{Name: SubnetStatsNameDeclinedNAs, Value: newIntegerDecimalZero()},
+		{Name: StatNameAssignedAddresses, Value: newIntegerDecimalZero()},
+		{Name: StatNameTotalAddresses, Value: newIntegerDecimalZero()},
+		{Name: StatNameDeclinedAddresses, Value: newIntegerDecimalZero()},
+		{Name: StatNameAssignedNAs, Value: newIntegerDecimalZero()},
+		{Name: StatNameTotalNAs, Value: newIntegerDecimalZero()},
+		{Name: StatNameAssignedPDs, Value: newIntegerDecimalZero()},
+		{Name: StatNameTotalPDs, Value: newIntegerDecimalZero()},
+		{Name: StatNameDeclinedNAs, Value: newIntegerDecimalZero()},
 	}
 
 	// Check if there are new statistics vs existing ones. Add new ones to DB.
@@ -57,7 +57,7 @@ func InitializeStats(db *pg.DB) error {
 }
 
 // Get all global statistics values.
-func GetAllStats(db *pg.DB) (SubnetStats, error) {
+func GetAllStats(db *pg.DB) (Stats, error) {
 	statsList := []*Statistic{}
 	q := db.Model(&statsList)
 	err := q.Select()
@@ -65,7 +65,7 @@ func GetAllStats(db *pg.DB) (SubnetStats, error) {
 		return nil, errors.Wrapf(err, "problem getting all statistics")
 	}
 
-	statsMap := SubnetStats{}
+	statsMap := Stats{}
 	for _, s := range statsList {
 		var value *big.Int
 		if s.Value != nil {
@@ -78,7 +78,7 @@ func GetAllStats(db *pg.DB) (SubnetStats, error) {
 }
 
 // Set a list of global statistics.
-func SetStats(db *pg.DB, statsMap SubnetStats) error {
+func SetStats(db *pg.DB, statsMap Stats) error {
 	statsList := []*Statistic{}
 	for s := range statsMap {
 		counter := statsMap.GetBigCounter(s)

@@ -194,12 +194,12 @@ func TestCollectorDescribe(t *testing.T) {
 				AddrUtilization: 0.09,
 				PdUtilization:   0.10,
 				Family:          11,
-				SharedNetworkStats: dbmodel.SubnetStats{
-					dbmodel.SubnetStatsNameTotalNAs:    uint64(12),
-					dbmodel.SubnetStatsNameAssignedNAs: uint64(13),
-					dbmodel.SubnetStatsNameDeclinedNAs: uint64(14),
-					dbmodel.SubnetStatsNameTotalPDs:    uint64(15),
-					dbmodel.SubnetStatsNameAssignedPDs: uint64(16),
+				SharedNetworkStats: dbmodel.Stats{
+					dbmodel.StatNameTotalNAs:    uint64(12),
+					dbmodel.StatNameAssignedNAs: uint64(13),
+					dbmodel.StatNameDeclinedNAs: uint64(14),
+					dbmodel.StatNameTotalPDs:    uint64(15),
+					dbmodel.StatNameAssignedPDs: uint64(16),
 				},
 			}},
 		})
@@ -252,11 +252,11 @@ func TestCollectorCollect(t *testing.T) {
 				AddrUtilization: 6,
 				PdUtilization:   7,
 				Family:          6,
-				SharedNetworkStats: dbmodel.SubnetStats{
-					dbmodel.SubnetStatsNameTotalNAs:    uint64(8),
-					dbmodel.SubnetStatsNameAssignedNAs: uint64(9),
-					dbmodel.SubnetStatsNameTotalPDs:    uint64(10),
-					dbmodel.SubnetStatsNameAssignedPDs: uint64(11),
+				SharedNetworkStats: dbmodel.Stats{
+					dbmodel.StatNameTotalNAs:    uint64(8),
+					dbmodel.StatNameAssignedNAs: uint64(9),
+					dbmodel.StatNameTotalPDs:    uint64(10),
+					dbmodel.StatNameAssignedPDs: uint64(11),
 				},
 			}},
 		})
@@ -304,11 +304,11 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 8,
 					PdUtilization:   0,
 					Family:          4,
-					SharedNetworkStats: dbmodel.SubnetStats{
-						dbmodel.SubnetStatsNameTotalNAs:    uint64(9),
-						dbmodel.SubnetStatsNameAssignedNAs: uint64(10),
-						dbmodel.SubnetStatsNameTotalPDs:    uint64(0),
-						dbmodel.SubnetStatsNameAssignedPDs: uint64(0),
+					SharedNetworkStats: dbmodel.Stats{
+						dbmodel.StatNameTotalNAs:    uint64(9),
+						dbmodel.StatNameAssignedNAs: uint64(10),
+						dbmodel.StatNameTotalPDs:    uint64(0),
+						dbmodel.StatNameAssignedPDs: uint64(0),
 					},
 				},
 				{
@@ -316,11 +316,11 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 11,
 					PdUtilization:   12,
 					Family:          6,
-					SharedNetworkStats: dbmodel.SubnetStats{
-						dbmodel.SubnetStatsNameTotalNAs:    uint64(13),
-						dbmodel.SubnetStatsNameAssignedNAs: uint64(14),
-						dbmodel.SubnetStatsNameTotalPDs:    uint64(15),
-						dbmodel.SubnetStatsNameAssignedPDs: uint64(16),
+					SharedNetworkStats: dbmodel.Stats{
+						dbmodel.StatNameTotalNAs:    uint64(13),
+						dbmodel.StatNameAssignedNAs: uint64(14),
+						dbmodel.StatNameTotalPDs:    uint64(15),
+						dbmodel.StatNameAssignedPDs: uint64(16),
 					},
 				},
 			},
@@ -352,11 +352,11 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 0.01,
 					PdUtilization:   0.02,
 					Family:          4,
-					SharedNetworkStats: dbmodel.SubnetStats{
-						dbmodel.SubnetStatsNameTotalNAs:    uint64(3),
-						dbmodel.SubnetStatsNameAssignedNAs: uint64(4),
-						dbmodel.SubnetStatsNameTotalPDs:    uint64(5),
-						dbmodel.SubnetStatsNameAssignedPDs: uint64(6),
+					SharedNetworkStats: dbmodel.Stats{
+						dbmodel.StatNameTotalNAs:    uint64(3),
+						dbmodel.StatNameAssignedNAs: uint64(4),
+						dbmodel.StatNameTotalPDs:    uint64(5),
+						dbmodel.StatNameAssignedPDs: uint64(6),
 					},
 				},
 				{
@@ -364,11 +364,11 @@ func TestCollectorCollect(t *testing.T) {
 					AddrUtilization: 0.07,
 					PdUtilization:   0.08,
 					Family:          6,
-					SharedNetworkStats: dbmodel.SubnetStats{
-						dbmodel.SubnetStatsNameTotalNAs:    uint64(10),
-						dbmodel.SubnetStatsNameAssignedNAs: uint64(11),
-						dbmodel.SubnetStatsNameTotalPDs:    uint64(12),
-						dbmodel.SubnetStatsNameAssignedPDs: uint64(13),
+					SharedNetworkStats: dbmodel.Stats{
+						dbmodel.StatNameTotalNAs:    uint64(10),
+						dbmodel.StatNameAssignedNAs: uint64(11),
+						dbmodel.StatNameTotalPDs:    uint64(12),
+						dbmodel.StatNameAssignedPDs: uint64(13),
 					},
 				},
 			},

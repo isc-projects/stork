@@ -18,7 +18,7 @@ type CalculatedNetworkMetrics struct {
 	// Delegated prefix utilization.
 	PdUtilization Utilization
 	// Statistics. It is nil for subnets.
-	SharedNetworkStats SubnetStats
+	SharedNetworkStats Stats
 }
 
 // Metric values calculated from the database.

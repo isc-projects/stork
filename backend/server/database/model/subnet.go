@@ -23,50 +23,50 @@ import (
 var _ keaconfig.SubnetAccessor = (*Subnet)(nil)
 
 // Identifier of the well-known subnet statistics.
-type SubnetStatsName = string
+type StatName = string
 
 const (
 	// Total number of network addresses.
-	SubnetStatsNameTotalNAs SubnetStatsName = "total-nas"
+	StatNameTotalNAs StatName = "total-nas"
 	// Number of assigned network addresses.
-	SubnetStatsNameAssignedNAs SubnetStatsName = "assigned-nas"
+	StatNameAssignedNAs StatName = "assigned-nas"
 	// Number of declined network addresses.
-	SubnetStatsNameDeclinedNAs SubnetStatsName = "declined-nas"
+	StatNameDeclinedNAs StatName = "declined-nas"
 	// Total number of delegated prefixes.
-	SubnetStatsNameTotalPDs SubnetStatsName = "total-pds"
+	StatNameTotalPDs StatName = "total-pds"
 	// Number of assigned delegated prefixes.
-	SubnetStatsNameAssignedPDs SubnetStatsName = "assigned-pds"
+	StatNameAssignedPDs StatName = "assigned-pds"
 	// Total number of addresses.
-	SubnetStatsNameTotalAddresses SubnetStatsName = "total-addresses"
+	StatNameTotalAddresses StatName = "total-addresses"
 	// Number of assigned addresses.
-	SubnetStatsNameAssignedAddresses SubnetStatsName = "assigned-addresses"
+	StatNameAssignedAddresses StatName = "assigned-addresses"
 	// Number of declined addresses.
-	SubnetStatsNameDeclinedAddresses SubnetStatsName = "declined-addresses"
+	StatNameDeclinedAddresses StatName = "declined-addresses"
 	// Cumulative number of assigned network addresses.
-	SubnetStatsNameCumulativeAssignedAddresses SubnetStatsName = "cumulative-assigned-addresses"
+	StatNameCumulativeAssignedAddresses StatName = "cumulative-assigned-addresses"
 	// Total number of out-of-pool addresses.
-	SubnetStatsNameTotalOutOfPoolAddresses SubnetStatsName = "total-out-of-pool-addresses"
+	StatNameTotalOutOfPoolAddresses StatName = "total-out-of-pool-addresses"
 	// Number of assigned out-of-pool addresses.
-	SubnetStatsNameAssignedOutOfPoolAddresses SubnetStatsName = "assigned-out-of-pool-addresses"
+	StatNameAssignedOutOfPoolAddresses StatName = "assigned-out-of-pool-addresses"
 	// Number of declined out-of-pool addresses.
-	SubnetStatsNameDeclinedOutOfPoolAddresses SubnetStatsName = "declined-out-of-pool-addresses"
+	StatNameDeclinedOutOfPoolAddresses StatName = "declined-out-of-pool-addresses"
 	// Total number of out-of-pool network addresses.
-	SubnetStatsNameTotalOutOfPoolNAs SubnetStatsName = "total-out-of-pool-nas"
+	StatNameTotalOutOfPoolNAs StatName = "total-out-of-pool-nas"
 	// Number of assigned out-of-pool network addresses.
-	SubnetStatsNameAssignedOutOfPoolNAs SubnetStatsName = "assigned-out-of-pool-nas"
+	StatNameAssignedOutOfPoolNAs StatName = "assigned-out-of-pool-nas"
 	// Number of declined out-of-pool network addresses.
-	SubnetStatsNameDeclinedOutOfPoolNAs SubnetStatsName = "declined-out-of-pool-nas"
+	StatNameDeclinedOutOfPoolNAs StatName = "declined-out-of-pool-nas"
 	// Total number of out-of-pool delegated prefixes.
-	SubnetStatsNameTotalOutOfPoolPDs SubnetStatsName = "total-out-of-pool-pds"
+	StatNameTotalOutOfPoolPDs StatName = "total-out-of-pool-pds"
 	// Number of assigned out-of-pool delegated prefixes.
-	SubnetStatsNameAssignedOutOfPoolPDs SubnetStatsName = "assigned-out-of-pool-pds"
+	StatNameAssignedOutOfPoolPDs StatName = "assigned-out-of-pool-pds"
 )
 
 // Custom statistic type to redefine JSON marshalling.
-type SubnetStats map[SubnetStatsName]any
+type Stats map[StatName]any
 
 // Returns the value of the statistic with the specified name as a big counter.
-func (s SubnetStats) GetBigCounter(name SubnetStatsName) *storkutil.BigCounter {
+func (s Stats) GetBigCounter(name StatName) *storkutil.BigCounter {
 	value, ok := s[name]
 	if !ok {
 		return nil
@@ -85,7 +85,7 @@ func (s SubnetStats) GetBigCounter(name SubnetStatsName) *storkutil.BigCounter {
 }
 
 // Sets the value of the statistic with the specified name as a big counter.
-func (s SubnetStats) SetBigCounter(name SubnetStatsName, counter *storkutil.BigCounter) {
+func (s Stats) SetBigCounter(name StatName, counter *storkutil.BigCounter) {
 	s[name] = counter.ConvertToNativeType()
 }
 
@@ -101,7 +101,7 @@ func (s SubnetStats) SetBigCounter(name SubnetStatsName, counter *storkutil.BigC
 //
 // It doesn't use the pointer to receiver type for compatibility with go-pg serialization
 // during inserting to the database.
-func (s SubnetStats) MarshalJSON() ([]byte, error) {
+func (s Stats) MarshalJSON() ([]byte, error) {
 	if s == nil {
 		return json.Marshal(nil)
 	}
@@ -125,7 +125,7 @@ func (s SubnetStats) MarshalJSON() ([]byte, error) {
 // that look like integers.
 // During the serialization we lost the original data type of the number.
 // We assume that strings with positive numbers are uint64 and negative numbers are int64.
-func (s *SubnetStats) UnmarshalJSON(data []byte) error {
+func (s *Stats) UnmarshalJSON(data []byte) error {
 	toUnmarshal := make(map[string]interface{})
 	err := json.Unmarshal(data, &toUnmarshal)
 	if err != nil {
@@ -138,7 +138,7 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 	}
 
 	if *s == nil {
-		*s = SubnetStats{}
+		*s = Stats{}
 	}
 
 	for k, v := range toUnmarshal {
@@ -174,11 +174,11 @@ func (s *SubnetStats) UnmarshalJSON(data []byte) error {
 
 // An interface for a wrapper of subnet statistics that encapsulates the
 // utilization calculations. It corresponds to the
-// `statisticscounter.subnetStats` interface and prevents the dependency cycle.
+// `statisticscounter.Stats` interface and prevents the dependency cycle.
 type utilizationStats interface {
 	GetAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
-	GetStatistics() SubnetStats
+	GetStatistics() Stats
 }
 
 // This structure holds subnet information retrieved from an app. Multiple
@@ -199,7 +199,7 @@ type LocalSubnet struct {
 	Subnet        *Subnet `pg:"rel:has-one"`
 	LocalSubnetID int64
 
-	Stats            SubnetStats
+	Stats            Stats
 	StatsCollectedAt time.Time
 
 	AddressPools []AddressPool `pg:"rel:has-many"`
@@ -225,7 +225,7 @@ type Subnet struct {
 
 	AddrUtilization  Utilization `pg:",use_zero"`
 	PdUtilization    Utilization `pg:",use_zero"`
-	Stats            SubnetStats
+	Stats            Stats
 	StatsCollectedAt time.Time
 }
 
@@ -1008,7 +1008,7 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 }
 
 // Update stats pulled for given local subnet.
-func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
+func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats Stats) error {
 	lsn.Stats = stats
 	lsn.StatsCollectedAt = storkutil.UTCNow()
 	q := dbi.Model(lsn)

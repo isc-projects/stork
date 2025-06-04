@@ -30,7 +30,7 @@ type AddressPool struct {
 	LocalSubnet   *LocalSubnet `pg:"rel:has-one"`
 	Utilization   Utilization  `pg:",use_zero"`
 
-	Stats            SubnetStats
+	Stats            Stats
 	StatsCollectedAt time.Time
 
 	KeaParameters *keaconfig.PoolParameters
@@ -77,7 +77,7 @@ type PrefixPool struct {
 	LocalSubnet       *LocalSubnet `pg:"rel:has-one"`
 	Utilization       Utilization  `pg:",use_zero"`
 
-	Stats            SubnetStats
+	Stats            Stats
 	StatsCollectedAt time.Time
 
 	KeaParameters *keaconfig.PoolParameters
@@ -238,16 +238,16 @@ func DeletePrefixPool(db *dbops.PgDB, poolID int64) error {
 }
 
 // Update stats pulled for given address pool.
-func (ap *AddressPool) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
+func (ap *AddressPool) UpdateStats(dbi dbops.DBI, stats Stats) error {
 	var assigned *storkutil.BigCounter
 	var total *storkutil.BigCounter
 	var utilization Utilization
 	if ap.IsIPv6() {
-		assigned = stats.GetBigCounter(SubnetStatsNameAssignedNAs)
-		total = stats.GetBigCounter(SubnetStatsNameTotalNAs)
+		assigned = stats.GetBigCounter(StatNameAssignedNAs)
+		total = stats.GetBigCounter(StatNameTotalNAs)
 	} else {
-		assigned = stats.GetBigCounter(SubnetStatsNameAssignedAddresses)
-		total = stats.GetBigCounter(SubnetStatsNameTotalAddresses)
+		assigned = stats.GetBigCounter(StatNameAssignedAddresses)
+		total = stats.GetBigCounter(StatNameTotalAddresses)
 	}
 	if assigned != nil && total != nil {
 		utilization = Utilization(assigned.DivideSafeBy(total))
@@ -272,9 +272,9 @@ func (ap *AddressPool) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
 }
 
 // Update stats pulled for given prefix pool.
-func (pp *PrefixPool) UpdateStats(dbi dbops.DBI, stats SubnetStats) error {
-	assigned := stats.GetBigCounter(SubnetStatsNameAssignedPDs)
-	total := stats.GetBigCounter(SubnetStatsNameTotalPDs)
+func (pp *PrefixPool) UpdateStats(dbi dbops.DBI, stats Stats) error {
+	assigned := stats.GetBigCounter(StatNameAssignedPDs)
+	total := stats.GetBigCounter(StatNameTotalPDs)
 	var utilization Utilization
 	if assigned != nil && total != nil {
 		utilization = Utilization(assigned.DivideSafeBy(total))

@@ -173,7 +173,7 @@ type localSubnetKey struct {
 // Processes statistics from the `statistic-get-all` response for the given daemon.
 func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.StatisticGetAllResponseItem, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
-	err := statsPuller.storeSubnetStats(response.Arguments, subnetsMap, dbApp, family)
+	err := statsPuller.storeStats(response.Arguments, subnetsMap, dbApp, family)
 	if err != nil {
 		log.WithError(err).Error("Error handling subnet statistics")
 		lastErr = err
@@ -195,7 +195,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response keactrl.StatisticGetAl
 }
 
 // Processes statistics from the given command response for subnets belonging to the daemon.
-func (statsPuller *StatsPuller) storeSubnetStats(response []*keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeStats(response []*keactrl.StatisticGetAllResponseSample, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
 
 	statisticsPerSubnet := make(map[int64][]*keactrl.StatisticGetAllResponseSample)
@@ -207,7 +207,7 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []*keactrl.StatisticGe
 	}
 
 	for subnetID, statEntries := range statisticsPerSubnet {
-		stats := dbmodel.SubnetStats{}
+		stats := dbmodel.Stats{}
 		subnet := subnetsMap[localSubnetKey{subnetID, family}]
 		if subnet == nil {
 			lastErr = errors.Errorf(
@@ -246,7 +246,7 @@ func (statsPuller *StatsPuller) storeSubnetStats(response []*keactrl.StatisticGe
 // Defines a common interface for address and prefix pools to update their
 // statistics.
 type measurablePools interface {
-	UpdateStats(dbi dbops.DBI, stats dbmodel.SubnetStats) error
+	UpdateStats(dbi dbops.DBI, stats dbmodel.Stats) error
 	GetKeaParameters() *keaconfig.PoolParameters
 }
 
@@ -339,7 +339,7 @@ func (statsPuller *StatsPuller) storePoolStats(
 					continue
 				}
 
-				stats := dbmodel.SubnetStats{}
+				stats := dbmodel.Stats{}
 
 				for _, statEntry := range statEntries {
 					// Store the value as a best fit type to preserve compatibility

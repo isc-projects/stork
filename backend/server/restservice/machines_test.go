@@ -2581,7 +2581,7 @@ func TestGetDhcpOverview(t *testing.T) {
 				Stats: nil,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses": 0,
 				},
 			},
@@ -2718,8 +2718,8 @@ func TestGetDhcpOverviewWithNullStatistics(t *testing.T) {
 	params := dhcp.GetDhcpOverviewParams{}
 
 	// Act
-	err := dbmodel.SetStats(db, dbmodel.SubnetStats{
-		dbmodel.SubnetStatsNameTotalAddresses: nil,
+	err := dbmodel.SetStats(db, dbmodel.Stats{
+		dbmodel.StatNameTotalAddresses: nil,
 	})
 	rsp := rapi.GetDhcpOverview(ctx, params)
 

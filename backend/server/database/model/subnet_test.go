@@ -23,10 +23,10 @@ import (
 type utilizationStatsMock struct {
 	addressUtilization         float64
 	delegatedPrefixUtilization float64
-	statistics                 SubnetStats
+	statistics                 Stats
 }
 
-func newUtilizationStatsMock(address, pd float64, stats SubnetStats) utilizationStats {
+func newUtilizationStatsMock(address, pd float64, stats Stats) utilizationStats {
 	return &utilizationStatsMock{
 		addressUtilization:         address,
 		delegatedPrefixUtilization: pd,
@@ -42,7 +42,7 @@ func (m *utilizationStatsMock) GetDelegatedPrefixUtilization() float64 {
 	return m.delegatedPrefixUtilization
 }
 
-func (m *utilizationStatsMock) GetStatistics() SubnetStats {
+func (m *utilizationStatsMock) GetStatistics() Stats {
 	return m.statistics
 }
 
@@ -856,7 +856,7 @@ func TestUpdateStats(t *testing.T) {
 	lsn := subnets[0]
 	lsn.DaemonID = apps[0].Daemons[0].ID
 	lsn.SubnetID = subnet.ID
-	stats := SubnetStats{}
+	stats := Stats{}
 	stats.SetBigCounter("hakuna-matata", storkutil.NewBigCounterFromInt64(123))
 	err = lsn.UpdateStats(db, stats)
 	require.NoError(t, err)
@@ -1094,7 +1094,7 @@ func TestUpdateUtilization(t *testing.T) {
 	require.Zero(t, returnedSubnet.StatsCollectedAt)
 
 	// update utilization in subnet
-	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, SubnetStats{
+	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, Stats{
 		"total-nas":    uint64(100),
 		"assigned-nas": uint64(1),
 		"total-pds":    uint64(100),
@@ -1247,7 +1247,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	// Arrange
 	localSubnet := &LocalSubnet{
-		Stats: SubnetStats{
+		Stats: Stats{
 			"maxInt64":             int64(math.MaxInt64),
 			"minInt64":             int64(math.MinInt64),
 			"maxUint64":            uint64(math.MaxUint64),
@@ -2008,9 +2008,9 @@ func TestGetMaxLocalSubnetIDEmptySet(t *testing.T) {
 }
 
 // Test that the subnet statistics can be accessed though the big counter.
-func TestSubnetStatsGetBigCounter(t *testing.T) {
+func TestStatsGetBigCounter(t *testing.T) {
 	// Arrange
-	stats := SubnetStats{
+	stats := Stats{
 		"uint64":         uint64(42),
 		"positive-int64": int64(42),
 		"negative-int64": int64(-42),
@@ -2089,10 +2089,10 @@ func TestSubnetStatsGetBigCounter(t *testing.T) {
 }
 
 // Test that the subnet statistics can be set using the big counter.
-func TestSubnetStatsSetBigCounter(t *testing.T) {
+func TestStatsSetBigCounter(t *testing.T) {
 	t.Run("uint64", func(t *testing.T) {
 		// Arrange
-		stats := SubnetStats{}
+		stats := Stats{}
 
 		// Act
 		stats.SetBigCounter("uint64", storkutil.NewBigCounter(42))
@@ -2104,7 +2104,7 @@ func TestSubnetStatsSetBigCounter(t *testing.T) {
 
 	t.Run("int64", func(t *testing.T) {
 		// Arrange
-		stats := SubnetStats{}
+		stats := Stats{}
 
 		// Act
 		stats.SetBigCounter("positive-int64", storkutil.NewBigCounter(42))
@@ -2116,7 +2116,7 @@ func TestSubnetStatsSetBigCounter(t *testing.T) {
 
 	t.Run("small-bigint", func(t *testing.T) {
 		// Arrange
-		stats := SubnetStats{}
+		stats := Stats{}
 
 		// Act
 		stats.SetBigCounter("bigint", storkutil.NewBigCounterFromBigInt(
@@ -2130,7 +2130,7 @@ func TestSubnetStatsSetBigCounter(t *testing.T) {
 
 	t.Run("large-bigint", func(t *testing.T) {
 		// Arrange
-		stats := SubnetStats{}
+		stats := Stats{}
 
 		// Act
 		stats.SetBigCounter("bigint", storkutil.NewBigCounterFromBigInt(

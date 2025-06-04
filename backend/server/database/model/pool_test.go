@@ -319,7 +319,7 @@ func TestAddressPoolUpdateStats(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	err = pool.UpdateStats(db, SubnetStats{
+	err = pool.UpdateStats(db, Stats{
 		"foo":                uint64(42),
 		"total-addresses":    uint64(100),
 		"assigned-addresses": uint64(33),
@@ -380,13 +380,13 @@ func TestPrefixPoolUpdateStats(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	errPD := pdPool.UpdateStats(db, SubnetStats{
+	errPD := pdPool.UpdateStats(db, Stats{
 		"foo":          uint64(42),
 		"total-pds":    uint64(100),
 		"assigned-pds": uint64(33),
 	})
 
-	errAddress := addressPool.UpdateStats(db, SubnetStats{
+	errAddress := addressPool.UpdateStats(db, Stats{
 		"foo":          uint64(42),
 		"total-nas":    uint64(200),
 		"assigned-nas": uint64(50),

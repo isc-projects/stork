@@ -31,7 +31,7 @@ type SharedNetwork struct {
 
 	AddrUtilization  Utilization `pg:",use_zero"`
 	PdUtilization    Utilization `pg:",use_zero"`
-	Stats            SubnetStats
+	Stats            Stats
 	StatsCollectedAt time.Time
 }
 

@@ -73,7 +73,7 @@ type prometheusCollector struct {
 	// methods. The iteration order must be the same. Otherwise, the samples
 	// will be assigned to the wrong metrics. Therefore, the OrderedMap is used
 	// here.
-	sharedNetworkStatisticDescriptors *storkutil.OrderedMap[dbmodel.SubnetStatsName, *prometheus.Desc]
+	sharedNetworkStatisticDescriptors *storkutil.OrderedMap[dbmodel.StatName, *prometheus.Desc]
 }
 
 var _ prometheus.Collector = (*prometheusCollector)(nil)
@@ -126,11 +126,11 @@ func NewCollector(source MetricsSource) (Collector, error) {
 			[]string{"name"}, nil,
 		),
 		sharedNetworkStatisticDescriptors: storkutil.NewOrderedMapFromEntries(
-			[]dbmodel.SubnetStatsName{
-				dbmodel.SubnetStatsNameTotalNAs,
-				dbmodel.SubnetStatsNameAssignedNAs,
-				dbmodel.SubnetStatsNameTotalPDs,
-				dbmodel.SubnetStatsNameAssignedPDs,
+			[]dbmodel.StatName{
+				dbmodel.StatNameTotalNAs,
+				dbmodel.StatNameAssignedNAs,
+				dbmodel.StatNameTotalPDs,
+				dbmodel.StatNameAssignedPDs,
 			},
 			[]*prometheus.Desc{
 				prometheus.NewDesc(
@@ -234,9 +234,9 @@ func (c *prometheusCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		// Statistics.
-		v6OnlyStats := map[dbmodel.SubnetStatsName]struct{}{
-			dbmodel.SubnetStatsNameAssignedPDs: {},
-			dbmodel.SubnetStatsNameTotalPDs:    {},
+		v6OnlyStats := map[dbmodel.StatName]struct{}{
+			dbmodel.StatNameAssignedPDs: {},
+			dbmodel.StatNameTotalPDs:    {},
 		}
 
 		for _, entry := range c.sharedNetworkStatisticDescriptors.GetEntries() {

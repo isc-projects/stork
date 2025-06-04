@@ -37,7 +37,7 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
@@ -75,7 +75,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(40),
 					"declined-nas": uint64(30),
@@ -116,7 +116,7 @@ func TestCounterAddSubnetUsingNonUint64OrInt64(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    int64(100),
 					"assigned-nas": int32(40),
 					"declined-nas": int16(30),
@@ -157,28 +157,28 @@ func TestCounterAddMultipleIPv4LocalSubnet(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(200),
 					"assigned-addresses": uint64(20),
 					"declined-addresses": uint64(40),
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(5),
 					"assigned-addresses": uint64(3),
 					"declined-addresses": uint64(1),
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(50),
 					"assigned-addresses": uint64(1),
 					"declined-addresses": uint64(2),
@@ -214,7 +214,7 @@ func TestCounterAddMultipleIPv6LocalSubnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
@@ -223,7 +223,7 @@ func TestCounterAddMultipleIPv6LocalSubnet(t *testing.T) {
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),
@@ -232,7 +232,7 @@ func TestCounterAddMultipleIPv6LocalSubnet(t *testing.T) {
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(5),
 					"assigned-nas": uint64(3),
 					"declined-nas": uint64(1),
@@ -241,7 +241,7 @@ func TestCounterAddMultipleIPv6LocalSubnet(t *testing.T) {
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(50),
 					"assigned-nas": uint64(1),
 					"declined-nas": uint64(2),
@@ -280,7 +280,7 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.Stats{
 						"total-nas":    uint64(100),
 						"assigned-nas": uint64(10),
 						"declined-nas": uint64(20),
@@ -295,7 +295,7 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.Stats{
 						"total-nas":    uint64(200),
 						"assigned-nas": uint64(40),
 						"declined-nas": uint64(50),
@@ -310,7 +310,7 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "192.0.2.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.Stats{
 						"total-addresses":    uint64(300),
 						"assigned-addresses": uint64(90),
 						"declined-addresses": uint64(100),
@@ -342,7 +342,7 @@ func TestCounterAddMultipleSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.Stats{
 						"total-nas":    uint64(100),
 						"assigned-nas": uint64(10),
 						"declined-nas": uint64(20),
@@ -357,7 +357,7 @@ func TestCounterAddMultipleSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.Stats{
 						"total-nas":    uint64(200),
 						"assigned-nas": uint64(40),
 						"declined-nas": uint64(50),
@@ -495,7 +495,7 @@ func TestCounterRealKeaResponse(t *testing.T) {
 		}
 
 		for localSubnetID, statSamples := range statSamplesBySubnet {
-			stats := dbmodel.SubnetStats{}
+			stats := dbmodel.Stats{}
 			for _, statSample := range statSamples {
 				stats.SetBigCounter(
 					statSample.Name,
@@ -551,7 +551,7 @@ func TestCounterAddIgnoreNegativeNumbers(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    big.NewInt(-1),
 					"assigned-nas": big.NewInt(math.MinInt64),
 					"declined-nas": big.NewInt(0).Mul(big.NewInt(0).SetUint64(math.MaxUint64), big.NewInt(-1)),
@@ -587,7 +587,7 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 			Prefix: "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.Stats{
 						"total-nas":    uint64(90),
 						"assigned-nas": uint64(50),
 						"declined-nas": uint64(40),
@@ -603,7 +603,7 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 			Prefix: "10.0.0.0/16",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: dbmodel.SubnetStats{
+					Stats: dbmodel.Stats{
 						"total-addresses":    uint64(60),
 						"assigned-addresses": uint64(20),
 						"declined-addresses": uint64(30),
@@ -681,7 +681,7 @@ func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
@@ -689,7 +689,7 @@ func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 				DaemonID: 1,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(200),
 					"assigned-addresses": uint64(20),
 					"declined-addresses": uint64(40),
@@ -697,7 +697,7 @@ func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 				DaemonID: 1,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(5),
 					"assigned-addresses": uint64(3),
 					"declined-addresses": uint64(1),
@@ -705,7 +705,7 @@ func TestCounterSkipExcludedDaemonsIPv4(t *testing.T) {
 				DaemonID: 2,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(50),
 					"assigned-addresses": uint64(1),
 					"declined-addresses": uint64(2),
@@ -743,7 +743,7 @@ func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
@@ -753,7 +753,7 @@ func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 				DaemonID: 1,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),
@@ -763,7 +763,7 @@ func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 				DaemonID: 2,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(5),
 					"assigned-nas": uint64(3),
 					"declined-nas": uint64(1),
@@ -773,7 +773,7 @@ func TestCounterSkipExcludedDaemonsIPv6(t *testing.T) {
 				DaemonID: 3,
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(50),
 					"assigned-nas": uint64(1),
 					"declined-nas": uint64(2),
@@ -813,14 +813,14 @@ func TestCounterGetStatisticsForIPv4Subnet(t *testing.T) {
 		Prefix:          "10.0.0.0/16",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(100),
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-addresses":    uint64(200),
 					"assigned-addresses": uint64(20),
 					"declined-addresses": uint64(40),
@@ -849,7 +849,7 @@ func TestCounterGetStatisticsForIPv6Subnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
@@ -858,7 +858,7 @@ func TestCounterGetStatisticsForIPv6Subnet(t *testing.T) {
 				},
 			},
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),
@@ -891,7 +891,7 @@ func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(100),
 					"assigned-nas": uint64(10),
 					"declined-nas": uint64(20),
@@ -907,7 +907,7 @@ func TestCounterGetStatisticsForSharedNetwork(t *testing.T) {
 		Prefix:          "30::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: dbmodel.SubnetStats{
+				Stats: dbmodel.Stats{
 					"total-nas":    uint64(200),
 					"assigned-nas": uint64(20),
 					"declined-nas": uint64(40),

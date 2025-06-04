@@ -169,7 +169,7 @@ func TestGetSubnets(t *testing.T) {
 	subnets, err := dbmodel.GetSubnetsByPrefix(db, "192.118.0.0/24")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
-	subnets[0].Stats = dbmodel.SubnetStats{
+	subnets[0].Stats = dbmodel.Stats{
 		"bar": 24,
 	}
 	subnets[0].StatsCollectedAt = time.Time{}.Add(2 * time.Hour)
@@ -178,7 +178,7 @@ func TestGetSubnets(t *testing.T) {
 	subnets, err = dbmodel.GetSubnetsByPrefix(db, "3001:db8:1::/64")
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
-	subnets[0].Stats = dbmodel.SubnetStats{
+	subnets[0].Stats = dbmodel.Stats{
 		"baz": 4224,
 	}
 	subnets[0].StatsCollectedAt = time.Time{}.Add(3 * time.Hour)
@@ -258,7 +258,7 @@ func TestGetSubnets(t *testing.T) {
 	require.True(t,
 		(okRsp.Payload.Items[0].LocalSubnets[0].ID == 1 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 3) ||
 			(okRsp.Payload.Items[0].LocalSubnets[0].ID == 3 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 1))
-	require.EqualValues(t, 24, okRsp.Payload.Items[1].Stats.(dbmodel.SubnetStats)["bar"])
+	require.EqualValues(t, 24, okRsp.Payload.Items[1].Stats.(dbmodel.Stats)["bar"])
 	require.NotNil(t, okRsp.Payload.Items[1].StatsCollectedAt)
 	require.EqualValues(t, time.Time{}.Add(2*time.Hour), *okRsp.Payload.Items[1].StatsCollectedAt)
 
@@ -279,7 +279,7 @@ func TestGetSubnets(t *testing.T) {
 			okRsp.Payload.Items[1].LocalSubnets[0].ID,
 			okRsp.Payload.Items[2].LocalSubnets[0].ID,
 		})
-	require.EqualValues(t, 4224, okRsp.Payload.Items[2].Stats.(dbmodel.SubnetStats)["baz"])
+	require.EqualValues(t, 4224, okRsp.Payload.Items[2].Stats.(dbmodel.Stats)["baz"])
 	require.NotNil(t, okRsp.Payload.Items[2].StatsCollectedAt)
 	require.EqualValues(t, time.Time{}.Add(3*time.Hour), *okRsp.Payload.Items[2].StatsCollectedAt)
 	require.EqualValues(t, 24, okRsp.Payload.Items[2].AddrUtilization)
