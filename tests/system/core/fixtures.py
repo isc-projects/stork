@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os.path
 from pathlib import Path
 import shutil
@@ -7,7 +8,6 @@ import pytest
 from core.compose_factory import create_docker_compose
 from core import wrappers
 from core.utils import setup_logger
-from core import lease_generators
 from core import performance_chart
 from core.version import parse_version_info
 
@@ -376,11 +376,23 @@ def _prepare_kea_wrapper(
 
     # Re-generate the lease files
     config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
-    with open(os.path.join(config_dir, "kea-leases4.csv"), "wt", encoding="utf-8") as f:
-        lease_generators.gen_dhcp4_lease_file(f)
+    lease_expire = str(int((datetime.now() + timedelta(minutes=10)).timestamp()))
 
-    with open(os.path.join(config_dir, "kea-leases6.csv"), "wt", encoding="utf-8") as f:
-        lease_generators.gen_dhcp6_lease_file(f)
+    lease_path = os.path.join(config_dir, "kea-leases4.csv")
+    with open(lease_path + ".template", "rt", encoding="utf-8") as f:
+        lease_template = f.read()
+    lease_file_content = lease_template.format(expire=lease_expire)
+    with open(lease_path, "w+t", encoding="utf-8") as f:
+        f.write(lease_file_content)
+
+    lease_path = os.path.join(config_dir, "kea-leases6.csv")
+    with open(
+        os.path.join(config_dir, "kea-leases6.csv.template"), "rt", encoding="utf-8"
+    ) as f:
+        lease_template = f.read()
+    lease_file_content = lease_template.format(expire=lease_expire)
+    with open(lease_path, "w+t", encoding="utf-8") as f:
+        f.write(lease_file_content)
 
     compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)
