@@ -25,6 +25,12 @@ func (n *BigCounter) canAddToBase(val uint64) bool {
 	return n.base <= math.MaxUint64-val
 }
 
+// Indicates that the uint64 can be subtracted from the base value without
+// integer underflow.
+func (n *BigCounter) canSubtractFromBase(val uint64) bool {
+	return n.base >= val
+}
+
 // Indicates that another counting value can be added to the internal state.
 func (n *BigCounter) canAdd(other *BigCounter) bool {
 	if n.isExtended() {
@@ -34,6 +40,18 @@ func (n *BigCounter) canAdd(other *BigCounter) bool {
 		return false
 	}
 	return n.canAddToBase(other.base)
+}
+
+// Indicates that another counting value can be subtracted from the internal
+// state.
+func (n *BigCounter) canSubtract(other *BigCounter) bool {
+	if n.isExtended() {
+		return true
+	}
+	if other.isExtended() {
+		return false
+	}
+	return n.canSubtractFromBase(other.base)
 }
 
 // Indicates that this counter uses big-int based counter.
@@ -48,6 +66,19 @@ func (n *BigCounter) isExtended() bool {
 func (n *BigCounter) initExtended() {
 	n.extended = big.NewInt(0).SetUint64(n.base)
 	n.base = math.MaxUint64
+}
+
+// Makes a copy of the current big counter.
+func (n *BigCounter) Clone() *BigCounter {
+	var extended *big.Int
+	if n.extended != nil {
+		extended = new(big.Int).Set(n.extended)
+	}
+
+	return &BigCounter{
+		base:     n.base,
+		extended: extended,
+	}
 }
 
 // Adds the other big counter value to the internal counting value.
@@ -66,7 +97,19 @@ func (n *BigCounter) Add(other *BigCounter) *BigCounter {
 	return n
 }
 
-// Adds uint64 number to the internal counting value.
+// Subtracts the other big counter value from the internal counting value.
+func (n *BigCounter) Subtract(other *BigCounter) *BigCounter {
+	if !n.canSubtract(other) {
+		n.initExtended()
+	}
+	if n.isExtended() {
+		n.extended.Sub(n.extended, other.ToBigInt())
+	} else {
+		n.base -= other.base
+	}
+	return n
+}
+
 // It modifies the internal state.
 func (n *BigCounter) AddUint64(val uint64) *BigCounter {
 	if !n.isExtended() && !n.canAddToBase(val) {
@@ -84,20 +127,15 @@ func (n *BigCounter) AddUint64(val uint64) *BigCounter {
 
 // Adds big.Int number to the internal counting value.
 // It modifies the internal state. Only positive integer are allowed.
-// Returns false if the value to add is negative and keeps the counter as is.
-func (n *BigCounter) AddBigInt(val *big.Int) (*BigCounter, bool) {
+func (n *BigCounter) AddBigInt(val *big.Int) *BigCounter {
 	if val.IsUint64() {
-		return n.AddUint64(val.Uint64()), true
-	}
-	// Ignore negative numbers
-	if val.Cmp(big.NewInt(0)) == -1 {
-		return n, false
+		return n.AddUint64(val.Uint64())
 	}
 	if !n.isExtended() {
 		n.initExtended()
 	}
 	n.extended.Add(n.extended, val)
-	return n, true
+	return n
 }
 
 // Divides this counter by the other.

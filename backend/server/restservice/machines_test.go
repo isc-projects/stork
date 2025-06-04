@@ -3,7 +3,6 @@ package restservice
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -2719,7 +2718,9 @@ func TestGetDhcpOverviewWithNullStatistics(t *testing.T) {
 	params := dhcp.GetDhcpOverviewParams{}
 
 	// Act
-	err := dbmodel.SetStats(db, map[string]*big.Int{"total-addresses": nil})
+	err := dbmodel.SetStats(db, dbmodel.SubnetStats{
+		dbmodel.SubnetStatsNameTotalAddresses: nil,
+	})
 	rsp := rapi.GetDhcpOverview(ctx, params)
 
 	// Assert

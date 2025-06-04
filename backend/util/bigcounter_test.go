@@ -119,18 +119,15 @@ func TestBigCounterAddBigIntShorthand(t *testing.T) {
 	)
 	// Act
 	counter := NewBigCounter(1)
-	_, ok1 := counter.AddBigInt(big.NewInt(10))
-	_, ok2 := counter.AddBigInt(big.NewInt(100))
-	_, ok3 := counter.AddBigInt(
+	_ = counter.AddBigInt(big.NewInt(10))
+	_ = counter.AddBigInt(big.NewInt(100))
+	_ = counter.AddBigInt(
 		big.NewInt(0).Add(
 			big.NewInt(0).SetUint64(math.MaxUint64),
 			big.NewInt(0).SetUint64(math.MaxUint64),
 		),
 	)
 	// Assert
-	require.True(t, ok1)
-	require.True(t, ok2)
-	require.True(t, ok3)
 	require.EqualValues(t, expected, counter.ToBigInt())
 }
 
@@ -138,19 +135,18 @@ func TestBigCounterAddBigIntShorthand(t *testing.T) {
 func TestBigCounterAddBigIntShorthandIgnoreNegatives(t *testing.T) {
 	// Arrange & Act
 	counter := NewBigCounter(42)
-	_, ok1 := counter.AddBigInt(big.NewInt(-1))
-	_, ok2 := counter.AddBigInt(big.NewInt(-2))
-	_, ok3 := counter.AddBigInt(big.NewInt(math.MinInt64))
-	_, ok4 := counter.AddBigInt(big.NewInt(0).Add(
+	_ = counter.AddBigInt(big.NewInt(-1))
+	_ = counter.AddBigInt(big.NewInt(-2))
+	_ = counter.AddBigInt(big.NewInt(math.MinInt64))
+	_ = counter.AddBigInt(big.NewInt(0).Add(
 		big.NewInt(math.MinInt64),
 		big.NewInt(math.MinInt64),
 	))
 	// Assert
-	require.False(t, ok1)
-	require.False(t, ok2)
-	require.False(t, ok3)
-	require.False(t, ok4)
-	require.EqualValues(t, big.NewInt(42), counter.ToBigInt())
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(42-1-2),
+		big.NewInt(0).Mul(big.NewInt(math.MinInt64), big.NewInt(3)),
+	), counter.ToBigInt())
 }
 
 // Test divide uint64 big counters.

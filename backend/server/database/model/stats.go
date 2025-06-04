@@ -57,7 +57,7 @@ func InitializeStats(db *pg.DB) error {
 }
 
 // Get all global statistics values.
-func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
+func GetAllStats(db *pg.DB) (SubnetStats, error) {
 	statsList := []*Statistic{}
 	q := db.Model(&statsList)
 	err := q.Select()
@@ -65,7 +65,7 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 		return nil, errors.Wrapf(err, "problem getting all statistics")
 	}
 
-	statsMap := make(map[string]*big.Int)
+	statsMap := SubnetStats{}
 	for _, s := range statsList {
 		var value *big.Int
 		if s.Value != nil {
@@ -78,10 +78,16 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 }
 
 // Set a list of global statistics.
-func SetStats(db *pg.DB, statsMap map[string]*big.Int) error {
+func SetStats(db *pg.DB, statsMap SubnetStats) error {
 	statsList := []*Statistic{}
-	for s, v := range statsMap {
-		stat := &Statistic{Name: s, Value: newIntegerDecimal(v)}
+	for s := range statsMap {
+		counter := statsMap.GetBigCounter(s)
+		var value *big.Int
+		if counter != nil {
+			value = counter.ToBigInt()
+		}
+
+		stat := &Statistic{Name: s, Value: newIntegerDecimal(value)}
 		statsList = append(statsList, stat)
 	}
 

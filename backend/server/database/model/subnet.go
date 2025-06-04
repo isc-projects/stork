@@ -44,6 +44,22 @@ const (
 	SubnetStatsNameDeclinedAddresses SubnetStatsName = "declined-addresses"
 	// Cumulative number of assigned network addresses.
 	SubnetStatsNameCumulativeAssignedAddresses SubnetStatsName = "cumulative-assigned-addresses"
+	// Total number of out-of-pool addresses.
+	SubnetStatsNameTotalOutOfPoolAddresses SubnetStatsName = "total-out-of-pool-addresses"
+	// Number of assigned out-of-pool addresses.
+	SubnetStatsNameAssignedOutOfPoolAddresses SubnetStatsName = "assigned-out-of-pool-addresses"
+	// Number of declined out-of-pool addresses.
+	SubnetStatsNameDeclinedOutOfPoolAddresses SubnetStatsName = "declined-out-of-pool-addresses"
+	// Total number of out-of-pool network addresses.
+	SubnetStatsNameTotalOutOfPoolNAs SubnetStatsName = "total-out-of-pool-nas"
+	// Number of assigned out-of-pool network addresses.
+	SubnetStatsNameAssignedOutOfPoolNAs SubnetStatsName = "assigned-out-of-pool-nas"
+	// Number of declined out-of-pool network addresses.
+	SubnetStatsNameDeclinedOutOfPoolNAs SubnetStatsName = "declined-out-of-pool-nas"
+	// Total number of out-of-pool delegated prefixes.
+	SubnetStatsNameTotalOutOfPoolPDs SubnetStatsName = "total-out-of-pool-pds"
+	// Number of assigned out-of-pool delegated prefixes.
+	SubnetStatsNameAssignedOutOfPoolPDs SubnetStatsName = "assigned-out-of-pool-pds"
 )
 
 // Custom statistic type to redefine JSON marshalling.

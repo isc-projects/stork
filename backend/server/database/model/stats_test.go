@@ -54,7 +54,7 @@ func TestStatisticNilValueIsNotError(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	stats := map[string]*big.Int{
+	stats := SubnetStats{
 		"foo": nil,
 	}
 

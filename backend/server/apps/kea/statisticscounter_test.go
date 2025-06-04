@@ -627,8 +627,10 @@ func TestCounterAddExtraToTotalCounters(t *testing.T) {
 
 	// Act
 	counter := newStatisticsCounter()
-	counter.setOutOfPoolAddresses(outOfPoolAddresses)
-	counter.setOutOfPoolPrefixes(outOfPoolPrefixes)
+	counter.setOutOfPoolShifts(outOfPoolShifts{
+		outOfPoolAddresses: outOfPoolAddresses,
+		outOfPoolPrefixes:  outOfPoolPrefixes,
+	})
 
 	utilization1 := counter.add(&subnets[0])
 	utilization2 := counter.add(&subnets[1])

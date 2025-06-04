@@ -2,7 +2,6 @@ package kea
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
@@ -88,17 +87,15 @@ func (statsPuller *StatsPuller) pullStats() error {
 	// out-of-pool reservations, yielding possibly incorrect utilization.
 	// The utilization can be corrected by including the out-of-pool
 	// reservation counts from the Stork database.
-	outOfPoolCounters, err := dbmodel.CountOutOfPoolAddressReservations(statsPuller.DB)
+	outOfPoolAddressCounters, err := dbmodel.CountOutOfPoolAddressReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
-	counter.setOutOfPoolAddresses(outOfPoolCounters)
 
-	outOfPoolCounters, err = dbmodel.CountOutOfPoolPrefixReservations(statsPuller.DB)
+	outOfPoolPrefixCounters, err := dbmodel.CountOutOfPoolPrefixReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
-	counter.setOutOfPoolPrefixes(outOfPoolCounters)
 
 	// Assume that all global reservations are out-of-pool for all subnets.
 	outOfPoolGlobalIPv4Addresses, outOfPoolGlobalIPv6Addresses, outOfPoolGlobalDelegatedPrefixes, err := dbmodel.CountGlobalReservations(statsPuller.DB)
@@ -106,9 +103,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 		return err
 	}
 
-	counter.global.totalIPv4Addresses.AddUint64(outOfPoolGlobalIPv4Addresses)
-	counter.global.totalIPv6Addresses.AddUint64(outOfPoolGlobalIPv6Addresses)
-	counter.global.totalDelegatedPrefixes.AddUint64(outOfPoolGlobalDelegatedPrefixes)
+	counter.setOutOfPoolShifts(outOfPoolShifts{
+		outOfPoolAddresses:       outOfPoolAddressCounters,
+		outOfPoolPrefixes:        outOfPoolPrefixCounters,
+		outOfPoolGlobalAddresses: outOfPoolGlobalIPv4Addresses,
+		outOfPoolGlobalNAs:       outOfPoolGlobalIPv6Addresses,
+		outOfPoolGlobalPrefixes:  outOfPoolGlobalDelegatedPrefixes,
+	})
 
 	// The HA servers share the same lease database and return the same
 	// statistics. The statistics from the passive daemons are excluded from
@@ -152,16 +153,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 	}
 
 	// global stats to collect
-	statsMap := map[dbmodel.SubnetStatsName]*big.Int{
-		dbmodel.SubnetStatsNameTotalAddresses:    counter.global.totalIPv4Addresses.ToBigInt(),
-		dbmodel.SubnetStatsNameAssignedAddresses: counter.global.totalAssignedIPv4Addresses.ToBigInt(),
-		dbmodel.SubnetStatsNameDeclinedAddresses: counter.global.totalDeclinedIPv4Addresses.ToBigInt(),
-		dbmodel.SubnetStatsNameTotalNAs:          counter.global.totalIPv6Addresses.ToBigInt(),
-		dbmodel.SubnetStatsNameAssignedNAs:       counter.global.totalAssignedIPv6Addresses.ToBigInt(),
-		dbmodel.SubnetStatsNameDeclinedNAs:       counter.global.totalDeclinedIPv6Addresses.ToBigInt(),
-		dbmodel.SubnetStatsNameAssignedPDs:       counter.global.totalAssignedDelegatedPrefixes.ToBigInt(),
-		dbmodel.SubnetStatsNameTotalPDs:          counter.global.totalDelegatedPrefixes.ToBigInt(),
-	}
+	statsMap := counter.GetStatistics()
 
 	// update global statistics in db
 	err = dbmodel.SetStats(statsPuller.DB, statsMap)
