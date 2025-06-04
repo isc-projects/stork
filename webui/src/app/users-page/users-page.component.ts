@@ -400,7 +400,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     severity: 'error',
                     summary: 'Loading user accounts failed',
                     detail: 'Failed to load user accounts from the database: ' + msg,
-                    sticky: true,
+                    life: 10000,
                 })
             })
     }
@@ -550,7 +550,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     severity: 'error',
                     summary: 'Failed to create new user account',
                     detail: 'Failed to create new user account: ' + msg,
-                    sticky: true,
+                    life: 10000,
                 })
             })
     }
@@ -588,7 +588,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     severity: 'error',
                     summary: 'Failed to update user account',
                     detail: 'Failed to update user account: ' + msg,
-                    sticky: true,
+                    life: 10000,
                 })
             })
     }
@@ -629,7 +629,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
                     severity: 'error',
                     summary: 'Failed to delete user account',
                     detail: 'Failed to delete user account: ' + msg,
-                    sticky: true,
+                    life: 10000,
                 })
             })
     }

@@ -98,7 +98,6 @@ export class PasswordChangePageComponent implements OnInit {
                 severity: 'warn',
                 summary: 'Password not updated',
                 detail: 'New password must be different from current password.',
-                sticky: false,
             })
             return
         }
@@ -126,7 +125,7 @@ export class PasswordChangePageComponent implements OnInit {
                     severity: 'error',
                     summary: 'Failed to update user password',
                     detail: msg,
-                    sticky: true,
+                    life: 10000,
                 })
             }
         )
