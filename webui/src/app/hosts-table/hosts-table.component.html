@@ -165,14 +165,14 @@
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-float-label">
                             <p-inputNumber
                                 inputId="app-id"
                                 mode="decimal"
                                 [useGrouping]="false"
                                 min="1"
-                                (onInput)="filter($event.value === 0 ? 1 : $event.value)"
+                                (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
                                 [ngModel]="value"
                                 [disabled]="hasPrefilter()"
                             ></p-inputNumber>
@@ -181,14 +181,14 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-float-label">
                             <p-inputNumber
                                 inputId="subnet-id"
                                 mode="decimal"
                                 [useGrouping]="false"
                                 min="1"
-                                (onInput)="filter($event.value === 0 ? 1 : $event.value)"
+                                (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
                                 [ngModel]="value"
                             ></p-inputNumber>
                             <label for="subnet-id">Subnet ID</label>
@@ -196,14 +196,14 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="keaSubnetId" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-float-label">
                             <p-inputNumber
                                 inputId="kea-subnet-id"
                                 mode="decimal"
                                 [useGrouping]="false"
                                 min="1"
-                                (onInput)="filter($event.value === 0 ? 1 : $event.value)"
+                                (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
                                 [ngModel]="value"
                             ></p-inputNumber>
                             <label for="kea-subnet-id">Kea Subnet ID</label>
@@ -219,13 +219,13 @@
                     <p-columnFilter type="boolean" field="conflict" matchMode="equals"></p-columnFilter>
                 </div>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input
                                 pInputText
                                 type="text"
-                                (input)="filter($event.target.value)"
+                                (input)="filterTable($event.target.value, filterMetadata)"
                                 [ngModel]="value"
                                 placeholder="Search IP or identifier"
                             />

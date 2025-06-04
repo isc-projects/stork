@@ -91,14 +91,14 @@
                 ></button>
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-float-label">
                             <p-inputNumber
                                 inputId="app-id"
                                 mode="decimal"
                                 [useGrouping]="false"
                                 min="1"
-                                (onInput)="filter($event.value === 0 ? 1 : $event.value)"
+                                (onInput)="filterTable($event.value === 0 ? 1 : $event.value, filterMetadata)"
                                 [ngModel]="value"
                                 [disabled]="hasPrefilter()"
                             ></p-inputNumber>
@@ -107,7 +107,7 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-float-label">
                             <p-dropdown
                                 inputId="dhcp-version"
@@ -117,7 +117,7 @@
                                 ]"
                                 optionLabel="label"
                                 optionValue="value"
-                                (onChange)="filter($event.value)"
+                                (onChange)="filterTable($event.value, filterMetadata)"
                                 [ngModel]="value"
                                 styleClass="w-10rem"
                             ></p-dropdown>
@@ -126,13 +126,13 @@
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
-                    <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                    <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input
                                 pInputText
                                 type="text"
-                                (input)="filter($event.target.value)"
+                                (input)="filterTable($event.target.value, filterMetadata)"
                                 [ngModel]="value"
                                 placeholder="Search shared networks"
                             />
