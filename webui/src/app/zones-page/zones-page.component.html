@@ -249,8 +249,7 @@ for each occurrence of that zone.
             (rowsChange)="storeZonesTableRowsPerPage($event)"
         >
             <ng-template pTemplate="caption">
-                <p-panel #filtersPanel [toggleable]="true">
-                    <ng-template pTemplate="headericons"></ng-template>
+                <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
                     <ng-template pTemplate="header">
                         <div class="flex align-items-center gap-2">
                             <p-button

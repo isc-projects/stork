@@ -47,9 +47,17 @@
     (selectAllChange)="onSelectAllChange($event)"
 >
     <ng-template pTemplate="caption">
-        <p-panel [toggleable]="true">
+        <p-panel #filtersPanel [toggleable]="true" styleClass="p-panel-icons-hidden">
             <ng-template pTemplate="header">
                 <div class="flex align-items-center gap-2">
+                    <p-button
+                        type="button"
+                        [text]="true"
+                        [rounded]="true"
+                        [plain]="true"
+                        [icon]="!filtersPanel.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                        (click)="filtersPanel.toggle($event)"
+                    />
                     <i class="pi pi-filter"></i>
                     <span class="font-bold">Filters</span>
                     <p-tag
