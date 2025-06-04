@@ -100,7 +100,8 @@
                                 inputId="app-id"
                                 mode="decimal"
                                 [useGrouping]="false"
-                                (onInput)="filter($event.value)"
+                                min="1"
+                                (onInput)="filter($event.value === 0 ? 1 : $event.value)"
                                 [ngModel]="value"
                                 [disabled]="hasPrefilter()"
                             ></p-inputNumber>
@@ -115,7 +116,8 @@
                                 inputId="subnet-id"
                                 mode="decimal"
                                 [useGrouping]="false"
-                                (onInput)="filter($event.value)"
+                                min="1"
+                                (onInput)="filter($event.value === 0 ? 1 : $event.value)"
                                 [ngModel]="value"
                             ></p-inputNumber>
                             <label for="subnet-id">Subnet ID</label>

@@ -130,7 +130,7 @@ export class AppComponent implements OnInit, OnDestroy {
                 items: [
                     {
                         label: 'Dashboard',
-                        id: 'dashboard',
+                        id: 'dns-dashboard',
                         icon: 'fa fa-tachometer-alt',
                         routerLink: '/dashboard',
                     },
