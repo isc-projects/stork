@@ -1,54 +1,81 @@
 <p-confirmDialog [baseZIndex]="10000" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
 <div *ngIf="sharedNetwork" class="mt-4 ml-2">
-    <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
-        <div class="fa fa-project-diagram mr-2"></div>
-        <div id="tab-title-span">Shared Network {{ sharedNetwork.name }}</div>
-        <div>
-            <app-help-tip subject="Shared Network View" width="40vw">
-                <p>
-                    Multiple DHCP servers can share a shared network when they run in High Availability (HA) mode or
-                    when they are connected to a shared lease database. Servers in HA mode or with a shared lease
-                    database typically have the same shared network configuration (i.e. the same subnets, DHCP options,
-                    and other DHCP-specific parameters); however, there are valid cases when the shared network
-                    configurations differ on individual servers. For example, interfaces used for subnet selection may
-                    have different names.
-                </p>
-                <p>The detailed address utilization statistics use the following naming conventions:</p>
-                <ul>
-                    <li><span class="monospace">total</span> - the number of addresses in a shared network.</li>
-                    <li>
-                        <span class="monospace">assigned</span> - the number of allocated leases, including declined
-                        leases.
-                    </li>
-                    <li>
-                        <span class="monospace">used</span> - the number of allocated leases, excluding declined leases.
-                    </li>
-                    <li><span class="monospace">declined</span> - the number of declined leases.</li>
-                    <li>
-                        <span class="monospace">uncertain</span> - optional statistics, only presented when the number
-                        of declined leases is greater than the number assigned (see below).
-                    </li>
-                </ul>
-                <p>
-                    There are rare cases when a Kea server can return inconsistent statistics, with the number of
-                    declined leases greater than the number of assigned leases. This may happen when some DHCP clients
-                    decline leases that are already released or expired; these leases are not counted as assigned, but
-                    the declined statistics are affected. Stork deals with such cases via the "uncertain leases" count,
-                    which holds the estimated number of leases for which it is unclear whether they are allocated,
-                    declined, or free. This statistic is only computed and presented when the number of declined leases
-                    is greater than the number assigned.
-                </p>
-                <p>
-                    The DHCP parameters can be specified at both the global and shared-network levels. The list below
-                    contains all parameters configured for all servers owning the shared network, and at both
-                    configuration levels, with an effective value displayed next to the parameter name. Click the button
-                    to the left of the parameter name to view the values specified at the different levels for each
-                    server. The shared network-level value takes precedence over the global value.
-                </p>
-            </app-help-tip>
+    <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
+        <div class="flex text-xl font-normal text-primary align-items-center">
+            <div class="fa fa-project-diagram mr-2"></div>
+            <div id="tab-title-span">Shared Network {{ sharedNetwork.name }}</div>
+            <div>
+                <app-help-tip subject="Shared Network View" width="40vw">
+                    <p>
+                        Multiple DHCP servers can share a shared network when they run in High Availability (HA) mode or
+                        when they are connected to a shared lease database. Servers in HA mode or with a shared lease
+                        database typically have the same shared network configuration (i.e. the same subnets, DHCP
+                        options, and other DHCP-specific parameters); however, there are valid cases when the shared
+                        network configurations differ on individual servers. For example, interfaces used for subnet
+                        selection may have different names.
+                    </p>
+                    <p>The detailed address utilization statistics use the following naming conventions:</p>
+                    <ul>
+                        <li><span class="monospace">total</span> - the number of addresses in a shared network.</li>
+                        <li>
+                            <span class="monospace">assigned</span> - the number of allocated leases, including declined
+                            leases.
+                        </li>
+                        <li>
+                            <span class="monospace">used</span> - the number of allocated leases, excluding declined
+                            leases.
+                        </li>
+                        <li><span class="monospace">declined</span> - the number of declined leases.</li>
+                        <li>
+                            <span class="monospace">uncertain</span> - optional statistics, only presented when the
+                            number of declined leases is greater than the number assigned (see below).
+                        </li>
+                    </ul>
+                    <p>
+                        There are rare cases when a Kea server can return inconsistent statistics, with the number of
+                        declined leases greater than the number of assigned leases. This may happen when some DHCP
+                        clients decline leases that are already released or expired; these leases are not counted as
+                        assigned, but the declined statistics are affected. Stork deals with such cases via the
+                        "uncertain leases" count, which holds the estimated number of leases for which it is unclear
+                        whether they are allocated, declined, or free. This statistic is only computed and presented
+                        when the number of declined leases is greater than the number assigned.
+                    </p>
+                    <p>
+                        The DHCP parameters can be specified at both the global and shared-network levels. The list
+                        below contains all parameters configured for all servers owning the shared network, and at both
+                        configuration levels, with an effective value displayed next to the parameter name. Click the
+                        button to the left of the parameter name to view the values specified at the different levels
+                        for each server. The shared network-level value takes precedence over the global value.
+                    </p>
+                </app-help-tip>
+            </div>
+        </div>
+        <div class="flex flex-column sm:flex-row gap-2 mt-2 mb-2 sm:mt-0 sm:mb-0">
+            <button
+                *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
+                type="button"
+                pButton
+                label="Edit"
+                icon="pi pi-pencil"
+                class="p-button-info"
+                (click)="onSharedNetworkEditBegin()"
+                appAccessEntity="shared-network"
+                appAccessType="update"
+            ></button>
+            <button
+                type="button"
+                pButton
+                [disabled]="sharedNetworkDeleting"
+                label="Delete"
+                icon="pi pi-times"
+                class="p-button-danger"
+                (click)="confirmDeleteSharedNetwork()"
+                appAccessEntity="shared-network"
+                appAccessType="delete"
+            ></button>
         </div>
     </div>
-    <div class="mb-4">
+    <div class="mt-4 mb-4">
         <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Shared Network">
             <p-table [value]="sharedNetwork.localSharedNetworks" styleClass="shared-network-servers-table">
                 <ng-template pTemplate="body" let-l>
@@ -133,28 +160,4 @@
             </p-fieldset>
         </div>
     </ng-container>
-    <div class="flex mt-6">
-        <button
-            *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
-            type="button"
-            pButton
-            label="Edit"
-            icon="pi pi-pencil"
-            class="p-button-info ml-2"
-            (click)="onSharedNetworkEditBegin()"
-            appAccessEntity="shared-network"
-            appAccessType="update"
-        ></button>
-        <button
-            type="button"
-            pButton
-            [disabled]="sharedNetworkDeleting"
-            label="Delete"
-            icon="pi pi-times"
-            class="p-button-danger ml-2"
-            (click)="confirmDeleteSharedNetwork()"
-            appAccessEntity="shared-network"
-            appAccessType="delete"
-        ></button>
-    </div>
 </div>

@@ -1,7 +1,7 @@
 import { moduleMetadata, Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { FormsModule } from '@angular/forms'
-import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter, RouterModule } from '@angular/router'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { ChipModule } from 'primeng/chip'
@@ -23,6 +23,8 @@ import { toastDecorator } from '../utils-stories'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { MessagesModule } from 'primeng/messages'
+import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 
 export default {
     title: 'App/HostTab',
@@ -34,7 +36,11 @@ export default {
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideHttpClientTesting(),
-                provideRouter([]),
+                provideNoopAnimations(),
+                provideRouter([
+                    { path: 'dhcp/hosts/:id', component: HostTabComponent },
+                    { path: 'iframe.html', component: HostTabComponent },
+                ]),
             ],
         }),
         moduleMetadata({
@@ -43,7 +49,7 @@ export default {
                 ConfirmDialogModule,
                 FieldsetModule,
                 FormsModule,
-                NoopAnimationsModule,
+                MessagesModule,
                 OverlayPanelModule,
                 ProgressSpinnerModule,
                 TableModule,
@@ -54,6 +60,7 @@ export default {
                 TagModule,
             ],
             declarations: [
+                HostDataSourceLabelComponent,
                 IdentifierComponent,
                 DhcpClientClassSetViewComponent,
                 DhcpOptionSetViewComponent,

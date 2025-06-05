@@ -1,25 +1,79 @@
 <p-confirmDialog [baseZIndex]="10000" rejectButtonStyleClass="p-button-text"></p-confirmDialog>
 <div *ngIf="host" class="mt-4 mx-2 max-w-50rem">
-    <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
-        <div class="fa fa-laptop mr-2"></div>
-        <div id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
-            [{{ host.id }}] Host in
-            <app-entity-link
-                entity="subnet"
-                [attrs]="{ id: host.subnetId, subnet: host.subnetPrefix }"
-            ></app-entity-link>
+    <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
+        <div class="flex text-xl font-normal text-primary align-items-center">
+            <div class="fa fa-laptop mr-2"></div>
+            <div id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
+                [{{ host.id }}] Host in
+                <app-entity-link
+                    entity="subnet"
+                    [attrs]="{ id: host.subnetId, subnet: host.subnetPrefix }"
+                ></app-entity-link>
+            </div>
+            <div id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0">[{{ host.id }}] Global host</div>
+            <div>
+                <app-help-tip subject="Host Reservation View">
+                    Multiple DHCP servers can share a host reservation. Host identifiers, IP addresses, and delegated
+                    prefixes for a host must match in each DHCP server's configuration; if they are different, they are
+                    treated as different hosts. Otherwise, they are combined, and the DHCP servers sharing the host are
+                    displayed in one of the panels on this page. Client classes and DHCP options can differ in the
+                    configurations of the DHCP servers owning the host. If this is the case, the client classes and/or
+                    DHCP options are displayed individually for each server.
+                </app-help-tip>
+            </div>
         </div>
-        <div id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0">[{{ host.id }}] Global host</div>
         <div>
-            <app-help-tip subject="Host Reservation View">
-                Multiple DHCP servers can share a host reservation. Host identifiers, IP addresses, and delegated
-                prefixes for a host must match in each DHCP server's configuration; if they are different, they are
-                treated as different hosts. Otherwise, they are combined, and the DHCP servers sharing the host are
-                displayed in one of the panels on this page. Client classes and DHCP options can differ in the
-                configurations of the DHCP servers owning the host. If this is the case, the client classes and/or DHCP
-                options are displayed individually for each server.
-            </app-help-tip>
+            <div class="flex flex-column sm:flex-row gap-2 mt-2 mb-2 sm:mt-0 sm:mb-0">
+                <button
+                    type="button"
+                    pButton
+                    [disabled]="leasesSearchInProgress"
+                    label="Leases"
+                    id="refresh-app-button"
+                    icon="pi pi-refresh"
+                    (click)="refreshLeases()"
+                    appAccessEntity="leases"
+                    (appHasAccess)="canGetLeases = $event"
+                ></button>
+                <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
+                    <button
+                        type="button"
+                        pButton
+                        [disabled]="hostDeleted"
+                        label="Edit"
+                        icon="pi pi-pencil"
+                        class="p-button-info"
+                        (click)="onHostEditBegin()"
+                        appAccessEntity="host-reservation"
+                        appAccessType="update"
+                    ></button>
+                    <button
+                        type="button"
+                        pButton
+                        [disabled]="hostDeleted"
+                        label="Delete"
+                        icon="pi pi-times"
+                        class="p-button-danger"
+                        (click)="confirmDeleteHost()"
+                        appAccessEntity="host-reservation"
+                        appAccessType="delete"
+                    ></button>
+                </ng-container>
+            </div>
         </div>
+    </div>
+    <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()">
+        <p-messages severity="warn">
+            <ng-template pTemplate>
+                <p>
+                    The <span class="font-bold">Edit</span> and <span class="font-bold">Delete</span> operations affect
+                    only the configurations stored in the host database (<app-host-data-source-label
+                        dataSource="api"
+                    ></app-host-data-source-label
+                    >).
+                </p>
+            </ng-template>
+        </p-messages>
     </div>
     <div *ngIf="erredApps && erredApps.length > 0">
         <p-messages id="erred-apps-message" [closable]="false" severity="warn">
@@ -40,7 +94,7 @@
     </div>
     <div>
         <div>
-            <div class="mb-4">
+            <div class="mt-4 mb-4">
                 <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Host">
                     <p-table [value]="localHostsGroups.appID">
                         <ng-template pTemplate="body" let-ls>
@@ -283,58 +337,6 @@
                         </app-dhcp-option-set-view>
                     </p-fieldset>
                 </div>
-            </ng-container>
-        </div>
-    </div>
-    <div class="mb-4">
-        <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()" class="mb-4">
-            <p-messages severity="warn">
-                <ng-template pTemplate>
-                    <p>
-                        The <span class="font-bold">Edit</span> and <span class="font-bold">Delete</span> operations
-                        affect only the configurations stored in the host database (<app-host-data-source-label
-                            dataSource="api"
-                        ></app-host-data-source-label
-                        >).
-                    </p>
-                </ng-template>
-            </p-messages>
-        </div>
-        <div class="flex">
-            <button
-                type="button"
-                pButton
-                [disabled]="leasesSearchInProgress"
-                label="Leases"
-                id="refresh-app-button"
-                icon="pi pi-refresh"
-                (click)="refreshLeases()"
-                appAccessEntity="leases"
-                (appHasAccess)="canGetLeases = $event"
-            ></button>
-            <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
-                <button
-                    type="button"
-                    pButton
-                    [disabled]="hostDeleted"
-                    label="Edit"
-                    icon="pi pi-pencil"
-                    class="p-button-info ml-2"
-                    (click)="onHostEditBegin()"
-                    appAccessEntity="host-reservation"
-                    appAccessType="update"
-                ></button>
-                <button
-                    type="button"
-                    pButton
-                    [disabled]="hostDeleted"
-                    label="Delete"
-                    icon="pi pi-times"
-                    class="p-button-danger ml-2"
-                    (click)="confirmDeleteHost()"
-                    appAccessEntity="host-reservation"
-                    appAccessType="delete"
-                ></button>
             </ng-container>
         </div>
     </div>
