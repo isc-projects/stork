@@ -9,7 +9,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ButtonModule } from 'primeng/button'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { InputNumberModule } from 'primeng/inputnumber'
+import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { PanelModule } from 'primeng/panel'
@@ -208,4 +208,27 @@ describe('HostsTableComponent', () => {
             ['Text', 'foo'],
         ])
     })
+
+    it('should not filter the table by numeric input with value zero', fakeAsync(() => {
+        // Arrange
+        const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
+        expect(inputNumbers).toBeTruthy()
+        expect(inputNumbers.length).toEqual(3)
+
+        // Act
+        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // appId
+        tick(300)
+        fixture.detectChanges()
+        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
+        tick(300)
+        fixture.detectChanges()
+        inputNumbers[2].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // keaSubnetId
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(dhcpServiceSpy.getHosts).toHaveBeenCalledTimes(3)
+        // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
+        expect(dhcpServiceSpy.getHosts).toHaveBeenCalledWith(0, 10, 1, 1, 1, null, null, null)
+    }))
 })

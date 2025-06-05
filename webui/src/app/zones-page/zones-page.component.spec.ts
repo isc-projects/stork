@@ -1161,4 +1161,20 @@ describe('ZonesPageComponent', () => {
             'ns1.example.com. admin.example.com. 2024031501 3600 900 1209600 300'
         )
     })
+
+    it('should not filter zones table by app id value zero', fakeAsync(() => {
+        // Arrange
+        const inputNumber = fixture.debugElement.query(By.css('[inputId="app-id"]'))
+        expect(inputNumber).toBeTruthy()
+
+        // Act
+        inputNumber.componentInstance.handleOnInput(new InputEvent('input'), '', 0)
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, 1, null)
+    }))
 })

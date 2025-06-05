@@ -8,7 +8,7 @@ import { TableModule } from 'primeng/table'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ButtonModule } from 'primeng/button'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
-import { InputNumberModule } from 'primeng/inputnumber'
+import { InputNumber, InputNumberModule } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
 import { PanelModule } from 'primeng/panel'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
@@ -283,6 +283,7 @@ describe('SharedNetworksTableComponent', () => {
         // Prepare responses for table filtering tests.
         getNetworksSpy.withArgs(0, 10, 5, null, 'cat').and.returnValue(of(fakeResponses[2]))
         getNetworksSpy.withArgs(0, 10, 5, 6, 'cat').and.returnValue(of(fakeResponses[2]))
+        getNetworksSpy.withArgs(0, 10, 1, null, null).and.returnValue(of(fakeResponses[2]))
 
         fixture.detectChanges()
 
@@ -472,5 +473,21 @@ describe('SharedNetworksTableComponent', () => {
         tick(300)
         fixture.detectChanges()
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 5, 6, 'cat')
+    }))
+
+    it('should not filter the table by numeric input with value zero', fakeAsync(() => {
+        // Arrange
+        const inputNumber = fixture.debugElement.query(By.directive(InputNumber))
+        expect(inputNumber).toBeTruthy()
+
+        // Act
+        inputNumber.componentInstance.handleOnInput(new InputEvent('input'), '', 0) // appId
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getNetworksSpy).toHaveBeenCalledTimes(2)
+        // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
+        expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 1, null, null)
     }))
 })
