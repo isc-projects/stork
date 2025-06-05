@@ -303,7 +303,13 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 		addCheckConfOutput(config1Path, config1)
 
 	// Now run the detection as usual.
-	app := detectBind9App([]string{"", sandbox.BasePath, fmt.Sprintf("-c %s", config1Path)}, "", executor, "", bind9config.NewParser())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -332,11 +338,13 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 		addCheckConfOutput(path.Join(chrootPath, config1Path), config1)
 
 	// Now run the detection as usual.
-	app := detectBind9App([]string{
-		"",
-		sandbox.BasePath,
-		fmt.Sprintf("-t %s -c %s", chrootPath, config1Path),
-	}, "", executor, "", bind9config.NewParser())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -c %s", absolutePath, chrootPath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -368,14 +376,13 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(confPath, config)
 
-	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
-	app := detectBind9App(
-		[]string{"", namedDir, "-some -params"},
-		"",
-		executor,
-		confPath,
-		bind9config.NewParser(),
-	)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "usr", "sbin", "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, confPath, bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -409,12 +416,13 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config)
 
-	namedDir := "/dir/usr/sbin"
-	app := detectBind9App([]string{
-		"",
-		namedDir,
-		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor, fullConfPath, bind9config.NewParser())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, fullConfPath, bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -448,12 +456,13 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	executor := newTestCommandExecutor().
 		addCheckConfOutput(fullConfPath, config)
 
-	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
-	app := detectBind9App([]string{
-		"",
-		namedDir,
-		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor, confPath, bind9config.NewParser())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, confPath, bind9config.NewParser())
 	require.Nil(t, app)
 }
 
@@ -479,8 +488,13 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 		setConfigPathInNamedOutput(varPath)
 
 	// Now run the detection as usual.
-	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
-	app := detectBind9App([]string{"", namedDir, "-some -params"}, "", executor, "", bind9config.NewParser())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -515,12 +529,13 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 		setConfigPathInNamedOutput(varPath)
 
 	// Now run the detection as usual.
-	namedDir := path.Join(sandbox.BasePath, "usr", "sbin")
-	app := detectBind9App([]string{
-		"",
-		namedDir,
-		fmt.Sprintf("-t %s -some -params", chrootPath),
-	}, "", executor, "", bind9config.NewParser())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, "", bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -567,7 +582,11 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			})
 
 			// Act
-			app := detectBind9App([]string{"", sandbox.BasePath, "-some -params"}, "", executor, "", parser)
+			process := NewMockSupportedProcess(ctrl)
+			absolutePath := path.Join(sandbox.BasePath, "named")
+			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -some -params", absolutePath), nil)
+			process.EXPECT().getCwd().Return("", nil)
+			app := detectBind9App(process, executor, "", parser)
 
 			// Assert
 			require.NotNil(t, app)
@@ -615,10 +634,11 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			})
 
 			// Act
-			app := detectBind9App(
-				[]string{"", sandbox.BasePath, fmt.Sprintf("-t %s -some -params", chrootPath)},
-				"", executor, "", parser,
-			)
+			process := NewMockSupportedProcess(ctrl)
+			absolutePath := path.Join(sandbox.BasePath, "named")
+			process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -t %s -some -params", absolutePath, chrootPath), nil)
+			process.EXPECT().getCwd().Return("", nil)
+			app := detectBind9App(process, executor, "", parser)
 
 			// Assert
 			require.NotNil(t, app)
@@ -675,7 +695,13 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 		setConfigPathInNamedOutput(config3Path)
 
 	// Now run the detection as usual
-	app := detectBind9App([]string{"", sandbox.BasePath, fmt.Sprintf("-c %s", config1Path)}, "", executor, config2Path, bind9config.NewParser())
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	process := NewMockSupportedProcess(ctrl)
+	absolutePath := path.Join(sandbox.BasePath, "named")
+	process.EXPECT().getCmdline().Return(fmt.Sprintf("%s -c %s", absolutePath, config1Path), nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app := detectBind9App(process, executor, config2Path, bind9config.NewParser())
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)

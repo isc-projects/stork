@@ -19,6 +19,9 @@ import (
 var (
 	_ App             = (*Bind9App)(nil)
 	_ bind9FileParser = (*bind9config.Parser)(nil)
+
+	// Pattern for detecting named process.
+	bind9Pattern = regexp.MustCompile(`(.*?)named\s+(.*)`)
 )
 
 // An interface for parsing BIND 9 configuration files.
@@ -501,9 +504,21 @@ func parseNamedDefaultPath(output []byte) string {
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
 // error occurs.
-func detectBind9App(match []string, cwd string, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) *Bind9App {
+func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) *Bind9App {
+	cmdline, err := p.getCmdline()
+	if err != nil {
+		return nil
+	}
+	cwd, err := p.getCwd()
+	if err != nil {
+		log.WithError(err).Warn("Cannot get named process current working directory")
+	}
+	match := bind9Pattern.FindStringSubmatch(cmdline)
+	if match == nil {
+		return nil
+	}
 	if len(match) < 3 {
-		log.Warnf("Problem with parsing BIND 9 cmdline: %s", match[0])
+		log.Warnf("Problem with parsing named command line: %s", match[0])
 		return nil
 	}
 

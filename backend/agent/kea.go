@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -16,7 +17,12 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-var _ App = (*KeaApp)(nil)
+var (
+	_ App = (*KeaApp)(nil)
+
+	// Pattern for detecting Kea Control Agent process.
+	keaCtrlAgentPattern = regexp.MustCompile(`(.*?)kea-ctrl-agent\s+.*-c\s+(\S+)`)
+)
 
 // It holds common and Kea specific runtime information.
 type KeaApp struct {
@@ -250,9 +256,23 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // picks the first one. See @readClientCredentials for details.
 // The user name of the selected credentials is used as a key of the
 // application's access point.
-func detectKeaApp(match []string, cwd string, httpClientConfig HTTPClientConfig) (*KeaApp, error) {
+func detectKeaApp(p supportedProcess, httpClientConfig HTTPClientConfig) (*KeaApp, error) {
+	cmdline, err := p.getCmdline()
+	if err != nil {
+		return nil, err
+	}
+	cwd, err := p.getCwd()
+	if err != nil {
+		log.WithError(err).Warn("Cannot get Kea process current working directory")
+	}
+
+	match := keaCtrlAgentPattern.FindStringSubmatch(cmdline)
+	if match == nil {
+		return nil, errors.Errorf("problem parsing Kea command line: %s", cmdline)
+	}
+
 	if len(match) < 3 {
-		return nil, errors.Errorf("problem parsing Kea cmdline: %s", match[0])
+		return nil, errors.Errorf("problem parsing Kea command line: %s", match[0])
 	}
 	keaConfPath := match[2]
 

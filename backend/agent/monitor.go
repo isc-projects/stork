@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -119,7 +118,7 @@ type appMonitor struct {
 	running         bool
 	wg              *sync.WaitGroup
 	commander       storkutil.CommandExecutor
-	processManager  ProcessManager
+	processManager  *ProcessManager
 	bind9FileParser bind9FileParser
 	// A flag indicating if the monitor has already detected no apps and reported it.
 	isNoAppsReported bool
@@ -241,91 +240,56 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 }
 
 func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
-	// Kea app is being detected by browsing list of processes in the system
-	// where cmdline of the process contains given pattern with kea-ctrl-agent
-	// substring. Such found processes are being processed further and all other
-	// Kea daemons are discovered and queried for their versions, etc.
-	keaPattern := regexp.MustCompile(`(.*?)kea-ctrl-agent\s+.*-c\s+(\S+)`)
-	// BIND 9 app is being detecting by browsing list of processes in the system
-	// where cmdline of the process contains given pattern with named substring.
-	bind9Pattern := regexp.MustCompile(`(.*?)named\s+(.*)`)
-
 	var apps []App
 
 	processes, _ := sm.processManager.ListProcesses()
 
 	for _, p := range processes {
-		procName, _ := p.GetName()
-		cmdline := ""
-		cwd := ""
-		var err error
-
-		if procName == keaProcName || procName == namedProcName {
-			cmdline, err = p.GetCmdline()
-			if err != nil {
-				log.WithError(err).Warn("Cannot get process command line")
-				continue
-			}
-			cwd, err = p.GetCwd()
-			if err != nil {
-				log.WithError(err).Warn("Cannot get process current working directory")
-				cwd = ""
-			}
-		}
-
+		procName, _ := p.getName()
 		switch procName {
 		case keaProcName:
-			// Detect Kea.
-			m := keaPattern.FindStringSubmatch(cmdline)
-			if m != nil {
-				// Detect the app.
-				keaApp, err := detectKeaApp(m, cwd, storkAgent.KeaHTTPClientConfig)
-				if err != nil {
-					log.WithError(err).Warn("Failed to detect Kea app")
-					continue
-				}
-
-				// Look for the previously detected application.
-				var recentlyActiveDaemons []string
-				for _, app := range sm.apps {
-					if keaApp.GetBaseApp().IsEqual(app.GetBaseApp()) {
-						recentlyActiveDaemons = app.(*KeaApp).ActiveDaemons
-						break
-					}
-				}
-
-				// Detect the active daemons.
-				keaApp.ActiveDaemons, err = detectKeaActiveDaemons(keaApp, recentlyActiveDaemons)
-				if err != nil {
-					log.WithError(err).Warn("Failed to detect active Kea daemons")
-				}
-
-				keaApp.GetBaseApp().Pid = p.GetPid()
-				apps = append(apps, keaApp)
+			// Detect the app.
+			keaApp, err := detectKeaApp(p, storkAgent.KeaHTTPClientConfig)
+			if err != nil {
+				log.WithError(err).Warn("Failed to detect Kea app")
+				continue
 			}
-		case namedProcName:
-			// detect bind9
-			m := bind9Pattern.FindStringSubmatch(cmdline)
-			if m != nil {
-				bind9App := detectBind9App(
-					m,
-					cwd,
-					sm.commander,
-					storkAgent.ExplicitBind9ConfigPath,
-					sm.bind9FileParser,
-				)
-				if bind9App != nil {
-					// Check if this app already exists. If it does we want to use
-					// an existing app to preserve its state.
-					if i := slices.IndexFunc(sm.apps, func(app App) bool {
-						return app.GetBaseApp().IsEqual(bind9App.GetBaseApp())
-					}); i >= 0 {
-						bind9App.zoneInventory.stop()
-						bind9App = sm.apps[i].(*Bind9App)
-					}
-					bind9App.GetBaseApp().Pid = p.GetPid()
-					apps = append(apps, bind9App)
+
+			// Look for the previously detected application.
+			var recentlyActiveDaemons []string
+			for _, app := range sm.apps {
+				if keaApp.GetBaseApp().IsEqual(app.GetBaseApp()) {
+					recentlyActiveDaemons = app.(*KeaApp).ActiveDaemons
+					break
 				}
+			}
+
+			// Detect the active daemons.
+			keaApp.ActiveDaemons, err = detectKeaActiveDaemons(keaApp, recentlyActiveDaemons)
+			if err != nil {
+				log.WithError(err).Warn("Failed to detect active Kea daemons")
+			}
+
+			keaApp.GetBaseApp().Pid = p.getPid()
+			apps = append(apps, keaApp)
+		case namedProcName:
+			bind9App := detectBind9App(
+				p,
+				sm.commander,
+				storkAgent.ExplicitBind9ConfigPath,
+				sm.bind9FileParser,
+			)
+			if bind9App != nil {
+				// Check if this app already exists. If it does we want to use
+				// an existing app to preserve its state.
+				if i := slices.IndexFunc(sm.apps, func(app App) bool {
+					return app.GetBaseApp().IsEqual(bind9App.GetBaseApp())
+				}); i >= 0 {
+					bind9App.zoneInventory.stop()
+					bind9App = sm.apps[i].(*Bind9App)
+				}
+				bind9App.GetBaseApp().Pid = p.getPid()
+				apps = append(apps, bind9App)
 			}
 		default:
 			continue

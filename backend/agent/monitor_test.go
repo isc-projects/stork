@@ -19,7 +19,7 @@ import (
 	"isc.org/stork/testutil"
 )
 
-//go:generate mockgen -source process.go -package=agent -destination=processmock_test.go isc.org/agent Process ProcessManager
+//go:generate mockgen -source process.go -package=agent -destination=processmock_test.go -mock_names=processLister=MockProcessLister,supportedProcess=MockSupportedProcess isc.org/agent supportedProcess processLister
 //go:generate mockgen -source monitor.go -package=agent -destination=monitormock_test.go isc.org/agent App
 
 const defaultBind9Config = `
@@ -201,32 +201,33 @@ func TestDetectApps(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	keaProcess := NewMockProcess(ctrl)
-	keaProcess.EXPECT().GetName().AnyTimes().Return("kea-ctrl-agent", nil)
-	keaProcess.EXPECT().GetCmdline().AnyTimes().Return(fmt.Sprintf(
+	keaProcess := NewMockSupportedProcess(ctrl)
+	keaProcess.EXPECT().getName().AnyTimes().Return("kea-ctrl-agent", nil)
+	keaProcess.EXPECT().getCmdline().AnyTimes().Return(fmt.Sprintf(
 		"kea-ctrl-agent -c %s", keaConfPath,
 	), nil)
-	keaProcess.EXPECT().GetCwd().AnyTimes().Return("/etc/kea", nil)
-	keaProcess.EXPECT().GetPid().AnyTimes().Return(int32(1234))
+	keaProcess.EXPECT().getCwd().AnyTimes().Return("/etc/kea", nil)
+	keaProcess.EXPECT().getPid().AnyTimes().Return(int32(1234))
+	keaProcess.EXPECT().getParentPid().AnyTimes().Return(int32(2345), nil)
 
-	bind9Process := NewMockProcess(ctrl)
-	bind9Process.EXPECT().GetName().AnyTimes().Return("named", nil)
-	bind9Process.EXPECT().GetCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
-	bind9Process.EXPECT().GetCwd().AnyTimes().Return("/etc", nil)
-	// Changing the PID should not affect the test result.
-	gomock.InOrder(
-		bind9Process.EXPECT().GetPid().Times(1).Return(int32(5678)),
-		bind9Process.EXPECT().GetPid().Times(1).Return(int32(5679)),
-		bind9Process.EXPECT().GetPid().Times(1).Return(int32(5680)),
-	)
+	bind9Process := NewMockSupportedProcess(ctrl)
+	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
+	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
 
-	unknownProcess := NewMockProcess(ctrl)
-	unknownProcess.EXPECT().GetName().AnyTimes().Return("unknown", nil)
+	unknownProcess := NewMockSupportedProcess(ctrl)
+	unknownProcess.EXPECT().getName().AnyTimes().Return("unknown", nil)
+	unknownProcess.EXPECT().getPid().AnyTimes().Return(int32(3456))
+	unknownProcess.EXPECT().getParentPid().AnyTimes().Return(int32(4567), nil)
 
-	processManager := NewMockProcessManager(ctrl)
-	processManager.EXPECT().ListProcesses().AnyTimes().Return([]Process{
+	processManager := NewProcessManager()
+	lister := NewMockProcessLister(ctrl)
+	lister.EXPECT().listProcesses().AnyTimes().Return([]supportedProcess{
 		keaProcess, bind9Process, unknownProcess,
 	}, nil)
+	processManager.lister = lister
 
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
@@ -284,16 +285,19 @@ func TestDetectAppsContinueOnNotAvailableCommandLine(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	bind9Process := NewMockProcess(ctrl)
-	bind9Process.EXPECT().GetName().Return("named", nil)
-	bind9Process.EXPECT().GetCmdline().Return("named -c /etc/named.conf", nil)
-	bind9Process.EXPECT().GetCwd().Return("", errors.New("no current working directory"))
-	bind9Process.EXPECT().GetPid().Return(int32(5678))
+	bind9Process := NewMockSupportedProcess(ctrl)
+	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCwd().Return("", errors.New("no current working directory"))
+	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
+	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
 
-	processManager := NewMockProcessManager(ctrl)
-	processManager.EXPECT().ListProcesses().Return([]Process{
+	processManager := NewProcessManager()
+	lister := NewMockProcessLister(ctrl)
+	lister.EXPECT().listProcesses().Return([]supportedProcess{
 		bind9Process,
 	}, nil)
+	processManager.lister = lister
 
 	parser := NewMockBind9FileParser(ctrl)
 	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
@@ -321,21 +325,26 @@ func TestDetectAppsSkipOnNotAvailableCwd(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	noCwdProcess := NewMockProcess(ctrl)
-	noCwdProcess.EXPECT().GetName().Return("kea-ctrl-agent", nil)
-	noCwdProcess.EXPECT().GetCmdline().Return("kea-ctrl-agent -c /etc/kea/kea.conf", nil)
-	noCwdProcess.EXPECT().GetCwd().Return("", errors.New("no current working directory"))
+	noCwdProcess := NewMockSupportedProcess(ctrl)
+	noCwdProcess.EXPECT().getName().AnyTimes().Return("kea-ctrl-agent", nil)
+	noCwdProcess.EXPECT().getCmdline().AnyTimes().Return("kea-ctrl-agent -c /etc/kea/kea.conf", nil)
+	noCwdProcess.EXPECT().getCwd().AnyTimes().Return("", errors.New("no current working directory"))
+	noCwdProcess.EXPECT().getPid().AnyTimes().Return(int32(1234))
+	noCwdProcess.EXPECT().getParentPid().AnyTimes().Return(int32(2345), nil)
 
-	bind9Process := NewMockProcess(ctrl)
-	bind9Process.EXPECT().GetName().Return("named", nil)
-	bind9Process.EXPECT().GetCmdline().Return("named -c /etc/named.conf", nil)
-	bind9Process.EXPECT().GetCwd().Return("/etc", nil)
-	bind9Process.EXPECT().GetPid().Return(int32(5678))
+	bind9Process := NewMockSupportedProcess(ctrl)
+	bind9Process.EXPECT().getName().AnyTimes().Return("named", nil)
+	bind9Process.EXPECT().getCmdline().AnyTimes().Return("named -c /etc/named.conf", nil)
+	bind9Process.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
+	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
 
-	processManager := NewMockProcessManager(ctrl)
-	processManager.EXPECT().ListProcesses().Return([]Process{
+	processManager := NewProcessManager()
+	lister := NewMockProcessLister(ctrl)
+	lister.EXPECT().listProcesses().Return([]supportedProcess{
 		noCwdProcess, bind9Process,
 	}, nil)
+	processManager.lister = lister
 
 	executor := newTestCommandExecutorDefault()
 
@@ -376,8 +385,10 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	processManager := NewMockProcessManager(ctrl)
-	processManager.EXPECT().ListProcesses().Return([]Process{}, nil)
+	processManager := NewProcessManager()
+	lister := NewMockProcessLister(ctrl)
+	lister.EXPECT().listProcesses().Return([]supportedProcess{}, nil)
+	processManager.lister = lister
 
 	executor := newTestCommandExecutorDefault()
 	am := &appMonitor{processManager: processManager, commander: executor}
@@ -437,8 +448,11 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
 		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
 	})
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/named -c /etc/named.conf", nil)
+	process.EXPECT().getCwd().Return("", nil)
 	executor := newTestCommandExecutorDefault()
-	app := detectBind9App([]string{"", "/dir", "-c /etc/named.conf"}, "", executor, "", parser)
+	app := detectBind9App(process, executor, "", parser)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 2)
@@ -464,7 +478,10 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
 	})
 	executor := newTestCommandExecutorDefault()
-	app := detectBind9App([]string{"", "/dir", "-c named.conf"}, "/etc", executor, "", parser)
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/named -c named.conf", nil)
+	process.EXPECT().getCwd().Return("/etc", nil)
+	app := detectBind9App(process, executor, "", parser)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }
@@ -535,13 +552,21 @@ func TestDetectKeaApp(t *testing.T) {
 		defer clean()
 
 		// check kea app detection
-		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClientConfig)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		process := NewMockSupportedProcess(ctrl)
+		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", tmpFilePath), nil)
+		process.EXPECT().getCwd().Return("", nil)
+		app, err := detectKeaApp(process, httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 
 		// check kea app detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
-		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClientConfig)
+		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
+		process.EXPECT().getCwd().Return(cwd, nil)
+		app, err = detectKeaApp(process, httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 	})
@@ -552,13 +577,21 @@ func TestDetectKeaApp(t *testing.T) {
 		defer clean()
 
 		// check kea app detection
-		app, err := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClientConfig)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		process := NewMockSupportedProcess(ctrl)
+		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", tmpFilePath), nil)
+		process.EXPECT().getCwd().Return("", nil)
+
+		app, err := detectKeaApp(process, httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 
 		// check kea app detection when kea conf file is relative to CWD of kea process
 		cwd, file := path.Split(tmpFilePath)
-		app, err = detectKeaApp([]string{"", "", file}, cwd, httpClientConfig)
+		process.EXPECT().getCmdline().Return(fmt.Sprintf("kea-ctrl-agent -c %s", file), nil)
+		process.EXPECT().getCwd().Return(cwd, nil)
+		app, err = detectKeaApp(process, httpClientConfig)
 		require.NoError(t, err)
 		checkApp(app)
 	})
