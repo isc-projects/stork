@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { SubnetsTableComponent } from './subnets-table.component'
 import { ButtonModule } from 'primeng/button'
@@ -78,6 +78,8 @@ describe('SubnetsTableComponent', () => {
         fixture = TestBed.createComponent(SubnetsTableComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
+        // Do not save table state between tests, because that makes tests unstable.
+        spyOn(component.table, 'saveState').and.callFake(() => {})
     })
 
     it('should create', () => {
@@ -237,15 +239,20 @@ describe('SubnetsTableComponent', () => {
         expect(inputNumbers.length).toEqual(2)
 
         // Act
+        component.table.clear()
+        tick(300)
+        fixture.detectChanges()
         inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // appId
-        tick()
+        tick(300)
+        fixture.detectChanges()
         inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
         tick(300)
         fixture.detectChanges()
 
         // Assert
-        expect(getSubnetsSpy).toHaveBeenCalledTimes(1)
+        expect(getSubnetsSpy).toHaveBeenCalledTimes(3)
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
         expect(getSubnetsSpy).toHaveBeenCalledWith(0, 10, 1, 1, null, null)
+        flush()
     }))
 })

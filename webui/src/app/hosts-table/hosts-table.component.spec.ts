@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { HostsTableComponent } from './hosts-table.component'
 import { TableModule } from 'primeng/table'
@@ -75,6 +75,8 @@ describe('HostsTableComponent', () => {
         fixture = TestBed.createComponent(HostsTableComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
+        // Do not save table state between tests, because that makes tests unstable.
+        spyOn(component.table, 'saveState').and.callFake(() => {})
     })
 
     it('should create', () => {
@@ -216,6 +218,9 @@ describe('HostsTableComponent', () => {
         expect(inputNumbers.length).toEqual(3)
 
         // Act
+        component.table.clear()
+        tick()
+        fixture.detectChanges()
         inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // appId
         tick(300)
         fixture.detectChanges()
@@ -227,8 +232,9 @@ describe('HostsTableComponent', () => {
         fixture.detectChanges()
 
         // Assert
-        expect(dhcpServiceSpy.getHosts).toHaveBeenCalledTimes(3)
+        expect(dhcpServiceSpy.getHosts).toHaveBeenCalledTimes(4)
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
         expect(dhcpServiceSpy.getHosts).toHaveBeenCalledWith(0, 10, 1, 1, 1, null, null, null)
+        flush()
     }))
 })

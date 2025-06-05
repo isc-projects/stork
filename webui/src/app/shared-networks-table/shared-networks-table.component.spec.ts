@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { SharedNetworksTableComponent } from './shared-networks-table.component'
 import { MessageService } from 'primeng/api'
@@ -489,5 +489,6 @@ describe('SharedNetworksTableComponent', () => {
         expect(getNetworksSpy).toHaveBeenCalledTimes(2)
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
         expect(getNetworksSpy).toHaveBeenCalledWith(0, 10, 1, null, null)
+        flush()
     }))
 })
