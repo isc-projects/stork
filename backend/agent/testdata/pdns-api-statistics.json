@@ -1,0 +1,579 @@
+[
+    {
+      "name": "backend-latency",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "backend-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "cache-latency",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "corrupt-packets",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "cpu-iowait",
+      "type": "StatisticItem",
+      "value": "582667"
+    },
+    {
+      "name": "cpu-steal",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "deferred-cache-inserts",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "deferred-cache-lookup",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "deferred-packetcache-inserts",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "deferred-packetcache-lookup",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "dnsupdate-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "dnsupdate-changes",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "dnsupdate-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "dnsupdate-refused",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "fd-usage",
+      "type": "StatisticItem",
+      "value": "17"
+    },
+    {
+      "name": "incoming-notifications",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "key-cache-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "latency",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "meta-cache-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "noerror-packets",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "nxdomain-packets",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "open-tcp-connections",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "overload-drops",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "packetcache-hit",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "packetcache-miss",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "packetcache-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "qsize-q",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "query-cache-hit",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "query-cache-miss",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "query-cache-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "rd-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "real-memory-usage",
+      "type": "StatisticItem",
+      "value": "69611520"
+    },
+    {
+      "name": "receive-latency",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "recursing-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "recursing-questions",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "recursion-unanswered",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-logmessages-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-logmessages-size",
+      "type": "StatisticItem",
+      "value": "3"
+    },
+    {
+      "name": "ring-noerror-queries-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-noerror-queries-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-nxdomain-queries-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-nxdomain-queries-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-queries-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-queries-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-remotes-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-remotes-corrupt-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-remotes-corrupt-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-remotes-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-remotes-unauth-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-remotes-unauth-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-servfail-queries-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-servfail-queries-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "ring-unauth-queries-capacity",
+      "type": "StatisticItem",
+      "value": "10000"
+    },
+    {
+      "name": "ring-unauth-queries-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "security-status",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "send-latency",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "servfail-packets",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "signature-cache-size",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "signatures",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "sys-msec",
+      "type": "StatisticItem",
+      "value": "60"
+    },
+    {
+      "name": "tcp-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp-answers-bytes",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp-cookie-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp4-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp4-answers-bytes",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp4-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp6-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp6-answers-bytes",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "tcp6-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "timedout-packets",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-answers-bytes",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-cookie-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-do-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-in-csum-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-in-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-noport-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-recvbuf-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp-sndbuf-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp4-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp4-answers-bytes",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp4-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-answers",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-answers-bytes",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-in-csum-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-in-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-noport-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-queries",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-recvbuf-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "udp6-sndbuf-errors",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "unauth-packets",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "uptime",
+      "type": "StatisticItem",
+      "value": "7"
+    },
+    {
+      "name": "user-msec",
+      "type": "StatisticItem",
+      "value": "166"
+    },
+    {
+      "name": "xfr-queue",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "zone-cache-hit",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "zone-cache-miss",
+      "type": "StatisticItem",
+      "value": "0"
+    },
+    {
+      "name": "zone-cache-size",
+      "type": "StatisticItem",
+      "value": "10"
+    },
+    {
+      "name": "response-by-qtype",
+      "type": "MapStatisticItem",
+      "value": []
+    },
+    {
+      "name": "response-sizes",
+      "type": "MapStatisticItem",
+      "value": []
+    },
+    {
+      "name": "response-by-rcode",
+      "type": "MapStatisticItem",
+      "value": []
+    },
+    {
+      "name": "logmessages",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": [
+        {
+          "name": "About to create 3 backend threads for UDP",
+          "value": "1"
+        },
+        {
+          "name": "Creating backend connection for TCP",
+          "value": "1"
+        },
+        {
+          "name": "Done launching threads, ready to distribute questions",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "name": "remotes",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    },
+    {
+      "name": "remotes-corrupt",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    },
+    {
+      "name": "remotes-unauth",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    },
+    {
+      "name": "noerror-queries",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    },
+    {
+      "name": "nxdomain-queries",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    },
+    {
+      "name": "queries",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    },
+    {
+      "name": "servfail-queries",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    },
+    {
+      "name": "unauth-queries",
+      "size": "10000",
+      "type": "RingStatisticItem",
+      "value": []
+    }
+  ]

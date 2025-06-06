@@ -1,0 +1,14 @@
+[
+    {
+        "kind": "Master",
+        "name": "pdns.example.com.",
+        "serial": 2024031501,
+        "url": "/api/v1/servers/localhost/zones/pdns.example.com."
+      },
+      {
+        "kind": "Master",
+        "name": "pdns.example.org.",
+        "serial": 2024031501,
+        "url": "/api/v1/servers/localhost/zones/pdns.example.org."
+      }
+]
