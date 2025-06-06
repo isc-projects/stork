@@ -11,55 +11,51 @@
                 ></app-entity-link>
             </div>
             <div id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0">[{{ host.id }}] Global host</div>
-            <div>
-                <app-help-tip subject="Host Reservation View">
-                    Multiple DHCP servers can share a host reservation. Host identifiers, IP addresses, and delegated
-                    prefixes for a host must match in each DHCP server's configuration; if they are different, they are
-                    treated as different hosts. Otherwise, they are combined, and the DHCP servers sharing the host are
-                    displayed in one of the panels on this page. Client classes and DHCP options can differ in the
-                    configurations of the DHCP servers owning the host. If this is the case, the client classes and/or
-                    DHCP options are displayed individually for each server.
-                </app-help-tip>
-            </div>
+            <app-help-tip subject="Host Reservation View">
+                Multiple DHCP servers can share a host reservation. Host identifiers, IP addresses, and delegated
+                prefixes for a host must match in each DHCP server's configuration; if they are different, they are
+                treated as different hosts. Otherwise, they are combined, and the DHCP servers sharing the host are
+                displayed in one of the panels on this page. Client classes and DHCP options can differ in the
+                configurations of the DHCP servers owning the host. If this is the case, the client classes and/or DHCP
+                options are displayed individually for each server.
+            </app-help-tip>
         </div>
-        <div>
-            <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
+        <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
+            <button
+                type="button"
+                pButton
+                [disabled]="leasesSearchInProgress"
+                label="Leases"
+                id="refresh-app-button"
+                icon="pi pi-refresh"
+                (click)="refreshLeases()"
+                appAccessEntity="leases"
+                (appHasAccess)="canGetLeases = $event"
+            ></button>
+            <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
                 <button
                     type="button"
                     pButton
-                    [disabled]="leasesSearchInProgress"
-                    label="Leases"
-                    id="refresh-app-button"
-                    icon="pi pi-refresh"
-                    (click)="refreshLeases()"
-                    appAccessEntity="leases"
-                    (appHasAccess)="canGetLeases = $event"
+                    [disabled]="hostDeleted"
+                    label="Edit"
+                    icon="pi pi-pencil"
+                    class="p-button-info"
+                    (click)="onHostEditBegin()"
+                    appAccessEntity="host-reservation"
+                    appAccessType="update"
                 ></button>
-                <ng-container *ngIf="hasAnyLocalHostFromDatabase()">
-                    <button
-                        type="button"
-                        pButton
-                        [disabled]="hostDeleted"
-                        label="Edit"
-                        icon="pi pi-pencil"
-                        class="p-button-info"
-                        (click)="onHostEditBegin()"
-                        appAccessEntity="host-reservation"
-                        appAccessType="update"
-                    ></button>
-                    <button
-                        type="button"
-                        pButton
-                        [disabled]="hostDeleted"
-                        label="Delete"
-                        icon="pi pi-times"
-                        class="p-button-danger"
-                        (click)="confirmDeleteHost()"
-                        appAccessEntity="host-reservation"
-                        appAccessType="delete"
-                    ></button>
-                </ng-container>
-            </div>
+                <button
+                    type="button"
+                    pButton
+                    [disabled]="hostDeleted"
+                    label="Delete"
+                    icon="pi pi-times"
+                    class="p-button-danger"
+                    (click)="confirmDeleteHost()"
+                    appAccessEntity="host-reservation"
+                    appAccessType="delete"
+                ></button>
+            </ng-container>
         </div>
     </div>
     <div *ngIf="hasAnyLocalHostFromConfig() && hasAnyLocalHostFromDatabase()">
@@ -93,252 +89,246 @@
         </p-messages>
     </div>
     <div>
-        <div>
-            <div class="my-4">
-                <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Host">
-                    <p-table [value]="localHostsGroups.appID">
-                        <ng-template pTemplate="body" let-ls>
-                            <tr>
-                                <td class="border-none w-10rem">
-                                    <a routerLink="/apps/kea/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
-                                    <app-host-data-source-label
-                                        class="ml-2"
-                                        *ngFor="let l of ls"
-                                        [dataSource]="l.dataSource"
-                                    ></app-host-data-source-label>
-                                    <ng-container
-                                        *ngIf="daemonsHaveDifferentHostData(ls); else duplicateCandidate"
-                                        [ngTemplateOutlet]="conflictLabel"
-                                    ></ng-container>
-                                    <ng-template #duplicateCandidate>
-                                        <ng-container *ngIf="ls.length > 1" [ngTemplateOutlet]="duplicateLabel">
-                                        </ng-container>
-                                    </ng-template>
-                                </td>
-                            </tr>
-                        </ng-template>
-                    </p-table>
-                </p-fieldset>
-            </div>
-            <div class="mb-4">
-                <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
-                    <p-table [value]="host.hostIdentifiers">
-                        <ng-template pTemplate="body" let-i>
-                            <tr>
-                                <td class="border-none w-8rem">{{ i.idType }}</td>
-                                <td class="monospace border-none text-color-secondary">
-                                    <app-identifier
-                                        [hexValue]="i.idHexValue"
-                                        [defaultHexFormat]="['hw-address', 'duid', 'client-id'].includes(i.idType)"
-                                    ></app-identifier>
-                                </td>
-                            </tr>
-                        </ng-template>
-                    </p-table>
-                </p-fieldset>
-            </div>
-
-            <ng-container *ngIf="host.localHosts?.length > 0">
-                <!-- Hostname -->
-                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.hostname">
-                    <p-fieldset>
-                        <ng-template pTemplate="header">
-                            <ng-container
-                                [ngTemplateOutlet]="sectionHeaderContent"
-                                [ngTemplateOutletContext]="{
-                                    title: 'Hostname',
-                                    localHosts: localHosts,
-                                    all: localHostsGroups.hostname.length === 1,
-                                }"
-                            ></ng-container>
-                        </ng-template>
-                        <span class="monospace" *ngIf="!!localHosts[0].hostname">{{ localHosts[0].hostname }}</span>
-                        <span *ngIf="!localHosts[0].hostname">No hostname configured.</span>
-                    </p-fieldset>
-                </div>
-
-                <!-- IP Reservations -->
-                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.ipReservations">
-                    <p-fieldset>
-                        <ng-template pTemplate="header">
-                            <ng-container
-                                [ngTemplateOutlet]="sectionHeaderContent"
-                                [ngTemplateOutletContext]="{
-                                    title: 'IP Reservations',
-                                    localHosts: localHosts,
-                                    all: localHostsGroups.ipReservations.length === 1,
-                                }"
-                            ></ng-container>
-                        </ng-template>
-                        <p-table [value]="localHosts[0].ipReservations || []" dataKey="address">
-                            <ng-template pTemplate="body" let-r let-expanded="expanded">
-                                <tr>
-                                    <td class="border-none">
-                                        <div class="flex align-items-center">
-                                            <div class="flex-initial">
-                                                <button
-                                                    type="button"
-                                                    pButton
-                                                    pRipple
-                                                    [pRowToggler]="r"
-                                                    class="p-button-text p-button-rounded p-button-plain"
-                                                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                                                ></button>
-                                            </div>
-                                            <div class="pl-2 flex-auto word-break-all">
-                                                <a
-                                                    routerLink="/dhcp/leases"
-                                                    [queryParams]="{ text: r.address.split('/')[0] }"
-                                                    >{{ r.address }}</a
-                                                >
-                                            </div>
-                                            <div class="flex-none">
-                                                <p-progressSpinner
-                                                    *ngIf="leasesSearchInProgress"
-                                                    [style]="{ width: '15px', height: '15px' }"
-                                                    styleClass="host-tab-leases-spinner"
-                                                    strokeWidth="6"
-                                                ></p-progressSpinner>
-                                                <ng-container *ngIf="!leasesSearchInProgress">
-                                                    <span
-                                                        *ngIf="
-                                                            currentLeases && currentLeases.has(r.address);
-                                                            else leaseNotFoundBlock
-                                                        "
-                                                    >
-                                                        <ng-container
-                                                            [ngSwitch]="currentLeases.get(r.address)['usage']"
-                                                        >
-                                                            <i
-                                                                *ngSwitchCase="Usage.Used"
-                                                                class="fa fa-signal text-green-500"
-                                                            ></i>
-                                                            <i
-                                                                *ngSwitchCase="Usage.Expired"
-                                                                class="fa fa-signal text-red-500"
-                                                            ></i>
-                                                            <i *ngSwitchDefault class="fa fa-lock text-gray-400"></i>
-                                                        </ng-container>
-                                                        {{ getLeaseUsageText(currentLeases.get(r.address)['usage']) }}
-                                                    </span>
-                                                    <ng-template #leaseNotFoundBlock>
-                                                        <i class="fa fa-power-off text-gray-400"></i>
-                                                        unused
-                                                    </ng-template>
-                                                </ng-container>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </ng-template>
-                            <ng-template pTemplate="rowexpansion" let-r>
-                                <tr>
-                                    <td class="border-none pl-6 pt-0 pb-4">
-                                        <div
-                                            *ngIf="
-                                                !leasesSearchInProgress && currentLeases.get(r.address) as leaseInfo;
-                                                else leaseFoundBlock
-                                            "
-                                        >
-                                            {{ getLeaseSummary(leaseInfo) }}
-                                        </div>
-                                        <ng-template #leaseFoundBlock>{{
-                                            leasesSearchInProgress ? 'Checking leases...' : 'No lease found.'
-                                        }}</ng-template>
-                                    </td>
-                                </tr>
-                            </ng-template>
-                            <ng-template pTemplate="emptymessage">
-                                <tr>
-                                    <td>No IP reservations configured.</td>
-                                </tr>
-                            </ng-template>
-                        </p-table>
-                    </p-fieldset>
-                </div>
-
-                <!-- Boot fields -->
-                <ng-container *ngIf="displayBootFields">
-                    <div class="mb-4" *ngFor="let localHosts of localHostsGroups.bootFields">
-                        <p-fieldset>
-                            <ng-template pTemplate="header">
+        <div class="my-4">
+            <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Host">
+                <p-table [value]="localHostsGroups.appID">
+                    <ng-template pTemplate="body" let-ls>
+                        <tr>
+                            <td class="border-none w-10rem">
+                                <a routerLink="/apps/kea/{{ ls[0].appId }}">{{ ls[0].appName }}</a>
+                                <app-host-data-source-label
+                                    class="ml-2"
+                                    *ngFor="let l of ls"
+                                    [dataSource]="l.dataSource"
+                                ></app-host-data-source-label>
                                 <ng-container
-                                    [ngTemplateOutlet]="sectionHeaderContent"
-                                    [ngTemplateOutletContext]="{
-                                        title: 'Boot Fields',
-                                        localHosts: localHosts,
-                                        all: localHostsGroups.bootFields.length === 1,
-                                    }"
+                                    *ngIf="daemonsHaveDifferentHostData(ls); else duplicateCandidate"
+                                    [ngTemplateOutlet]="conflictLabel"
                                 ></ng-container>
-                            </ng-template>
-                            <div class="flex align-items-center">
-                                <div class="p-2 w-10rem">Next server</div>
-                                <div class="pl-2 monospace">
-                                    <ng-container *ngIf="localHosts[0].nextServer?.length > 0; else bootFieldUnspec">
-                                        {{ localHosts[0].nextServer }}
+                                <ng-template #duplicateCandidate>
+                                    <ng-container *ngIf="ls.length > 1" [ngTemplateOutlet]="duplicateLabel">
                                     </ng-container>
-                                </div>
-                            </div>
-                            <div class="flex align-items-center">
-                                <div class="p-2 w-10rem">Server hostname</div>
-                                <div class="pl-2 monospace">
-                                    <ng-container
-                                        *ngIf="localHosts[0].serverHostname?.length > 0; else bootFieldUnspec"
+                                </ng-template>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </p-fieldset>
+        </div>
+        <div class="mb-4">
+            <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
+                <p-table [value]="host.hostIdentifiers">
+                    <ng-template pTemplate="body" let-i>
+                        <tr>
+                            <td class="border-none w-8rem">{{ i.idType }}</td>
+                            <td class="monospace border-none text-color-secondary">
+                                <app-identifier
+                                    [hexValue]="i.idHexValue"
+                                    [defaultHexFormat]="['hw-address', 'duid', 'client-id'].includes(i.idType)"
+                                ></app-identifier>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </p-fieldset>
+        </div>
+
+        <ng-container *ngIf="host.localHosts?.length > 0">
+            <!-- Hostname -->
+            <div class="mb-4" *ngFor="let localHosts of localHostsGroups.hostname">
+                <p-fieldset>
+                    <ng-template pTemplate="header">
+                        <ng-container
+                            [ngTemplateOutlet]="sectionHeaderContent"
+                            [ngTemplateOutletContext]="{
+                                title: 'Hostname',
+                                localHosts: localHosts,
+                                all: localHostsGroups.hostname.length === 1,
+                            }"
+                        ></ng-container>
+                    </ng-template>
+                    <span class="monospace" *ngIf="!!localHosts[0].hostname">{{ localHosts[0].hostname }}</span>
+                    <span *ngIf="!localHosts[0].hostname">No hostname configured.</span>
+                </p-fieldset>
+            </div>
+
+            <!-- IP Reservations -->
+            <div class="mb-4" *ngFor="let localHosts of localHostsGroups.ipReservations">
+                <p-fieldset>
+                    <ng-template pTemplate="header">
+                        <ng-container
+                            [ngTemplateOutlet]="sectionHeaderContent"
+                            [ngTemplateOutletContext]="{
+                                title: 'IP Reservations',
+                                localHosts: localHosts,
+                                all: localHostsGroups.ipReservations.length === 1,
+                            }"
+                        ></ng-container>
+                    </ng-template>
+                    <p-table [value]="localHosts[0].ipReservations || []" dataKey="address">
+                        <ng-template pTemplate="body" let-r let-expanded="expanded">
+                            <tr>
+                                <td class="border-none">
+                                    <div class="flex align-items-center">
+                                        <div class="flex-initial">
+                                            <button
+                                                type="button"
+                                                pButton
+                                                pRipple
+                                                [pRowToggler]="r"
+                                                class="p-button-text p-button-rounded p-button-plain"
+                                                [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                                            ></button>
+                                        </div>
+                                        <div class="pl-2 flex-auto word-break-all">
+                                            <a
+                                                routerLink="/dhcp/leases"
+                                                [queryParams]="{ text: r.address.split('/')[0] }"
+                                                >{{ r.address }}</a
+                                            >
+                                        </div>
+                                        <div class="flex-none">
+                                            <p-progressSpinner
+                                                *ngIf="leasesSearchInProgress"
+                                                [style]="{ width: '15px', height: '15px' }"
+                                                styleClass="host-tab-leases-spinner"
+                                                strokeWidth="6"
+                                            ></p-progressSpinner>
+                                            <ng-container *ngIf="!leasesSearchInProgress">
+                                                <span
+                                                    *ngIf="
+                                                        currentLeases && currentLeases.has(r.address);
+                                                        else leaseNotFoundBlock
+                                                    "
+                                                >
+                                                    <ng-container [ngSwitch]="currentLeases.get(r.address)['usage']">
+                                                        <i
+                                                            *ngSwitchCase="Usage.Used"
+                                                            class="fa fa-signal text-green-500"
+                                                        ></i>
+                                                        <i
+                                                            *ngSwitchCase="Usage.Expired"
+                                                            class="fa fa-signal text-red-500"
+                                                        ></i>
+                                                        <i *ngSwitchDefault class="fa fa-lock text-gray-400"></i>
+                                                    </ng-container>
+                                                    {{ getLeaseUsageText(currentLeases.get(r.address)['usage']) }}
+                                                </span>
+                                                <ng-template #leaseNotFoundBlock>
+                                                    <i class="fa fa-power-off text-gray-400"></i>
+                                                    unused
+                                                </ng-template>
+                                            </ng-container>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="rowexpansion" let-r>
+                            <tr>
+                                <td class="border-none pl-6 pt-0 pb-4">
+                                    <div
+                                        *ngIf="
+                                            !leasesSearchInProgress && currentLeases.get(r.address) as leaseInfo;
+                                            else leaseFoundBlock
+                                        "
                                     >
-                                        {{ localHosts[0].serverHostname }}
-                                    </ng-container>
-                                </div>
-                            </div>
-                            <div class="flex align-items-center">
-                                <div class="p-2 w-10rem">Boot file name</div>
-                                <div class="pl-2 monospace">
-                                    <ng-container *ngIf="localHosts[0].bootFileName?.length > 0; else bootFieldUnspec">
-                                        {{ localHosts[0].bootFileName }}
-                                    </ng-container>
-                                </div>
-                            </div>
-                            <ng-template #bootFieldUnspec> - </ng-template>
-                        </p-fieldset>
-                    </div>
-                </ng-container>
+                                        {{ getLeaseSummary(leaseInfo) }}
+                                    </div>
+                                    <ng-template #leaseFoundBlock>{{
+                                        leasesSearchInProgress ? 'Checking leases...' : 'No lease found.'
+                                    }}</ng-template>
+                                </td>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="emptymessage">
+                            <tr>
+                                <td>No IP reservations configured.</td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </p-fieldset>
+            </div>
 
-                <!-- Client classes -->
-                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.clientClasses">
+            <!-- Boot fields -->
+            <ng-container *ngIf="displayBootFields">
+                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.bootFields">
                     <p-fieldset>
                         <ng-template pTemplate="header">
                             <ng-container
                                 [ngTemplateOutlet]="sectionHeaderContent"
                                 [ngTemplateOutletContext]="{
-                                    title: 'Client Classes',
+                                    title: 'Boot Fields',
                                     localHosts: localHosts,
-                                    all: localHostsGroups.clientClasses.length === 1,
+                                    all: localHostsGroups.bootFields.length === 1,
                                 }"
                             ></ng-container>
                         </ng-template>
-                        <app-dhcp-client-class-set-view [clientClasses]="localHosts[0].clientClasses">
-                        </app-dhcp-client-class-set-view>
-                    </p-fieldset>
-                </div>
-
-                <!-- DHCP options -->
-                <div class="mb-4" *ngFor="let localHosts of localHostsGroups.dhcpOptions">
-                    <p-fieldset>
-                        <ng-template pTemplate="header">
-                            <ng-container
-                                [ngTemplateOutlet]="sectionHeaderContent"
-                                [ngTemplateOutletContext]="{
-                                    title: 'DHCP Options',
-                                    localHosts: localHosts,
-                                    all: localHostsGroups.dhcpOptions.length === 1,
-                                }"
-                            ></ng-container>
-                        </ng-template>
-                        <app-dhcp-option-set-view [options]="[localHosts[0].options]" [levels]="['host']">
-                        </app-dhcp-option-set-view>
+                        <div class="flex align-items-center">
+                            <div class="p-2 w-10rem">Next server</div>
+                            <div class="pl-2 monospace">
+                                <ng-container *ngIf="localHosts[0].nextServer?.length > 0; else bootFieldUnspec">
+                                    {{ localHosts[0].nextServer }}
+                                </ng-container>
+                            </div>
+                        </div>
+                        <div class="flex align-items-center">
+                            <div class="p-2 w-10rem">Server hostname</div>
+                            <div class="pl-2 monospace">
+                                <ng-container *ngIf="localHosts[0].serverHostname?.length > 0; else bootFieldUnspec">
+                                    {{ localHosts[0].serverHostname }}
+                                </ng-container>
+                            </div>
+                        </div>
+                        <div class="flex align-items-center">
+                            <div class="p-2 w-10rem">Boot file name</div>
+                            <div class="pl-2 monospace">
+                                <ng-container *ngIf="localHosts[0].bootFileName?.length > 0; else bootFieldUnspec">
+                                    {{ localHosts[0].bootFileName }}
+                                </ng-container>
+                            </div>
+                        </div>
+                        <ng-template #bootFieldUnspec> - </ng-template>
                     </p-fieldset>
                 </div>
             </ng-container>
-        </div>
+
+            <!-- Client classes -->
+            <div class="mb-4" *ngFor="let localHosts of localHostsGroups.clientClasses">
+                <p-fieldset>
+                    <ng-template pTemplate="header">
+                        <ng-container
+                            [ngTemplateOutlet]="sectionHeaderContent"
+                            [ngTemplateOutletContext]="{
+                                title: 'Client Classes',
+                                localHosts: localHosts,
+                                all: localHostsGroups.clientClasses.length === 1,
+                            }"
+                        ></ng-container>
+                    </ng-template>
+                    <app-dhcp-client-class-set-view [clientClasses]="localHosts[0].clientClasses">
+                    </app-dhcp-client-class-set-view>
+                </p-fieldset>
+            </div>
+
+            <!-- DHCP options -->
+            <div class="mb-4" *ngFor="let localHosts of localHostsGroups.dhcpOptions">
+                <p-fieldset>
+                    <ng-template pTemplate="header">
+                        <ng-container
+                            [ngTemplateOutlet]="sectionHeaderContent"
+                            [ngTemplateOutletContext]="{
+                                title: 'DHCP Options',
+                                localHosts: localHosts,
+                                all: localHostsGroups.dhcpOptions.length === 1,
+                            }"
+                        ></ng-container>
+                    </ng-template>
+                    <app-dhcp-option-set-view [options]="[localHosts[0].options]" [levels]="['host']">
+                    </app-dhcp-option-set-view>
+                </p-fieldset>
+            </div>
+        </ng-container>
     </div>
 </div>
 
