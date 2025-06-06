@@ -1,5 +1,5 @@
-<div class="flex flex-column">
-    <div class="flex flex-1 justify-content-start sm:justify-content-end max-w-100rem mb-2 sm:mb-0">
+<div class="flex flex-column max-w-100rem">
+    <div class="flex flex-1 justify-content-start sm:justify-content-end mb-2 sm:mb-0">
         <p-button
             label="Edit"
             icon="pi pi-pencil"
@@ -12,7 +12,7 @@
     </div>
 
     <div class="flex flex-column sm:flex-row mt-4 gap-3">
-        <p-fieldset legend="Global DHCP Parameters" class="flex-1 max-w-50rem">
+        <p-fieldset legend="Global DHCP Parameters" class="flex-1">
             <app-cascaded-parameters-board
                 [levels]="['Global']"
                 [data]="dhcpParameters"
@@ -20,7 +20,7 @@
                 [formatComplexTypes]="true"
             ></app-cascaded-parameters-board>
         </p-fieldset>
-        <p-fieldset legend="Global DHCP Options" class="flex-1 max-w-50rem">
+        <p-fieldset legend="Global DHCP Options" class="flex-1">
             <app-dhcp-option-set-view [options]="dhcpOptions" [levels]="['global']"></app-dhcp-option-set-view>
         </p-fieldset>
     </div>
