@@ -212,9 +212,10 @@ def test_fetching_statistics_from_kea_with_subnet_cmds_and_dhcp4_offline(
     total_nas_metric = metrics["kea_dhcp6_na_total"]
     sample = total_nas_metric.samples[0]
     labels = sample.labels
-    assert len(labels) == 3
+    assert len(labels) == 4
     assert labels["prefix"] == labels["subnet"]
     assert labels["subnet"] != labels["subnet_id"]
+    assert labels["shared_network"] is not None
 
 
 def test_agent_registration_administratively_disabled(
