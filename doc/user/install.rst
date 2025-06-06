@@ -57,6 +57,15 @@ to manage the subnets and shared networks. Stork can fetch and present subnets a
 hook library; however, adding, updating, or deleting a subnet or shared network requires the ``subnet_cmds``
 hook library to be loaded on all Kea instances where this subnet or shared network belongs.
 
+.. note::
+
+    The current version of Stork is generally not compatible with the Kea
+    Configuration Backend (CB) (configuration-in-database).  Stork does not
+    yet support the CB Commands (``cb_cmds``) hook library, which is required
+    for proper use of the Kea CB.  Stork depends on libraries such as
+    ``subnet_cmds`` which are also generally not compatible with the Kea CB.
+    This is expected to change in a future release of Stork.
+
 Stork uses the Go implementation to handle TLS connections, certificates, and keys. The secrets are stored in the PostgreSQL
 database, in the ``secret`` table.
 
