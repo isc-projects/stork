@@ -50,7 +50,7 @@
                 </app-help-tip>
             </div>
         </div>
-        <div class="flex flex-column sm:flex-row gap-2 mt-2 mb-2 sm:mt-0 sm:mb-0">
+        <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
             <button
                 *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
                 type="button"
@@ -75,7 +75,7 @@
             ></button>
         </div>
     </div>
-    <div class="mt-4 mb-4">
+    <div class="my-4">
         <p-fieldset id="apps-fieldset" legend="DHCP Servers Using the Shared Network">
             <p-table [value]="sharedNetwork.localSharedNetworks" styleClass="shared-network-servers-table">
                 <ng-template pTemplate="body" let-l>
