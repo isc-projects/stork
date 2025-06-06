@@ -54,20 +54,20 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.18.35",
-        "releaseDate": "2025-03-19",
+        "version": "9.18.37",
+        "releaseDate": "2025-05-21",
         "eolDate": "2026-07-01",
         "ESV": "true"
       },
       {
-        "version": "9.20.7",
-        "releaseDate": "2025-03-19",
+        "version": "9.20.9",
+        "releaseDate": "2025-05-21",
         "eolDate": "2028-07-01"
       }
     ],
     "latestDev": {
-      "version": "9.21.6",
-      "releaseDate": "2025-03-19"
+      "version": "9.21.8",
+      "releaseDate": "2025-05-21"
     }
   }
 }
