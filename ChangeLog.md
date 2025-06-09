@@ -1,3 +1,165 @@
+Stork 2.2.0 released on 2025-06-11.
+
+* 529 [doc] bscott
+
+    Clarify compatability with the Kea CB (Configuration Backend).
+    (Gitlab #1813)
+
+* 528 [doc] bscott, slawek
+
+    Improve, update, and fix documentation for the LDAP hook.
+    (Gitlab #1761)
+
+* 527 [ui] marcin
+
+    Better expose buttons for editing and deleting subnets, shared
+    networks, hosts and global parameters.
+    (Gitlab #1501)
+
+* 526 [sec] slawek
+
+    Fixed the security vulnerabilities reported by the security checkers
+    and Github Dependabot.
+    (Gitlab #1827)
+
+* 525 [func] piotrek
+
+    Table filtering user experience was improved. Buttons toggling
+    filtering panels are now better visible and accessible on the left
+    side of the panel. Reduced screen blinking when typing in the
+    filtering inputs. Number inputs no longer accept a numeric zero
+    filter value.
+    (Gitlab #1593, #1596, #1597, #1608)
+
+* 524 [bug] marcin
+
+    Fixed formatting of error events emitted when Kea returns an
+    HTTP error code in response to the control commands.
+    (Gitlab #1625)
+
+* 523 [func] slawek
+
+    Added a new label with a shared network name to the metrics exported
+    to Prometheus.
+    (Gitlab #1723)
+
+* 522 [func] slawek
+
+    The address and delegated prefix pool statistics are now fetched
+    from Kea. The UI displays utilization bars for the pools.
+    (Gitlab #1363)
+
+* 521 [func] slawek
+
+    Added a dedicated Not Found page. It is displayed when any UI
+    component does not handle a requested URL address.
+    (Gitlab #1816)
+
+* 520 [func] marcin
+
+    Delete associated entities (i.e., zones, subnets, shared networks,
+    host reservations) with the deleted machine.
+    (Gitlab #1733)
+
+* 519 [func] marcin
+
+    Extended the zone viewer to display the zone resource records for
+    a selected DNS server and view in the dialog.
+    (Gitlab #1713, #1714)
+
+* 518 [func] marcin
+
+    Stork server supports setting evaluate-additional-classes and
+    Kea client-classes parameters for Kea 2.7.4 and later.
+    (Gitlab #1653)
+
+* 517 [func] slawek
+
+    The Stork agent's Prometheus endpoint exports new metrics related to
+    lease assignments in address and prefix pools.
+    (Gitlab #1153)
+
+* 516 [func] piotrek
+
+    Added a new "read-only" user group. Users assigned to this
+    group have only read rights to the Stork data and REST API
+    endpoints. Some UI components (e.g., buttons or forms) are
+    disabled for read-only users.
+    (Gitlab #157)
+
+* 515 [func] slawek
+
+    The Stork server can now migrate host reservations from Kea JSON
+    configuration to the Kea hosts database.
+    (Gitlab #800)
+
+* 514 [func] piotrek
+
+    Added DNS dashboard. The new dashboard is displayed below the DHCP
+    dashboard. Users can control the dashboard's displayed/hidden
+    state with the toggle buttons.
+    (Gitlab #340)
+
+* 513 [func] tomek, piotrek
+
+    Zone Viewer UI was improved. Two new columns were added to the
+    Zone list table: Serial and Zone Type. If Stork detects a serial
+    mismatch across different servers or views, a red notification
+    will be displayed to draw the user's attention.
+    (Gitlab #1768)
+
+* 512 [func] piotrek
+
+    Zone viewer UI was improved. Some table column names were renamed
+    to be more precise about the table contents. Filtering by ANY zone
+    class was removed.
+    (Gitlab #1774, #1778, #1780)
+
+* 511 [build] slawek
+
+    Updated Kea version to 2.7.8 in demo and system tests.
+    (Gitlab #1792)
+
+* 510 [func] marcin
+
+    Eliminated issues with fetching large number of zones caused
+    by concurrent access to the BIND 9 statistics channel.
+    (Gitlab #1784)
+
+* 509 [func] piotrek
+
+    Improved Zone viewer UI to display a partial list of zones already
+    fetched during the ongoing zone fetch task running in the
+    background.
+    (Gitlab #1743)
+
+* 508 [func] piotrek
+
+    BIND9 App view UI was improved. Some labels were renamed to be
+    more precise about the displayed content. Clicking on Count of
+    Configured Zones will lead to Zone viewer displaying BIND9 App
+    zones.
+    (Gitlab #1775, #1777)
+
+* 507 [func] piotrek
+
+    Stork responsive UI was improved. The top menu navbar will
+    collapse earlier when the screen becomes too narrow to display all
+    the menu contents.
+    (Gitlab #1773)
+
+* 506 [func] slawek
+
+    Increased the number of visible rows per page in the JSON viewer
+    to fit all top-level Kea configuration options on a single page.
+    (Gitlab #1704)
+
+* 505 [bug] marcin
+
+    Fixed a bug whereby zones removed from the DNS servers remained
+    stale in the Stork server database.
+    (Gitlab #1769)
+
 Stork 2.1.2 released on 2025-04-02.
 
 * 504 [build] slawek
