@@ -375,24 +375,7 @@ def _prepare_kea_wrapper(
         server_service_instance = request.getfixturevalue("server_service")
 
     # Re-generate the lease files
-    config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
-    lease_expire = str(int((datetime.now() + timedelta(minutes=10)).timestamp()))
-
-    lease_path = os.path.join(config_dir, "kea-leases4.csv")
-    with open(lease_path + ".template", "rt", encoding="utf-8") as f:
-        lease_template = f.read()
-    lease_file_content = lease_template.format(expire=lease_expire)
-    with open(lease_path, "w+t", encoding="utf-8") as f:
-        f.write(lease_file_content)
-
-    lease_path = os.path.join(config_dir, "kea-leases6.csv")
-    with open(
-        os.path.join(config_dir, "kea-leases6.csv.template"), "rt", encoding="utf-8"
-    ) as f:
-        lease_template = f.read()
-    lease_file_content = lease_template.format(expire=lease_expire)
-    with open(lease_path, "w+t", encoding="utf-8") as f:
-        f.write(lease_file_content)
+    _regenerate_lease_files(config_dirname)
 
     compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)
@@ -402,6 +385,28 @@ def _prepare_kea_wrapper(
         wrapper.wait_for_registration()
 
     return wrapper
+
+
+def _regenerate_lease_files(config_dirname):
+    """
+    Regenerates the Kea lease files with a new expiration time.
+    This is used to ensure that the lease files are always up-to-date.
+
+    Parameters
+    ----------
+    config_dirname : str
+        The name of the directory where the lease files are stored.
+    """
+    config_dir = os.path.join(os.path.dirname(__file__), "../config", config_dirname)
+    lease_expire = str(int((datetime.now() + timedelta(minutes=10)).timestamp()))
+
+    for lease_filename in ["kea-leases4.csv", "kea-leases6.csv"]:
+        lease_path = os.path.join(config_dir, lease_filename)
+        with open(lease_path + ".template", "rt", encoding="utf-8") as f:
+            lease_template = f.read()
+        lease_file_content = lease_template.format(expire=lease_expire)
+        with open(lease_path, "w+t", encoding="utf-8") as f:
+            f.write(lease_file_content)
 
 
 @pytest.fixture
