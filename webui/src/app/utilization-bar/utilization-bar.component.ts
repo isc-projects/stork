@@ -86,13 +86,13 @@ export class UtilizationBarComponent {
             if (this.kindPrimary && this.kindSecondary) {
                 line += ` ${this.kindPrimary}`
             }
-            line += `: ${this.utilizationPrimary}%`
+            line += `: ${this.utilizationPrimary.toFixed(1)}%`
             lines.push(line)
             hasUtilizationLine = true
         }
 
         if (this.isDouble && this.utilizationSecondary != null) {
-            lines.push(`Utilization ${this.kindSecondary}: ${this.utilizationSecondary}%`)
+            lines.push(`Utilization ${this.kindSecondary}: ${this.utilizationSecondary.toFixed(1)}%`)
             hasUtilizationLine = true
         }
 
