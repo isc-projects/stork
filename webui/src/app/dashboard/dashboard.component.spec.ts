@@ -180,7 +180,7 @@ describe('DashboardComponent', () => {
                             'declined-addresses': '100',
                         },
                         statsCollectedAt: '2022-01-19T12:10:22.513Z',
-                        addrUtilization: 10,
+                        addrUtilization: 10.000000000000002,
                     },
                 ],
                 total: 10496,

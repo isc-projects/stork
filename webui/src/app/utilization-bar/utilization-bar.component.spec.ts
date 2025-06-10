@@ -62,14 +62,14 @@ describe('UtilizationBarComponent', () => {
             'assigned-pds': 202.0,
         }
 
-        expect(component.tooltip).toContain('101%')
+        expect(component.tooltip).toContain('101.0%')
         expect(component.tooltip).toContain('Data is unreliable')
     })
 
     it('has tooltip when utilization is known but the stats are not', () => {
         component.utilizationPrimary = 50
 
-        expect(component.tooltip).toContain('50%')
+        expect(component.tooltip).toContain('50.0%')
         expect(component.tooltip).toContain('No statistics yet')
         expect(component.tooltip).toContain('Utilization')
     })
@@ -89,6 +89,13 @@ describe('UtilizationBarComponent', () => {
 
     it('has tooltip when utilization and stats are unknown', () => {
         expect(component.tooltip).toBe('No statistics yet')
+    })
+
+    it('limits decimal places in utilization', () => {
+        component.utilizationPrimary = 9.87654321
+
+        expect(component.tooltip).toContain('9.9%')
+        expect(component.tooltip).toContain('Utilization')
     })
 
     it('tooltip should be prepared for DHCPv4', () => {
