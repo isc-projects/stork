@@ -181,7 +181,7 @@
                 <app-human-count [value]="getAssignedAddresses(net)"></app-human-count>
             </td>
             <td>
-                {{ net.addrUtilization ?? '0' }} %
+                {{ net.addrUtilization ?? 0 | number: '1.0-1' }}%
                 <i
                     *ngIf="net.addrUtilization > 80 && net.addrUtilization <= 90"
                     class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
@@ -199,7 +199,7 @@
                     <app-human-count [value]="getAssignedDelegatedPrefixes(net)"></app-human-count>
                 </td>
                 <td>
-                    {{ net.pdUtilization ?? '0' }} %
+                    {{ net.pdUtilization ?? 0 | number: '1.0-1' }} %
                     <i
                         *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
                         class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
