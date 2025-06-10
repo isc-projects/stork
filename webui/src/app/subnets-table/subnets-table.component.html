@@ -218,7 +218,7 @@
                 <app-human-count [value]="getAssignedAddresses(sn)"></app-human-count>
             </td>
             <td>
-                {{ sn.addrUtilization ? sn.addrUtilization.toFixed(1) : '0' }} %
+                {{ sn.addrUtilization ? sn.addrUtilization : '0' }} %
                 <i
                     *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
                     class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
@@ -236,7 +236,7 @@
                     <app-human-count [value]="getAssignedDelegatedPrefixes(sn)"></app-human-count>
                 </td>
                 <td *ngIf="sn.subnet.includes(':')">
-                    {{ sn.pdUtilization ? sn.pdUtilization.toFixed(1) : '0' }} %
+                    {{ sn.pdUtilization ? sn.pdUtilization : '0' }} %
                     <i
                         *ngIf="sn.pdUtilization > 80 && sn.pdUtilization <= 90"
                         class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"

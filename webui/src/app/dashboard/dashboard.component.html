@@ -78,7 +78,7 @@
                                     <app-subnet-bar [subnet]="sn"></app-subnet-bar>
                                 </td>
                                 <td class="utilization-row__value">
-                                    {{ sn.addrUtilization ? sn.addrUtilization.toFixed(1) : '0' }}% used
+                                    {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                     <i
                                         *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
                                         class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
@@ -137,7 +137,7 @@
                                 </td>
                                 <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
                                 <td class="utilization-row__value">
-                                    {{ net.addrUtilization ? net.addrUtilization.toFixed(1) : '0' }}% used
+                                    {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                                 </td>
                             </tr>
 
@@ -202,7 +202,7 @@
                                     <app-subnet-bar [subnet]="sn"></app-subnet-bar>
                                 </td>
                                 <td class="utilization-row__value">
-                                    {{ sn.addrUtilization ? sn.addrUtilization.toFixed(1) : '0' }}% used
+                                    {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                     <i
                                         *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
                                         class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
@@ -261,7 +261,7 @@
                                 </td>
                                 <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
                                 <td class="utilization-row__value">
-                                    {{ net.addrUtilization ? net.addrUtilization.toFixed(1) : '0' }}% used
+                                    {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                                 </td>
                             </tr>
 
