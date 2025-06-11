@@ -426,8 +426,8 @@ class DockerCompose:
 
         Returns
         -------
-        tuple[str, str, int]
-            stdout, stderr, return code
+        tuple[int, str, str]
+            return code, stdout, stderr
         """
         exec_cmd = (
             self.docker_compose_command() + ["exec", "-T", service_name] + command

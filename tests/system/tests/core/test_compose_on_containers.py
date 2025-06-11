@@ -18,7 +18,7 @@ def test_server_instance():
 
 def test_kea_only_instance():
     service_name = "agent-kea"
-    env_vars = {"STORK_SERVER_URL": ""}
+    env_vars = {"STORK_SERVER_URL": "", "STORK_AGENT_LISTEN_PROMETHEUS_ONLY": "true"}
     compose = create_docker_compose(extra_env_vars=env_vars)
     compose.bootstrap(service_name)
     compose.wait_for_operational(service_name)

@@ -590,6 +590,12 @@ def collect_logs(test_dir: Path):
         with open(test_dir / f"inspect-{service_name}.json", "wt", encoding="utf-8") as f:
             f.write(inspect_stdout)
 
+        # Collect supervisor status
+        _, stdout, _ = compose.exec(service_name, ["supervisorctl", "status"], check=False)
+        if stdout.strip() != "":
+            with open(test_dir / f"supervisorctl-status-{service_name}.out", "wt", encoding="utf-8") as f:
+                f.write(stdout)
+
     if has_non_operational_service:
         # Collect service statuses
         ps_stdout = compose.ps()
