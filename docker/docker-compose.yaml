@@ -17,6 +17,7 @@ services:
       - "agent-kea:172.24.0.100"
       - "agent-kea6:172.24.0.106"
       - "agent-kea-premium-one:172.24.0.103"
+      - "agent-pdns:172.24.0.55"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
       - storknet

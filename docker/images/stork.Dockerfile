@@ -435,6 +435,8 @@ RUN apt-get update \
 COPY --from=agent-builder /app/dist/agent /
 # Run the processes.
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+# Incoming port
+EXPOSE 8080
 HEALTHCHECK CMD [ "supervisorctl", "-c", "/etc/supervisor/supervisord.conf", "status" ]
 
 #################
