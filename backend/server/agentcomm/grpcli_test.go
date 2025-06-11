@@ -1409,3 +1409,89 @@ func TestReceiveZoneRRs(t *testing.T) {
 		require.Equal(t, rrs[i], rr.String())
 	}
 }
+
+// Test successfully getting the PowerDNS server information.
+func TestGetPowerDNSServerInfo(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	rsp := &agentapi.GetPowerDNSServerInfoRsp{
+		Type:       "PowerDNS",
+		Id:         "127.0.0.1",
+		DaemonType: "pdns",
+		Version:    "4.7.0",
+		Url:        "http://127.0.0.1:8081",
+	}
+	mockAgentClient.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any(), newGZIPMatcher()).AnyTimes().Return(rsp, nil)
+
+	serverInfo, err := agents.GetPowerDNSServerInfo(context.Background(), app)
+	require.NoError(t, err)
+	require.NotNil(t, serverInfo)
+	require.Equal(t, "PowerDNS", serverInfo.Type)
+	require.Equal(t, "127.0.0.1", serverInfo.ID)
+	require.Equal(t, "pdns", serverInfo.DaemonType)
+	require.Equal(t, "4.7.0", serverInfo.Version)
+	require.Equal(t, "http://127.0.0.1:8081", serverInfo.URL)
+}
+
+// Test that an error is returned when trying to get the PowerDNS server
+// when there is no access point.
+func TestGetPowerDNSServerInfoNoAccessPoint(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	_, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	serverInfo, err := agents.GetPowerDNSServerInfo(context.Background(), app)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "no access point")
+	require.Nil(t, serverInfo)
+}
+
+// Test that an error is returned when trying to get the PowerDNS server
+// when the gRPC call fails.
+func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
+	app := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockAgentClient.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any(), newGZIPMatcher()).AnyTimes().Return(nil, &testError{})
+
+	serverInfo, err := agents.GetPowerDNSServerInfo(context.Background(), app)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "test error")
+	require.Nil(t, serverInfo)
+}

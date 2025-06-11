@@ -20,8 +20,9 @@ var (
 	_ App             = (*Bind9App)(nil)
 	_ bind9FileParser = (*bind9config.Parser)(nil)
 
-	// Pattern for detecting named process.
-	bind9Pattern = regexp.MustCompile(`(.*?)named\s+(.*)`)
+	// Patterns for detecting named process.
+	bind9Pattern       = regexp.MustCompile(`(.*?)named\s+(.*)`)
+	bind9ChrootPattern = regexp.MustCompile(`-t\s+(\S+)`)
 )
 
 // An interface for parsing BIND 9 configuration files.
@@ -81,6 +82,11 @@ func (ba *Bind9App) AwaitBackgroundTasks() {
 	if ba.zoneInventory != nil {
 		ba.zoneInventory.awaitBackgroundTasks()
 	}
+}
+
+// Returns the zone inventory instance associated with the BIND 9 app.
+func (ba *Bind9App) GetZoneInventory() *zoneInventory {
+	return ba.zoneInventory
 }
 
 // List of BIND 9 executables used during app detection.
@@ -504,7 +510,7 @@ func parseNamedDefaultPath(output []byte) string {
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
 // error occurs.
-func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) *Bind9App {
+func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) App {
 	cmdline, err := p.getCmdline()
 	if err != nil {
 		return nil
@@ -531,8 +537,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	bind9ConfPath := ""
 
 	// Look for the chroot directory.
-	chrootPathPattern := regexp.MustCompile(`-t\s+(\S+)`)
-	m := chrootPathPattern.FindStringSubmatch(bind9Params)
+	m := bind9ChrootPattern.FindStringSubmatch(bind9Params)
 	if m != nil {
 		rootPrefix = strings.TrimRight(m[1], "/")
 

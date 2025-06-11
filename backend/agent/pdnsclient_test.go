@@ -20,6 +20,9 @@ var pdnsZones []byte
 //go:embed testdata/pdns-api-statistics.json
 var pdnsStats []byte
 
+//go:embed testdata/pdns-api-server-info.json
+var pdnsServerInfo []byte
+
 // Test creating base URL by appending the /api/v{n} path to the host and
 // port with ensuring correct slashes.
 func TestSetPDNSClientBasePath(t *testing.T) {
@@ -30,7 +33,7 @@ func TestSetPDNSClientBasePath(t *testing.T) {
 
 // Test making an URL by appending the path to the base URL.
 func TestPDNSMakeURL(t *testing.T) {
-	request := NewPDNSClient("stork").createRequest("localhost", 5380)
+	request := NewPDNSClient().createRequest("stork", "localhost", 5380)
 	require.NotNil(t, request)
 	require.Equal(t, fmt.Sprintf("http://localhost:5380/api/v%d/servers/localhost/zones", pdnsAPIVersion), request.makeURL("servers/localhost/zones"))
 	require.Equal(t, fmt.Sprintf("http://localhost:5380/api/v%d/servers/localhost/zones", pdnsAPIVersion), request.makeURL("/servers/localhost/zones"))
@@ -53,7 +56,7 @@ func TestPDNSGetRawJSON(t *testing.T) {
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(pdnsStats))
-	request := NewPDNSClient("stork").createRequest("localhost", 5380)
+	request := NewPDNSClient().createRequest("stork", "localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, rawJSON, err := request.getRawJSON("/servers/localhost/statistics")
@@ -79,7 +82,7 @@ func TestPDNSGetRawJSON404(t *testing.T) {
 		Reply(404).
 		AddHeader("Content-Type", "application/json").
 		BodyString("No such URL")
-	request := NewPDNSClient("stork").createRequest("localhost", 5380)
+	request := NewPDNSClient().createRequest("stork", "localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, rawJSON, err := request.getRawJSON("/servers/localhost/statistics")
@@ -127,10 +130,10 @@ func TestPDNSGetViews(t *testing.T) {
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(pdnsZones))
-	client := NewPDNSClient("stork")
+	client := NewPDNSClient()
 	gock.InterceptClient(client.innerClient.GetClient())
 
-	response, views, err := client.getViews("localhost", 5380)
+	response, views, err := client.getViews("stork", "localhost", 5380)
 	require.NoError(t, err)
 	require.NotNil(t, response)
 	require.Equal(t, http.StatusOK, response.StatusCode())
@@ -169,7 +172,7 @@ func TestPDNSGetViews404(t *testing.T) {
 		Reply(404).
 		AddHeader("Content-Type", "application/json").
 		BodyString("No such URL")
-	request := NewPDNSClient("stork").createRequest("localhost", 5380)
+	request := NewPDNSClient().createRequest("stork", "localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
 
 	response, views, err := request.getViews()
@@ -202,6 +205,37 @@ func TestPDNSGetViewsError(t *testing.T) {
 	require.Nil(t, views)
 }
 
+func TestPDNSGetServerInfo(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("api/v1/servers/localhost").
+		MatchHeader("X-API-Key", "stork").
+		AddMatcher(func(r1 *http.Request, r2 *gock.Request) (bool, error) {
+			// Require empty body
+			return r1.Body == nil, nil
+		}).
+		Persist().
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(pdnsServerInfo))
+	request := NewPDNSClient().createRequest("stork", "localhost", 5380)
+	gock.InterceptClient(request.innerClient.GetClient())
+
+	response, serverInfo, err := request.getServerInfo()
+	require.NoError(t, err)
+	require.NotNil(t, response)
+	require.Equal(t, http.StatusOK, response.StatusCode())
+	require.NotNil(t, serverInfo)
+
+	require.Equal(t, "localhost", serverInfo.ID)
+	require.Equal(t, "authoritative", serverInfo.DaemonType)
+	require.Equal(t, "4.7.3", serverInfo.Version)
+	require.Equal(t, "/api/v1/servers/localhost", serverInfo.URL)
+	require.Equal(t, "/api/v1/servers/localhost/zones{/zone}", serverInfo.ZonesURL)
+	require.Equal(t, "/api/v1/servers/localhost/config{/config_setting}", serverInfo.ConfigURL)
+	// require.Equal(t, "/api/v1/servers/localhost/autoprimaries", serverInfo.AutoprimariesURL)
+}
+
 // Test that the client returns with a timeout if the server doesn't
 // respond.
 func TestPDNSClientTimeout(t *testing.T) {
@@ -217,7 +251,7 @@ func TestPDNSClientTimeout(t *testing.T) {
 		ts.Close()
 	}()
 
-	client := NewPDNSClient("stork")
+	client := NewPDNSClient()
 	// Set very short timeout for the testing purposes.
 	client.SetRequestTimeout(100 * time.Millisecond)
 	var (
@@ -232,7 +266,7 @@ func TestPDNSClientTimeout(t *testing.T) {
 		// Use the client to communicate with the server. This call
 		// should return with a timeout because the server response
 		// is blocked.
-		request := client.createRequestFromURL(ts.URL)
+		request := client.createRequestFromURL("stork", ts.URL)
 		_, _, err = request.getRawJSON(ts.URL)
 		defer func() {
 			// Indicate that the client returned.

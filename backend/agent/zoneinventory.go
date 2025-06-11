@@ -39,6 +39,7 @@ const zoneInventoryMetaFileName = "zone-inventory.json"
 // it returns the elements required to perform zone transfers.
 type dnsConfigAccessor interface {
 	GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error)
+	GetAPIKey() string
 }
 
 // An interface to a REST client communicating with a DNS server and returning
@@ -54,7 +55,7 @@ type dnsConfigAccessor interface {
 // servers.
 type zoneFetcher interface {
 	// Returns a list of zones configured in a DNS server grouped into views.
-	getViews(host string, port int64) (httpResponse, *bind9stats.Views, error)
+	getViews(apiKey string, host string, port int64) (httpResponse, *bind9stats.Views, error)
 }
 
 // An error indicating that the zone inventory is busy and the requested transition
@@ -810,7 +811,7 @@ func (inventory *zoneInventory) populate(block bool) (chan zoneInventoryAsyncNot
 	go func() {
 		defer inventory.wg.Done()
 		// Fetch views and zones from the DNS server.
-		response, views, err := inventory.client.getViews(inventory.host, inventory.port)
+		response, views, err := inventory.client.getViews(inventory.config.GetAPIKey(), inventory.host, inventory.port)
 		if err == nil {
 			if response.IsError() {
 				err = errors.Errorf("DNS server returned error status code %d with message: %s", response.StatusCode(), response.String())

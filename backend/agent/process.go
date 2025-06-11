@@ -63,7 +63,7 @@ func (p *processWrapper) getName() (string, error) {
 // Convenience function checking if the detected process is supported by the agent.
 func isSupportedProcess(p *process.Process) bool {
 	name, _ := p.Name()
-	return name == keaProcName || name == namedProcName
+	return name == keaProcName || name == namedProcName || name == pdnsProcName
 }
 
 // An interface for listing the supported processes. It can be mocked in the

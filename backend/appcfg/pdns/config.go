@@ -1,5 +1,12 @@
 package pdnsconfig
 
+import (
+	"net"
+
+	"github.com/pkg/errors"
+	storkutil "isc.org/stork/util"
+)
+
 // Config represents a parsed PowerDNS configuration.
 type Config struct {
 	values map[string][]ParsedValue
@@ -46,6 +53,58 @@ func (c *Config) GetValues(key string) []ParsedValue {
 		return values
 	}
 	return []ParsedValue{}
+}
+
+// Gets the target address and the required credentials for the zone transfer.
+// Since TSIG keys are not specified in the configuration file, this function
+// assumes that the TSIG is disabled for the zone transfers from the local host.
+// It checks IP addresses and ranges specified in the allow-axfr-ips. If this
+// parameter allows zone transfer from the localhost addresses, the function
+// returns 127.0.0.1 or ::1 as a target address. It will return an error if
+// AXFR is globally disabled or if the allow-axfr-ips parameter forbids access
+// from the localhost addresses. The function ignores the viewName parameter
+// until views are supported in PowerDNS and Stork.
+func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error) {
+	disableAXFR := c.GetBool("disable-axfr")
+	if disableAXFR != nil && *disableAXFR {
+		// AXFR is globally disabled.
+		return nil, nil, nil, nil, errors.Errorf("disable-axfr is set to disable zone transfers")
+	}
+	allowedIPs := c.GetValues("allow-axfr-ips")
+	if allowedIPs == nil {
+		// By default, PowerDNS allows AXFR from the localhost.
+		return storkutil.Ptr("127.0.0.1"), nil, nil, nil, nil
+	}
+	for _, value := range allowedIPs {
+		allowed := value.GetString()
+		if allowed == nil {
+			// Invalid value. Get the next one.
+			continue
+		}
+		parsedAllowed := storkutil.ParseIP(*allowed)
+		if parsedAllowed == nil {
+			// Invalid value.
+			continue
+		}
+		switch {
+		// Check for things like 127.0.0.0/8 or 127.0.0.1.
+		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("127.0.0.1")), parsedAllowed.IP.Equal(net.ParseIP("127.0.0.1")):
+			return storkutil.Ptr("127.0.0.1"), nil, nil, nil, nil
+		// Check for things like ::/120 or ::1.
+		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("::1")), parsedAllowed.IP.Equal(net.ParseIP("::1")):
+			return storkutil.Ptr("::1"), nil, nil, nil, nil
+		}
+	}
+	return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-axfr-ips allows neither 127.0.0.1 nor ::1", zoneName)
+}
+
+// Returns the API key for the statistics channel. This key is included in
+// the X-API-Key header.
+func (c *Config) GetAPIKey() string {
+	if key := c.GetString("api-key"); key != nil {
+		return *key
+	}
+	return ""
 }
 
 // ParsedValue represents a parsed value from a PowerDNS configuration.

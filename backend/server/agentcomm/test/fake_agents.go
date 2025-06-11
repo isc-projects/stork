@@ -7,6 +7,7 @@ import (
 	"github.com/miekg/dns"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
+	pdnsdata "isc.org/stork/appdata/pdns"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -177,6 +178,12 @@ func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.Cont
 		return output, nil
 	}
 
+	return nil, nil
+}
+
+// FakeAgents specific implementation of the function to get the PowerDNS
+// server information. It returns nil.
+func (fa *FakeAgents) GetPowerDNSServerInfo(ctx context.Context, app agentcomm.ControlledApp) (*pdnsdata.ServerInfo, error) {
 	return nil, nil
 }
 

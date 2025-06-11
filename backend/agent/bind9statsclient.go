@@ -12,7 +12,10 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-var _ httpResponse = (*resty.Response)(nil)
+var (
+	_ httpResponse = (*resty.Response)(nil)
+	_ zoneFetcher  = (*bind9StatsClient)(nil)
+)
 
 // BIND9 stats API version. This is the number being a part of
 // the URL path, e.g. http://localhost:8080/json/v1, where 1 is
@@ -167,7 +170,7 @@ func (client *bind9StatsClient) createRequestFromURL(url string) *bind9StatsClie
 }
 
 // Makes a request to retrieve BIND9 views over the stats channel.
-func (client *bind9StatsClient) getViews(host string, port int64) (httpResponse, *bind9stats.Views, error) {
+func (client *bind9StatsClient) getViews(apiKey string, host string, port int64) (httpResponse, *bind9stats.Views, error) {
 	return client.createRequest(host, port).getViews()
 }
 

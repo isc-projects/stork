@@ -20,6 +20,7 @@ import (
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/appdata/bind9stats"
+	pdnsdata "isc.org/stork/appdata/pdns"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -851,6 +852,37 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, app
 
 	// Everything was fine, so return no error.
 	return result, nil
+}
+
+// Returns the PowerDNS server information.
+func (agents *connectedAgentsImpl) GetPowerDNSServerInfo(ctx context.Context, app ControlledApp) (*pdnsdata.ServerInfo, error) {
+	address, port, _, _, err := app.GetControlAccessPoint()
+	if err != nil {
+		return nil, err
+	}
+	addrPort := net.JoinHostPort(address, strconv.FormatInt(port, 10))
+	req := &agentapi.GetPowerDNSServerInfoReq{
+		WebserverAddress: address,
+		WebserverPort:    port,
+	}
+	agentResponse, err := agents.sendAndRecvViaQueue(addrPort, req)
+	if err != nil {
+		return nil, err
+	}
+	response, ok := agentResponse.(*agentapi.GetPowerDNSServerInfoRsp)
+	if !ok || response == nil {
+		return nil, errors.Errorf("wrong response to getting PowerDNS server info from the Stork agent %s", addrPort)
+	}
+	serverInfo := &pdnsdata.ServerInfo{
+		Type:       response.Type,
+		ID:         response.Id,
+		DaemonType: response.DaemonType,
+		Version:    response.Version,
+		URL:        response.Url,
+		ConfigURL:  response.ConfigURL,
+		ZonesURL:   response.ZonesURL,
+	}
+	return serverInfo, nil
 }
 
 // Get the tail of the remote text file.

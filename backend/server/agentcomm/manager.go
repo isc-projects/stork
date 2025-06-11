@@ -79,6 +79,8 @@ func doCall(ctx context.Context, agent *agentState, in interface{}) (interface{}
 		response, err = client.ForwardToNamedStats(ctx, inData, bigMessageOptions...)
 	case *agentapi.ForwardToKeaOverHTTPReq:
 		response, err = client.ForwardToKeaOverHTTP(ctx, inData, bigMessageOptions...)
+	case *agentapi.GetPowerDNSServerInfoReq:
+		response, err = client.GetPowerDNSServerInfo(ctx, inData, bigMessageOptions...)
 	case *agentapi.TailTextFileReq:
 		response, err = client.TailTextFile(ctx, inData, bigMessageOptions...)
 	default:

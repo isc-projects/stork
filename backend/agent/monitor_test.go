@@ -16,6 +16,7 @@ import (
 	"gopkg.in/h2non/gock.v1"
 
 	bind9config "isc.org/stork/appcfg/bind9"
+	pdnsconfig "isc.org/stork/appcfg/pdns"
 	"isc.org/stork/testutil"
 )
 
@@ -35,6 +36,14 @@ const defaultBind9Config = `
 		inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
 		inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
 	};`
+
+const defaultPDNSConfig = `
+	api
+	webserver
+	webserver-port=8081
+	webserver-address=127.0.0.1
+	api-key=stork
+`
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
@@ -182,7 +191,7 @@ func TestReadKeaConfigOk(t *testing.T) {
 	require.False(t, config.UseSecureProtocol())
 }
 
-// Test that the Kea and BIND 9 apps are detected properly.
+// Test that the Kea, BIND 9 and PowerDNS apps are detected properly.
 func TestDetectApps(t *testing.T) {
 	// Arrange
 	sb := testutil.NewSandbox()
@@ -194,8 +203,8 @@ func TestDetectApps(t *testing.T) {
 		"http-port": 45634
 	} }`)
 
-	// Prepare the command executor.
-	executor := newTestCommandExecutorDefault()
+	// Prepare the command commander.
+	commander := newTestCommandExecutorDefault()
 
 	// Prepare process mocks.
 	ctrl := gomock.NewController(t)
@@ -217,6 +226,13 @@ func TestDetectApps(t *testing.T) {
 	bind9Process.EXPECT().getPid().AnyTimes().Return(int32(5678))
 	bind9Process.EXPECT().getParentPid().AnyTimes().Return(int32(6789), nil)
 
+	pdnsProcess := NewMockSupportedProcess(ctrl)
+	pdnsProcess.EXPECT().getName().AnyTimes().Return("pdns_server", nil)
+	pdnsProcess.EXPECT().getCmdline().AnyTimes().Return("pdns_server -c /etc/pdns.conf", nil)
+	pdnsProcess.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
+	pdnsProcess.EXPECT().getPid().AnyTimes().Return(int32(7890))
+	pdnsProcess.EXPECT().getParentPid().AnyTimes().Return(int32(8901), nil)
+
 	unknownProcess := NewMockSupportedProcess(ctrl)
 	unknownProcess.EXPECT().getName().AnyTimes().Return("unknown", nil)
 	unknownProcess.EXPECT().getPid().AnyTimes().Return(int32(3456))
@@ -225,15 +241,26 @@ func TestDetectApps(t *testing.T) {
 	processManager := NewProcessManager()
 	lister := NewMockProcessLister(ctrl)
 	lister.EXPECT().listProcesses().AnyTimes().Return([]supportedProcess{
-		keaProcess, bind9Process, unknownProcess,
+		keaProcess, bind9Process, pdnsProcess, unknownProcess,
 	}, nil)
 	processManager.lister = lister
 
-	parser := NewMockBind9FileParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
+	bind9ConfigParser := NewMockBind9FileParser(ctrl)
+	bind9ConfigParser.EXPECT().ParseFile("/etc/named.conf").AnyTimes().DoAndReturn(func(configPath string) (*bind9config.Config, error) {
 		return bind9config.NewParser().Parse(configPath, strings.NewReader(defaultBind9Config))
 	})
-	am := &appMonitor{processManager: processManager, commander: executor, bind9FileParser: parser}
+
+	pdnsConfigParser := NewMockPDNSConfigParser(ctrl)
+	pdnsConfigParser.EXPECT().ParseFile("/etc/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
+		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
+	})
+
+	am := &appMonitor{
+		processManager:   processManager,
+		commander:        commander,
+		bind9FileParser:  bind9ConfigParser,
+		pdnsConfigParser: pdnsConfigParser,
+	}
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
 	httpConfig := HTTPClientConfig{}
@@ -252,17 +279,20 @@ func TestDetectApps(t *testing.T) {
 	apps := am.apps
 
 	// Assert
-	require.Len(t, apps, 2)
+	require.Len(t, apps, 3)
 	require.Equal(t, AppTypeKea, apps[0].GetBaseApp().Type)
 	require.EqualValues(t, 1234, apps[0].GetBaseApp().Pid)
 	require.Equal(t, AppTypeBind9, apps[1].GetBaseApp().Type)
 	require.EqualValues(t, 5678, apps[1].GetBaseApp().Pid)
+	require.Equal(t, AppTypePowerDNS, apps[2].GetBaseApp().Type)
+	require.EqualValues(t, 7890, apps[2].GetBaseApp().Pid)
 
 	// Detect tha apps again. The zone inventory should be preserved.
 	am.detectApps(sa)
 	apps2 := am.apps
-	require.Len(t, apps2, 2)
+	require.Len(t, apps2, 3)
 	require.Equal(t, apps[1].(*Bind9App).zoneInventory, apps2[1].(*Bind9App).zoneInventory)
+	require.Equal(t, apps[2].(*pdnsApp).zoneInventory, apps2[2].(*pdnsApp).zoneInventory)
 
 	// If the app access point changes, the inventory should be recreated.
 	for index, accessPoint := range am.apps[1].(*Bind9App).AccessPoints {
@@ -271,11 +301,19 @@ func TestDetectApps(t *testing.T) {
 			am.apps[1].(*Bind9App).AccessPoints[index].Port = 5453
 		}
 	}
+	for index, accessPoint := range am.apps[2].(*pdnsApp).AccessPoints {
+		if accessPoint.Type == AccessPointControl {
+			// Change the access point port.
+			am.apps[2].(*pdnsApp).AccessPoints[index].Port = 8082
+		}
+	}
+
 	// Redetect apps. It should result in recreating the zone inventory.
 	am.detectApps(sa)
 	apps3 := am.apps
-	require.Len(t, apps3, 2)
+	require.Len(t, apps3, 3)
 	require.NotEqual(t, apps[1].(*Bind9App).zoneInventory, apps3[1].(*Bind9App).zoneInventory)
+	require.NotEqual(t, apps[2].(*pdnsApp).zoneInventory, apps3[2].(*pdnsApp).zoneInventory)
 }
 
 // Test that the processes for which the command line cannot be read are
@@ -401,7 +439,7 @@ func TestDetectAppsNoAppDetectedWarning(t *testing.T) {
 	am.detectApps(sa)
 
 	// Assert
-	require.Contains(t, buffer.String(), "No Kea nor Bind9 app detected for monitoring")
+	require.Contains(t, buffer.String(), "No app detected for monitoring")
 }
 
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
@@ -486,6 +524,49 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }
 
+// Check PowerDNS app detection when its conf file is absolute path.
+func TestDetectPowerDNSAppAbsPath(t *testing.T) {
+	// check BIND 9 app detection
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	parser := NewMockPDNSConfigParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
+		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
+	})
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-dir=/etc", nil)
+	process.EXPECT().getCwd().Return("", nil)
+	app, err := detectPowerDNSApp(process, parser)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypePowerDNS)
+	require.Len(t, app.GetBaseApp().AccessPoints, 1)
+	point := app.GetBaseApp().AccessPoints[0]
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "127.0.0.1", point.Address)
+	require.EqualValues(t, 8081, point.Port)
+	require.NotEmpty(t, point.Key)
+}
+
+// Check PowerDNS app detection when its conf file is relative to CWD of its process.
+func TestDetectPowerDNSAppRelativePath(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	parser := NewMockPDNSConfigParser(ctrl)
+	parser.EXPECT().ParseFile("/etc/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
+		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
+	})
+	process := NewMockSupportedProcess(ctrl)
+	process.EXPECT().getCmdline().Return("/dir/pdns_server --config-name=pdns.conf", nil)
+	process.EXPECT().getCwd().Return("/etc", nil)
+	app, err := detectPowerDNSApp(process, parser)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Equal(t, app.GetBaseApp().Type, AppTypePowerDNS)
+}
+
 // Creates a basic Kea configuration file.
 // Caller is responsible for remove the file.
 func makeKeaConfFile() (string, func()) {
@@ -532,7 +613,9 @@ func makeKeaConfFileWithInclude() (string, func()) {
 }
 
 func TestDetectKeaApp(t *testing.T) {
-	checkApp := func(app *KeaApp) {
+	checkApp := func(app App) {
+		keaApp, ok := app.(*KeaApp)
+		require.True(t, ok)
 		require.NotNil(t, app)
 		require.Equal(t, AppTypeKea, app.GetBaseApp().Type)
 		require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -541,8 +624,8 @@ func TestDetectKeaApp(t *testing.T) {
 		require.Equal(t, "localhost", ctrlPoint.Address)
 		require.EqualValues(t, 45634, ctrlPoint.Port)
 		require.Empty(t, ctrlPoint.Key)
-		require.Len(t, app.ConfiguredDaemons, 3)
-		require.Nil(t, app.ActiveDaemons)
+		require.Len(t, keaApp.ConfiguredDaemons, 3)
+		require.Nil(t, keaApp.ActiveDaemons)
 	}
 
 	httpClientConfig := HTTPClientConfig{}

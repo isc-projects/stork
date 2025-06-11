@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"path"
 	"slices"
@@ -20,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/security/advancedtls"
 	"google.golang.org/grpc/status"
 	"gopkg.in/h2non/gock.v1"
@@ -55,6 +57,9 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	bind9StatsClient := NewBind9StatsClient()
 	gock.InterceptClient(bind9StatsClient.innerClient.GetClient())
 
+	pdnsClient := NewPDNSClient()
+	gock.InterceptClient(pdnsClient.innerClient.GetClient())
+
 	httpClientConfig := HTTPClientConfig{SkipTLSVerification: true}
 	httpClient := NewHTTPClient(httpClientConfig)
 	gock.InterceptClient(httpClient.client)
@@ -84,6 +89,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 	sa := &StorkAgent{
 		AppMonitor:          &fam,
 		bind9StatsClient:    bind9StatsClient,
+		pdnsClient:          pdnsClient,
 		KeaHTTPClientConfig: httpClientConfig,
 		logTailer:           newLogTailer(),
 		keaInterceptor:      newKeaInterceptor(),
@@ -1779,4 +1785,149 @@ func TestReceiveZoneRRsZoneInventoryBusy(t *testing.T) {
 	info, ok := details[0].(*errdetails.ErrorInfo)
 	require.True(t, ok)
 	require.Equal(t, "ZONE_INVENTORY_BUSY", info.Reason)
+}
+
+// Test that the PowerDNS server information is returned and
+// parsed successfully.
+func TestGetPowerDNSServerInfo(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	defer gock.Off()
+	gock.New("http://localhost:1234/").
+		MatchHeader("X-API-Key", "stork").
+		Get("api/v1/servers/localhost").
+		Reply(http.StatusOK).
+		JSON(map[string]any{
+			"type":    "Server",
+			"version": "4.7.3",
+		})
+
+	// Add a PowerDNS app.
+	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
+	var apps []App
+	apps = append(apps, &pdnsApp{
+		BaseApp: BaseApp{
+			Type:         AppTypePowerDNS,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Get the server information.
+	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
+		WebserverAddress: "localhost",
+		WebserverPort:    1234,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, rsp)
+	require.Equal(t, "Server", rsp.Type)
+	require.Equal(t, "4.7.3", rsp.Version)
+}
+
+// Test that the correct error is returned when the specified PowerDNS
+// server was not found by the control address and port.
+func TestGetPowerDNSServerInfoNoApp(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = []App{}
+
+	// Get the server information.
+	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
+		WebserverAddress: "localhost",
+		WebserverPort:    1234,
+	})
+	require.Error(t, err)
+	require.Nil(t, rsp)
+
+	// Make sure that the correct status and details were returned.
+	st := status.Convert(err)
+	require.Equal(t, codes.FailedPrecondition, st.Code())
+	require.Equal(t, "PowerDNS server localhost:1234 not found", st.Message())
+	details := st.Details()
+	require.Len(t, details, 1)
+	info, ok := details[0].(*errdetails.ErrorInfo)
+	require.True(t, ok)
+	require.Equal(t, "APP_NOT_FOUND", info.Reason)
+}
+
+// Test that the correct error is returned when the API key is not configured
+// for the PowerDNS server.
+func TestGetPowerDNSServerInfoNoAPIKey(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	// Add a PowerDNS app with no API key.
+	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "", 1234, false)
+	var apps []App
+	apps = append(apps, &pdnsApp{
+		BaseApp: BaseApp{
+			Type:         AppTypePowerDNS,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Get the server information.
+	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
+		WebserverAddress: "localhost",
+		WebserverPort:    1234,
+	})
+	require.Error(t, err)
+	require.Nil(t, rsp)
+
+	// Make sure that the correct status and details were returned.
+	st := status.Convert(err)
+	require.Equal(t, codes.FailedPrecondition, st.Code())
+	require.Equal(t, "API key not configured for PowerDNS server localhost:1234", st.Message())
+	details := st.Details()
+	require.Len(t, details, 1)
+	info, ok := details[0].(*errdetails.ErrorInfo)
+	require.True(t, ok)
+	require.Equal(t, "API_KEY_NOT_CONFIGURED", info.Reason)
+}
+
+// Test that the correct error is returned when the PowerDNS server
+// returns an error response.
+func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	defer gock.Off()
+	gock.New("http://localhost:1234/").
+		MatchHeader("X-API-Key", "stork").
+		Get("api/v1/servers/localhost").
+		Reply(http.StatusInternalServerError).
+		BodyString("Internal server error")
+
+	// Add a PowerDNS app.
+	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
+	var apps []App
+	apps = append(apps, &pdnsApp{
+		BaseApp: BaseApp{
+			Type:         AppTypePowerDNS,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Get the server information.
+	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
+		WebserverAddress: "localhost",
+		WebserverPort:    1234,
+	})
+	require.Error(t, err)
+	require.Nil(t, rsp)
+
+	// Make sure that the correct status was returned.
+	st := status.Convert(err)
+	require.Equal(t, codes.Unknown, st.Code())
+	require.Equal(t, "Internal server error", st.Message())
+	details := st.Details()
+	require.Empty(t, details)
 }

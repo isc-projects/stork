@@ -26,6 +26,15 @@ func TestBind9AllowedLogs(t *testing.T) {
 	require.Len(t, paths, 0)
 }
 
+// Test that the zone inventory can be accessed.
+func TestBind9GetZoneInventory(t *testing.T) {
+	app := &Bind9App{
+		zoneInventory: &zoneInventory{},
+	}
+	inventory := app.GetZoneInventory()
+	require.Equal(t, app.zoneInventory, inventory)
+}
+
 // Check if getPotentialNamedConfLocations returns paths.
 func TestGetPotentialNamedConfLocations(t *testing.T) {
 	paths := getPotentialNamedConfLocations()

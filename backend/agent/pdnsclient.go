@@ -12,7 +12,10 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-var _ httpResponse = (*resty.Response)(nil)
+var (
+	_ httpResponse = (*resty.Response)(nil)
+	_ zoneFetcher  = (*pdnsClient)(nil)
+)
 
 // PowerDNS API version. This is the number being a part of
 // the URL path, e.g. http://localhost:8080/api/v1, where 1 is
@@ -32,7 +35,7 @@ type pdnsClientRequest struct {
 	apiKey      string
 }
 
-// Creates new PowerDNS request to the host and port.
+// Creates new PowerDNS request to the host and port, with specifying the X-API-Key header.
 func newPDNSClientRequest(innerClient *resty.Client, apiKey string, host string, port int64) *pdnsClientRequest {
 	return &pdnsClientRequest{
 		innerClient: innerClient,
@@ -41,7 +44,7 @@ func newPDNSClientRequest(innerClient *resty.Client, apiKey string, host string,
 	}
 }
 
-// Creates new PowerDNS request to a URL.
+// Creates new PowerDNS request to a URL, with specifying the X-API-Key header.
 func newPDNSClientRequestFromURL(innerClient *resty.Client, apiKey string, url string) *pdnsClientRequest {
 	return &pdnsClientRequest{
 		innerClient: innerClient,
@@ -115,18 +118,29 @@ func (request *pdnsClientRequest) getViews() (httpResponse, *bind9stats.Views, e
 	return response, views, err
 }
 
+// Makes a request to retrieve general information about the PowerDNS server instance.
+func (request *pdnsClientRequest) getServerInfo() (httpResponse, *pdnsdata.ServerInfo, error) {
+	var server pdnsdata.ServerInfo
+	response, err := request.getJSON("/servers/localhost", &server)
+	if err != nil {
+		return nil, nil, err
+	}
+	if response.IsError() {
+		return response, nil, nil
+	}
+	return response, &server, nil
+}
+
 // A wrapper for the REST client. It exposes a function to create individual
-// HTTP requests to selected hosts/ports.
+// HTTP requests to selected hosts/ports, with specifying the X-API-Key header.
 type pdnsClient struct {
 	innerClient *resty.Client
-	apiKey      string
 }
 
 // Instantiates REST client for PowerDNS.
-func NewPDNSClient(apiKey string) *pdnsClient {
+func NewPDNSClient() *pdnsClient {
 	return &pdnsClient{
 		innerClient: resty.New(),
-		apiKey:      apiKey,
 	}
 }
 
@@ -135,18 +149,25 @@ func (client *pdnsClient) SetRequestTimeout(timeout time.Duration) {
 	client.innerClient.SetTimeout(timeout)
 }
 
-// Creates new request to the particular host and port.
-func (client *pdnsClient) createRequest(host string, port int64) *pdnsClientRequest {
-	return newPDNSClientRequest(client.innerClient, client.apiKey, host, port)
+// Creates new request to the particular host and port, with specifying the X-API-Key header.
+func (client *pdnsClient) createRequest(apiKey string, host string, port int64) *pdnsClientRequest {
+	return newPDNSClientRequest(client.innerClient, apiKey, host, port)
 }
 
-// Creates new request sent to the specified URL. The URL must exclude the "/api/v{n}" part.
-func (client *pdnsClient) createRequestFromURL(url string) *pdnsClientRequest {
-	return newPDNSClientRequestFromURL(client.innerClient, client.apiKey, url)
+// Creates new request sent to the specified URL, with specifying the X-API-Key header.
+// The URL must exclude the "/api/v{n}" part.
+func (client *pdnsClient) createRequestFromURL(apiKey string, url string) *pdnsClientRequest {
+	return newPDNSClientRequestFromURL(client.innerClient, apiKey, url)
+}
+
+// Makes a request to retrieve general information about the PowerDNS server instance.
+func (client *pdnsClient) getServerInfo(apiKey string, host string, port int64) (httpResponse, *pdnsdata.ServerInfo, error) {
+	return client.createRequest(apiKey, host, port).getServerInfo()
 }
 
 // Makes a request to retrieve zones encapsulated in the artificial view (localhost)
-// from the PowerDNS server.
-func (client *pdnsClient) getViews(host string, port int64) (httpResponse, *bind9stats.Views, error) {
-	return client.createRequest(host, port).getViews()
+// from the PowerDNS server. It implements the zoneFetcher interface used by the
+// zone inventory.
+func (client *pdnsClient) getViews(apiKey string, host string, port int64) (httpResponse, *bind9stats.Views, error) {
+	return client.createRequest(apiKey, host, port).getViews()
 }

@@ -1,0 +1,10 @@
+{
+    "autoprimaries_url": "/api/v1/servers/localhost/autoprimaries{/autoprimary}",
+    "config_url": "/api/v1/servers/localhost/config{/config_setting}",
+    "daemon_type": "authoritative",
+    "id": "localhost",
+    "type": "Server",
+    "url": "/api/v1/servers/localhost",
+    "version": "4.7.3",
+    "zones_url": "/api/v1/servers/localhost/zones{/zone}"
+}

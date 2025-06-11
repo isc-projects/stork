@@ -44,6 +44,8 @@ type StorkAgent struct {
 	AppMonitor              AppMonitor
 	// BIND9 HTTP stats client.
 	bind9StatsClient *bind9StatsClient
+	// PowerDNS webserver client.
+	pdnsClient *pdnsClient
 	// An HTTP client configuration used to create the HTTP clients for
 	// particular Kea applications.
 	// If the agent is registered, it will use the GRPC credentials obtained
@@ -460,6 +462,68 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	return grpcResponse, nil
 }
 
+// Returns general information about the PowerDNS server. It uses the
+// PowerDNS REST API to retrieve this information from the /api/v1/servers/localhost
+// endpoint.
+func (sa *StorkAgent) GetPowerDNSServerInfo(ctx context.Context, req *agentapi.GetPowerDNSServerInfoReq) (*agentapi.GetPowerDNSServerInfoRsp, error) {
+	app := sa.AppMonitor.GetApp(AppTypePowerDNS, AccessPointControl, req.WebserverAddress, req.WebserverPort)
+	if app == nil {
+		st := status.Newf(codes.FailedPrecondition, "PowerDNS server %s:%d not found", req.WebserverAddress, req.WebserverPort)
+		ds, err := st.WithDetails(&errdetails.ErrorInfo{
+			Reason: "APP_NOT_FOUND",
+		})
+		if err != nil {
+			// If this unlikely error occurs, it is better to return the original
+			// error.
+			return nil, st.Err()
+		}
+		return nil, ds.Err()
+	}
+
+	// The API key is required to access the PowerDNS REST API.
+	accessPoint := app.GetBaseApp().GetAccessPoint(AccessPointControl)
+	if accessPoint == nil || accessPoint.Key == "" {
+		st := status.Newf(codes.FailedPrecondition, "API key not configured for PowerDNS server %s:%d", req.WebserverAddress, req.WebserverPort)
+		ds, err := st.WithDetails(&errdetails.ErrorInfo{
+			Reason: "API_KEY_NOT_CONFIGURED",
+		})
+		if err != nil {
+			return nil, st.Err()
+		}
+		return nil, ds.Err()
+	}
+
+	// Use the PowerDNS REST API to retrieve the server information.
+	response, serverInfo, err := sa.pdnsClient.getServerInfo(accessPoint.Key, req.WebserverAddress, req.WebserverPort)
+	if err != nil {
+		// If there is an error, the PowerDNS server is most likely unavailable.
+		st := status.New(codes.Unavailable, err.Error())
+		return nil, st.Err()
+	}
+
+	if response.IsError() {
+		// Communication successful but HTTP error code returned. There are many
+		// different kinds of errors that the server can return. The response
+		// text contains the details. It doesn't make much sense to check for the
+		// exact error codes. The client can detect that it is the REST API error
+		// by checking the gRPC unknown status code.
+		st := status.New(codes.Unknown, response.String())
+		return nil, st.Err()
+	}
+
+	// Response is OK. Return the server information.
+	rsp := &agentapi.GetPowerDNSServerInfoRsp{
+		Type:       serverInfo.Type,
+		Id:         serverInfo.ID,
+		DaemonType: serverInfo.DaemonType,
+		Version:    serverInfo.Version,
+		Url:        serverInfo.URL,
+		ConfigURL:  serverInfo.ConfigURL,
+		ZonesURL:   serverInfo.ZonesURL,
+	}
+	return rsp, nil
+}
+
 // Forwards one or more Kea commands sent by the Stork Server to the appropriate Kea instance over
 // HTTP (via Control Agent).
 func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) (*agentapi.ForwardToKeaOverHTTPRsp, error) {
@@ -566,6 +630,8 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 	var inventory *zoneInventory
 	switch app := appI.(type) {
 	case *Bind9App:
+		inventory = app.zoneInventory
+	case *pdnsApp:
 		inventory = app.zoneInventory
 	default:
 		// This is rather an exceptional case, so we don't necessarily need to

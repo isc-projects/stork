@@ -215,6 +215,11 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 // Currently it does nothing.
 func (ka *KeaApp) AwaitBackgroundTasks() {}
 
+// Always returns nil. It is implemented to satisfy the App interface.
+func (ka *KeaApp) GetZoneInventory() *zoneInventory {
+	return nil
+}
+
 // Reads the Kea configuration file, resolves the includes, and parses the content.
 func readKeaConfig(path string) (*keaconfig.Config, error) {
 	text, err := storkutil.ReadFileWithIncludes(path)
@@ -256,7 +261,7 @@ func readKeaConfig(path string) (*keaconfig.Config, error) {
 // picks the first one. See @readClientCredentials for details.
 // The user name of the selected credentials is used as a key of the
 // application's access point.
-func detectKeaApp(p supportedProcess, httpClientConfig HTTPClientConfig) (*KeaApp, error) {
+func detectKeaApp(p supportedProcess, httpClientConfig HTTPClientConfig) (App, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {
 		return nil, err

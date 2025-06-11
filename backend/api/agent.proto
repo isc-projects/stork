@@ -23,6 +23,8 @@ service Agent {
   // Forward commands (one or more) to Kea Control Agent and return results.
   rpc ForwardToKeaOverHTTP(ForwardToKeaOverHTTPReq) returns (ForwardToKeaOverHTTPRsp) {}
 
+  rpc GetPowerDNSServerInfo(GetPowerDNSServerInfoReq) returns (GetPowerDNSServerInfoRsp) {}
+
   // Get the tail of the specified file, typically a log file.
   rpc TailTextFile(TailTextFileReq) returns (TailTextFileRsp) {}
 
@@ -197,6 +199,21 @@ message ForwardToNamedStatsRsp {
   Status status = 1;
 
   NamedStatsResponse namedStatsResponse = 2;
+}
+
+message GetPowerDNSServerInfoReq {
+  string webserverAddress = 1;
+  int64 webserverPort = 2;
+}
+
+message GetPowerDNSServerInfoRsp {
+   string type = 1;
+   string id = 2;
+   string daemonType = 3;
+   string version = 4;
+   string url = 5;
+   string configURL = 6;
+   string zonesURL = 7;
 }
 
 // Log file tailing request

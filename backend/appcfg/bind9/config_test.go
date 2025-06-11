@@ -742,3 +742,11 @@ func TestGetAlgorithmSecretNoSecret(t *testing.T) {
 	_, _, err := key.GetAlgorithmSecret()
 	require.ErrorContains(t, err, "no algorithm or secret found in key test-key")
 }
+
+// Tests that the API key is empty.
+func TestGetAPIKey(t *testing.T) {
+	cfg, err := NewParser().ParseFile("testdata/named.conf")
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Empty(t, cfg.GetAPIKey())
+}

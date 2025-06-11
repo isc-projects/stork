@@ -320,6 +320,12 @@ func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *
 	return c.getAXFRCredentialsForDefaultView(zoneName)
 }
 
+// Returns the API key for the statistics channel. This key is included in
+// the X-API-Key header. It is unused for BIND 9.
+func (c *Config) GetAPIKey() string {
+	return ""
+}
+
 // Returns the key associated with the given view or nil if the view is not found.
 // The key can be associated with the view via match-clients clause and the global
 // ACLs.

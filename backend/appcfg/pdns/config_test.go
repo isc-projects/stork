@@ -156,3 +156,129 @@ func TestConfigGetValuesEmpty(t *testing.T) {
 	values := config.GetValues("api-key")
 	require.Len(t, values, 0)
 }
+
+// Test that IPv4 localhost address is returned when the allow-axfr-ips
+// parameter contains the 127.0.0.0/8 range.
+func TestConfigGetAXFRCredentialsAllowIPv4Range(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"allow-axfr-ips": {
+			{
+				stringValue: storkutil.Ptr("192.0.2.0/24"),
+			},
+			{
+				stringValue: storkutil.Ptr("127.0.0.0/8"),
+			},
+			{
+				stringValue: storkutil.Ptr("::1"),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "127.0.0.1", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that IPv4 localhost address is returned when the allow-axfr-ips
+// parameter contains the 127.0.0.1 address.
+func TestConfigGetAXFRCredentialsAllowIPv4Address(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"allow-axfr-ips": {
+			{
+				stringValue: storkutil.Ptr("127.0.0.1"),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "127.0.0.1", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that IPv6 localhost address is returned when the allow-axfr-ips
+// parameter contains the ::/120 range.
+func TestConfigGetAXFRCredentialsAllowIPv6Range(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"allow-axfr-ips": {
+			{
+				stringValue: storkutil.Ptr("::/120"),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "::1", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that IPv6 localhost address is returned when the allow-axfr-ips
+// parameter contains the ::1 address.
+func TestConfigGetAXFRCredentialsAllowIPv6Address(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"allow-axfr-ips": {
+			{
+				stringValue: storkutil.Ptr("192.0.2.0/24"),
+			},
+			{
+				stringValue: storkutil.Ptr("::1"),
+			},
+			{
+				stringValue: storkutil.Ptr("127.0.0.0/8"),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
+	require.NoError(t, err)
+	require.NotNil(t, address)
+	require.Equal(t, "::1", *address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test that an error is returned when the disable-axfr parameter is set to
+// true.
+func TestConfigGetAXFRCredentialsDisableAXFR(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"disable-axfr": {
+			{
+				boolValue: storkutil.Ptr(true),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	address, keyName, algorithm, secret, err := config.GetAXFRCredentials("", "example.com")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "disable-axfr is set to disable zone transfers")
+	require.Nil(t, address)
+	require.Nil(t, keyName)
+	require.Nil(t, algorithm)
+	require.Nil(t, secret)
+}
+
+// Test returning the API key.
+func TestConfigGetAPIKey(t *testing.T) {
+	config := newConfig(map[string][]ParsedValue{
+		"api-key": {
+			{
+				stringValue: storkutil.Ptr("stork"),
+			},
+		},
+	})
+	require.NotNil(t, config)
+	apiKey := config.GetAPIKey()
+	require.Equal(t, "stork", apiKey)
+}
