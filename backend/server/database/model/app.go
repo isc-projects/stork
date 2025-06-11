@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -23,6 +24,7 @@ const (
 	AppRelationKeaDaemons        = "Daemons.KeaDaemon"
 	AppRelationKeaDHCPDaemons    = "Daemons.KeaDaemon.KeaDHCPDaemon"
 	AppRelationBind9Daemons      = "Daemons.Bind9Daemon"
+	AppRelationPDNSDaemons       = "Daemons.PDNSDaemon"
 	AppRelationDaemonsLogTargets = "Daemons.LogTargets"
 )
 
@@ -33,6 +35,7 @@ type AppType = datamodel.AppType
 const (
 	AppTypeKea   = datamodel.AppTypeKea
 	AppTypeBind9 = datamodel.AppTypeBind9
+	AppTypePDNS  = datamodel.AppTypePDNS
 )
 
 // Part of app table in database that describes metadata of app. In DB it is stored as JSONB.
@@ -178,6 +181,14 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 			if err != nil {
 				return nil, nil, pkgerrors.Wrapf(err, "problem upserting BIND 9 daemon to app %d: %v",
 					app.ID, daemon.Bind9Daemon)
+			}
+		} else if daemon.PDNSDaemon != nil {
+			// Make sure that the pdns_daemon references the daemon.
+			daemon.PDNSDaemon.DaemonID = daemon.ID
+			err = upsertInTransaction(tx, daemon.PDNSDaemon.ID, daemon.PDNSDaemon)
+			if err != nil {
+				return nil, nil, pkgerrors.Wrapf(err, "problem upserting PowerDNS daemon to app %d: %v",
+					app.ID, daemon.PDNSDaemon)
 			}
 		}
 
@@ -343,6 +354,7 @@ func GetAppByID(dbi dbops.DBI, id int64) (*App, error) {
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.Relation("Daemons.PDNSDaemon")
 	q = q.Relation("Daemons.LogTargets")
 	q = q.Where("app.id = ?", id)
 	err := q.Select()
@@ -362,6 +374,7 @@ func GetAppsByMachine(dbi dbops.DBI, machineID int64) ([]*App, error) {
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.Relation("Daemons.PDNSDaemon")
 	q = q.Relation("Daemons.LogTargets")
 	q = q.Relation("Daemons.ConfigReview")
 	q = q.Where("machine_id = ?", machineID)
@@ -373,28 +386,36 @@ func GetAppsByMachine(dbi dbops.DBI, machineID int64) ([]*App, error) {
 	return apps, nil
 }
 
-// Fetches all apps by type including the corresponding services.
-func GetAppsByType(dbi dbops.DBI, appType AppType) ([]App, error) {
+// Fetches all apps by listed types including the corresponding services.
+func GetAppsByType(dbi dbops.DBI, appTypes ...AppType) ([]App, error) {
 	var apps []App
 
 	q := dbi.Model(&apps)
-	q = q.Where("type = ?", appType)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.LogTargets")
 
-	switch appType {
-	case AppTypeKea:
-		q = q.Relation("Daemons.Services.HAService")
-		q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
-	case AppTypeBind9:
-		q = q.Relation("Daemons.Bind9Daemon")
+	for _, appType := range appTypes {
+		q = q.WhereOr("type = ?", appType)
+		switch appType {
+		case AppTypeKea:
+			q = q.Relation("Daemons.Services.HAService")
+			q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+		case AppTypeBind9:
+			q = q.Relation("Daemons.Bind9Daemon")
+		case AppTypePDNS:
+			q = q.Relation("Daemons.PDNSDaemon")
+		}
 	}
 
 	q = q.OrderExpr("id ASC")
 	err := q.Select()
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem getting %s apps from database", appType)
+		appTypeStrings := make([]string, 0, len(appTypes))
+		for _, appType := range appTypes {
+			appTypeStrings = append(appTypeStrings, string(appType))
+		}
+		return nil, pkgerrors.Wrapf(err, "problem getting %s apps from database", strings.Join(appTypeStrings, ", "))
 	}
 	return apps, nil
 }
@@ -418,6 +439,7 @@ func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string,
 	q = q.Relation("Machine")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.Relation("Daemons.PDNSDaemon")
 	q = q.Relation("Daemons.LogTargets")
 	if appType != "" {
 		q = q.Where("type = ?", appType)
@@ -455,7 +477,7 @@ func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string,
 // access points and machines information. If it is set to false, only
 // the data belonging to the app table are returned.
 func GetAllApps(dbi dbops.DBI, withRelations bool) ([]App, error) {
-	return GetAllAppsWithRelations(dbi, AppRelationAccessPoints, AppRelationKeaDHCPDaemons, AppRelationBind9Daemons, AppRelationDaemonsLogTargets, AppRelationMachine)
+	return GetAllAppsWithRelations(dbi, AppRelationAccessPoints, AppRelationKeaDHCPDaemons, AppRelationBind9Daemons, AppRelationPDNSDaemons, AppRelationDaemonsLogTargets, AppRelationMachine)
 }
 
 // Retrieves all apps with custom relations. If no relations are specified

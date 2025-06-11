@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -821,7 +822,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.Len(t, apps, 0)
 	require.NoError(t, err)
 
-	// add app, no error expected
+	// Add a BIND 9 app.
 	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, true)
 
@@ -850,7 +851,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	err = AddConfigReview(db, cr)
 	require.NoError(t, err)
 
-	// get apps of given machine
+	// Get apps of given machine.
 	apps, err = GetAppsByMachine(db, m.ID)
 	require.Len(t, apps, 1)
 	require.NoError(t, err)
@@ -870,7 +871,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.Equal(t, "named", apps[0].Daemons[0].Name)
 	require.NotNil(t, apps[0].Daemons[0].Bind9Daemon)
 
-	// test GetAccessPoint
+	// Test GetAccessPoint.
 	pt, err = app.GetAccessPoint(AccessPointControl)
 	require.NotNil(t, pt)
 	require.NoError(t, err)
@@ -878,7 +879,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.Equal(t, "localhost", pt.Address)
 	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
-	// bad access point type
+	// Bad access point type.
 	pt, err = app.GetAccessPoint("foobar")
 	require.Nil(t, pt)
 	require.Error(t, err)
@@ -889,12 +890,12 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.Equal(t, "2345", apps[0].Daemons[0].ConfigReview.Signature)
 }
 
-// Check getting apps by type only.
-func TestGetAppsByType(t *testing.T) {
+// Test getting apps by machine or types.
+func TestGetAppsByMachineAndType(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// add a machine
+	// Add a machine.
 	m := &Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -904,10 +905,10 @@ func TestGetAppsByType(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, m.ID)
 
-	// add kea app
+	// Add a Kea app.
 	var keaPoints []*AccessPoint
 	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234, false)
-	aKea := &App{
+	kea := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeKea,
@@ -922,14 +923,14 @@ func TestGetAppsByType(t *testing.T) {
 			},
 		},
 	}
-	_, err = AddApp(db, aKea)
+	_, err = AddApp(db, kea)
 	require.NoError(t, err)
-	require.NotZero(t, aKea.ID)
+	require.NotZero(t, kea.ID)
 
-	// add bind9 app
+	// Add a BIND 9 app.
 	var bind9Points []*AccessPoint
 	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "", 2234, false)
-	aBind9 := &App{
+	bind9 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
@@ -942,28 +943,122 @@ func TestGetAppsByType(t *testing.T) {
 			},
 		},
 	}
-	_, err = AddApp(db, aBind9)
+	_, err = AddApp(db, bind9)
 	require.NoError(t, err)
-	require.NotZero(t, aBind9.ID)
+	require.NotZero(t, bind9.ID)
 
-	// check getting kea apps
-	apps, err := GetAppsByType(db, AppTypeKea)
+	// Add a PowerDNS app.
+	var pdnsPoints []*AccessPoint
+	pdnsPoints = AppendAccessPoint(pdnsPoints, AccessPointControl, "", "", 3234, false)
+	pdns := &App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypePDNS,
+		Active:       true,
+		AccessPoints: pdnsPoints,
+		Daemons: []*Daemon{
+			NewPDNSDaemon(true),
+		},
+	}
+	_, err = AddApp(db, pdns)
 	require.NoError(t, err)
-	require.Len(t, apps, 1)
-	require.Equal(t, aKea.ID, apps[0].ID)
-	require.NotNil(t, apps[0].Machine)
-	require.Len(t, apps[0].Daemons, 1)
-	require.NotNil(t, apps[0].Daemons[0].KeaDaemon)
-	require.NotNil(t, apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
+	require.NotZero(t, pdns.ID)
 
-	// check getting bind9 apps
-	apps, err = GetAppsByType(db, AppTypeBind9)
-	require.NoError(t, err)
-	require.Len(t, apps, 1)
-	require.Equal(t, aBind9.ID, apps[0].ID)
-	require.NotNil(t, apps[0].Machine)
-	require.Len(t, apps[0].Daemons, 1)
-	require.NotNil(t, apps[0].Daemons[0].Bind9Daemon)
+	t.Run("kea app", func(t *testing.T) {
+		// Test getting Kea app.
+		apps, err := GetAppsByType(db, AppTypeKea)
+		require.NoError(t, err)
+		require.Len(t, apps, 1)
+		require.Equal(t, kea.ID, apps[0].ID)
+		require.NotNil(t, apps[0].Machine)
+		require.Len(t, apps[0].Daemons, 1)
+		require.NotNil(t, apps[0].Daemons[0].KeaDaemon)
+		require.NotNil(t, apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
+	})
+
+	t.Run("bind9 app", func(t *testing.T) {
+		// Test getting BIND 9 app.
+		apps, err := GetAppsByType(db, AppTypeBind9)
+		require.NoError(t, err)
+		require.Len(t, apps, 1)
+		require.Equal(t, bind9.ID, apps[0].ID)
+		require.NotNil(t, apps[0].Machine)
+		require.Len(t, apps[0].Daemons, 1)
+		require.NotNil(t, apps[0].Daemons[0].Bind9Daemon)
+	})
+
+	t.Run("pdns app", func(t *testing.T) {
+		// Test getting PowerDNS app.
+		apps, err := GetAppsByType(db, AppTypePDNS)
+		require.NoError(t, err)
+		require.Len(t, apps, 1)
+		require.Equal(t, pdns.ID, apps[0].ID)
+		require.NotNil(t, apps[0].Machine)
+		require.Len(t, apps[0].Daemons, 1)
+		require.NotNil(t, apps[0].Daemons[0].PDNSDaemon)
+	})
+
+	t.Run("multiple apps", func(t *testing.T) {
+		// Test getting multiple apps.
+		apps, err := GetAppsByType(db, AppTypeKea, AppTypeBind9, AppTypePDNS)
+		require.NoError(t, err)
+		require.Len(t, apps, 3)
+		// Kea app should be returned.
+		require.Condition(t, func() bool {
+			return slices.ContainsFunc(apps, func(app App) bool {
+				return app.ID == kea.ID
+			})
+		})
+		// BIND 9 app should be returned.
+		require.Condition(t, func() bool {
+			return slices.ContainsFunc(apps, func(app App) bool {
+				return app.ID == bind9.ID
+			})
+		})
+		// PowerDNS app should be returned.
+		require.Condition(t, func() bool {
+			return slices.ContainsFunc(apps, func(app App) bool {
+				return app.ID == pdns.ID
+			})
+		})
+	})
+
+	t.Run("multiple apps by machine", func(t *testing.T) {
+		// Test getting multiple apps by machine.
+		apps, err := GetAppsByMachine(db, m.ID)
+		require.NoError(t, err)
+		require.Len(t, apps, 3)
+		// Kea app should be returned.
+		require.Condition(t, func() bool {
+			return slices.ContainsFunc(apps, func(app *App) bool {
+				return app.ID == kea.ID
+			})
+		})
+		// BIND 9 app should be returned.
+		require.Condition(t, func() bool {
+			return slices.ContainsFunc(apps, func(app *App) bool {
+				return app.ID == bind9.ID
+			})
+		})
+		// PowerDNS app should be returned.
+		require.Condition(t, func() bool {
+			return slices.ContainsFunc(apps, func(app *App) bool {
+				return app.ID == pdns.ID
+			})
+		})
+		// Make sure that appropriate relations are returned.
+		for _, app := range apps {
+			switch app.Type {
+			case AppTypeKea:
+				require.NotNil(t, app.Daemons[0].KeaDaemon)
+				require.NotNil(t, app.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+			case AppTypeBind9:
+				require.NotNil(t, app.Daemons[0].Bind9Daemon)
+			case AppTypePDNS:
+				require.NotNil(t, app.Daemons[0].PDNSDaemon)
+			}
+		}
+	})
 }
 
 // Check getting app by its ID.
@@ -1051,7 +1146,7 @@ func TestGetAppsByPage(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// add first machine, should be no error
+	// Add a machine.
 	m := &Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -1061,11 +1156,11 @@ func TestGetAppsByPage(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, m.ID)
 
-	// add kea app, no error expected
+	// Add a Kea app.
 	var keaPoints []*AccessPoint
 	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234, false)
 
-	sKea := &App{
+	kea := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeKea,
@@ -1083,15 +1178,15 @@ func TestGetAppsByPage(t *testing.T) {
 			},
 		},
 	}
-	_, err = AddApp(db, sKea)
+	_, err = AddApp(db, kea)
 	require.NoError(t, err)
-	require.NotZero(t, sKea.ID)
+	require.NotZero(t, kea.ID)
 
-	// add bind app, no error expected
+	// Add a BIND 9 app.
 	var bind9Points []*AccessPoint
 	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321, true)
 
-	sBind := &App{
+	bind9 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
@@ -1107,17 +1202,35 @@ func TestGetAppsByPage(t *testing.T) {
 			},
 		},
 	}
-	_, err = AddApp(db, sBind)
+	_, err = AddApp(db, bind9)
 	require.NoError(t, err)
-	require.NotZero(t, sBind.ID)
+	require.NotZero(t, bind9.ID)
 
-	// get all apps
+	// Add a PowerDNS app.
+	var pdnsPoints []*AccessPoint
+	pdnsPoints = AppendAccessPoint(pdnsPoints, AccessPointControl, "", "", 5432, false)
+	pdns := &App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypePDNS,
+		Name:         "unique-pdns",
+		Active:       true,
+		AccessPoints: pdnsPoints,
+		Daemons: []*Daemon{
+			NewPDNSDaemon(true),
+		},
+	}
+	_, err = AddApp(db, pdns)
+	require.NoError(t, err)
+	require.NotZero(t, pdns.ID)
+
+	// Get all apps.
 	apps, total, err := GetAppsByPage(db, 0, 10, nil, "", "", SortDirAny)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
-	require.EqualValues(t, 2, total)
+	require.Len(t, apps, 3)
+	require.EqualValues(t, 3, total)
 
-	// get kea apps
+	// Get Kea apps.
 	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypeKea, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
@@ -1133,7 +1246,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
 
-	// get bind apps
+	// Get BIND 9 apps.
 	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypeBind9, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
@@ -1148,39 +1261,58 @@ func TestGetAppsByPage(t *testing.T) {
 	require.EqualValues(t, 4321, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
 
-	// get apps sorted by id descending
+	// Get PowerDNS apps.
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypePDNS, "", SortDirAny)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.EqualValues(t, 1, total)
+	require.Equal(t, AppTypePDNS, apps[0].Type)
+	require.Len(t, apps[0].Daemons, 1)
+	require.NotNil(t, apps[0].Daemons[0].PDNSDaemon)
+	require.Len(t, apps[0].AccessPoints, 1)
+	pt = apps[0].AccessPoints[0]
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "localhost", pt.Address)
+	require.EqualValues(t, 5432, pt.Port)
+	require.Empty(t, pt.Key)
+
+	// Get apps sorted by id descending.
 	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "", SortDirDesc)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
-	require.EqualValues(t, 2, total)
-	require.Equal(t, AppTypeBind9, apps[0].Type)
-	require.Equal(t, AppTypeKea, apps[1].Type)
+	require.Len(t, apps, 3)
+	require.EqualValues(t, 3, total)
+	require.Equal(t, AppTypePDNS, apps[0].Type)
+	require.Equal(t, AppTypeBind9, apps[1].Type)
+	require.Equal(t, AppTypeKea, apps[2].Type)
 
-	// get apps sorted by id ascending
+	// Get apps sorted by id ascending.
 	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "", SortDirAsc)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
-	require.EqualValues(t, 2, total)
+	require.Len(t, apps, 3)
+	require.EqualValues(t, 3, total)
 	require.Equal(t, AppTypeKea, apps[0].Type)
 	require.Equal(t, AppTypeBind9, apps[1].Type)
+	require.Equal(t, AppTypePDNS, apps[2].Type)
 
-	// get apps sorted by type descending
+	// Get apps sorted by type descending.
 	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "type", SortDirDesc)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
-	require.EqualValues(t, 2, total)
-	require.Equal(t, AppTypeKea, apps[0].Type)
-	require.Equal(t, AppTypeBind9, apps[1].Type)
+	require.Len(t, apps, 3)
+	require.EqualValues(t, 3, total)
+	require.Equal(t, AppTypePDNS, apps[0].Type)
+	require.Equal(t, AppTypeKea, apps[1].Type)
+	require.Equal(t, AppTypeBind9, apps[2].Type)
 
-	// get apps sorted by type ascending
+	// Get apps sorted by type ascending.
 	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "type", SortDirAsc)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
-	require.EqualValues(t, 2, total)
+	require.Len(t, apps, 3)
+	require.EqualValues(t, 3, total)
 	require.Equal(t, AppTypeBind9, apps[0].Type)
 	require.Equal(t, AppTypeKea, apps[1].Type)
+	require.Equal(t, AppTypePDNS, apps[2].Type)
 
-	// get apps by filter text, case 1
+	// Get apps by filter text, case 1.
 	text := "1.2.3"
 	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAny)
 	require.NoError(t, err)
@@ -1188,7 +1320,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeKea, apps[0].Type)
 
-	// get apps by filter text, case 2
+	// Get apps by filter text, case 2.
 	text = "1.2.4"
 	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAny)
 	require.NoError(t, err)
@@ -1196,16 +1328,17 @@ func TestGetAppsByPage(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeBind9, apps[0].Type)
 
-	// get apps by filter text, case 3
+	// Get apps by filter text, case 3.
 	text = "unique"
 	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
-	require.EqualValues(t, 2, total)
+	require.Len(t, apps, 3)
+	require.EqualValues(t, 3, total)
 	require.Equal(t, AppTypeKea, apps[0].Type)
 	require.Equal(t, AppTypeBind9, apps[1].Type)
+	require.Equal(t, AppTypePDNS, apps[2].Type)
 
-	// get apps by filter text, case 4
+	// Get apps by filter text, case 4.
 	text = "unique-k"
 	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
 	require.NoError(t, err)
@@ -1213,13 +1346,21 @@ func TestGetAppsByPage(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeKea, apps[0].Type)
 
-	// get apps by filter text, case 5
+	// Get apps by filter text, case 5.
 	text = "unique-b"
 	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeBind9, apps[0].Type)
+
+	// Get apps by filter text, case 6.
+	text = "unique-p"
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.EqualValues(t, 1, total)
+	require.Equal(t, AppTypePDNS, apps[0].Type)
 }
 
 // Test that two names of the active DHCP daemons are returned.
@@ -1288,7 +1429,7 @@ func TestGetAllApps(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// add first machine, should be no error
+	// Add a machine.
 	m := &Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -1298,11 +1439,11 @@ func TestGetAllApps(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, m.ID)
 
-	// add kea app, no error expected
+	// Add a Kea app.
 	var keaPoints []*AccessPoint
 	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234, false)
 
-	aKea := &App{
+	kea := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeKea,
@@ -1316,15 +1457,15 @@ func TestGetAllApps(t *testing.T) {
 			},
 		},
 	}
-	_, err = AddApp(db, aKea)
+	_, err = AddApp(db, kea)
 	require.NoError(t, err)
-	require.NotZero(t, aKea.ID)
+	require.NotZero(t, kea.ID)
 
-	// add bind app, no error expected
+	// Add a BIND 9 app.
 	var bind9Points []*AccessPoint
 	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321, true)
 
-	aBind := &App{
+	bind9 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
@@ -1336,16 +1477,48 @@ func TestGetAllApps(t *testing.T) {
 			},
 		},
 	}
-	_, err = AddApp(db, aBind)
+	_, err = AddApp(db, bind9)
 	require.NoError(t, err)
-	require.NotZero(t, aBind.ID)
+	require.NotZero(t, bind9.ID)
 
-	// get all apps
+	// Add a PowerDNS app.
+	var pdnsPoints []*AccessPoint
+	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321, true)
+
+	pdns := &App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypePDNS,
+		Active:       true,
+		AccessPoints: pdnsPoints,
+		Daemons: []*Daemon{
+			{
+				PDNSDaemon: &PDNSDaemon{},
+			},
+		},
+	}
+	_, err = AddApp(db, pdns)
+	require.NoError(t, err)
+
+	// Get all apps.
 	apps, err := GetAllApps(db, true)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
-	require.True(t, apps[0].Type == AppTypeKea || apps[1].Type == AppTypeKea)
-	require.True(t, apps[0].Type == AppTypeBind9 || apps[1].Type == AppTypeBind9)
+	require.Len(t, apps, 3)
+	require.Condition(t, func() bool {
+		return slices.ContainsFunc(apps, func(app App) bool {
+			return app.Type == AppTypeKea
+		})
+	})
+	require.Condition(t, func() bool {
+		return slices.ContainsFunc(apps, func(app App) bool {
+			return app.Type == AppTypeBind9
+		})
+	})
+	require.Condition(t, func() bool {
+		return slices.ContainsFunc(apps, func(app App) bool {
+			return app.Type == AppTypePDNS
+		})
+	})
 
 	// Make sure that app specific fields are set.
 	for _, a := range apps {
@@ -1356,6 +1529,8 @@ func TestGetAllApps(t *testing.T) {
 			require.NotNil(t, a.Daemons[0].KeaDaemon.KeaDHCPDaemon)
 		case AppTypeBind9:
 			require.NotNil(t, a.Daemons[0].Bind9Daemon)
+		case AppTypePDNS:
+			require.NotNil(t, a.Daemons[0].PDNSDaemon)
 		}
 	}
 }

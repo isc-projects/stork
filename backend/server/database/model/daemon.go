@@ -22,6 +22,7 @@ const (
 	DaemonNameDHCPv6 = "dhcp6"
 	DaemonNameD2     = "d2"
 	DaemonNameCA     = "ca"
+	DaemonNamePDNS   = "pdns"
 )
 
 // KEA
@@ -71,6 +72,13 @@ type Bind9Daemon struct {
 	Stats    Bind9DaemonStats
 }
 
+// A structure holding PowerDNS daemon specific information.
+type PDNSDaemon struct {
+	tableName struct{} `pg:"pdns_daemon"` //nolint:unused
+	ID        int64
+	DaemonID  int64
+}
+
 // A structure reflecting all SQL tables holding information about the
 // daemons of various types. It embeds the KeaDaemon structure which
 // holds Kea DHCP specific information for Kea daemons. It is nil
@@ -99,6 +107,7 @@ type Daemon struct {
 
 	KeaDaemon   *KeaDaemon   `pg:"rel:belongs-to"`
 	Bind9Daemon *Bind9Daemon `pg:"rel:belongs-to"`
+	PDNSDaemon  *PDNSDaemon  `pg:"rel:belongs-to"`
 
 	ConfigReview *ConfigReview `pg:"rel:belongs-to"`
 }
@@ -142,6 +151,17 @@ func NewBind9Daemon(active bool) *Daemon {
 		Active:      active,
 		Monitored:   true,
 		Bind9Daemon: &Bind9Daemon{},
+	}
+	return daemon
+}
+
+// Creates an instance of the PowerDNS daemon.
+func NewPDNSDaemon(active bool) *Daemon {
+	daemon := &Daemon{
+		Name:       DaemonNamePDNS,
+		Active:     active,
+		Monitored:  true,
+		PDNSDaemon: &PDNSDaemon{},
 	}
 	return daemon
 }
