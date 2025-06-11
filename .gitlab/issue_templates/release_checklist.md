@@ -114,7 +114,7 @@ Release notes: {release_notes}
     1. Go to https://cloudsmith.io/~isc/repos/stork-testing/packages/.
     1. Click the checkbox that checks all packages.
     1. Click the red trash-can icon that says `Delete (remove) completely.`.
-1. [ ] Add release tag. Run QA script [stork/release/add-tag-and-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/add-tag-and-release.py).
+1. [ ] Add release tag. Run QA script [stork/release/add-tag-and-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/add-tag-and-release.py). (Connection to repo.isc.org will be required.)
     * Example command: `GITLAB_TOKEN='...' ./add-tag-and-release.py`
     * Fallback if it does not work:
         1. Tag the selected commit at the top with the proper version tag in the `vx.y.z` format on. Put there a link to the release notes page (e.g. https://gitlab.isc.org/isc-projects/stork/-/wikis/releases/Release-notes-1.2.0) and a link to the ARM (e.g. https://stork.readthedocs.io/en/v1.2.0/). Then click on `Create release`. Do this for:
