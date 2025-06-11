@@ -759,7 +759,8 @@ class DockerCompose:
         except subprocess.CalledProcessError as e:
             logger.error(
                 "Command '%s' failed with exit code: '%d'; stdout: '%s'; stderr: '%s'",
-                e.cmd, e.returncode,
+                e.cmd,
+                e.returncode,
                 e.stdout.decode("utf-8").rstrip() if e.stdout else None,
                 e.stderr.decode("utf-8").rstrip() if e.stderr else None,
             )
