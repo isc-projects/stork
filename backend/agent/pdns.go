@@ -91,6 +91,11 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 		}
 	}
 
+	if !path.IsAbs(configDir) {
+		// PowerDNS configuration is typically stored in /etc/powerdns.
+		configDir = path.Join("/etc/powerdns", configDir)
+	}
+
 	configPath := path.Join(configDir, configName)
 	if rootPrefix != "" {
 		configPath = path.Join(rootPrefix, configPath)
@@ -114,7 +119,7 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 	}
 	// Get webserver address and port.
 	webserverAddress := "127.0.0.1"
-	if address := parsedConfig.GetString("webserver-address"); address != nil {
+	if address := parsedConfig.GetString("webserver-address"); address != nil && *address != "0.0.0.0" && *address != "::" {
 		webserverAddress = *address
 	}
 	webserverPort := int64(8081)

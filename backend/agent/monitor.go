@@ -110,7 +110,7 @@ const (
 // They are available through assessors.
 type AppMonitor interface {
 	GetApps() []App
-	GetApp(appType, apType, address string, port int64) App
+	GetApp(apType, address string, port int64) App
 	Start(agent *StorkAgent)
 	Shutdown()
 }
@@ -367,22 +367,21 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 	}
 }
 
-// Iterates over the detected BIND9 apps and populates their zone inventories.
+// Iterates over the detected DNS apps and populates their zone inventories.
 func (sm *appMonitor) populateZoneInventories() {
 	for _, app := range sm.apps {
-		if bind9app, ok := app.(*Bind9App); ok {
-			if bind9app.zoneInventory == nil || bind9app.zoneInventory.getCurrentState().isReady() {
+		zoneInventory := app.GetZoneInventory()
+		if zoneInventory == nil || zoneInventory.getCurrentState().isReady() {
+			continue
+		}
+		var busyError *zoneInventoryBusyError
+		if _, err := zoneInventory.populate(false); err != nil {
+			switch {
+			case errors.As(err, &busyError):
+				// Inventory creation is in progress. This is not an error.
 				continue
-			}
-			var busyError *zoneInventoryBusyError
-			if _, err := bind9app.zoneInventory.populate(false); err != nil {
-				switch {
-				case errors.As(err, &busyError):
-					// Inventory creation is in progress. This is not an error.
-					continue
-				default:
-					log.WithError(err).Error("Failed to populate DNS zones inventory")
-				}
+			default:
+				log.WithError(err).Error("Failed to populate DNS zones inventory")
 			}
 		}
 	}
@@ -397,11 +396,8 @@ func (sm *appMonitor) GetApps() []App {
 }
 
 // Get an app from a monitor that matches provided params.
-func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
+func (sm *appMonitor) GetApp(apType, address string, port int64) App {
 	for _, app := range sm.GetApps() {
-		if app.GetBaseApp().Type != appType {
-			continue
-		}
 		for _, ap := range app.GetBaseApp().AccessPoints {
 			if ap.Type == apType && ap.Address == address && ap.Port == port {
 				return app

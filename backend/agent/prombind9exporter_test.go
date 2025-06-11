@@ -38,7 +38,7 @@ func (fam *PromFakeBind9AppMonitor) GetApps() []App {
 	return []App{ba}
 }
 
-func (fam *PromFakeBind9AppMonitor) GetApp(appType, apType, address string, port int64) App {
+func (fam *PromFakeBind9AppMonitor) GetApp(apType, address string, port int64) App {
 	return nil
 }
 

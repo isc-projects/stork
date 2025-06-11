@@ -97,7 +97,7 @@ func TestDetectPowerDNSAppCwdError(t *testing.T) {
 	process.EXPECT().getCwd().Return("", errors.New("test error"))
 
 	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
+	parser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").DoAndReturn(func(path string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
 	})
 

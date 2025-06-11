@@ -70,6 +70,7 @@ func NewStorkAgent(host string, port int, appMonitor AppMonitor, bind9StatsClien
 		ExplicitBind9ConfigPath: explicitBind9ConfigPath,
 		AppMonitor:              appMonitor,
 		bind9StatsClient:        bind9StatsClient,
+		pdnsClient:              NewPDNSClient(),
 		KeaHTTPClientConfig:     keaHTTPClientConfig,
 		logTailer:               logTailer,
 		keaInterceptor:          newKeaInterceptor(),
@@ -293,7 +294,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		RndcResponse: rndcRsp,
 	}
 
-	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port)
+	app := sa.AppMonitor.GetApp(AccessPointControl, in.Address, in.Port)
 	if app == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
 		rndcRsp.Status.Message = "cannot find BIND 9 app"
@@ -466,7 +467,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 // PowerDNS REST API to retrieve this information from the /api/v1/servers/localhost
 // endpoint.
 func (sa *StorkAgent) GetPowerDNSServerInfo(ctx context.Context, req *agentapi.GetPowerDNSServerInfoReq) (*agentapi.GetPowerDNSServerInfoRsp, error) {
-	app := sa.AppMonitor.GetApp(AppTypePowerDNS, AccessPointControl, req.WebserverAddress, req.WebserverPort)
+	app := sa.AppMonitor.GetApp(AccessPointControl, req.WebserverAddress, req.WebserverPort)
 	if app == nil {
 		st := status.Newf(codes.FailedPrecondition, "PowerDNS server %s:%d not found", req.WebserverAddress, req.WebserverPort)
 		ds, err := st.WithDetails(&errdetails.ErrorInfo{
@@ -548,7 +549,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 	}
 
 	host, port, _ := storkutil.ParseURL(reqURL)
-	app := sa.AppMonitor.GetApp(AppTypeKea, AccessPointControl, host, port)
+	app := sa.AppMonitor.GetApp(AccessPointControl, host, port)
 	if app == nil {
 		response.Status.Code = agentapi.Status_ERROR
 		response.Status.Message = "cannot find Kea app"
@@ -626,7 +627,7 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 // agent. The response can be filtered or unfiltered, depending on the
 // request.
 func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.ServerStreamingServer[agentapi.Zone]) error {
-	appI := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, req.ControlAddress, req.ControlPort)
+	appI := sa.AppMonitor.GetApp(AccessPointControl, req.ControlAddress, req.ControlPort)
 	var inventory *zoneInventory
 	switch app := appI.(type) {
 	case *Bind9App:
@@ -713,10 +714,12 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 
 // Generate a streaming response returning DNS zone RRs from a specified agent.
 func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grpc.ServerStreamingServer[agentapi.ReceiveZoneRRsRsp]) error {
-	appI := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, req.ControlAddress, req.ControlPort)
+	appI := sa.AppMonitor.GetApp(AccessPointControl, req.ControlAddress, req.ControlPort)
 	var inventory *zoneInventory
 	switch app := appI.(type) {
 	case *Bind9App:
+		inventory = app.zoneInventory
+	case *pdnsApp:
 		inventory = app.zoneInventory
 	default:
 		// This is rather an exceptional case, so we don't necessarily need to

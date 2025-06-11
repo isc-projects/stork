@@ -111,11 +111,8 @@ func (fam *FakeAppMonitor) GetApps() []App {
 }
 
 // Stub function for AppMonitor. It behaves in the same way as original one.
-func (fam *FakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
+func (fam *FakeAppMonitor) GetApp(apType, address string, port int64) App {
 	for _, app := range fam.GetApps() {
-		if app.GetBaseApp().Type != appType {
-			continue
-		}
 		for _, ap := range app.GetBaseApp().AccessPoints {
 			if ap.Type == apType && ap.Address == address && ap.Port == port {
 				return app
@@ -242,7 +239,7 @@ func TestGetState(t *testing.T) {
 	sa, ctx, teardown = setupAgentTest()
 	defer teardown()
 
-	app := fam.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234).(*KeaApp)
+	app := fam.GetApp(AccessPointControl, "1.2.3.1", 1234).(*KeaApp)
 	app.HTTPClient = NewHTTPClient(HTTPClientConfig{
 		BasicAuth: basicAuthCredentials{User: "foo", Password: "bar"},
 	})
@@ -1560,63 +1557,6 @@ func TestReceiveZoneRRsNilZoneInventory(t *testing.T) {
 		ViewName:       "trusted",
 	}, mock)
 	require.Contains(t, err.Error(), "attempted to receive DNS zone RRs from an app for which zone inventory was not instantiated")
-}
-
-// Test that an error is returned when the app is not a DNS server.
-func TestReceiveZoneRRsUnsupportedApp(t *testing.T) {
-	// Setup server response for populating the zone inventory.
-	trustedZones := generateRandomZones(10)
-	slices.SortFunc(trustedZones, func(zone1, zone2 *bind9stats.Zone) int {
-		return storkutil.CompareNames(zone1.Name(), zone2.Name())
-	})
-	guestZones := generateRandomZones(10)
-	response := map[string]any{
-		"views": map[string]any{
-			"trusted": map[string]any{
-				"zones": trustedZones,
-			},
-			"guest": map[string]any{
-				"zones": guestZones,
-			},
-		},
-	}
-	bind9StatsClient, off := setGetViewsResponseOK(t, response)
-	defer off()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	sa, _, teardown := setupAgentTest()
-	defer teardown()
-
-	config := parseDefaultBind9Config(t)
-	inventory := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	defer inventory.awaitBackgroundTasks()
-
-	// Add an app that is not a DNS server.
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
-	var apps []App
-	apps = append(apps, &Bind9App{
-		BaseApp: BaseApp{
-			Type:         AppTypeKea,
-			AccessPoints: accessPoints,
-		},
-		zoneInventory: inventory,
-	})
-	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fam.Apps = apps
-
-	// Mock the streaming server.
-	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneRRsRsp](ctrl)
-
-	// Run the actual test.
-	err := sa.ReceiveZoneRRs(&agentapi.ReceiveZoneRRsReq{
-		ControlAddress: "127.0.0.1",
-		ControlPort:    1234,
-		ZoneName:       "example.com",
-		ViewName:       "trusted",
-	}, mock)
-	require.Contains(t, err.Error(), "attempted to receive DNS zone RRs from an unsupported app")
 }
 
 // Test that specific error is returned when the zone inventory was not initialized

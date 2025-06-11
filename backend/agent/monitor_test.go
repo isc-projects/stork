@@ -104,7 +104,7 @@ func TestGetApp(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234)
+		app := am.GetApp(AccessPointControl, "1.2.3.1", 1234)
 		require.NotNil(t, app)
 		require.EqualValues(t, AppTypeKea, app.GetBaseApp().Type)
 	}()
@@ -116,7 +116,7 @@ func TestGetApp(t *testing.T) {
 	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AppTypeBind9, AccessPointControl, "2.3.4.4", 2345)
+		app := am.GetApp(AccessPointControl, "2.3.4.4", 2345)
 		require.NotNil(t, app)
 		require.EqualValues(t, AppTypeBind9, app.GetBaseApp().Type)
 	}()
@@ -128,7 +128,7 @@ func TestGetApp(t *testing.T) {
 	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AppTypeKea, AccessPointControl, "0.0.0.0", 1)
+		app := am.GetApp(AccessPointControl, "0.0.0.0", 1)
 		require.Nil(t, app)
 	}()
 	ret = <-am.(*appMonitor).requests
@@ -228,7 +228,7 @@ func TestDetectApps(t *testing.T) {
 
 	pdnsProcess := NewMockSupportedProcess(ctrl)
 	pdnsProcess.EXPECT().getName().AnyTimes().Return("pdns_server", nil)
-	pdnsProcess.EXPECT().getCmdline().AnyTimes().Return("pdns_server -c /etc/pdns.conf", nil)
+	pdnsProcess.EXPECT().getCmdline().AnyTimes().Return("pdns_server -c /etc/powerdns/pdns.conf", nil)
 	pdnsProcess.EXPECT().getCwd().AnyTimes().Return("/etc", nil)
 	pdnsProcess.EXPECT().getPid().AnyTimes().Return(int32(7890))
 	pdnsProcess.EXPECT().getParentPid().AnyTimes().Return(int32(8901), nil)
@@ -251,7 +251,7 @@ func TestDetectApps(t *testing.T) {
 	})
 
 	pdnsConfigParser := NewMockPDNSConfigParser(ctrl)
-	pdnsConfigParser.EXPECT().ParseFile("/etc/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
+	pdnsConfigParser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
 	})
 
@@ -555,7 +555,7 @@ func TestDetectPowerDNSAppRelativePath(t *testing.T) {
 	defer ctrl.Finish()
 
 	parser := NewMockPDNSConfigParser(ctrl)
-	parser.EXPECT().ParseFile("/etc/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
+	parser.EXPECT().ParseFile("/etc/powerdns/pdns.conf").AnyTimes().DoAndReturn(func(configPath string) (*pdnsconfig.Config, error) {
 		return pdnsconfig.NewParser().Parse(strings.NewReader(defaultPDNSConfig))
 	})
 	process := NewMockSupportedProcess(ctrl)
@@ -1087,21 +1087,36 @@ func TestPopulateZoneInventories(t *testing.T) {
 		},
 		zoneInventory: zi2,
 	}
-	app3 := &KeaApp{
+	zi3 := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
+	app3 := &pdnsApp{
+		BaseApp: BaseApp{
+			Type: AppTypePowerDNS,
+		},
+		zoneInventory: zi3,
+	}
+	app4 := &KeaApp{
 		BaseApp: BaseApp{
 			Type: AppTypeKea,
 		},
 	}
-	appMonitor.apps = append(appMonitor.apps, app0, app1, app2, app3)
+	appMonitor.apps = append(appMonitor.apps, app0, app1, app2, app3, app4)
 	appMonitor.populateZoneInventories()
 
 	require.Eventually(t, func() bool {
 		for _, app := range appMonitor.apps {
-			bind9App, ok := app.(*Bind9App)
-			if !ok || bind9App.zoneInventory == nil {
+			var zoneInventory *zoneInventory
+			switch concreteApp := app.(type) {
+			case *Bind9App:
+				zoneInventory = concreteApp.zoneInventory
+			case *pdnsApp:
+				zoneInventory = concreteApp.zoneInventory
+			default:
 				continue
 			}
-			if !bind9App.zoneInventory.getCurrentState().isReady() {
+			if zoneInventory == nil {
+				continue
+			}
+			if !zoneInventory.getCurrentState().isReady() {
 				return false
 			}
 		}

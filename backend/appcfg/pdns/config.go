@@ -73,7 +73,7 @@ func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *
 	allowedIPs := c.GetValues("allow-axfr-ips")
 	if allowedIPs == nil {
 		// By default, PowerDNS allows AXFR from the localhost.
-		return storkutil.Ptr("127.0.0.1"), nil, nil, nil, nil
+		return storkutil.Ptr("127.0.0.1:53"), nil, nil, nil, nil
 	}
 	for _, value := range allowedIPs {
 		allowed := value.GetString()
@@ -89,10 +89,10 @@ func (c *Config) GetAXFRCredentials(viewName string, zoneName string) (address *
 		switch {
 		// Check for things like 127.0.0.0/8 or 127.0.0.1.
 		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("127.0.0.1")), parsedAllowed.IP.Equal(net.ParseIP("127.0.0.1")):
-			return storkutil.Ptr("127.0.0.1"), nil, nil, nil, nil
+			return storkutil.Ptr("127.0.0.1:53"), nil, nil, nil, nil
 		// Check for things like ::/120 or ::1.
 		case parsedAllowed.Prefix && parsedAllowed.IPNet.Contains(net.ParseIP("::1")), parsedAllowed.IP.Equal(net.ParseIP("::1")):
-			return storkutil.Ptr("::1"), nil, nil, nil, nil
+			return storkutil.Ptr("[::1]:53"), nil, nil, nil, nil
 		}
 	}
 	return nil, nil, nil, nil, errors.Errorf("failed to get AXFR credentials for zone %s: allow-axfr-ips allows neither 127.0.0.1 nor ::1", zoneName)
