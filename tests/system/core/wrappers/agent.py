@@ -103,11 +103,11 @@ class Agent(ComposeServiceWrapper):
         metrics_dict = {metric.name: metric for metric in metrics_list}
         return metrics_dict
 
-    def restart_stork_agent(self):
+    def restart_stork_agent(self, wait_for_operational: bool = True):
         """
         Restarts the Stork Agent and waits to recover an operational status.
         """
-        self._agent_supervisor_service.restart()
+        self._agent_supervisor_service.restart(wait_for_operational)
 
     def reload_stork_agent(self):
         """Sends SIGHUP to the stork-agent."""

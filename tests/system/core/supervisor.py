@@ -49,12 +49,13 @@ class SupervisorService:
 
         return code == 0
 
-    def restart(self):
+    def restart(self, wait_for_operational: bool = True):
         """Restart a specific supervisor service and wait to recover
         operational status."""
         cmd = ["supervisorctl", "restart", self._service_name]
         self._exec(cmd)
-        self._wait_for_operational()
+        if wait_for_operational:
+            self._wait_for_operational()
 
     def _send_signal(self, signal: str):
         """Send a specific signal to a supervisor service."""

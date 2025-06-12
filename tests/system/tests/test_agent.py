@@ -238,7 +238,8 @@ def test_agent_registration_administratively_disabled(
     server_service.update_settings(settings)
 
     # Restart the agent to enforce the re-registration attempt.
-    kea_service.restart_stork_agent()
+    # The agent should exit with an error code and not re-register.
+    kea_service.restart_stork_agent(wait_for_operational=False)
 
     # The registration should fail and the machine should not be added to
     # the database.
