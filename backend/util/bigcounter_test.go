@@ -424,7 +424,7 @@ func TestBigCounterConstructFromBigInt(t *testing.T) {
 }
 
 // Test that the subtraction in uint64 range works correctly.
-func TestSubtractInUInt64Range(t *testing.T) {
+func TestBigCounterSubtractInUInt64Range(t *testing.T) {
 	// Arrange
 	counter0 := NewBigCounter(10000)
 
@@ -442,7 +442,7 @@ func TestSubtractInUInt64Range(t *testing.T) {
 }
 
 // Test that the subtraction above uint64 range works correctly.
-func TestSubtractAboveUInt64Range(t *testing.T) {
+func TestBigCounterSubtractAboveUInt64Range(t *testing.T) {
 	// Arrange
 	counter := NewBigCounter(math.MaxUint64).AddUint64(10001)
 
@@ -461,7 +461,7 @@ func TestSubtractAboveUInt64Range(t *testing.T) {
 
 // Test that the subtraction that results in a number in uint64 range
 // works correctly.
-func TestSubtractFromAboveUint64ToUint64Range(t *testing.T) {
+func TestBigCounterSubtractFromAboveUint64ToUint64Range(t *testing.T) {
 	// Arrange
 	counter := NewBigCounter(math.MaxUint64).AddUint64(1)
 
@@ -475,7 +475,7 @@ func TestSubtractFromAboveUint64ToUint64Range(t *testing.T) {
 
 // Test that the subtraction that results in a number in uint64 range
 // works correctly.
-func TestSubtractFromAboveUint64ToBelowUint64Range(t *testing.T) {
+func TestBigCounterSubtractFromAboveUint64ToBelowUint64Range(t *testing.T) {
 	// Arrange
 	counter := NewBigCounter(math.MaxUint64).AddUint64(1)
 
@@ -486,6 +486,42 @@ func TestSubtractFromAboveUint64ToBelowUint64Range(t *testing.T) {
 	// Assert
 	require.EqualValues(t, -1, counter.ToInt64())
 	require.True(t, counter.isExtended())
+}
+
+// Test that the cloned non-extended big counter is a separate instance
+// and modifications to the original do not affect the clone.
+func TestCloneInt64(t *testing.T) {
+	// Arrange
+	counter := NewBigCounter(42)
+
+	// Act
+	clone := counter.Clone()
+	clone.AddUint64(1)
+
+	// Assert
+	require.EqualValues(t, 42, counter.ToInt64())
+	require.EqualValues(t, 43, clone.ToInt64())
+}
+
+// Test that the cloned extended big counter is a separate instance
+// and modifications to the original do not affect the clone.
+func TestCloneBigInt(t *testing.T) {
+	// Arrange
+	counter := NewBigCounter(math.MaxUint64).AddUint64(1)
+
+	// Act
+	clone := counter.Clone()
+	clone.AddUint64(1)
+
+	// Assert
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(1),
+	), counter.ToBigInt())
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(2),
+	), clone.ToBigInt())
 }
 
 // Benchmarks.
