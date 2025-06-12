@@ -15,13 +15,13 @@ var app = new Vue({
     created: function () {
         axios.get('/subnets').then(function (response) {
             this.subnets.push(...response.data.items)
-        })
+        }).catch((err) => console.log('Error getting subnets: ', err))
         axios.get('/applications').then(function (response) {
             this.applications.push(...response.data.items)
-        })
+        }).catch((err) => console.log('Error getting applications: ', err))
         axios.get('/services').then(function (response) {
             this.services.push(...response.data.items)
-        })
+        }).catch((err) => console.log('Error getting services: ', err))
     },
     methods: {
         menuSelect: function (key, keyPath) {
@@ -37,7 +37,7 @@ var app = new Vue({
             axios.put('/subnets/' + idx, data).then(function (response) {
                 this.subnets.length = 0;
                 this.subnets.push(...response.data.items);
-            })
+            }).catch((err) => console.log('Error putting subnet: ', idx, data, err))
         },
         query: function (idx) {
             var application = this.applications[idx]
@@ -50,7 +50,7 @@ var app = new Vue({
             axios.put('/query/' + idx, data).then(function (response) {
                 this.applications.length = 0;
                 this.applications.push(...response.data.items);
-            })
+            }).catch((err) => console.log('Error putting query: ', idx, data, err))
         },
         perf: function (idx, state) {
             var application = this.applications[idx]
@@ -64,15 +64,15 @@ var app = new Vue({
             axios.put('/perf/' + idx, data).then(function (response) {
                 this.applications.length = 0;
                 this.applications.push(...response.data.items);
-            })
+            }).catch((err) => console.log('Error putting perf: ', idx, data, err))
         },
         updateService: function (idx, operation) {
             var sn = this.subnets[idx]
-            var data = { operation: operation }
+            var data = {operation: operation}
             axios.put('/services/' + idx, data).then(function (response) {
                 this.services.length = 0;
                 this.services.push(...response.data.items);
-            })
+            }).catch((err) => console.log('Error putting service: ', idx, data, err))
         }
     }
 })
