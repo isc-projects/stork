@@ -10,7 +10,8 @@ var app = new Vue({
         menuIndex: 'manager',
         subnets: subnets,
         applications: applications,
-        services: services
+        services: services,
+        disableDHCPButtons: false
     },
     created: function () {
         axios.get('/subnets').then(function (response) {
@@ -28,6 +29,7 @@ var app = new Vue({
             this.menuIndex = key;
         },
         updateSubnet: function (idx, state) {
+            this.disableDHCPButtons = true
             var sn = this.subnets[idx]
             var data = {
                 state: state,
@@ -38,6 +40,7 @@ var app = new Vue({
                 this.subnets.length = 0;
                 this.subnets.push(...response.data.items);
             }).catch((err) => console.log('Error putting subnet: ', idx, data, err))
+                .finally(() => this.disableDHCPButtons = false)
         },
         query: function (idx) {
             var application = this.applications[idx]

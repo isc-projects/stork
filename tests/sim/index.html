@@ -70,8 +70,8 @@
             <el-table-column label="Action" min-width="8em">
                 <template slot-scope="scope">
                     <div v-if="scope.row.clientClass != null || scope.row.clientClasses != null">
-                        <el-button type="success" v-if="scope.row.state == 'stop'" v-on:click="updateSubnet(scope.$index, 'start')">Start</el-button>
-                        <el-button type="danger" v-if="scope.row.state == 'start'" v-on:click="updateSubnet(scope.$index, 'stop')">Stop</el-button>
+                        <el-button type="success" v-if="scope.row.state == 'stop'" v-on:click="updateSubnet(scope.$index, 'start')" v-bind:disabled="disableDHCPButtons">Start</el-button>
+                        <el-button type="danger" v-if="scope.row.state == 'start'" v-on:click="updateSubnet(scope.$index, 'stop')" v-bind:disabled="disableDHCPButtons">Stop</el-button>
                     </div>
                 </template>
             </el-table-column>
