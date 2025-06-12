@@ -165,10 +165,20 @@ func (n *BigCounter) DivideSafeBy(other *BigCounter) float64 {
 // Returns the counting value as int64. If the value is above the range
 // then returns the maximum value of int64.
 func (n *BigCounter) ToInt64() int64 {
-	if n.base >= math.MaxInt64 {
+	if n.isExtended() {
+		if n.extended.IsInt64() {
+			return n.extended.Int64()
+		}
+		if n.extended.Sign() == -1 {
+			return math.MinInt64
+		}
 		return math.MaxInt64
+	} else {
+		if n.base > math.MaxInt64 {
+			return math.MaxInt64
+		}
+		return int64(n.base)
 	}
-	return int64(n.base)
 }
 
 // Returns the counting value as float64. If the value exceeds the maximum

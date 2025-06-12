@@ -423,6 +423,71 @@ func TestBigCounterConstructFromBigInt(t *testing.T) {
 	})
 }
 
+// Test that the subtraction in uint64 range works correctly.
+func TestSubtractInUInt64Range(t *testing.T) {
+	// Arrange
+	counter0 := NewBigCounter(10000)
+
+	// Act
+	counter1 := counter0.Subtract(NewBigCounter(5000))
+	counter2 := counter1.Subtract(NewBigCounter(1000))
+	counter3 := counter2.Subtract(NewBigCounter(4000))
+
+	// Assert
+	require.Zero(t, counter0.ToInt64())
+	require.Zero(t, counter1.ToInt64())
+	require.Zero(t, counter2.ToInt64())
+	require.Zero(t, counter3.ToInt64())
+	require.False(t, counter3.isExtended())
+}
+
+// Test that the subtraction above uint64 range works correctly.
+func TestSubtractAboveUInt64Range(t *testing.T) {
+	// Arrange
+	counter := NewBigCounter(math.MaxUint64).AddUint64(10001)
+
+	// Act
+	counter.Subtract(NewBigCounter(5000))
+	counter.Subtract(NewBigCounter(1000))
+	counter.Subtract(NewBigCounter(4000))
+
+	// Assert
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(1),
+	), counter.ToBigInt())
+	require.True(t, counter.isExtended())
+}
+
+// Test that the subtraction that results in a number in uint64 range
+// works correctly.
+func TestSubtractFromAboveUint64ToUint64Range(t *testing.T) {
+	// Arrange
+	counter := NewBigCounter(math.MaxUint64).AddUint64(1)
+
+	// Act
+	counter.Subtract(NewBigCounter(math.MaxUint64))
+
+	// Assert
+	require.EqualValues(t, 1, counter.ToInt64())
+	require.True(t, counter.isExtended())
+}
+
+// Test that the subtraction that results in a number in uint64 range
+// works correctly.
+func TestSubtractFromAboveUint64ToBelowUint64Range(t *testing.T) {
+	// Arrange
+	counter := NewBigCounter(math.MaxUint64).AddUint64(1)
+
+	// Act
+	counter.Subtract(NewBigCounter(math.MaxUint64))
+	counter.Subtract(NewBigCounter(2))
+
+	// Assert
+	require.EqualValues(t, -1, counter.ToInt64())
+	require.True(t, counter.isExtended())
+}
+
 // Benchmarks.
 // The below benchmark measure the big counter performance.
 
