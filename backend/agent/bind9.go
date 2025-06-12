@@ -510,10 +510,10 @@ func parseNamedDefaultPath(output []byte) string {
 //
 // Returns the collected data or nil if the Bind 9 is not recognized or any
 // error occurs.
-func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) App {
+func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, explicitConfigPath string, parser bind9FileParser) (App, error) {
 	cmdline, err := p.getCmdline()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	cwd, err := p.getCwd()
 	if err != nil {
@@ -521,11 +521,10 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 	}
 	match := bind9Pattern.FindStringSubmatch(cmdline)
 	if match == nil {
-		return nil
+		return nil, errors.Wrapf(err, "failed to find named cmdline: %s", cmdline)
 	}
 	if len(match) < 3 {
-		log.Warnf("Problem with parsing named command line: %s", match[0])
-		return nil
+		return nil, errors.Errorf("failed to parse named cmdline: %s", cmdline)
 	}
 
 	// Try to find bind9 config file(s).
@@ -593,13 +592,11 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 		log.Debugf("Looking for BIND 9 config file in output of `named -V`.")
 		namedPath, err := determineBinPath(baseNamedDir, namedExec, executor)
 		if err != nil {
-			log.Warnf("Could not determine BIND 9 executable %s: %s", namedExec, err)
-			return nil
+			return nil, errors.Wrapf(err, "failed to determine BIND 9 executable %s", namedExec)
 		}
 		out, err := executor.Output(namedPath, "-V")
 		if err != nil {
-			log.Warnf("Attempt to run '%s -V' failed. I give up. Error: %s", namedPath, err)
-			return nil
+			return nil, errors.Wrapf(err, "failed to run '%s -V'", namedPath)
 		}
 		bind9ConfPath = parseNamedDefaultPath(out)
 	}
@@ -621,16 +618,14 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 
 	// no config file so nothing to do
 	if bind9ConfPath == "" {
-		log.Warnf("Cannot find config file for BIND 9")
-		return nil
+		return nil, errors.Errorf("cannot find config file for BIND 9")
 	}
 	prefixedBind9ConfPath := path.Join(rootPrefix, bind9ConfPath)
 
 	// run named-checkconf on main config file and get preprocessed content of whole config
 	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec, executor)
 	if err != nil {
-		log.Warnf("Cannot find BIND 9 %s: %s", namedCheckconfExec, err)
-		return nil
+		return nil, errors.Wrapf(err, "failed to determine BIND 9 executable %s", namedCheckconfExec)
 	}
 
 	// Prepare named-checkconf arguments.
@@ -643,22 +638,19 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 
 	out, err := executor.Output(namedCheckconfPath, args...)
 	if err != nil {
-		log.Warnf("Cannot parse BIND 9 config file %s: %+v; %s", prefixedBind9ConfPath, err, out)
-		return nil
+		return nil, errors.Wrapf(err, "failed to parse BIND 9 config file %s", prefixedBind9ConfPath)
 	}
 	cfgText := string(out)
 
 	bind9Config, err := parser.ParseFile(prefixedBind9ConfPath)
 	if err != nil {
-		log.WithError(err).Warnf("Cannot parse BIND 9 config file %s", prefixedBind9ConfPath)
-		return nil
+		return nil, errors.Wrapf(err, "failed to parse BIND 9 config file %s", prefixedBind9ConfPath)
 	}
 
 	// look for control address in config
 	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
 	if ctrlPort == 0 || len(ctrlAddress) == 0 {
-		log.Warnf("Found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", prefixedBind9ConfPath)
-		return nil
+		return nil, errors.Errorf("found BIND 9 config file (%s) but rndc support was disabled (empty `controls` clause)", prefixedBind9ConfPath)
 	}
 
 	rndcKey := ""
@@ -705,8 +697,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 		ctrlKey,
 	)
 	if err != nil {
-		log.Warnf("Cannot determine BIND 9 rndc details: %s", err)
-		return nil
+		return nil, errors.Wrapf(err, "failed to determine BIND 9 rndc details")
 	}
 
 	// prepare final BIND 9 app
@@ -719,7 +710,7 @@ func detectBind9App(p supportedProcess, executor storkutil.CommandExecutor, expl
 		zoneInventory: inventory,
 	}
 
-	return bind9App
+	return bind9App, nil
 }
 
 // Send a command to named using rndc client.

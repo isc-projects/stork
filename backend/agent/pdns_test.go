@@ -294,6 +294,6 @@ func TestDetectPowerDNSAppNoAPI(t *testing.T) {
 
 	app, err := detectPowerDNSApp(process, parser)
 	require.Error(t, err)
-	require.ErrorContains(t, err, "API disabled in /etc/pdns.conf")
+	require.ErrorContains(t, err, "API or webserver disabled in /etc/pdns.conf")
 	require.Nil(t, app)
 }

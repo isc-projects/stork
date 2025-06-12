@@ -156,7 +156,8 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 			}
 		}
 
-		if daemon.KeaDaemon != nil {
+		switch {
+		case daemon.KeaDaemon != nil:
 			// Make sure that the kea_daemon references the daemon.
 			daemon.KeaDaemon.DaemonID = daemon.ID
 			err = upsertInTransaction(tx, daemon.KeaDaemon.ID, daemon.KeaDaemon)
@@ -174,7 +175,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 						app.ID, daemon.KeaDaemon.KeaDHCPDaemon)
 				}
 			}
-		} else if daemon.Bind9Daemon != nil {
+		case daemon.Bind9Daemon != nil:
 			// Make sure that the bind9_daemon references the daemon.
 			daemon.Bind9Daemon.DaemonID = daemon.ID
 			err = upsertInTransaction(tx, daemon.Bind9Daemon.ID, daemon.Bind9Daemon)
@@ -182,7 +183,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 				return nil, nil, pkgerrors.Wrapf(err, "problem upserting BIND 9 daemon to app %d: %v",
 					app.ID, daemon.Bind9Daemon)
 			}
-		} else if daemon.PDNSDaemon != nil {
+		case daemon.PDNSDaemon != nil:
 			// Make sure that the pdns_daemon references the daemon.
 			daemon.PDNSDaemon.DaemonID = daemon.ID
 			err = upsertInTransaction(tx, daemon.PDNSDaemon.ID, daemon.PDNSDaemon)

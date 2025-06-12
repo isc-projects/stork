@@ -856,11 +856,12 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, app
 
 // Returns the PowerDNS server information.
 func (agents *connectedAgentsImpl) GetPowerDNSServerInfo(ctx context.Context, app ControlledApp) (*pdnsdata.ServerInfo, error) {
+	addrPort := net.JoinHostPort(app.GetMachineTag().GetAddress(), strconv.FormatInt(app.GetMachineTag().GetAgentPort(), 10))
+
 	address, port, _, _, err := app.GetControlAccessPoint()
 	if err != nil {
 		return nil, err
 	}
-	addrPort := net.JoinHostPort(address, strconv.FormatInt(port, 10))
 	req := &agentapi.GetPowerDNSServerInfoReq{
 		WebserverAddress: address,
 		WebserverPort:    port,

@@ -27,7 +27,7 @@ func setPDNSClientBasePath(baseURL string) string {
 	return strings.TrimRight(baseURL, "/") + fmt.Sprintf("/api/v%d", pdnsAPIVersion)
 }
 
-// Request over PowerDNS API to a particular host and port.
+// Request over PowerDNS API to a particular host, port and API key.
 // It uses a common REST client which is safe for concurrent use.
 type pdnsClientRequest struct {
 	innerClient *resty.Client

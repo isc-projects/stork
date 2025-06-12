@@ -109,22 +109,10 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 	if err != nil {
 		return nil, err
 	}
-	// Get the API flag.
-	if api := parsedConfig.GetBool("api"); api == nil || !*api {
-		return nil, errors.Errorf("API disabled in %s", configPath)
-	}
-	// Get the webserver flag.
-	if webserver := parsedConfig.GetBool("webserver"); webserver == nil || !*webserver {
-		return nil, errors.Errorf("webserver disabled in %s", configPath)
-	}
-	// Get webserver address and port.
-	webserverAddress := "127.0.0.1"
-	if address := parsedConfig.GetString("webserver-address"); address != nil && *address != "0.0.0.0" && *address != "::" {
-		webserverAddress = *address
-	}
-	webserverPort := int64(8081)
-	if port := parsedConfig.GetInt64("webserver-port"); port != nil {
-		webserverPort = *port
+	// Get the webserver address and port.
+	webserverAddress, webserverPort, enabled := parsedConfig.GetWebserverConfig()
+	if !enabled {
+		return nil, errors.Errorf("API or webserver disabled in %s", configPath)
 	}
 	// Get the API key. It is mandatory.
 	key := parsedConfig.GetString("api-key")
@@ -138,7 +126,7 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 	client.SetRequestTimeout(time.Minute * 3)
 
 	// Create the zone inventory.
-	inventory := newZoneInventory(newZoneInventoryStorageMemory(), parsedConfig, client, webserverAddress, webserverPort)
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), parsedConfig, client, *webserverAddress, *webserverPort)
 
 	// Create the PowerDNS app.
 	pdnsApp := &pdnsApp{
@@ -147,8 +135,8 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 			AccessPoints: []AccessPoint{
 				{
 					Type:    AccessPointControl,
-					Address: webserverAddress,
-					Port:    webserverPort,
+					Address: *webserverAddress,
+					Port:    *webserverPort,
 					Key:     *key,
 				},
 			},

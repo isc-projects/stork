@@ -514,13 +514,14 @@ func (sa *StorkAgent) GetPowerDNSServerInfo(ctx context.Context, req *agentapi.G
 
 	// Response is OK. Return the server information.
 	rsp := &agentapi.GetPowerDNSServerInfoRsp{
-		Type:       serverInfo.Type,
-		Id:         serverInfo.ID,
-		DaemonType: serverInfo.DaemonType,
-		Version:    serverInfo.Version,
-		Url:        serverInfo.URL,
-		ConfigURL:  serverInfo.ConfigURL,
-		ZonesURL:   serverInfo.ZonesURL,
+		Type:             serverInfo.Type,
+		Id:               serverInfo.ID,
+		DaemonType:       serverInfo.DaemonType,
+		Version:          serverInfo.Version,
+		Url:              serverInfo.URL,
+		ConfigURL:        serverInfo.ConfigURL,
+		ZonesURL:         serverInfo.ZonesURL,
+		AutoprimariesURL: serverInfo.AutoprimariesURL,
 	}
 	return rsp, nil
 }

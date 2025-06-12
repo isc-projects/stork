@@ -281,12 +281,13 @@ func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 			}
 		case namedProcName:
 			// BIND 9 DNS server.
-			if detectedApp = detectBind9App(
+			if detectedApp, err = detectBind9App(
 				p,
 				sm.commander,
 				storkAgent.ExplicitBind9ConfigPath,
 				sm.bind9FileParser,
-			); detectedApp == nil {
+			); err != nil {
+				log.WithError(err).Warnf("Failed to detect BIND 9 DNS server app")
 				continue
 			}
 		case pdnsProcName:

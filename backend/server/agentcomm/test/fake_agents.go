@@ -184,7 +184,9 @@ func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.Cont
 // FakeAgents specific implementation of the function to get the PowerDNS
 // server information. It returns nil.
 func (fa *FakeAgents) GetPowerDNSServerInfo(ctx context.Context, app agentcomm.ControlledApp) (*pdnsdata.ServerInfo, error) {
-	return nil, nil
+	return &pdnsdata.ServerInfo{
+		Version: "4.7.0",
+	}, nil
 }
 
 // Mimics tailing text file.

@@ -116,7 +116,8 @@ func TestPDNSGetRawJSONError(t *testing.T) {
 	require.Nil(t, rawJSON)
 }
 
-// Test the GET /zones endpoint returning a list of views and the zones.
+// Test the GET /servers/localhost/zones endpoint returning a list of
+// views and the zones.
 func TestPDNSGetViews(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://localhost:5380/").
@@ -205,6 +206,7 @@ func TestPDNSGetViewsError(t *testing.T) {
 	require.Nil(t, views)
 }
 
+// Test the GET /servers/localhost endpoint returning the server info.
 func TestPDNSGetServerInfo(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://localhost:5380/").
@@ -233,7 +235,7 @@ func TestPDNSGetServerInfo(t *testing.T) {
 	require.Equal(t, "/api/v1/servers/localhost", serverInfo.URL)
 	require.Equal(t, "/api/v1/servers/localhost/zones{/zone}", serverInfo.ZonesURL)
 	require.Equal(t, "/api/v1/servers/localhost/config{/config_setting}", serverInfo.ConfigURL)
-	// require.Equal(t, "/api/v1/servers/localhost/autoprimaries", serverInfo.AutoprimariesURL)
+	require.Equal(t, "/api/v1/servers/localhost/autoprimaries{/autoprimary}", serverInfo.AutoprimariesURL)
 }
 
 // Test that the client returns with a timeout if the server doesn't

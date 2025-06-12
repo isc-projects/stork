@@ -1739,8 +1739,14 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 		Get("api/v1/servers/localhost").
 		Reply(http.StatusOK).
 		JSON(map[string]any{
-			"type":    "Server",
-			"version": "4.7.3",
+			"type":              "Server",
+			"version":           "4.7.3",
+			"id":                "localhost",
+			"daemon_type":       "authoritative",
+			"url":               "http://localhost:1234/api/v1/servers/localhost",
+			"config_url":        "http://localhost:1234/api/v1/servers/localhost/config",
+			"zones_url":         "http://localhost:1234/api/v1/servers/localhost/zones",
+			"autoprimaries_url": "http://localhost:1234/api/v1/servers/localhost/autoprimaries",
 		})
 
 	// Add a PowerDNS app.
@@ -1764,6 +1770,12 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.Equal(t, "Server", rsp.Type)
 	require.Equal(t, "4.7.3", rsp.Version)
+	require.Equal(t, "localhost", rsp.Id)
+	require.Equal(t, "authoritative", rsp.DaemonType)
+	require.Equal(t, "http://localhost:1234/api/v1/servers/localhost", rsp.Url)
+	require.Equal(t, "http://localhost:1234/api/v1/servers/localhost/config", rsp.ConfigURL)
+	require.Equal(t, "http://localhost:1234/api/v1/servers/localhost/zones", rsp.ZonesURL)
+	require.Equal(t, "http://localhost:1234/api/v1/servers/localhost/autoprimaries", rsp.AutoprimariesURL)
 }
 
 // Test that the correct error is returned when the specified PowerDNS

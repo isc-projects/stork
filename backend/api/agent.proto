@@ -23,6 +23,7 @@ service Agent {
   // Forward commands (one or more) to Kea Control Agent and return results.
   rpc ForwardToKeaOverHTTP(ForwardToKeaOverHTTPReq) returns (ForwardToKeaOverHTTPRsp) {}
 
+  // Get the general server information from the PowerDNS server.
   rpc GetPowerDNSServerInfo(GetPowerDNSServerInfoReq) returns (GetPowerDNSServerInfoRsp) {}
 
   // Get the tail of the specified file, typically a log file.
@@ -201,11 +202,13 @@ message ForwardToNamedStatsRsp {
   NamedStatsResponse namedStatsResponse = 2;
 }
 
+// Request to fetch the general server information from the PowerDNS server.
 message GetPowerDNSServerInfoReq {
   string webserverAddress = 1;
   int64 webserverPort = 2;
 }
 
+// Response containing the general server information from the PowerDNS server.
 message GetPowerDNSServerInfoRsp {
    string type = 1;
    string id = 2;
@@ -214,6 +217,7 @@ message GetPowerDNSServerInfoRsp {
    string url = 5;
    string configURL = 6;
    string zonesURL = 7;
+   string autoprimariesURL = 8;
 }
 
 // Log file tailing request

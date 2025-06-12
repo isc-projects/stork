@@ -1483,7 +1483,7 @@ func TestGetAllApps(t *testing.T) {
 
 	// Add a PowerDNS app.
 	var pdnsPoints []*AccessPoint
-	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321, true)
+	pdnsPoints = AppendAccessPoint(pdnsPoints, AccessPointControl, "", "abcd", 5678, true)
 
 	pdns := &App{
 		ID:           0,

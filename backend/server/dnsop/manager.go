@@ -227,7 +227,7 @@ func (manager *managerImpl) FetchZones(poolSize, batchSize int, block bool) (cha
 	// Get the list of monitored DNS servers. We're going to communicate
 	// with the zone inventories created for these servers to fetch the
 	// list of zones.
-	apps, err := dbmodel.GetAppsByType(manager.db, dbmodel.AppTypeBind9)
+	apps, err := dbmodel.GetAppsByType(manager.db, dbmodel.AppTypeBind9, dbmodel.AppTypePDNS)
 	if err != nil {
 		manager.fetchingState.stopFetching()
 		return nil, err

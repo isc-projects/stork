@@ -59,6 +59,10 @@ func TestStatePullerPullData(t *testing.T) {
 				Type:         datamodel.AppTypeBind9.String(),
 				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124),
 			},
+			{
+				Type:         datamodel.AppTypePDNS.String(),
+				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 134),
+			},
 		},
 	}
 
@@ -127,12 +131,13 @@ func TestStatePullerPullData(t *testing.T) {
 	// check if apps have been updated correctly
 	apps, err := dbmodel.GetAllApps(db, true)
 	require.NoError(t, err)
-	require.Len(t, apps, 2)
+	require.Len(t, apps, 3)
+
 	var keaApp dbmodel.App
-	if apps[0].Type == dbmodel.AppTypeKea {
-		keaApp = apps[0]
-	} else {
-		keaApp = apps[1]
+	for _, app := range apps {
+		if app.Type == dbmodel.AppTypeKea {
+			keaApp = app
+		}
 	}
 	require.Len(t, keaApp.AccessPoints, 1)
 	require.EqualValues(t, keaApp.AccessPoints[0].Address, "1.2.3.4")
