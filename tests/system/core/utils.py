@@ -108,6 +108,12 @@ def tic(label: str = ""):
 
     Similarly to the `print` function, the `tic` calls should be removed from
     the production code.
+
+    Example
+    -------
+    >>> toc = tic("My Timer")
+    >>> # ... some code to measure ...
+    >>> toc()  # Prints elapsed time for "My Timer"
     """
     if label:
         print("Starting timer for", label)
