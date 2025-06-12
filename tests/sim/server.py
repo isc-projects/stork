@@ -3,6 +3,7 @@ This module provides a simple interface to the Stork server for use in the
 simulator.
 TODO: Replace it with OpenAPI client generated from the Stork server API.
 """
+
 import os
 import requests
 
@@ -12,17 +13,18 @@ import requests
 STORK_SERVER_URL = os.environ.get("STORK_SERVER_URL", "http://server:8080")
 
 # Once the POST /api/sessions is successful, store the session as a global variable.
-stored_session = None
+STORED_SESSION = None
 
 
 def _login_session():
     """Log-in to Stork server as admin with default credentials. Return a
     session object."""
     from sim import log
-    global stored_session
-    if stored_session is not None:
-        log.info("returning stored session %s", stored_session)
-        return stored_session
+
+    global STORED_SESSION
+    if STORED_SESSION is not None:
+        log.info("returning stored session %s", STORED_SESSION)
+        return STORED_SESSION
 
     requests_session = requests.Session()
     credentials = {
@@ -30,18 +32,23 @@ def _login_session():
         "identifier": "admin",
         "secret": "admin",
     }
-    post_session_resp = requests_session.post(f"{STORK_SERVER_URL}/api/sessions", json=credentials, timeout=10)
+    post_session_resp = requests_session.post(
+        f"{STORK_SERVER_URL}/api/sessions", json=credentials, timeout=10
+    )
     if post_session_resp.status_code == 200:
         log.info("successfully logged in")
-        stored_session = requests_session
+        STORED_SESSION = requests_session
         return requests_session
 
-    raise requests.exceptions.RequestException(f"error creating a session: REST API returned {post_session_resp}")
+    raise requests.exceptions.RequestException(
+        f"error creating a session: REST API returned {post_session_resp}"
+    )
 
 
 def get_subnets():
     """Fetches the list of subnets from Stork server."""
     from sim import log
+
     try:
         session = _login_session()
 
@@ -63,6 +70,7 @@ def get_subnets():
 def get_bind9_applications():
     """Fetches the list of BIND 9 applications from Stork server."""
     from sim import log
+
     try:
         session = _login_session()
 
@@ -84,6 +92,7 @@ def get_bind9_applications():
 def get_machines():
     """Fetches the list of machines from Stork server."""
     from sim import log
+
     try:
         session = _login_session()
 
