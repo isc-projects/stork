@@ -573,7 +573,9 @@ def collect_logs(test_dir: Path):
         # Stdout log is in format: container_name | timestamp message
         # Sort by timestamp.
         stdout = "\n".join(
-            sorted(stdout.splitlines(), key=lambda x: x.split("|")[1] if "|" in x else x)
+            sorted(
+                stdout.splitlines(), key=lambda x: x.split("|")[1] if "|" in x else x
+            )
         )
         f.write(stdout)
 
@@ -587,13 +589,21 @@ def collect_logs(test_dir: Path):
             continue
         has_non_operational_service = True
         inspect_stdout = compose.inspect_raw(service_name)
-        with open(test_dir / f"inspect-{service_name}.json", "wt", encoding="utf-8") as f:
+        with open(
+            test_dir / f"inspect-{service_name}.json", "wt", encoding="utf-8"
+        ) as f:
             f.write(inspect_stdout)
 
         # Collect supervisor status
-        _, stdout, _ = compose.exec(service_name, ["supervisorctl", "status"], check=False)
+        _, stdout, _ = compose.exec(
+            service_name, ["supervisorctl", "status"], check=False
+        )
         if stdout.strip() != "":
-            with open(test_dir / f"supervisorctl-status-{service_name}.out", "wt", encoding="utf-8") as f:
+            with open(
+                test_dir / f"supervisorctl-status-{service_name}.out",
+                "wt",
+                encoding="utf-8",
+            ) as f:
                 f.write(stdout)
 
     if has_non_operational_service:
