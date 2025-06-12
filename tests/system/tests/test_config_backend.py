@@ -185,6 +185,7 @@ def test_migrate_host_reservations(kea_service: Kea, server_service: Server):
 
     # Fetch host reservations after migration.
     server_service.wait_for_host_reservation_pulling()
+    server_service.wait_for_host_reservation_pulling()
 
     hosts = server_service.list_hosts()
     in_config_count = len(
