@@ -3,9 +3,10 @@ The main simulator project file.
 It defines the Flask application and the main function.
 """
 
-import os
 import json
 import logging
+import os
+from subprocess import TimeoutExpired
 
 from flask import Flask, request
 from flask.logging import create_logger
@@ -142,6 +143,9 @@ def get_subnets():
 def put_subnet_params(index):
     """Start generating DHCP traffic for a subnet with a given index."""
     data = json.loads(request.data)
+    if app.subnets is None or not isinstance(app.subnets["items"], list) or index >= len(app.subnets["items"]):
+        log.error('subnet index out of boundaries - requested idx %s but the subnets are %s', index, app.subnets)
+        return 'subnet index out of boundaries!', 500
     subnet = app.subnets["items"][index]
 
     if "rate" in data:
@@ -179,9 +183,24 @@ def put_subnet_params(index):
                         related_subnet["proc"] = None
                         related_subnet["state"] = "stop"
 
-            subnet["proc"] = traffic.start_perfdhcp(subnet)
-            log.info("Started perfdhcp for subnet %s", subnet["subnet"])
+            proc = traffic.start_perfdhcp(subnet)
+            try:
+                # Let's wait here, because sometimes perfdhcp exits with non-zero code milliseconds after triggering
+                # e.g. ERROR: running perfdhcp: Failed to bind socket 6 to 172.101.0.200/port=67
+                proc.wait(1)
+            except TimeoutExpired:
+                # The timeout means that perfdhcp process is alive.
+                log.info("Started perfdhcp for subnet %s", subnet["subnet"])
 
+            if proc.returncode is not None and proc.returncode != 0:
+                proc.terminate()
+                proc.wait()
+                subnet["proc"] = None
+                subnet["state"] = "stop"
+                log.error("Failed to start perfdhcp for subnet %s, exit code %s", subnet["subnet"], proc.returncode)
+                return serialize_subnets(app.subnets)
+
+            subnet["proc"] = proc
         subnet["state"] = data["state"]
 
     return serialize_subnets(app.subnets)
@@ -198,6 +217,9 @@ def get_bind9_applications():
 def put_dig_params(index):
     """Sends DNS query to a server with the given index."""
     data = json.loads(request.data)
+    if app.bind9_applications is None or not isinstance(app.bind9_applications["items"], list) or index >= len(app.bind9_applications["items"]):
+        log.error('bind9 app index out of boundaries - requested idx %s but the apps are %s', index, app.bind9_applications)
+        return 'bind9 app index out of boundaries!', 500
     application = app.bind9_applications["items"][index]
 
     if "qname" in data:
@@ -225,6 +247,9 @@ def put_dig_params(index):
 def put_flamethrower_params(index):
     """Starts generating DNS traffic to a server with the given index."""
     data = json.loads(request.data)
+    if app.bind9_applications is None or not isinstance(app.bind9_applications["items"], list) or index >= len(app.bind9_applications["items"]):
+        log.error('bind9 app index out of boundaries - requested idx %s but the apps are %s', index, app.bind9_applications)
+        return 'bind9 app index out of boundaries!', 500
     application = app.bind9_applications["items"][index]
 
     if "qname" in data:
@@ -275,6 +300,9 @@ def get_services():
 def put_service(index):
     """Toggles a service with the given index."""
     data = json.loads(request.data)
+    if app.services is None or not isinstance(app.services["items"], list) or index >= len(app.services["items"]):
+        log.error('service index out of boundaries - requested idx %s but the services are %s', index, app.services)
+        return 'service index out of boundaries!', 500
     service = app.services["items"][index]
 
     if data["operation"] == "stop":
