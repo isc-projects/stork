@@ -8,13 +8,17 @@ import logging
 import os
 from subprocess import TimeoutExpired
 
+import requests
 from flask import Flask, request
 from flask.logging import create_logger
 
-import server
 import supervisor
 import traffic
 
+# The Stork server URL. The default value is suitable for the demo environment.
+# The environment variable should be set to localhost if the server is running
+# on the same host as the simulator.
+STORK_SERVER_URL = os.environ.get("STORK_SERVER_URL", "http://server:8080")
 LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
 logging.basicConfig(level=LOGLEVEL)
 
@@ -23,11 +27,96 @@ app: Flask = None
 log: logging.Logger = None
 
 
+def _login_session():
+    """Log-in to Stork server as admin with default credentials. Return a
+    session object."""
+    if app.stored_session is not None:
+        log.info("returning stored session %s", app.stored_session)
+        return app.stored_session
+
+    requests_session = requests.Session()
+    credentials = {
+        "authenticationMethodId": "ldap",
+        "identifier": "admin",
+        "secret": "admin",
+    }
+    post_session_resp = requests_session.post(
+        f"{STORK_SERVER_URL}/api/sessions", json=credentials, timeout=10
+    )
+    if post_session_resp.status_code == 200:
+        log.info("successfully logged in")
+        app.stored_session = requests_session
+        return requests_session
+
+    raise requests.exceptions.RequestException(
+        f"error creating a session: REST API returned {post_session_resp}"
+    )
+
+
+def _get_subnets_from_rest_api():
+    """Fetches the list of subnets from Stork server."""
+    try:
+        session = _login_session()
+
+        url = f"{STORK_SERVER_URL}/api/subnets?start=0&limit=100"
+        response = session.get(url)
+        data = response.json()
+
+        if data is None or data.get("items") is None:
+            return {"items": [], "total": 0}
+        return data
+    except requests.exceptions.RequestException as err:
+        log.error("Error getting subnets: %s", err)
+        return {"items": [], "total": 0}
+    except BaseException as err:
+        log.error("Generic error getting subnets: %s", err)
+        return {"items": [], "total": 0}
+
+
+def _get_bind9_applications_from_rest_api():
+    """Fetches the list of BIND 9 applications from Stork server."""
+    try:
+        session = _login_session()
+
+        url = f"{STORK_SERVER_URL}/api/apps?app=bind9"
+        response = session.get(url)
+        data = response.json()
+
+        if data is None or data.get("items") is None:
+            return {"items": [], "total": 0}
+        return data
+    except requests.exceptions.RequestException as err:
+        log.error("Error getting BIND9 apps: %s", err)
+        return {"items": [], "total": 0}
+    except BaseException as err:
+        log.error("Generic error getting BIND9 apps: %s", err)
+        return {"items": [], "total": 0}
+
+
+def _get_machines_from_rest_api():
+    """Fetches the list of machines from Stork server."""
+    try:
+        session = _login_session()
+
+        url = f"{STORK_SERVER_URL}/api/machines?start=0&limit=100"
+        response = session.get(url)
+        machines = response.json()
+        if machines is None or machines.get("items") is None:
+            return {"items": [], "total": 0}
+        return machines
+    except requests.exceptions.RequestException as err:
+        log.error("Error getting machines: %s", err)
+        return {"items": [], "total": 0}
+    except BaseException as err:
+        log.error("Generic error getting machines: %s", err)
+        return {"items": [], "total": 0}
+
+
 def _refresh_subnets():
     """Fetches list of subnets from Stork server and extends them with fields
     related to generating traffic. Stores the subnets in the app object."""
     app.subnets = {"items": [], "total": 0}
-    subnets = server.get_subnets()
+    subnets = _get_subnets_from_rest_api()
 
     # Add the simulator-specific fields to the subnets.
     for subnet in subnets["items"]:
@@ -45,7 +134,7 @@ def _refresh_bind9_applications():
     fields related to generating traffic. Stores the BIND 9 applications in the app
     object."""
     app.bind9_applications = {"items": [], "total": 0}
-    bind9_applications = server.get_bind9_applications()
+    bind9_applications = _get_bind9_applications_from_rest_api()
 
     # Add the simulator-specific fields to the BIND 9 applications.
     for application in bind9_applications["items"]:
@@ -65,7 +154,7 @@ def _refresh_services():
     call to extract list of services managed by SupervisorD. Stores the list of
     services in the app object."""
     app.services = {"items": [], "total": 0}
-    machines = server.get_machines()
+    machines = _get_machines_from_rest_api()
     services = supervisor.get_services(machines)
     app.services = services
 
@@ -111,6 +200,7 @@ def init():
     """Creates Flask application and logger."""
     app_instance = Flask(__name__, static_url_path="", static_folder="")
     logger_instance = create_logger(app_instance)
+    app_instance.stored_session = None
     return app_instance, logger_instance
 
 
