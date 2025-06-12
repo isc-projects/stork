@@ -19,7 +19,7 @@ STORED_SESSION = None
 def _login_session():
     """Log-in to Stork server as admin with default credentials. Return a
     session object."""
-    from sim import log
+    from sim import log # pylint: disable=import-outside-toplevel
 
     global STORED_SESSION
     if STORED_SESSION is not None:
@@ -47,7 +47,7 @@ def _login_session():
 
 def get_subnets():
     """Fetches the list of subnets from Stork server."""
-    from sim import log
+    from sim import log # pylint: disable=import-outside-toplevel
 
     try:
         session = _login_session()
@@ -69,7 +69,7 @@ def get_subnets():
 
 def get_bind9_applications():
     """Fetches the list of BIND 9 applications from Stork server."""
-    from sim import log
+    from sim import log # pylint: disable=import-outside-toplevel
 
     try:
         session = _login_session()
@@ -91,7 +91,7 @@ def get_bind9_applications():
 
 def get_machines():
     """Fetches the list of machines from Stork server."""
-    from sim import log
+    from sim import log # pylint: disable=import-outside-toplevel
 
     try:
         session = _login_session()
