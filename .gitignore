@@ -82,6 +82,8 @@ tests/system/config/kea/kea-leases4.csv
 tests/system/config/kea/kea-leases6.csv
 tests/system/config/kea-ha2/kea-leases4.csv
 tests/system/config/kea-ha2/kea-leases6.csv
+tests/system/config/kea-ha3/kea-leases4.csv
+tests/system/config/kea-ha3/kea-leases6.csv
 tests/system/config/certs/key.pem
 tests/system/config/certs/cert.pem
 tests/system/config/.isolated/

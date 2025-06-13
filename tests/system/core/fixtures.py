@@ -81,9 +81,10 @@ def kea_parametrize(
     )
 
 
-def ha_pair_parametrize(
+def ha_parametrize(
     first_service_name="agent-kea-ha1",
     second_service_name="agent-kea-ha2",
+    third_service_name="agent-kea-ha3",
     min_version=None,
     suppress_registration=False,
 ):
@@ -96,6 +97,9 @@ def ha_pair_parametrize(
         Name of docker-compose service of the first Kea instance, by default "agent-kea-ha1"
     second_service_name : str, optional
         Name of docker-compose service of the second Kea instance, by default "agent-kea-ha2"
+    third_service_name : str, optional
+        Name of docker-compose service of the third Kea instance, by default "agent-kea-ha3"
+        Set to None if the third instance should not be started.
     suppress_registration : bool, optional
         Suppress the Stork Agent registration in a server, by default False
     min_version : str, optional
@@ -109,11 +113,12 @@ def ha_pair_parametrize(
         the Pytest decorator ready to use
     """
     return pytest.mark.parametrize(
-        "ha_pair_service",
+        "ha_service",
         [
             {
                 "first_service_name": first_service_name,
                 "second_service_name": second_service_name,
+                "third_service_name": third_service_name,
                 "suppress_registration": suppress_registration,
                 "min_kea_version": min_version,
             }
@@ -251,9 +256,9 @@ def kea_service(request):
 
 
 @pytest.fixture
-def ha_pair_service(request):
+def ha_service(request):
     """
-    A fixture setting up the Kea High-Availability pair services and
+    A fixture setting up the Kea High-Availability services and
     guarantees that they are operational.
 
     Parameters
@@ -268,11 +273,12 @@ def ha_pair_service(request):
 
     Notes
     -----
-    You can use the ha_pair_parametrize helper for configure the service.
+    You can use the ha_parametrize helper for configure the service.
     """
     param = {
         "first_service_name": "agent-kea-ha1",
         "second_service_name": "agent-kea-ha2",
+        "third_service_name": "agent-kea-ha3",
         "suppress_registration": False,
         "min_kea_version": None,
     }
@@ -293,7 +299,17 @@ def ha_pair_service(request):
         config_dirname="kea-ha2",
         min_kea_version=param["min_kea_version"],
     )
-    return first_wrapper, second_wrapper
+    if param["third_service_name"] is not None:
+        third_wrapper = _prepare_kea_wrapper(
+            request=request,
+            service_name=param["third_service_name"],
+            suppress_registration=True,
+            config_dirname="kea-ha3",
+            min_kea_version=param["min_kea_version"],
+        )
+    else:
+        third_wrapper = None
+    return first_wrapper, second_wrapper, third_wrapper
 
 
 def _prepare_kea_wrapper(

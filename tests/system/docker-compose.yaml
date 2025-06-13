@@ -338,6 +338,37 @@ services:
       - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha-dhcp4.json
       - $PWD/tests/system/config/kea-ha2/hook-ha.json:/etc/kea/hook-ha-dhcp6.json
 
+  agent-kea-ha3:
+    extends: agent-kea
+    hostname: agent-kea-ha3
+    ports: !override
+      - 8080
+      - "42549:9547"
+    environment:
+      STORK_AGENT_HOST: 172.42.42.102
+    networks:
+      storknet:
+        ipv4_address: 172.42.42.102
+        priority: 1000
+      subnet_00:
+        ipv4_address: 172.100.42.102
+        priority: 500
+      subnet_01:
+        ipv4_address: 172.101.42.102
+        priority: 400
+      subnet_02:
+        ipv4_address: 172.102.42.102
+        priority: 300
+      subnet6_00:
+        ipv6_address: 3000:db8:1:42::102
+        priority: 500
+      subnet6_01:
+        ipv6_address: 3001:db8:1:42::102
+        priority: 400
+    volumes:
+      - $PWD/tests/system/config/kea-ha3/hook-ha.json:/etc/kea/hook-ha-dhcp4.json
+      - $PWD/tests/system/config/kea-ha3/hook-ha.json:/etc/kea/hook-ha-dhcp6.json
+
   agent-kea-ha2-only-top-mt:
     extends: agent-kea-ha2
     volumes:

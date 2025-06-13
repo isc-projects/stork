@@ -45,7 +45,8 @@ def test_kea_with_explicit_server_fixture(server_service: Server, kea_service: K
     assert server_service.is_operational()
 
 
-def test_kea_ha_pair_fixture(ha_pair_service: Tuple[Kea, Kea]):
-    kea_first, kea_second = ha_pair_service
+def test_kea_ha_fixture(ha_service: Tuple[Kea, Kea, Kea]):
+    kea_first, kea_second, kea_third = ha_service
     assert kea_first.is_operational()
     assert kea_second.is_operational()
+    assert kea_third.is_operational()

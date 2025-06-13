@@ -14,7 +14,7 @@ import pytest
 from core.fixtures import (  # noqa: F401
     server_service,
     kea_service,
-    ha_pair_service,
+    ha_service,
     bind9_service,
     perfdhcp_service,
     package_service,
@@ -28,7 +28,7 @@ from core.compose_factory import create_docker_compose
 KEA_FIXTURE_NAMES = set(
     [
         kea_service.__name__,
-        ha_pair_service.__name__,
+        ha_service.__name__,
         perfdhcp_service.__name__,
         register_service.__name__,
     ]

@@ -1,4 +1,4 @@
-from core.fixtures import kea_parametrize, ha_pair_parametrize
+from core.fixtures import kea_parametrize, ha_parametrize
 from core.wrappers import Server, Kea
 
 
@@ -52,9 +52,9 @@ def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea
     assert "pd_pools_exhausted_by_reservations" in issue_reports
 
 
-@ha_pair_parametrize("agent-kea-ha1-only-top-mt", "agent-kea-ha2-only-top-mt")
-def test_get_ha_pair_only_top_mt_config_review_reports(
-    server_service: Server, ha_pair_service
+@ha_parametrize("agent-kea-ha1-only-top-mt", "agent-kea-ha2-only-top-mt")
+def test_get_ha_only_top_mt_config_review_reports(
+    server_service: Server, ha_service
 ):
     """Test that the Stork server suggests to enable the HA multi-threading
     if the Kea is running in the multi-threading mode."""
@@ -84,8 +84,8 @@ def test_get_ha_pair_only_top_mt_config_review_reports(
             assert "ha_mt_presence" in issue_reports
 
 
-@ha_pair_parametrize("agent-kea-ha1-mt", "agent-kea-ha2-mt")
-def test_get_ha_pair_mt_config_review_reports(server_service: Server, ha_pair_service):
+@ha_parametrize("agent-kea-ha1-mt", "agent-kea-ha2-mt", None)
+def test_get_ha_mt_config_review_reports(server_service: Server, ha_service):
     """Test that the Stork server suggests to use the dedicated listeners
     if the Kea HA is running in the multi-threading mode but the peers
     communicate over the Kea Control Agent."""

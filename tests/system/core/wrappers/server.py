@@ -714,7 +714,7 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
         The HA peers must be detected and authorized.
         Supports only hot-standby mode.
         """
-        valid_states = ["hot-standby"]
+        valid_states = ["hot-standby", "backup"]
 
         overview = self.overview()
 
