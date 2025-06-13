@@ -140,7 +140,7 @@ agent_dist_etc_dir = "dist/agent/etc/stork"
 file agent_dist_etc_dir => agent_etc_files do
     sh "mkdir", "-p", agent_dist_etc_dir
     agent_etc_files.each do |file|
-        FileUtils.cp(file, agent_dist_etc_dir)
+        FileUtils.cp(file, agent_dist_etc_dir, preserve: true)
     end
     sh "touch", "-c", agent_dist_etc_dir
 end
@@ -218,7 +218,7 @@ server_dist_etc_dir = "dist/server/etc/stork"
 file server_dist_etc_dir => server_etc_files do
     sh "mkdir", "-p", server_dist_etc_dir
     server_etc_files.each do |file|
-        FileUtils.cp(file, server_dist_etc_dir)
+        FileUtils.cp(file, server_dist_etc_dir, preserve: true)
     end
     sh "touch", "-c", server_dist_etc_dir
 end
