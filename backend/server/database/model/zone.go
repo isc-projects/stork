@@ -25,13 +25,18 @@ type ZoneType string
 
 const (
 	ZoneTypeBuiltin        ZoneType = "builtin"
+	ZoneTypeConsumer       ZoneType = "consumer"
 	ZoneTypeDelegationOnly ZoneType = "delegation-only"
 	ZoneTypeForward        ZoneType = "forward"
 	ZoneTypeHint           ZoneType = "hint"
+	ZoneTypeMaster         ZoneType = "master"
 	ZoneTypeMirror         ZoneType = "mirror"
+	ZoneTypeNative         ZoneType = "native"
 	ZoneTypePrimary        ZoneType = "primary"
+	ZoneTypeProducer       ZoneType = "producer"
 	ZoneTypeRedirect       ZoneType = "redirect"
 	ZoneTypeSecondary      ZoneType = "secondary"
+	ZoneTypeSlave          ZoneType = "slave"
 	ZoneTypeStaticStub     ZoneType = "static-stub"
 	ZoneTypeStub           ZoneType = "stub"
 )

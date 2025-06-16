@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"iter"
 	"slices"
+	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	storkutil "isc.org/stork/util"
 )
 
@@ -19,6 +22,28 @@ type Zone struct {
 // Implements NameAccessor interface and returns zone name.
 func (zone *Zone) Name() string {
 	return zone.ZoneName
+}
+
+// Custom implementation of the JSON unmarshaller for a zone. It turns
+// the zone Kind to lowercase.
+func (zone *Zone) UnmarshalJSON(data []byte) error {
+	type zoneAlias Zone
+	var z zoneAlias
+	if err := json.Unmarshal(data, &z); err != nil {
+		return err
+	}
+	z.Kind = strings.ToLower(z.Kind)
+	*zone = Zone(z)
+	return nil
+}
+
+// Custom implementation of the JSON marshaller for a zone. It capitalizes
+// the first letter of the zone Kind.
+func (zone *Zone) MarshalJSON() ([]byte, error) {
+	type zoneAlias Zone
+	z := zoneAlias(*zone)
+	z.Kind = cases.Title(language.Und).String(z.Kind)
+	return json.Marshal(z)
 }
 
 // Represents a collection of Zones. The Zones must be instantiated using

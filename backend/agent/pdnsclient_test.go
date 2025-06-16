@@ -155,7 +155,7 @@ func TestPDNSGetViews(t *testing.T) {
 	require.NotNil(t, zone)
 
 	require.Equal(t, "pdns.example.com", zone.Name())
-	require.Equal(t, "Master", zone.Type)
+	require.Equal(t, "master", zone.Type)
 }
 
 // Tests that the REST client correctly handles a non-success status code
