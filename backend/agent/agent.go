@@ -633,7 +633,7 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 	switch app := appI.(type) {
 	case *Bind9App:
 		inventory = app.zoneInventory
-	case *pdnsApp:
+	case *PDNSApp:
 		inventory = app.zoneInventory
 	default:
 		// This is rather an exceptional case, so we don't necessarily need to
@@ -720,7 +720,7 @@ func (sa *StorkAgent) ReceiveZoneRRs(req *agentapi.ReceiveZoneRRsReq, server grp
 	switch app := appI.(type) {
 	case *Bind9App:
 		inventory = app.zoneInventory
-	case *pdnsApp:
+	case *PDNSApp:
 		inventory = app.zoneInventory
 	default:
 		// This is rather an exceptional case, so we don't necessarily need to

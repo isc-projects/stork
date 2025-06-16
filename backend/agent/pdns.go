@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	_ App              = (*pdnsApp)(nil)
+	_ App              = (*PDNSApp)(nil)
 	_ pdnsConfigParser = (*pdnsconfig.Parser)(nil)
 
 	// Pattern for detecting PowerDNS process.
@@ -25,31 +25,31 @@ type pdnsConfigParser interface {
 	ParseFile(path string) (*pdnsconfig.Config, error)
 }
 
-// pdnsApp implements the App interface for PowerDNS.
-type pdnsApp struct {
+// PDNSApp implements the App interface for PowerDNS.
+type PDNSApp struct {
 	BaseApp
 	zoneInventory *zoneInventory
 }
 
 // Returns the base app.
-func (pa *pdnsApp) GetBaseApp() *BaseApp {
+func (pa *PDNSApp) GetBaseApp() *BaseApp {
 	return &pa.BaseApp
 }
 
 // Returns the allowed logs. Always returns nil.
-func (pa *pdnsApp) DetectAllowedLogs() ([]string, error) {
+func (pa *PDNSApp) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
 }
 
 // Waits for the zone inventory to complete background tasks.
-func (pa *pdnsApp) AwaitBackgroundTasks() {
+func (pa *PDNSApp) AwaitBackgroundTasks() {
 	if pa.zoneInventory != nil {
 		pa.zoneInventory.awaitBackgroundTasks()
 	}
 }
 
 // Returns the zone inventory.
-func (pa *pdnsApp) GetZoneInventory() *zoneInventory {
+func (pa *PDNSApp) GetZoneInventory() *zoneInventory {
 	return pa.zoneInventory
 }
 
@@ -129,7 +129,7 @@ func detectPowerDNSApp(p supportedProcess, parser pdnsConfigParser) (App, error)
 	inventory := newZoneInventory(newZoneInventoryStorageMemory(), parsedConfig, client, *webserverAddress, *webserverPort)
 
 	// Create the PowerDNS app.
-	pdnsApp := &pdnsApp{
+	pdnsApp := &PDNSApp{
 		BaseApp: BaseApp{
 			Type: AppTypePowerDNS,
 			AccessPoints: []AccessPoint{

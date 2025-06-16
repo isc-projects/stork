@@ -292,7 +292,7 @@ func TestDetectApps(t *testing.T) {
 	apps2 := am.apps
 	require.Len(t, apps2, 3)
 	require.Equal(t, apps[1].(*Bind9App).zoneInventory, apps2[1].(*Bind9App).zoneInventory)
-	require.Equal(t, apps[2].(*pdnsApp).zoneInventory, apps2[2].(*pdnsApp).zoneInventory)
+	require.Equal(t, apps[2].(*PDNSApp).zoneInventory, apps2[2].(*PDNSApp).zoneInventory)
 
 	// If the app access point changes, the inventory should be recreated.
 	for index, accessPoint := range am.apps[1].(*Bind9App).AccessPoints {
@@ -301,10 +301,10 @@ func TestDetectApps(t *testing.T) {
 			am.apps[1].(*Bind9App).AccessPoints[index].Port = 5453
 		}
 	}
-	for index, accessPoint := range am.apps[2].(*pdnsApp).AccessPoints {
+	for index, accessPoint := range am.apps[2].(*PDNSApp).AccessPoints {
 		if accessPoint.Type == AccessPointControl {
 			// Change the access point port.
-			am.apps[2].(*pdnsApp).AccessPoints[index].Port = 8082
+			am.apps[2].(*PDNSApp).AccessPoints[index].Port = 8082
 		}
 	}
 
@@ -313,7 +313,7 @@ func TestDetectApps(t *testing.T) {
 	apps3 := am.apps
 	require.Len(t, apps3, 3)
 	require.NotEqual(t, apps[1].(*Bind9App).zoneInventory, apps3[1].(*Bind9App).zoneInventory)
-	require.NotEqual(t, apps[2].(*pdnsApp).zoneInventory, apps3[2].(*pdnsApp).zoneInventory)
+	require.NotEqual(t, apps[2].(*PDNSApp).zoneInventory, apps3[2].(*PDNSApp).zoneInventory)
 }
 
 // Test that the processes for which the command line cannot be read are
@@ -1090,7 +1090,7 @@ func TestPopulateZoneInventories(t *testing.T) {
 		zoneInventory: zi2,
 	}
 	zi3 := newZoneInventory(newZoneInventoryStorageMemory(), config, bind9StatsClient, "localhost", 5380)
-	app3 := &pdnsApp{
+	app3 := &PDNSApp{
 		BaseApp: BaseApp{
 			Type: AppTypePowerDNS,
 		},
@@ -1110,7 +1110,7 @@ func TestPopulateZoneInventories(t *testing.T) {
 			switch concreteApp := app.(type) {
 			case *Bind9App:
 				zoneInventory = concreteApp.zoneInventory
-			case *pdnsApp:
+			case *PDNSApp:
 				zoneInventory = concreteApp.zoneInventory
 			default:
 				continue

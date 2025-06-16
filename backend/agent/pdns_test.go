@@ -14,7 +14,7 @@ import (
 
 // Test that the BaseApp structure can be accessed.
 func TestPowerDNSAppGetBaseApp(t *testing.T) {
-	app := &pdnsApp{
+	app := &PDNSApp{
 		BaseApp: BaseApp{
 			Type: AppTypePowerDNS,
 		},
@@ -24,7 +24,7 @@ func TestPowerDNSAppGetBaseApp(t *testing.T) {
 
 // Test that no allowed logs are returned.
 func TestPowerDNSAppDetectAllowedLogs(t *testing.T) {
-	app := &pdnsApp{}
+	app := &PDNSApp{}
 	logs, err := app.DetectAllowedLogs()
 	require.NoError(t, err)
 	require.Empty(t, logs)
@@ -32,13 +32,13 @@ func TestPowerDNSAppDetectAllowedLogs(t *testing.T) {
 
 // Test that awaiting background tasks doesn't panic when zone inventory is nil.
 func TestPowerDNSAppAwaitBackgroundTasksNilZoneInventory(t *testing.T) {
-	app := &pdnsApp{}
+	app := &PDNSApp{}
 	require.NotPanics(t, app.AwaitBackgroundTasks)
 }
 
 // Test that the zone inventory can be accessed.
 func TestPowerDNSAppGetZoneInventory(t *testing.T) {
-	app := &pdnsApp{
+	app := &PDNSApp{
 		zoneInventory: &zoneInventory{},
 	}
 	require.Equal(t, app.zoneInventory, app.GetZoneInventory())
@@ -62,7 +62,7 @@ func TestDetectPowerDNSApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 
-	require.IsType(t, &pdnsApp{}, app)
+	require.IsType(t, &PDNSApp{}, app)
 	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
 	require.Zero(t, app.GetBaseApp().Pid)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -105,7 +105,7 @@ func TestDetectPowerDNSAppCwdError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 
-	require.IsType(t, &pdnsApp{}, app)
+	require.IsType(t, &PDNSApp{}, app)
 	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
 	require.Zero(t, app.GetBaseApp().Pid)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -134,7 +134,7 @@ func TestDetectPowerDNSAppChroot(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 
-	require.IsType(t, &pdnsApp{}, app)
+	require.IsType(t, &PDNSApp{}, app)
 	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
 	require.Zero(t, app.GetBaseApp().Pid)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -164,7 +164,7 @@ func TestDetectPowerDNSAppConfigDir(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 
-	require.IsType(t, &pdnsApp{}, app)
+	require.IsType(t, &PDNSApp{}, app)
 	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
 	require.Zero(t, app.GetBaseApp().Pid)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)
@@ -216,7 +216,7 @@ func TestDetectPowerDNSAppDefaultWebserver(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 
-	require.IsType(t, &pdnsApp{}, app)
+	require.IsType(t, &PDNSApp{}, app)
 	require.Equal(t, AppTypePowerDNS, app.GetBaseApp().Type)
 	require.Zero(t, app.GetBaseApp().Pid)
 	require.Len(t, app.GetBaseApp().AccessPoints, 1)

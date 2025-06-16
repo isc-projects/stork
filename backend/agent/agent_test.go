@@ -1752,7 +1752,7 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 	// Add a PowerDNS app.
 	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
 	var apps []App
-	apps = append(apps, &pdnsApp{
+	apps = append(apps, &PDNSApp{
 		BaseApp: BaseApp{
 			Type:         AppTypePowerDNS,
 			AccessPoints: accessPoints,
@@ -1815,7 +1815,7 @@ func TestGetPowerDNSServerInfoNoAPIKey(t *testing.T) {
 	// Add a PowerDNS app with no API key.
 	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "", 1234, false)
 	var apps []App
-	apps = append(apps, &pdnsApp{
+	apps = append(apps, &PDNSApp{
 		BaseApp: BaseApp{
 			Type:         AppTypePowerDNS,
 			AccessPoints: accessPoints,
@@ -1859,7 +1859,7 @@ func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
 	// Add a PowerDNS app.
 	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
 	var apps []App
-	apps = append(apps, &pdnsApp{
+	apps = append(apps, &PDNSApp{
 		BaseApp: BaseApp{
 			Type:         AppTypePowerDNS,
 			AccessPoints: accessPoints,
