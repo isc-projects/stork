@@ -14,11 +14,18 @@ func (c *Config) GetWebserverConfig() (*string, *int64, bool) {
 	if webserver == nil || !*webserver {
 		return nil, nil, false
 	}
+	// Default address and port in PowerDNS.
 	address := "127.0.0.1"
 	port := int64(8081)
 	if webserverAddress := c.GetString("webserver-address"); webserverAddress != nil {
-		if ip := net.ParseIP(*webserverAddress); ip != nil && !ip.IsUnspecified() {
-			address = *webserverAddress
+		if ip := net.ParseIP(*webserverAddress); ip != nil {
+			if ip.IsUnspecified() {
+				if ip.To4() == nil {
+					address = "::1"
+				}
+			} else {
+				address = *webserverAddress
+			}
 		}
 	}
 	if webserverPort := c.GetInt64("webserver-port"); webserverPort != nil {
