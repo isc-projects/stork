@@ -32,6 +32,7 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, RouterModule } from '@angular/router'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { ButtonModule } from 'primeng/button'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 class Daemon {
     name = 'named'
@@ -77,6 +78,7 @@ describe('Bind9AppTabComponent', () => {
                 Bind9AppTabComponent,
                 LocaltimePipe,
                 PlaceholderPipe,
+                DurationPipe,
                 RenameAppDialogComponent,
                 AppOverviewComponent,
                 EventsPanelComponent,

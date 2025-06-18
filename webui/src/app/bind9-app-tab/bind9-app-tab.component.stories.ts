@@ -21,6 +21,7 @@ import { VersionStatusComponent } from '../version-status/version-status.compone
 import { TooltipModule } from 'primeng/tooltip'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { DataViewModule } from 'primeng/dataview'
+import { DurationPipe } from '../pipes/duration.pipe'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { AppsVersions } from '../backend'
@@ -116,6 +117,7 @@ export default {
             declarations: [
                 AppOverviewComponent,
                 Bind9AppTabComponent,
+                DurationPipe,
                 LocaltimePipe,
                 PlaceholderPipe,
                 RenameAppDialogComponent,

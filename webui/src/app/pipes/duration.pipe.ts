@@ -23,26 +23,48 @@ export class DurationPipe implements PipeTransform {
     fractionalDigits = 1
 
     /**
-     * Formats the Golang-style duration into a human-readable string.
-     * @param value String in the format of "1h2m3.4567s"
+     * Formats the duration into a human-readable string.
+     * @param value Either a number (seconds) or a string in the format of "1h2m3.4567s"
      * @returns formatted string in the format of "1 hour 2 minutes 3.4 seconds"
      */
-    transform(value: string): string {
+    transform(value: string | number): string | number {
         if (value == null) {
             return value
+        }
+
+        let durationStr: string
+        // If value is a number, convert it to seconds
+        if (typeof value === 'number') {
+            const hours = Math.floor(value / 3600)
+            const minutes = Math.floor((value % 3600) / 60)
+            const seconds = value % 60
+            const parts = []
+
+            if (hours > 0) {
+                parts.push(`${hours}h`)
+            }
+            if (minutes > 0) {
+                parts.push(`${minutes}m`)
+            }
+            if (seconds > 0 || parts.length === 0) {
+                parts.push(`${seconds}s`)
+            }
+            durationStr = parts.join('')
+        } else {
+            durationStr = value
         }
 
         const numbers: number[] = []
         const units: string[] = []
 
         const digits = []
-        for (let i = 0; i < value.length; i++) {
-            const c = value[i]
+        for (let i = 0; i < durationStr.length; i++) {
+            const c = durationStr[i]
             if ((c >= '0' && c <= '9') || c === '.') {
                 digits.push(c)
             } else {
                 let unit = c
-                const nextChar = value[i + 1]
+                const nextChar = durationStr[i + 1]
                 if (nextChar === 's') {
                     unit += nextChar
                     i++

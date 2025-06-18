@@ -25,6 +25,14 @@ describe('DurationPipe', () => {
         expect(pipe.transform('42ns')).toBe('42 nanoseconds')
     })
 
+    it('should format duration specified as a number correctly', () => {
+        const pipe = new DurationPipe()
+        expect(pipe.transform(42)).toBe('42 seconds')
+        expect(pipe.transform(42.1)).toBe('42.1 seconds')
+        expect(pipe.transform(100)).toBe('1 minute 40 seconds')
+        expect(pipe.transform(3723)).toBe('1 hour 2 minutes 3 seconds')
+    })
+
     it('should not crash if the value is invalid', () => {
         const pipe = new DurationPipe()
         expect(pipe.transform('invalid')).toBe('0 seconds')

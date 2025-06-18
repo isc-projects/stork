@@ -8,7 +8,6 @@ import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 
 import {
-    durationToString,
     daemonStatusErred,
     daemonStatusIconName,
     daemonStatusIconTooltip,
@@ -160,17 +159,6 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      */
     refreshAppState() {
         this.refreshApp.emit(this._appTab.app.id)
-    }
-
-    /**
-     * Converts duration to pretty string.
-     *
-     * @param duration duration value to be converted.
-     *
-     * @returns duration as text
-     */
-    showDuration(duration) {
-        return durationToString(duration)
     }
 
     /**
