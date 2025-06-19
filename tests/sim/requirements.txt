@@ -13,9 +13,9 @@ charset-normalizer==3.4.1
 click==8.1.8
     # via flask
 flask==3.1.1
-    # via -r /Users/meow/Projects/stork/rakelib/init_deps/flask.in
+    # via -r ../../rakelib/init_deps/flask.in
 gunicorn==23.0.0
-    # via -r /Users/meow/Projects/stork/rakelib/init_deps/flask.in
+    # via -r ../../rakelib/init_deps/flask.in
 idna==3.10
     # via requests
 itsdangerous==2.2.0
@@ -24,13 +24,14 @@ jinja2==3.1.6
     # via flask
 markupsafe==3.0.2
     # via
+    #   flask
     #   jinja2
     #   werkzeug
 packaging==24.2
     # via gunicorn
 requests==2.32.3
-    # via -r /Users/meow/Projects/stork/rakelib/init_deps/flask.in
-urllib3==2.3.0
+    # via -r ../../rakelib/init_deps/flask.in
+urllib3==2.5.0
     # via requests
 werkzeug==3.1.3
     # via flask
