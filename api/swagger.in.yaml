@@ -184,14 +184,12 @@ definitions:
       - delegation-only
       - forward
       - hint
-      - master
       - mirror
       - native
       - primary
       - producer
       - redirect
       - secondary
-      - slave
       - static-stub
       - stub
 

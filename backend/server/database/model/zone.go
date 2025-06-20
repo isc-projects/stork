@@ -67,6 +67,9 @@ func (f *GetZonesFilterZoneTypes) IsAnySpecified() bool {
 }
 
 // Returns an iterator over the enabled zone types.
+// Since primary is an alias of master, and the secondary is an alias of slave,
+// the iterator includes both primary and master, and/or secondary and slave,
+// if one in any pair is enabled.
 func (f *GetZonesFilterZoneTypes) GetEnabled() iter.Seq[ZoneType] {
 	return func(yield func(ZoneType) bool) {
 		for zoneType, enabled := range f.types {
@@ -102,12 +105,23 @@ type GetZonesFilter struct {
 	Text *string
 }
 
-// Convenience function to enable a zone type filter.
+// Convenience function to enable a zone type filter. There are two zone types that
+// have aliases: primary and master, and secondary and slave. The function enables
+// filters for both aliases if one of them is enabled.
 func (f *GetZonesFilter) EnableZoneType(zoneType ZoneType) {
 	if f.Types == nil {
 		f.Types = NewGetZonesFilterZoneTypes()
 	}
-	f.Types.Enable(zoneType)
+	switch zoneType {
+	case ZoneTypePrimary, ZoneTypeMaster:
+		f.Types.Enable(ZoneTypePrimary)
+		f.Types.Enable(ZoneTypeMaster)
+	case ZoneTypeSecondary, ZoneTypeSlave:
+		f.Types.Enable(ZoneTypeSecondary)
+		f.Types.Enable(ZoneTypeSlave)
+	default:
+		f.Types.Enable(zoneType)
+	}
 }
 
 // Represents a zone in a database. The same zone can be shared between

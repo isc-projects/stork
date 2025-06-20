@@ -17,9 +17,9 @@ import (
 // Test convenience function enabling filtering by zone types on the GetZonesFilter.
 func TestGetZonesFilterEnableZoneTypes(t *testing.T) {
 	filter := &GetZonesFilter{}
-	filter.EnableZoneType(ZoneTypeSecondary)
+	filter.EnableZoneType(ZoneTypeSlave)
 	filter.EnableZoneType(ZoneTypeBuiltin)
-	require.ElementsMatch(t, []ZoneType{ZoneTypeSecondary, ZoneTypeBuiltin}, slices.Collect(filter.Types.GetEnabled()))
+	require.ElementsMatch(t, []ZoneType{ZoneTypeSecondary, ZoneTypeSlave, ZoneTypeBuiltin}, slices.Collect(filter.Types.GetEnabled()))
 }
 
 // Test that the zone type filter can be enabled and enabled types can be retrieved.
@@ -170,6 +170,8 @@ func TestGetZones(t *testing.T) {
 	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
 	randomZones = testutil.GenerateMoreZonesWithSerial(randomZones, 25, 123456)
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "master")
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "slave")
 
 	var zones []*Zone
 	for i, randomZone := range randomZones {
@@ -194,16 +196,16 @@ func TestGetZones(t *testing.T) {
 		// Without filtering we should get all zones.
 		zones, total, err := GetZones(db, nil, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
-		require.Len(t, zones, 100)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
 	})
 
 	t.Run("relations", func(t *testing.T) {
 		// Include daemon and app tables.
 		zones, total, err := GetZones(db, nil, ZoneRelationLocalZonesApp)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
-		require.Len(t, zones, 100)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
 
 		for _, zone := range zones {
 			require.Len(t, zone.LocalZones, 1)
@@ -231,8 +233,8 @@ func TestGetZones(t *testing.T) {
 		}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 75, total)
-		require.Len(t, zones, 75)
+		require.Equal(t, 125, total)
+		require.Len(t, zones, 125)
 		for _, zone := range zones {
 			require.Equal(t, "IN", zone.LocalZones[0].Class)
 		}
@@ -243,10 +245,11 @@ func TestGetZones(t *testing.T) {
 		filter.EnableZoneType(ZoneTypeSecondary)
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 25, total)
-		require.Len(t, zones, 25)
+		// It should return both secondary and slave, as they are aliases.
+		require.Equal(t, 50, total)
+		require.Len(t, zones, 50)
 		for _, zone := range zones {
-			require.Equal(t, "secondary", zone.LocalZones[0].Type)
+			require.Contains(t, []string{"secondary", "slave"}, zone.LocalZones[0].Type)
 		}
 	})
 
@@ -257,8 +260,10 @@ func TestGetZones(t *testing.T) {
 		filter.EnableZoneType(ZoneTypeSecondary)
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
-		require.Len(t, zones, 100)
+		// It should also include master and slave, as they are aliases of
+		// primary and secondary.
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
 
 		// Collect unique zone types from the zones.
 		collectedZoneTypes := make(map[ZoneType]struct{})
@@ -266,17 +271,19 @@ func TestGetZones(t *testing.T) {
 			collectedZoneTypes[ZoneType(zone.LocalZones[0].Type)] = struct{}{}
 		}
 		// There should be two zone types. There is no builtin zone.
-		require.Equal(t, 2, len(collectedZoneTypes))
+		require.Equal(t, 4, len(collectedZoneTypes))
 		require.Contains(t, collectedZoneTypes, ZoneTypePrimary)
 		require.Contains(t, collectedZoneTypes, ZoneTypeSecondary)
+		require.Contains(t, collectedZoneTypes, ZoneTypeMaster)
+		require.Contains(t, collectedZoneTypes, ZoneTypeSlave)
 	})
 
 	t.Run("filter for zone types unspecified", func(t *testing.T) {
 		filter := &GetZonesFilter{}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
-		require.Len(t, zones, 100)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
 
 		// Collect unique zone types from the zones.
 		collectedZoneTypes := make(map[ZoneType]struct{})
@@ -284,7 +291,7 @@ func TestGetZones(t *testing.T) {
 			collectedZoneTypes[ZoneType(zone.LocalZones[0].Type)] = struct{}{}
 		}
 		// There should be two zone types. There is no builtin zone.
-		require.Equal(t, 2, len(collectedZoneTypes))
+		require.Equal(t, 4, len(collectedZoneTypes))
 		require.Contains(t, collectedZoneTypes, ZoneTypePrimary)
 		require.Contains(t, collectedZoneTypes, ZoneTypeSecondary)
 	})
@@ -296,7 +303,7 @@ func TestGetZones(t *testing.T) {
 		}
 		zones1, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
+		require.Equal(t, 150, total)
 		require.Len(t, zones1, 30)
 
 		// Use the 29th zone as a start (lower bound) for another fetch.
@@ -304,7 +311,7 @@ func TestGetZones(t *testing.T) {
 		filter.Limit = storkutil.Ptr(20)
 		zones2, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 71, total)
+		require.Equal(t, 121, total)
 		require.Len(t, zones2, 20)
 
 		// The first returned zone should overlap with the last zone
@@ -320,7 +327,7 @@ func TestGetZones(t *testing.T) {
 		}
 		zones1, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
+		require.Equal(t, 150, total)
 		require.Len(t, zones1, 20)
 
 		// Use the 20th zone as a start for another fetch.
@@ -328,7 +335,7 @@ func TestGetZones(t *testing.T) {
 		filter.Limit = storkutil.Ptr(20)
 		zones2, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
+		require.Equal(t, 150, total)
 		require.Len(t, zones2, 20)
 
 		// The first returned zone should overlap with the last zone
@@ -340,8 +347,8 @@ func TestGetZones(t *testing.T) {
 		filter := &GetZonesFilter{}
 		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
 		require.NoError(t, err)
-		require.Equal(t, 100, total)
-		require.Len(t, zones, 100)
+		require.Equal(t, 150, total)
+		require.Len(t, zones, 150)
 		for i := range zones {
 			if i > 0 {
 				// Compare the current zone with the previous zone. The current zone must
