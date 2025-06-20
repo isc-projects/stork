@@ -1,6 +1,6 @@
 import { Component, Input, ViewChild } from '@angular/core'
 
-import { OverlayPanel } from 'primeng/overlaypanel'
+import { Popover } from 'primeng/popover'
 
 /**
  * Component displaying help box for widgets.
@@ -14,8 +14,7 @@ import { OverlayPanel } from 'primeng/overlaypanel'
     styleUrls: ['./help-tip.component.sass'],
 })
 export class HelpTipComponent {
-    @ViewChild(OverlayPanel)
-    overlay: OverlayPanel
+    @ViewChild(Popover) popover: Popover
 
     /**
      * Target component to align the overlay of the help-tip.
@@ -41,6 +40,6 @@ export class HelpTipComponent {
 
     /** Show/hide the help tip content. */
     toggleOverlay(ev) {
-        this.overlay.toggle(ev, this.target)
+        this.popover.toggle(ev, this.target)
     }
 }
