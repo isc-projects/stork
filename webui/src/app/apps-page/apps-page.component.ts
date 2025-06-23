@@ -104,7 +104,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         this.activeItem = this.tabs[index]
 
         if (index > 0) {
-            this.appTab = this.openedApps[index - 1]
+            this.appTab = { ...this.openedApps[index - 1] }
         }
     }
 
@@ -311,6 +311,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     if (s.app.id === data.id) {
                         Object.assign(s.app, data)
                         // Notify the child component about the update.
+                        this.appTab = { ...s }
                         this.refreshedAppTab.next(this.appTab)
                         break
                     }

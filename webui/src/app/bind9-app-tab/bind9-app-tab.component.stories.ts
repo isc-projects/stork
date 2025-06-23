@@ -159,7 +159,6 @@ type Story = StoryObj<Bind9AppTabComponent>
 
 export const Default: Story = {
     args: {
-        refreshedAppTab: of(mockAppTab),
         appTab: mockAppTab,
     },
 }

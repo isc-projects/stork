@@ -253,8 +253,9 @@ export function extractKeyValsAndPrepareQueryParams<T extends { text?: string }>
  *         false otherwise.
  */
 export function daemonStatusErred(daemon: Bind9Daemon | KeaDaemon) {
-    return ['agentCommErrors', 'caCommErrors', 'daemonCommErrors', 'rndcCommErrors', 'statsCommErrors']
-        .some(errorType => (daemon as any)[errorType] && (daemon as any)[errorType] > 0)
+    return ['agentCommErrors', 'caCommErrors', 'daemonCommErrors', 'rndcCommErrors', 'statsCommErrors'].some(
+        (errorType) => (daemon as any)[errorType] && (daemon as any)[errorType] > 0
+    )
 }
 
 /**
@@ -270,7 +271,7 @@ export function daemonStatusErred(daemon: Bind9Daemon | KeaDaemon) {
  *  should be active but the communication with it is broken and
  *  check icon if the communication with the active daemon is ok.
  */
-export function daemonStatusIconName(daemon: Bind9Daemon |KeaDaemon) {
+export function daemonStatusIconName(daemon: Bind9Daemon | KeaDaemon) {
     if (!daemon.monitored) {
         return 'pi pi-ban icon-not-monitored'
     }

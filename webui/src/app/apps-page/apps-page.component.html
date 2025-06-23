@@ -149,7 +149,6 @@
     <app-bind9-app-tab
         *ngIf="appTab.app.type === 'bind9'"
         [appTab]="appTab"
-        [refreshedAppTab]="refreshedAppTab"
         (refreshApp)="onRefreshApp()"
         (renameApp)="onRenameApp($event)"
     ></app-bind9-app-tab>

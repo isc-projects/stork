@@ -1,18 +1,13 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 
-import { forkJoin, Observable, Subscription } from 'rxjs'
+import { forkJoin, lastValueFrom } from 'rxjs'
 
 import { MessageService } from 'primeng/api'
 
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 
-import {
-    daemonStatusErred,
-    daemonStatusIconName,
-    daemonStatusIconTooltip,
-    getErrorMessage,
-} from '../utils'
+import { daemonStatusErred, daemonStatusIconName, daemonStatusIconTooltip, getErrorMessage } from '../utils'
 import { AppTab } from '../apps'
 import { Bind9Daemon, Bind9DaemonView, DNSZoneType } from '../backend'
 
@@ -25,12 +20,23 @@ type DaemonInfo = Bind9Daemon & {
     templateUrl: './bind9-app-tab.component.html',
     styleUrls: ['./bind9-app-tab.component.sass'],
 })
-export class Bind9AppTabComponent implements OnInit, OnDestroy {
-    private subscriptions = new Subscription()
+export class Bind9AppTabComponent {
     private _appTab: AppTab
+    /**
+     * Event emitter sending an event to the parent component when the app is
+     * refreshed.
+     */
     @Output() refreshApp = new EventEmitter<number>()
-    @Input() refreshedAppTab: Observable<AppTab>
 
+    /**
+     * Event emitter sending an event to the parent component when an app is
+     * renamed.
+     */
+    @Output() renameApp = new EventEmitter<string>()
+
+    /**
+     * Information about the daemons.
+     */
     daemons: DaemonInfo[] = []
 
     /**
@@ -71,46 +77,15 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
     showRenameDialogClicked = false
 
     /**
-     * Event emitter sending an event to the parent component when an app is
-     * renamed.
-     */
-    @Output() renameApp = new EventEmitter<string>()
-
-    /**
      * All zone types except builtin type.
      */
-    configuredZoneTypes: string[] = []
+    configuredZoneTypes: string[] = Object.values(DNSZoneType).filter((t) => t !== DNSZoneType.Builtin)
 
     constructor(
         private servicesApi: ServicesService,
         private serverData: ServerDataService,
         private msgService: MessageService
     ) {}
-
-    ngOnDestroy(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    /**
-     * Subscribes to the updates of the information about daemons
-     *
-     * The information about the daemons may be updated as a result of
-     * pressing the refresh button in the app tab. In such case, this
-     * component emits an event to which the parent component reacts
-     * and updates the daemons. When the daemons are updated, it
-     * notifies this component via the subscription mechanism.
-     */
-    ngOnInit() {
-        this.subscriptions.add(
-            this.refreshedAppTab.subscribe((data) => {
-                if (data) {
-                    this.initDaemon(data.app.details.daemon)
-                }
-            })
-        )
-
-        this.configuredZoneTypes = Object.values(DNSZoneType).filter((t) => t !== DNSZoneType.Builtin)
-    }
 
     /**
      * Selects new application tab
@@ -123,7 +98,12 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
     set appTab(appTab) {
         this._appTab = appTab
         // Refresh local information about the daemon presented by this component.
-        this.initDaemon(appTab.app.details.daemon)
+        this.daemons = [
+            {
+                statusErred: this.daemonStatusErred(appTab.app.details.daemon),
+                ...appTab.app.details.daemon,
+            },
+        ]
     }
 
     /**
@@ -131,25 +111,6 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      */
     get appTab(): AppTab {
         return this._appTab
-    }
-
-    /**
-     * Initializes information about the daemon according to the information
-     * carried in the provided parameter.
-     *
-     * As a result of invoking this function, the view of the component will be
-     * updated.
-     *
-     * @param appTabDaemons information about the daemon stored in the app tab
-     *                      data structure.
-     */
-    private initDaemon(appTabDaemon: Bind9Daemon) {
-        this.daemons = [
-            {
-                statusErred: this.daemonStatusErred(appTabDaemon),
-                ...appTabDaemon,
-            },
-        ]
     }
 
     /**
@@ -184,10 +145,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      *         false otherwise.
      */
     private daemonStatusErred(daemon: Bind9Daemon): boolean {
-        if (daemon.active && daemonStatusErred(daemon)) {
-            return true
-        }
-        return false
+        return daemon.active && daemonStatusErred(daemon)
     }
 
     /**
@@ -236,8 +194,8 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      */
     handleRenameDialogSubmitted(event) {
         this.appRenameDialogVisible = false
-        this.servicesApi.renameApp(this.appTab.app.id, { name: event }).subscribe(
-            (/* data */) => {
+        lastValueFrom(this.servicesApi.renameApp(this.appTab.app.id, { name: event }))
+            .then((/* data */) => {
                 // Renaming the app was successful.
                 this.msgService.add({
                     severity: 'success',
@@ -248,8 +206,8 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
                 this.appTab.app.name = event
                 // Notify the parent component about successfully renaming the app.
                 this.renameApp.emit(event)
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 // Renaming the app failed.
                 const msg = getErrorMessage(err)
                 this.msgService.add({
@@ -258,8 +216,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
                     detail: 'Error renaming app to ' + event + msg,
                     life: 10000,
                 })
-            }
-        )
+            })
     }
 
     /**
@@ -284,14 +241,14 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      */
     showRenameAppDialog() {
         this.showRenameDialogClicked = true
-        forkJoin([this.serverData.getAppsNames(), this.serverData.getMachinesAddresses()]).subscribe(
-            (data) => {
+        lastValueFrom(forkJoin([this.serverData.getAppsNames(), this.serverData.getMachinesAddresses()]))
+            .then((data) => {
                 this.existingApps = data[0]
                 this.existingMachines = data[1]
                 this.appRenameDialogVisible = true
                 this.showRenameDialogClicked = false
-            },
-            (/* err */) => {
+            })
+            .catch((/* err */) => {
                 this.msgService.add({
                     severity: 'error',
                     summary: 'Fetching apps and machines failed',
@@ -299,7 +256,6 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
                     life: 10000,
                 })
                 this.showRenameDialogClicked = false
-            }
-        )
+            })
     }
 }
