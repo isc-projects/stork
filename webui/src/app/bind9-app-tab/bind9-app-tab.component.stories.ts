@@ -29,6 +29,7 @@ import { Severity, VersionService } from '../version.service'
 import { Directive, Input, Output, EventEmitter, AfterViewInit } from '@angular/core'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 // Mock directive that always grants access
 @Directive({
@@ -117,6 +118,7 @@ export default {
             declarations: [
                 AppOverviewComponent,
                 Bind9AppTabComponent,
+                DaemonNiceNamePipe,
                 DurationPipe,
                 LocaltimePipe,
                 PlaceholderPipe,

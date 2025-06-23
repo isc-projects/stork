@@ -14,7 +14,11 @@ import {
     getErrorMessage,
 } from '../utils'
 import { AppTab } from '../apps'
-import { Bind9DaemonView, DNSZoneType } from '../backend'
+import { Bind9Daemon, Bind9DaemonView, DNSZoneType } from '../backend'
+
+type DaemonInfo = Bind9Daemon & {
+    statusErred: boolean
+}
 
 @Component({
     selector: 'app-bind9-app-tab',
@@ -27,7 +31,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
     @Output() refreshApp = new EventEmitter<number>()
     @Input() refreshedAppTab: Observable<AppTab>
 
-    daemons: any[] = []
+    daemons: DaemonInfo[] = []
 
     /**
      * Active tab index used by the tab view.
@@ -139,19 +143,13 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      * @param appTabDaemons information about the daemon stored in the app tab
      *                      data structure.
      */
-    private initDaemon(appTabDaemon) {
-        const daemonMap = []
-        daemonMap[appTabDaemon.name] = appTabDaemon
-        const DMAP = [['named', 'named']]
-        const daemons = []
-        for (const dm of DMAP) {
-            if (daemonMap[dm[0]] !== undefined) {
-                daemonMap[dm[0]].niceName = dm[1]
-                daemonMap[dm[0]].statusErred = this.daemonStatusErred(daemonMap[dm[0]])
-                daemons.push(daemonMap[dm[0]])
-            }
-        }
-        this.daemons = daemons
+    private initDaemon(appTabDaemon: Bind9Daemon) {
+        this.daemons = [
+            {
+                statusErred: this.daemonStatusErred(appTabDaemon),
+                ...appTabDaemon,
+            },
+        ]
     }
 
     /**
@@ -185,7 +183,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      * @return true if there is a communication problem with the daemon,
      *         false otherwise.
      */
-    private daemonStatusErred(daemon): boolean {
+    private daemonStatusErred(daemon: Bind9Daemon): boolean {
         if (daemon.active && daemonStatusErred(daemon)) {
             return true
         }
@@ -205,7 +203,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      *          should be active but the communication with it is broken and
      *          check icon if the communication with the active daemon is ok.
      */
-    daemonStatusIconName(daemon) {
+    daemonStatusIconName(daemon: Bind9Daemon) {
         return daemonStatusIconName(daemon)
     }
 
@@ -219,7 +217,7 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      *          problems when such problems occur, e.g. it includes the
      *          hint whether the communication is with the agent or daemon.
      */
-    daemonStatusErrorText(daemon) {
+    daemonStatusErrorText(daemon: Bind9Daemon) {
         return daemonStatusIconTooltip(daemon)
     }
 

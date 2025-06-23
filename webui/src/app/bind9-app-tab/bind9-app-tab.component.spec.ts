@@ -33,6 +33,7 @@ import { provideRouter, RouterModule } from '@angular/router'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { ButtonModule } from 'primeng/button'
 import { DurationPipe } from '../pipes/duration.pipe'
+import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 class Daemon {
     name = 'named'
@@ -76,6 +77,7 @@ describe('Bind9AppTabComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 Bind9AppTabComponent,
+                DaemonNiceNamePipe,
                 LocaltimePipe,
                 PlaceholderPipe,
                 DurationPipe,

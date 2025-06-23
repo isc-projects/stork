@@ -252,14 +252,9 @@ export function extractKeyValsAndPrepareQueryParams<T extends { text?: string }>
  * @return true if there is a communication problem with the daemon,
  *         false otherwise.
  */
-export function daemonStatusErred(daemon) {
-    return (
-        (daemon.agentCommErrors && daemon.agentCommErrors > 0) ||
-        (daemon.caCommErrors && daemon.caCommErrors > 0) ||
-        (daemon.daemonCommErrors && daemon.daemonCommErrors > 0) ||
-        (daemon.rndcCommErrors && daemon.rndcCommErrors > 0) ||
-        (daemon.statsCommErrors && daemon.statsCommErrors > 0)
-    )
+export function daemonStatusErred(daemon: Bind9Daemon | KeaDaemon) {
+    return ['agentCommErrors', 'caCommErrors', 'daemonCommErrors', 'rndcCommErrors', 'statsCommErrors']
+        .some(errorType => (daemon as any)[errorType] && (daemon as any)[errorType] > 0)
 }
 
 /**
@@ -275,7 +270,7 @@ export function daemonStatusErred(daemon) {
  *  should be active but the communication with it is broken and
  *  check icon if the communication with the active daemon is ok.
  */
-export function daemonStatusIconName(daemon: KeaDaemon) {
+export function daemonStatusIconName(daemon: Bind9Daemon |KeaDaemon) {
     if (!daemon.monitored) {
         return 'pi pi-ban icon-not-monitored'
     }
@@ -294,7 +289,7 @@ export function daemonStatusIconName(daemon: KeaDaemon) {
  *          active but there are communication issues, green if the
  *          communication with the active daemon is ok.
  */
-export function daemonStatusIconColor(daemon: KeaDaemon) {
+export function daemonStatusIconColor(daemon: Bind9Daemon | KeaDaemon) {
     if (!daemon.monitored) {
         return 'var(--gray-400)'
     }

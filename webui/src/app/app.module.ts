@@ -161,6 +161,7 @@ import { UtilizationBarComponent } from './utilization-bar/utilization-bar.compo
 import { PoolBarsComponent } from './pool-bars/pool-bars.component'
 import { UnrootPipe } from './pipes/unroot.pipe'
 import { OutOfPoolBarComponent } from './out-of-pool-bar/out-of-pool-bar.component'
+import { DaemonNiceNamePipe } from './pipes/daemon-name.pipe'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -270,6 +271,7 @@ export function cfgFactory() {
         PoolBarsComponent,
         UnrootPipe,
         OutOfPoolBarComponent,
+        DaemonNiceNamePipe,
     ],
     bootstrap: [AppComponent],
     imports: [
