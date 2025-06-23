@@ -53,6 +53,8 @@ import { FloatLabelModule } from 'primeng/floatlabel'
 import { AutoCompleteModule } from 'primeng/autocomplete'
 import { InputNumberModule } from 'primeng/inputnumber'
 import Aura from '@primeng/themes/aura'
+import { definePreset } from '@primeng/themes'
+import { providePrimeNG } from 'primeng/config'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -165,7 +167,6 @@ import { OutOfPoolBarComponent } from './out-of-pool-bar/out-of-pool-bar.compone
 import { DaemonNiceNamePipe } from './pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from './bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from './pdns-daemon/pdns-daemon.component'
-import { providePrimeNG } from 'primeng/config'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -175,6 +176,24 @@ export function cfgFactory() {
     }
     return new Configuration(params)
 }
+
+const AuraBluePreset = definePreset(Aura, {
+    semantic: {
+        primary: {
+            50: '{blue.50}',
+            100: '{blue.100}',
+            200: '{blue.200}',
+            300: '{blue.300}',
+            400: '{blue.400}',
+            500: '{blue.500}',
+            600: '{blue.600}',
+            700: '{blue.700}',
+            800: '{blue.800}',
+            900: '{blue.900}',
+            950: '{blue.950}',
+        },
+    },
+})
 
 @NgModule({
     declarations: [
@@ -353,7 +372,7 @@ export function cfgFactory() {
         provideHttpClient(withInterceptorsFromDi()),
         providePrimeNG({
             theme: {
-                preset: Aura,
+                preset: AuraBluePreset,
                 options: {
                     darkModeSelector: '.dark',
                 },
