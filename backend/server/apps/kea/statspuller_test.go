@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"sort"
 	"testing"
 
 	"github.com/go-pg/pg/v10"
@@ -63,55 +64,106 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 					"subnet[10].%[1]s": [ [ %[4]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[10].%[2]s": [ [ %[5]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[10].%[3]s": [ [ %[6]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[10].pool[0].%[1]s": [ [ %[4]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[10].pool[0].%[2]s": [ [ %[5]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[10].pool[0].%[3]s": [ [ %[6]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].%[1]s": [ [ %[7]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].%[2]s": [ [ %[8]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].%[3]s": [ [ %[9]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].pool[0].%[1]s": [ [ %[10]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].pool[0].%[2]s": [ [ %[11]d, "2019-07-30 10:13:00.000000" ] ],
 					"subnet[20].pool[0].%[3]s": [ [ %[12]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].pool[1].%[1]s": [ [ %[13]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].pool[1].%[2]s": [ [ %[14]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[20].pool[1].%[3]s": [ [ %[15]d, "2019-07-30 10:13:00.000000" ] ],
 					"pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
 				}
-			}]`, statistic4Names[0], statistic4Names[1], statistic4Names[2],
+			}]`,
+				// Labels.
+				// 1.               2.                  3.
+				statistic4Names[0], statistic4Names[1], statistic4Names[2],
+				// Subnet 10 (and pool 0).
+				// 4.           5.         6.
 				256+totalShift, 111+shift, 0+shift,
+				// Subnet 20.
+				// 7.            8.          9.
 				4098+totalShift, 2034+shift, 4+shift,
+				// Pool 0 in subnet 20.
+				// 10.         11.      12.
 				10+totalShift, 4+shift, 2+shift,
+				// Pool 1 in subnet 20.
+				// 13. 14.  15.
+				4088, 2030, 2,
 			),
 			fmt.Sprintf(`[{
 				"result": 0,
 				"arguments": {
-					"subnet[30].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[30].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[30].declined-addresses": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[30].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[30].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[40].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[40].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[40].declined-addresses": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[40].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[40].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].declined-addresses": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[60].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[60].assigned-nas": [ [ %s, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[60].declined-addresses": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[60].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[60].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].pool[0].total-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].pool[0].assigned-nas": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].pool[0].declined-addresses": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].pd-pool[0].total-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
-					"subnet[50].pd-pool[0].assigned-pds": [ [ %d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].total-nas": [ [ %[1]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].assigned-nas": [ [ %[2]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].declined-addresses": [ [ %[3]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].total-pds": [ [ %[4]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].assigned-pds": [ [ %[5]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].pool[0].total-nas": [ [ %[1]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].pool[0].assigned-nas": [ [ %[2]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].pool[0].declined-addresses": [ [ %[3]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].pd-pool[0].total-pds": [ [ %[4]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[30].pd-pool[0].assigned-pds": [ [ %[5]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].total-nas": [ [ %[6]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].assigned-nas": [ [ %[7]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].declined-addresses": [ [ %[8]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].total-pds": [ [ %[9]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].assigned-pds": [ [ %[10]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].pool[0].total-nas": [ [ %[6]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].pool[0].assigned-nas": [ [ %[7]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].pool[0].declined-addresses": [ [ %[8]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].pd-pool[0].total-pds": [ [ %[9]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[40].pd-pool[0].assigned-pds": [ [ %[10]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].total-nas": [ [ %[11]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].assigned-nas": [ [ %[12]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].declined-addresses": [ [ %[13]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].total-pds": [ [ %[14]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].assigned-pds": [ [ %[15]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].total-nas": [ [ %[16]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].assigned-nas": [ [ %[17]s, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].declined-addresses": [ [ %[18]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].total-pds": [ [ %[19]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].assigned-pds": [ [ %[20]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].pool[0].total-nas": [ [ %[16]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].pool[0].assigned-nas": [ [ %[17]s, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].pool[0].declined-addresses": [ [ %[18]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].pd-pool[0].total-pds": [ [ %[19]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[60].pd-pool[0].assigned-pds": [ [ %[20]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[0].total-nas": [ [ %[21]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[0].assigned-nas": [ [ %[22]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[0].declined-addresses": [ [ %[23]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pd-pool[0].total-pds": [ [ %[24]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pd-pool[0].assigned-pds": [ [ %[25]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[1].total-nas": [ [ %[26]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[1].assigned-nas": [ [ %[27]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pool[1].declined-addresses": [ [ %[28]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pd-pool[1].total-pds": [ [ %[29]d, "2019-07-30 10:13:00.000000" ] ],
+					"subnet[50].pd-pool[1].assigned-pds": [ [ %[30]d, "2019-07-30 10:13:00.000000" ] ],
 					"pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
 				}
 			}]`,
+				// Subnet 30.
+				// 1.            2.          3.       4.            5.
 				4096+totalShift, 2400+shift, 3+shift, 0+totalShift, 0+shift,
+				// Subnet 40.
+				// 6.         7.       8.       9.               10.
 				0+totalShift, 0+shift, 0+shift, 1048+totalShift, 233+shift,
+				// Subnet 50.
+				// 11.          12.       13.      14.              15.
 				256+totalShift, 60+shift, 0+shift, 1048+totalShift, 15+shift,
+				// Subnet 60.
+				// 16. 17.                 18. 19. 20.
 				-1, "9223372036854775807", 0, -2, -3,
+				// Address pool 0 and PD pool 0 in subnet 50.
+				// 21.         22.      23.      24.            25.
 				20+totalShift, 8+shift, 4+shift, 40+totalShift, 20+shift,
+				// Address pool 1 and PD pool 1 in subnet 50.
+				// 26.         27.      28.      29.            30.
+				236, 52, 0, 1008, 5,
 			),
 		}
 	})
@@ -136,17 +188,29 @@ func createDhcpConfigs() (string, string) {
 			"subnet4": [
 				{
 					"id": 10,
-					"subnet": "192.0.2.0/24"
+					"subnet": "192.0.2.0/24",
+					"pools": [
+						{
+							"pool": "192.0.2.1 - 192.0.2.10"
+						}
+					]
 				},
 				{
 					"id": 20,
 					"subnet": "192.0.3.0/24",
-					// 1 in-pool, 2 out-of-pool host reservations
 					"pools": [
 						{
 							"pool": "192.0.3.1 - 192.0.3.10"
+						},
+						{
+							"pool": "192.0.3.11 - 192.0.3.20"
+						},
+						{
+							"pool": "192.0.3.21 - 192.0.3.30",
+							"pool-id": 1
 						}
 					],
+					// 1 in-pool, 2 out-of-pool host reservations
 					"reservations": [
 						{
 							"hw-address": "00:00:00:00:00:21",
@@ -181,11 +245,27 @@ func createDhcpConfigs() (string, string) {
 			"subnet6": [
 				{
 					"id": 30,
-					"subnet": "2001:db8:1::/64"
+					"subnet": "2001:db8:1::/64",
+					"pools": [{
+						"pool": "2001:db8:1::100-2001:db8:1::ffff"
+					}],
+					"pd-pools": [{
+						"prefix": "2001:db8:1:8000::",
+						"prefix-len": 64,
+						"delegated-len": 80
+					}]
 				},
 				{
 					"id": 40,
-					"subnet": "2001:db8:2::/64"
+					"subnet": "2001:db8:2::/64",
+					"pools": [{
+						"pool": "2001:db8:2::100-2001:db8:2::ffff"
+					}],
+					"pd-pools": [{
+						"prefix": "2001:db8:2:8000::",
+						"prefix-len": 64,
+						"delegated-len": 80
+					}]
 				},
 				{
 					"id": 50,
@@ -193,13 +273,31 @@ func createDhcpConfigs() (string, string) {
 					"pools": [
 						{
 							"pool": "2001:db8:3::100-2001:db8:3::ffff"
+						},
+						{
+							"pool": "2001:db8:3::1:100-2001:db8:3::1:ffff"
+						},
+						{
+							"pool": "2001:db8:3::2:100-2001:db8:3::2:ffff",
+							"pool-id": 1
 						}
 					],
 					"pd-pools": [
 						{
-							"prefix": "2001:db8:3:8000::",
+							"prefix": "2001:db8:3:1:8000::",
 							"prefix-len": 64,
 							"delegated-len": 80
+						},
+						{
+							"prefix": "2001:db8:2:8000::",
+							"prefix-len": 64,
+							"delegated-len": 80
+						},
+						{
+							"prefix": "2001:db8:3:8000::",
+							"prefix-len": 64,
+							"delegated-len": 80,
+							"pool-id": 1
 						}
 					],
 					// 2 out-of-pool, 1 in-pool host reservations
@@ -252,6 +350,13 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 	require.NoError(t, err)
 	snCnt := 0
 	for _, sn := range localSubnets {
+		sort.Slice(sn.AddressPools, func(i, j int) bool {
+			return sn.AddressPools[i].KeaParameters.PoolID < sn.AddressPools[j].KeaParameters.PoolID
+		})
+		sort.Slice(sn.PrefixPools, func(i, j int) bool {
+			return sn.PrefixPools[i].KeaParameters.PoolID < sn.PrefixPools[j].KeaParameters.PoolID
+		})
+
 		shift := (sn.Daemon.AppID - 1) * 100
 		totalShift := shift * 2
 		switch sn.LocalSubnetID {
@@ -267,10 +372,20 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 			snCnt++
 
 			// Check pools.
-			require.Len(t, sn.AddressPools, 1)
+			require.Len(t, sn.AddressPools, 3)
+
+			require.Zero(t, sn.AddressPools[0].KeaParameters.PoolID)
 			require.Equal(t, uint64(10+totalShift), sn.AddressPools[0].Stats["total-addresses"])
 			require.Equal(t, uint64(4+shift), sn.AddressPools[0].Stats["assigned-addresses"])
 			require.Equal(t, uint64(2+shift), sn.AddressPools[0].Stats["declined-addresses"])
+			require.Zero(t, sn.AddressPools[1].KeaParameters.PoolID)
+			require.Equal(t, uint64(10+totalShift), sn.AddressPools[1].Stats["total-addresses"])
+			require.Equal(t, uint64(4+shift), sn.AddressPools[1].Stats["assigned-addresses"])
+			require.Equal(t, uint64(2+shift), sn.AddressPools[1].Stats["declined-addresses"])
+			require.EqualValues(t, 1, sn.AddressPools[2].KeaParameters.PoolID)
+			require.Equal(t, uint64(4088), sn.AddressPools[2].Stats["total-addresses"])
+			require.Equal(t, uint64(2030), sn.AddressPools[2].Stats["assigned-addresses"])
+			require.Equal(t, uint64(2), sn.AddressPools[2].Stats["declined-addresses"])
 		case 30:
 			require.Equal(t, uint64(2400+shift), sn.Stats["assigned-nas"])
 			require.Equal(t, uint64(0+shift), sn.Stats["assigned-pds"])
@@ -294,14 +409,36 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 			snCnt++
 
 			// Check pools.
-			require.Len(t, sn.AddressPools, 1)
+			require.Len(t, sn.AddressPools, 3)
+
+			require.Zero(t, sn.AddressPools[0].KeaParameters.PoolID)
 			require.Equal(t, uint64(20+totalShift), sn.AddressPools[0].Stats["total-nas"])
 			require.Equal(t, uint64(8+shift), sn.AddressPools[0].Stats["assigned-nas"])
 			require.Equal(t, uint64(4+shift), sn.AddressPools[0].Stats["declined-nas"])
 
-			require.Len(t, sn.PrefixPools, 1)
+			require.Zero(t, sn.AddressPools[1].KeaParameters.PoolID)
+			require.Equal(t, uint64(20+totalShift), sn.AddressPools[1].Stats["total-nas"])
+			require.Equal(t, uint64(8+shift), sn.AddressPools[1].Stats["assigned-nas"])
+			require.Equal(t, uint64(4+shift), sn.AddressPools[1].Stats["declined-nas"])
+
+			require.EqualValues(t, 1, sn.AddressPools[2].KeaParameters.PoolID)
+			require.Equal(t, uint64(236), sn.AddressPools[2].Stats["total-nas"])
+			require.Equal(t, uint64(52), sn.AddressPools[2].Stats["assigned-nas"])
+			require.Equal(t, uint64(0), sn.AddressPools[2].Stats["declined-nas"])
+
+			require.Len(t, sn.PrefixPools, 3)
+
+			require.Zero(t, sn.PrefixPools[0].KeaParameters.PoolID)
 			require.Equal(t, uint64(40+totalShift), sn.PrefixPools[0].Stats["total-pds"])
 			require.Equal(t, uint64(20+shift), sn.PrefixPools[0].Stats["assigned-pds"])
+
+			require.Zero(t, sn.PrefixPools[1].KeaParameters.PoolID)
+			require.Equal(t, uint64(40+totalShift), sn.PrefixPools[1].Stats["total-pds"])
+			require.Equal(t, uint64(20+shift), sn.PrefixPools[1].Stats["assigned-pds"])
+
+			require.EqualValues(t, 1, sn.PrefixPools[2].KeaParameters.PoolID)
+			require.Equal(t, uint64(1008), sn.PrefixPools[2].Stats["total-pds"])
+			require.Equal(t, uint64(5), sn.PrefixPools[2].Stats["assigned-pds"])
 		case 60:
 			require.Equal(t, uint64(math.MaxUint64), sn.Stats["total-nas"])
 			require.Equal(t, uint64(math.MaxInt64), sn.Stats["assigned-nas"])
