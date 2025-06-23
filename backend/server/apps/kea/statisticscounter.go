@@ -397,7 +397,14 @@ func sumStatAddressPoolsIPv6(subnet *dbmodel.Subnet, statName string, excludedDa
 			continue
 		}
 
+		seenIDs := map[int64]bool{} // To avoid double counting of pools with the same ID.
 		for _, pool := range localSubnet.AddressPools {
+			poolID := pool.KeaParameters.PoolID
+			if _, ok := seenIDs[poolID]; ok {
+				continue // Skip already seen pool ID.
+			}
+			seenIDs[poolID] = true
+
 			value := pool.Stats.GetBigCounter(statName)
 			if value == nil {
 				continue
@@ -420,7 +427,14 @@ func sumStatPrefixPoolsIPv6(subnet *dbmodel.Subnet, statName string, excludedDae
 			continue
 		}
 
+		seenIDs := map[int64]bool{} // To avoid double counting of pools with the same ID.
 		for _, pool := range localSubnet.PrefixPools {
+			poolID := pool.KeaParameters.PoolID
+			if _, ok := seenIDs[poolID]; ok {
+				continue // Skip already seen pool ID.
+			}
+			seenIDs[poolID] = true
+
 			value := pool.Stats.GetBigCounter(statName)
 			if value == nil {
 				continue
@@ -467,7 +481,14 @@ func sumStatAddressPoolsIPv4(subnet *dbmodel.Subnet, statName string, excludedDa
 			continue
 		}
 
+		seenIDs := map[int64]bool{} // To avoid double counting of pools with the same ID.
 		for _, pool := range localSubnet.AddressPools {
+			poolID := pool.KeaParameters.PoolID
+			if _, ok := seenIDs[poolID]; ok {
+				continue // Skip already seen pool ID.
+			}
+			seenIDs[poolID] = true
+
 			value := pool.Stats.GetBigCounter(statName)
 			if value == nil {
 				continue

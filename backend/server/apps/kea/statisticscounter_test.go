@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -19,13 +20,22 @@ func TestCounterConstruction(t *testing.T) {
 
 	// Assert
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
+	require.Zero(t, counter.global.totalIPv4AddressesInPools.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
+	require.Zero(t, counter.global.totalAssignedIPv4AddressesInPools.ToInt64())
 	require.Zero(t, counter.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.Zero(t, counter.global.totalDeclinedIPv4AddressesInPools.ToInt64())
 	require.Zero(t, counter.global.totalIPv6Addresses.ToInt64())
+	require.Zero(t, counter.global.totalIPv6AddressesInPools.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv6Addresses.ToInt64())
+	require.Zero(t, counter.global.totalAssignedIPv6AddressesInPools.ToInt64())
 	require.Zero(t, counter.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.Zero(t, counter.global.totalDeclinedIPv6AddressesInPools.ToInt64())
 	require.Zero(t, counter.global.totalDelegatedPrefixes.ToInt64())
+	require.Zero(t, counter.global.totalDelegatedPrefixesInPools.ToInt64())
 	require.Zero(t, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
+	require.Zero(t, counter.global.totalAssignedDelegatedPrefixesInPools.ToInt64())
+
 	require.Len(t, counter.sharedNetworks, 0)
 }
 
@@ -42,6 +52,41 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 					"assigned-addresses": uint64(10),
 					"declined-addresses": uint64(20),
 				},
+				AddressPools: []dbmodel.AddressPool{
+					// It has three pools, but two of them share the same ID.
+					// It causes their statistics to be merged. In such case,
+					// only a first pool statistics are counted.
+					{
+						Stats: dbmodel.Stats{
+							"total-addresses":    uint64(75),
+							"assigned-addresses": uint64(5),
+							"declined-addresses": uint64(13),
+						},
+						KeaParameters: &keaconfig.PoolParameters{
+							PoolID: 0,
+						},
+					},
+					{
+						Stats: dbmodel.Stats{
+							"total-addresses":    uint64(70),
+							"assigned-addresses": uint64(5),
+							"declined-addresses": uint64(13),
+						},
+						KeaParameters: &keaconfig.PoolParameters{
+							PoolID: 0,
+						},
+					},
+					{
+						Stats: dbmodel.Stats{
+							"total-addresses":    uint64(20),
+							"assigned-addresses": uint64(2),
+							"declined-addresses": uint64(5),
+						},
+						KeaParameters: &keaconfig.PoolParameters{
+							PoolID: 42,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -50,19 +95,37 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 
 	// Act
 	statistics := counter.add(subnet)
+	data := statistics.GetStatistics()
 
 	// Assert
 	require.InDelta(t, float64(0.1), statistics.GetAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
-	require.EqualValues(t, 100, counter.global.totalIPv4Addresses.ToInt64())
-	require.EqualValues(t, 10, counter.global.totalAssignedIPv4Addresses.ToInt64())
-	require.EqualValues(t, 20, counter.global.totalDeclinedIPv4Addresses.ToInt64())
-	require.Zero(t, counter.global.totalIPv6Addresses.ToInt64())
-	require.Zero(t, counter.global.totalAssignedIPv6Addresses.ToInt64())
-	require.Zero(t, counter.global.totalDeclinedIPv6Addresses.ToInt64())
-	require.Zero(t, counter.global.totalDelegatedPrefixes.ToInt64())
-	require.Zero(t, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
+	require.EqualValues(t, 100, data.GetBigCounter(dbmodel.StatNameTotalAddresses).ToInt64())
+	require.EqualValues(t, 5, data.GetBigCounter(dbmodel.StatNameTotalOutOfPoolAddresses).ToInt64())
+	require.EqualValues(t, 10, data.GetBigCounter(dbmodel.StatNameAssignedAddresses).ToInt64())
+	require.EqualValues(t, 3, data.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolAddresses).ToInt64())
+	require.EqualValues(t, 20, data.GetBigCounter(dbmodel.StatNameDeclinedAddresses).ToInt64())
+	require.EqualValues(t, 2, data.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolAddresses).ToInt64())
+
+	global := counter.GetStatistics()
+
+	require.EqualValues(t, 100, global.GetBigCounter(dbmodel.StatNameTotalAddresses).ToInt64())
+	require.EqualValues(t, 5, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolAddresses).ToInt64())
+	require.EqualValues(t, 10, global.GetBigCounter(dbmodel.StatNameAssignedAddresses).ToInt64())
+	require.EqualValues(t, 3, global.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolAddresses).ToInt64())
+	require.EqualValues(t, 20, global.GetBigCounter(dbmodel.StatNameDeclinedAddresses).ToInt64())
+	require.EqualValues(t, 2, global.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolAddresses).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolNAs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameTotalPDs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolPDs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameAssignedPDs).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolPDs).ToInt64())
 
 	require.Len(t, counter.sharedNetworks, 0)
 }
@@ -82,6 +145,61 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 					"total-pds":    uint64(20),
 					"assigned-pds": uint64(10),
 				},
+				AddressPools: []dbmodel.AddressPool{
+					// It has three pools, but two of them share the same ID.
+					// It causes their statistics to be merged. In such case,
+					// only a first pool statistics are counted.
+					{
+						Stats: dbmodel.Stats{
+							"total-nas":    uint64(75),
+							"assigned-nas": uint64(5),
+							"declined-nas": uint64(13),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					},
+					{
+						Stats: dbmodel.Stats{
+							"total-nas":    uint64(75),
+							"assigned-nas": uint64(5),
+							"declined-nas": uint64(13),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					},
+					{
+						Stats: dbmodel.Stats{
+							"total-nas":    uint64(20),
+							"assigned-nas": uint64(15),
+							"declined-nas": uint64(5),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 42},
+					},
+				},
+				PrefixPools: []dbmodel.PrefixPool{
+					// It has three pools, but two of them share the same ID.
+					// It causes their statistics to be merged. In such case,
+					// only a first pool statistics are counted.
+					{
+						Stats: dbmodel.Stats{
+							"total-pds":    uint64(10),
+							"assigned-pds": uint64(4),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					},
+					{
+						Stats: dbmodel.Stats{
+							"total-pds":    uint64(10),
+							"assigned-pds": uint64(4),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					},
+					{
+						Stats: dbmodel.Stats{
+							"total-pds":    uint64(8),
+							"assigned-pds": uint64(5),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 42},
+					},
+				},
 			},
 		},
 	}
@@ -95,14 +213,35 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 	require.InDelta(t, float64(0.4), statistics.GetAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(0.5), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
 
-	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
-	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
-	require.Zero(t, counter.global.totalDeclinedIPv4Addresses.ToInt64())
-	require.EqualValues(t, 100, counter.global.totalIPv6Addresses.ToInt64())
-	require.EqualValues(t, 40, counter.global.totalAssignedIPv6Addresses.ToInt64())
-	require.EqualValues(t, 30, counter.global.totalDeclinedIPv6Addresses.ToInt64())
-	require.EqualValues(t, 20, counter.global.totalDelegatedPrefixes.ToInt64())
-	require.EqualValues(t, 10, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
+	data := statistics.GetStatistics()
+	require.EqualValues(t, 100, data.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
+	require.EqualValues(t, 5, data.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 40, data.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
+	require.EqualValues(t, 20, data.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 30, data.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
+	require.EqualValues(t, 12, data.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 20, data.GetBigCounter(dbmodel.StatNameTotalPDs).ToInt64())
+	require.EqualValues(t, 2, data.GetBigCounter(dbmodel.StatNameTotalOutOfPoolPDs).ToInt64())
+	require.EqualValues(t, 10, data.GetBigCounter(dbmodel.StatNameAssignedPDs).ToInt64())
+	require.EqualValues(t, 1, data.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolPDs).ToInt64())
+
+	global := counter.GetStatistics()
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameTotalAddresses).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolAddresses).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameAssignedAddresses).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolAddresses).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameDeclinedAddresses).ToInt64())
+	require.Zero(t, global.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolAddresses).ToInt64())
+	require.EqualValues(t, 100, global.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
+	require.EqualValues(t, 5, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 40, global.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
+	require.EqualValues(t, 20, global.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 30, global.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
+	require.EqualValues(t, 12, global.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 20, global.GetBigCounter(dbmodel.StatNameTotalPDs).ToInt64())
+	require.EqualValues(t, 2, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolPDs).ToInt64())
+	require.EqualValues(t, 10, global.GetBigCounter(dbmodel.StatNameAssignedPDs).ToInt64())
+	require.EqualValues(t, 1, global.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolPDs).ToInt64())
 
 	require.Len(t, counter.sharedNetworks, 0)
 }
