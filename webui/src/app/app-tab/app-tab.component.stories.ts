@@ -5,7 +5,7 @@ import { ToastModule } from 'primeng/toast'
 import { MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { Bind9AppTabComponent } from './bind9-app-tab.component'
+import { AppTabComponent } from './app-tab.component'
 import { of } from 'rxjs'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { PanelModule } from 'primeng/panel'
@@ -30,6 +30,7 @@ import { Directive, Input, Output, EventEmitter, AfterViewInit } from '@angular/
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
 
 // Mock directive that always grants access
 @Directive({
@@ -86,15 +87,15 @@ const versionServiceStub = {
 }
 
 export default {
-    title: 'App/Bind9AppTab',
-    component: Bind9AppTabComponent,
+    title: 'App/AppTab',
+    component: AppTabComponent,
     decorators: [
         applicationConfig({
             providers: [
                 MessageService,
                 provideHttpClient(withInterceptorsFromDi()),
                 provideNoopAnimations(),
-                provideRouter([{ path: 'iframe.html', component: Bind9AppTabComponent }]),
+                provideRouter([{ path: 'iframe.html', component: AppTabComponent }]),
                 { provide: ServerSentEventsService, useClass: ServerSentEventsTestingService },
                 { provide: VersionService, useValue: versionServiceStub },
             ],
@@ -117,7 +118,8 @@ export default {
             ],
             declarations: [
                 AppOverviewComponent,
-                Bind9AppTabComponent,
+                AppTabComponent,
+                Bind9DaemonComponent,
                 DaemonNiceNamePipe,
                 DurationPipe,
                 LocaltimePipe,
@@ -155,9 +157,9 @@ export default {
     },
 } as Meta
 
-type Story = StoryObj<Bind9AppTabComponent>
+type Story = StoryObj<AppTabComponent>
 
-export const Default: Story = {
+export const Bind9: Story = {
     args: {
         appTab: mockAppTab,
     },

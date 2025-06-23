@@ -146,12 +146,12 @@
 
 <!-- Single app tab -->
 <div *ngIf="activeTabIdx !== 0" class="p-component">
-    <app-bind9-app-tab
+    <app-app-tab
         *ngIf="appTab.app.type === 'bind9'"
         [appTab]="appTab"
         (refreshApp)="onRefreshApp()"
         (renameApp)="onRenameApp($event)"
-    ></app-bind9-app-tab>
+    ></app-app-tab>
     <app-kea-app-tab
         *ngIf="appTab.app.type === 'kea'"
         [appTab]="appTab"

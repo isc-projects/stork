@@ -6,7 +6,7 @@ import { TabMenuModule } from 'primeng/tabmenu'
 import { MenuModule } from 'primeng/menu'
 import { FormsModule } from '@angular/forms'
 import { TableModule } from 'primeng/table'
-import { Bind9AppTabComponent } from '../bind9-app-tab/bind9-app-tab.component'
+import { AppTabComponent } from '../app-tab/app-tab.component'
 import { KeaAppTabComponent } from '../kea-app-tab/kea-app-tab.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { TabViewModule } from 'primeng/tabview'
@@ -44,7 +44,7 @@ describe('AppsPageComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 AppsPageComponent,
-                Bind9AppTabComponent,
+                AppTabComponent,
                 KeaAppTabComponent,
                 LocaltimePipe,
                 HaStatusComponent,

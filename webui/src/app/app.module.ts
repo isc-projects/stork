@@ -69,7 +69,7 @@ import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
-import { Bind9AppTabComponent } from './bind9-app-tab/bind9-app-tab.component'
+import { AppTabComponent } from './app-tab/app-tab.component'
 import { KeaAppTabComponent } from './kea-app-tab/kea-app-tab.component'
 import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
 import { ProfilePageComponent } from './profile-page/profile-page.component'
@@ -162,6 +162,7 @@ import { PoolBarsComponent } from './pool-bars/pool-bars.component'
 import { UnrootPipe } from './pipes/unroot.pipe'
 import { OutOfPoolBarComponent } from './out-of-pool-bar/out-of-pool-bar.component'
 import { DaemonNiceNamePipe } from './pipes/daemon-name.pipe'
+import { Bind9DaemonComponent } from './bind9-daemon/bind9-daemon.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -183,7 +184,7 @@ export function cfgFactory() {
         LocaltimePipe,
         UsersPageComponent,
         AppsPageComponent,
-        Bind9AppTabComponent,
+        AppTabComponent,
         KeaAppTabComponent,
         PasswordChangePageComponent,
         ProfilePageComponent,
@@ -272,6 +273,7 @@ export function cfgFactory() {
         UnrootPipe,
         OutOfPoolBarComponent,
         DaemonNiceNamePipe,
+        Bind9DaemonComponent,
     ],
     bootstrap: [AppComponent],
     imports: [

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
+import { Component, Input, Output, EventEmitter } from '@angular/core'
 
 import { forkJoin, lastValueFrom } from 'rxjs'
 
@@ -9,18 +9,18 @@ import { ServerDataService } from '../server-data.service'
 
 import { daemonStatusErred, daemonStatusIconName, daemonStatusIconTooltip, getErrorMessage } from '../utils'
 import { AppTab } from '../apps'
-import { Bind9Daemon, Bind9DaemonView, DNSZoneType } from '../backend'
+import { Bind9Daemon } from '../backend'
 
 type DaemonInfo = Bind9Daemon & {
     statusErred: boolean
 }
 
 @Component({
-    selector: 'app-bind9-app-tab',
-    templateUrl: './bind9-app-tab.component.html',
-    styleUrls: ['./bind9-app-tab.component.sass'],
+    selector: 'app-app-tab',
+    templateUrl: './app-tab.component.html',
+    styleUrls: ['./app-tab.component.sass'],
 })
-export class Bind9AppTabComponent {
+export class AppTabComponent {
     private _appTab: AppTab
     /**
      * Event emitter sending an event to the parent component when the app is
@@ -76,11 +76,6 @@ export class Bind9AppTabComponent {
      */
     showRenameDialogClicked = false
 
-    /**
-     * All zone types except builtin type.
-     */
-    configuredZoneTypes: string[] = Object.values(DNSZoneType).filter((t) => t !== DNSZoneType.Builtin)
-
     constructor(
         private servicesApi: ServicesService,
         private serverData: ServerDataService,
@@ -118,21 +113,6 @@ export class Bind9AppTabComponent {
      */
     refreshAppState() {
         this.refreshApp.emit(this._appTab.app.id)
-    }
-
-    /**
-     * Get cache effectiveness based on stats for a BIND9 view.
-     *
-     * @param view is a data structure holding the information about the BIND9 view.
-     * @return A percentage is returned as floored int.
-     */
-    getQueryUtilization(view: Bind9DaemonView) {
-        let utilization = 0.0
-        if (!view.queryHitRatio) {
-            return utilization
-        }
-        utilization = 100 * view.queryHitRatio
-        return Math.floor(utilization)
     }
 
     /**

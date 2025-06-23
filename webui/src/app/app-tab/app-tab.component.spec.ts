@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 
-import { Bind9AppTabComponent } from './bind9-app-tab.component'
+import { AppTabComponent } from './app-tab.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { TabViewModule } from 'primeng/tabview'
 import { MessageService } from 'primeng/api'
@@ -9,7 +9,7 @@ import { MockLocationStrategy } from '@angular/common/testing'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'
 
-import { AppsVersions, Bind9DaemonView, ServicesService, UsersService } from '../backend'
+import { AppsVersions, ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
 import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
 import { DialogModule } from 'primeng/dialog'
@@ -34,6 +34,7 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 import { ButtonModule } from 'primeng/button'
 import { DurationPipe } from '../pipes/duration.pipe'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
+import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
 
 class Daemon {
     name = 'named'
@@ -60,9 +61,9 @@ class AppTab {
     app: App = new App()
 }
 
-describe('Bind9AppTabComponent', () => {
-    let component: Bind9AppTabComponent
-    let fixture: ComponentFixture<Bind9AppTabComponent>
+describe('AppTabComponent', () => {
+    let component: AppTabComponent
+    let fixture: ComponentFixture<AppTabComponent>
     let servicesApi: ServicesService
     let serverData: ServerDataService
     let versionServiceStub: Partial<VersionService>
@@ -76,7 +77,8 @@ describe('Bind9AppTabComponent', () => {
 
         TestBed.configureTestingModule({
             declarations: [
-                Bind9AppTabComponent,
+                AppTabComponent,
+                Bind9DaemonComponent,
                 DaemonNiceNamePipe,
                 LocaltimePipe,
                 PlaceholderPipe,
@@ -117,7 +119,7 @@ describe('Bind9AppTabComponent', () => {
     }))
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(Bind9AppTabComponent)
+        fixture = TestBed.createComponent(AppTabComponent)
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
         serverData = fixture.debugElement.injector.get(ServerDataService)
@@ -205,26 +207,4 @@ describe('Bind9AppTabComponent', () => {
         const eventsPanel = fixture.debugElement.query(By.css('app-events-panel'))
         expect(eventsPanel).toBeTruthy()
     }))
-
-    it('should display version status component', () => {
-        // One VersionStatus BIND9.
-        let versionStatus = fixture.debugElement.queryAll(By.directive(VersionStatusComponent))
-        expect(versionStatus).toBeTruthy()
-        expect(versionStatus.length).toEqual(1)
-        // Stubbed success icon for BIND 9.18.30 is expected.
-        expect(versionStatus[0].properties.outerHTML).toContain('9.18.30')
-        expect(versionStatus[0].properties.outerHTML).toContain('bind9')
-        expect(versionStatus[0].properties.outerHTML).toContain('text-green-500')
-        expect(versionStatus[0].properties.outerHTML).toContain('test feedback')
-    })
-
-    it('should return 0 when queryHitRatio is undefined', () => {
-        const view = {} as Bind9DaemonView
-        expect(component.getQueryUtilization(view)).toBe(0)
-    })
-
-    it('should calculate correct utilization percentage', () => {
-        const view = { queryHitRatio: 0.756 } as Bind9DaemonView
-        expect(component.getQueryUtilization(view)).toBe(75)
-    })
 })
