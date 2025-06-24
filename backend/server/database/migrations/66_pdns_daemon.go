@@ -9,6 +9,7 @@ func init() {
 			CREATE TABLE IF NOT EXISTS pdns_daemon (
 			id BIGSERIAL NOT NULL,
 			daemon_id BIGINT NOT NULL,
+			details JSONB,
 			CONSTRAINT pdns_daemon_pkey PRIMARY KEY (id),
 			CONSTRAINT pdns_daemon_id_unique UNIQUE (daemon_id),
 			CONSTRAINT pdns_daemon_id_fkey FOREIGN KEY (daemon_id)

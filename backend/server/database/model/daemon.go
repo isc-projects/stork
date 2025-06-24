@@ -73,10 +73,19 @@ type Bind9Daemon struct {
 }
 
 // A structure holding PowerDNS daemon specific information.
+type PDNSDaemonDetails struct {
+	URL              string
+	ConfigURL        string
+	ZonesURL         string
+	AutoprimariesURL string
+}
+
+// A structure holding PowerDNS daemon specific information.
 type PDNSDaemon struct {
 	tableName struct{} `pg:"pdns_daemon"` //nolint:unused
 	ID        int64
 	DaemonID  int64
+	Details   PDNSDaemonDetails
 }
 
 // A structure reflecting all SQL tables holding information about the
