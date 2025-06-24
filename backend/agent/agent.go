@@ -495,7 +495,7 @@ func (sa *StorkAgent) GetPowerDNSServerInfo(ctx context.Context, req *agentapi.G
 	}
 
 	// Use the PowerDNS REST API to retrieve the server information.
-	response, serverInfo, err := sa.pdnsClient.getServerInfo(accessPoint.Key, req.WebserverAddress, req.WebserverPort)
+	response, serverInfo, err := sa.pdnsClient.getCombinedServerInfo(accessPoint.Key, req.WebserverAddress, req.WebserverPort)
 	if err != nil {
 		// If there is an error, the PowerDNS server is most likely unavailable.
 		st := status.New(codes.Unavailable, err.Error())
@@ -522,6 +522,7 @@ func (sa *StorkAgent) GetPowerDNSServerInfo(ctx context.Context, req *agentapi.G
 		ConfigURL:        serverInfo.ConfigURL,
 		ZonesURL:         serverInfo.ZonesURL,
 		AutoprimariesURL: serverInfo.AutoprimariesURL,
+		Uptime:           serverInfo.Uptime,
 	}
 	return rsp, nil
 }

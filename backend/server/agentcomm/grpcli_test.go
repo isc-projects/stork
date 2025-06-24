@@ -1430,11 +1430,15 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 	defer ctrl.Finish()
 
 	rsp := &agentapi.GetPowerDNSServerInfoRsp{
-		Type:       "PowerDNS",
-		Id:         "127.0.0.1",
-		DaemonType: "pdns",
-		Version:    "4.7.0",
-		Url:        "http://127.0.0.1:8081",
+		Type:             "PowerDNS",
+		Id:               "127.0.0.1",
+		DaemonType:       "pdns",
+		Version:          "4.7.0",
+		Url:              "http://127.0.0.1:8081",
+		ConfigURL:        "http://127.0.0.1:8081/config",
+		ZonesURL:         "http://127.0.0.1:8081/zones",
+		AutoprimariesURL: "http://127.0.0.1:8081/autoprimaries",
+		Uptime:           1234,
 	}
 	mockAgentClient.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any(), newGZIPMatcher()).AnyTimes().Return(rsp, nil)
 
@@ -1446,6 +1450,10 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 	require.Equal(t, "pdns", serverInfo.DaemonType)
 	require.Equal(t, "4.7.0", serverInfo.Version)
 	require.Equal(t, "http://127.0.0.1:8081", serverInfo.URL)
+	require.Equal(t, "http://127.0.0.1:8081/config", serverInfo.ConfigURL)
+	require.Equal(t, "http://127.0.0.1:8081/zones", serverInfo.ZonesURL)
+	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", serverInfo.AutoprimariesURL)
+	require.EqualValues(t, 1234, serverInfo.Uptime)
 }
 
 // Test that an error is returned when trying to get the PowerDNS server

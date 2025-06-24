@@ -1749,6 +1749,18 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 			"autoprimaries_url": "http://localhost:1234/api/v1/servers/localhost/autoprimaries",
 		})
 
+	gock.New("http://localhost:1234/").
+		MatchHeader("X-API-Key", "stork").
+		Get("api/v1/servers/localhost/statistics").
+		MatchParam("statistic", "uptime").
+		Reply(http.StatusOK).
+		JSON([]map[string]any{
+			{
+				"name":  "uptime",
+				"value": "1234",
+			},
+		})
+
 	// Add a PowerDNS app.
 	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
 	var apps []App
@@ -1776,6 +1788,7 @@ func TestGetPowerDNSServerInfo(t *testing.T) {
 	require.Equal(t, "http://localhost:1234/api/v1/servers/localhost/config", rsp.ConfigURL)
 	require.Equal(t, "http://localhost:1234/api/v1/servers/localhost/zones", rsp.ZonesURL)
 	require.Equal(t, "http://localhost:1234/api/v1/servers/localhost/autoprimaries", rsp.AutoprimariesURL)
+	require.EqualValues(t, 1234, rsp.Uptime)
 }
 
 // Test that the correct error is returned when the specified PowerDNS
@@ -1853,6 +1866,63 @@ func TestGetPowerDNSServerInfoErrorResponse(t *testing.T) {
 	gock.New("http://localhost:1234/").
 		MatchHeader("X-API-Key", "stork").
 		Get("api/v1/servers/localhost").
+		Reply(http.StatusInternalServerError).
+		BodyString("Internal server error")
+
+	// Add a PowerDNS app.
+	accessPoints := makeAccessPoint(AccessPointControl, "localhost", "stork", 1234, false)
+	var apps []App
+	apps = append(apps, &PDNSApp{
+		BaseApp: BaseApp{
+			Type:         AppTypePowerDNS,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Get the server information.
+	rsp, err := sa.GetPowerDNSServerInfo(context.Background(), &agentapi.GetPowerDNSServerInfoReq{
+		WebserverAddress: "localhost",
+		WebserverPort:    1234,
+	})
+	require.Error(t, err)
+	require.Nil(t, rsp)
+
+	// Make sure that the correct status was returned.
+	st := status.Convert(err)
+	require.Equal(t, codes.Unknown, st.Code())
+	require.Equal(t, "Internal server error", st.Message())
+	details := st.Details()
+	require.Empty(t, details)
+}
+
+// Test that the correct error is returned when the PowerDNS server
+// returns an error response for the statistics endpoint.
+func TestGetPowerDNSServerInfoStatisticsErrorResponse(t *testing.T) {
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	defer gock.Off()
+	gock.New("http://localhost:1234/").
+		MatchHeader("X-API-Key", "stork").
+		Get("api/v1/servers/localhost").
+		Reply(http.StatusOK).
+		JSON(map[string]any{
+			"type":              "Server",
+			"version":           "4.7.3",
+			"id":                "localhost",
+			"daemon_type":       "authoritative",
+			"url":               "http://localhost:1234/api/v1/servers/localhost",
+			"config_url":        "http://localhost:1234/api/v1/servers/localhost/config",
+			"zones_url":         "http://localhost:1234/api/v1/servers/localhost/zones",
+			"autoprimaries_url": "http://localhost:1234/api/v1/servers/localhost/autoprimaries",
+		})
+
+	gock.New("http://localhost:1234/").
+		MatchHeader("X-API-Key", "stork").
+		Get("api/v1/servers/localhost/statistics").
+		MatchParam("statistic", "uptime").
 		Reply(http.StatusInternalServerError).
 		BodyString("Internal server error")
 

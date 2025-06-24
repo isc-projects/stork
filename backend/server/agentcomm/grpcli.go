@@ -875,13 +875,15 @@ func (agents *connectedAgentsImpl) GetPowerDNSServerInfo(ctx context.Context, ap
 		return nil, errors.Errorf("wrong response to getting PowerDNS server info from the Stork agent %s", addrPort)
 	}
 	serverInfo := &pdnsdata.ServerInfo{
-		Type:       response.Type,
-		ID:         response.Id,
-		DaemonType: response.DaemonType,
-		Version:    response.Version,
-		URL:        response.Url,
-		ConfigURL:  response.ConfigURL,
-		ZonesURL:   response.ZonesURL,
+		Type:             response.Type,
+		ID:               response.Id,
+		DaemonType:       response.DaemonType,
+		Version:          response.Version,
+		URL:              response.Url,
+		ConfigURL:        response.ConfigURL,
+		ZonesURL:         response.ZonesURL,
+		AutoprimariesURL: response.AutoprimariesURL,
+		Uptime:           response.Uptime,
 	}
 	return serverInfo, nil
 }

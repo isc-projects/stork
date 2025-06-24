@@ -218,6 +218,7 @@ message GetPowerDNSServerInfoRsp {
    string configURL = 6;
    string zonesURL = 7;
    string autoprimariesURL = 8;
+   int64 uptime = 9;
 }
 
 // Log file tailing request

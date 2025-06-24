@@ -63,7 +63,12 @@ func TestGetAppStateUpdateDaemon(t *testing.T) {
 	agents := NewMockConnectedAgents(ctrl)
 
 	agents.EXPECT().GetPowerDNSServerInfo(gomock.Any(), gomock.Any()).Return(&pdnsdata.ServerInfo{
-		Version: "4.7.0",
+		Version:          "4.7.0",
+		Uptime:           1234,
+		URL:              "http://127.0.0.1:8081",
+		ConfigURL:        "http://127.0.0.1:8081/config",
+		ZonesURL:         "http://127.0.0.1:8081/zones",
+		AutoprimariesURL: "http://127.0.0.1:8081/autoprimaries",
 	}, nil)
 
 	dbApp := dbmodel.App{
@@ -84,9 +89,16 @@ func TestGetAppStateUpdateDaemon(t *testing.T) {
 				Active:          true,
 				Version:         "4.5.2",
 				ExtendedVersion: "4.5.2",
+				Uptime:          1234,
 				PDNSDaemon: &dbmodel.PDNSDaemon{
 					ID:       234,
 					DaemonID: 123,
+					Details: dbmodel.PDNSDaemonDetails{
+						URL:              "http://127.0.0.1:8081",
+						ConfigURL:        "http://127.0.0.1:8081/config",
+						ZonesURL:         "http://127.0.0.1:8081/zones",
+						AutoprimariesURL: "http://127.0.0.1:8081/autoprimaries",
+					},
 				},
 			},
 		},
@@ -103,6 +115,11 @@ func TestGetAppStateUpdateDaemon(t *testing.T) {
 	require.NotNil(t, dbApp.Daemons[0].PDNSDaemon)
 	require.EqualValues(t, 234, dbApp.Daemons[0].PDNSDaemon.ID)
 	require.EqualValues(t, 123, dbApp.Daemons[0].PDNSDaemon.DaemonID)
+	require.EqualValues(t, 1234, dbApp.Daemons[0].Uptime)
+	require.Equal(t, "http://127.0.0.1:8081", dbApp.Daemons[0].PDNSDaemon.Details.URL)
+	require.Equal(t, "http://127.0.0.1:8081/config", dbApp.Daemons[0].PDNSDaemon.Details.ConfigURL)
+	require.Equal(t, "http://127.0.0.1:8081/zones", dbApp.Daemons[0].PDNSDaemon.Details.ZonesURL)
+	require.Equal(t, "http://127.0.0.1:8081/autoprimaries", dbApp.Daemons[0].PDNSDaemon.Details.AutoprimariesURL)
 }
 
 // Test the case when an attempt to get state fails.

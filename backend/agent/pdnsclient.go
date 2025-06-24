@@ -160,9 +160,26 @@ func (client *pdnsClient) createRequestFromURL(apiKey string, url string) *pdnsC
 	return newPDNSClientRequestFromURL(client.innerClient, apiKey, url)
 }
 
-// Makes a request to retrieve general information about the PowerDNS server instance.
-func (client *pdnsClient) getServerInfo(apiKey string, host string, port int64) (httpResponse, *pdnsdata.ServerInfo, error) {
-	return client.createRequest(apiKey, host, port).getServerInfo()
+// Makes a request to retrieve general information about the PowerDNS server instance
+// including the uptime.
+func (client *pdnsClient) getCombinedServerInfo(apiKey string, host string, port int64) (httpResponse, *pdnsdata.ServerInfo, error) {
+	response, serverInfo, err := client.createRequest(apiKey, host, port).getServerInfo()
+	if err != nil || response.IsError() {
+		return response, serverInfo, err
+	}
+	// Get statistics
+	var stats []pdnsdata.StatisticItem
+	response, err = client.createRequest(apiKey, host, port).getJSON("/servers/localhost/statistics?statistic=uptime", &stats)
+	if err != nil || response.IsError() {
+		return response, serverInfo, err
+	}
+	// Process statistics
+	for _, stat := range stats {
+		if stat.Name == "uptime" {
+			serverInfo.Uptime = stat.GetInt64()
+		}
+	}
+	return response, serverInfo, nil
 }
 
 // Makes a request to retrieve zones encapsulated in the artificial view (localhost)
