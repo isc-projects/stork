@@ -71,7 +71,16 @@
                         </div>
 
                         <div class="col-12 xl:col-7">
-                            <app-bind9-daemon [appId]="appTab.app.id" [daemon]="daemon"></app-bind9-daemon>
+                            <ng-container [ngSwitch]="appTab.app.type">
+                                <!-- BIND9 -->
+                                <app-bind9-daemon
+                                    *ngSwitchCase="'bind9'"
+                                    [appId]="appTab.app.id"
+                                    [daemon]="daemon"
+                                ></app-bind9-daemon>
+                                <!-- PowerDNS -->
+                                <app-pdns-daemon *ngSwitchCase="'pdns'" [daemon]="daemon"></app-pdns-daemon>
+                            </ng-container>
                         </div>
                         <!-- Events -->
                         <div class="col-12 xl:col-5">

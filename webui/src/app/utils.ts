@@ -1,7 +1,7 @@
 import moment from 'moment-timezone'
 import { IPv6, collapseIPv6Number } from 'ip-num'
 import { gt, lt, valid } from 'semver'
-import { Bind9Daemon, KeaDaemon } from './backend'
+import { Bind9Daemon, KeaDaemon, PdnsDaemon } from './backend'
 
 /**
  * Formats the date-like object as local date-time string.
@@ -252,7 +252,7 @@ export function extractKeyValsAndPrepareQueryParams<T extends { text?: string }>
  * @return true if there is a communication problem with the daemon,
  *         false otherwise.
  */
-export function daemonStatusErred(daemon: Bind9Daemon | KeaDaemon) {
+export function daemonStatusErred(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) {
     return ['agentCommErrors', 'caCommErrors', 'daemonCommErrors', 'rndcCommErrors', 'statsCommErrors'].some(
         (errorType) => (daemon as any)[errorType] && (daemon as any)[errorType] > 0
     )
@@ -271,7 +271,7 @@ export function daemonStatusErred(daemon: Bind9Daemon | KeaDaemon) {
  *  should be active but the communication with it is broken and
  *  check icon if the communication with the active daemon is ok.
  */
-export function daemonStatusIconName(daemon: Bind9Daemon | KeaDaemon) {
+export function daemonStatusIconName(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) {
     if (!daemon.monitored) {
         return 'pi pi-ban icon-not-monitored'
     }
@@ -290,7 +290,7 @@ export function daemonStatusIconName(daemon: Bind9Daemon | KeaDaemon) {
  *          active but there are communication issues, green if the
  *          communication with the active daemon is ok.
  */
-export function daemonStatusIconColor(daemon: Bind9Daemon | KeaDaemon) {
+export function daemonStatusIconColor(daemon: PdnsDaemon | Bind9Daemon | KeaDaemon) {
     if (!daemon.monitored) {
         return 'var(--gray-400)'
     }
@@ -309,7 +309,7 @@ export function daemonStatusIconColor(daemon: Bind9Daemon | KeaDaemon) {
  *          problems when such problems occur, e.g. it includes the
  *          hint whether the communication is with the agent or daemon.
  */
-export function daemonStatusIconTooltip(daemon: KeaDaemon & Bind9Daemon) {
+export function daemonStatusIconTooltip(daemon: PdnsDaemon & KeaDaemon & Bind9Daemon) {
     if (!daemon.monitored) {
         return 'Monitoring of this daemon has been disabled. It can be enabled on the daemon tab on the Kea Apps page.'
     }

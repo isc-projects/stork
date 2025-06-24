@@ -296,7 +296,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     detail: 'Refreshing succeeded.',
                 })
 
-                htmlizeExtVersion(data)
+                htmlizeExtVersion(app)
                 setDaemonStatusErred(data)
 
                 // refresh app in app list

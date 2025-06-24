@@ -92,11 +92,12 @@ export class AppTabComponent {
     @Input()
     set appTab(appTab) {
         this._appTab = appTab
+        const daemon = appTab.app.type === 'bind9' ? appTab.app.details.daemon : appTab.app.details.pdnsDaemon
         // Refresh local information about the daemon presented by this component.
         this.daemons = [
             {
-                statusErred: this.daemonStatusErred(appTab.app.details.daemon),
-                ...appTab.app.details.daemon,
+                statusErred: this.daemonStatusErred(daemon),
+                ...daemon,
             },
         ]
     }

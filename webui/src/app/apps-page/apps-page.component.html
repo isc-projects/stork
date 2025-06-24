@@ -147,7 +147,7 @@
 <!-- Single app tab -->
 <div *ngIf="activeTabIdx !== 0" class="p-component">
     <app-app-tab
-        *ngIf="appTab.app.type === 'bind9'"
+        *ngIf="appTab.app.type === 'bind9' || appTab.app.type === 'pdns'"
         [appTab]="appTab"
         (refreshApp)="onRefreshApp()"
         (renameApp)="onRenameApp($event)"

@@ -31,6 +31,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
+import { PdnsDaemonComponent } from '../pdns-daemon/pdns-daemon.component'
 
 // Mock directive that always grants access
 @Directive({
@@ -48,7 +49,7 @@ class MockManagedAccessDirective implements AfterViewInit {
     }
 }
 
-const mockAppTab = {
+const mockBind9AppTab = {
     app: {
         id: 1,
         name: 'bind9@bind9-app-tab',
@@ -75,6 +76,62 @@ const mockAppTab = {
                 agentCommErrors: 0,
                 rndcCommErrors: 0,
                 statsCommErrors: 0,
+            },
+        },
+    },
+}
+
+const mockPowerDNSAppTabNoURLs = {
+    app: {
+        id: 1,
+        name: 'pdns@pdns-app-tab',
+        type: 'pdns',
+        accessPoints: [],
+        version: '4.1.2',
+        machine: {
+            id: 1,
+            address: '127.0.0.1',
+            hostname: 'test',
+        },
+        details: {
+            pdnsDaemon: {
+                name: 'pdns',
+                id: 1,
+                pid: 1,
+                active: true,
+                monitored: true,
+                version: '4.1.2',
+                uptime: 100,
+            },
+        },
+    },
+}
+
+const mockPowerDNSAppTab = {
+    app: {
+        id: 1,
+        name: 'pdns@pdns-app-tab',
+        type: 'pdns',
+        accessPoints: [],
+        version: '4.1.2',
+        machine: {
+            id: 1,
+            address: '127.0.0.1',
+            hostname: 'test',
+        },
+        details: {
+            pdnsDaemon: {
+                name: 'pdns',
+                id: 1,
+                pid: 1,
+                active: true,
+                monitored: true,
+                version: '4.1.2',
+                uptime: 100,
+                url: 'http://localhost:5380',
+                configUrl: 'http://localhost:5380/config',
+                zonesUrl: 'http://localhost:5380/zones',
+                autoprimariesUrl: 'http://localhost:5380/autoprimaries',
             },
         },
     },
@@ -123,6 +180,7 @@ export default {
                 DaemonNiceNamePipe,
                 DurationPipe,
                 LocaltimePipe,
+                PdnsDaemonComponent,
                 PlaceholderPipe,
                 RenameAppDialogComponent,
                 AppOverviewComponent,
@@ -161,6 +219,18 @@ type Story = StoryObj<AppTabComponent>
 
 export const Bind9: Story = {
     args: {
-        appTab: mockAppTab,
+        appTab: mockBind9AppTab,
+    },
+}
+
+export const PowerDNS: Story = {
+    args: {
+        appTab: mockPowerDNSAppTab,
+    },
+}
+
+export const PowerDNSNoURLs: Story = {
+    args: {
+        appTab: mockPowerDNSAppTabNoURLs,
     },
 }
