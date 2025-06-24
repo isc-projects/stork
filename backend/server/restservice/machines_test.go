@@ -1328,6 +1328,68 @@ func TestRestGetApp(t *testing.T) {
 	require.Equal(t, bind9App.Name, okRsp.Payload.Name)
 }
 
+// Test getting PowerDNS app by ID.
+func TestGetPowerDNSApp(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add machine
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add PowerDNS app to machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
+	pdnsApp := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypePDNS,
+		Active:       true,
+		Name:         "pdns",
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				PDNSDaemon: &dbmodel.PDNSDaemon{
+					Details: dbmodel.PDNSDaemonDetails{
+						URL:              "https://pdns.example.com",
+						ConfigURL:        "https://pdns.example.com/config",
+						ZonesURL:         "https://pdns.example.com/zones",
+						AutoprimariesURL: "https://pdns.example.com/autoprimaries",
+					},
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, pdnsApp)
+	require.NoError(t, err)
+
+	// get added kea app
+	params := services.GetAppParams{
+		ID: pdnsApp.ID,
+	}
+	rsp := rapi.GetApp(ctx, params)
+	require.IsType(t, &services.GetAppOK{}, rsp)
+	okRsp := rsp.(*services.GetAppOK)
+	require.Equal(t, pdnsApp.ID, okRsp.Payload.ID)
+	require.Equal(t, pdnsApp.Name, okRsp.Payload.Name)
+	require.Equal(t, "https://pdns.example.com", okRsp.Payload.Details.AppPdns.PdnsDaemon.URL)
+	require.Equal(t, "https://pdns.example.com/config", okRsp.Payload.Details.AppPdns.PdnsDaemon.ConfigURL)
+	require.Equal(t, "https://pdns.example.com/zones", okRsp.Payload.Details.AppPdns.PdnsDaemon.ZonesURL)
+	require.Equal(t, "https://pdns.example.com/autoprimaries", okRsp.Payload.Details.AppPdns.PdnsDaemon.AutoprimariesURL)
+}
+
 func TestRestGetApps(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

@@ -1527,7 +1527,7 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	}
 
 	var a *models.App
-	if dbApp.Type == dbmodel.AppTypeBind9 || dbApp.Type == dbmodel.AppTypeKea {
+	if dbApp.Type == dbmodel.AppTypeBind9 || dbApp.Type == dbmodel.AppTypeKea || dbApp.Type == dbmodel.AppTypePDNS {
 		a = r.appToRestAPI(dbApp)
 	}
 	rsp := services.NewGetAppOK().WithPayload(a)
