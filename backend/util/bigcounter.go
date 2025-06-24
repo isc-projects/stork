@@ -238,8 +238,10 @@ func NewBigCounter(val uint64) *BigCounter {
 // Constructs a new big counter instance from the int64 value.
 func NewBigCounterFromInt64(val int64) *BigCounter {
 	if val < 0 {
-		// The negative value is not supported.
-		return nil
+		return &BigCounter{
+			base:     0,
+			extended: big.NewInt(val),
+		}
 	}
 	return NewBigCounter(uint64(val))
 }
@@ -248,11 +250,6 @@ func NewBigCounterFromInt64(val int64) *BigCounter {
 func NewBigCounterFromBigInt(val *big.Int) *BigCounter {
 	if val.IsUint64() {
 		return NewBigCounter(val.Uint64())
-	}
-
-	// The negative value is not supported.
-	if val.Cmp(big.NewInt(0)) == -1 {
-		return nil
 	}
 
 	return &BigCounter{

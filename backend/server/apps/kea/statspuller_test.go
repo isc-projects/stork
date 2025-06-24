@@ -153,8 +153,8 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 				// 6.         7.       8.       9.               10.
 				0+totalShift, 0+shift, 0+shift, 1048+totalShift, 233+shift,
 				// Subnet 50.
-				// 11.          12.       13.      14.              15.
-				256+totalShift, 60+shift, 0+shift, 1048+totalShift, 15+shift,
+				// 11.          12.       13.       14.              15.
+				256+totalShift, 60+shift, 10+shift, 1048+totalShift, 35+shift,
 				// Subnet 60.
 				// 16. 17.                 18. 19. 20.
 				-1, "9223372036854775807", 0, -2, -3,
@@ -163,7 +163,7 @@ func createStandardKeaMock(t *testing.T, oldStatsFormat bool) func(callNo int, c
 				20+totalShift, 8+shift, 4+shift, 40+totalShift, 20+shift,
 				// Address pool 1 and PD pool 1 in subnet 50.
 				// 26.         27.      28.      29.            30.
-				236, 52, 0, 1008, 5,
+				234, 50, 0, 1008, 5,
 			),
 		}
 	})
@@ -402,8 +402,8 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 			snCnt++
 		case 50:
 			require.Equal(t, uint64(60+shift), sn.Stats["assigned-nas"])
-			require.Equal(t, uint64(15+shift), sn.Stats["assigned-pds"])
-			require.Equal(t, uint64(0+shift), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(35+shift), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(10+shift), sn.Stats["declined-nas"])
 			require.Equal(t, uint64(256+totalShift), sn.Stats["total-nas"])
 			require.Equal(t, uint64(1048+totalShift), sn.Stats["total-pds"])
 			snCnt++
@@ -422,8 +422,8 @@ func verifyStandardLocalSubnetsStatistics(t *testing.T, db *pg.DB) {
 			require.Equal(t, uint64(4+shift), sn.AddressPools[1].Stats["declined-nas"])
 
 			require.EqualValues(t, 1, sn.AddressPools[2].KeaParameters.PoolID)
-			require.Equal(t, uint64(236), sn.AddressPools[2].Stats["total-nas"])
-			require.Equal(t, uint64(52), sn.AddressPools[2].Stats["assigned-nas"])
+			require.Equal(t, uint64(234), sn.AddressPools[2].Stats["total-nas"])
+			require.Equal(t, uint64(50), sn.AddressPools[2].Stats["assigned-nas"])
 			require.Equal(t, uint64(0), sn.AddressPools[2].Stats["declined-nas"])
 
 			require.Len(t, sn.PrefixPools, 3)
@@ -592,18 +592,60 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		case 10:
 			require.InDelta(t, 111.0/256.0, float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
+			require.EqualValues(t, 256, sn.Stats.GetBigCounter(dbmodel.StatNameTotalAddresses).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolAddresses).ToInt64())
+			require.EqualValues(t, 111, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedAddresses).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolAddresses).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedAddresses).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolAddresses).ToInt64())
 		case 20:
 			require.InDelta(t, 2034.0/(4098.0+2), float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
+			require.EqualValues(t, 4100, sn.Stats.GetBigCounter(dbmodel.StatNameTotalAddresses).ToInt64())
+			require.EqualValues(t, 2, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolAddresses).ToInt64())
+			require.EqualValues(t, 2034, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedAddresses).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolAddresses).ToInt64())
+			require.EqualValues(t, 4, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedAddresses).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolAddresses).ToInt64())
 		case 30:
 			require.InDelta(t, 2400.0/4096.0, float64(sn.AddrUtilization), 0.001)
 			require.Zero(t, sn.PdUtilization)
+			require.EqualValues(t, 4096, sn.Stats.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+			require.EqualValues(t, 2400, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
+			require.EqualValues(t, 3, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameTotalPDs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolPDs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedPDs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolPDs).ToInt64())
 		case 40:
 			require.Zero(t, sn.AddrUtilization)
 			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization), 0.001)
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolNAs).ToInt64())
+			require.EqualValues(t, 1048, sn.Stats.GetBigCounter(dbmodel.StatNameTotalPDs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolPDs).ToInt64())
+			require.EqualValues(t, 233, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedPDs).ToInt64())
+			require.Zero(t, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolPDs).ToInt64())
 		case 50:
-			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization), 0.001)
-			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization), 0.001)
+			require.InDelta(t, 60.0/(254.0+4), float64(sn.AddrUtilization), 0.001)
+			require.InDelta(t, 35.0/(1048.0+1), float64(sn.PdUtilization), 0.001)
+			require.EqualValues(t, 254+4, sn.Stats.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
+			require.EqualValues(t, 4, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+			require.EqualValues(t, 60, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
+			require.EqualValues(t, 2, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
+			require.EqualValues(t, 10, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
+			require.EqualValues(t, 6, sn.Stats.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolNAs).ToInt64())
+			require.EqualValues(t, 1048+1, sn.Stats.GetBigCounter(dbmodel.StatNameTotalPDs).ToInt64())
+			require.EqualValues(t, 1, sn.Stats.GetBigCounter(dbmodel.StatNameTotalOutOfPoolPDs).ToInt64())
+			require.EqualValues(t, 35, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedPDs).ToInt64())
+			require.EqualValues(t, 10, sn.Stats.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolPDs).ToInt64())
 		}
 	}
 
@@ -619,12 +661,12 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(2460), big.NewInt(math.MaxInt64),
 	), globals["assigned-nas"])
-	require.EqualValues(t, big.NewInt(3), globals["declined-nas"])
+	require.EqualValues(t, big.NewInt(13), globals["declined-nas"])
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(2097), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["total-pds"])
 	require.EqualValues(t, big.NewInt(0).Add(
-		big.NewInt(246), big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(266), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["assigned-pds"])
 }
 
@@ -886,7 +928,7 @@ func verifyCountingStatisticsFromPrimary(t *testing.T, db *pg.DB) {
 			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization), 0.001)
 		case "2001:db8:3::/64":
 			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization), 0.001)
-			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization), 0.001)
+			require.InDelta(t, 35.0/(1048.0+1), float64(sn.PdUtilization), 0.001)
 		}
 	}
 
@@ -902,12 +944,12 @@ func verifyCountingStatisticsFromPrimary(t *testing.T, db *pg.DB) {
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(2460), big.NewInt(math.MaxInt64),
 	), globals["assigned-nas"])
-	require.EqualValues(t, big.NewInt(3), globals["declined-nas"])
+	require.EqualValues(t, big.NewInt(13), globals["declined-nas"])
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(2097), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["total-pds"])
 	require.EqualValues(t, big.NewInt(0).Add(
-		big.NewInt(246), big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(266), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["assigned-pds"])
 }
 
@@ -938,7 +980,7 @@ func verifyCountingStatisticsFromSecondary(t *testing.T, db *pg.DB) {
 			require.InDelta(t, 333.0/1248.0, float64(sn.PdUtilization), 0.001)
 		case "2001:db8:3::/64":
 			require.InDelta(t, 160.0/(456.0+2), float64(sn.AddrUtilization), 0.001)
-			require.InDelta(t, 115.0/(1248.0+1), float64(sn.PdUtilization), 0.001)
+			require.InDelta(t, 135.0/(1248.0+1), float64(sn.PdUtilization), 0.001)
 		}
 	}
 
@@ -954,12 +996,12 @@ func verifyCountingStatisticsFromSecondary(t *testing.T, db *pg.DB) {
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(2760), big.NewInt(math.MaxInt64),
 	), globals["assigned-nas"])
-	require.EqualValues(t, big.NewInt(303), globals["declined-nas"])
+	require.EqualValues(t, big.NewInt(313), globals["declined-nas"])
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(2697), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["total-pds"])
 	require.EqualValues(t, big.NewInt(0).Add(
-		big.NewInt(546), big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(566), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["assigned-pds"])
 }
 

@@ -366,7 +366,8 @@ func TestBigCounterConstructFromInt64(t *testing.T) {
 		counter := NewBigCounterFromInt64(val)
 
 		// Assert
-		require.Nil(t, counter)
+		require.NotNil(t, counter)
+		require.EqualValues(t, -1, counter.ToInt64())
 	})
 }
 
@@ -419,7 +420,9 @@ func TestBigCounterConstructFromBigInt(t *testing.T) {
 		counter := NewBigCounterFromBigInt(bigInt)
 
 		// Assert
-		require.Nil(t, counter)
+		require.NotNil(t, counter)
+		require.EqualValues(t, bigInt, counter.ToBigInt())
+		require.EqualValues(t, -1, counter.ToInt64())
 	})
 }
 

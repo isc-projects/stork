@@ -682,7 +682,7 @@ func TestCounterRealKeaResponse(t *testing.T) {
 	}
 }
 
-// Test that the negative statistic value is ignored.
+// Test that the negative statistic value isn't ignored.
 func TestCounterAddIgnoreNegativeNumbers(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
@@ -705,16 +705,19 @@ func TestCounterAddIgnoreNegativeNumbers(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.Zero(t, statistics.GetAddressUtilization())
-	require.Zero(t, statistics.GetDelegatedPrefixUtilization())
+	require.EqualValues(t, math.MaxInt64, statistics.GetAddressUtilization())
+	require.EqualValues(t, 3./2., statistics.GetDelegatedPrefixUtilization())
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalDeclinedIPv4Addresses.ToInt64())
-	require.Zero(t, counter.global.totalIPv6Addresses.ToInt64())
-	require.Zero(t, counter.global.totalAssignedIPv6Addresses.ToInt64())
-	require.Zero(t, counter.global.totalDeclinedIPv6Addresses.ToInt64())
-	require.Zero(t, counter.global.totalDelegatedPrefixes.ToInt64())
-	require.Zero(t, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
+	require.EqualValues(t, -1, counter.global.totalIPv6Addresses.ToInt64())
+	require.EqualValues(t, math.MinInt64, counter.global.totalAssignedIPv6Addresses.ToInt64())
+	require.EqualValues(t,
+		big.NewInt(0).Mul(big.NewInt(0).SetUint64(math.MaxUint64), big.NewInt(-1)),
+		counter.global.totalDeclinedIPv6Addresses.ToBigInt(),
+	)
+	require.EqualValues(t, -2, counter.global.totalDelegatedPrefixes.ToInt64())
+	require.EqualValues(t, -3, counter.global.totalAssignedDelegatedPrefixes.ToInt64())
 }
 
 // Checks if the out-of-pool values are added to the total counters.

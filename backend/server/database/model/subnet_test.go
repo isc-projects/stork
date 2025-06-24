@@ -2049,7 +2049,7 @@ func TestStatsGetBigCounter(t *testing.T) {
 		counter := stats.GetBigCounter("negative-int64")
 
 		// Assert
-		require.Nil(t, counter)
+		require.EqualValues(t, -42, counter.ToInt64())
 	})
 
 	t.Run("large-bigint", func(t *testing.T) {
@@ -2084,7 +2084,7 @@ func TestStatsGetBigCounter(t *testing.T) {
 		counter := stats.GetBigCounter("negative-bigint")
 
 		// Assert
-		require.Nil(t, counter)
+		require.EqualValues(t, -42, counter.ToInt64())
 	})
 }
 
