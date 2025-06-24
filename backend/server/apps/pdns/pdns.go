@@ -34,6 +34,10 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	}
 	daemon.Version = serverInfo.Version
 	daemon.ExtendedVersion = serverInfo.Version
+	daemon.PDNSDaemon.Details.URL = serverInfo.URL
+	daemon.PDNSDaemon.Details.ConfigURL = serverInfo.ConfigURL
+	daemon.PDNSDaemon.Details.ZonesURL = serverInfo.ZonesURL
+	daemon.PDNSDaemon.Details.AutoprimariesURL = serverInfo.AutoprimariesURL
 
 	dbApp.Active = daemon.Active
 	dbApp.Meta.Version = daemon.Version

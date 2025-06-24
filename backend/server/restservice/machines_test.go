@@ -1403,6 +1403,30 @@ func TestRestGetApps(t *testing.T) {
 	_, err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
+	// add PowerDNS to machine
+	var pdnsPoints []*dbmodel.AccessPoint
+	pdnsPoints = dbmodel.AppendAccessPoint(pdnsPoints, dbmodel.AccessPointControl, "", "defg", 5300, false)
+	pdnsApp := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypePDNS,
+		AccessPoints: pdnsPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				PDNSDaemon: &dbmodel.PDNSDaemon{
+					Details: dbmodel.PDNSDaemonDetails{
+						URL:              "https://pdns.example.com",
+						ConfigURL:        "https://pdns.example.com/config",
+						ZonesURL:         "https://pdns.example.com/zones",
+						AutoprimariesURL: "https://pdns.example.com/autoprimaries",
+					},
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, pdnsApp)
+	require.NoError(t, err)
+
 	stats := agentcomm.NewAgentStats()
 	stats.IncreaseErrorCount("foo")
 	stats.GetKeaCommErrorStats(s1.ID).IncreaseErrorCountBy(agentcomm.KeaDaemonCA, 2)
@@ -1416,12 +1440,13 @@ func TestRestGetApps(t *testing.T) {
 	rsp = rapi.GetApps(ctx, params)
 	require.IsType(t, &services.GetAppsOK{}, rsp)
 	okRsp = rsp.(*services.GetAppsOK)
-	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.EqualValues(t, 3, okRsp.Payload.Total)
 
 	// Verify that the communication error counters are returned.
-	require.Len(t, okRsp.Payload.Items, 2)
+	require.Len(t, okRsp.Payload.Items, 3)
 	for _, app := range okRsp.Payload.Items {
-		if app.Type == dbmodel.AppTypeKea.String() {
+		switch app.Type {
+		case dbmodel.AppTypeKea.String():
 			require.Equal(t, "fancy-app", app.Name)
 			appKea := app.Details.AppKea
 			require.Len(t, appKea.Daemons, 1)
@@ -1433,13 +1458,20 @@ func TestRestGetApps(t *testing.T) {
 			require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
 			require.Equal(t, "debug", daemon.LogTargets[0].Severity)
 			require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
-		} else if app.Type == dbmodel.AppTypeBind9.String() {
+		case dbmodel.AppTypeBind9.String():
 			require.Equal(t, "another-fancy-app", app.Name)
 			appBind9 := app.Details.AppBind9
 			daemon := appBind9.Daemon
 			require.EqualValues(t, 1, daemon.AgentCommErrors)
 			require.EqualValues(t, 2, daemon.RndcCommErrors)
 			require.EqualValues(t, 3, daemon.StatsCommErrors)
+		case dbmodel.AppTypePDNS.String():
+			require.Equal(t, "pdns@localhost", app.Name)
+			appPdns := app.Details.AppPdns
+			require.Equal(t, "https://pdns.example.com", appPdns.PdnsDaemon.URL)
+			require.Equal(t, "https://pdns.example.com/config", appPdns.PdnsDaemon.ConfigURL)
+			require.Equal(t, "https://pdns.example.com/zones", appPdns.PdnsDaemon.ZonesURL)
+			require.Equal(t, "https://pdns.example.com/autoprimaries", appPdns.PdnsDaemon.AutoprimariesURL)
 		}
 	}
 }

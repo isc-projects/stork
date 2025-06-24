@@ -218,6 +218,7 @@
         allOf:
           - $ref: '#/definitions/AppKea'
           - $ref: '#/definitions/AppBind9'
+          - $ref: '#/definitions/AppPdns'
 
   KeaDaemonDatabase:
     type: object
@@ -369,6 +370,42 @@
     properties:
       daemon:
         $ref: '#/definitions/Bind9Daemon'
+
+  PdnsDaemon:
+    type: object
+    properties:
+      id:
+        type: integer
+      pid:
+        type: integer
+      name:
+        type: string
+      active:
+        type: boolean
+      monitored:
+        type: boolean
+      version:
+        type: string
+      uptime:
+        type: integer
+      reloadedAt:
+        type: string
+        format: date-time
+        x-nullable: true
+      url:
+        type: string
+      configUrl:
+        type: string
+      zonesUrl:
+        type: string
+      autoprimariesUrl:
+        type: string
+
+  AppPdns:
+    type: object
+    properties:
+      pdnsDaemon:
+        $ref: '#/definitions/PdnsDaemon'
 
   AppMachine:
     type: object

@@ -36,6 +36,13 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// A structure representing union of all app details.
+type appDetails struct {
+	models.AppKea
+	models.AppBind9
+	models.AppPdns
+}
+
 // Get version of Stork Server.
 func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParams) middleware.Responder {
 	bd := stork.BuildDate
@@ -1142,9 +1149,6 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		Version:      baseApp.Version,
 	}
 
-	isKeaApp := dbApp.Type == dbmodel.AppTypeKea
-	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
-
 	agentErrors := int64(0)
 	var agentStats *agentcomm.AgentCommStatsWrapper
 	if dbApp.Machine != nil {
@@ -1155,8 +1159,8 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 	}
 
-	switch {
-	case isKeaApp:
+	switch dbApp.Type {
+	case dbmodel.AppTypeKea:
 		var keaStats *agentcomm.KeaAppCommErrorStats
 		if agentStats != nil {
 			keaStats = agentStats.GetStats().GetKeaCommErrorStats(app.ID)
@@ -1172,96 +1176,53 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 			keaDaemons = append(keaDaemons, dmn)
 		}
 
-		app.Details = struct {
-			models.AppKea
-			models.AppBind9
-		}{
+		app.Details = appDetails{
 			models.AppKea{
 				ExtendedVersion: dbApp.Meta.ExtendedVersion,
 				Daemons:         keaDaemons,
 			},
 			models.AppBind9{},
+			models.AppPdns{},
 		}
-	case isBind9App:
-		var bind9DaemonDB *dbmodel.Daemon
-		var namedStats *bind9stats.Bind9NamedStats
-		if len(dbApp.Daemons) > 0 {
-			bind9DaemonDB = dbApp.Daemons[0]
-			if bind9DaemonDB.Bind9Daemon != nil {
-				namedStats = bind9DaemonDB.Bind9Daemon.Stats.NamedStats
-			}
-		}
-
-		app.Details = struct {
-			models.AppKea
-			models.AppBind9
-		}{
-			models.AppKea{
-				Daemons: []*models.KeaDaemon{},
-			},
-			models.AppBind9{
-				Daemon: nil,
-			},
-		}
-
-		if bind9DaemonDB == nil {
+	case dbmodel.AppTypeBind9:
+		if len(dbApp.Daemons) == 0 {
 			// The BIND9 daemon is missing when the Stork Agent detects that the
 			// BIND9 daemon is running, but there are problems with fetching its
 			// configuration (e.g., cannot call the named-checkconf -v command).
 			// In this case, the application entry is created but no daemon.
 			break
 		}
-
-		var views []*models.Bind9DaemonView
-		if namedStats != nil {
-			for name, view := range namedStats.Views {
-				queryHits := view.Resolver.CacheStats["QueryHits"]
-				queryMisses := view.Resolver.CacheStats["QueryMisses"]
-				queryTotal := float64(queryHits) + float64(queryMisses)
-				var queryHitRatio float64
-				if queryTotal > 0 {
-					queryHitRatio = float64(queryHits) / queryTotal
-				}
-				views = append(views, &models.Bind9DaemonView{
-					Name:          name,
-					QueryHits:     queryHits,
-					QueryMisses:   queryMisses,
-					QueryHitRatio: queryHitRatio,
-				})
-			}
-			// Sort views by name. Otherwise they will be returned in the random
-			// order of a map.
-			sort.Slice(views, func(i, j int) bool {
-				return views[i].Name < views[j].Name
-			})
-		}
-
-		bind9Daemon := &models.Bind9Daemon{
-			ID:              bind9DaemonDB.ID,
-			Pid:             int64(bind9DaemonDB.Pid),
-			Name:            bind9DaemonDB.Name,
-			Active:          bind9DaemonDB.Active,
-			Monitored:       bind9DaemonDB.Monitored,
-			Version:         bind9DaemonDB.Version,
-			Uptime:          bind9DaemonDB.Uptime,
-			ReloadedAt:      convertToOptionalDatetime(bind9DaemonDB.ReloadedAt),
-			Views:           views,
-			AgentCommErrors: agentErrors,
-		}
-		app.Details.AppBind9.Daemon = bind9Daemon
-
-		if bind9DaemonDB.Bind9Daemon != nil {
-			bind9Daemon.ZoneCount = bind9DaemonDB.Bind9Daemon.Stats.ZoneCount
-			bind9Daemon.AutoZoneCount = bind9DaemonDB.Bind9Daemon.Stats.AutomaticZoneCount
-		}
+		bind9Daemon := bind9DaemonToRestAPI(dbApp.Daemons[0])
+		bind9Daemon.AgentCommErrors = agentErrors
 
 		if agentStats != nil {
 			bind9Errors := agentStats.GetStats().GetBind9CommErrorStats(app.ID)
 			bind9Daemon.RndcCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelRNDC)
 			bind9Daemon.StatsCommErrors = bind9Errors.GetErrorCount(agentcomm.Bind9ChannelStats)
 		}
-	}
 
+		app.Details = appDetails{
+			models.AppKea{
+				Daemons: []*models.KeaDaemon{},
+			},
+			models.AppBind9{
+				Daemon: bind9Daemon,
+			},
+			models.AppPdns{},
+		}
+	case dbmodel.AppTypePDNS:
+		if len(dbApp.Daemons) == 0 {
+			break
+		}
+		pdnsDaemon := pdnsDaemonToRestAPI(dbApp.Daemons[0])
+		app.Details = appDetails{
+			models.AppKea{},
+			models.AppBind9{},
+			models.AppPdns{
+				PdnsDaemon: pdnsDaemon,
+			},
+		}
+	}
 	return app
 }
 
@@ -1282,14 +1243,12 @@ func (r *RestAPI) appSwVersionsToRestAPI(dbApp *dbmodel.App) *models.App {
 			keaDaemons = append(keaDaemons, dmn)
 		}
 
-		app.Details = struct {
-			models.AppKea
-			models.AppBind9
-		}{
+		app.Details = appDetails{
 			models.AppKea{
 				Daemons: keaDaemons,
 			},
 			models.AppBind9{},
+			models.AppPdns{},
 		}
 	}
 
@@ -1351,6 +1310,76 @@ func keaDaemonSwVersionsToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
 		Version: dbDaemon.Version,
 	}
 
+	return daemon
+}
+
+// Converts BIND9 daemon to REST API format.
+func bind9DaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.Bind9Daemon {
+	var namedStats *bind9stats.Bind9NamedStats
+	if dbDaemon.Bind9Daemon != nil {
+		namedStats = dbDaemon.Bind9Daemon.Stats.NamedStats
+	}
+	var views []*models.Bind9DaemonView
+	if namedStats != nil {
+		for name, view := range namedStats.Views {
+			queryHits := view.Resolver.CacheStats["QueryHits"]
+			queryMisses := view.Resolver.CacheStats["QueryMisses"]
+			queryTotal := float64(queryHits) + float64(queryMisses)
+			var queryHitRatio float64
+			if queryTotal > 0 {
+				queryHitRatio = float64(queryHits) / queryTotal
+			}
+			views = append(views, &models.Bind9DaemonView{
+				Name:          name,
+				QueryHits:     queryHits,
+				QueryMisses:   queryMisses,
+				QueryHitRatio: queryHitRatio,
+			})
+		}
+		// Sort views by name. Otherwise they will be returned in the random
+		// order of a map.
+		sort.Slice(views, func(i, j int) bool {
+			return views[i].Name < views[j].Name
+		})
+	}
+
+	bind9Daemon := &models.Bind9Daemon{
+		ID:         dbDaemon.ID,
+		Pid:        int64(dbDaemon.Pid),
+		Name:       dbDaemon.Name,
+		Active:     dbDaemon.Active,
+		Monitored:  dbDaemon.Monitored,
+		Version:    dbDaemon.Version,
+		Uptime:     dbDaemon.Uptime,
+		ReloadedAt: convertToOptionalDatetime(dbDaemon.ReloadedAt),
+		Views:      views,
+	}
+	if dbDaemon.Bind9Daemon != nil {
+		bind9Daemon.ZoneCount = dbDaemon.Bind9Daemon.Stats.ZoneCount
+		bind9Daemon.AutoZoneCount = dbDaemon.Bind9Daemon.Stats.AutomaticZoneCount
+	}
+
+	return bind9Daemon
+}
+
+// Converts PowerDNS daemon to REST API format.
+func pdnsDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.PdnsDaemon {
+	daemon := &models.PdnsDaemon{
+		ID:         dbDaemon.ID,
+		Pid:        int64(dbDaemon.Pid),
+		Name:       dbDaemon.Name,
+		Active:     dbDaemon.Active,
+		Monitored:  dbDaemon.Monitored,
+		Version:    dbDaemon.Version,
+		Uptime:     dbDaemon.Uptime,
+		ReloadedAt: convertToOptionalDatetime(dbDaemon.ReloadedAt),
+	}
+	if dbDaemon.PDNSDaemon != nil {
+		daemon.URL = dbDaemon.PDNSDaemon.Details.URL
+		daemon.ConfigURL = dbDaemon.PDNSDaemon.Details.ConfigURL
+		daemon.ZonesURL = dbDaemon.PDNSDaemon.Details.ZonesURL
+		daemon.AutoprimariesURL = dbDaemon.PDNSDaemon.Details.AutoprimariesURL
+	}
 	return daemon
 }
 
