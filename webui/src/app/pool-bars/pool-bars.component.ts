@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { DelegatedPrefixPool, LocalSubnet, Pool } from '../backend'
+import { DelegatedPrefixPool, Pool } from '../backend'
 import { RangedSet, IPv6CidrRange, IPv4, IPv6 } from 'ip-num'
 import { SharedNetworkWithUniquePools, SubnetWithUniquePools } from '../subnets'
 
@@ -16,7 +16,7 @@ export class PoolBarsComponent implements OnInit {
     /**
      * Address pools to be displayed.
      */
-    @Input({ required: true }) source: SubnetWithUniquePools | SharedNetworkWithUniquePools | LocalSubnet
+    @Input({ required: true }) source: SubnetWithUniquePools | SharedNetworkWithUniquePools
 
     /**
      * Address pools grouped by their IDs.
