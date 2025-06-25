@@ -40,10 +40,10 @@
     <!-- Delegated prefix pools -->
     <!-- Out-of-pool utilization -->
     <app-out-of-pool-bar
+        [isPD]="true"
         [utilization]="source.outOfPoolPdUtilization"
         [stats]="source.stats"
         [statsCollectedAt]="source.statsCollectedAt"
-        [isPD]="true"
     ></app-out-of-pool-bar>
     <!-- In-pool utilization -->
     <ng-container *ngFor="let group of pdPoolsGrouped">

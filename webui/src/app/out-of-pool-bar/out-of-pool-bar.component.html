@@ -4,5 +4,5 @@
     [stats]="stats"
     [statsCollectedAt]="statsCollectedAt"
 >
-    <span class="white-space-nowrap">Out of pool</span>
+    <span class="white-space-nowrap">Out of pool {{ isPD ? 'delegated prefixes' : 'addresses' }}</span>
 </app-utilization-bar>
