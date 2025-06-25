@@ -160,6 +160,7 @@ import { NotFoundPageComponent } from './not-found-page/not-found-page.component
 import { UtilizationBarComponent } from './utilization-bar/utilization-bar.component'
 import { PoolBarsComponent } from './pool-bars/pool-bars.component'
 import { UnrootPipe } from './pipes/unroot.pipe'
+import { OutOfPoolBarComponent } from './out-of-pool-bar/out-of-pool-bar.component'
 
 /** Create the OpenAPI client configuration. */
 export function cfgFactory() {
@@ -268,6 +269,7 @@ export function cfgFactory() {
         UtilizationBarComponent,
         PoolBarsComponent,
         UnrootPipe,
+        OutOfPoolBarComponent,
     ],
     bootstrap: [AppComponent],
     imports: [

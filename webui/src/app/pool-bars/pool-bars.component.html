@@ -1,5 +1,12 @@
 <div class="flex flex-wrap gap-2 align-items-baseline">
     <!-- Address pools -->
+    <!-- Out-of-pool utilization -->
+    <app-out-of-pool-bar
+        [utilization]="source.outOfPoolAddrUtilization"
+        [stats]="source.stats"
+        [statsCollectedAt]="source.statsCollectedAt"
+    ></app-out-of-pool-bar>
+    <!-- In-pool utilization -->
     <ng-container *ngFor="let group of addressPoolsGrouped">
         <!-- Single pool group. Display just as a bar. -->
         <app-address-pool-bar
@@ -31,6 +38,14 @@
     </ng-container>
 
     <!-- Delegated prefix pools -->
+    <!-- Out-of-pool utilization -->
+    <app-out-of-pool-bar
+        [utilization]="source.outOfPoolPdUtilization"
+        [stats]="source.stats"
+        [statsCollectedAt]="source.statsCollectedAt"
+        [isPD]="true"
+    ></app-out-of-pool-bar>
+    <!-- In-pool utilization -->
     <ng-container *ngFor="let group of pdPoolsGrouped">
         <!-- Single pool group. Display just as a bar. -->
         <app-delegated-prefix-bar

@@ -43,6 +43,7 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 import { AuthService } from '../auth.service'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
+import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
@@ -75,6 +76,7 @@ describe('SharedNetworkTabComponent', () => {
                 UtilizationStatsChartsComponent,
                 UtilizationBarComponent,
                 PoolBarsComponent,
+                OutOfPoolBarComponent,
             ],
             imports: [
                 ButtonModule,

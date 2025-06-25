@@ -1,0 +1,8 @@
+<app-utilization-bar
+    *ngIf="hasOutOfPoolData"
+    [utilizationPrimary]="utilization"
+    [stats]="stats"
+    [statsCollectedAt]="statsCollectedAt"
+>
+    <span class="white-space-nowrap">Out of pool</span>
+</app-utilization-bar>

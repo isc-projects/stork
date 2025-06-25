@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core'
-import { DelegatedPrefixPool, Pool } from '../backend'
+import { DelegatedPrefixPool, LocalSubnet, Pool } from '../backend'
 import { RangedSet, IPv6CidrRange, IPv4, IPv6 } from 'ip-num'
+import { SharedNetworkWithUniquePools, SubnetWithUniquePools } from '../subnets'
 
 /**
  * A component displaying address pool and delegated prefix pool bars in a
@@ -15,12 +16,7 @@ export class PoolBarsComponent implements OnInit {
     /**
      * Address pools to be displayed.
      */
-    @Input() addressPools: Pool[] = []
-
-    /**
-     * Delegated prefix pools to be displayed.
-     */
-    @Input() pdPools: DelegatedPrefixPool[] = []
+    @Input({ required: true }) source: SubnetWithUniquePools | SharedNetworkWithUniquePools | LocalSubnet
 
     /**
      * Address pools grouped by their IDs.
@@ -41,11 +37,11 @@ export class PoolBarsComponent implements OnInit {
      */
     ngOnInit(): void {
         this.addressPoolsGrouped = this.sortGroups(
-            this.groupById(this.addressPools ?? []),
+            this.groupById(this.source.pools ?? []),
             this.compareAddressPools.bind(this)
         )
         this.pdPoolsGrouped = this.sortGroups(
-            this.groupById(this.pdPools ?? []),
+            this.groupById(this.source.prefixDelegationPools ?? []),
             this.compareDelegatedPrefixPools.bind(this)
         )
     }

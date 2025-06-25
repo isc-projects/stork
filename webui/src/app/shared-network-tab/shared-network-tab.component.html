@@ -108,11 +108,7 @@
     </div>
     <div class="mb-4">
         <p-fieldset legend="Pools">
-            <app-pool-bars
-                [addressPools]="sharedNetwork.pools"
-                [pdPools]="sharedNetwork.prefixDelegationPools"
-                *ngIf="sharedNetwork.pools?.length > 0; else poolsNotExistBlock"
-            >
+            <app-pool-bars [source]="sharedNetwork" *ngIf="sharedNetwork.pools?.length > 0; else poolsNotExistBlock">
             </app-pool-bars>
             <ng-template #poolsNotExistBlock>
                 <div>No pools configured.</div>

@@ -62,6 +62,7 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -99,6 +100,7 @@ describe('SharedNetworksPageComponent', () => {
                 PluralizePipe,
                 UtilizationBarComponent,
                 PoolBarsComponent,
+                OutOfPoolBarComponent,
             ],
             imports: [
                 BreadcrumbModule,

@@ -249,7 +249,7 @@
                 <td *ngIf="sn.subnet.includes('.')">-</td>
             </ng-container>
             <td>
-                <app-pool-bars [addressPools]="sn.pools" [pdPools]="sn.prefixDelegationPools"></app-pool-bars>
+                <app-pool-bars [source]="sn"></app-pool-bars>
             </td>
             <td>
                 {{ sn.sharedNetwork }}

@@ -2,6 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { PoolBarsComponent } from './pool-bars.component'
 import { DelegatedPrefixPool, Pool } from '../backend'
+import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
+import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { SubnetWithUniquePools } from '../subnets'
+import { TooltipModule } from 'primeng/tooltip'
 
 describe('PoolBarsComponent', () => {
     let component: PoolBarsComponent
@@ -9,11 +13,13 @@ describe('PoolBarsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [PoolBarsComponent],
+            declarations: [PoolBarsComponent, OutOfPoolBarComponent, UtilizationBarComponent],
+            imports: [TooltipModule],
         }).compileComponents()
 
         fixture = TestBed.createComponent(PoolBarsComponent)
         component = fixture.componentInstance
+        component.source = {}
         fixture.detectChanges()
     })
 
@@ -47,7 +53,7 @@ describe('PoolBarsComponent', () => {
         ]
 
         // Act
-        component.addressPools = addressPools
+        component.source = { pools: addressPools }
         component.ngOnInit()
 
         // Assert
@@ -138,7 +144,7 @@ describe('PoolBarsComponent', () => {
         ]
 
         // Act
-        component.pdPools = pdPools
+        component.source = { prefixDelegationPools: pdPools }
         component.ngOnInit()
 
         // Assert
@@ -183,5 +189,35 @@ describe('PoolBarsComponent', () => {
         expect(component.pdPoolsGrouped[6][1][0].prefix).toBe('2001:db8:7:3::/64')
         expect(component.pdPoolsGrouped[6][1][1].prefix).toBe('2001:db8:7:1:1:1:1:1::/64')
         expect(component.pdPoolsGrouped[6][1][2].prefix).toBe('2001:db8:7:2:2:2:2:2::/64')
+    })
+
+    it('should not display the out of pool bar if there are no out of pool statistics', () => {
+        component.source = {}
+        fixture.detectChanges()
+        expect((fixture.debugElement.nativeElement as HTMLElement).textContent).not.toContain('Out of pool')
+    })
+
+    it('should not display the out of pool bar if the out of pool statistics are zero', () => {
+        const subnet: SubnetWithUniquePools = {
+            pools: [{ pool: '10.0.0.1-10.0.10' }],
+            outOfPoolAddrUtilization: 0,
+            stats: { 'total-out-of-pool-addresses': 0, 'assigned-out-of-pool-addresses': 0 },
+            statsCollectedAt: '2023-10-01T00:00:00Z',
+        }
+        component.source = subnet
+        fixture.detectChanges()
+        expect((fixture.debugElement.nativeElement as HTMLElement).textContent).not.toContain('Out of pool')
+    })
+
+    it('should display the out of pool bar if the out of pool statistics are not zero', () => {
+        const subnet: SubnetWithUniquePools = {
+            pools: [{ pool: '10.0.0.1-10.0.10' }],
+            outOfPoolAddrUtilization: 0.1,
+            stats: { 'total-out-of-pool-addresses': 10, 'assigned-out-of-pool-addresses': 1 },
+            statsCollectedAt: '2023-10-01T00:00:00Z',
+        }
+        component.source = subnet
+        fixture.detectChanges()
+        expect((fixture.debugElement.nativeElement as HTMLElement).textContent).toContain('Out of pool')
     })
 })

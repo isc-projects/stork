@@ -71,6 +71,7 @@ import { ManagedAccessDirective } from '../managed-access.directive'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
 import { FloatLabelModule } from 'primeng/floatlabel'
+import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -111,6 +112,7 @@ describe('SubnetsPageComponent', () => {
                 ParameterViewComponent,
                 UtilizationBarComponent,
                 PoolBarsComponent,
+                OutOfPoolBarComponent,
             ],
             imports: [
                 AccordionModule,

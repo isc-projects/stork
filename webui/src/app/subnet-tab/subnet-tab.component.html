@@ -148,10 +148,7 @@
                 No pools configured.
             </div>
             <ng-template #poolsExistBlock>
-                <app-pool-bars
-                    [addressPools]="localSubnet.pools"
-                    [pdPools]="localSubnet.prefixDelegationPools"
-                ></app-pool-bars>
+                <app-pool-bars [source]="localSubnet"></app-pool-bars>
             </ng-template>
         </p-fieldset>
     </div>
