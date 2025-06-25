@@ -184,6 +184,8 @@ func TestGetSubnets(t *testing.T) {
 	subnets[0].StatsCollectedAt = time.Time{}.Add(3 * time.Hour)
 	subnets[0].AddrUtilization = 0.24
 	subnets[0].PdUtilization = 0.42
+	subnets[0].OutOfPoolAddrUtilization = 0.12
+	subnets[0].OutOfPoolPdUtilization = 0.14
 	subnets[0].LocalSubnets[0].AddressPools[0].ID = 0
 	subnets[0].LocalSubnets[0].AddressPools[0].Utilization = 0.24
 	subnets[0].LocalSubnets[0].PrefixPools[0].ID = 0
@@ -284,6 +286,8 @@ func TestGetSubnets(t *testing.T) {
 	require.EqualValues(t, time.Time{}.Add(3*time.Hour), *okRsp.Payload.Items[2].StatsCollectedAt)
 	require.EqualValues(t, 24, okRsp.Payload.Items[2].AddrUtilization)
 	require.EqualValues(t, 42, okRsp.Payload.Items[2].PdUtilization)
+	require.EqualValues(t, 12, okRsp.Payload.Items[2].OutOfPoolAddrUtilization)
+	require.EqualValues(t, 14, okRsp.Payload.Items[2].OutOfPoolPdUtilization)
 	require.EqualValues(t, 24, okRsp.Payload.Items[2].LocalSubnets[0].Pools[0].Utilization)
 	require.EqualValues(t, 42, okRsp.Payload.Items[2].LocalSubnets[0].PrefixDelegationPools[0].Utilization)
 

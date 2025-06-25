@@ -29,10 +29,12 @@ type SharedNetwork struct {
 
 	LocalSharedNetworks []*LocalSharedNetwork `pg:"rel:has-many"`
 
-	AddrUtilization  Utilization `pg:",use_zero"`
-	PdUtilization    Utilization `pg:",use_zero"`
-	Stats            Stats
-	StatsCollectedAt time.Time
+	AddrUtilization          Utilization `pg:",use_zero"`
+	PdUtilization            Utilization `pg:",use_zero"`
+	OutOfPoolAddrUtilization Utilization `pg:",use_zero"`
+	OutOfPoolPdUtilization   Utilization
+	Stats                    Stats
+	StatsCollectedAt         time.Time
 }
 
 // Identifier of the relations between a shared network and other tables.
@@ -478,15 +480,20 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (err error)
 func UpdateStatisticsInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, statistics utilizationStats) error {
 	addrUtilization := statistics.GetAddressUtilization()
 	pdUtilization := statistics.GetDelegatedPrefixUtilization()
+	outOfPoolAddrUtilization := statistics.GetOutOfPoolAddressUtilization()
+	outOfPoolPdUtilization := statistics.GetOutOfPoolDelegatedPrefixUtilization()
+
 	net := &SharedNetwork{
-		ID:               sharedNetworkID,
-		AddrUtilization:  Utilization(addrUtilization),
-		PdUtilization:    Utilization(pdUtilization),
-		Stats:            statistics.GetStatistics(),
-		StatsCollectedAt: time.Now().UTC(),
+		ID:                       sharedNetworkID,
+		AddrUtilization:          Utilization(addrUtilization),
+		PdUtilization:            Utilization(pdUtilization),
+		OutOfPoolAddrUtilization: Utilization(outOfPoolAddrUtilization),
+		OutOfPoolPdUtilization:   Utilization(outOfPoolPdUtilization),
+		Stats:                    statistics.GetStatistics(),
+		StatsCollectedAt:         time.Now().UTC(),
 	}
 	q := dbi.Model(net)
-	q = q.Column("addr_utilization", "pd_utilization", "stats", "stats_collected_at")
+	q = q.Column("addr_utilization", "pd_utilization", "out_of_pool_addr_utilization", "out_of_pool_pd_utilization", "stats", "stats_collected_at")
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {

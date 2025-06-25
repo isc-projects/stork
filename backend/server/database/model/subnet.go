@@ -177,7 +177,9 @@ func (s *Stats) UnmarshalJSON(data []byte) error {
 // `statisticscounter.Stats` interface and prevents the dependency cycle.
 type utilizationStats interface {
 	GetAddressUtilization() float64
+	GetOutOfPoolAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
+	GetOutOfPoolDelegatedPrefixUtilization() float64
 	GetStatistics() Stats
 }
 
@@ -223,10 +225,12 @@ type Subnet struct {
 
 	Hosts []Host `pg:"rel:has-many"`
 
-	AddrUtilization  Utilization `pg:",use_zero"`
-	PdUtilization    Utilization `pg:",use_zero"`
-	Stats            Stats
-	StatsCollectedAt time.Time
+	AddrUtilization          Utilization `pg:",use_zero"`
+	PdUtilization            Utilization `pg:",use_zero"`
+	OutOfPoolAddrUtilization Utilization `pg:",use_zero"`
+	OutOfPoolPdUtilization   Utilization `pg:",use_zero"`
+	Stats                    Stats
+	StatsCollectedAt         time.Time
 }
 
 // Returns local subnet id for the specified daemon.
@@ -1029,12 +1033,19 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats Stats) error {
 func (s *Subnet) UpdateStatistics(dbi dbops.DBI, statistics utilizationStats) error {
 	addrUtilization := statistics.GetAddressUtilization()
 	pdUtilization := statistics.GetDelegatedPrefixUtilization()
+	outOfPoolAddrUtilization := statistics.GetOutOfPoolAddressUtilization()
+	outOfPoolPdUtilization := statistics.GetOutOfPoolDelegatedPrefixUtilization()
+
 	s.AddrUtilization = Utilization(addrUtilization)
 	s.PdUtilization = Utilization(pdUtilization)
+	s.OutOfPoolAddrUtilization = Utilization(outOfPoolAddrUtilization)
+	s.OutOfPoolPdUtilization = Utilization(outOfPoolPdUtilization)
+
 	s.Stats = statistics.GetStatistics()
 	s.StatsCollectedAt = time.Now().UTC()
+
 	q := dbi.Model(s)
-	q = q.Column("addr_utilization", "pd_utilization", "stats", "stats_collected_at")
+	q = q.Column("addr_utilization", "pd_utilization", "out_of_pool_addr_utilization", "out_of_pool_pd_utilization", "stats", "stats_collected_at")
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {

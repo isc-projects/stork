@@ -21,16 +21,20 @@ import (
 
 // Simple mock for utilizationStatistics for testing purposes.
 type utilizationStatsMock struct {
-	addressUtilization         float64
-	delegatedPrefixUtilization float64
-	statistics                 Stats
+	addressUtilization                  float64
+	outOfPoolAddressUtilization         float64
+	delegatedPrefixUtilization          float64
+	outOfPoolDelegatedPrefixUtilization float64
+	statistics                          Stats
 }
 
-func newUtilizationStatsMock(address, pd float64, stats Stats) utilizationStats {
+func newUtilizationStatsMock(address, pd, oopAddress, oopPD float64, stats Stats) utilizationStats {
 	return &utilizationStatsMock{
-		addressUtilization:         address,
-		delegatedPrefixUtilization: pd,
-		statistics:                 stats,
+		addressUtilization:                  address,
+		outOfPoolAddressUtilization:         oopAddress,
+		delegatedPrefixUtilization:          pd,
+		outOfPoolDelegatedPrefixUtilization: oopPD,
+		statistics:                          stats,
 	}
 }
 
@@ -38,8 +42,16 @@ func (m *utilizationStatsMock) GetAddressUtilization() float64 {
 	return m.addressUtilization
 }
 
+func (m *utilizationStatsMock) GetOutOfPoolAddressUtilization() float64 {
+	return m.outOfPoolAddressUtilization
+}
+
 func (m *utilizationStatsMock) GetDelegatedPrefixUtilization() float64 {
 	return m.delegatedPrefixUtilization
+}
+
+func (m *utilizationStatsMock) GetOutOfPoolDelegatedPrefixUtilization() float64 {
+	return m.outOfPoolDelegatedPrefixUtilization
 }
 
 func (m *utilizationStatsMock) GetStatistics() Stats {
@@ -1094,11 +1106,15 @@ func TestUpdateUtilization(t *testing.T) {
 	require.Zero(t, returnedSubnet.StatsCollectedAt)
 
 	// update utilization in subnet
-	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, Stats{
-		"total-nas":    uint64(100),
-		"assigned-nas": uint64(1),
-		"total-pds":    uint64(100),
-		"assigned-pds": uint64(2),
+	returnedSubnet.UpdateStatistics(db, newUtilizationStatsMock(0.01, 0.02, 0.5, 0.25, Stats{
+		StatNameAssignedNAs:          uint64(1),
+		StatNameAssignedOutOfPoolNAs: uint64(2),
+		StatNameTotalNAs:             uint64(100),
+		StatNameTotalOutOfPoolNAs:    uint64(4),
+		StatNameAssignedPDs:          uint64(4),
+		StatNameAssignedOutOfPoolPDs: uint64(3),
+		StatNameTotalPDs:             uint64(200),
+		StatNameTotalOutOfPoolPDs:    uint64(12),
 	}))
 
 	// check if utilization was stored in db
@@ -1107,8 +1123,10 @@ func TestUpdateUtilization(t *testing.T) {
 	require.NotNil(t, returnedSubnet2)
 	require.EqualValues(t, 0.01, returnedSubnet2.AddrUtilization)
 	require.EqualValues(t, 0.02, returnedSubnet2.PdUtilization)
-	require.EqualValues(t, 1, returnedSubnet2.Stats["assigned-nas"])
-	require.EqualValues(t, 2, returnedSubnet2.Stats["assigned-pds"])
+	require.Equal(t, Utilization(0.5), returnedSubnet2.OutOfPoolAddrUtilization)
+	require.Equal(t, Utilization(0.25), returnedSubnet2.OutOfPoolPdUtilization)
+	require.EqualValues(t, 1, returnedSubnet2.Stats[StatNameAssignedNAs])
+	require.EqualValues(t, 4, returnedSubnet2.Stats[StatNameAssignedPDs])
 	require.InDelta(t, time.Now().UTC().Unix(), returnedSubnet2.StatsCollectedAt.Unix(), 10.0)
 }
 

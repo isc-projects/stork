@@ -358,6 +358,10 @@
         type: number
       pdUtilization:
         type: number
+      outOfPoolAddrUtilization:
+        type: number
+      outOfPoolPdUtilization:
+        type: number
       stats:
         type: object
       statsCollectedAt:
@@ -469,6 +473,10 @@
       addrUtilization:
         type: number
       pdUtilization:
+        type: number
+      outOfPoolAddrUtilization:
+        type: number
+      outOfPoolPdUtilization:
         type: number
       stats:
         type: object

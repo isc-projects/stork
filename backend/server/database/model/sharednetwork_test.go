@@ -650,12 +650,18 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.Equal(t, network.Name, returned.Name)
 
 	// update utilization
-	err = UpdateStatisticsInSharedNetwork(db, network.ID, newUtilizationStatsMock(0.01, 0.02, Stats{
-		"assigned-nas": uint64(1),
-		"total-nas":    uint64(100),
-		"assigned-pds": uint64(4),
-		"total-pds":    uint64(200),
-	}))
+	err = UpdateStatisticsInSharedNetwork(db, network.ID,
+		newUtilizationStatsMock(0.01, 0.02, 0.5, 0.25, Stats{
+			StatNameAssignedNAs:          uint64(1),
+			StatNameAssignedOutOfPoolNAs: uint64(2),
+			StatNameTotalNAs:             uint64(100),
+			StatNameTotalOutOfPoolNAs:    uint64(4),
+			StatNameAssignedPDs:          uint64(4),
+			StatNameAssignedOutOfPoolPDs: uint64(3),
+			StatNameTotalPDs:             uint64(200),
+			StatNameTotalOutOfPoolPDs:    uint64(12),
+		}),
+	)
 	require.NoError(t, err)
 
 	returned, err = GetSharedNetwork(db, network.ID)
@@ -663,8 +669,10 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.NotNil(t, returned)
 	require.Equal(t, Utilization(0.01), returned.AddrUtilization)
 	require.Equal(t, Utilization(0.02), returned.PdUtilization)
-	require.EqualValues(t, 100, returned.Stats["total-nas"])
-	require.EqualValues(t, 200, returned.Stats["total-pds"])
+	require.Equal(t, Utilization(0.5), returned.OutOfPoolAddrUtilization)
+	require.Equal(t, Utilization(0.25), returned.OutOfPoolPdUtilization)
+	require.EqualValues(t, 100, returned.Stats[StatNameTotalNAs])
+	require.EqualValues(t, 200, returned.Stats[StatNameTotalPDs])
 	require.InDelta(t, time.Now().Unix(), returned.StatsCollectedAt.Unix(), 10.0)
 	require.Equal(t, createdAt, returned.CreatedAt)
 }

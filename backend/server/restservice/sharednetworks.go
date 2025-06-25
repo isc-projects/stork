@@ -105,14 +105,16 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 	}
 	// Create shared network.
 	sharedNetwork := &models.SharedNetwork{
-		ID:               sn.ID,
-		Name:             sn.Name,
-		Universe:         int64(sn.Family),
-		Subnets:          subnets,
-		AddrUtilization:  float64(sn.AddrUtilization) * 100,
-		PdUtilization:    float64(sn.PdUtilization) * 100,
-		Stats:            sn.Stats,
-		StatsCollectedAt: convertToOptionalDatetime(sn.StatsCollectedAt),
+		ID:                       sn.ID,
+		Name:                     sn.Name,
+		Universe:                 int64(sn.Family),
+		Subnets:                  subnets,
+		AddrUtilization:          float64(sn.AddrUtilization) * 100,
+		OutOfPoolAddrUtilization: float64(sn.OutOfPoolAddrUtilization) * 100,
+		OutOfPoolPdUtilization:   float64(sn.OutOfPoolPdUtilization) * 100,
+		PdUtilization:            float64(sn.PdUtilization) * 100,
+		Stats:                    sn.Stats,
+		StatsCollectedAt:         convertToOptionalDatetime(sn.StatsCollectedAt),
 	}
 
 	for _, lsn := range sn.LocalSharedNetworks {

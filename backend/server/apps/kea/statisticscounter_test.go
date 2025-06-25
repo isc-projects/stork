@@ -100,6 +100,8 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 	// Assert
 	require.InDelta(t, float64(0.1), statistics.GetAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(0.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.6), statistics.GetOutOfPoolAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), statistics.GetOutOfPoolDelegatedPrefixUtilization(), float64(0.001))
 
 	require.EqualValues(t, 100, data.GetBigCounter(dbmodel.StatNameTotalAddresses).ToInt64())
 	require.EqualValues(t, 5, data.GetBigCounter(dbmodel.StatNameTotalOutOfPoolAddresses).ToInt64())
@@ -151,7 +153,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 					// only a first pool statistics are counted.
 					{
 						Stats: dbmodel.Stats{
-							"total-nas":    uint64(75),
+							"total-nas":    uint64(55),
 							"assigned-nas": uint64(5),
 							"declined-nas": uint64(13),
 						},
@@ -159,7 +161,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 					},
 					{
 						Stats: dbmodel.Stats{
-							"total-nas":    uint64(75),
+							"total-nas":    uint64(55),
 							"assigned-nas": uint64(5),
 							"declined-nas": uint64(13),
 						},
@@ -212,10 +214,12 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 	// Assert
 	require.InDelta(t, float64(0.4), statistics.GetAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(0.5), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.8), statistics.GetOutOfPoolAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.5), statistics.GetOutOfPoolDelegatedPrefixUtilization(), float64(0.001))
 
 	data := statistics.GetStatistics()
 	require.EqualValues(t, 100, data.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
-	require.EqualValues(t, 5, data.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 25, data.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
 	require.EqualValues(t, 40, data.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
 	require.EqualValues(t, 20, data.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
 	require.EqualValues(t, 30, data.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
@@ -233,7 +237,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 	require.Zero(t, global.GetBigCounter(dbmodel.StatNameDeclinedAddresses).ToInt64())
 	require.Zero(t, global.GetBigCounter(dbmodel.StatNameDeclinedOutOfPoolAddresses).ToInt64())
 	require.EqualValues(t, 100, global.GetBigCounter(dbmodel.StatNameTotalNAs).ToInt64())
-	require.EqualValues(t, 5, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
+	require.EqualValues(t, 25, global.GetBigCounter(dbmodel.StatNameTotalOutOfPoolNAs).ToInt64())
 	require.EqualValues(t, 40, global.GetBigCounter(dbmodel.StatNameAssignedNAs).ToInt64())
 	require.EqualValues(t, 20, global.GetBigCounter(dbmodel.StatNameAssignedOutOfPoolNAs).ToInt64())
 	require.EqualValues(t, 30, global.GetBigCounter(dbmodel.StatNameDeclinedNAs).ToInt64())
@@ -426,6 +430,21 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 						"total-pds":    uint64(40),
 						"assigned-pds": uint64(30),
 					},
+					AddressPools: []dbmodel.AddressPool{{
+						Stats: dbmodel.Stats{
+							"total-nas":    uint64(100),
+							"assigned-nas": uint64(10),
+							"declined-nas": uint64(20),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					}},
+					PrefixPools: []dbmodel.PrefixPool{{
+						Stats: dbmodel.Stats{
+							"total-pds":    uint64(40),
+							"assigned-pds": uint64(30),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					}},
 				},
 			},
 		},
@@ -441,6 +460,21 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 						"total-pds":    uint64(80),
 						"assigned-pds": uint64(70),
 					},
+					AddressPools: []dbmodel.AddressPool{{
+						Stats: dbmodel.Stats{
+							"total-nas":    uint64(100),
+							"assigned-nas": uint64(30),
+							"declined-nas": uint64(50),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					}},
+					PrefixPools: []dbmodel.PrefixPool{{
+						Stats: dbmodel.Stats{
+							"total-pds":    uint64(40),
+							"assigned-pds": uint64(50),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					}},
 				},
 			},
 		},
@@ -454,6 +488,14 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 						"assigned-addresses": uint64(90),
 						"declined-addresses": uint64(100),
 					},
+					AddressPools: []dbmodel.AddressPool{{
+						Stats: dbmodel.Stats{
+							"total-addresses":    uint64(300),
+							"assigned-addresses": uint64(90),
+							"declined-addresses": uint64(100),
+						},
+						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+					}},
 				},
 			},
 		},
@@ -470,6 +512,8 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 	statistics := counter.sharedNetworks[1]
 	require.InDelta(t, float64(140.0/600.0), statistics.GetAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(100.0/120.0), statistics.GetDelegatedPrefixUtilization(), float64(0.001))
+	require.InDelta(t, float64(10.0/100.0), statistics.GetOutOfPoolAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(20.0/40.0), statistics.GetOutOfPoolDelegatedPrefixUtilization(), float64(0.001))
 }
 
 // Test that the counter separates the shared networks during the calculations.
@@ -683,7 +727,7 @@ func TestCounterRealKeaResponse(t *testing.T) {
 }
 
 // Test that the negative statistic value isn't ignored.
-func TestCounterAddIgnoreNegativeNumbers(t *testing.T) {
+func TestCounterAddNotIgnoreNegativeNumbers(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 13,

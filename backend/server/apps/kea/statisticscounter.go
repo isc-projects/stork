@@ -76,7 +76,9 @@ func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 // It unifies the IPv4 and IPv6 subnet data.
 type subnetStats interface {
 	GetAddressUtilization() float64
+	GetOutOfPoolAddressUtilization() float64
 	GetDelegatedPrefixUtilization() float64
+	GetOutOfPoolDelegatedPrefixUtilization() float64
 	GetStatistics() dbmodel.Stats
 }
 
@@ -113,9 +115,25 @@ func (s *sharedNetworkStats) GetAddressUtilization() float64 {
 	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
 }
 
+// Out-of-pool address utilization of the shared network.
+func (s *sharedNetworkStats) GetOutOfPoolAddressUtilization() float64 {
+	return s.totalAssignedAddresses.Subtract(s.totalAssignedAddressesInPools).
+		DivideSafeBy(
+			s.totalAddresses.Subtract(s.totalAddressesInPools),
+		)
+}
+
 // Delegated prefix utilization of the shared network.
 func (s *sharedNetworkStats) GetDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
+}
+
+// Out-of-pool delegated prefix utilization of the shared network.
+func (s *sharedNetworkStats) GetOutOfPoolDelegatedPrefixUtilization() float64 {
+	return s.totalAssignedDelegatedPrefixes.Subtract(s.totalAssignedDelegatedPrefixesInPools).
+		DivideSafeBy(
+			s.totalDelegatedPrefixes.Subtract(s.totalDelegatedPrefixesInPools),
+		)
 }
 
 // Returns set of accumulated statistics from all local subnets belonging to
@@ -172,9 +190,25 @@ func (s *subnetIPv4Stats) GetAddressUtilization() float64 {
 	return float64(s.totalAssignedAddresses) / float64(s.totalAddresses)
 }
 
+// Returns the out-of-pool address utilization for a single IPv4 subnet.
+func (s *subnetIPv4Stats) GetOutOfPoolAddressUtilization() float64 {
+	if s.totalAddresses == s.totalAddressesInPools {
+		return 0.0
+	}
+
+	return float64(s.totalAssignedAddresses-s.totalAssignedAddressesInPools) /
+		float64(s.totalAddresses-s.totalAddressesInPools)
+}
+
 // Return the delegated prefix utilization for a single IPv4 subnet.
 // It's always zero because the delegated prefix doesn't apply to IPv4.
 func (s *subnetIPv4Stats) GetDelegatedPrefixUtilization() float64 {
+	return 0.0
+}
+
+// Returns the out-of-pool delegated prefix utilization for a single IPv4 subnet.
+// It's always zero because the delegated prefix doesn't apply to IPv4.
+func (s *subnetIPv4Stats) GetOutOfPoolDelegatedPrefixUtilization() float64 {
 	return 0.0
 }
 
@@ -211,9 +245,25 @@ func (s *subnetIPv6Stats) GetAddressUtilization() float64 {
 	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
 }
 
+// Returns the out-of-pool IPv6 address utilization for a single IPv6 subnet.
+func (s *subnetIPv6Stats) GetOutOfPoolAddressUtilization() float64 {
+	return s.totalAssignedAddresses.Clone().Subtract(s.totalAssignedAddressesInPools).
+		DivideSafeBy(
+			s.totalAddresses.Clone().Subtract(s.totalAddressesInPools),
+		)
+}
+
 // Return the delegated prefix utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) GetDelegatedPrefixUtilization() float64 {
 	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
+}
+
+// Returns the out-of-pool delegated prefix utilization for a single IPv6 subnet.
+func (s *subnetIPv6Stats) GetOutOfPoolDelegatedPrefixUtilization() float64 {
+	return s.totalAssignedDelegatedPrefixes.Clone().Subtract(s.totalAssignedDelegatedPrefixesInPools).
+		DivideSafeBy(
+			s.totalDelegatedPrefixes.Clone().Subtract(s.totalDelegatedPrefixesInPools),
+		)
 }
 
 // Returns set of accumulated statistics from all local subnets belonging to
