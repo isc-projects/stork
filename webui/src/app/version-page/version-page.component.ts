@@ -242,24 +242,26 @@ export class VersionPageComponent implements OnInit, OnDestroy {
                                 ],
                                 m.versionCheckSeverity
                             )
-                            m.apps.forEach((a: BackendApp & { mismatchingDaemons: boolean }) => {
-                                m.versionCheckSeverity = Math.min(
-                                    this.severityMap[
-                                        this.versionService.getSoftwareVersionFeedback(
-                                            a.version,
-                                            a.type as AppType,
-                                            this._processedData
-                                        )?.severity ?? Severity.success
-                                    ],
-                                    m.versionCheckSeverity
-                                )
-                                // daemons version match check
-                                if (this.versionService.areKeaDaemonsVersionsMismatching(a)) {
-                                    m.versionCheckSeverity = Severity.error
-                                    a.mismatchingDaemons = true
-                                    this.versionService.detectAlertingSeverity(m.versionCheckSeverity)
-                                }
-                            })
+                            m.apps
+                                .filter((a: BackendApp) => ['kea', 'bind9', 'stork'].includes(a.type))
+                                .forEach((a: BackendApp & { mismatchingDaemons: boolean }) => {
+                                    m.versionCheckSeverity = Math.min(
+                                        this.severityMap[
+                                            this.versionService.getSoftwareVersionFeedback(
+                                                a.version,
+                                                a.type as AppType,
+                                                this._processedData
+                                            )?.severity ?? Severity.success
+                                        ],
+                                        m.versionCheckSeverity
+                                    )
+                                    // daemons version match check
+                                    if (this.versionService.areKeaDaemonsVersionsMismatching(a)) {
+                                        m.versionCheckSeverity = Severity.error
+                                        a.mismatchingDaemons = true
+                                        this.versionService.detectAlertingSeverity(m.versionCheckSeverity)
+                                    }
+                                })
                             this.counters[m.versionCheckSeverity]++
                             return m
                         })

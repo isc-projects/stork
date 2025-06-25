@@ -10,6 +10,9 @@ import { map } from 'rxjs/operators'
  * The given version is compared with current known released versions. Feedback contains information
  * about available software updates and how severe the urge to update the software is.
  * The component can be either an inline icon with a tooltip or a block container with feedback visible upfront.
+ *
+ * The software version check is only done for ISC software. For non-ISC software, e.g. PowerDNS,
+ * the component only displays the version without checking if it is up to date.
  */
 @Component({
     selector: 'app-version-status',
@@ -99,6 +102,10 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      * primary one, and the offline will be a fallback option.
      */
     ngOnInit(): void {
+        // Mute version checks for non-ISC apps.
+        if (!this.iscApp) {
+            return
+        }
         this._appName = this.app === 'bind9' ? this.app.toUpperCase() : this.app[0].toUpperCase() + this.app.slice(1)
         this._appName += this.app === 'stork' ? ' agent' : ''
         if (!this.version) {
@@ -160,6 +167,13 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
      */
     get appName() {
         return this._appName
+    }
+
+    /**
+     * Returns true if the app is a Kea, BIND9 or Stork agent.
+     */
+    get iscApp(): boolean {
+        return ['kea', 'bind9', 'stork'].includes(this.app)
     }
 
     /**

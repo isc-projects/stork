@@ -236,4 +236,14 @@ describe('VersionStatusComponent', () => {
         // No error message should be emitted.
         expect(messageAddSpy).toHaveBeenCalledTimes(0)
     })
+
+    it('should skip version checks for non-ISC apps', () => {
+        // Arrange
+        fixture.componentRef.setInput('app', 'pdns')
+        fixture.detectChanges()
+
+        // Act & Assert
+        expect(getCurrentDataSpy).toHaveBeenCalledTimes(0)
+        expect(getSoftwareVersionFeedbackSpy).toHaveBeenCalledTimes(0)
+    })
 })

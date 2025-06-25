@@ -1,11 +1,11 @@
 <div *ngIf="inline" class="ml-2 inline-flex" [class]="styleClass">
     <span *ngIf="showAppName" class="mr-1">{{ appName }} {{ version }}</span>
-    <a routerLink="/versions">
+    <a *ngIf="iscApp" routerLink="/versions">
         <i class="pi font-semibold" [class]="iconClasses" [pTooltip]="feedbackMessages.join(' ')"></i>
     </a>
 </div>
 <p-messages
-    *ngIf="!inline"
+    *ngIf="!inline && iscApp"
     [(value)]="messages"
     [enableService]="false"
     [closable]="false"
