@@ -122,13 +122,35 @@ func (request *pdnsClientRequest) getViews() (httpResponse, *bind9stats.Views, e
 func (request *pdnsClientRequest) getServerInfo() (httpResponse, *pdnsdata.ServerInfo, error) {
 	var server pdnsdata.ServerInfo
 	response, err := request.getJSON("/servers/localhost", &server)
-	if err != nil {
-		return nil, nil, err
-	}
-	if response.IsError() {
-		return response, nil, nil
+	if err != nil || response.IsError() {
+		return response, nil, err
 	}
 	return response, &server, nil
+}
+
+// Makes a request to retrieve statistics about the PowerDNS server instance.
+// Optional statNames can be specified to filter the statistics of interest.
+func (request *pdnsClientRequest) getStatistics(statNames ...string) (httpResponse, []pdnsdata.AnyStatisticItem, error) {
+	var (
+		stats   []pdnsdata.AnyStatisticItem
+		builder strings.Builder
+	)
+	builder.WriteString("/servers/localhost/statistics")
+	if len(statNames) > 0 {
+		builder.WriteRune('?')
+	}
+	for i, stateName := range statNames {
+		if i > 0 {
+			builder.WriteString("&")
+		}
+		builder.WriteString("statistic=")
+		builder.WriteString(stateName)
+	}
+	response, err := request.getJSON(builder.String(), &stats)
+	if err != nil || response.IsError() {
+		return response, nil, err
+	}
+	return response, stats, nil
 }
 
 // A wrapper for the REST client. It exposes a function to create individual
@@ -165,13 +187,12 @@ func (client *pdnsClient) createRequestFromURL(apiKey string, url string) *pdnsC
 func (client *pdnsClient) getCombinedServerInfo(apiKey string, host string, port int64) (httpResponse, *pdnsdata.ServerInfo, error) {
 	response, serverInfo, err := client.createRequest(apiKey, host, port).getServerInfo()
 	if err != nil || response.IsError() {
-		return response, serverInfo, err
+		return response, nil, err
 	}
 	// Get statistics
-	var stats []pdnsdata.StatisticItem
-	response, err = client.createRequest(apiKey, host, port).getJSON("/servers/localhost/statistics?statistic=uptime", &stats)
+	response, stats, err := client.createRequest(apiKey, host, port).getStatistics("uptime")
 	if err != nil || response.IsError() {
-		return response, serverInfo, err
+		return response, nil, err
 	}
 	// Process statistics
 	for _, stat := range stats {

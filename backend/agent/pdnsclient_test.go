@@ -2,6 +2,7 @@ package agent
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -52,7 +53,6 @@ func TestPDNSGetRawJSON(t *testing.T) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(pdnsStats))
@@ -78,7 +78,6 @@ func TestPDNSGetRawJSON404(t *testing.T) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		Reply(404).
 		AddHeader("Content-Type", "application/json").
 		BodyString("No such URL")
@@ -105,7 +104,6 @@ func TestPDNSGetRawJSONError(t *testing.T) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		ReplyError(pkgerrors.New("error during the HTTP request"))
 	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
@@ -127,7 +125,6 @@ func TestPDNSGetViews(t *testing.T) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(pdnsZones))
@@ -169,7 +166,6 @@ func TestPDNSGetViews404(t *testing.T) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		Reply(404).
 		AddHeader("Content-Type", "application/json").
 		BodyString("No such URL")
@@ -195,7 +191,6 @@ func TestPDNSGetViewsError(t *testing.T) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		ReplyError(pkgerrors.New("error making HTTP request"))
 	request := NewBind9StatsClient().createRequest("localhost", 5380)
 	gock.InterceptClient(request.innerClient.GetClient())
@@ -216,7 +211,6 @@ func TestPDNSGetServerInfo(t *testing.T) {
 			// Require empty body
 			return r1.Body == nil, nil
 		}).
-		Persist().
 		Reply(200).
 		AddHeader("Content-Type", "application/json").
 		BodyString(string(pdnsServerInfo))
@@ -236,6 +230,99 @@ func TestPDNSGetServerInfo(t *testing.T) {
 	require.Equal(t, "/api/v1/servers/localhost/zones{/zone}", serverInfo.ZonesURL)
 	require.Equal(t, "/api/v1/servers/localhost/config{/config_setting}", serverInfo.ConfigURL)
 	require.Equal(t, "/api/v1/servers/localhost/autoprimaries{/autoprimary}", serverInfo.AutoprimariesURL)
+}
+
+// Test getting all statistics.
+func TestPDNSGetStatistics(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("api/v1/servers/localhost/statistics").
+		MatchHeader("X-API-Key", "stork").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(pdnsStats))
+	request := NewPDNSClient().createRequest("stork", "localhost", 5380)
+	gock.InterceptClient(request.innerClient.GetClient())
+
+	response, stats, err := request.getStatistics()
+	require.NoError(t, err)
+	require.NotNil(t, response)
+	require.Equal(t, http.StatusOK, response.StatusCode())
+	require.NotNil(t, stats)
+	serializedStats, err := json.Marshal(stats)
+	require.NoError(t, err)
+	require.JSONEq(t, string(pdnsStats), string(serializedStats))
+}
+
+// Test getting a filtered set of statistics.
+func TestPDNSGetStatisticsFiltered(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("api/v1/servers/localhost/statistics").
+		MatchHeader("X-API-Key", "stork").
+		MatchParam("statistic", "uptime").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(`[
+			{
+				"name": "uptime",
+				"type": "StatisticItem",
+				"value": "1234"
+			}
+		]`)
+	request := NewPDNSClient().createRequest("stork", "localhost", 5380)
+	gock.InterceptClient(request.innerClient.GetClient())
+
+	response, stats, err := request.getStatistics("uptime")
+	require.NoError(t, err)
+	require.NotNil(t, response)
+	require.Equal(t, http.StatusOK, response.StatusCode())
+	require.NotNil(t, stats)
+	require.Len(t, stats, 1)
+	require.Equal(t, "uptime", stats[0].Name)
+	require.Equal(t, int64(1234), stats[0].GetInt64())
+}
+
+// Test getting the server info combined with uptime statistics.
+func TestPDNSGetCombinedServerInfo(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://localhost:5380/").
+		Get("api/v1/servers/localhost").
+		MatchHeader("X-API-Key", "stork").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(string(pdnsServerInfo))
+
+	gock.New("http://localhost:5380/").
+		Get("api/v1/servers/localhost/statistics").
+		MatchHeader("X-API-Key", "stork").
+		MatchParam("statistic", "uptime").
+		Reply(200).
+		AddHeader("Content-Type", "application/json").
+		BodyString(`[
+			{
+				"name": "uptime",
+				"type": "StatisticItem",
+				"value": "1234"
+			}
+		]`)
+	client := NewPDNSClient()
+	gock.InterceptClient(client.innerClient.GetClient())
+
+	response, serverInfo, err := client.getCombinedServerInfo("stork", "localhost", 5380)
+	require.NoError(t, err)
+	require.NotNil(t, response)
+	require.Equal(t, http.StatusOK, response.StatusCode())
+	require.NotNil(t, serverInfo)
+
+	require.Equal(t, "localhost", serverInfo.ID)
+	require.Equal(t, "authoritative", serverInfo.DaemonType)
+	require.Equal(t, "4.7.3", serverInfo.Version)
+	require.Equal(t, "/api/v1/servers/localhost", serverInfo.URL)
+	require.Equal(t, "/api/v1/servers/localhost/zones{/zone}", serverInfo.ZonesURL)
+	require.Equal(t, "/api/v1/servers/localhost/config{/config_setting}", serverInfo.ConfigURL)
+	require.Equal(t, "/api/v1/servers/localhost/autoprimaries{/autoprimary}", serverInfo.AutoprimariesURL)
+	require.EqualValues(t, 1234, serverInfo.Uptime)
 }
 
 // Test that the client returns with a timeout if the server doesn't
