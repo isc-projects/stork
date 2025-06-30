@@ -307,7 +307,7 @@ KEA_BASE_SUBNET = {
     #            { "pool": "192.0.2.51 - 192.0.2.100" },
     #            { "pool": "192.0.2.101 - 192.0.2.150" },
     #            { "pool": "192.0.2.151 - 192.0.2.200" } ],
-    "client-class": "class-00-00",
+    "client-classes": ["class-00-00"],
     "relay": {"ip-addresses": ["172.100.0.200"]},
     "option-data": [{"name": "routers", "data": "192.0.2.1"}],
     "reservations": [
@@ -459,7 +459,7 @@ def generate_v4_subnets(
             ],
             "subnet": subnet_prefix,
             "option-data": random.choices(optiondata4, k=6),
-            "client-class": "class-00-00",
+            "client-classes": ["class-00-00"],
             "relay": {"ip-addresses": ["172.100.0.200"]},
             "id": subnet_id,
         }
