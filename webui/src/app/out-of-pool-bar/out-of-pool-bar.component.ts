@@ -15,7 +15,7 @@ export class OutOfPoolBarComponent {
      * associated with any address pool. The keys are the names of the
      * statistics without the "out-of-pool" infix.
      */
-    private _stats: { [key: string]: number | bigint } | null = null
+    private _stats: { [key: string]: number | bigint | string } | null = null
 
     /**
      * Subnet or shared network statistics. They are used to display the out
@@ -23,7 +23,7 @@ export class OutOfPoolBarComponent {
      * If the statistics are not set or empty after filtering, the bar will not
      * be displayed.
      */
-    @Input() set stats(value: { [key: string]: number | bigint } | null) {
+    @Input() set stats(value: { [key: string]: number | bigint | string } | null) {
         if (value == null) {
             this._stats = null
             return
@@ -66,7 +66,7 @@ export class OutOfPoolBarComponent {
      * are without the "out-of-pool" infix.
      * @returns The out of pool statistics or null if not set.
      */
-    get stats(): { [key: string]: number | bigint } | null {
+    get stats(): { [key: string]: number | bigint | string } | null {
         return this._stats
     }
 
@@ -75,8 +75,6 @@ export class OutOfPoolBarComponent {
      */
     get hasOutOfPoolData(): boolean {
         return (
-            // The utilization must be set.
-            this.utilization != null &&
             // The statistics must be set.
             this.stats != null &&
             // Any total statistics must be non-zero.

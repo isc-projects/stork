@@ -94,7 +94,7 @@ describe('OutOfPoolBarComponent', () => {
         component.stats = {
             'total-out-of-pool-addresses': 100,
         }
-        expect(component.hasOutOfPoolData).toBeFalse()
+        expect(component.hasOutOfPoolData).toBeTrue()
 
         // Zero total statistics.
         component.utilization = 50
