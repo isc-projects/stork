@@ -749,7 +749,7 @@ func TestCounterAddNotIgnoreNegativeNumbers(t *testing.T) {
 	statistics := counter.add(subnet)
 
 	// Assert
-	require.EqualValues(t, math.MaxInt64, statistics.GetAddressUtilization())
+	require.EqualValues(t, float64(math.MaxInt64), statistics.GetAddressUtilization())
 	require.EqualValues(t, 3./2., statistics.GetDelegatedPrefixUtilization())
 	require.Zero(t, counter.global.totalIPv4Addresses.ToInt64())
 	require.Zero(t, counter.global.totalAssignedIPv4Addresses.ToInt64())
