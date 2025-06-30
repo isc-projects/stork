@@ -79,7 +79,7 @@ export class OutOfPoolBarComponent {
             this.stats != null &&
             // Any total statistics must be non-zero.
             // Warning: the counters must be compared with non-strict equality
-            // because they may be BigInt or number.
+            // because they may be BigInt or number or string.
             (('total-nas' in this.stats && this.stats['total-nas'] != 0) ||
                 ('total-addresses' in this.stats && this.stats['total-addresses'] != 0) ||
                 ('total-pds' in this.stats && this.stats['total-pds'] != 0))
