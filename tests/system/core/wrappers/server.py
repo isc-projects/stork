@@ -517,6 +517,12 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
             self.update_machine(machine)
         return machines
 
+    # Log assertions
+    def has_deadlock_log_entry(self):
+        """Checks if any DB deadlock occurred."""
+        stdout, _ = self._compose.logs(self._service_name)
+        return "deadlock detected" in stdout
+
     # Waits
 
     def _wait_for_event(self, expected_condition: Callable[[Event], bool], **kwargs):
@@ -621,6 +627,10 @@ class Server(ComposeServiceWrapper):  # pylint: disable=too-many-public-methods)
     def wait_for_bind9_statistics_pulling(self, start: datetime = None):
         """Waits for finishing next execution of Bind9 statistics puller."""
         return self._wait_for_puller("bind9_stats_puller_interval", start)
+
+    def wait_for_ha_pulling(self, start: datetime = None):
+        """Waits for finishing next execution of HA puller."""
+        return self._wait_for_puller("kea_status_puller_interval", start)
 
     def _wait_for_states_pulling(self, start: datetime = None):
         """

@@ -303,7 +303,7 @@ def ha_service(request):
         third_wrapper = _prepare_kea_wrapper(
             request=request,
             service_name=param["third_service_name"],
-            suppress_registration=True,
+            suppress_registration=param["suppress_registration"],
             config_dirname="kea-ha3",
             min_kea_version=param["min_kea_version"],
         )

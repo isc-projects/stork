@@ -17,3 +17,6 @@ def test_get_ha_config_review_reports(
     # Require 3 servers, each with 2 daemons (DHCPv4 and DHCPv6).
     assert len(overview.dhcp_daemons) == 6
     assert all(getattr(d, "ha_enabled") for d in overview.dhcp_daemons)
+
+    server_service.wait_for_ha_pulling()
+    assert not server_service.has_deadlock_log_entry()
