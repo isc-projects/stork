@@ -58,7 +58,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
     private subscriptions = new Subscription()
     breadcrumbs: MenuItem[] = []
 
-    appType: 'kea' | 'bind9'
+    appType: 'kea' | 'dns'
     // apps table
     apps: any[]
     totalApps: number
@@ -88,10 +88,10 @@ export class AppsPageComponent implements OnInit, OnDestroy {
 
     /** Returns a human-readable application label. */
     getAppsLabel() {
-        if (this.appType === 'bind9') {
-            return 'BIND 9 Apps'
-        } else {
+        if (this.appType === 'kea') {
             return 'Kea Apps'
+        } else {
+            return 'DNS Apps'
         }
     }
 
@@ -129,7 +129,7 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                 const newAppType = params.get('appType')
 
                 if (newAppType !== this.appType) {
-                    this.appType = newAppType as 'kea' | 'bind9'
+                    this.appType = newAppType as 'kea' | 'dns'
                     this.breadcrumbs = [{ label: 'Services' }, { label: this.getAppsLabel() }]
 
                     this.tabs = [{ label: 'All', routerLink: '/apps/' + this.appType + '/all' }]

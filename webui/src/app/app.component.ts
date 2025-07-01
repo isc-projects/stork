@@ -149,11 +149,11 @@ export class AppComponent implements OnInit, OnDestroy {
                         routerLink: '/apps/kea/all',
                     },
                     {
-                        label: 'BIND 9 Apps',
-                        id: 'bind9-apps',
+                        label: 'DNS Apps',
+                        id: 'dns-apps',
                         visible: false,
                         icon: 'fa fa-server',
-                        routerLink: '/apps/bind9/all',
+                        routerLink: '/apps/dns/all',
                     },
                     {
                         label: 'Machines',
@@ -345,15 +345,15 @@ export class AppComponent implements OnInit, OnDestroy {
                             dhcpMenuItem.visible = false
                             keaAppsMenuItem['visible'] = false
                         }
-                        // if there are BIND 9 apps then show BIND 9 related menu items
+                        // if there are DNS apps then show DNS related menu items
                         // otherwise hide them
-                        const bind9AppsMenuItem = this.getMenuItem('BIND 9 Apps')
+                        const dnsAppsMenuItem = this.getMenuItem('DNS Apps')
                         const dnsMenuItem = this.getMenuItem('DNS')
-                        if (data.bind9AppsTotal && data.bind9AppsTotal > 0) {
-                            bind9AppsMenuItem['visible'] = true
+                        if (data.dnsAppsTotal && data.dnsAppsTotal > 0) {
+                            dnsAppsMenuItem['visible'] = true
                             dnsMenuItem['visible'] = true
                         } else {
-                            bind9AppsMenuItem['visible'] = false
+                            dnsAppsMenuItem['visible'] = false
                             dnsMenuItem['visible'] = false
                         }
 

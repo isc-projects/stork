@@ -94,11 +94,11 @@
         <ng-template pTemplate="body" let-a>
             <tr>
                 <td>
-                    <a routerLink="/apps/{{ appType }}/{{ a.id }}">{{ a.name }}</a>
+                    <a routerLink="/apps/{{ a.type }}/{{ a.id }}">{{ a.name }}</a>
                 </td>
                 <td>
-                    <a routerLink="/apps/{{ appType }}/{{ a.id }}">{{ a.version }}</a>
-                    <app-version-status [app]="appType" [version]="a.version"></app-version-status>
+                    <a routerLink="/apps/{{ a.type }}/{{ a.id }}">{{ a.version }}</a>
+                    <app-version-status [app]="a.type" [version]="a.version"></app-version-status>
                 </td>
                 <td>
                     <app-app-daemons-status [app]="a"></app-app-daemons-status>

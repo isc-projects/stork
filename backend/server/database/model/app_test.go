@@ -1225,13 +1225,13 @@ func TestGetAppsByPage(t *testing.T) {
 	require.NotZero(t, pdns.ID)
 
 	// Get all apps.
-	apps, total, err := GetAppsByPage(db, 0, 10, nil, "", "", SortDirAny)
+	apps, total, err := GetAppsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 3)
 	require.EqualValues(t, 3, total)
 
 	// Get Kea apps.
-	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypeKea, "", SortDirAny)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", SortDirAny, AppTypeKea)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -1247,7 +1247,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Empty(t, pt.Key)
 
 	// Get BIND 9 apps.
-	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypeBind9, "", SortDirAny)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", SortDirAny, AppTypeBind9)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -1262,7 +1262,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Equal(t, "abcd", pt.Key)
 
 	// Get PowerDNS apps.
-	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypePDNS, "", SortDirAny)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", SortDirAny, AppTypePDNS)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -1277,7 +1277,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Empty(t, pt.Key)
 
 	// Get apps sorted by id descending.
-	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "", SortDirDesc)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", SortDirDesc)
 	require.NoError(t, err)
 	require.Len(t, apps, 3)
 	require.EqualValues(t, 3, total)
@@ -1286,7 +1286,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Equal(t, AppTypeKea, apps[2].Type)
 
 	// Get apps sorted by id ascending.
-	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "", SortDirAsc)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 3)
 	require.EqualValues(t, 3, total)
@@ -1295,7 +1295,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Equal(t, AppTypePDNS, apps[2].Type)
 
 	// Get apps sorted by type descending.
-	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "type", SortDirDesc)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "type", SortDirDesc)
 	require.NoError(t, err)
 	require.Len(t, apps, 3)
 	require.EqualValues(t, 3, total)
@@ -1304,7 +1304,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Equal(t, AppTypeBind9, apps[2].Type)
 
 	// Get apps sorted by type ascending.
-	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "type", SortDirAsc)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "type", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 3)
 	require.EqualValues(t, 3, total)
@@ -1314,7 +1314,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// Get apps by filter text, case 1.
 	text := "1.2.3"
-	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAny)
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -1322,7 +1322,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// Get apps by filter text, case 2.
 	text = "1.2.4"
-	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAny)
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -1330,7 +1330,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// Get apps by filter text, case 3.
 	text = "unique"
-	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 3)
 	require.EqualValues(t, 3, total)
@@ -1340,7 +1340,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// Get apps by filter text, case 4.
 	text = "unique-k"
-	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -1348,7 +1348,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// Get apps by filter text, case 5.
 	text = "unique-b"
-	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -1356,7 +1356,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// Get apps by filter text, case 6.
 	text = "unique-p"
-	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)

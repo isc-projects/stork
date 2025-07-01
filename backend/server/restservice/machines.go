@@ -1401,8 +1401,8 @@ func pdnsDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.PdnsDaemon {
 	return daemon
 }
 
-func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Apps, error) {
-	dbApps, total, err := dbmodel.GetAppsByPage(r.DB, offset, limit, filterText, dbmodel.AppType(appType), sortField, sortDir)
+func (r *RestAPI) getApps(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum, appTypes ...dbmodel.AppType) (*models.Apps, error) {
+	dbApps, total, err := dbmodel.GetAppsByPage(r.DB, offset, limit, filterText, sortField, sortDir, appTypes...)
 	if err != nil {
 		return nil, err
 	}
@@ -1442,7 +1442,15 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		"app":   appType,
 	}).Info("query apps")
 
-	apps, err := r.getApps(start, limit, params.Text, appType, "", dbmodel.SortDirAny)
+	var appTypes []dbmodel.AppType
+	if appType != "" {
+		if appType == "dns" {
+			appTypes = []dbmodel.AppType{dbmodel.AppTypeBind9, dbmodel.AppTypePDNS}
+		} else {
+			appTypes = []dbmodel.AppType{dbmodel.AppType(appType)}
+		}
+	}
+	apps, err := r.getApps(start, limit, params.Text, "", dbmodel.SortDirAny, appTypes...)
 	if err != nil {
 		log.Error(err)
 		msg := "Cannot get apps from db"
@@ -1744,10 +1752,10 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 	}
 
 	appsStats := models.AppsStats{
-		KeaAppsTotal:   0,
-		KeaAppsNotOk:   0,
-		Bind9AppsTotal: 0,
-		Bind9AppsNotOk: 0,
+		KeaAppsTotal: 0,
+		KeaAppsNotOk: 0,
+		DNSAppsTotal: 0,
+		DNSAppsNotOk: 0,
 	}
 	for _, dbApp := range dbApps {
 		switch dbApp.Type {
@@ -1756,10 +1764,10 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 			if !dbApp.Active {
 				appsStats.KeaAppsNotOk++
 			}
-		case dbmodel.AppTypeBind9:
-			appsStats.Bind9AppsTotal++
+		case dbmodel.AppTypeBind9, dbmodel.AppTypePDNS:
+			appsStats.DNSAppsTotal++
 			if !dbApp.Active {
-				appsStats.Bind9AppsNotOk++
+				appsStats.DNSAppsNotOk++
 			}
 		}
 	}

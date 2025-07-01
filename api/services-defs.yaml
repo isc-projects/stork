@@ -436,9 +436,9 @@
         type: integer
       keaAppsNotOk:
         type: integer
-      bind9AppsTotal:
+      dnsAppsTotal:
         type: integer
-      bind9AppsNotOk:
+      dnsAppsNotOk:
         type: integer
 
   KeaHAServerStatus:

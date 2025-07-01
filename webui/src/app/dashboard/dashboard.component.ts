@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
-import { DHCPService, DNSService, ServicesService } from '../backend'
+import { Bind9Daemon, DHCPService, DNSService, PdnsDaemon, ServicesService } from '../backend'
 import { AppsStats } from '../backend'
 import {
     datetimeToLocal,
@@ -146,11 +146,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     zoneInventoryStateMap: Map<number, ZoneInventoryState> = new Map()
 
     /**
-     * Returns true when no kea and no bind9 apps exist among authorized machines;
+     * Returns true when no kea and no DNS apps exist among authorized machines;
      * false otherwise.
      */
     get noApps(): boolean {
-        return this.appsStats.keaAppsTotal === 0 && this.appsStats.bind9AppsTotal === 0
+        return this.appsStats.keaAppsTotal === 0 && this.appsStats.dnsAppsTotal === 0
     }
 
     /**
@@ -158,7 +158,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
      * false otherwise.
      */
     get bothDHCPAndDNSAppsExist(): boolean {
-        return this.appsStats.keaAppsTotal > 0 && this.appsStats.bind9AppsTotal > 0
+        return this.appsStats.keaAppsTotal > 0 && this.appsStats.dnsAppsTotal > 0
     }
 
     /**
@@ -215,8 +215,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.appsStats = {
             keaAppsTotal: 0,
             keaAppsNotOk: 0,
-            bind9AppsTotal: 0,
-            bind9AppsNotOk: 0,
+            dnsAppsTotal: 0,
+            dnsAppsNotOk: 0,
         }
 
         // get stats about apps
@@ -330,7 +330,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
                             this.zoneInventoryStateMap.set(s.appId, s)
                         })
                     }
-                    return this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'bind9')
+                    return this.servicesApi.getApps(event?.first ?? 0, event?.rows ?? 5, null, 'dns')
                 })
             )
         )
@@ -644,5 +644,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
      */
     storeDHCPDashboardHidden(hidden: boolean): void {
         localStorage.setItem(this._dhcpDashboardHiddenStorageKey, JSON.stringify(hidden))
+    }
+
+    getDNSDaemon(app: App): Bind9Daemon | PdnsDaemon {
+        if (app.details?.daemon) {
+            return app.details.daemon
+        } else {
+            return app.details.pdnsDaemon
+        }
     }
 }

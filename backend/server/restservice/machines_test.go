@@ -2532,6 +2532,20 @@ func TestRestGetAppsStats(t *testing.T) {
 	_, err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
+	// Add PowerDNS app to the machine.
+	var pdnsPoints []*dbmodel.AccessPoint
+	pdnsPoints = dbmodel.AppendAccessPoint(pdnsPoints, dbmodel.AccessPointControl, "", "abcd", 5432, true)
+	s3 := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypePDNS,
+		Active:       false,
+		AccessPoints: pdnsPoints,
+		Daemons:      []*dbmodel.Daemon{},
+	}
+	_, err = dbmodel.AddApp(db, s3)
+	require.NoError(t, err)
+
 	// get added app
 	params = services.GetAppsStatsParams{}
 	rsp = rapi.GetAppsStats(ctx, params)
@@ -2539,8 +2553,8 @@ func TestRestGetAppsStats(t *testing.T) {
 	okRsp = rsp.(*services.GetAppsStatsOK)
 	require.EqualValues(t, 1, okRsp.Payload.KeaAppsTotal)
 	require.Zero(t, okRsp.Payload.KeaAppsNotOk)
-	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsTotal)
-	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsNotOk)
+	require.EqualValues(t, 2, okRsp.Payload.DNSAppsTotal)
+	require.EqualValues(t, 2, okRsp.Payload.DNSAppsNotOk)
 }
 
 func TestGetDhcpOverview(t *testing.T) {

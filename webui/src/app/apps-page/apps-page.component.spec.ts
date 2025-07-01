@@ -83,7 +83,7 @@ describe('AppsPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(AppsPageComponent)
         component = fixture.componentInstance
-        component.appType = 'bind9'
+        component.appType = 'dns'
         api = fixture.debugElement.injector.get(ServicesService)
         msgSrv = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
@@ -98,7 +98,7 @@ describe('AppsPageComponent', () => {
         app.id = 1
         app.name = 'test-app'
 
-        component.appType = 'bind9'
+        component.appType = 'dns'
 
         component.addAppTab(app)
         expect(component.tabs.length).toEqual(2)
@@ -106,7 +106,7 @@ describe('AppsPageComponent', () => {
         expect(component.tabs[1].hasOwnProperty('routerLink')).toBeTrue()
 
         expect(component.tabs[1].label).toBe('test-app')
-        expect(component.tabs[1].routerLink).toBe('/apps/bind9/1')
+        expect(component.tabs[1].routerLink).toBe('/apps/dns/1')
     })
 
     it('should change app tab label after rename', () => {

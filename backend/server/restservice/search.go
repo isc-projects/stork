@@ -67,7 +67,7 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 	}
 
 	// get list of apps
-	apps, err := r.getApps(0, 5, &text, "", "", dbmodel.SortDirAny)
+	apps, err := r.getApps(0, 5, &text, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "Cannot get apps from the db")
 	}

@@ -224,8 +224,8 @@ describe('DashboardComponent', () => {
         spyOn(dataService, 'getAppsStats').and.returnValue(
             of({
                 keaAppsTotal: 1,
-                bind9AppsNotOk: 0,
-                bind9AppsTotal: 1,
+                dnsAppsNotOk: 0,
+                dnsAppsTotal: 1,
                 keaAppsNotOk: 0,
             } as AppsStats)
         )
@@ -568,25 +568,25 @@ describe('DashboardComponent', () => {
 
     it('should return whether both dhcp and dns apps exist', () => {
         component.appsStats.keaAppsTotal = 0
-        component.appsStats.bind9AppsTotal = 0
+        component.appsStats.dnsAppsTotal = 0
         expect(component.appsStats.keaAppsTotal).toBe(0)
-        expect(component.appsStats.bind9AppsTotal).toBe(0)
+        expect(component.appsStats.dnsAppsTotal).toBe(0)
         expect(component.bothDHCPAndDNSAppsExist)
             .withContext('in the beginning there are no dhcp nor dns apps')
             .toBeFalse()
-        component.appsStats.bind9AppsTotal = 2
+        component.appsStats.dnsAppsTotal = 2
         expect(component.bothDHCPAndDNSAppsExist).withContext('only dns apps exist').toBeFalse()
-        component.appsStats.bind9AppsTotal = 0
+        component.appsStats.dnsAppsTotal = 0
         component.appsStats.keaAppsTotal = 2
         expect(component.bothDHCPAndDNSAppsExist).withContext('only dhcp apps exist').toBeFalse()
-        component.appsStats.bind9AppsTotal = 2
+        component.appsStats.dnsAppsTotal = 2
         expect(component.bothDHCPAndDNSAppsExist).withContext('both dhcp and dns apps exist').toBeTrue()
     })
 
     it('should return that both dhcp and dns dashboards are hidden', () => {
         localStorage.clear()
         expect(component.appsStats.keaAppsTotal).toBe(1)
-        expect(component.appsStats.bind9AppsTotal).toBe(1)
+        expect(component.appsStats.dnsAppsTotal).toBe(1)
         expect(localStorage.getItem('dns-dashboard-hidden'))
             .withContext('there should be no state stored in local storage yet')
             .toBeNull()
@@ -600,7 +600,7 @@ describe('DashboardComponent', () => {
     it('should return that one dashboard is not hidden', () => {
         localStorage.clear()
         component.appsStats.keaAppsTotal = 2
-        component.appsStats.bind9AppsTotal = 0
+        component.appsStats.dnsAppsTotal = 0
         expect(localStorage.getItem('dns-dashboard-hidden'))
             .withContext('there should be no state stored in local storage yet')
             .toBeNull()
@@ -617,7 +617,7 @@ describe('DashboardComponent', () => {
         expect(expandedDashboardPanels[0].nativeElement.innerText).toContain('DHCP Dashboard')
 
         component.appsStats.keaAppsTotal = 0
-        component.appsStats.bind9AppsTotal = 2
+        component.appsStats.dnsAppsTotal = 2
         expect(component.isDNSDashboardHidden()).toBeFalse()
         fixture.detectChanges()
         expandedDashboardPanels = fixture.debugElement.queryAll(By.css('.p-panel.p-panel-toggleable.p-panel-expanded'))

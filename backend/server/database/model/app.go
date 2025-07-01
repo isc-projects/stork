@@ -428,7 +428,7 @@ func GetAppsByType(dbi dbops.DBI, appTypes ...AppType) ([]App, error) {
 // sortDir allows selection the order of sorting. If sortField is
 // empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used.
-func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string, appType AppType, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
+func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string, sortField string, sortDir SortDirEnum, appTypes ...AppType) ([]App, int64, error) {
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
@@ -442,9 +442,20 @@ func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string,
 	q = q.Relation("Daemons.Bind9Daemon")
 	q = q.Relation("Daemons.PDNSDaemon")
 	q = q.Relation("Daemons.LogTargets")
-	if appType != "" {
-		q = q.Where("type = ?", appType)
+
+	for _, appType := range appTypes {
+		q = q.WhereOr("type = ?", appType)
+		switch appType {
+		case AppTypeKea:
+			q = q.Relation("Daemons.Services.HAService")
+			q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+		case AppTypeBind9:
+			q = q.Relation("Daemons.Bind9Daemon")
+		case AppTypePDNS:
+			q = q.Relation("Daemons.PDNSDaemon")
+		}
 	}
+
 	if filterText != nil {
 		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {

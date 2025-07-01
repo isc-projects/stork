@@ -381,7 +381,7 @@
             </p-panel>
         </div>
 
-        <div *ngIf="appsStats.bind9AppsTotal > 0">
+        <div *ngIf="appsStats.dnsAppsTotal > 0">
             <p-panel
                 [toggleable]="true"
                 [collapsed]="isDNSDashboardHidden()"
@@ -461,7 +461,7 @@
                                 }}</a>
                             </td>
                             <td>
-                                <a *ngIf="a.id" routerLink="/apps/bind9/{{ a.id }}"
+                                <a *ngIf="a.id" routerLink="/apps/dns/{{ a.id }}"
                                     ><app-version-status
                                         [app]="a.type"
                                         [version]="a.version"
@@ -470,16 +470,16 @@
                                 ></a>
                             </td>
                             <td>
-                                <a *ngIf="a.id" routerLink="/apps/bind9/{{ a.id }}">{{ a.name ?? 'unknown' }}</a>
+                                <a *ngIf="a.id" routerLink="/apps/dns/{{ a.id }}">{{ a.name ?? 'unknown' }}</a>
                             </td>
-                            <td>{{ a.details?.daemon?.name ?? 'unknown' }}</td>
+                            <td>{{ getDNSDaemon(a)?.name ?? 'unknown' }}</td>
                             <td>
                                 <i
-                                    *ngIf="a.details?.daemon"
-                                    pTooltip="{{ daemonStatusIconTooltip(a.details.daemon) }}"
-                                    class="{{ daemonStatusIconName(a.details.daemon) }} text-2xl"
+                                    *ngIf="getDNSDaemon(a)"
+                                    pTooltip="{{ daemonStatusIconTooltip(getDNSDaemon(a)) }}"
+                                    class="{{ daemonStatusIconName(getDNSDaemon(a)) }} text-2xl"
                                     [ngStyle]="{
-                                        color: daemonStatusIconColor(a.details.daemon),
+                                        color: daemonStatusIconColor(getDNSDaemon(a)),
                                     }"
                                 ></i>
                             </td>
@@ -533,7 +533,7 @@
                                 >
                                 </ng-container>
                             </td>
-                            <td>{{ showDuration(a.details?.daemon?.uptime ?? 0) }}</td>
+                            <td>{{ showDuration(getDNSDaemon(a)?.uptime ?? 0) }}</td>
                         </tr>
                     </ng-template>
                 </p-table>

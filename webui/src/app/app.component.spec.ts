@@ -113,7 +113,7 @@ describe('AppComponent', () => {
             'Shared Networks',
             'Services',
             'Kea Apps',
-            'BIND 9 Apps',
+            'DNS Apps',
             'Machines',
             'Grafana',
             'Monitoring',
@@ -131,7 +131,7 @@ describe('AppComponent', () => {
 
         // List of menu items that are expected to be hidden. Unless listed here, the test expects
         // the menu item to be visible.
-        const expHiddenItems = ['DHCP', 'Kea Apps', 'BIND 9 Apps', 'Grafana', 'Users']
+        const expHiddenItems = ['DHCP', 'Kea Apps', 'DNS Apps', 'Grafana', 'Users']
 
         for (const name of expMenuItems) {
             // Check if the menu item is there
