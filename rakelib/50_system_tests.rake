@@ -26,7 +26,8 @@ def check_hosts_and_print_hint(compose_files)
         fail
     end
 
-    hostnames = []
+    hostnamesV4 = []
+    hostnamesV6 = []
     compose = YAML.load(stdout)
     compose["services"].each do |name, service|
         # Ignore non-agent services
@@ -39,32 +40,52 @@ def check_hosts_and_print_hint(compose_files)
         if service.key? "hostname"
             hostname = service["hostname"]
         end
-        hostnames.append hostname
+        # Check if the service has the IPv6 address explicitly set to the main
+        # network.
+        if service.key?("networks") && service["networks"].key?("storknet") &&
+            service["networks"]["storknet"].key?("ipv6_address") then
+            # Add the hostname to the IPv6 hostnames list.
+            hostnamesV6.append hostname
+        else
+            # Add the hostname to the IPv4 hostnames list.
+            hostnamesV4.append hostname
+        end
     end
 
     # List all unknown hostnames
-    unknown_hostnames = []
-    hostnames.each do |h|
+    unknown_hostnamesV4 = []
+    hostnamesV4.each do |h|
         _, _, status = Open3.capture3 "ping", "-c", "1", h
         if status != 0
-            unknown_hostnames.append h
+            unknown_hostnamesV4.append h
+        end
+    end
+
+    unknown_hostnamesV6 = []
+    hostnamesV6.each do |h|
+        _, _, status = Open3.capture3 "ping6", "-c", "1", h
+        if status != 0
+            unknown_hostnamesV6.append h
         end
     end
 
     # Print message
-    if !unknown_hostnames.empty?
+    if !unknown_hostnamesV4.empty? || !unknown_hostnamesV6.empty?
         puts "Some Docker hostnames cannot be resolved."
         puts "You need to append the below entries to your /etc/hosts file."
         puts "They redirect to localhost because the main docker-compose network uses the bridge mode."
         puts "--- Start /etc/hosts content ---"
-        unknown_hostnames.each do |h|
+        unknown_hostnamesV4.each do |h|
             print "127.0.0.1", "\t", h, "\n"
+        end
+        unknown_hostnamesV6.each do |h|
+            print "::1", "\t", h, "\n"
         end
         puts "--- End /etc/hosts content ---"
     end
 
     # OK - all hostnames are known
-    return unknown_hostnames.empty?
+    return unknown_hostnamesV4.empty? && unknown_hostnamesV6.empty?
 end
 
 #############
@@ -391,6 +412,7 @@ namespace :systemtest do
             host_server_address = "http://172.42.42.1:8080"
         end
         ENV["STORK_SERVER_URL"] = host_server_address
+        ENV["IPWD"] = ENV["PWD"]
 
         Rake::Task["systemtest:sh"].invoke(
             "up", service_name,

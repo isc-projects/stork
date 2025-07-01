@@ -96,7 +96,7 @@ services:
   agent-kea:
     extends: agent-kea-base
     ports:
-      - "42888:8080"
+      - "42888:42888"
       - "42547:9547"
     networks:
       storknet:
@@ -121,7 +121,8 @@ services:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_LISTEN_PROMETHEUS_ONLY: ${STORK_AGENT_LISTEN_PROMETHEUS_ONLY-false}
-      STORK_AGENT_HOST: 172.42.42.100
+      STORK_AGENT_HOST: agent-kea
+      STORK_AGENT_PORT: 42888
     healthcheck:
       interval: 250ms
       timeout: 1s
@@ -163,12 +164,13 @@ services:
 
   agent-kea-many-subnets-and-shared-networks-2:
     extends: agent-kea-many-subnets-and-shared-networks-1
-    hostname: agent-kea2
+    hostname: agent-kea-ha2
     ports: !override
-      - 8080
+      - 42889:42889
       - "42548:9547"
     environment:
-      STORK_AGENT_HOST: 172.42.42.101
+      STORK_AGENT_HOST: agent-kea-ha2
+      STORK_AGENT_PORT: 42889
     networks:
       storknet:
         ipv4_address: 172.42.42.101
@@ -191,11 +193,12 @@ services:
 
   agent-kea6:
     extends: agent-kea
+    hostname: agent-kea6
     networks:
       storknet:
         ipv6_address: 3009:db8:1:42::100
     environment:
-      STORK_AGENT_HOST: 3009:db8:1:42::100
+      STORK_AGENT_HOST: agent-kea6
 
   agent-kea-tls-optional-client-cert-no-verify:
     extends: agent-kea
@@ -290,7 +293,7 @@ services:
 
   agent-kea-ha1:
     extends: agent-kea
-    hostname: agent-kea-ha1
+    hostname: agent-kea
     volumes:
       - $PWD/tests/system/config/kea-ha1/hook-ha.json:/etc/kea/hook-ha-dhcp4.json
       - $PWD/tests/system/config/kea-ha1/hook-ha.json:/etc/kea/hook-ha-dhcp6.json
@@ -311,10 +314,11 @@ services:
     extends: agent-kea
     hostname: agent-kea-ha2
     ports: !override
-      - 8080
+      - 42889:42889
       - "42548:9547"
     environment:
-      STORK_AGENT_HOST: 172.42.42.101
+      STORK_AGENT_HOST: agent-kea-ha2
+      STORK_AGENT_PORT: 42889
     networks:
       storknet:
         ipv4_address: 172.42.42.101
@@ -342,10 +346,11 @@ services:
     extends: agent-kea
     hostname: agent-kea-ha3
     ports: !override
-      - 8080
+      - 42890:42890
       - "42549:9547"
     environment:
-      STORK_AGENT_HOST: 172.42.42.102
+      STORK_AGENT_HOST: agent-kea-ha3
+      STORK_AGENT_PORT: 42890
     networks:
       storknet:
         ipv4_address: 172.42.42.102
@@ -397,7 +402,8 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_LISTEN_PROMETHEUS_ONLY: ${STORK_AGENT_LISTEN_PROMETHEUS_ONLY-false}
-      STORK_AGENT_HOST: 172.42.42.53
+      STORK_AGENT_HOST: agent-bind9
+      STORK_AGENT_PORT: 42888
       STORK_LOG_LEVEL: DEBUG
     ports:
       - "42119:9119"
@@ -481,7 +487,7 @@ services:
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: agent
     ports:
-      - "42188:8080"
+      - "42188:42188"
       - "42147:9547"
     networks:
       storknet:
@@ -489,6 +495,7 @@ services:
     environment:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: 172.42.42.100
+      STORK_AGENT_PORT: 42188
     healthcheck:
       disable: true
 
