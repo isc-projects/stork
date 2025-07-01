@@ -59,6 +59,7 @@ import { AuthService } from '../auth.service'
 import { ZoneViewerFeederComponent } from '../zone-viewer-feeder/zone-viewer-feeder.component'
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { UnrootPipe } from '../pipes/unroot.pipe'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -314,6 +315,7 @@ describe('ZonesPageComponent', () => {
                 PlaceholderPipe,
                 LocaltimePipe,
                 PluralizePipe,
+                UnrootPipe,
             ],
             providers: [
                 { provide: MessageService, useValue: messageService },

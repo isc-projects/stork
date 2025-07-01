@@ -55,10 +55,14 @@ func CompareNames(name1, name2 string) int {
 
 // Converts DNS name to the name with labels ordered backwards. For example:
 // zone.example.org is converted to org.example.zone.
-func ConvertNameToRname(name string) string {
+func ConvertNameToRname(name string) (rname string) {
 	labels := dns.SplitDomainName(name)
 	slices.Reverse(labels)
-	return strings.Join(labels, ".")
+	rname = strings.Join(labels, ".")
+	if rname == "" {
+		rname = "."
+	}
+	return
 }
 
 // Represents Fully Qualified Domain Name (FQDN).

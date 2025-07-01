@@ -23,7 +23,8 @@ func TestCompareNames(t *testing.T) {
 func TestConvertNameToRname(t *testing.T) {
 	require.Equal(t, "org.example.zone", ConvertNameToRname("zone.example.org"))
 	require.Equal(t, "org.example.www", ConvertNameToRname("www.example.org."))
-	require.Empty(t, ConvertNameToRname(""))
+	require.Equal(t, ".", ConvertNameToRname(""))
+	require.Equal(t, ".", ConvertNameToRname("."))
 }
 
 // Test parsing a full FQDN.

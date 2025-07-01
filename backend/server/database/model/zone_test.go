@@ -352,6 +352,93 @@ func TestGetZones(t *testing.T) {
 	})
 }
 
+// Test getting zones with filtering by root zone.
+func TestGetZonesFilterByRootZone(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeBind9,
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	addedDaemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, addedDaemons, 1)
+
+	// Store zones in the database and associate them with our app.
+	var zones []*Zone
+	rootZone := &Zone{
+		Name:       ".",
+		LocalZones: []*LocalZone{},
+	}
+	anotherZone := &Zone{
+		Name:       "example.com",
+		LocalZones: []*LocalZone{},
+	}
+	zones = append(zones, rootZone, anotherZone)
+	for _, zone := range zones {
+		zone.LocalZones = append(zone.LocalZones, &LocalZone{
+			DaemonID: addedDaemons[0].ID,
+			View:     "_default",
+			Class:    "IN",
+			Serial:   123456,
+			Type:     "primary",
+			LoadedAt: time.Now().UTC(),
+		})
+	}
+
+	err = AddZones(db, zones...)
+	require.NoError(t, err)
+
+	t.Run("filter by root zone", func(t *testing.T) {
+		searchKeys := []string{"r", "ro", "roo", "root", "(root", "(root)"}
+		for _, searchKey := range searchKeys {
+			filter := &GetZonesFilter{
+				Text: storkutil.Ptr(searchKey),
+			}
+			zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+			require.NoError(t, err)
+			require.Equal(t, 1, total)
+			require.Len(t, zones, 1)
+			require.Equal(t, ".", zones[0].Name)
+		}
+	})
+
+	t.Run("filter by dot", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Text: storkutil.Ptr("."),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 2, total)
+		require.Len(t, zones, 2)
+		require.Equal(t, ".", zones[0].Name)
+	})
+
+	t.Run("filter by another zone", func(t *testing.T) {
+		filter := &GetZonesFilter{
+			Text: storkutil.Ptr("example"),
+		}
+		zones, total, err := GetZones(db, filter, ZoneRelationLocalZones)
+		require.NoError(t, err)
+		require.Equal(t, 1, total)
+		require.Len(t, zones, 1)
+		require.Equal(t, "example.com", zones[0].Name)
+	})
+}
+
 // Test getting zones with app ID filter.
 func TestGetZonesWithAppIDFilter(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

@@ -251,9 +251,18 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 	// Filter by zone name, app name or local zone view using partial matching.
 	if filter.Text != nil {
 		q = q.WhereGroup(func(q *pg.Query) (*pg.Query, error) {
-			return q.WhereOr("zone.name ILIKE ?", "%"+*filter.Text+"%").
+			// UI can use the keyword "root" or "(root)" to search for a root zone.
+			// That's because the root zone is displayed using the keywords in the UI.
+			// Users will expect that the root zone is returned not only when they type
+			// the dot but also the keyword.
+			//nolint:gocritic
+			if strings.HasPrefix("root", *filter.Text) || strings.HasPrefix("(root)", *filter.Text) {
+				q = q.Where("zone.name = ?", ".")
+			}
+			q = q.WhereOr("zone.name ILIKE ?", "%"+*filter.Text+"%").
 				WhereOr("a.name ILIKE ?", "%"+*filter.Text+"%").
-				WhereOr("lz.view ILIKE ?", "%"+*filter.Text+"%"), nil
+				WhereOr("lz.view ILIKE ?", "%"+*filter.Text+"%")
+			return q, nil
 		})
 	}
 	// Select and count the zones.

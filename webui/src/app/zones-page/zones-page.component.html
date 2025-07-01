@@ -521,7 +521,12 @@ for each occurrence of that zone.
                         />
                     </td>
                     <td>
-                        <p-button [label]="zone.name" [link]="true" (click)="openTab(zone)" styleClass="px-0 md:px-2" />
+                        <p-button
+                            [label]="zone.name | unroot"
+                            [link]="true"
+                            (click)="openTab(zone)"
+                            styleClass="px-0 md:px-2"
+                        />
                     </td>
                     <td>
                         <ng-container
@@ -595,12 +600,12 @@ for each occurrence of that zone.
             </ng-template>
         </p-table>
     </p-tabPanel>
-    <p-tabPanel *ngFor="let tab of openTabs" [header]="tab.name" [closable]="true">
+    <p-tabPanel *ngFor="let tab of openTabs" [header]="tab.name | unroot" [closable]="true">
         <div class="max-w-100rem">
             <div class="flex text-xl align-items-baseline font-normal text-primary mb-4">
                 <div class="pi pi-sitemap mr-2"></div>
                 <div class="word-break-all">
-                    DNS Zone <span class="font-semibold">{{ tab.name }}</span>
+                    DNS Zone <span class="font-semibold">{{ tab.name | unroot }}</span>
                 </div>
             </div>
             <div class="mb-4">
@@ -609,7 +614,7 @@ for each occurrence of that zone.
                         <ng-template pTemplate="body" let-zone>
                             <tr>
                                 <td class="font-semibold w-14rem">Name</td>
-                                <td>{{ zone.name }}</td>
+                                <td>{{ zone.name | unroot }}</td>
                             </tr>
                             <tr>
                                 <td class="font-semibold w-14rem">Stork Internal Zone ID</td>
@@ -692,7 +697,7 @@ for each occurrence of that zone.
                                         <ng-template pTemplate="header">
                                             <div class="inline-flex align-items-center justify-content-center gap-2">
                                                 <span>
-                                                    <span class="font-bold text-2xl">{{ tab.name }}</span>
+                                                    <span class="font-bold text-2xl">{{ tab.name | unroot }}</span>
                                                     <span class="text-lg">
                                                         for
                                                         <a routerLink="/apps/bind9/{{ localZone.appId }}">{{

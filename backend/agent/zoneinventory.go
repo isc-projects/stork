@@ -10,6 +10,7 @@ import (
 	"path"
 	"runtime"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -299,7 +300,7 @@ func (storage *zoneInventoryStorageDisk) getViewsIterator(filter *bind9stats.Zon
 // than for other storage types because it is searched and read from disk.
 func (storage *zoneInventoryStorageDisk) getZoneInView(viewName, zoneName string) (*bind9stats.Zone, error) {
 	vio := newViewIO(storage.location, viewName)
-	zone, err := vio.loadZone(zoneName)
+	zone, err := vio.loadZone(getViewIOZoneFileName(zoneName))
 	if err != nil {
 		return nil, err
 	}
@@ -1248,7 +1249,7 @@ func (vio *viewIO) recreateView(view *bind9stats.View) (err error) {
 
 // Creates a zone information file in the view directory.
 func (vio *viewIO) createZone(zone *bind9stats.Zone) error {
-	zoneDataFilePath := path.Join(vio.viewLocation, zone.Name())
+	zoneDataFilePath := path.Join(vio.viewLocation, getViewIOZoneFileName(zone.Name()))
 	zoneDataFile, err := os.OpenFile(zoneDataFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o640)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save data for zone %s due to an error while opening the file %s", zone.Name(), zoneDataFilePath)
@@ -1302,4 +1303,13 @@ func (vio *viewIO) loadZone(zoneName string) (*bind9stats.Zone, error) {
 		return nil, errors.Wrapf(err, "failed to parse the inventory file for zone %s", zoneName)
 	}
 	return &zone, nil
+}
+
+// Returns the file name for the zone information file.
+func getViewIOZoneFileName(zoneName string) string {
+	zoneName = strings.TrimSpace(zoneName)
+	if zoneName == "." {
+		zoneName = "root"
+	}
+	return storkutil.FullyQualifyName(zoneName) + "zone"
 }

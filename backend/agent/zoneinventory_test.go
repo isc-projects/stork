@@ -25,6 +25,17 @@ import (
 
 //go:generate mockgen -package=agent -destination=zoneinventorymock_test.go -mock_names=zoneInventoryAXFRExecutor=MockZoneInventoryAXFRExecutor isc.org/stork/agent zoneInventoryAXFRExecutor
 
+// This function generates a root zone.
+func generateRootZone() *bind9stats.Zone {
+	return &bind9stats.Zone{
+		ZoneName: ".",
+		Class:    "IN",
+		Serial:   1,
+		Type:     "master",
+		Loaded:   time.Date(2025, 1, 1, 15, 19, 20, 0, time.UTC),
+	}
+}
+
 // This function generates a collection of zones used in the benchmarks.
 // The function argument specifies the number of zones to be generated.
 func generateRandomZones(num int) []*bind9stats.Zone {
@@ -625,7 +636,8 @@ func TestZoneInventoryTransition(t *testing.T) {
 // Test populating the zones from the DNS server to memory and disk.
 func TestZoneInventoryPopulateMemoryDisk(t *testing.T) {
 	// Setup server response.
-	defaultZones := generateRandomZones(10)
+	defaultZones := []*bind9stats.Zone{generateRootZone()}
+	defaultZones = append(defaultZones, generateRandomZones(9)...)
 	bindZones := generateRandomZones(20)
 	response := map[string]any{
 		"views": map[string]any{
@@ -665,10 +677,10 @@ func TestZoneInventoryPopulateMemoryDisk(t *testing.T) {
 
 	// Make sure that the views contain zones.
 	for _, zone := range defaultZones {
-		require.FileExists(t, path.Join(sandbox.BasePath, "_default", zone.Name()))
+		require.FileExists(t, path.Join(sandbox.BasePath, "_default", getViewIOZoneFileName(zone.Name())))
 	}
 	for _, zone := range bindZones {
-		require.FileExists(t, path.Join(sandbox.BasePath, "_bind", zone.Name()))
+		require.FileExists(t, path.Join(sandbox.BasePath, "_bind", getViewIOZoneFileName(zone.Name())))
 	}
 
 	// Make sure that the inventory is in the correct state.
@@ -751,10 +763,10 @@ func TestZoneInventoryPopulateDisk(t *testing.T) {
 
 	// Make sure that the views contain zones.
 	for _, zone := range defaultZones {
-		require.FileExists(t, path.Join(sandbox.BasePath, "_default", zone.Name()))
+		require.FileExists(t, path.Join(sandbox.BasePath, "_default", getViewIOZoneFileName(zone.Name())))
 	}
 	for _, zone := range bindZones {
-		require.FileExists(t, path.Join(sandbox.BasePath, "_bind", zone.Name()))
+		require.FileExists(t, path.Join(sandbox.BasePath, "_bind", getViewIOZoneFileName(zone.Name())))
 	}
 	// Make sure that the inventory is in the correct state.
 	require.Equal(t, zoneInventoryStatePopulated, inventory.getCurrentState().name)
@@ -873,7 +885,8 @@ func TestZoneInventoryPopulateAwaitBackgroundTasks(t *testing.T) {
 // Test loading the inventory from disk to memory.
 func TestZoneInventoryLoadMemoryDisk(t *testing.T) {
 	// Setup server response.
-	defaultZones := generateRandomZones(10)
+	defaultZones := []*bind9stats.Zone{generateRootZone()}
+	defaultZones = append(defaultZones, generateRandomZones(9)...)
 	bindZones := generateRandomZones(20)
 	response := map[string]any{
 		"views": map[string]any{
@@ -981,7 +994,8 @@ func TestZoneInventoryLoadMemory(t *testing.T) {
 // Test loading the inventory from disk.
 func TestZoneInventoryLoadDisk(t *testing.T) {
 	// Setup server response.
-	defaultZones := generateRandomZones(10)
+	defaultZones := []*bind9stats.Zone{generateRootZone()}
+	defaultZones = append(defaultZones, generateRandomZones(9)...)
 	bindZones := generateRandomZones(20)
 	response := map[string]any{
 		"views": map[string]any{
@@ -1031,13 +1045,17 @@ func TestZoneInventoryLoadDisk(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the views have been reloaded and contain zones.
-	zone, err := inventory.getZoneInView("_default", defaultZones[0].Name())
-	require.NoError(t, err)
-	require.NotNil(t, zone)
+	for _, defaultZone := range defaultZones {
+		zone, err := inventory.getZoneInView("_default", defaultZone.Name())
+		require.NoError(t, err)
+		require.NotNil(t, zone)
+	}
 
-	zone, err = inventory.getZoneInView("_bind", bindZones[0].Name())
-	require.NoError(t, err)
-	require.NotNil(t, zone)
+	for _, bindZone := range bindZones {
+		zone, err := inventory.getZoneInView("_bind", bindZone.Name())
+		require.NoError(t, err)
+		require.NotNil(t, zone)
+	}
 
 	// Make sure that the inventory is in the correct state and that
 	// the inventory creation time was read from disk.
@@ -1865,6 +1883,14 @@ func TestZoneInventoryRequestAXFRResponseError(t *testing.T) {
 	axfrResponse := <-channel
 	require.ErrorContains(t, axfrResponse.err, "some error")
 	require.Nil(t, axfrResponse.envelope)
+}
+
+// Test the function that returns the file name for the zone information file.
+func TestGetViewIOZoneFileName(t *testing.T) {
+	require.Equal(t, "root.zone", getViewIOZoneFileName("."))
+	require.Equal(t, "root.zone", getViewIOZoneFileName("root."))
+	require.Equal(t, "example.com.zone", getViewIOZoneFileName("example.com."))
+	require.Equal(t, "example.com.zone", getViewIOZoneFileName("example.com"))
 }
 
 // Benchmark measuring performance of loading the zones from disk to memory.
