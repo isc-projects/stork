@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"iter"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -258,4 +259,73 @@ func TestParseIncludeSelf(t *testing.T) {
 	require.Equal(t, "test", cfg.Statements[1].ACL.Name)
 	require.Len(t, cfg.Statements[1].ACL.AddressMatchList.Elements, 1)
 	require.Equal(t, "1.2.3.4", cfg.Statements[1].ACL.AddressMatchList.Elements[0].IPAddress)
+}
+
+// Test that the parser doesn't fail when parsing the query-source option.
+func TestParseQuerySource(t *testing.T) {
+	t.Run("IP address only", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				query-source 1.2.3.4;
+				query-source-v6 2001:db8::1;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address keyword", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				query-source address 1.2.3.4;
+				query-source-v6 address 2001:db8::1;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address keyword with port", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				query-source address 1.2.3.4 port 53;
+				query-source-v6 address 2001:db8::1 port 53;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address keyword with port asterisk", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				query-source address 1.2.3.4 port *;
+				query-source-v6 address 2001:db8::1 port *;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address with asterisk and port with asterisk", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				query-source * port *;
+				query-source-v6 * port *;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address none", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				query-source none;
+				query-source-v6 none;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
 }

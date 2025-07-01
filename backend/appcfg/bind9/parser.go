@@ -160,9 +160,9 @@ type OptionClause struct {
 	// The listen-on-v6 clause specifying the addresses the server listens
 	// on the DNS requests.
 	ListenOnV6 *ListenOn `parser:"| 'listen-on-v6' @@"`
-	// Any namedClause clause.
+	// Any named clause.
 	NamedClause *NamedStatement `parser:"| @@"`
-	// Any unnamedClause clause.
+	// Any unnamed clause.
 	UnnamedClause *UnnamedStatement `parser:"| @@"`
 	// Any option clause.
 	Option *Option `parser:"| @@"`
@@ -292,7 +292,7 @@ type UnnamedStatement struct {
 // Many options in the options statement have this format.
 type Option struct {
 	Identifier string                 `parser:"@Ident"`
-	Switches   []string               `parser:"( @String | @Ident | @Number | @Asterisk )*"`
+	Switches   []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
 	Contents   *GenericClauseContents `parser:"( '{' @@ '}' )?"`
 }
 
