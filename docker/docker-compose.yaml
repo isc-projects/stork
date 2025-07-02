@@ -394,7 +394,6 @@ services:
       - "5302:53/udp" # Expose DNS service to the host.
       - "5302:53/tcp" # Expose DNS service to the host.
     volumes:
-      - ./docker/config/agent-bind9-2/db.root:/etc/bind/db.root
       - ./docker/config/agent-bind9-2/db.test:/etc/bind/db.test
       - ./docker/config/agent-bind9-2/db.bind9.example.org.text:/etc/bind/db.bind9.example.org.text
       - ./docker/config/agent-bind9-2/named.conf:/etc/bind/named.conf

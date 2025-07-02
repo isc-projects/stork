@@ -5,6 +5,7 @@ import {
     DNSClass,
     DNSService,
     DNSZoneType,
+    LocalZone,
     Zone,
     ZoneInventoryState,
     ZoneInventoryStates,
@@ -32,6 +33,14 @@ import { FilterMetadata } from 'primeng/api/filtermetadata'
 import { hasFilter, parseBoolean } from '../table'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'
+
+/**
+ * An interface extending the LocalZone with the properties useful
+ * in the component template.
+ */
+interface ExtendedLocalZone extends LocalZone {
+    disableShowZone: boolean
+}
 
 @Component({
     selector: 'app-zones-page',
@@ -769,16 +778,29 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         this.zonesLoading = showLoadingState
         this.cd.detectChanges() // in order to solve NG0100: ExpressionChangedAfterItHasBeenCheckedError
         lastValueFrom(
-            this.dnsService.getZones(
-                event?.first ?? 0,
-                event?.rows ?? 10,
-                (event?.filters?.appType as FilterMetadata)?.value ?? null,
-                (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
-                (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
-                (event?.filters?.text as FilterMetadata)?.value || null,
-                (event?.filters?.appId as FilterMetadata)?.value || null,
-                (event?.filters?.zoneSerial as FilterMetadata)?.value || null
-            )
+            this.dnsService
+                .getZones(
+                    event?.first ?? 0,
+                    event?.rows ?? 10,
+                    (event?.filters?.appType as FilterMetadata)?.value ?? null,
+                    (event?.filters?.zoneType as FilterMetadata)?.value ?? null,
+                    (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
+                    (event?.filters?.text as FilterMetadata)?.value || null,
+                    (event?.filters?.appId as FilterMetadata)?.value || null,
+                    (event?.filters?.zoneSerial as FilterMetadata)?.value || null
+                )
+                .pipe(
+                    map((resp) => {
+                        resp.items?.forEach((zone) => {
+                            let elz: ExtendedLocalZone[] = []
+                            zone.localZones.forEach((localZone) => {
+                                elz.push({ ...localZone, disableShowZone: this._shouldDisableShowZone(localZone) })
+                            })
+                            zone.localZones = elz
+                        })
+                        return resp
+                    })
+                )
         )
             .then((resp) => {
                 this.zones = resp?.items ?? []
@@ -797,6 +819,18 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                 })
             })
             .finally(() => (this.zonesLoading = false))
+    }
+
+    /**
+     * Returns true if the "show zone" button should be disabled for the given
+     * instance of the zone on a server.
+     *
+     * @param localZone instance of the zone on a server
+     * @returns true if the "show zone" button should be disabled for the given
+     * instance of the zone on a server
+     */
+    private _shouldDisableShowZone(localZone: LocalZone): boolean {
+        return ![DNSZoneType.Primary, DNSZoneType.Secondary].includes(localZone.zoneType as DNSZoneType)
     }
 
     /**

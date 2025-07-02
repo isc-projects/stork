@@ -22,6 +22,7 @@ import {
     ZoneRRs,
     Zones,
     Zone,
+    DNSZoneType,
 } from '../backend'
 import { Observable, of } from 'rxjs'
 import {
@@ -1179,4 +1180,23 @@ describe('ZonesPageComponent', () => {
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
         expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, 1, null)
     }))
+
+    it('should disable show zone button', () => {
+        // Arrange
+        let shouldDisableShowZone = component['_shouldDisableShowZone']
+        expect(shouldDisableShowZone).toBeDefined()
+
+        // Act + Assert
+        expect(shouldDisableShowZone({ zoneType: 'primary' })).toBeFalse()
+        expect(shouldDisableShowZone({ zoneType: 'secondary' })).toBeFalse()
+        expect(shouldDisableShowZone({ zoneType: 'builtin' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: 'delegation-only' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: 'forward' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: 'hint' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: 'mirror' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: 'redirect' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: 'static-stub' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: 'stub' })).toBeTrue()
+        expect(shouldDisableShowZone({ zoneType: undefined })).toBeTrue()
+    })
 })

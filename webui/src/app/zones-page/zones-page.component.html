@@ -666,7 +666,7 @@ for each occurrence of that zone.
                                 <td>
                                     <p-button
                                         type="button"
-                                        [disabled]="localZone.zoneType === 'builtin'"
+                                        [disabled]="localZone.disableShowZone"
                                         severity="secondary"
                                         icon="pi pi-file-import"
                                         (click)="
@@ -675,7 +675,7 @@ for each occurrence of that zone.
                                     />
                                     <!-- Dialog displaying a zone viewer for a selected view and daemon -->
                                     <p-dialog
-                                        *ngIf="localZone.zoneType !== 'builtin'"
+                                        *ngIf="!localZone.disableShowZone"
                                         [modal]="true"
                                         [visible]="
                                             getZoneViewerDialogVisible(localZone.daemonId, localZone.view, tab.id)
