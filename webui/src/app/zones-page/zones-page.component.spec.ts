@@ -22,7 +22,6 @@ import {
     ZoneRRs,
     Zones,
     Zone,
-    DNSZoneType,
 } from '../backend'
 import { Observable, of } from 'rxjs'
 import {
