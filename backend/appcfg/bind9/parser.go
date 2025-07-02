@@ -383,7 +383,7 @@ func (p *Parser) Parse(filename string, fileReader io.Reader) (*Config, error) {
 		// Note that the Bind9 configuration parser allows for specifying
 		// configuration element names (and values) in quotes or without quotes.
 		// The identifier handles this second case.
-		{Name: "Ident", Pattern: `[0-9a-zA-Z-_]+`},
+		{Name: "Ident", Pattern: `[0-9a-zA-Z-_\.]+`},
 		// Asterisk.
 		{Name: "Asterisk", Pattern: `\*`},
 		// Punctuation characters.
