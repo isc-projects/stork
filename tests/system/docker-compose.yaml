@@ -193,12 +193,11 @@ services:
 
   agent-kea6:
     extends: agent-kea
-    hostname: agent-kea6
     networks:
       storknet:
         ipv6_address: 3009:db8:1:42::100
     environment:
-      STORK_AGENT_HOST: agent-kea6
+      STORK_AGENT_HOST: 3009:db8:1:42::100
 
   agent-kea-tls-optional-client-cert-no-verify:
     extends: agent-kea
