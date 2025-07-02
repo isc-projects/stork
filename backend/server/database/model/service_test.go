@@ -340,7 +340,6 @@ func TestUpdateService(t *testing.T) {
 	service, err := GetDetailedService(db, services[0].ID)
 	require.NoError(t, err)
 	require.NotNil(t, service)
-	require.Equal(t, "ha_dhcp", service.ServiceType)
 	require.NotNil(t, service.HAService)
 	require.Equal(t, "dhcp4", service.HAService.HAType)
 	require.Equal(t, "server1", service.HAService.Relationship)
@@ -661,7 +660,7 @@ func TestCommitServicesIntoDB(t *testing.T) {
 	err = CommitServicesIntoDB(db, services[1:3], apps[1].Daemons[0])
 	require.NoError(t, err)
 
-	// Get the services shanpshot from the db again.
+	// Get the services snapshot from the db again.
 	returned, err = GetDetailedAllServices(db)
 	require.NoError(t, err)
 	require.Len(t, returned, 3)

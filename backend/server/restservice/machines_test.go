@@ -1935,9 +1935,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	commInterrupted := []bool{true, true}
 	keaServices := []dbmodel.Service{
 		{
-			BaseService: dbmodel.BaseService{
-				ServiceType: "ha_dhcp",
-			},
+			BaseService: dbmodel.BaseService{},
 			HAService: &dbmodel.BaseHAService{
 				HAType:                      "dhcp4",
 				HAMode:                      "load-balancing",
@@ -1964,9 +1962,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 			},
 		},
 		{
-			BaseService: dbmodel.BaseService{
-				ServiceType: "ha_dhcp",
-			},
+			BaseService: dbmodel.BaseService{},
 			HAService: &dbmodel.BaseHAService{
 				HAType:                      "dhcp4",
 				HAMode:                      "load-balancing",
@@ -1993,9 +1989,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 			},
 		},
 		{
-			BaseService: dbmodel.BaseService{
-				ServiceType: "ha_dhcp",
-			},
+			BaseService: dbmodel.BaseService{},
 			HAService: &dbmodel.BaseHAService{
 				HAType:                      "dhcp6",
 				HAMode:                      "hot-standby",
@@ -2206,9 +2200,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
 	keaServices := []dbmodel.Service{
 		{
-			BaseService: dbmodel.BaseService{
-				ServiceType: "ha_dhcp",
-			},
+			BaseService: dbmodel.BaseService{},
 			HAService: &dbmodel.BaseHAService{
 				HAType:                   "dhcp4",
 				HAMode:                   "passive-backup",
@@ -2465,9 +2457,7 @@ func TestHAInDhcpOverview(t *testing.T) {
 	// Create an HA service.
 	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
 	keaService := dbmodel.Service{
-		BaseService: dbmodel.BaseService{
-			ServiceType: "ha_dhcp",
-		},
+		BaseService: dbmodel.BaseService{},
 		HAService: &dbmodel.BaseHAService{
 			HAType:                   "dhcp4",
 			HAMode:                   "load-balancing",

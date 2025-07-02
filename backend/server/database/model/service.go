@@ -20,11 +20,10 @@ func init() {
 // generic information about the service such as ID, service name
 // and service type.
 type BaseService struct {
-	tableName   struct{} `pg:"service"` //nolint:unused
-	ID          int64
-	Name        string
-	ServiceType string
-	CreatedAt   time.Time
+	tableName struct{} `pg:"service"` //nolint:unused
+	ID        int64
+	Name      string
+	CreatedAt time.Time
 
 	Daemons []*Daemon `pg:"many2many:daemon_to_service,fk:service_id,join_fk:daemon_id"`
 }

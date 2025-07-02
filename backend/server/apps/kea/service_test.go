@@ -438,9 +438,7 @@ func TestAppBelongsToHAServiceBlankService(t *testing.T) {
 
 	// Create blank service.
 	service := &dbmodel.Service{
-		BaseService: dbmodel.BaseService{
-			ServiceType: "ha_dhcp",
-		},
+		BaseService: dbmodel.BaseService{},
 		HAService: &dbmodel.BaseHAService{
 			HAType:       "dhcp4",
 			Relationship: "server1",
