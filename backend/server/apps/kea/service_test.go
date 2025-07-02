@@ -404,23 +404,30 @@ func TestDetectHAServices(t *testing.T) {
 	app, err = dhcp4.GetKea()
 	require.NoError(t, err)
 
-	services = []dbmodel.Service{}
-	for i := range app.Daemons {
-		detected, err := DetectHAServices(db, app.Daemons[i])
-		require.NoError(t, err)
-		services = append(services, detected...)
-	}
-	require.Len(t, services, 1)
-	require.False(t, services[0].IsNew())
-	require.NotNil(t, services[0].HAService)
-	require.Equal(t, "dhcp4", services[0].HAService.HAType)
-	require.Equal(t, "load-balancing", services[0].HAService.HAMode)
-	require.NotZero(t, services[0].HAService.PrimaryID)
-	require.NotZero(t, services[0].HAService.SecondaryID)
-	require.Len(t, services[0].HAService.BackupID, 2)
-	require.Contains(t, services[0].HAService.BackupID, app.Daemons[0].ID)
+	// The services shouldn't be changed when they are detected again.
+	for i := 0; i < 5; i++ {
+		services = []dbmodel.Service{}
+		for d := range app.Daemons {
+			detected, err := DetectHAServices(db, app.Daemons[d])
+			require.NoError(t, err)
+			for _, d := range detected {
+				err = dbmodel.UpdateBaseHAService(db, d.HAService)
+				require.NoError(t, err)
+			}
+			services = append(services, detected...)
+		}
+		require.Len(t, services, 1)
+		require.False(t, services[0].IsNew())
+		require.NotNil(t, services[0].HAService)
+		require.Equal(t, "dhcp4", services[0].HAService.HAType)
+		require.Equal(t, "load-balancing", services[0].HAService.HAMode)
+		require.NotZero(t, services[0].HAService.PrimaryID)
+		require.NotZero(t, services[0].HAService.SecondaryID)
+		require.Len(t, services[0].HAService.BackupID, 2)
+		require.Contains(t, services[0].HAService.BackupID, app.Daemons[0].ID)
 
-	require.Len(t, services[0].Daemons, 3)
+		require.Len(t, services[0].Daemons, 3)
+	}
 }
 
 // Test that a daemon doesn't belong to a blank service , i.e. a
