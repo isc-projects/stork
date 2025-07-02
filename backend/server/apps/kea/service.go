@@ -1,6 +1,8 @@
 package kea
 
 import (
+	"slices"
+
 	errors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
@@ -101,7 +103,9 @@ func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) ([]dbmodel.Service,
 		case "secondary", "standby":
 			service.HAService.SecondaryID = daemon.ID
 		default:
-			service.HAService.BackupID = append(service.HAService.BackupID, daemon.ID)
+			if !slices.Contains(service.HAService.BackupID, daemon.ID) {
+				service.HAService.BackupID = append(service.HAService.BackupID, daemon.ID)
+			}
 		}
 		services = append(services, *service)
 	}
