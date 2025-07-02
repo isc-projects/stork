@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -879,6 +880,53 @@ def test_get_build_arguments():
     args = compose.get_build_arguments("foo")
     # Assert
     assert args == {"bar": "baz", "biz": 42}
+
+
+def test_get_configured_environment_variables_no_env():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {"services": {"foo": {}}}
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act & Assert
+    assert compose.get_configured_environment_variables("foo") == {}
+
+
+def test_get_configured_environment_variables_no_service():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {"services": {}}
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act & Assert
+    assert compose.get_configured_environment_variables("foo") == {}
+
+
+def test_get_configured_environment_variables():
+    # Arrange
+    compose = DockerCompose("project-dir")
+    mock = MagicMock()
+    config = {
+        "services": {
+            "foo": {
+                "environment": {
+                    "bar": "baz",
+                    "biz": 42,
+                }
+            }
+        }
+    }
+    config_yaml = yaml.safe_dump(config)
+    mock.return_value = (0, config_yaml, "")
+    compose._call_command = mock
+    # Act
+    env_vars = compose.get_configured_environment_variables("foo")
+    # Assert
+    assert env_vars == {"bar": "baz", "biz": 42}
 
 
 @patch("subprocess.run")

@@ -51,7 +51,12 @@ class Agent(ComposeServiceWrapper):
     @memoize
     def get_stork_control_endpoint(self):
         """Returns the host and port of the stork-agent control endpoint."""
-        internal_port = 8080
+        env_vars = self._compose.get_configured_environment_variables(
+            self._service_name
+        )
+        env_var = env_vars.get("STORK_AGENT_PORT", "8080")
+
+        internal_port = int(env_var)
         mapped = self._compose.port(self._service_name, internal_port)
         return mapped
 

@@ -688,6 +688,16 @@ class DockerCompose:
 
         return build_args
 
+    def get_configured_environment_variables(self, service_name):
+        """Returns the environment variables configured for the service."""
+        config = self._read_config_yaml()
+        services_config = config["services"]
+        service_config = services_config.get(service_name)
+        if service_config is None:
+            return {}
+
+        return service_config.get("environment", {})
+
     def is_enabled(self, service_name):
         """Checks if the given service is enabled. The service is enabled if
         it has no profiles or has at least one profile provided by the --profile

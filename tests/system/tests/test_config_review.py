@@ -52,7 +52,7 @@ def test_get_dhcp_config_review_reports(server_service: Server, kea_service: Kea
     assert "pd_pools_exhausted_by_reservations" in issue_reports
 
 
-@ha_parametrize("agent-kea-ha1-only-top-mt", "agent-kea-ha2-only-top-mt")
+@ha_parametrize("agent-kea-ha1-only-top-mt", "agent-kea-ha2-only-top-mt", None)
 def test_get_ha_only_top_mt_config_review_reports(server_service: Server, ha_service):
     """Test that the Stork server suggests to enable the HA multi-threading
     if the Kea is running in the multi-threading mode."""
