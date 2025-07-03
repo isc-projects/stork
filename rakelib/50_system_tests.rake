@@ -391,7 +391,6 @@ namespace :systemtest do
             host_server_address = "http://172.42.42.1:8080"
         end
         ENV["STORK_SERVER_URL"] = host_server_address
-        ENV["IPWD"] = ENV["PWD"]
 
         Rake::Task["systemtest:sh"].invoke(
             "up", service_name,
