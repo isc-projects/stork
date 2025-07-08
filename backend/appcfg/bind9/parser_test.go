@@ -329,3 +329,61 @@ func TestParseQuerySource(t *testing.T) {
 		require.NotNil(t, cfg)
 	})
 }
+
+// Test that the parser doesn't fail when parsing the notify-source option.
+func TestParseNotifySource(t *testing.T) {
+	t.Run("IP address only", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				notify-source 1.2.3.4;
+				notify-source-v6 2001:db8::1;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address and port", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				notify-source address 1.2.3.4 port 53;
+				notify-source-v6 address 2001:db8::1 port 53;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address and port asterisk", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				notify-source address 1.2.3.4 port *;
+				notify-source-v6 address 2001:db8::1 port *;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address with asterisk and port with asterisk", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				notify-source * port *;
+				notify-source-v6 * port *;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	t.Run("address with asterisk", func(t *testing.T) {
+		cfg, err := NewParser().Parse(" ", strings.NewReader(`
+			options {
+				notify-source *;
+				notify-source-v6 *;
+			}
+		`))
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+	})
+}
