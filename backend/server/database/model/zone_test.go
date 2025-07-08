@@ -403,7 +403,7 @@ func TestGetZonesFilterByRootZone(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("filter by root zone", func(t *testing.T) {
-		searchKeys := []string{"r", "ro", "roo", "root", "(root", "(root)"}
+		searchKeys := []string{"r", "ro", "roo", "root", "(root", "(root)", "R", "Root", "(rooT"}
 		for _, searchKey := range searchKeys {
 			filter := &GetZonesFilter{
 				Text: storkutil.Ptr(searchKey),
