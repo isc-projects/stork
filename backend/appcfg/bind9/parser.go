@@ -147,7 +147,7 @@ type KeyClause struct {
 //
 // See: https://bind9.readthedocs.io/en/stable/reference.html#options-block-grammar.
 type Options struct {
-	Clauses []*OptionClause `parser:"'{' ( @@ ';'* )* '}'"`
+	Clauses []*OptionClause `parser:"'{' ( @@ ';'+ )* '}'"`
 }
 
 // OptionClause is a single clause of an options statement.
@@ -160,6 +160,8 @@ type OptionClause struct {
 	// The listen-on-v6 clause specifying the addresses the server listens
 	// on the DNS requests.
 	ListenOnV6 *ListenOn `parser:"| 'listen-on-v6' @@"`
+	// The response-policy clause specifying the response policy zones.
+	ResponsePolicy *ResponsePolicy `parser:"| 'response-policy' @@"`
 	// Any named clause.
 	NamedClause *NamedStatement `parser:"| @@"`
 	// Any unnamed clause.
@@ -192,6 +194,8 @@ type ViewClause struct {
 	MatchClients *MatchClients `parser:"'match-clients' @@"`
 	// The allow-transfer clause restricting who can perform AXFR.
 	AllowTransfer *AllowTransfer `parser:"| 'allow-transfer' @@"`
+	// The response-policy clause specifying the response policy zones.
+	ResponsePolicy *ResponsePolicy `parser:"| 'response-policy' @@"`
 	// The zone clause associating the zone with a view.
 	Zone *Zone `parser:"| 'zone' @@"`
 	// Any namedClause clause.
@@ -252,6 +256,16 @@ type ListenOn struct {
 	TLS              *string           `parser:"( 'tls' ( @String | @Ident ) )?"`
 	HTTP             *string           `parser:"( 'http' ( @String | @Ident ) )?"`
 	AddressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
+}
+
+type ResponsePolicy struct {
+	Zones    []*ResponsePolicyZone `parser:"'{' ( @@ ';'+ )* '}'"`
+	Switches []string              `parser:"( @String | @Ident | @Number | @Asterisk )*"`
+}
+
+type ResponsePolicyZone struct {
+	Zone     string   `parser:"'zone' ( @String | @Ident )"`
+	Switches []string `parser:"( @String | @Ident | @Number | @Asterisk )*"`
 }
 
 // NamedStatement is a generic catch-all named statement. It is used to parse

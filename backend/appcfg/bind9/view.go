@@ -20,6 +20,16 @@ func (v *View) GetMatchClients() *MatchClients {
 	return nil
 }
 
+// Returns the response-policy clause for the view or nil if it is not found.
+func (v *View) GetResponsePolicy() *ResponsePolicy {
+	for _, clause := range v.Clauses {
+		if clause.ResponsePolicy != nil {
+			return clause.ResponsePolicy
+		}
+	}
+	return nil
+}
+
 // Returns the zone with the specified name or nil if the zone is not found.
 func (v *View) GetZone(zoneName string) *Zone {
 	for _, clause := range v.Clauses {

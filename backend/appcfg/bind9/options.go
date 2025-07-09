@@ -23,3 +23,13 @@ func (o *Options) GetListenOnSet() *ListenOnClauses {
 	}
 	return &listenOnSet
 }
+
+// Gets the response-policy clause from options.
+func (o *Options) GetResponsePolicy() *ResponsePolicy {
+	for _, clause := range o.Clauses {
+		if clause.ResponsePolicy != nil {
+			return clause.ResponsePolicy
+		}
+	}
+	return nil
+}

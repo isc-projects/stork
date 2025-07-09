@@ -40,6 +40,7 @@ const zoneInventoryMetaFileName = "zone-inventory.json"
 type dnsConfigAccessor interface {
 	GetAXFRCredentials(viewName string, zoneName string) (address *string, keyName *string, algorithm *string, secret *string, err error)
 	GetAPIKey() string
+	IsRPZ(viewName string, zoneName string) bool
 }
 
 // An interface to a REST client communicating with a DNS server and returning

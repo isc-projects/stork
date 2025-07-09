@@ -61,3 +61,28 @@ func TestOptionsGetListenOnSet(t *testing.T) {
 	require.Equal(t, int64(54), (*listenOnSet)[1].GetPort())
 	require.Equal(t, int64(56), (*listenOnSet)[2].GetPort())
 }
+
+// Test getting the response-policy clause from options.
+func TestOptionsGetResponsePolicy(t *testing.T) {
+	options := &Options{
+		Clauses: []*OptionClause{
+			{
+				AllowTransfer: &AllowTransfer{
+					Port: storkutil.Ptr(int64(53)),
+				},
+			},
+			{
+				ResponsePolicy: &ResponsePolicy{
+					Zones: []*ResponsePolicyZone{
+						{
+							Zone: "rpz.example.com",
+						},
+					},
+				},
+			},
+		},
+	}
+	responsePolicy := options.GetResponsePolicy()
+	require.NotNil(t, responsePolicy)
+	require.Len(t, responsePolicy.Zones, 1)
+}

@@ -326,6 +326,19 @@ func (c *Config) GetAPIKey() string {
 	return ""
 }
 
+// Checks if the zone is RPZ.
+func (c *Config) IsRPZ(viewName string, zoneName string) bool {
+	var responsePolicy *ResponsePolicy
+	if viewName == DefaultViewName {
+		if options := c.GetOptions(); options != nil {
+			responsePolicy = options.GetResponsePolicy()
+		}
+	} else if view := c.GetView(viewName); view != nil {
+		responsePolicy = view.GetResponsePolicy()
+	}
+	return responsePolicy != nil && responsePolicy.IsRPZ(zoneName)
+}
+
 // Returns the key associated with the given view or nil if the view is not found.
 // The key can be associated with the view via match-clients clause and the global
 // ACLs.

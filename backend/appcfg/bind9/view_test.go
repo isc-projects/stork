@@ -124,3 +124,28 @@ func TestViewGetZoneLacking(t *testing.T) {
 	}
 	require.Nil(t, view.GetZone("test.example.com"))
 }
+
+// Test getting the response-policy clause from view.
+func TestViewGetResponsePolicy(t *testing.T) {
+	view := &View{
+		Clauses: []*ViewClause{
+			{
+				Zone: &Zone{
+					Name: "example.com",
+				},
+			},
+			{
+				ResponsePolicy: &ResponsePolicy{
+					Zones: []*ResponsePolicyZone{
+						{
+							Zone: "rpz.example.com",
+						},
+					},
+				},
+			},
+		},
+	}
+	responsePolicy := view.GetResponsePolicy()
+	require.NotNil(t, responsePolicy)
+	require.Len(t, responsePolicy.Zones, 1)
+}

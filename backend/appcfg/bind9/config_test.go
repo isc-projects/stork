@@ -696,6 +696,38 @@ func TestGetAXFRCredentialsForDefaultViewNoAllowTransfer(t *testing.T) {
 	require.Nil(t, secret)
 }
 
+// Test checking whether or not a zone is a RPZ.
+func TestIsRPZDefaultView(t *testing.T) {
+	config := `options {
+		response-policy {
+			zone "rpz.example.com";
+			zone "db.local";
+		};
+	};
+	view "trusted" {
+		response-policy {
+			zone "rpz.example.org";
+		};
+	};`
+	cfg, err := NewParser().Parse("", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	t.Run("default view", func(t *testing.T) {
+		require.True(t, cfg.IsRPZ(DefaultViewName, "rpz.example.com"))
+		require.True(t, cfg.IsRPZ(DefaultViewName, "db.local"))
+		require.False(t, cfg.IsRPZ(DefaultViewName, "example.com"))
+		require.False(t, cfg.IsRPZ(DefaultViewName, "rpz.example.org"))
+	})
+
+	t.Run("trusted view", func(t *testing.T) {
+		require.False(t, cfg.IsRPZ("trusted", "rpz.example.com"))
+		require.False(t, cfg.IsRPZ("trusted", "db.local"))
+		require.False(t, cfg.IsRPZ("trusted", "example.com"))
+		require.True(t, cfg.IsRPZ("trusted", "rpz.example.org"))
+	})
+}
+
 // Tests that GetAlgorithmSecret returns parsed algorithm and secret.
 func TestGetAlgorithmSecret(t *testing.T) {
 	key := Key{
