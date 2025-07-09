@@ -378,6 +378,7 @@ services:
     volumes:
       - ./docker/config/agent-bind9/db.bind9.example.com:/etc/bind/db.bind9.example.com
       - ./docker/config/agent-bind9/db.bind9.example.org:/etc/bind/db.bind9.example.org
+      - ./docker/config/agent-bind9/db.rpz.example.com:/etc/bind/db.rpz.example.com
       - ./docker/config/agent-bind9/named.conf:/etc/bind/named.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
@@ -417,6 +418,7 @@ services:
     volumes:
       - ./docker/config/agent-bind9-2/db.test:/etc/bind/db.test
       - ./docker/config/agent-bind9-2/db.bind9.example.org.text:/etc/bind/db.bind9.example.org.text
+      - ./docker/config/agent-bind9-2/db.rpz.local:/etc/bind/db.rpz.local
       - ./docker/config/agent-bind9-2/named.conf:/etc/bind/named.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
