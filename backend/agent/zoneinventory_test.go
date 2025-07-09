@@ -1293,8 +1293,10 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 			// Views should be sorted by name, so _bind goes first.
 			if i < 20 {
 				require.Equal(t, "_bind", zone.ViewName)
+				require.False(t, zone.RPZ)
 			} else {
 				require.Equal(t, "_default", zone.ViewName)
+				require.False(t, zone.RPZ)
 			}
 			require.EqualValues(t, 30, zone.TotalZoneCount)
 		}
@@ -1323,6 +1325,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		require.Len(t, receivedZones, 20)
 		for _, zone := range receivedZones {
 			require.Equal(t, "_bind", zone.ViewName)
+			require.False(t, zone.RPZ)
 			require.EqualValues(t, 20, zone.TotalZoneCount)
 		}
 		// Make sure that the inventory is in the correct state.
@@ -1351,6 +1354,7 @@ func TestZoneInventoryReceiveZonesMemoryStorage(t *testing.T) {
 		require.Len(t, receivedZones, 5)
 		for index, zone := range receivedZones {
 			require.Equal(t, "_bind", zone.ViewName)
+			require.False(t, zone.RPZ)
 			require.EqualValues(t, 20, zone.TotalZoneCount)
 			require.Equal(t, getOrderedZoneByIndex(bindZones, index+15).Name(), zone.Name())
 		}
@@ -1526,6 +1530,69 @@ func TestZoneInventoryReceiveZonesDiskStorage(t *testing.T) {
 		// Should return no zones.
 		require.Empty(t, receivedZones)
 	})
+}
+
+// Test that the zone inventory correctly identifies the RPZ zones.
+func TestZoneInventoryReceiveZonesRPZ(t *testing.T) {
+	// Setup server response.
+	response := map[string]any{
+		"views": map[string]any{
+			"trusted": map[string]any{
+				"zones": []*bind9stats.Zone{
+					{
+						ZoneName: "rpz.example.com",
+						Class:    "IN",
+						Serial:   1234567890,
+						Type:     "primary",
+						Loaded:   time.Date(2025, 1, 1, 15, 19, 20, 0, time.UTC),
+					},
+				},
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	// Create the inventory.
+	sandbox := testutil.NewSandbox()
+	defer sandbox.Close()
+	storage, err := newZoneInventoryStorageMemoryDisk(sandbox.BasePath)
+	require.NoError(t, err)
+	config := parseDefaultBind9Config(t)
+	inventory := newZoneInventory(storage, config, bind9StatsClient, "localhost", 5380)
+	defer inventory.stop()
+
+	// Populate the zones from the DNS server to the inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+	err = inventory.getCurrentState().err
+	require.NoError(t, err)
+
+	channel, err := inventory.receiveZones(context.Background(), nil)
+	require.NoError(t, err)
+
+	// Wait for the inventory to start sending zones.
+	require.Eventually(t, func() bool {
+		return inventory.getCurrentState().name == zoneInventoryStateReceivingZones
+	}, time.Second, time.Millisecond)
+
+	// Get the zones from the channel.
+	var receivedZones []*bind9stats.ExtendedZone
+	for result := range channel {
+		require.NoError(t, result.err)
+		receivedZones = append(receivedZones, result.zone)
+	}
+	// Make sure that all zones have been received.
+	require.Len(t, receivedZones, 1)
+	for _, zone := range receivedZones {
+		require.Equal(t, "trusted", zone.ViewName)
+		require.True(t, zone.RPZ)
+	}
+	// Make sure that the inventory is in the correct state.
+	require.Equal(t, zoneInventoryStateReceivedZones, inventory.getCurrentState().name)
 }
 
 // Test that receiving the zones over the channel can be cancelled.

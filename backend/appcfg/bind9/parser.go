@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
@@ -147,6 +148,11 @@ type KeyClause struct {
 //
 // See: https://bind9.readthedocs.io/en/stable/reference.html#options-block-grammar.
 type Options struct {
+	// Cache the response-policy only once.
+	responsePolicyOnce sync.Once
+	// The response-policy clause cache for better access performance.
+	responsePolicy *ResponsePolicy
+	// The list of clauses (e.g., allow-transfer, listen-on, response-policy etc.).
 	Clauses []*OptionClause `parser:"'{' ( @@ ';'+ )* '}'"`
 }
 
@@ -180,6 +186,10 @@ type OptionClause struct {
 //
 // See: https://bind9.readthedocs.io/en/stable/reference.html#view-block-grammar.
 type View struct {
+	// Cache the response-policy only once.
+	responsePolicyOnce sync.Once
+	// The response-policy clause cache for better access performance.
+	responsePolicy *ResponsePolicy
 	// The name of the view statement.
 	Name string `parser:"( @String | @Ident )"`
 	// An optional class of the view statement.

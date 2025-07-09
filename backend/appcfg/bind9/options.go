@@ -24,12 +24,23 @@ func (o *Options) GetListenOnSet() *ListenOnClauses {
 	return &listenOnSet
 }
 
-// Gets the response-policy clause from options.
+// Gets the response-policy clause from options or nil if it is not found. The result
+// of calling this function is cached because it can be accessed frequently (for each zone
+// returned to the server).
 func (o *Options) GetResponsePolicy() *ResponsePolicy {
-	for _, clause := range o.Clauses {
-		if clause.ResponsePolicy != nil {
-			return clause.ResponsePolicy
+	o.responsePolicyOnce.Do(func() {
+		// Return the cached response-policy clause if it was already accessed.
+		if o.responsePolicy != nil {
+			return
 		}
-	}
-	return nil
+		for _, clause := range o.Clauses {
+			if clause.ResponsePolicy != nil {
+				// Cache the response-policy clause for better access performance
+				// in the future.
+				o.responsePolicy = clause.ResponsePolicy
+				return
+			}
+		}
+	})
+	return o.responsePolicy
 }

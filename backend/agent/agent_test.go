@@ -36,6 +36,7 @@ import (
 )
 
 //go:generate mockgen -package=agent -destination=serverstreamingservermock_test.go google.golang.org/grpc ServerStreamingServer
+//go:generate mockgen -package=agent -destination=dnsconfigaccessormock_test.go -mock_names=dnsConfigAccessor=MockDNSConfigAccessor isc.org/stork/agent dnsConfigAccessor
 
 //go:embed testdata/valid-zone.json
 var validZoneData []byte
@@ -1158,6 +1159,87 @@ func TestReceiveZonesPDNS(t *testing.T) {
 		ControlAddress: "127.0.0.1",
 		ControlPort:    1234,
 		ViewName:       "localhost",
+		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
+	}, mock)
+	require.NoError(t, err)
+}
+
+// Test receiving a stream of RPZ zones.
+func TestReceiveRPZZones(t *testing.T) {
+	// Setup server response.
+	defaultZones := generateRandomZones(10)
+	slices.SortFunc(defaultZones, func(zone1, zone2 *bind9stats.Zone) int {
+		return storkutil.CompareNames(zone1.Name(), zone2.Name())
+	})
+	response := map[string]any{
+		"views": map[string]any{
+			"_default": map[string]any{
+				"zones": defaultZones,
+			},
+		},
+	}
+	bind9StatsClient, off := setGetViewsResponseOK(t, response)
+	defer off()
+
+	sa, _, teardown := setupAgentTest()
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Create zone inventory with the configuration that marks each zone as RPZ.
+	rpzMock := NewMockDNSConfigAccessor(ctrl)
+	rpzMock.EXPECT().IsRPZ(gomock.Any(), gomock.Any()).AnyTimes().Return(true)
+
+	inventory := newZoneInventory(newZoneInventoryStorageMemory(), rpzMock, bind9StatsClient, "localhost", 5380)
+	defer inventory.awaitBackgroundTasks()
+
+	// Populate the zones into inventory.
+	done, err := inventory.populate(false)
+	require.NoError(t, err)
+	require.Equal(t, zoneInventoryStateInitial, inventory.getVisitedState(zoneInventoryStateInitial).name)
+	if inventory.getCurrentState().name == zoneInventoryStatePopulating {
+		<-done
+	}
+
+	// Add a BIND9 app with the inventory.
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "key", 1234, false)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+		zoneInventory: inventory,
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
+	// Mock the streaming server.
+	mock := NewMockServerStreamingServer[agentapi.Zone](ctrl)
+
+	// The zones from the _default view should be returned in order.
+	var mocks []any
+	for _, zone := range defaultZones {
+		apiZone := &agentapi.Zone{
+			Name:           zone.Name(),
+			Class:          zone.Class,
+			Serial:         zone.Serial,
+			Type:           zone.Type,
+			Loaded:         zone.Loaded.Unix(),
+			View:           "_default",
+			Rpz:            true,
+			TotalZoneCount: 10,
+		}
+		mocks = append(mocks, mock.EXPECT().Send(apiZone).Return(nil))
+	}
+	gomock.InOrder(mocks...)
+
+	// Run the actual test.
+	err = sa.ReceiveZones(&agentapi.ReceiveZonesReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    1234,
+		ViewName:       "_default",
 		LoadedAfter:    time.Date(2024, 2, 3, 15, 19, 0, 0, time.UTC).Unix(),
 	}, mock)
 	require.NoError(t, err)

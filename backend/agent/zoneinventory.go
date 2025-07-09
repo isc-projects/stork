@@ -952,6 +952,7 @@ func (inventory *zoneInventory) receiveZones(ctx context.Context, filter *bind9s
 						result.zone = &bind9stats.ExtendedZone{
 							Zone:           *zone,
 							ViewName:       view.GetViewName(),
+							RPZ:            inventory.config.IsRPZ(view.GetViewName(), zone.Name()),
 							TotalZoneCount: totalZoneCount,
 						}
 					}

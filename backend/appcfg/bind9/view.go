@@ -21,13 +21,22 @@ func (v *View) GetMatchClients() *MatchClients {
 }
 
 // Returns the response-policy clause for the view or nil if it is not found.
+// The result of calling this function is cached because it can be accessed
+// frequently (for each zone returned to the server).
 func (v *View) GetResponsePolicy() *ResponsePolicy {
-	for _, clause := range v.Clauses {
-		if clause.ResponsePolicy != nil {
-			return clause.ResponsePolicy
+	v.responsePolicyOnce.Do(func() {
+		// Return the cached response-policy clause if it was already accessed.
+		if v.responsePolicy != nil {
+			return
 		}
-	}
-	return nil
+		for _, clause := range v.Clauses {
+			if clause.ResponsePolicy != nil {
+				v.responsePolicy = clause.ResponsePolicy
+				return
+			}
+		}
+	})
+	return v.responsePolicy
 }
 
 // Returns the zone with the specified name or nil if the zone is not found.

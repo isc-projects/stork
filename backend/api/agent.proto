@@ -276,6 +276,8 @@ message Zone {
   string view = 6;
   // Total number of zones.
   int64 totalZoneCount = 7;
+  // Indicates if the zone is RPZ.
+  bool rpz = 8;
 }
 
 // This request is sent from the server to the agent to receive the

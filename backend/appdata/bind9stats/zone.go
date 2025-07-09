@@ -33,6 +33,7 @@ func (zone *Zone) Name() string {
 type ExtendedZone struct {
 	Zone
 	ViewName       string
+	RPZ            bool
 	TotalZoneCount int64
 }
 

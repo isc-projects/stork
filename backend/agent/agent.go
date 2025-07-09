@@ -702,6 +702,7 @@ func (sa *StorkAgent) ReceiveZones(req *agentapi.ReceiveZonesReq, server grpc.Se
 				Type:           zone.Type,
 				Loaded:         zone.Loaded.Unix(),
 				View:           zone.ViewName,
+				Rpz:            zone.RPZ,
 				TotalZoneCount: zone.TotalZoneCount,
 			}
 			err = server.Send(apiZone)
