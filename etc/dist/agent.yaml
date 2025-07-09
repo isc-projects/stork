@@ -32,7 +32,7 @@ contents:
   dst: /usr
 - src: dist/agent/etc/stork/agent.env
   dst: /etc/stork/agent.env
-  type: config
+  type: config|noreplace
 - src: dist/agent/etc/stork/isc-stork-agent.initd
   dst: /etc/init.d/isc-stork-agent
   packager: apk

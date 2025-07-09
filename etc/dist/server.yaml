@@ -32,7 +32,7 @@ contents:
   dst: /usr
 - src: dist/server/etc/stork/server.env
   dst: /etc/stork/server.env
-  type: config
+  type: config|noreplace
 - src: dist/server/etc/stork/isc-stork-server.initd
   dst: /etc/init.d/isc-stork-server
   packager: apk
