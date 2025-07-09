@@ -1,6 +1,6 @@
 import { Component, OnInit, OnChanges, Input, OnDestroy } from '@angular/core'
 
-import { LazyLoadEvent, MessageService } from 'primeng/api'
+import { LazyLoadEvent, MessageService, ConfirmationService } from 'primeng/api'
 
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
@@ -8,6 +8,7 @@ import { Subscription, filter, lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { Events, Machine } from '../backend'
 import { ServerSentEventsService } from '../server-sent-events.service'
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 /**
  * A component that presents the events list. Each event has its own row.
@@ -116,6 +117,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
         public auth: AuthService,
+        private confirmationService: ConfirmationService,
         private sse: ServerSentEventsService
     ) {}
 
@@ -356,6 +358,40 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             this.filter.user = event.value.id
         }
         this.applyFilter()
+    }
+
+    /** Callback called on clicking the Clear button. */
+    onClear(event) {
+      console.log("Clearing event log...");
+      this.confirmationService.confirm({
+        header: "Are you sure you want to clear all of the notifications?",
+        message: "Every notification on every page will be permanently deleted.<br/>This action cannot be undone.",
+        acceptLabel: "Delete",
+        rejectLabel: "Cancel",
+        defaultFocus: "none",
+        accept: () => {
+          this.loading = true;
+          this.eventsApi.deleteEvents()
+            .toPromise()
+            .then(() => {
+              this.events.items = [];
+              this.events.total = 0;
+            })
+            .catch((err) => {
+              const msg = getErrorMessage(err)
+              this.msgSrv.add({
+                  severity: 'error',
+                  summary: 'Cannot clear events',
+                  detail: 'Error clearing events: ' + msg,
+                  life: 10000,
+              });
+            })
+            .finally(() => {
+              this.loading = false
+            });
+        },
+        key: "clearConfirmDialog",
+      });
     }
 
     /**

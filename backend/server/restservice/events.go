@@ -71,3 +71,17 @@ func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) 
 	rsp := events.NewGetEventsOK().WithPayload(eventRecs)
 	return rsp
 }
+
+func (r *RestAPI) DeleteEvents(ctx context.Context, params events.DeleteEventsParams) middleware.Responder {
+	err := dbmodel.DeleteAllEvents(r.DB)
+	if err != nil {
+		msg := "Problem deleting events from the database"
+		log.Error(err)
+		rsp := events.NewDeleteEventsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rsp := events.NewDeleteEventsNoContent()
+	return rsp
+}

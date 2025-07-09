@@ -39,3 +39,17 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+    delete:
+      summary: Clear all events.
+      description: >-
+        Clear all of the events known to the server.
+      operationId: deleteEvents
+      tags:
+        - Events
+      responses:
+        204:
+          description: No events (because deleting all of them was successful).
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

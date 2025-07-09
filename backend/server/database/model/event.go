@@ -124,3 +124,16 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level EventLevel, dae
 	}
 	return events, int64(total), nil
 }
+
+func DeleteAllEvents(db *pg.DB) error {
+	_, err := db.Model((*Event)(nil)).
+	// A where clause is mandatory in go-pg, but I really do want to delete
+	// everything.  Give a where clause that's always true to satisfy the API
+	// requirement and still perform the desired action.
+		Where("1 = 1").
+		Delete()
+	if err != nil {
+		return pkgerrors.Wrapf(err, "problem deleting events")
+	}
+	return nil
+}
