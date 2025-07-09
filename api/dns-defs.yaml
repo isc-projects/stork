@@ -64,6 +64,8 @@
       loadedAt:
         type: string
         format: date-time
+      rpz:
+        type: boolean
       serial:
         type: integer
         x-omitempty: false

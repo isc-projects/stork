@@ -409,6 +409,7 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 					Class:    zone.Class,
 					Serial:   zone.Serial,
 					Type:     zone.Type,
+					RPZ:      zone.RPZ,
 					LoadedAt: zone.Loaded,
 				},
 			},

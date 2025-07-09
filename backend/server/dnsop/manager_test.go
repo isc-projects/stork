@@ -473,6 +473,7 @@ func TestFetchZones(t *testing.T) {
 							Type:     zone.Type,
 							Loaded:   time.Now().UTC(),
 						},
+						RPZ:            true,
 						ViewName:       "foo",
 						TotalZoneCount: int64(len(randomZones)),
 					}
@@ -520,6 +521,7 @@ func TestFetchZones(t *testing.T) {
 			require.Equal(t, "foo", localZone.View)
 			require.Equal(t, "IN", localZone.Class)
 			require.Equal(t, "primary", localZone.Type)
+			require.True(t, localZone.RPZ)
 		}
 	}
 

@@ -1063,6 +1063,7 @@ func TestReceiveZones(t *testing.T) {
 			Serial:         zone.Serial,
 			Type:           zone.Type,
 			Loaded:         time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC).Unix(),
+			Rpz:            true,
 			View:           "_default",
 			TotalZoneCount: 100,
 		}
@@ -1094,6 +1095,7 @@ func TestReceiveZones(t *testing.T) {
 		require.Equal(t, generatedZones[i].Class, zone.Class)
 		require.Equal(t, generatedZones[i].Serial, zone.Serial)
 		require.Equal(t, generatedZones[i].Type, zone.Type)
+		require.True(t, zone.RPZ)
 		require.Equal(t, time.Date(2025, 1, 5, 15, 19, 0, 0, time.UTC), zone.Loaded)
 		require.Equal(t, "_default", zone.ViewName)
 		require.EqualValues(t, 100, zone.TotalZoneCount)

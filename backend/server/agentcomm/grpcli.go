@@ -1044,6 +1044,7 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, app Control
 					Type:     receivedZone.GetType(),
 					Loaded:   time.Unix(receivedZone.GetLoaded(), 0).UTC(),
 				},
+				RPZ:            receivedZone.GetRpz(),
 				ViewName:       receivedZone.View,
 				TotalZoneCount: receivedZone.TotalZoneCount,
 			}

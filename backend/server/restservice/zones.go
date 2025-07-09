@@ -64,6 +64,7 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 				DaemonID: localZone.DaemonID,
 				LoadedAt: strfmt.DateTime(localZone.LoadedAt),
 				Serial:   localZone.Serial,
+				Rpz:      localZone.RPZ,
 				View:     localZone.View,
 				ZoneType: localZone.Type,
 			})

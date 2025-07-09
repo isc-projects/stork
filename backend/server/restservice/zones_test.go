@@ -89,6 +89,7 @@ func TestGetZones(t *testing.T) {
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
 					Type:     randomZone.Type,
+					RPZ:      i%2 == 0,
 					LoadedAt: time.Now().UTC(),
 				},
 			},
@@ -105,6 +106,10 @@ func TestGetZones(t *testing.T) {
 		rspOK := (rsp).(*dns.GetZonesOK)
 		require.Len(t, rspOK.Payload.Items, 10)
 		require.EqualValues(t, 100, rspOK.Payload.Total)
+		for i, zone := range rspOK.Payload.Items {
+			// Ensure that the RPZ flag is propagated.
+			require.Equal(t, i%2 == 0, zone.LocalZones[0].Rpz)
+		}
 	})
 
 	t.Run("page and offset", func(t *testing.T) {

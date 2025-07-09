@@ -156,6 +156,7 @@ type LocalZone struct {
 	Class    string
 	Serial   int64 `pg:",use_zero"`
 	Type     string
+	RPZ      bool
 	LoadedAt time.Time
 
 	Daemon *Daemon `pg:"rel:has-one"`
