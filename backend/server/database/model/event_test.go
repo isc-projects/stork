@@ -186,3 +186,32 @@ func TestConvertLevelToString(t *testing.T) {
 	require.EqualValues(t, "error", EvError.String())
 	require.EqualValues(t, "unknown", EventLevel(42).String())
 }
+
+func TestDeleteAllEvents(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add example event
+	exEv := &Event{
+		Text:    "some info event",
+		Details: "more details about info event",
+		Level:   EvInfo,
+		Relations: &Relations{
+			MachineID: 1,
+		},
+		SSEStreams: []SSEStream{"foo", "bar"},
+	}
+
+	err := AddEvent(db, exEv)
+	require.NoError(t, err)
+	require.NotZero(t, exEv.ID)
+
+	err = DeleteAllEvents(db)
+
+	require.NoError(t, err)
+
+	events, total, err := GetEventsByPage(db, 0, 10, EvInfo, nil, nil, nil, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, total)
+	require.Len(t, events, 0)
+}

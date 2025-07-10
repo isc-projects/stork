@@ -1,88 +1,90 @@
 <!-- filter bar -->
-<div *ngIf="isTable" class="my-2 flex justify-content-between align-items-start">
-  <div class="flex flex-wrap gap-2 column-gap-5">
-    <div class="w-20rem">
-        <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)"></p-selectButton>
-    </div>
+<div *ngIf="isTable" class="my-2 flex gap-2 justify-content-between align-items-start filter-bar--maxwidth-flexwrap">
+    <div class="flex flex-wrap gap-2 column-gap-5">
+        <div class="w-20rem">
+            <p-selectButton
+                [options]="levels"
+                [(ngModel)]="filter.level"
+                (onChange)="refreshEvents(null)"
+            ></p-selectButton>
+        </div>
 
-    <div class="flex align-items-center gap-2 flex-none">
-        <div>Machine:</div>
-        <p-dropdown
-            [options]="machines"
-            [(ngModel)]="selectedMachine"
-            optionLabel="address"
-            id="machines-events"
-            placeholder="any"
-            showClear="true"
-            tooltip="Show events related to selected machine"
-            styleClass="max-w-14rem w-12rem"
-            (onChange)="onMachineSelect($event)"
-        ></p-dropdown>
-    </div>
+        <div class="flex align-items-center gap-2 flex-none">
+            <div>Machine:</div>
+            <p-dropdown
+                [options]="machines"
+                [(ngModel)]="selectedMachine"
+                optionLabel="address"
+                id="machines-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected machine"
+                styleClass="max-w-14rem w-12rem"
+                (onChange)="onMachineSelect($event)"
+            ></p-dropdown>
+        </div>
 
-    <div class="flex align-items-center gap-2 flex-none">
-        <div>App Type:</div>
-        <p-dropdown
-            [options]="appTypes"
-            [(ngModel)]="selectedAppType"
-            optionLabel="name"
-            id="app-events"
-            placeholder="any"
-            showClear="true"
-            tooltip="Show events related to selected app type"
-            styleClass="max-w-14rem w-10rem"
-            (onChange)="onAppTypeSelect($event)"
-        ></p-dropdown>
-    </div>
+        <div class="flex align-items-center gap-2 flex-none">
+            <div>App Type:</div>
+            <p-dropdown
+                [options]="appTypes"
+                [(ngModel)]="selectedAppType"
+                optionLabel="name"
+                id="app-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected app type"
+                styleClass="max-w-14rem w-10rem"
+                (onChange)="onAppTypeSelect($event)"
+            ></p-dropdown>
+        </div>
 
-    <div class="flex align-items-center gap-2 flex-none">
-        <div>Daemon:</div>
-        <p-dropdown
-            [options]="daemonTypes"
-            [(ngModel)]="selectedDaemonType"
-            optionLabel="name"
-            id="daemon-events"
-            placeholder="any"
-            showClear="true"
-            tooltip="Show events related to selected daemon type"
-            styleClass="max-w-14rem w-10rem"
-            (onChange)="onDaemonTypeSelect($event)"
-        ></p-dropdown>
-    </div>
+        <div class="flex align-items-center gap-2 flex-none">
+            <div>Daemon:</div>
+            <p-dropdown
+                [options]="daemonTypes"
+                [(ngModel)]="selectedDaemonType"
+                optionLabel="name"
+                id="daemon-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected daemon type"
+                styleClass="max-w-14rem w-10rem"
+                (onChange)="onDaemonTypeSelect($event)"
+            ></p-dropdown>
+        </div>
 
+        <div class="flex align-items-center gap-2 flex-none" appAccessEntity="users" [appHideIfNoAccess]="true">
+            <div>User:</div>
+            <p-dropdown
+                [options]="users"
+                [(ngModel)]="selectedUser"
+                optionLabel="login"
+                id="user-events"
+                placeholder="any"
+                showClear="true"
+                tooltip="Show events related to selected user"
+                styleClass="max-w-14rem w-10rem"
+                (onChange)="onUserSelect($event)"
+            ></p-dropdown>
+        </div>
+    </div>
     <div class="flex align-items-center gap-2 flex-none" appAccessEntity="users" [appHideIfNoAccess]="true">
-        <div>User:</div>
-        <p-dropdown
-            [options]="users"
-            [(ngModel)]="selectedUser"
-            optionLabel="login"
-            id="user-events"
-            placeholder="any"
-            showClear="true"
-            tooltip="Show events related to selected user"
-            styleClass="max-w-14rem w-10rem"
-            (onChange)="onUserSelect($event)"
-        ></p-dropdown>
+        <p-button
+            tooltip="Clear all events (on all pages)"
+            label="Clear"
+            severity="warning"
+            icon="pi pi-trash"
+            (onClick)="onClear()"
+        ></p-button>
+        <p-confirmDialog
+            key="clearConfirmDialog"
+            closable="false"
+            icon="pi pi-exclamation-triangle"
+            acceptIcon="pi pi-trash mr-2"
+            rejectButtonStyleClass="p-button-text"
+        ></p-confirmDialog>
     </div>
-  </div>
-  <div class="flex align-items-center gap-2 flex-none" appAccessEntity="users"
-  [appHideIfNoAccess]="true">
-    <p-button
-      tooltip="Clear all events (on all pages)"
-      label="Clear"
-      severity="danger"
-      [outlined]="true"
-      icon="pi pi-trash"
-      (onClick)="onClear($event)"
-    ></p-button>
-    <p-confirmDialog
-      key="clearConfirmDialog"
-      closable="false"
-      icon="pi pi-exclamation-circle"
-      acceptIcon="pi pi-trash mr-2"
-      acceptButtonStyleClass="p-button-danger"
-    ></p-confirmDialog>
-  </div>
 </div>
 
 <!-- events table -->

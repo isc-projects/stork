@@ -68,3 +68,12 @@
   text-align: center
   // Use the same font size as in the standard ceils.
   font-size: 1.2em
+
+.filter-bar--maxwidth-flexwrap
+  // If the viewport is smaller than 462px, the largest element in the filter
+  // bar (the all/warnings/errors button) pushes the clear button off the side
+  // of the viewport.  Apply flex-wrap: wrap to the container around both the
+  // filter bar and the clear button so that the clear button gets bumped down
+  // below the filter buttons rather than sliding off the edge of the screen.
+  @media (max-width: 462px)
+    flex-wrap: wrap

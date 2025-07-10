@@ -9,6 +9,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { FormsModule } from '@angular/forms'
 import { SelectButtonModule } from 'primeng/selectbutton'
+import { ButtonModule } from 'primeng/button'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
@@ -35,6 +37,8 @@ describe('EventsPageComponent', () => {
             imports: [
                 FormsModule,
                 SelectButtonModule,
+                ButtonModule,
+                ConfirmDialogModule,
                 DropdownModule,
                 TableModule,
                 BreadcrumbModule,

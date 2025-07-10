@@ -42,4 +42,9 @@ func TestEvents(t *testing.T) {
 	ev2 := okRsp.Payload.Items[0]
 	require.EqualValues(t, "some event", ev2.Text)
 	require.EqualValues(t, dbmodel.EvInfo, ev2.Level)
+
+	// delete all
+	deleteParams := events.DeleteEventsParams{}
+	rsp = rapi.DeleteEvents(ctx, deleteParams)
+	require.IsType(t, &events.DeleteEventsNoContent{}, rsp)
 }

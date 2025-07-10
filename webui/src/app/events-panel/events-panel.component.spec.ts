@@ -1,7 +1,7 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute, RouterModule } from '@angular/router'
-import { MessageService } from 'primeng/api'
+import { MessageService, ConfirmationService, Confirmation } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { PaginatorModule } from 'primeng/paginator'
 import { TableModule } from 'primeng/table'
@@ -37,6 +37,8 @@ describe('EventsPanelComponent', () => {
     let component: EventsPanelComponent
     let fixture: ComponentFixture<EventsPanelComponent>
     let sseService: ServerSentEventsService
+    let eventsApi: EventsService
+    let confirmationService: ConfirmationService
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -47,6 +49,7 @@ describe('EventsPanelComponent', () => {
                 UsersService,
                 ServicesService,
                 MessageService,
+                ConfirmationService,
                 {
                     provide: ActivatedRoute,
                     useValue: {},
@@ -63,6 +66,8 @@ describe('EventsPanelComponent', () => {
         component = fixture.componentInstance
         fixture.detectChanges()
         sseService = fixture.debugElement.injector.get(ServerSentEventsService)
+        eventsApi = fixture.debugElement.injector.get(EventsService)
+        confirmationService = fixture.debugElement.injector.get(ConfirmationService)
     })
 
     it('should create', () => {
@@ -182,5 +187,29 @@ describe('EventsPanelComponent', () => {
 
         component.onToggleExpandEventDetails(42)
         expect(component.expandedEvents.has(42)).toBeFalse()
+    })
+
+    it('should remove the events on onClear', () => {
+        spyOn(eventsApi, 'deleteEvents')
+        const confirmSpy = spyOn(confirmationService, 'confirm')
+        // 1. Confirm that the onClear function clears events when the user clicks
+        // the clear button and accepts the confirmation dialog.
+        confirmSpy.and.callFake((confirmation: Confirmation) => {
+            return confirmation.accept()
+        })
+        component.onClear()
+        expect(eventsApi.deleteEvents).toHaveBeenCalledTimes(1)
+
+        // 2. Confirm that the onClear function doesn't clear events when the user
+        // clicks the clear button and then *rejects* the confirmation dialog.
+        confirmSpy.and.callFake((confirmation: Confirmation) => {
+            if (confirmation.reject) {
+                return confirmation.reject()
+            }
+        })
+        component.onClear()
+        // deleteEvents should still have been called one time (i.e. *not* called
+        // a second time).
+        expect(eventsApi.deleteEvents).toHaveBeenCalledTimes(1)
     })
 })
