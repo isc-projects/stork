@@ -268,11 +268,13 @@ type ListenOn struct {
 	AddressMatchList *AddressMatchList `parser:"'{' @@ '}'"`
 }
 
+// ResponsePolicy is the clause specifying the response policy zones.
 type ResponsePolicy struct {
 	Zones    []*ResponsePolicyZone `parser:"'{' ( @@ ';'+ )* '}'"`
 	Switches []string              `parser:"( @String | @Ident | @Number | @Asterisk )*"`
 }
 
+// ResponsePolicyZone is a single response policy zone entry.
 type ResponsePolicyZone struct {
 	Zone     string   `parser:"'zone' ( @String | @Ident )"`
 	Switches []string `parser:"( @String | @Ident | @Number | @Asterisk )*"`
@@ -315,9 +317,10 @@ type UnnamedStatement struct {
 //
 // Many options in the options statement have this format.
 type Option struct {
-	Identifier string                 `parser:"@Ident"`
-	Switches   []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
-	Contents   *GenericClauseContents `parser:"( '{' @@ '}' )?"`
+	Identifier                  string                 `parser:"@Ident"`
+	SwitchesBeforeCurlyBrackets []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
+	Contents                    *GenericClauseContents `parser:"( '{' @@ '}' )?"`
+	SwitchesAfterCurlyBrackets  []string               `parser:"( @IPv4Address | @IPv6AddressRange | @IPv6Address | @IPv4AddressQuoted | @IPv6AddressRangeQuoted | @IPv6AddressQuoted | @String | @Ident | @Number | @Asterisk )*"`
 }
 
 // GenericClauseContents is used to parse any type of contents. It is
