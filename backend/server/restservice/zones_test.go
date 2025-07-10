@@ -53,6 +53,7 @@ func TestGetZones(t *testing.T) {
 	randomZones = testutil.GenerateMoreZonesWithClass(randomZones, 25, "CH")
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, "secondary")
 	randomZones = testutil.GenerateMoreZonesWithSerial(randomZones, 25, 123456)
+	randomZones = testutil.GenerateMoreZonesWithRPZ(randomZones, 25, true)
 
 	var (
 		apps  []*dbmodel.App
@@ -89,7 +90,7 @@ func TestGetZones(t *testing.T) {
 					Class:    randomZone.Class,
 					Serial:   randomZone.Serial,
 					Type:     randomZone.Type,
-					RPZ:      i%2 == 0,
+					RPZ:      randomZone.RPZ,
 					LoadedAt: time.Now().UTC(),
 				},
 			},
@@ -105,11 +106,7 @@ func TestGetZones(t *testing.T) {
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
 		rspOK := (rsp).(*dns.GetZonesOK)
 		require.Len(t, rspOK.Payload.Items, 10)
-		require.EqualValues(t, 100, rspOK.Payload.Total)
-		for i, zone := range rspOK.Payload.Items {
-			// Ensure that the RPZ flag is propagated.
-			require.Equal(t, i%2 == 0, zone.LocalZones[0].Rpz)
-		}
+		require.EqualValues(t, 125, rspOK.Payload.Total)
 	})
 
 	t.Run("page and offset", func(t *testing.T) {
@@ -124,7 +121,7 @@ func TestGetZones(t *testing.T) {
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
 		rspOK := (rsp).(*dns.GetZonesOK)
 		require.Len(t, rspOK.Payload.Items, 20)
-		require.EqualValues(t, 100, rspOK.Payload.Total)
+		require.EqualValues(t, 125, rspOK.Payload.Total)
 	})
 
 	t.Run("filter by serial", func(t *testing.T) {
@@ -212,8 +209,8 @@ func TestGetZones(t *testing.T) {
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
 		rspOK := (rsp).(*dns.GetZonesOK)
-		require.Len(t, rspOK.Payload.Items, 100)
-		require.EqualValues(t, 100, rspOK.Payload.Total)
+		require.Len(t, rspOK.Payload.Items, 125)
+		require.EqualValues(t, 125, rspOK.Payload.Total)
 
 		// Check unique zone types.
 		collectedZoneTypes := make(map[string]struct{})
@@ -275,8 +272,8 @@ func TestGetZones(t *testing.T) {
 		rsp := rapi.GetZones(ctx, params)
 		require.IsType(t, &dns.GetZonesOK{}, rsp)
 		rspOK := (rsp).(*dns.GetZonesOK)
-		require.Len(t, rspOK.Payload.Items, 100)
-		require.EqualValues(t, 100, rspOK.Payload.Total)
+		require.Len(t, rspOK.Payload.Items, 125)
+		require.EqualValues(t, 125, rspOK.Payload.Total)
 	})
 
 	t.Run("filter by non-DNS app type", func(t *testing.T) {
@@ -352,6 +349,40 @@ func TestGetZones(t *testing.T) {
 			return zone.LocalZones[0].View == view
 		})
 		require.GreaterOrEqual(t, index, 0)
+	})
+
+	t.Run("filter with excluding RPZ", func(t *testing.T) {
+		ctx := context.Background()
+		params := dns.GetZonesParams{
+			Limit: storkutil.Ptr(int64(1000)),
+			Rpz:   storkutil.Ptr(false),
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 100)
+		require.EqualValues(t, 100, rspOK.Payload.Total)
+		for _, zone := range rspOK.Payload.Items {
+			// Must not return RPZ zones.
+			require.False(t, zone.LocalZones[0].Rpz)
+		}
+	})
+
+	t.Run("filter with only RPZ", func(t *testing.T) {
+		ctx := context.Background()
+		params := dns.GetZonesParams{
+			Limit: storkutil.Ptr(int64(1000)),
+			Rpz:   storkutil.Ptr(true),
+		}
+		rsp := rapi.GetZones(ctx, params)
+		require.IsType(t, &dns.GetZonesOK{}, rsp)
+		rspOK := (rsp).(*dns.GetZonesOK)
+		require.Len(t, rspOK.Payload.Items, 25)
+		require.EqualValues(t, 25, rspOK.Payload.Total)
+		for _, zone := range rspOK.Payload.Items {
+			// All zones must be RPZ.
+			require.True(t, zone.LocalZones[0].Rpz)
+		}
 	})
 }
 

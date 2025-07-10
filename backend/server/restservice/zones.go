@@ -33,6 +33,7 @@ func (r *RestAPI) GetZones(ctx context.Context, params dns.GetZonesParams) middl
 		AppID:   params.AppID,
 		AppType: params.AppType,
 		Class:   params.Class,
+		RPZ:     params.Rpz,
 		Serial:  params.Serial,
 		Text:    params.Text,
 		Offset:  storkutil.Ptr(offset),

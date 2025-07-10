@@ -9,6 +9,7 @@ func init() {
 			-- response policy zone.
 			ALTER TABLE public.local_zone
 				ADD COLUMN rpz BOOLEAN DEFAULT FALSE;
+			CREATE INDEX local_zone_rpz_idx ON local_zone(rpz);
 		`)
 		return err
 	}, func(db migrations.DB) error {

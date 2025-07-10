@@ -245,6 +245,35 @@ describe('ZonesPageComponent', () => {
                 name: '0.IN-ADDR.ARPA',
                 rname: 'ARPA.IN-ADDR.0',
             },
+            {
+                id: 21323,
+                localZones: [
+                    {
+                        appId: 30,
+                        appName: 'bind9@agent-bind9',
+                        _class: 'IN',
+                        daemonId: 73,
+                        loadedAt: '2025-03-03T17:36:14.000Z',
+                        serial: 0,
+                        view: '_default',
+                        zoneType: 'primary',
+                        rpz: true,
+                    },
+                    {
+                        appId: 31,
+                        appName: 'bind9@agent-bind9-2',
+                        _class: 'IN',
+                        daemonId: 74,
+                        loadedAt: '2025-03-03T17:36:14.000Z',
+                        serial: 0,
+                        view: '_default',
+                        zoneType: 'primary',
+                        rpz: true,
+                    },
+                ],
+                name: 'rpz.example.com',
+                rname: 'com.example.rpz',
+            },
         ],
         total: 3,
     }
@@ -414,7 +443,7 @@ describe('ZonesPageComponent', () => {
 
     it('should call dns apis on init', async () => {
         // Arrange + Act + Assert
-        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null, null)
+        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null, null, null)
         expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(messageAddSpy).toHaveBeenCalledOnceWith(
@@ -436,7 +465,7 @@ describe('ZonesPageComponent', () => {
         // Assert
         expect(component.zonesLoading).withContext('Zones table data loading should be done').toBeFalse()
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null, null)
         expect(component.getZonesFetchWithStatus).toHaveBeenCalledTimes(1)
         expect(putZonesFetchSpy).toHaveBeenCalledTimes(0)
         expect(component.zones).toEqual(fakeZones.items)
@@ -447,13 +476,18 @@ describe('ZonesPageComponent', () => {
         const messageDe = fixture.debugElement.query(By.css('#zones-table .p-inline-message'))
         expect(messageDe).toBeNull()
 
-        // There are all 3 zones listed.
+        // There are all zones listed.
         const tableRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tr'))
         expect(tableRows).toBeTruthy()
-        expect(tableRows.length).toEqual(3)
+        expect(tableRows.length).toEqual(4)
         expect(tableRows[0].nativeElement.innerText).toContain(fakeZones.items[0].name)
+        expect(tableRows[0].nativeElement.innerText).not.toContain('RPZ')
         expect(tableRows[1].nativeElement.innerText).toContain(fakeZones.items[1].name)
+        expect(tableRows[1].nativeElement.innerText).not.toContain('RPZ')
         expect(tableRows[2].nativeElement.innerText).toContain(fakeZones.items[2].name)
+        expect(tableRows[2].nativeElement.innerText).not.toContain('RPZ')
+        expect(tableRows[3].nativeElement.innerText).toContain(fakeZones.items[3].name)
+        expect(tableRows[3].nativeElement.innerText).toContain('RPZ')
 
         // Try to expand the row.
         const expandRowBtns = tableRows[0].queryAll(By.css('button'))
@@ -484,7 +518,7 @@ describe('ZonesPageComponent', () => {
         expect(buttonDe).toBeTruthy()
         expect(messageDe.nativeElement.innerText).toContain('Zones were not fetched yet')
         expect(buttonDe.nativeElement.innerText).toContain('Fetch Zones')
-        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null, null)
+        expect(getZonesSpy).toHaveBeenCalledOnceWith(0, 10, null, null, null, null, null, null, null)
     })
 
     it('should open and close tabs', async () => {
@@ -502,10 +536,10 @@ describe('ZonesPageComponent', () => {
         expect(component.zonesTotal).toEqual(fakeZones.total)
         fixture.detectChanges()
 
-        // There are all 3 zones listed.
+        // There are all zones listed.
         const tableRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tr'))
         expect(tableRows).toBeTruthy()
-        expect(tableRows.length).toEqual(3)
+        expect(tableRows.length).toEqual(4)
 
         // Act + Assert
         const zonesTabDe = fixture.debugElement.query(By.css('ul.p-tabview-nav li:first-child a'))
@@ -697,7 +731,7 @@ describe('ZonesPageComponent', () => {
 
         // Assert
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, '1')
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, '1', null)
     }))
 
     it('should filter zones table by app id', fakeAsync(() => {
@@ -712,7 +746,7 @@ describe('ZonesPageComponent', () => {
 
         // Assert
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, 9, null)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, 9, null, null)
     }))
 
     it('should filter zones table by text', fakeAsync(() => {
@@ -728,7 +762,7 @@ describe('ZonesPageComponent', () => {
 
         // Assert
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, 'test', null, null)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, 'test', null, null, null)
     }))
 
     it('should filter zones table by app type', fakeAsync(() => {
@@ -748,7 +782,7 @@ describe('ZonesPageComponent', () => {
 
         // Assert
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, inValuesOf(DNSAppType), null, null, null, null, null)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, inValuesOf(DNSAppType), null, null, null, null, null, null)
     }))
 
     it('should filter zones table by class', fakeAsync(() => {
@@ -768,7 +802,7 @@ describe('ZonesPageComponent', () => {
 
         // Assert
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, inValuesOf(DNSClass), null, null, null)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, inValuesOf(DNSClass), null, null, null, null)
     }))
 
     it('should filter zones table by type', fakeAsync(() => {
@@ -806,8 +840,69 @@ describe('ZonesPageComponent', () => {
             null,
             null,
             null,
+            null,
             null
         )
+    }))
+
+    it('should filter zones table with including RPZ', fakeAsync(() => {
+        // Arrange
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-dropdown'))
+        expect(inputDropdown).toBeTruthy()
+        inputDropdown.nativeElement.click()
+        fixture.detectChanges()
+        const listItems = inputDropdown.queryAll(By.css('li'))
+        expect(listItems).toBeTruthy()
+        expect(listItems.length).toBeGreaterThan(0)
+
+        // Act
+        listItems[0].nativeElement.click()
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null, null)
+    }))
+
+    it('should filter zones table with excluding RPZ', fakeAsync(() => {
+        // Arrange
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-dropdown'))
+        expect(inputDropdown).toBeTruthy()
+        inputDropdown.nativeElement.click()
+        fixture.detectChanges()
+        const listItems = inputDropdown.queryAll(By.css('li'))
+        expect(listItems).toBeTruthy()
+        expect(listItems.length).toBeGreaterThan(0)
+
+        // Act
+        listItems[1].nativeElement.click()
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null, false)
+    }))
+
+    it('should filter zones table with RPZ only', fakeAsync(() => {
+        // Arrange
+        const inputDropdown = fixture.debugElement.query(By.css('[inputId="rpz"] .p-dropdown'))
+        expect(inputDropdown).toBeTruthy()
+        inputDropdown.nativeElement.click()
+        fixture.detectChanges()
+        const listItems = inputDropdown.queryAll(By.css('li'))
+        expect(listItems).toBeTruthy()
+        expect(listItems.length).toBeGreaterThan(0)
+
+        // Act
+        listItems[2].nativeElement.click()
+        tick(300)
+        fixture.detectChanges()
+
+        // Assert
+        expect(getZonesSpy).toHaveBeenCalledTimes(2)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null, true)
     }))
 
     it('should display feedback when wrong filter in query params', async () => {
@@ -902,7 +997,8 @@ describe('ZonesPageComponent', () => {
             'IN',
             'test',
             2,
-            '123'
+            '123',
+            null
         )
     })
 
@@ -932,7 +1028,7 @@ describe('ZonesPageComponent', () => {
         await fixture.whenStable()
         fixture.detectChanges()
         expect(component.builtinZonesDisplayed).toBeFalse()
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, 'bind9', ['primary'], 'IN', 'test', 2, '123')
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, 'bind9', ['primary'], 'IN', 'test', 2, '123', null)
         component.toggleBuiltinZones()
         await fixture.whenStable()
         fixture.detectChanges()
@@ -944,7 +1040,8 @@ describe('ZonesPageComponent', () => {
             'IN',
             'test',
             2,
-            '123'
+            '123',
+            null
         )
 
         component.clearFilter(component?.zonesTable?.filters['appId'])
@@ -959,13 +1056,14 @@ describe('ZonesPageComponent', () => {
             'IN',
             'test',
             null,
-            '123'
+            '123',
+            null
         )
 
         component.clearTableState()
         fixture.detectChanges()
         expect(hasFilter(component?.zonesTable?.filters)).toBeFalse()
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, null, null, null)
     })
 
     it('should have non empty enum values for all enum type of supported query param filters', () => {
@@ -1109,10 +1207,10 @@ describe('ZonesPageComponent', () => {
         expect(component.zonesTotal).toEqual(fakeZones.total)
         fixture.detectChanges()
 
-        // There are all 3 zones listed.
+        // There are all zones listed.
         const tableRows = fixture.debugElement.queryAll(By.css('#zones-table tbody tr'))
         expect(tableRows).toBeTruthy()
-        expect(tableRows.length).toEqual(3)
+        expect(tableRows.length).toEqual(4)
 
         const zonesTabDe = fixture.debugElement.query(By.css('ul.p-tabview-nav li:first-child a'))
         expect(zonesTabDe).toBeTruthy()
@@ -1181,7 +1279,7 @@ describe('ZonesPageComponent', () => {
         // Assert
         expect(getZonesSpy).toHaveBeenCalledTimes(2)
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
-        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, 1, null)
+        expect(getZonesSpy).toHaveBeenCalledWith(0, 10, null, null, null, null, 1, null, null)
     }))
 
     it('should disable show zone button', () => {

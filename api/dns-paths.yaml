@@ -80,6 +80,12 @@
             Limit the returned list of zones to the ones with the given serial number
             or partial serial number.
           type: string
+        - name: rpz
+          in: query
+          description: >-
+            Filter returned list of zones by RPZ flag indicating if the zone is a response policy zone.
+            If not specified, all zones are returned.
+          type: boolean
       responses:
         200:
           description: List of zones.

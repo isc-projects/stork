@@ -98,6 +98,8 @@ type GetZonesFilter struct {
 	Limit *int
 	// Paging offset.
 	Offset *int
+	// Filter by response policy zone. If nil, all zones are returned.
+	RPZ *bool
 	// Filter by partial or exact zone serial.
 	Serial *string
 	// Filter by zone type (e.g., primary or secondary).
@@ -257,7 +259,7 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 		q = q.Offset(*filter.Offset)
 	}
 	// Join relations required for filtering.
-	if filter.Serial != nil || filter.Class != nil || filter.Types != nil && filter.Types.IsAnySpecified() || filter.AppID != nil || filter.AppType != nil || filter.Text != nil {
+	if filter.Serial != nil || filter.Class != nil || filter.Types != nil && filter.Types.IsAnySpecified() || filter.RPZ != nil || filter.AppID != nil || filter.AppType != nil || filter.Text != nil {
 		q = q.Join("JOIN local_zone AS lz").JoinOn("lz.zone_id = zone.id")
 		if filter.AppID != nil || filter.AppType != nil || filter.Text != nil {
 			q = q.Join("JOIN daemon AS d").JoinOn("d.id = lz.daemon_id").
@@ -278,6 +280,10 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 		if len(types) > 0 {
 			q = q.WhereIn("lz.type IN (?)", types)
 		}
+	}
+	// Filter by response policy zone.
+	if filter.RPZ != nil {
+		q = q.Where("lz.rpz = ?", *filter.RPZ)
 	}
 	// Filter by app ID.
 	if filter.AppID != nil {

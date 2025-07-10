@@ -294,6 +294,20 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
     zoneClasses: string[] = []
 
     /**
+     * Response policy zone filtering options.
+     *
+     * The options are:
+     * - include - include RPZ with other zones,
+     * - exclude - exclude RPZ from the list,
+     * - only - return only RPZ.
+     */
+    rpzOptions: { name: string; value: string }[] = [
+        { name: 'include', value: 'include' },
+        { name: 'exclude', value: 'exclude' },
+        { name: 'only', value: 'only' },
+    ]
+
+    /**
      * DNS app types values used for the UI filter dropdown options.
      */
     appTypes: { name: string; value: string }[] = []
@@ -360,6 +374,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         appId: { type: 'numeric', matchMode: 'contains' },
         appType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSAppType) },
         zoneType: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSZoneType), arrayType: true },
+        rpz: { type: 'enum', matchMode: 'equals', enumValues: ['include', 'exclude', 'only'] },
         zoneClass: { type: 'enum', matchMode: 'equals', enumValues: Object.values(DNSClass) },
         text: { type: 'string', matchMode: 'contains' },
         zoneSerial: { type: 'string', matchMode: 'contains' },
@@ -787,7 +802,8 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
                     (event?.filters?.zoneClass as FilterMetadata)?.value ?? null,
                     (event?.filters?.text as FilterMetadata)?.value || null,
                     (event?.filters?.appId as FilterMetadata)?.value || null,
-                    (event?.filters?.zoneSerial as FilterMetadata)?.value || null
+                    (event?.filters?.zoneSerial as FilterMetadata)?.value || null,
+                    this._getRPZFilterValue((event?.filters?.rpz as FilterMetadata)?.value)
                 )
                 .pipe(
                     map((resp) => {
@@ -1037,6 +1053,34 @@ export class ZonesPageComponent implements OnInit, OnDestroy, AfterViewInit {
         return {
             serial: uniqueSerials[0]?.toString() ?? 'N/A',
             hasMismatch: uniqueSerials.length > 1,
+        }
+    }
+
+    /**
+     * Checks if any of the instances of the zone are response policy zones.
+     *
+     * @param zone Zone to check.
+     * @returns true if any of the instances of the zone are response policy zones,
+     * false otherwise.
+     */
+    includesRPZ(zone: Zone): boolean {
+        return zone?.localZones?.some((lz) => lz.rpz)
+    }
+
+    /**
+     * Returns the RPZ filter value for the zones table.
+     *
+     * @param selection RPZ filter selection in the dropdown.
+     * @returns RPZ filter value sent to the backend.
+     */
+    private _getRPZFilterValue(selection: string | null): boolean | null {
+        switch (selection) {
+            case 'exclude':
+                return false
+            case 'only':
+                return true
+            default:
+                return null
         }
     }
 }

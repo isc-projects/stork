@@ -12,13 +12,14 @@ type Zone struct {
 	Class  string
 	Type   string
 	Serial int64
+	RPZ    bool
 }
 
 // This function generates a collection of zones used in the benchmarks.
 // The function argument specifies the number of zones to be generated.
 //
 //nolint:gosec
-func generateRandomZones(existingZones []*Zone, num int, class, zoneType string, serial int64) []*Zone {
+func generateRandomZones(existingZones []*Zone, num int, class, zoneType string, serial int64, rpz bool) []*Zone {
 	// We construct labels from this set of characters.
 	const charset = "abcdefghijklmnopqrstuvwxyz"
 	// We want to simulate a use case where zones have child zones, e.g.:
@@ -78,6 +79,7 @@ func generateRandomZones(existingZones []*Zone, num int, class, zoneType string,
 				Class:  class,
 				Type:   zoneType,
 				Serial: serial,
+				RPZ:    rpz,
 			}
 			i++
 		}
@@ -87,25 +89,30 @@ func generateRandomZones(existingZones []*Zone, num int, class, zoneType string,
 
 // Generate random zones with default parameters.
 func GenerateRandomZones(num int) []*Zone {
-	return generateRandomZones([]*Zone{}, num, "IN", "primary", 20240304)
+	return generateRandomZones([]*Zone{}, num, "IN", "primary", 20240304, false)
 }
 
 // Generate more zones with default parameters.
 func GenerateMoreZones(existingZones []*Zone, num int) []*Zone {
-	return generateRandomZones(existingZones, num, "IN", "primary", 20240304)
+	return generateRandomZones(existingZones, num, "IN", "primary", 20240304, false)
 }
 
 // Generate more zones with a specific class.
 func GenerateMoreZonesWithClass(existingZones []*Zone, num int, class string) []*Zone {
-	return generateRandomZones(existingZones, num, class, "primary", 20240304)
+	return generateRandomZones(existingZones, num, class, "primary", 20240304, false)
 }
 
 // Generate more zones with a specific type.
 func GenerateMoreZonesWithType(existingZones []*Zone, num int, zoneType string) []*Zone {
-	return generateRandomZones(existingZones, num, "IN", zoneType, 20240304)
+	return generateRandomZones(existingZones, num, "IN", zoneType, 20240304, false)
 }
 
 // Generate more zones with a specific serial.
 func GenerateMoreZonesWithSerial(existingZones []*Zone, num int, serial int64) []*Zone {
-	return generateRandomZones(existingZones, num, "IN", "primary", serial)
+	return generateRandomZones(existingZones, num, "IN", "primary", serial, false)
+}
+
+// Generate more zones with RPZ flag.
+func GenerateMoreZonesWithRPZ(existingZones []*Zone, num int, rpz bool) []*Zone {
+	return generateRandomZones(existingZones, num, "IN", "primary", 20240304, rpz)
 }

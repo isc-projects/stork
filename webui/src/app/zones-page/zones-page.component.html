@@ -91,9 +91,12 @@
         }}</a>
     </td>
     <td>
-        <a routerLink="/dns/zones" [queryParams]="{ zoneType: localZone.zoneType }" (click)="activateFirstTab()">{{
-            localZone.zoneType
-        }}</a>
+        <div class="flex flex-wrap justify-center align-items-center gap-2">
+            <a routerLink="/dns/zones" [queryParams]="{ zoneType: localZone.zoneType }" (click)="activateFirstTab()">{{
+                localZone.zoneType
+            }}</a>
+            <p-tag *ngIf="localZone.rpz" value="RPZ" severity="success" />
+        </div>
     </td>
     <td [class.p-error]="serialInfo.hasMismatch">
         {{ localZone.serial
@@ -301,6 +304,14 @@ to the number of configured zones.
                                         are returned. Next to this filter there is a toggle button that allows to
                                         quickly filter out builtin zones.
                                     </li>
+                                    <li>
+                                        RPZ - a response policy zone is a special type of zone in BIND 9 that defines
+                                        a set of rules that are applied to the response to a DNS query. Stork identifies
+                                        these special zones and marks them with the RPZ tag on the zone list. The filter allows
+                                        for selecting whether the response policy zones should be included along with
+                                        other zones, should be excluded (only non-RPZ are listed), or only the RPZ
+                                        should be listed (and regular zones excluded).
+                                    </li>
                                     <li>App ID - the ID of the DNS App.</li>
                                     <li>Serial - partial or exact zone serial.</li>
                                     <li>Zone Class - exact zone class.</li>
@@ -360,6 +371,33 @@ to the number of configured zones.
                                         />
                                         <label for="zone-type">Zone Type</label>
                                     </p-floatLabel>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter field="rpz" matchMode="equals" [showMenu]="false" [showClearButton]="false">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <span class="p-float-label">
+                                        <p-dropdown
+                                            inputId="rpz"
+                                            [options]="rpzOptions"
+                                            optionLabel="name"
+                                            optionValue="value"
+                                            (onChange)="filterZonesTable($event.value, filterConstraint)"
+                                            [ngModel]="value"
+                                            styleClass="w-10rem"
+                                        ></p-dropdown>
+                                        <label for="rpz">RPZ</label>
+                                    </span>
                                     <ng-container
                                         *ngTemplateOutlet="
                                             clearFilterBtn;
@@ -556,7 +594,12 @@ to the number of configured zones.
                             *ngTemplateOutlet="zoneSerialInfo; context: { $implicit: getZoneSerialInfo(zone) }"
                         ></ng-container>
                     </td>
-                    <td>{{ getUniqueZoneTypes(zone).join(', ') }}</td>
+                    <td>
+                        <div class="flex flex-wrap justify-center align-items-center gap-2">
+                            <span>{{ getUniqueZoneTypes(zone).join(', ') }}</span>
+                            <p-tag *ngIf="includesRPZ(zone)" value="RPZ" severity="success" />
+                        </div>
+                    </td>
                     <td>
                         {{ zone?.localZones?.length ?? 0 }}
                     </td>
