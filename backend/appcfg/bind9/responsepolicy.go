@@ -1,9 +1,12 @@
 package bind9config
 
-// Checks if the zone is a RPZ.
+import "strings"
+
+// Checks if the zone is a RPZ by running a case-insensitive comparison
+// of the zone name with the zone names in the response-policy clause.
 func (rp *ResponsePolicy) IsRPZ(zoneName string) bool {
 	for _, zone := range rp.Zones {
-		if zone.Zone == zoneName {
+		if strings.EqualFold(zone.Zone, zoneName) {
 			return true
 		}
 	}

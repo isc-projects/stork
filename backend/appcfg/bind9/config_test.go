@@ -714,7 +714,7 @@ func TestIsRPZDefaultView(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	t.Run("default view", func(t *testing.T) {
-		require.True(t, cfg.IsRPZ(DefaultViewName, "rpz.example.com"))
+		require.True(t, cfg.IsRPZ(DefaultViewName, "RPZ.EXAMPLE.COM"))
 		require.True(t, cfg.IsRPZ(DefaultViewName, "db.local"))
 		require.False(t, cfg.IsRPZ(DefaultViewName, "example.com"))
 		require.False(t, cfg.IsRPZ(DefaultViewName, "rpz.example.org"))
