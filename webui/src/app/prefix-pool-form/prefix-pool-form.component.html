@@ -1,11 +1,11 @@
 <div [formGroup]="formGroup">
     <p-fieldset legend="Prefix" styleClass="mt-4">
         <div class="flex mt-4 mb-2 align-items-center flex-wrap gap-2 row-gap-5" formGroupName="prefixes">
-            <span class="flex-auto p-float-label min-w-0">
+            <p-floatLabel class="flex-auto min-w-0">
                 <input [id]="uuids.prefix" pInputText formControlName="prefix" class="w-full" />
                 <label [for]="uuids.prefix">Pool Prefix</label>
-            </span>
-            <span class="p-float-label min-w-0">
+            </p-floatLabel>
+            <p-floatLabel class="min-w-0">
                 <p-inputNumber
                     ngDefaultControl
                     [inputId]="uuids.delegatedLength"
@@ -16,11 +16,11 @@
                 >
                 </p-inputNumber>
                 <label [for]="uuids.delegatedLength">Delegated Length</label>
-            </span>
-            <span class="flex-auto p-float-label min-w-0">
+            </p-floatLabel>
+            <p-floatLabel class="flex-auto min-w-0">
                 <input [id]="uuids.excludedPrefix" pInputText formControlName="excludedPrefix" class="w-full" />
                 <label [for]="uuids.excludedPrefix">Excluded Prefix</label>
-            </span>
+            </p-floatLabel>
         </div>
         <ng-container *ngFor="let control of ['prefix', 'excludedPrefix']">
             <small
@@ -52,7 +52,7 @@
     </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="mt-4">
         <div class="mt-4">
-            <span class="p-float-label mt-4 mb-2">
+            <p-floatLabel class="block mt-4 mb-2">
                 <p-multiSelect
                     [inputId]="uuids.selectedDaemons"
                     optionLabel="label"
@@ -66,7 +66,7 @@
                 >
                 </p-multiSelect>
                 <label [for]="uuids.selectedDaemons">DHCP Servers</label>
-            </span>
+            </p-floatLabel>
             <small
                 *ngIf="
                     formGroup.get('selectedDaemons').invalid &&

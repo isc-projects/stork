@@ -103,7 +103,7 @@
                 <div class="flex-auto"></div>
                 <p-columnFilter field="appId" matchMode="equals" [showMenu]="false" [showClearButton]="!hasPrefilter()">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <span class="p-float-label">
+                        <p-floatLabel>
                             <p-inputNumber
                                 inputId="app-id"
                                 mode="decimal"
@@ -114,12 +114,12 @@
                                 [disabled]="hasPrefilter()"
                             ></p-inputNumber>
                             <label for="app-id">Kea App ID</label>
-                        </span>
+                        </p-floatLabel>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="subnetId" matchMode="equals" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <span class="p-float-label">
+                        <p-floatLabel>
                             <p-inputNumber
                                 inputId="subnet-id"
                                 mode="decimal"
@@ -129,12 +129,12 @@
                                 [ngModel]="value"
                             ></p-inputNumber>
                             <label for="subnet-id">Subnet ID</label>
-                        </span>
+                        </p-floatLabel>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="dhcpVersion" matchMode="equals" [showMenu]="false">
                     <ng-template pTemplate="filter" let-value let-filterMetadata="filterConstraint">
-                        <span class="p-float-label">
+                        <p-floatLabel>
                             <p-dropdown
                                 inputId="dhcp-version"
                                 [options]="[
@@ -148,7 +148,7 @@
                                 styleClass="w-10rem"
                             ></p-dropdown>
                             <label for="dhcp-version">DHCP Version</label>
-                        </span>
+                        </p-floatLabel>
                     </ng-template>
                 </p-columnFilter>
                 <p-columnFilter field="text" matchMode="contains" [showMenu]="false">
