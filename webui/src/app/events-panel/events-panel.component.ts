@@ -263,8 +263,8 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
 
         this.loading = true
 
-        this.eventsApi
-            .getEvents(
+        lastValueFrom(
+            this.eventsApi.getEvents(
                 this.start,
                 this.limit,
                 this.filter.level,
@@ -273,7 +273,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                 this.filter.daemonType,
                 this.filter.user
             )
-            .toPromise()
+        )
             .then((data) => {
                 this.events.items = data.items ?? []
                 this.events.total = data.total ?? 0
