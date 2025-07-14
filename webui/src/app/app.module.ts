@@ -51,6 +51,7 @@ import { TriStateCheckboxModule } from 'primeng/tristatecheckbox'
 import { AccordionModule } from 'primeng/accordion'
 import { TreeTableModule } from 'primeng/treetable'
 import { SkeletonModule } from 'primeng/skeleton'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -321,6 +322,7 @@ export function cfgFactory() {
         BadgeModule,
         SkeletonModule,
         ManagedAccessDirective,
+        FloatLabelModule,
     ],
     providers: [
         {

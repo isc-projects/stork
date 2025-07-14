@@ -1,18 +1,17 @@
 :host ::ng-deep
-    .p-float-label, .mixed-content, .form-w-full
-        // Give full width but prevent from becoming too wide.
-        width: 100%
-        max-width: var(--max-form-width)
-
-    .p-float-label
+    .max-w-form
         .p-component.p-inputwrapper, textarea, .p-inputtext, .p-element.p-inputwrapper, .p-component.p-inputnumber
-            // Apply the same style for form inputs inside of .p-float-label span.
+            // Apply the same style for form inputs inside of .max-w-form element.
             width: 100%
             max-width: var(--max-form-width)
 
     .mixed-content
         // .mixed-content is a flex container which contains more than one form input.
         display: flex
+
+        // Give full width but prevent from becoming too wide.
+        width: 100%
+        max-width: var(--max-form-width)
 
         // Flex items for PD and PSID forms. Prefix is wider and shrinkable.
         // Prefix len doesn't shrink and takes less space.

@@ -1,18 +1,27 @@
+<ng-template #classesinput>
+    <p-chips
+        ngDefaultControl
+        inputId="{{ inputId }}"
+        [allowDuplicate]="false"
+        [addOnBlur]="true"
+        [formControl]="classFormControl"
+        styleClass="adaptive-chips-background w-full"
+        placeholder="{{ floatingPlaceholder ? null : 'Type or Pick From List' }}"
+        title="Type or Select Class Names From List"
+    >
+    </p-chips>
+</ng-template>
 <div class="flex align-items-end gap-1">
-    <span [class]="{ 'p-float-label': floatingPlaceholder }" class="flex-auto min-w-0">
-        <p-chips
-            ngDefaultControl
-            inputId="{{ inputId }}"
-            [allowDuplicate]="false"
-            [addOnBlur]="true"
-            [formControl]="classFormControl"
-            styleClass="adaptive-chips-background w-full"
-            placeholder="{{ floatingPlaceholder ? null : 'Type or Pick From List' }}"
-            title="Type or Select Class Names From List"
-        >
-        </p-chips>
-        <label *ngIf="floatingPlaceholder" for="{{ inputId }}">Type or Pick From List</label>
-    </span>
+    @if (floatingPlaceholder) {
+        <p-floatLabel class="flex-auto min-w-0">
+            <ng-container *ngTemplateOutlet="classesinput"></ng-container>
+            <label for="{{ inputId }}">Type or Pick From List</label>
+        </p-floatLabel>
+    } @else {
+        <span class="flex-auto min-w-0">
+            <ng-container *ngTemplateOutlet="classesinput"></ng-container>
+        </span>
+    }
     <p-overlayPanel #op [dismissable]="false">
         <ng-template pTemplate>
             <div

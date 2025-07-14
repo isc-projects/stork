@@ -1,6 +1,6 @@
 <div [formGroup]="formGroup" class="flex flex-column gap-1">
     <div class="flex gap-2" [class.flex-column]="!topLevel" [class.align-items-center]="topLevel">
-        <div class="form-w-full" *ngIf="topLevel; else showSuboptionInput">
+        <div class="max-w-form w-full" *ngIf="topLevel; else showSuboptionInput">
             <p-dropdown
                 inputId="{{ codeInputId }}"
                 [editable]="true"
@@ -20,7 +20,7 @@
             <!-- For smaller viewports, option nesting level can't be visualized with left padding (not enough horizontal space), so display light divider and text information about nest level. -->
             <p-divider class="sm:hidden" type="dashed" />
             <div class="sm:hidden mb-4 font-semibold">Suboption level {{ nestLevel }}</div>
-            <span class="p-float-label">
+            <p-floatLabel class="max-w-form w-full">
                 <p-inputNumber
                     ngDefaultControl
                     inputId="{{ codeInputId }}"
@@ -32,7 +32,7 @@
                     [useGrouping]="false"
                 >
                 </p-inputNumber>
-                <label for="{{ codeInputId }}">Type Suboption Code</label></span
+                <label for="{{ codeInputId }}">Type Suboption Code</label></p-floatLabel
             >
         </ng-template>
         <app-help-tip *ngIf="optionDef" [subject]="optionDef.name">
@@ -114,7 +114,7 @@
         >
             <div [ngSwitch]="fieldControl.data.fieldType" class="flex gap-2 sm:pl-3" [formGroupName]="i">
                 <ng-container *ngSwitchCase="FieldType.Binary">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <textarea
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputTextarea
@@ -122,10 +122,10 @@
                             formControlName="control"
                         ></textarea>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.String">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -133,7 +133,7 @@
                             formControlName="control"
                         />
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Bool">
                     <div id="{{ fieldControl.data.getInputId(0) }}" class="p-inputtext option-field p-0">
@@ -141,7 +141,7 @@
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Uint8">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -153,10 +153,10 @@
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Uint16">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -168,10 +168,10 @@
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Uint32">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -183,10 +183,10 @@
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Int8">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -198,10 +198,10 @@
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Int16">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -213,10 +213,10 @@
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Int32">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <p-inputNumber
                             ngDefaultControl
                             inputId="{{ fieldControl.data.getInputId(0) }}"
@@ -228,10 +228,10 @@
                         >
                         </p-inputNumber>
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.IPv4Address">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -239,10 +239,10 @@
                             formControlName="control"
                         />
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.IPv6Address">
-                    <span class="p-float-label">
+                    <p-floatLabel class="max-w-form w-full">
                         <input
                             id="{{ fieldControl.data.getInputId(0) }}"
                             pInputText
@@ -250,11 +250,11 @@
                             formControlName="control"
                         />
                         <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                    </span>
+                    </p-floatLabel>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.IPv6Prefix">
                     <div class="mixed-content gap-1">
-                        <span class="p-float-label prefix">
+                        <p-floatLabel class="prefix">
                             <input
                                 id="{{ fieldControl.data.getInputId(0) }}"
                                 pInputText
@@ -262,8 +262,8 @@
                                 formControlName="prefix"
                             />
                             <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                        </span>
-                        <span class="p-float-label prefix-len">
+                        </p-floatLabel>
+                        <p-floatLabel class="prefix-len">
                             <p-inputNumber
                                 inputId="{{ fieldControl.data.getInputId(1) }}"
                                 ngDefaultControl
@@ -275,12 +275,12 @@
                             >
                             </p-inputNumber>
                             <label for="{{ fieldControl.data.getInputId(1) }}">len</label>
-                        </span>
+                        </p-floatLabel>
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Psid">
                     <div class="mixed-content gap-1">
-                        <span class="p-float-label prefix">
+                        <p-floatLabel class="prefix">
                             <p-inputNumber
                                 inputId="{{ fieldControl.data.getInputId(0) }}"
                                 ngDefaultControl
@@ -292,8 +292,8 @@
                             >
                             </p-inputNumber>
                             <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                        </span>
-                        <span class="p-float-label prefix-len">
+                        </p-floatLabel>
+                        <p-floatLabel class="prefix-len">
                             <p-inputNumber
                                 inputId="{{ fieldControl.data.getInputId(1) }}"
                                 ngDefaultControl
@@ -305,12 +305,12 @@
                             >
                             </p-inputNumber>
                             <label for="{{ fieldControl.data.getInputId(1) }}">len</label>
-                        </span>
+                        </p-floatLabel>
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchCase="FieldType.Fqdn">
                     <div class="mixed-content flex-column sm:flex-row gap-2">
-                        <span class="p-float-label">
+                        <p-floatLabel class="max-w-form w-full">
                             <input
                                 id="{{ fieldControl.data.getInputId(0) }}"
                                 pInputText
@@ -318,7 +318,7 @@
                                 formControlName="control"
                             />
                             <label for="{{ fieldControl.data.getInputId(0) }}">{{ fieldControl.data.fieldType }}</label>
-                        </span>
+                        </p-floatLabel>
                         <p-toggleButton
                             onLabel="Use Full FQDN"
                             offLabel="Use Partial FQDN"
