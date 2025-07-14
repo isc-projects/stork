@@ -60,6 +60,7 @@ import { ZoneViewerFeederComponent } from '../zone-viewer-feeder/zone-viewer-fee
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { UnrootPipe } from '../pipes/unroot.pipe'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('ZonesPageComponent', () => {
     let component: ZonesPageComponent
@@ -305,6 +306,7 @@ describe('ZonesPageComponent', () => {
                 MultiSelectModule,
                 ProgressSpinnerModule,
                 ManagedAccessDirective,
+                FloatLabelModule,
             ],
             declarations: [
                 ZoneViewerComponent,

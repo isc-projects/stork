@@ -34,6 +34,7 @@ import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.co
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { provideRouter, RouterModule } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 let mockCreateSharedNetwork4BeginData: CreateSharedNetworkBeginResponse = {
     id: 123,
@@ -336,6 +337,7 @@ export default {
                 RouterModule,
                 SplitButtonModule,
                 ToastModule,
+                FloatLabelModule,
             ],
             declarations: [
                 AddressPoolFormComponent,

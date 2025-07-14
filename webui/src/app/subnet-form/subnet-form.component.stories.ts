@@ -32,6 +32,7 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 let mockCreateSubnetBeginData: CreateSubnetBeginResponse = {
     id: 123,
@@ -502,6 +503,7 @@ export default {
                 ReactiveFormsModule,
                 SplitButtonModule,
                 ToastModule,
+                FloatLabelModule,
             ],
             declarations: [
                 AddressPoolFormComponent,

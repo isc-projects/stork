@@ -28,6 +28,7 @@ import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('SharedNetworksTableComponent', () => {
     let component: SharedNetworksTableComponent
@@ -71,6 +72,7 @@ describe('SharedNetworksTableComponent', () => {
                 ]),
                 TooltipModule,
                 ManagedAccessDirective,
+                FloatLabelModule,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()

@@ -21,6 +21,7 @@ import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog'
 import { DHCPService, Host } from '../backend'
 import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -58,6 +59,7 @@ describe('HostsTableComponent', () => {
                 TagModule,
                 ManagedAccessDirective,
                 ConfirmDialogModule,
+                FloatLabelModule,
             ],
             providers: [
                 MessageService,

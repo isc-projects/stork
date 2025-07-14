@@ -28,6 +28,7 @@ import { TableModule } from 'primeng/table'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, RouterModule } from '@angular/router'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('HostFormComponent', () => {
     let component: HostFormComponent
@@ -150,6 +151,7 @@ describe('HostFormComponent', () => {
                 TableModule,
                 ToggleButtonModule,
                 ProgressSpinnerModule,
+                FloatLabelModule,
             ],
             providers: [
                 UntypedFormBuilder,

@@ -35,6 +35,7 @@ import { KeaSubnetParametersForm } from '../forms/subnet-set-form.service'
 import { By } from '@angular/platform-browser'
 import { SharedNetworkFormState } from '../forms/shared-network-form'
 import { provideRouter, RouterModule } from '@angular/router'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('SharedNetworkFormComponent', () => {
     let component: SharedNetworkFormComponent
@@ -311,6 +312,7 @@ describe('SharedNetworkFormComponent', () => {
                 RouterModule,
                 SplitButtonModule,
                 ToastModule,
+                FloatLabelModule,
             ],
             providers: [DHCPService, MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }).compileComponents()

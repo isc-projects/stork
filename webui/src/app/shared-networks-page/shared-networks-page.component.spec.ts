@@ -61,6 +61,7 @@ import { PositivePipe } from '../pipes/positive.pipe'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -133,6 +134,7 @@ describe('SharedNetworksPageComponent', () => {
                 PanelModule,
                 TagModule,
                 ManagedAccessDirective,
+                FloatLabelModule,
             ],
             providers: [
                 ConfirmationService,

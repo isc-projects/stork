@@ -29,6 +29,7 @@ import { MessagesModule } from 'primeng/messages'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 import { TreeModule } from 'primeng/tree'
 import { TagModule } from 'primeng/tag'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 const mockGetDaemonConfig = {
     appName: 'kea-server',
@@ -241,6 +242,7 @@ export default {
                 ToastModule,
                 TreeModule,
                 TagModule,
+                FloatLabelModule,
             ],
             declarations: [
                 BreadcrumbsComponent,

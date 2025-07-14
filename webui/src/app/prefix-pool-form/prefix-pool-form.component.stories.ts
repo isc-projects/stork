@@ -26,6 +26,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { InputNumberModule } from 'primeng/inputnumber'
 import { DividerModule } from 'primeng/divider'
 import { StorkValidators } from '../validators'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 export default {
     title: 'App/PrefixPoolForm',
@@ -58,6 +59,7 @@ export default {
                 TableModule,
                 TagModule,
                 ToastModule,
+                FloatLabelModule,
             ],
             declarations: [
                 PrefixPoolFormComponent,

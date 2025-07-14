@@ -29,6 +29,7 @@ import { MultiSelectModule } from 'primeng/multiselect'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { SplitButtonModule } from 'primeng/splitbutton'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 const mockUpdateKeaGlobalParameters4BeginData: UpdateKeaDaemonsGlobalParametersBeginResponse = {
     id: 123,
@@ -237,6 +238,7 @@ export default {
                 TriStateCheckboxModule,
                 ToastModule,
                 SplitButtonModule,
+                FloatLabelModule,
             ],
             declarations: [
                 ArrayValueSetFormComponent,

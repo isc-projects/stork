@@ -27,6 +27,7 @@ import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('KeaGlobalConfigurationFormComponent', () => {
     let component: KeaGlobalConfigurationFormComponent
@@ -258,6 +259,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                 ProgressSpinnerModule,
                 ReactiveFormsModule,
                 SplitButtonModule,
+                FloatLabelModule,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents()

@@ -70,6 +70,7 @@ import { SettingService } from '../setting.service'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 import { PoolBarsComponent } from '../pool-bars/pool-bars.component'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -141,6 +142,7 @@ describe('SubnetsPageComponent', () => {
                 ConfirmDialogModule,
                 PanelModule,
                 ManagedAccessDirective,
+                FloatLabelModule,
             ],
             providers: [
                 ConfirmationService,

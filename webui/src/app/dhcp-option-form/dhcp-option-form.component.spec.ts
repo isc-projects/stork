@@ -21,6 +21,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { IPType } from '../iptype'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DividerModule } from 'primeng/divider'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('DhcpOptionFormComponent', () => {
     let component: DhcpOptionFormComponent
@@ -40,6 +41,7 @@ describe('DhcpOptionFormComponent', () => {
                 SplitButtonModule,
                 ToggleButtonModule,
                 DividerModule,
+                FloatLabelModule,
             ],
             declarations: [DhcpOptionFormComponent, DhcpOptionSetFormComponent, HelpTipComponent],
         }).compileComponents()

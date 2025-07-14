@@ -25,6 +25,7 @@ import { KeaPoolParametersForm, PrefixForm, PrefixPoolForm } from '../forms/subn
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { By } from '@angular/platform-browser'
 import { StorkValidators } from '../validators'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('PrefixPoolFormComponent', () => {
     let component: PrefixPoolFormComponent
@@ -49,6 +50,7 @@ describe('PrefixPoolFormComponent', () => {
                 TableModule,
                 TagModule,
                 ToastModule,
+                FloatLabelModule,
             ],
             declarations: [
                 DhcpClientClassSetFormComponent,

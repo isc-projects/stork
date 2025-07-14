@@ -9,6 +9,7 @@ import { TableModule } from 'primeng/table'
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { By } from '@angular/platform-browser'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('DhcpClientClassSetFormComponent', () => {
     let component: DhcpClientClassSetFormComponent
@@ -27,6 +28,7 @@ describe('DhcpClientClassSetFormComponent', () => {
                 OverlayPanelModule,
                 ReactiveFormsModule,
                 TableModule,
+                FloatLabelModule,
             ],
         }).compileComponents()
 

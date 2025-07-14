@@ -17,6 +17,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { PasswordModule } from 'primeng/password'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
@@ -60,6 +61,7 @@ describe('LoginScreenComponent', () => {
                 DropdownModule,
                 PasswordModule,
                 BrowserAnimationsModule,
+                FloatLabelModule,
             ],
             providers: [
                 GeneralService,

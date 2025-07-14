@@ -36,6 +36,7 @@ import { AccordionModule } from 'primeng/accordion'
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
 import { provideRouter, RouterModule } from '@angular/router'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('SubnetFormComponent', () => {
     let component: SubnetFormComponent
@@ -437,6 +438,7 @@ describe('SubnetFormComponent', () => {
                 RouterModule.forRoot([]),
                 SplitButtonModule,
                 ToastModule,
+                FloatLabelModule,
             ],
             providers: [MessageService, provideHttpClient(withInterceptorsFromDi()), provideRouter([])],
         }).compileComponents()

@@ -13,6 +13,7 @@ import { PasswordModule } from 'primeng/password'
 import { DropdownModule } from 'primeng/dropdown'
 import { provideRouter, RouterModule } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 export default {
     title: 'App/LoginScreen',
@@ -38,6 +39,7 @@ export default {
                 ButtonModule,
                 ToastModule,
                 PasswordModule,
+                FloatLabelModule,
             ],
             declarations: [LoginScreenComponent],
         }),

@@ -9,6 +9,7 @@ import { ChipsModule } from 'primeng/chips'
 import { ButtonModule } from 'primeng/button'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { TableModule } from 'primeng/table'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 export default {
     title: 'App/DhcpClientClassSetForm',
@@ -27,6 +28,7 @@ export default {
                 OverlayPanelModule,
                 ReactiveFormsModule,
                 TableModule,
+                FloatLabelModule,
             ],
             declarations: [DhcpClientClassSetFormComponent, HelpTipComponent],
         }),

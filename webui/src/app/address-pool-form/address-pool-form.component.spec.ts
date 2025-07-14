@@ -25,6 +25,7 @@ import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
 import { DividerModule } from 'primeng/divider'
 import { By } from '@angular/platform-browser'
 import { StorkValidators } from '../validators'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('AddressPoolFormComponent', () => {
     let component: AddressPoolFormComponent
@@ -49,6 +50,7 @@ describe('AddressPoolFormComponent', () => {
                 TableModule,
                 TagModule,
                 ToastModule,
+                FloatLabelModule,
             ],
             declarations: [
                 AddressPoolFormComponent,

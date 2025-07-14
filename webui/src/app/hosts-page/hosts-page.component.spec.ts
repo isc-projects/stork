@@ -53,6 +53,7 @@ import { PanelModule } from 'primeng/panel'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ManagedAccessDirective } from '../managed-access.directive'
+import { FloatLabelModule } from 'primeng/floatlabel'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -119,6 +120,7 @@ describe('HostsPageComponent', () => {
                 InputNumberModule,
                 PanelModule,
                 ManagedAccessDirective,
+                FloatLabelModule,
             ],
             providers: [
                 DHCPService,
