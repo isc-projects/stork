@@ -61,11 +61,8 @@
                         </p>
                     </div>
                     <div class="login-screen__authentication-inputs">
-                        <div>
-                            <p-floatLabel
-                                *ngIf="loginForm.get('authenticationMethod')?.value.formLabelIdentifier"
-                                class="form-wrapper"
-                            >
+                        <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelIdentifier">
+                            <p-floatLabel>
                                 <input
                                     type="text"
                                     name="identifier"
@@ -79,11 +76,8 @@
                                 }}</label>
                             </p-floatLabel>
                         </div>
-                        <div>
-                            <p-floatLabel
-                                *ngIf="loginForm.get('authenticationMethod')?.value.formLabelSecret"
-                                class="form-wrapper"
-                            >
+                        <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelSecret">
+                            <p-floatLabel>
                                 <p-password
                                     id="secret"
                                     formControlName="secret"
