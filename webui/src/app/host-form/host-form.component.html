@@ -17,7 +17,7 @@
     </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="host-form-section">
         <div>
-            <span class="p-float-label">
+            <p-floatLabel>
                 <p-multiSelect
                     inputId="servers-select"
                     optionLabel="label"
@@ -31,7 +31,7 @@
                 >
                 </p-multiSelect>
                 <label for="servers-select">DHCP Servers</label>
-            </span>
+            </p-floatLabel>
             <small
                 *ngIf="
                     formGroup.get('selectedDaemons').invalid &&
@@ -42,7 +42,7 @@
             </small>
         </div>
         <div *ngIf="!formGroup.get('globalReservation').value">
-            <span class="p-float-label">
+            <p-floatLabel>
                 <p-dropdown
                     inputId="subnets-dropdown"
                     optionLabel="subnet"
@@ -57,7 +57,7 @@
                 >
                 </p-dropdown>
                 <label for="subnets-dropdown">Subnet</label>
-            </span>
+            </p-floatLabel>
             <small
                 *ngIf="
                     formGroup.controls['selectedSubnet'].invalid &&
@@ -135,10 +135,10 @@
 
     <p-fieldset legend="Host Reservations" styleClass="host-form-section">
         <div>
-            <span class="p-float-label">
+            <p-floatLabel>
                 <input id="hostname-input" pInputText class="w-full" formControlName="hostname" />
                 <label for="hostname-input">Hostname</label>
-            </span>
+            </p-floatLabel>
             <small
                 *ngIf="
                     formGroup.get('hostname').invalid &&
@@ -303,10 +303,10 @@
                     ></ng-container>
                 </ng-template>
                 <div>
-                    <span class="p-float-label">
+                    <p-floatLabel>
                         <input id="next-server-input-{{ i }}" pInputText class="w-full" formControlName="nextServer" />
                         <label for="next-server-input-{{ i }}">Next Server</label>
-                    </span>
+                    </p-floatLabel>
                     <small
                         *ngIf="
                             getBootFieldsGroup(i).get('nextServer').invalid &&
@@ -318,7 +318,7 @@
                     </small>
                 </div>
                 <div>
-                    <span class="p-float-label">
+                    <p-floatLabel>
                         <input
                             id="server-hostname-input-{{ i }}"
                             pInputText
@@ -326,7 +326,7 @@
                             formControlName="serverHostname"
                         />
                         <label for="server-hostname-input-{{ i }}">Server Hostname</label>
-                    </span>
+                    </p-floatLabel>
                     <small
                         *ngIf="
                             getBootFieldsGroup(i).get('serverHostname').invalid &&
@@ -338,7 +338,7 @@
                     </small>
                 </div>
                 <div>
-                    <span class="p-float-label">
+                    <p-floatLabel>
                         <input
                             id="boot-file-name-input-{{ i }}"
                             pInputText
@@ -346,7 +346,7 @@
                             formControlName="bootFileName"
                         />
                         <label for="boot-file-name-input-{{ i }}">Boot File Name</label>
-                    </span>
+                    </p-floatLabel>
                 </div>
             </p-fieldset>
         </ng-container>

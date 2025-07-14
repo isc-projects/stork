@@ -21,7 +21,7 @@
                 ></p-progressSpinner>
                 <form [formGroup]="loginForm" *ngIf="authenticationMethods">
                     <div class="login-screen__authentication-selector" *ngIf="authenticationMethods.length > 1">
-                        <div class="p-float-label w-full">
+                        <p-floatLabel class="authentication-methods-wrapper">
                             <p-dropdown
                                 [options]="authenticationMethods"
                                 formControlName="authenticationMethod"
@@ -55,41 +55,47 @@
                                 </ng-template>
                             </p-dropdown>
                             <label for="authenticationMethod" class="text-white">Choose a Method</label>
-                        </div>
+                        </p-floatLabel>
                         <p>
                             {{ loginForm.get('authenticationMethod')?.value.description }}
                         </p>
                     </div>
                     <div class="login-screen__authentication-inputs">
-                        <div
-                            *ngIf="loginForm.get('authenticationMethod')?.value.formLabelIdentifier"
-                            class="p-float-label"
-                        >
-                            <input
-                                type="text"
-                                name="identifier"
-                                id="identifier"
-                                formControlName="identifier"
-                                pInputText
-                                autofocus
-                            />
-                            <label htmlFor="identifier">{{
-                                loginForm.get('authenticationMethod')?.value.formLabelIdentifier
-                            }}</label>
+                        <div>
+                            <p-floatLabel
+                                *ngIf="loginForm.get('authenticationMethod')?.value.formLabelIdentifier"
+                                class="form-wrapper"
+                            >
+                                <input
+                                    type="text"
+                                    name="identifier"
+                                    id="identifier"
+                                    formControlName="identifier"
+                                    pInputText
+                                    autofocus
+                                />
+                                <label for="identifier">{{
+                                    loginForm.get('authenticationMethod')?.value.formLabelIdentifier
+                                }}</label>
+                            </p-floatLabel>
                         </div>
-                        <div *ngIf="loginForm.get('authenticationMethod')?.value.formLabelSecret" class="p-float-label">
-                            <p-password
-                                name="secret"
-                                id="secret"
-                                formControlName="secret"
-                                styleClass="password-component"
-                                (keyup)="keyUp($event)"
-                                [feedback]="false"
-                                [toggleMask]="true"
-                            />
-                            <label for="secret">{{
-                                loginForm.get('authenticationMethod')?.value.formLabelSecret
-                            }}</label>
+                        <div>
+                            <p-floatLabel
+                                *ngIf="loginForm.get('authenticationMethod')?.value.formLabelSecret"
+                                class="form-wrapper"
+                            >
+                                <p-password
+                                    id="secret"
+                                    formControlName="secret"
+                                    styleClass="password-component"
+                                    (keyup)="keyUp($event)"
+                                    [feedback]="false"
+                                    [toggleMask]="true"
+                                />
+                                <label for="secret">{{
+                                    loginForm.get('authenticationMethod')?.value.formLabelSecret
+                                }}</label>
+                            </p-floatLabel>
                         </div>
                         <div>
                             <button
