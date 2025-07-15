@@ -731,6 +731,63 @@ func TestGetZonesWithTextFilter(t *testing.T) {
 	})
 }
 
+// Test getting the number of distinct and builtin zones for a given daemon.
+func TestGetZoneCountStatsByDaemon(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeBind9,
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	addedDaemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, addedDaemons, 1)
+
+	// Store zones in the database and associate them with our app.
+	randomZones := testutil.GenerateRandomZones(25)
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, string(ZoneTypeBuiltin))
+
+	for i := 0; i < 10; i++ {
+		// Add overlapping zones using a sliding window between i and len(randomZones)-10+i (exclusive).
+		// It should result in getting 49 distinct zones and 24 builtin zones.
+		for _, randomZone := range randomZones[i : len(randomZones)-10+i] {
+			zone := &Zone{
+				Name: randomZone.Name,
+				LocalZones: []*LocalZone{
+					{
+						DaemonID: addedDaemons[0].ID,
+						View:     fmt.Sprintf("view%d", i),
+						Class:    randomZone.Class,
+						Serial:   randomZone.Serial,
+						Type:     randomZone.Type,
+						LoadedAt: time.Now().UTC(),
+					},
+				},
+			}
+			err = AddZones(db, zone)
+			require.NoError(t, err)
+		}
+	}
+
+	stats, err := GetZoneCountStatsByDaemon(db, addedDaemons[0].ID)
+	require.NoError(t, err)
+	require.Equal(t, int64(49), stats.DistinctZones)
+	require.Equal(t, int64(24), stats.BuiltinZones)
+}
+
 // Test getting a zone by its ID.
 func TestGetZoneByID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -1127,6 +1184,89 @@ func BenchmarkGetZonesWithZoneTypeFilter(b *testing.B) {
 		}
 		if len(zones) != zonesNum {
 			b.Fatalf("invalid number of zones returned %d", len(zones))
+		}
+	}
+}
+
+// The benchmark measures the time to return the number of distinct zones
+// for a given daemon. The benchmark gave the following result:
+//
+// BenchmarkGetDistinctZoneCount-12   285899406 ns/op
+//
+// It shows a reasonable performance.
+func BenchmarkGetDistinctZoneCount(b *testing.B) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
+	defer teardown()
+
+	zonesNum := 100000
+	randomZones := testutil.GenerateRandomZones(zonesNum)
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := AddMachine(db, machine)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	app := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	addedDaemons, err := AddApp(db, app)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	daemons := addedDaemons
+
+	// Add the zones to the database to different views.
+	var views []string
+	for i := 0; i < 10; i++ {
+		views = append(views, fmt.Sprintf("view%d", i))
+	}
+
+	batch := NewBatch(db, 10000, AddZones)
+	// The zones in each view overlap.
+	for _, view := range views {
+		for _, randomZone := range randomZones {
+			zone := &Zone{
+				Name: randomZone.Name,
+				LocalZones: []*LocalZone{
+					{
+						DaemonID: daemons[0].ID,
+						Class:    randomZone.Class,
+						Serial:   randomZone.Serial,
+						Type:     randomZone.Type,
+						View:     view,
+						LoadedAt: time.Now().UTC(),
+					},
+				},
+			}
+			err := batch.Add(zone)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	}
+	err = batch.Flush()
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		stats, err := GetZoneCountStatsByDaemon(db, daemons[0].ID)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if stats.DistinctZones != int64(zonesNum) {
+			b.Fatalf("invalid number of zones returned %d", stats.DistinctZones)
 		}
 	}
 }

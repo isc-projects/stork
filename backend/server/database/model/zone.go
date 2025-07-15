@@ -132,6 +132,12 @@ type LocalZone struct {
 	Zone   *Zone   `pg:"rel:has-one"`
 }
 
+// Represents the counts of zones returned by the GetZoneCountStatsByDaemon.
+type ZoneCountStats struct {
+	DistinctZones int64 `pg:"distinct_zones"`
+	BuiltinZones  int64 `pg:"builtin_zones"`
+}
+
 // Upserts multiple zones in a transaction into the database.
 func addZones(tx *pg.Tx, zones ...*Zone) error {
 	// First insert zones into the zone table.
@@ -273,6 +279,22 @@ func GetZones(db pg.DBI, filter *GetZonesFilter, relations ...ZoneRelation) ([]*
 		return nil, count, errors.Wrapf(err, "failed to select filtered zones from the database")
 	}
 	return zones, count, nil
+}
+
+// GetZoneCountStatsByDaemon returns the count of distinct zones and builtin zones for a specific daemon.
+func GetZoneCountStatsByDaemon(db pg.DBI, daemonID int64) (*ZoneCountStats, error) {
+	var stats ZoneCountStats
+	_, err := db.QueryOne(&stats, `
+		SELECT
+			COUNT(DISTINCT zone_id) as distinct_zones,
+			COUNT(DISTINCT zone_id) FILTER (WHERE type='builtin') as builtin_zones
+		FROM local_zone
+		WHERE daemon_id = ?
+	`, daemonID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get zone count stats for daemon id %d", daemonID)
+	}
+	return &stats, nil
 }
 
 // Retrieves a zone by its ID.

@@ -396,6 +396,13 @@ func (manager *managerImpl) fetchZonesFromDNSServer(app *dbmodel.App, batchSize 
 			state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
 		}
 	}
+	zoneCountStats, err := dbmodel.GetZoneCountStatsByDaemon(manager.db, app.Daemons[0].ID)
+	if err != nil {
+		state.SetStatus(dbmodel.ZoneInventoryStatusErred, err)
+	} else {
+		state.SetDistinctZoneCount(zoneCountStats.DistinctZones)
+		state.SetBuiltinZoneCount(zoneCountStats.BuiltinZones)
+	}
 	// Add the zone inventory state into the database for this DNS server.
 	if err := dbmodel.AddZoneInventoryState(manager.db, dbmodel.NewZoneInventoryState(app.Daemons[0].ID, state)); err != nil {
 		// This is an exceptional situation and normally shouldn't happen.

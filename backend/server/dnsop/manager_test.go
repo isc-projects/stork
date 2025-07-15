@@ -499,6 +499,10 @@ func TestFetchZones(t *testing.T) {
 		require.Equal(t, dbmodel.ZoneInventoryStatusOK, state.State.Status)
 		require.NotNil(t, state.State.ZoneCount)
 		require.EqualValues(t, len(randomZones), *state.State.ZoneCount)
+		require.NotNil(t, state.State.DistinctZoneCount)
+		require.NotNil(t, state.State.BuiltinZoneCount)
+		require.EqualValues(t, len(randomZones), *state.State.DistinctZoneCount)
+		require.Zero(t, *state.State.BuiltinZoneCount)
 	}
 }
 
@@ -633,6 +637,7 @@ func TestFetchRepeatedZones(t *testing.T) {
 	mock := NewMockConnectedAgents(controller)
 
 	randomZones := testutil.GenerateRandomZones(10)
+	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 10, string(dbmodel.ZoneTypeBuiltin))
 
 	machine := &dbmodel.Machine{
 		ID:        0,
@@ -697,14 +702,18 @@ func TestFetchRepeatedZones(t *testing.T) {
 		if result.Error != nil {
 			require.Empty(t, *result.Error)
 		}
+		require.NotNil(t, result.DistinctZoneCount)
+		require.NotNil(t, result.BuiltinZoneCount)
+		require.EqualValues(t, 20, *result.DistinctZoneCount)
+		require.EqualValues(t, 10, *result.BuiltinZoneCount)
 	}
 
 	// Get all the zones from the database to make sure that all zones
 	// have been inserted.
 	zones, total, err := dbmodel.GetZones(db, nil, dbmodel.ZoneRelationLocalZones)
 	require.NoError(t, err)
-	require.Equal(t, 10, total)
-	require.Len(t, zones, 10)
+	require.EqualValues(t, 20, total)
+	require.Len(t, zones, 20)
 
 	// Make sure that all zones have two associations.
 	for _, zone := range zones {

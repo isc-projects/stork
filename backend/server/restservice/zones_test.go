@@ -381,19 +381,25 @@ func TestGetZonesFetch(t *testing.T) {
 	// Create several states.
 	details := []*dbmodel.ZoneInventoryStateDetails{
 		{
-			Status:    dbmodel.ZoneInventoryStatusBusy,
-			Error:     storkutil.Ptr("busy error"),
-			ZoneCount: storkutil.Ptr(int64(123)),
+			Status:            dbmodel.ZoneInventoryStatusBusy,
+			Error:             storkutil.Ptr("busy error"),
+			ZoneCount:         storkutil.Ptr(int64(123)),
+			DistinctZoneCount: storkutil.Ptr(int64(200)),
+			BuiltinZoneCount:  storkutil.Ptr(int64(23)),
 		},
 		{
-			Status:    dbmodel.ZoneInventoryStatusErred,
-			Error:     storkutil.Ptr("other error"),
-			ZoneCount: storkutil.Ptr(int64(234)),
+			Status:            dbmodel.ZoneInventoryStatusErred,
+			Error:             storkutil.Ptr("other error"),
+			ZoneCount:         storkutil.Ptr(int64(234)),
+			DistinctZoneCount: storkutil.Ptr(int64(300)),
+			BuiltinZoneCount:  storkutil.Ptr(int64(233)),
 		},
 		{
-			Status:    dbmodel.ZoneInventoryStatusUninitialized,
-			Error:     storkutil.Ptr("uninitialized error"),
-			ZoneCount: storkutil.Ptr(int64(345)),
+			Status:            dbmodel.ZoneInventoryStatusUninitialized,
+			Error:             storkutil.Ptr("uninitialized error"),
+			ZoneCount:         storkutil.Ptr(int64(345)),
+			DistinctZoneCount: storkutil.Ptr(int64(400)),
+			BuiltinZoneCount:  storkutil.Ptr(int64(234)),
 		},
 	}
 	// Add the machines and apps and associate them with the states.
@@ -449,6 +455,8 @@ func TestGetZonesFetch(t *testing.T) {
 		require.GreaterOrEqual(t, index, 0)
 		require.Equal(t, d.Error, rspOK.Payload.Items[index].Error)
 		require.Equal(t, d.ZoneCount, rspOK.Payload.Items[index].ZoneConfigsCount)
+		require.Equal(t, d.DistinctZoneCount, rspOK.Payload.Items[index].DistinctZonesCount)
+		require.Equal(t, d.BuiltinZoneCount, rspOK.Payload.Items[index].BuiltinZonesCount)
 		require.Positive(t, rspOK.Payload.Items[index].DaemonID)
 		require.Positive(t, rspOK.Payload.Items[index].AppID)
 		require.NotZero(t, rspOK.Payload.Items[index].CreatedAt)

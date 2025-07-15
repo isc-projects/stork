@@ -31,6 +31,12 @@
       zoneConfigsCount:
         type: integer
         x-nullable: true
+      distinctZonesCount:
+        type: integer
+        x-nullable: true
+      builtinZonesCount:
+        type: integer
+        x-nullable: true
 
   # ZoneInventoryStates
   ZoneInventoryStates:
