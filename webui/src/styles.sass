@@ -83,9 +83,19 @@ button.stork-disabled.p-disabled
 .max-w-40rem
   max-width: 40rem
 
-// Utility class to apply on form elements making them not wider than one global width value.
+// Utility class to apply on form elements.
+// Take full width and limit that with one global width value.
 .max-w-form
   max-width: var(--max-form-width)
+  width: 100%
+
+  // Propagate full width inside of PrimeNG form components.
+  input, .p-inputwrapper, .p-inputtext, .p-inputnumber
+    width: 100%
+
+  // Reapply max-width to PrimeNG wrapper containers that are direct children of components having .max-w-form applied.
+  & > .p-inputwrapper
+    max-width: var(--max-form-width)
 
 // Custom style for part of PrimeNG p-tabMenu component.
 // Sets custom margin for the button which closes active tab.
