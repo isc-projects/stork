@@ -760,6 +760,11 @@ func TestGetZoneCountStatsByDaemon(t *testing.T) {
 	randomZones := testutil.GenerateRandomZones(25)
 	randomZones = testutil.GenerateMoreZonesWithType(randomZones, 25, string(ZoneTypeBuiltin))
 
+	// Make sure that the builtin zones are last.
+	sort.Slice(randomZones, func(i, j int) bool {
+		return randomZones[i].Type > randomZones[j].Type
+	})
+
 	for i := 0; i < 10; i++ {
 		// Add overlapping zones using a sliding window between i and len(randomZones)-10+i (exclusive).
 		// It should result in getting 49 distinct zones and 24 builtin zones.
